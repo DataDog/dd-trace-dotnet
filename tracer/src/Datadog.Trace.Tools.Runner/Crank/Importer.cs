@@ -11,6 +11,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Spectre.Console;

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

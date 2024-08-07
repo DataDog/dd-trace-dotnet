@@ -9,41 +9,41 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode
     {
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => "aws-sdk";
 
-        [Tag(Trace.Tags.AwsAgentName)]
+        [Tag(Internal.Tags.AwsAgentName)]
         public string AgentName => "dotnet-aws-sdk";
 
-        [Tag(Trace.Tags.AwsOperationName)]
+        [Tag(Internal.Tags.AwsOperationName)]
         public string Operation { get; set; }
 
 #pragma warning disable CS0618
-        [Tag(Trace.Tags.AwsRegion)]
+        [Tag(Internal.Tags.AwsRegion)]
 #pragma warning restore CS0618
         public string AwsRegion => Region;
 
-        [Tag(Trace.Tags.Region)]
+        [Tag(Internal.Tags.Region)]
         public string Region { get; set; }
 
-        [Tag(Trace.Tags.AwsRequestId)]
+        [Tag(Internal.Tags.AwsRequestId)]
         public string RequestId { get; set; }
 
 #pragma warning disable CS0618
-        [Tag(Trace.Tags.AwsServiceName)]
+        [Tag(Internal.Tags.AwsServiceName)]
 #pragma warning restore CS0618
         public string AwsService => Service;
 
-        [Tag(Trace.Tags.AwsService)]
+        [Tag(Internal.Tags.AwsService)]
         public string Service { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod)]
+        [Tag(Internal.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
+        [Tag(Internal.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Internal.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
     }
 }

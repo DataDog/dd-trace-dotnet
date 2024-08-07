@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;

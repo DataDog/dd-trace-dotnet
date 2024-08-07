@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 

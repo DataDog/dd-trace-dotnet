@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableIntegrationSettingsCollectionTests.cs" company="Datadog">
+// <copyright file="ImmutableIntegrationSettingsCollectionTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 

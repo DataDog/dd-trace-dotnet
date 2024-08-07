@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 

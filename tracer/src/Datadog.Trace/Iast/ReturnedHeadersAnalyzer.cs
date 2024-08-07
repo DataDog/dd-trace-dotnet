@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;

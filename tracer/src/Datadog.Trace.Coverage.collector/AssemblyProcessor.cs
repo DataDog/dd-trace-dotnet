@@ -18,6 +18,8 @@ using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using CallSite = Mono.Cecil.CallSite;
@@ -179,12 +181,12 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
-                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                     else if (hasInternalsVisibleAttribute)
                     {
-                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                 }

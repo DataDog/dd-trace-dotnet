@@ -11,6 +11,7 @@ using System.Security.Claims;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {

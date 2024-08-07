@@ -4,12 +4,14 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Ci;
+using Datadog;
+
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// Benchmark job info
 /// </summary>
-public struct BenchmarkJobInfo
+internal struct BenchmarkJobInfo
 {
     /// <summary>
     /// Job description

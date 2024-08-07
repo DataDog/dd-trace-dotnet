@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;

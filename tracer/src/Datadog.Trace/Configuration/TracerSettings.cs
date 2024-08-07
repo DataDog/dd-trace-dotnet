@@ -13,9 +13,11 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
@@ -26,7 +28,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Contains Tracer settings.

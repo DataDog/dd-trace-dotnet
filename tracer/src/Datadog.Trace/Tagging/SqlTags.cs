@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -11,25 +12,25 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class SqlTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.DbType)]
+        [Tag(Internal.Tags.DbType)]
         public string DbType { get; set; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.DbName)]
+        [Tag(Internal.Tags.DbName)]
         public string DbName { get; set; }
 
-        [Tag(Trace.Tags.DbUser)]
+        [Tag(Internal.Tags.DbUser)]
         public string DbUser { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Internal.Tags.OutHost)]
         public string OutHost { get; set; }
 
-        [Tag(Trace.Tags.DbmTraceInjected)]
+        [Tag(Internal.Tags.DbmTraceInjected)]
         public string DbmTraceInjected { get; set; }
     }
 
@@ -42,14 +43,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? DbName ?? OutHost;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

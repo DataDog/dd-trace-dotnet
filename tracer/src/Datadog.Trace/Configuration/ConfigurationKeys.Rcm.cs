@@ -6,7 +6,7 @@
 using System;
 using Datadog.Trace.RemoteConfigurationManagement;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal static partial class ConfigurationKeys
     {

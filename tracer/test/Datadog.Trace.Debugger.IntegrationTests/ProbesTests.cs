@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;

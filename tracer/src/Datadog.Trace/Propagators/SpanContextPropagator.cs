@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;

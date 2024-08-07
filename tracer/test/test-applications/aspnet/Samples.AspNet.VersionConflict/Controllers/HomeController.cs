@@ -133,6 +133,11 @@ namespace Samples.AspNet.VersionConflict.Controllers
             Assembly automaticAssembly = AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && asm.GetName().Version > _manualTracingVersion);
             Type tracerType = automaticAssembly.GetType("Datadog.Trace.Tracer");
 
+            if (tracerType == null)
+            {
+                tracerType = automaticAssembly.GetType("Datadog.Trace.Internal.Tracer");
+            }
+
             // Invoke 'Tracer.Instance'
             var instanceGetMethod = tracerType.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public).GetGetMethod();
             object instance = instanceGetMethod.Invoke(null, new object[] {});

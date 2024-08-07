@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

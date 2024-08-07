@@ -13,6 +13,7 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 

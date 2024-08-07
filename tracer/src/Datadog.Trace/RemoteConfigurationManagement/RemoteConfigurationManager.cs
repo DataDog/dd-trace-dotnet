@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;

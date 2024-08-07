@@ -13,6 +13,8 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test
 /// </summary>
-public sealed class Test
+internal sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();
@@ -158,11 +160,11 @@ public sealed class Test
     {
         var span = _scope.Span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Internal.Tags.ErrorType, type);
+        span.SetTag(Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Internal.Tags.ErrorStack, callStack);
         }
     }
 

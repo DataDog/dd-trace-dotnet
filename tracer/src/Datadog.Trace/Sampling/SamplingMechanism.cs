@@ -5,6 +5,7 @@
 
 using System;
 using System.Globalization;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.Sampling;
 

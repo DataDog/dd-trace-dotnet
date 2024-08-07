@@ -10,6 +10,7 @@ using System.Text;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;

@@ -6,6 +6,7 @@
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace

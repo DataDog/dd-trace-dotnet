@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Tools.Shared;
 
 namespace Datadog.Trace.Tools.Runner

@@ -5,11 +5,11 @@ using Datadog.Trace.Configuration.Telemetry;
 #nullable enable
 #pragma warning disable CS0618 // Type is obsolete
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.Internal.Configuration;
 
 internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
 {
-    internal TracerSettingsSnapshot(Datadog.Trace.Configuration.TracerSettings settings)
+    internal TracerSettingsSnapshot(Datadog.Trace.Internal.Configuration.TracerSettings settings)
     {
         EnvironmentInternal = settings.EnvironmentInternal;
         ServiceNameInternal = settings.ServiceNameInternal;
@@ -47,7 +47,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
     private bool KafkaCreateConsumerScopeEnabledInternal { get; }
     private bool StartupDiagnosticLogEnabledInternal { get; }
 
-    internal void RecordChanges(Datadog.Trace.Configuration.TracerSettings settings, IConfigurationTelemetry telemetry)
+    internal void RecordChanges(Datadog.Trace.Internal.Configuration.TracerSettings settings, IConfigurationTelemetry telemetry)
     {
         RecordIfChanged(telemetry, "DD_ENV", EnvironmentInternal, settings.EnvironmentInternal);
         RecordIfChanged(telemetry, "DD_SERVICE", ServiceNameInternal, settings.ServiceNameInternal);
@@ -68,6 +68,6 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         RecordAdditionalChanges(settings, telemetry);
     }
 
-    partial void AdditionalInitialization(Datadog.Trace.Configuration.TracerSettings settings);
-    partial void RecordAdditionalChanges(Datadog.Trace.Configuration.TracerSettings settings, IConfigurationTelemetry telemetry);
+    partial void AdditionalInitialization(Datadog.Trace.Internal.Configuration.TracerSettings settings);
+    partial void RecordAdditionalChanges(Datadog.Trace.Internal.Configuration.TracerSettings settings, IConfigurationTelemetry telemetry);
 }

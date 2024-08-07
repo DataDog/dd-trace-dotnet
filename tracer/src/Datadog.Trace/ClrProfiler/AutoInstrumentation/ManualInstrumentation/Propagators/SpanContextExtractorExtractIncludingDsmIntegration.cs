@@ -11,6 +11,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 

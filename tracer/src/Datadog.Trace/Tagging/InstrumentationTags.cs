@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -14,7 +15,7 @@ namespace Datadog.Trace.Tagging
     {
         public abstract string SpanKind { get; }
 
-        [Metric(Trace.Tags.Analytics)]
+        [Metric(Internal.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)

@@ -11,6 +11,7 @@ using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5TestsWithoutExternalRulesFile(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity, string testName)
             : base("AspNetCore5", fixture, outputHelper, "/shutdown", enableSecurity: enableSecurity, testName: testName)
         {
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "false");
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "false");
         }
 
         [SkippableTheory]

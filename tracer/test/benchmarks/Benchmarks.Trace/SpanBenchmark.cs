@@ -7,14 +7,15 @@ using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using BindingFlags = System.Reflection.BindingFlags;
-using Tracer = Datadog.Trace.Tracer;
+using Tracer = Datadog.Trace.Internal.Tracer;
 using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
 using ManualSpanContext = DatadogTraceManual::Datadog.Trace.SpanContext;
 using ManualISpan = DatadogTraceManual::Datadog.Trace.ISpan;
+using Datadog.Trace.Internal.Configuration;
+using Datadog.Trace.Internal;
 
 namespace Benchmarks.Trace
 {

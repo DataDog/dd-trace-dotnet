@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema

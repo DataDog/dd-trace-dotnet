@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
@@ -71,9 +72,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 }
                 else
                 {
-                    var operationNameTag = span.GetTag(Trace.Tags.GraphQLOperationName);
+                    var operationNameTag = span.GetTag(Internal.Tags.GraphQLOperationName);
                     span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
-                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+                    span.SetTag(Internal.Tags.GraphQLOperationType, operationType);
                 }
             }
             catch (Exception ex)

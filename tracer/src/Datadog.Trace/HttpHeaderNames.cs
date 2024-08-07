@@ -5,7 +5,7 @@
 
 using System;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Names of HTTP headers that can be used tracing inbound or outbound HTTP requests.

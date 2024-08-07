@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Xunit;
 

@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Tests.PlatformHelpers;

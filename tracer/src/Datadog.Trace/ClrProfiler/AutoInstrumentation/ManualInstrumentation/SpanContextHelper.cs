@@ -8,6 +8,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 

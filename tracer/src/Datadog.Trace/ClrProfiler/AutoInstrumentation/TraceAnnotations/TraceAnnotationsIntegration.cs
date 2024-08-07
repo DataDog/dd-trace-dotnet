@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations

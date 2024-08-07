@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryController.cs" company="Datadog">
+// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,13 +14,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
+using ConfigurationKeys = Datadog.Trace.Internal.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Telemetry;
 

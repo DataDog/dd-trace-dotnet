@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Tagging
         [Tag("messaging.system")]
         public string MessagingSystem { get; set; }
 
-        [Tag(Trace.Tags.MessagingOperation)]
+        [Tag(Tags.MessagingOperation)]
         public string MessagingOperation { get; set; }
 
         [Tag("rpc.system")]

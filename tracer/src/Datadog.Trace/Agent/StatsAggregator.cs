@@ -11,6 +11,8 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;

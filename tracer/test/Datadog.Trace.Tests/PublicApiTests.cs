@@ -11,11 +11,14 @@ extern alias DatadogTraceManual;
 using System;
 using System.Reflection;
 using Datadog.Trace.Annotations;
+using Datadog.Trace.Internal;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.PublicApiTests
 {
+    /*
+     * TODO: Reenable when the assemblies have been merged
     public class DatadogTraceTests : PublicApiTestsBase
     {
         public DatadogTraceTests(ITestOutputHelper output)
@@ -32,6 +35,7 @@ namespace Datadog.Trace.Tests.PublicApiTests
         }
 #endif
     }
+    */
 
     public class DatadogTraceAnnotationsTests : PublicApiTestsBase
     {

@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions.Execution;
 using VerifyXunit;

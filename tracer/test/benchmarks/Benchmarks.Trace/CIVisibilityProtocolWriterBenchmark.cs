@@ -5,6 +5,7 @@ using Datadog.Trace;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Internal;
 
 namespace Benchmarks.Trace
 {

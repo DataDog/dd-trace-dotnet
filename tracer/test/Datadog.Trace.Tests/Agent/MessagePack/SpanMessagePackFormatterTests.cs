@@ -14,6 +14,8 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;

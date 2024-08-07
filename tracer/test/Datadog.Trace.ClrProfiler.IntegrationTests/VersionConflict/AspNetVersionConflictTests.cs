@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;

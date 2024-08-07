@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -21,26 +22,26 @@ namespace Datadog.Trace.Tagging
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
 
-        [Tag(Trace.Tags.MsmqCommand)]
+        [Tag(Tags.MsmqCommand)]
         public string Command { get; set; }
 
         /// <inheritdoc/>
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Tags.InstrumentationName)]
         public string InstrumentationName => "msmq";
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Trace.Tags.MsmqQueuePath)]
+        [Tag(Tags.MsmqQueuePath)]
         public string Path { get; set; }
 
-        [Tag(Trace.Tags.MsmqMessageWithTransaction)]
+        [Tag(Tags.MsmqMessageWithTransaction)]
         public string MessageWithTransaction { get; set; }
 
-        [Tag(Trace.Tags.MsmqIsTransactionalQueue)]
+        [Tag(Tags.MsmqIsTransactionalQueue)]
         public string IsTransactionalQueue { get; set; }
     }
 
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? (SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer) ?
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

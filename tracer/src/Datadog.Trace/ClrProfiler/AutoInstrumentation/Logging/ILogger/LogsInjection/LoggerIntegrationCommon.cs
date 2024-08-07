@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {

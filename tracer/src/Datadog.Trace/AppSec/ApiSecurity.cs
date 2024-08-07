@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 

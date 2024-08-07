@@ -6,8 +6,8 @@
 #nullable enable
 
 using System.ComponentModel;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal.AppSec;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -32,7 +32,7 @@ public class EventTrackingSdkTrackUserLoginSuccessEventIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
-        EventTrackingSdk.TrackUserLoginSuccessEvent(userId, null, Datadog.Trace.Tracer.Instance);
+        EventTrackingSdk.TrackUserLoginSuccessEvent(userId, null, Internal.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }

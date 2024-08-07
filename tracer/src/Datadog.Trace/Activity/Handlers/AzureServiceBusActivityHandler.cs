@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity.Handlers

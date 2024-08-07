@@ -13,6 +13,7 @@ using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;

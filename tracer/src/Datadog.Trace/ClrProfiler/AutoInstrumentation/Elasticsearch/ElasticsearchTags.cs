@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -12,22 +13,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal partial class ElasticsearchTags : InstrumentationTags
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
 
-        [Tag(Trace.Tags.ElasticsearchAction)]
+        [Tag(Internal.Tags.ElasticsearchAction)]
         public string Action { get; set; }
 
-        [Tag(Trace.Tags.ElasticsearchMethod)]
+        [Tag(Internal.Tags.ElasticsearchMethod)]
         public string Method { get; set; }
 
-        [Tag(Trace.Tags.ElasticsearchUrl)]
+        [Tag(Internal.Tags.ElasticsearchUrl)]
         public string Url { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Internal.Tags.OutHost)]
         public string Host { get; set; }
     }
 
@@ -40,14 +41,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

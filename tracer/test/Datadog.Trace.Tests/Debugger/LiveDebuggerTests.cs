@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;

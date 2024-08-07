@@ -8,6 +8,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using System.Linq;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Util;
 using Spectre.Console;
 
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Tools.Runner
             if (enableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
             var setEnvironmentVariables = _legacySettings.SetEnvironmentVariablesOption.GetValue(context);

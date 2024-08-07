@@ -15,6 +15,8 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;

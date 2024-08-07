@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Internal;
 using FluentAssertions;
 using Moq;
 using Xunit;

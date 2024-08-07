@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -83,7 +84,7 @@ namespace Datadog.Trace
                 // Ignore case because service name and _dd.base_service are normalized in the agent and backend
                 if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
                 {
-                    Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
+                    Tags.SetTag(Internal.Tags.BaseService, Context.ServiceNameInternal);
                     _baseServiceTagSet = true;
                 }
 
@@ -209,7 +210,7 @@ namespace Datadog.Trace
             // also, some "pseudo-tags" have special meaning, such as "manual.keep" and "_dd.measured".
             switch (key)
             {
-                case Trace.Tags.Env:
+                case Internal.Tags.Env:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -218,7 +219,7 @@ namespace Datadog.Trace
 
                     Context.TraceContext.Environment = value;
                     break;
-                case Trace.Tags.Version:
+                case Internal.Tags.Version:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -227,7 +228,7 @@ namespace Datadog.Trace
 
                     Context.TraceContext.ServiceVersion = value;
                     break;
-                case Trace.Tags.Origin:
+                case Internal.Tags.Origin:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -237,21 +238,21 @@ namespace Datadog.Trace
                     Context.TraceContext.Origin = value;
                     break;
 
-                case Trace.Tags.AzureAppServicesSiteName:
-                case Trace.Tags.AzureAppServicesSiteKind:
-                case Trace.Tags.AzureAppServicesSiteType:
-                case Trace.Tags.AzureAppServicesResourceGroup:
-                case Trace.Tags.AzureAppServicesSubscriptionId:
-                case Trace.Tags.AzureAppServicesResourceId:
-                case Trace.Tags.AzureAppServicesInstanceId:
-                case Trace.Tags.AzureAppServicesInstanceName:
-                case Trace.Tags.AzureAppServicesOperatingSystem:
-                case Trace.Tags.AzureAppServicesRuntime:
-                case Trace.Tags.AzureAppServicesExtensionVersion:
+                case Internal.Tags.AzureAppServicesSiteName:
+                case Internal.Tags.AzureAppServicesSiteKind:
+                case Internal.Tags.AzureAppServicesSiteType:
+                case Internal.Tags.AzureAppServicesResourceGroup:
+                case Internal.Tags.AzureAppServicesSubscriptionId:
+                case Internal.Tags.AzureAppServicesResourceId:
+                case Internal.Tags.AzureAppServicesInstanceId:
+                case Internal.Tags.AzureAppServicesInstanceName:
+                case Internal.Tags.AzureAppServicesOperatingSystem:
+                case Internal.Tags.AzureAppServicesRuntime:
+                case Internal.Tags.AzureAppServicesExtensionVersion:
                     Log.Warning("This tag is reserved for Azure App Service tagging. Value will be ignored");
                     break;
 
-                case Trace.Tags.SamplingPriority:
+                case Internal.Tags.SamplingPriority:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -270,7 +271,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.ManualKeep:
+                case Internal.Tags.ManualKeep:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -284,7 +285,7 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.ManualDrop:
+                case Internal.Tags.ManualDrop:
                     if (Context.TraceContext == null)
                     {
                         LogMissingTraceContext(key, value);
@@ -298,11 +299,11 @@ namespace Datadog.Trace
                     }
 
                     break;
-                case Trace.Tags.Analytics:
+                case Internal.Tags.Analytics:
                     if (string.IsNullOrEmpty(value))
                     {
                         // remove metric
-                        SetMetric(Trace.Tags.Analytics, null);
+                        SetMetric(Internal.Tags.Analytics, null);
                         return this;
                     }
 
@@ -313,12 +314,12 @@ namespace Datadog.Trace
                     if (analyticsSamplingRate == true)
                     {
                         // always sample
-                        SetMetric(Trace.Tags.Analytics, 1.0);
+                        SetMetric(Internal.Tags.Analytics, 1.0);
                     }
                     else if (analyticsSamplingRate == false)
                     {
                         // never sample
-                        SetMetric(Trace.Tags.Analytics, 0.0);
+                        SetMetric(Internal.Tags.Analytics, 0.0);
                     }
                     else if (double.TryParse(
                         value,
@@ -327,19 +328,19 @@ namespace Datadog.Trace
                         out double analyticsSampleRate))
                     {
                         // use specified sample rate
-                        SetMetric(Trace.Tags.Analytics, analyticsSampleRate);
+                        SetMetric(Internal.Tags.Analytics, analyticsSampleRate);
                     }
                     else
                     {
-                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Analytics);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Internal.Tags.Analytics);
                     }
 
                     break;
-                case Trace.Tags.Measured:
+                case Internal.Tags.Measured:
                     if (string.IsNullOrEmpty(value))
                     {
                         // Remove metric if value is null
-                        SetMetric(Trace.Tags.Measured, null);
+                        SetMetric(Internal.Tags.Measured, null);
                         return this;
                     }
 
@@ -348,20 +349,20 @@ namespace Datadog.Trace
                     if (measured == true)
                     {
                         // Set metric to true by passing the value of 1.0
-                        SetMetric(Trace.Tags.Measured, 1.0);
+                        SetMetric(Internal.Tags.Measured, 1.0);
                     }
                     else if (measured == false)
                     {
                         // Set metric to false by passing the value of 0.0
-                        SetMetric(Trace.Tags.Measured, 0.0);
+                        SetMetric(Internal.Tags.Measured, 0.0);
                     }
                     else
                     {
-                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Trace.Tags.Measured);
+                        Log.Warning("Value {Value} has incorrect format for tag {TagName}", value, Internal.Tags.Measured);
                     }
 
                     break;
-                case Trace.Tags.PeerService:
+                case Internal.Tags.PeerService:
                     Tags.SetTag(key, value);
                     Context.TraceContext.CurrentTraceSettings.Schema.RemapPeerService(Tags);
                     break;
@@ -425,9 +426,9 @@ namespace Datadog.Trace
                         exception = aggregateException.InnerExceptions[0];
                     }
 
-                    SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                    SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
-                    SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    SetTag(Internal.Tags.ErrorMsg, exception.Message);
+                    SetTag(Internal.Tags.ErrorType, exception.GetType().ToString());
+                    SetTag(Internal.Tags.ErrorStack, exception.ToString());
 
                     ExceptionDebugging.Report(this, exception);
                 }
@@ -450,11 +451,11 @@ namespace Datadog.Trace
             // allow retrieval through any span in the trace
             return key switch
             {
-                Trace.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
-                Trace.Tags.Env => Context.TraceContext?.Environment,
-                Trace.Tags.Version => Context.TraceContext?.ServiceVersion,
-                Trace.Tags.Origin => Context.TraceContext?.Origin,
-                Trace.Tags.TraceId => Context.RawTraceId,
+                Internal.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
+                Internal.Tags.Env => Context.TraceContext?.Environment,
+                Internal.Tags.Version => Context.TraceContext?.ServiceVersion,
+                Internal.Tags.Origin => Context.TraceContext?.Origin,
+                Internal.Tags.TraceId => Context.RawTraceId,
                 _ => Tags.GetTag(key)
             };
         }

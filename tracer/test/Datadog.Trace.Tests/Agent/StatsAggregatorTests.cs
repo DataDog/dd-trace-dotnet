@@ -13,6 +13,8 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using FluentAssertions;
 using Moq;
 using Xunit;

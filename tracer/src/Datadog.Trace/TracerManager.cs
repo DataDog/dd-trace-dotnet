@@ -19,6 +19,8 @@ using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;

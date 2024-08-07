@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 

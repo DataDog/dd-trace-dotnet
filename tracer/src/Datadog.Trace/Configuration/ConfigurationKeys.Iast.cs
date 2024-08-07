@@ -5,7 +5,7 @@
 
 using Datadog.Trace.Iast.Settings;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     internal partial class ConfigurationKeys
     {

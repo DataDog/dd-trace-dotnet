@@ -1,8 +1,8 @@
 using System.IO;
 using BenchmarkDotNet.Attributes;
-using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using NLog;
 using NLog.Config;
 using NLog.Targets;

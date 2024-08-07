@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmissio
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using ILoggingRuleProxy = Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILoggingRuleProxy;
 

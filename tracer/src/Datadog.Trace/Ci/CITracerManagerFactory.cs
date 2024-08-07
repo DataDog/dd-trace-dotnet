@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.RemoteConfigurationManagement;

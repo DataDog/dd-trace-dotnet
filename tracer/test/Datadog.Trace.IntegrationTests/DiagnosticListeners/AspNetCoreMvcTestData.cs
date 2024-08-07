@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using Datadog.Trace.Internal;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using static Datadog.Trace.IntegrationTests.DiagnosticListeners.ErrorHandlingHelper;

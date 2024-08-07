@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
@@ -23,7 +24,7 @@ public abstract class AspNetCoreIpCollectionTests : AspNetCoreMvcTestBase
         : base(sampleName, fixture, output, enableRouteTemplateResourceNames: true)
     {
         _testName = GetTestName(sampleName);
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.IpHeaderEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.IpHeaderEnabled, "1");
     }
 
     public static TheoryData<string, int> IpData() => new()

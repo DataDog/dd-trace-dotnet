@@ -8,6 +8,8 @@ using System.Collections.Specialized;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;

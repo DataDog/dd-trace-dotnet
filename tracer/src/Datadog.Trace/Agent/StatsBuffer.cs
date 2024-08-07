@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 

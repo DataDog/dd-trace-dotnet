@@ -12,6 +12,8 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;

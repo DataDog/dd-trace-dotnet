@@ -5,7 +5,9 @@
 
 #nullable enable
 
-namespace Datadog.Trace
+using Datadog;
+
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// Span context interface.

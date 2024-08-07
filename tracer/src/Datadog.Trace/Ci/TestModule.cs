@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Ipc;
@@ -20,6 +21,7 @@ using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
@@ -28,12 +30,12 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.Ci;
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// CI Visibility test module
 /// </summary>
-public sealed class TestModule
+internal sealed class TestModule
 {
     private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private static readonly HashSet<TestModule> OpenedTestModules = new();
@@ -149,7 +151,7 @@ public sealed class TestModule
             else
             {
                 CIVisibility.Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
-                _fakeSession = TestSession.InternalGetOrCreate(System.Environment.CommandLine, System.Environment.CurrentDirectory, null, startDate, false);
+                _fakeSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
                     tags.SessionId = fakeSessionTags.SessionId;
@@ -333,11 +335,11 @@ public sealed class TestModule
     {
         var span = _span;
         span.Error = true;
-        span.SetTag(Trace.Tags.ErrorType, type);
-        span.SetTag(Trace.Tags.ErrorMsg, message);
+        span.SetTag(Internal.Tags.ErrorType, type);
+        span.SetTag(Internal.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Trace.Tags.ErrorStack, callStack);
+            span.SetTag(Internal.Tags.ErrorStack, callStack);
         }
     }
 

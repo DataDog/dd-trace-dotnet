@@ -58,6 +58,11 @@ namespace LogsInjectionHelper.VersionConflict
 
             Type tracerType = _automaticAssembly.GetType("Datadog.Trace.Tracer");
 
+            if (tracerType is null)
+            {
+                tracerType = _automaticAssembly.GetType("Datadog.Trace.Internal.Tracer");
+            }
+
             // Invoke 'Tracer.Instance'
             var instanceGetMethod = tracerType.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public).GetGetMethod();
             object instance = instanceGetMethod.Invoke(null, new object[] {});

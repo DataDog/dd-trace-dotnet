@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {

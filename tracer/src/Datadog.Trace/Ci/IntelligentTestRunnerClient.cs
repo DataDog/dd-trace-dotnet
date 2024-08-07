@@ -22,6 +22,8 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Telemetry;

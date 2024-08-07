@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;

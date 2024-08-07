@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = "trace";
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
     }
 }

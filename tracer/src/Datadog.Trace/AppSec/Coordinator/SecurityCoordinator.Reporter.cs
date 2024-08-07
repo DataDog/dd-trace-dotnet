@@ -12,6 +12,7 @@ using System.IO.Compression;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;

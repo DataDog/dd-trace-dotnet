@@ -10,6 +10,7 @@ using System.Text;
 using Amazon.Kinesis.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;

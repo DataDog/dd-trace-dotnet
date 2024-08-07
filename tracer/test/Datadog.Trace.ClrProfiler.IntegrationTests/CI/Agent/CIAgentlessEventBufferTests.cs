@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Internal;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent

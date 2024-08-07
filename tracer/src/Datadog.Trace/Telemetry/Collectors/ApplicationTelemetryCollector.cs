@@ -7,6 +7,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry.Collectors;

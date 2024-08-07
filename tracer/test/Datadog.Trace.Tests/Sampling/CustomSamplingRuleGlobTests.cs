@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Xunit;

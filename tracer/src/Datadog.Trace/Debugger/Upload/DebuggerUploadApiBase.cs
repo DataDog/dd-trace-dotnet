@@ -11,6 +11,7 @@ using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 

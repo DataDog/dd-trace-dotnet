@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Agent
 {

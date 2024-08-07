@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.IntegrationTests.Assertions;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes.TestRuns.SmokeTests;
 using VerifyXunit;

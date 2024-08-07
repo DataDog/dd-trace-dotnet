@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;

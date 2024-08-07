@@ -23,6 +23,8 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
@@ -458,7 +460,7 @@ namespace Datadog.Trace.TestHelpers
         protected void SetSecurity(bool security)
         {
             SecurityEnabled = security;
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
         protected void SetInstrumentationVerification()

@@ -15,7 +15,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.Internal
 {
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
@@ -169,7 +169,7 @@ namespace Datadog.Trace
             // to children spans and distributed trace.
             if (CIVisibility.IsRunning)
             {
-                Origin = Ci.Tags.TestTags.CIAppTestOriginName;
+                Origin = Trace.Ci.Tags.TestTags.CIAppTestOriginName;
             }
         }
 
@@ -419,21 +419,21 @@ namespace Datadog.Trace
         private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
         {
             return context switch
-                   {
-                       // if there is no context or it has a zero trace id,
-                       // use the specified fallback value
-                       null or { TraceId: 0 } => fallback,
+            {
+                // if there is no context or it has a zero trace id,
+                // use the specified fallback value
+                null or { TraceId: 0 } => fallback,
 
-                       // use the 128-bit trace id from SpanContext if possible
-                       SpanContext sc => sc.TraceId128,
+                // use the 128-bit trace id from SpanContext if possible
+                SpanContext sc => sc.TraceId128,
 
-                       // otherwise use the 64-bit trace id from ISpanContext
-                       _ => (TraceId)context.TraceId
-                   };
+                // otherwise use the 64-bit trace id from ISpanContext
+                _ => (TraceId)context.TraceId
+            };
         }
 
         /// <summary>
-        /// If <see cref="TraceContext"/> is not null, returns <see cref="Trace.TraceContext.GetOrMakeSamplingDecision"/>.
+        /// If <see cref="TraceContext"/> is not null, returns <see cref="TraceContext.GetOrMakeSamplingDecision"/>.
         /// Otherwise, returns <see cref="SamplingPriority"/>.
         /// </summary>
         internal int? GetOrMakeSamplingDecision() =>

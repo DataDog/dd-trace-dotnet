@@ -10,6 +10,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.StreamFactories

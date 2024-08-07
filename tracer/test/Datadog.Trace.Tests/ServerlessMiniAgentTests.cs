@@ -10,6 +10,7 @@ using System.IO;
 
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;

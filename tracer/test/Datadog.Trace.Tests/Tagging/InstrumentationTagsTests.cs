@@ -6,6 +6,7 @@
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.Internal;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
@@ -64,7 +65,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.BootstrapServers = bootstrapServer;
 
             tags.PeerService.Should().Be(bootstrapServer);
-            tags.PeerServiceSource.Should().Be(Trace.Tags.KafkaBootstrapServers);
+            tags.PeerServiceSource.Should().Be(Tags.KafkaBootstrapServers);
         }
 
         [Fact]
@@ -115,7 +116,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be(Trace.Tags.OutHost);
+            tags.PeerServiceSource.Should().Be(Tags.OutHost);
         }
 
         [Fact]

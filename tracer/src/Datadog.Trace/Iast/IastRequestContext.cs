@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;

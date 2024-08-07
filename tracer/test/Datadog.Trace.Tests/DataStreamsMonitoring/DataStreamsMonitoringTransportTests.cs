@@ -15,6 +15,7 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;

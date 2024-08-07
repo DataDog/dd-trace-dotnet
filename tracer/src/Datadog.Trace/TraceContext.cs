@@ -14,6 +14,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -306,12 +307,12 @@ namespace Datadog.Trace
             if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
                 // add the tag once if trace is sampled, but never overwrite an existing tag
-                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
+                Tags.TryAddTag(Internal.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
             else if (SamplingPriorityValues.IsDrop(p))
             {
                 // remove tag if trace is not sampled
-                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
+                Tags.RemoveTag(Internal.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)

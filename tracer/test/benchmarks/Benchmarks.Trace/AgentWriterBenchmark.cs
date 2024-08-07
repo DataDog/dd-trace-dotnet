@@ -7,7 +7,8 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Util;
 
 namespace Benchmarks.Trace

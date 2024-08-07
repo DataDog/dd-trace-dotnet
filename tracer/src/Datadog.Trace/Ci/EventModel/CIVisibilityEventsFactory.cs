@@ -6,6 +6,7 @@
 
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.Ci.EventModel;
 

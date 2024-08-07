@@ -21,6 +21,7 @@ using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;

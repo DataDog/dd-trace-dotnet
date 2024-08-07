@@ -10,6 +10,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal.Ci;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
 

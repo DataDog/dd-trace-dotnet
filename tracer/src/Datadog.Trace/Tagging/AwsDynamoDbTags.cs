@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -11,10 +12,10 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AwsDynamoDbTags : AwsSdkTags
     {
-        [Tag(Trace.Tags.TableName)]
+        [Tag(Internal.Tags.TableName)]
         public string TableName { get; set; }
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
     }
 
@@ -27,21 +28,21 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? TableName;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
             {
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.TableName;
+                           : Internal.Tags.TableName;
             }
         }
     }

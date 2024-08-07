@@ -10,6 +10,7 @@ using System.Reflection.Emit;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
 {

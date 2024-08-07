@@ -9,6 +9,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.Internal;
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;

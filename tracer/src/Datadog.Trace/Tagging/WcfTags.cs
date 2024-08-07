@@ -10,7 +10,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class WcfTags : WebTags
     {
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Wcf);
     }
 }

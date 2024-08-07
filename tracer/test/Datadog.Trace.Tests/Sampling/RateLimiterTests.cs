@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;

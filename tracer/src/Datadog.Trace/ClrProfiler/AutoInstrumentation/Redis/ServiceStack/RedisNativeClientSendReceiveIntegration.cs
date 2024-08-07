@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
 {

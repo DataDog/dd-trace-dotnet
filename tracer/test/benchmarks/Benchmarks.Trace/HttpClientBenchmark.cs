@@ -3,9 +3,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
-using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Benchmarks.Trace
 {

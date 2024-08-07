@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;

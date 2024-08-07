@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Tagging;
 using Microsoft.AspNetCore.Http;
 

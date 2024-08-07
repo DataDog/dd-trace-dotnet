@@ -4,12 +4,13 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Ci;
+
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// Test status
 /// </summary>
-public enum TestStatus
+internal enum TestStatus
 {
     /// <summary>
     /// Pass test status

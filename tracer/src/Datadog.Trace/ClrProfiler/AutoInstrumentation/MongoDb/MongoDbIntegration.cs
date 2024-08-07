@@ -10,6 +10,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb

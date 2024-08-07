@@ -4,12 +4,14 @@
 // </copyright>
 
 #nullable enable
-namespace Datadog.Trace.Ci;
+using Datadog;
+
+namespace Datadog.Trace.Internal.Ci;
 
 /// <summary>
 /// Benchmark host info
 /// </summary>
-public struct BenchmarkHostInfo
+internal struct BenchmarkHostInfo
 {
     /// <summary>
     /// Processor Name

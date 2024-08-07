@@ -14,6 +14,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -27,7 +29,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
-using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
+using ConfigurationKeys = Datadog.Trace.Internal.Configuration.ConfigurationKeys;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 using Stopwatch = System.Diagnostics.Stopwatch;
 

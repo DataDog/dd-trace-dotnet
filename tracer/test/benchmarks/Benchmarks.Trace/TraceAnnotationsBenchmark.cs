@@ -1,9 +1,9 @@
 using System;
 using BenchmarkDotNet.Attributes;
-using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Benchmarks.Trace
 {

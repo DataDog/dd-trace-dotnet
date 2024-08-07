@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 
 namespace Datadog.Trace.ServiceFabric
 {

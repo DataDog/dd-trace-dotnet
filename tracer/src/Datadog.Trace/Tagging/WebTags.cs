@@ -3,34 +3,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
     internal partial class WebTags : InstrumentationTags, IHasStatusCode
     {
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
-        [Tag(Trace.Tags.HttpUserAgent)]
+        [Tag(Internal.Tags.HttpUserAgent)]
         public string HttpUserAgent { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod)]
+        [Tag(Internal.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [Tag(Trace.Tags.HttpRequestHeadersHost)]
+        [Tag(Internal.Tags.HttpRequestHeadersHost)]
         public string HttpRequestHeadersHost { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
+        [Tag(Internal.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Internal.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
 
-        [Tag(Trace.Tags.NetworkClientIp)]
+        [Tag(Internal.Tags.NetworkClientIp)]
         public string NetworkClientIp { get; set; }
 
-        [Tag(Trace.Tags.HttpClientIp)]
+        [Tag(Internal.Tags.HttpClientIp)]
         public string HttpClientIp { get; set; }
     }
 }

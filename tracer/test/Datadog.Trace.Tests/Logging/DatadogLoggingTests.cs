@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Internal.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.RuntimeMetrics;

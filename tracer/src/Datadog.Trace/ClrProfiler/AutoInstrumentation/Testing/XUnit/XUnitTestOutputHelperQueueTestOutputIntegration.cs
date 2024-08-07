@@ -8,6 +8,7 @@ using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Logging.DirectSubmission;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;

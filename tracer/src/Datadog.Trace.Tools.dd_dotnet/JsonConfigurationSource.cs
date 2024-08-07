@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal.Configuration;
 
 namespace Datadog.Trace.Tools.dd_dotnet;
 

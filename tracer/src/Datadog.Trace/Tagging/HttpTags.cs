@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -12,25 +13,25 @@ namespace Datadog.Trace.Tagging
     {
         private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
-        [Tag(Trace.Tags.SpanKind)]
+        [Tag(Internal.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [Tag(Trace.Tags.InstrumentationName)]
+        [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod)]
+        [Tag(Internal.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
+        [Tag(Internal.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
         [Tag(HttpClientHandlerTypeKey)]
         public string HttpClientHandlerType { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Internal.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Internal.Tags.OutHost)]
         public string Host { get; set; }
     }
 
@@ -43,14 +44,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Trace.Tags.PeerService)]
+        [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Trace.Tags.PeerServiceSource)]
+        [Tag(Internal.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

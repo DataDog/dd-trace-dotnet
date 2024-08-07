@@ -10,6 +10,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;

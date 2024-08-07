@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;

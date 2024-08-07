@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.Internal;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;

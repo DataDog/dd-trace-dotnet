@@ -5,13 +5,14 @@
 
 #nullable enable
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Configuration
+namespace Datadog.Trace.Internal.Configuration
 {
     /// <summary>
     /// Contains integration-specific settings.

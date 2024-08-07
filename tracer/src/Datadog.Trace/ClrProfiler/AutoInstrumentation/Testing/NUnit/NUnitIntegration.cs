@@ -13,6 +13,8 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
+using Datadog.Trace.Internal.Ci;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -62,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             switch (testResult.ResultState.Status)
             {
                 case TestStatus.Skipped or TestStatus.Inconclusive:
-                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
+                    test.Close(Internal.Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
                     break;
                 case TestStatus.Failed:
                     test.SetErrorInfo(exceptionType, resultMessage, testResult.StackTrace);
-                    test.Close(Ci.TestStatus.Fail);
+                    test.Close(Internal.Ci.TestStatus.Fail);
                     break;
                 default:
                     if (!string.IsNullOrEmpty(resultMessage))
@@ -74,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                         test.SetTag(TestTags.Message, resultMessage);
                     }
 
-                    test.Close(Ci.TestStatus.Pass);
+                    test.Close(Internal.Ci.TestStatus.Pass);
                     break;
             }
         }
@@ -301,7 +303,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Skip tests
             if (skipReason is not null)
             {
-                test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+                test.Close(Internal.Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
                 return test;
             }
 
