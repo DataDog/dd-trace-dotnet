@@ -37,6 +37,38 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "otel.env.hiding": {
+      "tags": [
+        "config_datadog",
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of Opentelemetry configuration keys, configured and supported, but overridden by its counterpart Datadog Configuration key, tagged by Datadog configuration key and Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "otel.env.invalid": {
+      "tags": [
+        "config_datadog",
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of configured supported Opentelemetry configuration keys that we fail to map its value to the Datadog form, tagged by Datadog configuration key and Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "otel.env.unsupported": {
+      "tags": [
+        "config_opentelemetry"
+      ],
+      "metric_type": "count",
+      "data_type": "configuration keys",
+      "description": "The number of unsupported (not having a mapping with any Datadog configuration key) configured Opentelemetry Configuration keys, tagged by Opentelemetry configuration key",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "spans_created": {
       "tags": [
         "integration_name"
@@ -314,28 +346,100 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "inject.success": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "platform",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "inject.skip": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version",
+        "platform",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of skipped injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "inject.error": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version",
+        "platform",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of erroneous injections of APM libraries",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "host_lib_injection.success": {
       "tags": [
         "language",
         "version",
+        "injector_version",
         "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful host lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "host_lib_injection.failure": {
       "tags": [
         "language",
         "version",
+        "injector_version",
         "injecter_version"
       ],
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed host lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "k8s_lib_injection.success": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful k8s lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "k8s_lib_injection.failure": {
+      "tags": [
+        "language",
+        "version",
+        "injector_version",
+        "injecter_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of failed host k8s injection",
+      "send_to_user": false,
       "user_tags": []
     },
     "docker_lib_injection.success": {
@@ -346,7 +450,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful docker lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "docker_lib_injection.failure": {
@@ -357,7 +461,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of failed docker lib injection",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort": {
@@ -369,7 +473,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to checks not passing",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort.runtime": {
@@ -380,7 +484,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to runtime version not supported",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.abort.integration": {
@@ -393,7 +497,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to integration version not supported",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.error": {
@@ -407,7 +511,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections aborted at library entrypoint due to an error",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "library_entrypoint.complete": {
@@ -419,7 +523,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of successful library entrypoint injections",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.1s": {
@@ -430,7 +534,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 1s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.5s": {
@@ -441,7 +545,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 5s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "entry.process.running.10s": {
@@ -452,7 +556,7 @@
       "metric_type": "count",
       "data_type": "requests",
       "description": "Number of injections that are still running after 10s",
-      "send_to_user": true,
+      "send_to_user": false,
       "user_tags": []
     },
     "exporter_fallback": {
@@ -462,28 +566,6 @@
       "metric_type": "count",
       "data_type": "instances",
       "description": "Number of times the libdatadog trace exporter isn't used and we fallback on the previous implementation",
-      "send_to_user": false,
-      "user_tags": []
-    },
-    "otel.env.hiding": {
-      "tags": [
-        "config.opentelemetry",
-        "config.datadog"
-      ],
-      "metric_type": "count",
-      "data_type": "instances",
-      "description": "The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set, thus `hiding` the OpenTelemetry configuration.",
-      "send_to_user": false,
-      "user_tags": []
-    },
-    "otel.env.invalid": {
-      "tags": [
-        "config.opentelemetry",
-        "config.datadog"
-      ],
-      "metric_type": "count",
-      "data_type": "instances",
-      "description": "The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly",
       "send_to_user": false,
       "user_tags": []
     }
