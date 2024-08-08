@@ -71,7 +71,7 @@ jobs:
           git push origin "v${{steps.versions.outputs.full_version}}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: ./.github/actions/create-release
         with:
           draft: true
           name: "${{steps.versions.outputs.full_version}}"
