@@ -156,8 +156,11 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.Capacity()));
-        std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
+        auto cs = _callstackProvider.Get();
+        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
+        std::copy(stack.begin(), end_stack, cs.begin());
+        cs.SetCount(std::min(stack.size(), static_cast<std::size_t>(cs.Capacity())));
+        rawSample.Stack = std::move(cs);
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
