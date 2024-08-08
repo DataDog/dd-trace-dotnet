@@ -10,7 +10,7 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   echo "Downloading artifacts from Github"
   VERSION=${DOTNET_PACKAGE_VERSION:-${CI_COMMIT_TAG##v}} # Use DOTNET_PACKAGE_VERSION if it exists, otherwise use CI_COMMIT_TAG without the v
 
-  for SUFFIX in "" ".arm64"; do
+  for SUFFIX in "" ".arm64" "-musl"; do
     curl --location --fail \
       --output $target_dir/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz \
       "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz"

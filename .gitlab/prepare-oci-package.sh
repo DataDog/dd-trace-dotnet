@@ -17,7 +17,11 @@ if [ -z "$ARCH" ]; then
 fi
 
 if [ "$ARCH" == "amd64" ]; then
-  SUFFIX=""
+  if [ "$LIBC" == "musl" ]; then
+    SUFFIX="-musl"
+  else
+    SUFFIX=""
+  fi
 elif [ "$ARCH" == "arm64" ]; then
   SUFFIX=".arm64"
 else

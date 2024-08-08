@@ -102,9 +102,35 @@ download-single-step-artifacts:
 package-oci:
   needs: [ download-single-step-artifacts ]
 
-generate-lib-init-pinned-tag-values:
+package-oci-musl:
+  extends: package-oci
+  parallel:
+    matrix:
+      - ARCH: amd64
+        LIBC: musl
+
+create-arch-specific-lib-injection-image-musl:
+  extends: create-arch-specific-lib-injection-image
+  needs: [ package-oci-musl ]
+  parallel:
+    matrix:
+      - ARCH: musl # technically not true but that's how the package is named
+        DOCKER_PLATFORM: linux/amd64
+  script:
+    - export VERSION="$(<packaging/sources/version)"
+    - mv packaging/datadog-apm-library-dotnet-${VERSION}-linux-amd64.tar packaging/datadog-apm-library-dotnet-${VERSION}-linux-musl.tar
+    - !reference [create-arch-specific-lib-injection-image , script]
+
+generate-lib-init-pinned-tag-values-musl:
+  extends: generate-lib-init-pinned-tag-values
   variables:
-    ADDITIONAL_TAG_SUFFIXES: musl #add -musl to all generated image tags
+    ADDITIONAL_TAG_SUFFIXES: musl
+
+publish-lib-init-pinned-tags-musl:
+  extends: publish-lib-init-pinned-tags
+  needs: [ generate-lib-init-pinned-tag-values-musl ]
+  variables:
+    IMG_SOURCES: $GHCR_BASE/$LIB_INJECTION_NAME:${CI_COMMIT_SHA}-musl
 
 onboarding_tests_installer:
   parallel:
