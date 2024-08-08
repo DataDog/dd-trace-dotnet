@@ -23,17 +23,17 @@ namespace Datadog.Trace.Tagging
         }
 
 #pragma warning disable CS0618 // Duplicate of TopicName
-        [Tag(Internal.Tags.AwsTopicName)]
+        [Tag(Trace.Tags.AwsTopicName)]
 #pragma warning restore CS0618
         public string AwsTopicName => TopicName;
 
-        [Tag(Internal.Tags.TopicName)]
+        [Tag(Trace.Tags.TopicName)]
         public string TopicName { get; set; }
 
-        [Tag(Internal.Tags.AwsTopicArn)]
+        [Tag(Trace.Tags.AwsTopicArn)]
         public string TopicArn { get; set; }
 
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }
 
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Internal.Tags.TopicName;
+                           : Tags.TopicName;
             }
         }
     }

@@ -101,7 +101,7 @@ After:
                     span.SetTag(Tags.ErrorMsg, returnValue.ToString());
                 }
 */
-                    span.SetTag(Internal.Tags.ErrorMsg, returnValue.ToString());
+                    span.SetTag(Tags.ErrorMsg, returnValue.ToString());
                 }
             }
 

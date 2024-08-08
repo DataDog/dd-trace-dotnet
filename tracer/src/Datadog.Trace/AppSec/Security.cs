@@ -27,7 +27,6 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
-using Tags = Datadog.Trace.Internal.Tags;
 
 namespace Datadog.Trace.AppSec
 {

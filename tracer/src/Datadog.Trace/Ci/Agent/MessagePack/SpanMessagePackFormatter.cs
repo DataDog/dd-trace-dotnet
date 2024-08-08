@@ -42,14 +42,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
-        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Language);
+        private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
-        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Env);
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
 
-        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Version);
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
 
-        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Origin);
+        private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
 
         // numeric tags

@@ -160,11 +160,11 @@ internal sealed class Test
     {
         var span = _scope.Span;
         span.Error = true;
-        span.SetTag(Internal.Tags.ErrorType, type);
-        span.SetTag(Internal.Tags.ErrorMsg, message);
+        span.SetTag(Trace.Tags.ErrorType, type);
+        span.SetTag(Trace.Tags.ErrorMsg, message);
         if (callStack is not null)
         {
-            span.SetTag(Internal.Tags.ErrorStack, callStack);
+            span.SetTag(Trace.Tags.ErrorStack, callStack);
         }
     }
 

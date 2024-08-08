@@ -11,22 +11,22 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AerospikeTags : InstrumentationTags
     {
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => InternalSpanKinds.Client;
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aerospike";
 
-        [Tag(Internal.Tags.AerospikeKey)]
+        [Tag(Trace.Tags.AerospikeKey)]
         public string Key { get; set; }
 
-        [Tag(Internal.Tags.AerospikeNamespace)]
+        [Tag(Trace.Tags.AerospikeNamespace)]
         public string Namespace { get; set; }
 
-        [Tag(Internal.Tags.AerospikeSetName)]
+        [Tag(Trace.Tags.AerospikeSetName)]
         public string SetName { get; set; }
 
-        [Tag(Internal.Tags.AerospikeUserKey)]
+        [Tag(Trace.Tags.AerospikeUserKey)]
         public string UserKey { get; set; }
     }
 
@@ -39,14 +39,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? Namespace;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : Namespace is not null
-                            ? Internal.Tags.AerospikeNamespace
+                            ? Tags.AerospikeNamespace
                             : null;
             }
         }

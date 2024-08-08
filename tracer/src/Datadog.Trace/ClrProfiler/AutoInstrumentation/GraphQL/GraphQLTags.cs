@@ -20,19 +20,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             InstrumentationName = instrumentationName;
         }
 
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => InternalSpanKinds.Server;
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; }
 
-        [Tag(Internal.Tags.GraphQLSource)]
+        [Tag(Trace.Tags.GraphQLSource)]
         public string Source { get; set; }
 
-        [Tag(Internal.Tags.GraphQLOperationName)]
+        [Tag(Trace.Tags.GraphQLOperationName)]
         public string OperationName { get; set; }
 
-        [Tag(Internal.Tags.GraphQLOperationType)]
+        [Tag(Trace.Tags.GraphQLOperationType)]
         public string OperationType { get; set; }
     }
 }

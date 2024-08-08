@@ -28,25 +28,25 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
-        [Tag(Internal.Tags.KafkaBootstrapServers)]
+        [Tag(Trace.Tags.KafkaBootstrapServers)]
         public string BootstrapServers { get; set; }
 
-        [Tag(Internal.Tags.KafkaPartition)]
+        [Tag(Trace.Tags.KafkaPartition)]
         public string Partition { get; set; }
 
-        [Tag(Internal.Tags.KafkaOffset)]
+        [Tag(Trace.Tags.KafkaOffset)]
         public string Offset { get; set; }
 
-        [Tag(Internal.Tags.KafkaTombstone)]
+        [Tag(Trace.Tags.KafkaTombstone)]
         public string Tombstone { get; set; }
 
-        [Tag(Internal.Tags.KafkaConsumerGroup)]
+        [Tag(Trace.Tags.KafkaConsumerGroup)]
         public string ConsumerGroup { get; set; }
 
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? (SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer) ?
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                            ? "peer.service"
                            : SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer) ?
-                               Internal.Tags.KafkaBootstrapServers
+                               Tags.KafkaBootstrapServers
                                : null;
             }
         }

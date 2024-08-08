@@ -23,10 +23,10 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Internal.Tags.StreamName)]
+        [Tag(Trace.Tags.StreamName)]
         public string StreamName { get; set; }
 
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
     }
 
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Internal.Tags.StreamName;
+                           : Tags.StreamName;
             }
         }
     }

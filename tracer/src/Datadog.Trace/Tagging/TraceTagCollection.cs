@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
                     KeyValuePair<string, string>? samplingMechanismPair = null;
                     foreach (var item in tags)
                     {
-                        if (item.Key == Internal.Tags.Propagated.DecisionMaker)
+                        if (item.Key == Tags.Propagated.DecisionMaker)
                         {
                             samplingMechanismPair = item;
                             break;
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tagging
                 return RemoveTag(name);
             }
 
-            if (name == Internal.Tags.Propagated.DecisionMaker)
+            if (name == Tags.Propagated.DecisionMaker)
             {
                 if (_samplingMechanismValue != null && !replaceIfExists)
                 {
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            if (name == Internal.Tags.Propagated.DecisionMaker)
+            if (name == Tags.Propagated.DecisionMaker)
             {
                 _samplingMechanismValue = null;
                 return true;
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
-            if (name == Internal.Tags.Propagated.DecisionMaker)
+            if (name == Tags.Propagated.DecisionMaker)
             {
                 return _samplingMechanismValue;
             }
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Tagging
 
         public void FixTraceIdTag(TraceId traceId)
         {
-            var tagValue = GetTag(Internal.Tags.Propagated.TraceIdUpper);
+            var tagValue = GetTag(Tags.Propagated.TraceIdUpper);
 
             if (traceId.Upper > 0)
             {
@@ -262,13 +262,13 @@ namespace Datadog.Trace.Tagging
                 // (parse the hex string and compare ulongs to avoid allocating another string)
                 if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
                 {
-                    SetTag(Internal.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
+                    SetTag(Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }
             }
             else if (traceId.Upper == 0 && tagValue != null)
             {
                 // remove tag "_dd.p.tid" if trace id is only 64 bits
-                RemoveTag(Internal.Tags.Propagated.TraceIdUpper);
+                RemoveTag(Tags.Propagated.TraceIdUpper);
             }
         }
 
@@ -289,7 +289,7 @@ namespace Datadog.Trace.Tagging
         {
             if (_samplingMechanismValue != null)
             {
-                tagEnumerator.Next(new KeyValuePair<string, string>(Internal.Tags.Propagated.DecisionMaker, _samplingMechanismValue));
+                tagEnumerator.Next(new KeyValuePair<string, string>(Tags.Propagated.DecisionMaker, _samplingMechanismValue));
             }
 
             var tags = _tags;

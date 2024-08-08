@@ -12,25 +12,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal partial class MongoDbTags : InstrumentationTags
     {
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => InternalSpanKinds.Client;
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
-        [Tag(Internal.Tags.DbName)]
+        [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }
 
-        [Tag(Internal.Tags.MongoDbQuery)]
+        [Tag(Trace.Tags.MongoDbQuery)]
         public string Query { get; set; }
 
-        [Tag(Internal.Tags.MongoDbCollection)]
+        [Tag(Trace.Tags.MongoDbCollection)]
         public string Collection { get; set; }
 
-        [Tag(Internal.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Internal.Tags.OutPort)]
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
     }
 
@@ -43,14 +43,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? DbName ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

@@ -307,12 +307,12 @@ namespace Datadog.Trace
             if (InternalSamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
                 // add the tag once if trace is sampled, but never overwrite an existing tag
-                Tags.TryAddTag(Internal.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
+                Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
             else if (InternalSamplingPriorityValues.IsDrop(p))
             {
                 // remove tag if trace is not sampled
-                Tags.RemoveTag(Internal.Tags.Propagated.DecisionMaker);
+                Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
             if (notifyDistributedTracer)

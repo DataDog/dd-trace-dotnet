@@ -72,9 +72,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 }
                 else
                 {
-                    var operationNameTag = span.GetTag(Internal.Tags.GraphQLOperationName);
+                    var operationNameTag = span.GetTag(Tags.GraphQLOperationName);
                     span.ResourceName = $"{operationType} {operationNameTag ?? "operation"}";
-                    span.SetTag(Internal.Tags.GraphQLOperationType, operationType);
+                    span.SetTag(Tags.GraphQLOperationType, operationType);
                 }
             }
             catch (Exception ex)

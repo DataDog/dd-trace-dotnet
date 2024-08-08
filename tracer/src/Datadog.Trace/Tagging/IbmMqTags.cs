@@ -16,13 +16,13 @@ namespace Datadog.Trace.Tagging
         public IbmMqTags(string spanKind) => SpanKind = spanKind;
 
         /// <inheritdoc/>
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "ibmmq";
 
-        [Tag(Internal.Tags.TopicName)]
+        [Tag(Trace.Tags.TopicName)]
         public string? TopicName { get; set; }
     }
 }

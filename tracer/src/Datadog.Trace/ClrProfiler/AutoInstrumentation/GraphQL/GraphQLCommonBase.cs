@@ -59,9 +59,9 @@ After:
                 span.SetTag(Tags.ErrorStack, errors);
             }
 */
-                span.SetTag(Internal.Tags.ErrorMsg, $"{errorCount} error(s)");
-                span.SetTag(Internal.Tags.ErrorType, errorType);
-                span.SetTag(Internal.Tags.ErrorStack, errors);
+                span.SetTag(Tags.ErrorMsg, $"{errorCount} error(s)");
+                span.SetTag(Tags.ErrorType, errorType);
+                span.SetTag(Tags.ErrorStack, errors);
             }
         }
 

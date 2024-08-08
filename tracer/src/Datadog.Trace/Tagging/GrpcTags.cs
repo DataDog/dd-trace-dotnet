@@ -17,28 +17,28 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Internal.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [Tag(Internal.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Grpc);
 
-        [Tag(Internal.Tags.GrpcMethodKind)]
+        [Tag(Trace.Tags.GrpcMethodKind)]
         public string MethodKind { get; set; }
 
-        [Tag(Internal.Tags.GrpcMethodName)]
+        [Tag(Trace.Tags.GrpcMethodName)]
         public string MethodName { get; set; }
 
-        [Tag(Internal.Tags.GrpcMethodPath)]
+        [Tag(Trace.Tags.GrpcMethodPath)]
         public string MethodPath { get; set; }
 
-        [Tag(Internal.Tags.GrpcMethodPackage)]
+        [Tag(Trace.Tags.GrpcMethodPackage)]
         public string MethodPackage { get; set; }
 
-        [Tag(Internal.Tags.GrpcMethodService)]
+        [Tag(Trace.Tags.GrpcMethodService)]
         public string MethodService { get; set; }
 
-        [Tag(Internal.Tags.GrpcStatusCode)]
+        [Tag(Trace.Tags.GrpcStatusCode)]
         public string StatusCode { get; set; }
     }
 
@@ -57,10 +57,10 @@ namespace Datadog.Trace.Tagging
         {
         }
 
-        [Tag(Internal.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [Tag(Internal.Tags.PeerHostname)]
+        [Tag(Trace.Tags.PeerHostname)]
         public string PeerHostname => Host;
     }
 
@@ -78,14 +78,14 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get => _peerServiceOverride ?? MethodService ?? Host;
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get

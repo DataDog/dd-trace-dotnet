@@ -134,11 +134,11 @@ namespace Datadog.Trace.Security.IntegrationTests
                                 }
                             }
 
-                            if (target.Tags.TryGetValue(Internal.Tags.AppSecJson, out var appsecJson))
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
                             {
                                 var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
                                 var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Internal.Tags.AppSecJson] = orderedAppSecJson;
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                             }
 
                             if (target.MetaStruct != null)
@@ -152,14 +152,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     var json = JsonConvert.SerializeObject(appSecMetaStruct);
                                     var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
                                     var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
-                                    target.Tags[Internal.Tags.AppSecJson] = orderedJson;
+                                    target.Tags[Tags.AppSecJson] = orderedJson;
 
                                     target.MetaStruct.Remove("appsec");
 
                                     // Let the snapshot know that the data comes from the meta struct
                                     if (forceMetaStruct)
                                     {
-                                        target.Tags[Internal.Tags.AppSecJson + ".metastruct.test"] = "true";
+                                        target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true";
                                     }
                                 }
 
@@ -248,7 +248,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spansWithUserKeep = allSpansReceived.Where(
                 s =>
                 {
-                    s.Tags.TryGetValue(Internal.Tags.AppSecEvent, out var appsecevent);
+                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
                     s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
                     return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
                 });
@@ -256,14 +256,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spansWithoutUserKeep = allSpansReceived.Where(
                 s =>
                 {
-                    s.Tags.TryGetValue(Internal.Tags.AppSecEvent, out var appsecevent);
+                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
                     return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
                 });
             var itemsCount = allSpansReceived.Count();
             var appsecItemsCount = allSpansReceived.Where(
                                                         s =>
                                                         {
-                                                            s.Tags.TryGetValue(Internal.Tags.AppSecEvent, out var appsecevent);
+                                                            s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
                                                             return appsecevent == "true";
                                                         })
                                                    .Count();

@@ -1,4 +1,4 @@
-﻿// <copyright file="ObfuscatorTagsProcessor.cs" company="Datadog">
+// <copyright file="ObfuscatorTagsProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,15 +21,7 @@ namespace Datadog.Trace.Processors
         {
             // https://github.dev/DataDog/datadog-agent/blob/712c7a7835e0f5aaa47211c4d75a84323eed7fd9/pkg/trace/obfuscate/redis.go#L91
 
-/* Unmerged change from project 'Datadog.Trace (netstandard2.0)'
-Before:
-            if (_redisObfuscationEnabled && key == Trace.Tags.RedisRawCommand)
-            {
-After:
             if (_redisObfuscationEnabled && key == Tags.RedisRawCommand)
-            {
-*/
-            if (_redisObfuscationEnabled && key == Internal.Tags.RedisRawCommand)
             {
                 value = RedisObfuscationUtil.Obfuscate(value);
                 Log.Debug("span.obfuscate: obfuscating `redis.raw_command` value");

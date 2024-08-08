@@ -91,7 +91,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return string.IsNullOrEmpty(globalTags) ? null : globalTags;
             }
 
-            var aasTags = $"{Trace.Internal.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
+            var aasTags = $"{Trace.Tags.AzureAppServicesResourceId}{KeyValueTagSeparator}{aasSettings.ResourceId}";
 
             return string.IsNullOrEmpty(globalTags) ? aasTags : aasTags + TagSeparator + globalTags;
         }
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             var service = _service;
             if (span is not null)
             {
-                if (span.GetTag(Trace.Internal.Tags.Env) is { } spanEnv && spanEnv != env)
+                if (span.GetTag(Trace.Tags.Env) is { } spanEnv && spanEnv != env)
                 {
                     ddTags = GetCIVisiblityDDTagsString(spanEnv);
                 }

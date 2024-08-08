@@ -19,16 +19,16 @@ namespace Datadog.Trace.Tagging
     {
         private string _spanKind;
 
-        [Metric(Internal.Tags.Analytics)]
+        [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
-        [Tag(Internal.Tags.MessagingSourceName)]
+        [Tag(Trace.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
 
-        [Tag(Internal.Tags.MessagingDestinationName)]
+        [Tag(Trace.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
-        [Tag(Internal.Tags.LegacyMessageBusDestination)]
+        [Tag(Trace.Tags.LegacyMessageBusDestination)]
         public string LegacyMessageBusDestination { get; set; }
 
         public override string SpanKind
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tagging
         // value from predefined precursor attributes.
         // However, this can still be set from ITags.SetTag so the user can
         // customize the value if they wish.
-        [Tag(Internal.Tags.PeerService)]
+        [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
             get
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tagging
             private set => _peerServiceOverride = value;
         }
 
-        [Tag(Internal.Tags.PeerServiceSource)]
+        [Tag(Trace.Tags.PeerServiceSource)]
         public string PeerServiceSource
         {
             get
@@ -92,8 +92,8 @@ namespace Datadog.Trace.Tagging
                 return _peerServiceOverride is not null
                             ? "peer.service"
                             : MessagingDestinationName is not null
-                                ? Internal.Tags.MessagingDestinationName
-                                : Internal.Tags.LegacyMessageBusDestination;
+                                ? Tags.MessagingDestinationName
+                                : Tags.LegacyMessageBusDestination;
             }
         }
     }

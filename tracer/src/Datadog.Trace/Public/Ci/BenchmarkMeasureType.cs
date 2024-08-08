@@ -4,14 +4,12 @@
 // </copyright>
 
 #nullable enable
-using Datadog;
-
-namespace Datadog.Trace.Internal.Ci;
+namespace Datadog.Trace.Ci;
 
 /// <summary>
 /// Benchmark measure type
 /// </summary>
-internal enum BenchmarkMeasureType
+public enum BenchmarkMeasureType
 {
     /// <summary>
     /// Duration in nanoseconds

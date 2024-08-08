@@ -20,7 +20,6 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Tags = Datadog.Trace.Internal.Tags;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 

@@ -4,8 +4,9 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Internal;
 
-namespace Datadog.Trace.Internal
+namespace Datadog.Trace
 {
     /// <summary>
     /// Standard Datadog span tags.

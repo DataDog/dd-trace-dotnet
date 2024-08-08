@@ -92,27 +92,27 @@ internal static class MessagePackStringCache
     {
         switch (key)
         {
-            case Internal.Tags.AzureAppServicesSiteName:
+            case Tags.AzureAppServicesSiteName:
                 return GetBytes(value, ref _aasSiteNameBytes);
-            case Internal.Tags.AzureAppServicesSiteType:
+            case Tags.AzureAppServicesSiteType:
                 return GetBytes(value, ref _aasSiteTypeBytes);
-            case Internal.Tags.AzureAppServicesSiteKind:
+            case Tags.AzureAppServicesSiteKind:
                 return GetBytes(value, ref _aasSiteKindBytes);
-            case Internal.Tags.AzureAppServicesResourceGroup:
+            case Tags.AzureAppServicesResourceGroup:
                 return GetBytes(value, ref _aasResourceGroupBytes);
-            case Internal.Tags.AzureAppServicesSubscriptionId:
+            case Tags.AzureAppServicesSubscriptionId:
                 return GetBytes(value, ref _aasSubscriptionIdBytes);
-            case Internal.Tags.AzureAppServicesResourceId:
+            case Tags.AzureAppServicesResourceId:
                 return GetBytes(value, ref _aasResourceIdBytes);
-            case Internal.Tags.AzureAppServicesInstanceId:
+            case Tags.AzureAppServicesInstanceId:
                 return GetBytes(value, ref _aasInstanceIdBytes);
-            case Internal.Tags.AzureAppServicesInstanceName:
+            case Tags.AzureAppServicesInstanceName:
                 return GetBytes(value, ref _aasInstanceNameBytes);
-            case Internal.Tags.AzureAppServicesOperatingSystem:
+            case Tags.AzureAppServicesOperatingSystem:
                 return GetBytes(value, ref _aasOperatingSystemBytes);
-            case Internal.Tags.AzureAppServicesRuntime:
+            case Tags.AzureAppServicesRuntime:
                 return GetBytes(value, ref _aasRuntimeBytes);
-            case Internal.Tags.AzureAppServicesExtensionVersion:
+            case Tags.AzureAppServicesExtensionVersion:
                 return GetBytes(value, ref _aasExtensionVersionBytes);
             default:
                 throw new InvalidOperationException("The given key isn't yet handled in the cache");

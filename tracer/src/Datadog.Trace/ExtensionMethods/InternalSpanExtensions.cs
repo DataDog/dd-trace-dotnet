@@ -1,4 +1,4 @@
-// <copyright file="SpanExtensions.cs" company="Datadog">
+// <copyright file="InternalSpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,9 +24,9 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for the <see cref="IInternalSpan"/> class.
     /// </summary>
-    public static class SpanExtensions
+    public static class InternalSpanExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InternalSpanExtensions));
 
         /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="IInternalSpan"/>.
