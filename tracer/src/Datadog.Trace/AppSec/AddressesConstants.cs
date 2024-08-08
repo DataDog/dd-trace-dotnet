@@ -15,6 +15,7 @@ namespace Datadog.Trace.AppSec
         public const string DBStatement = "server.db.statement";
         public const string DBSystem = "server.db.system";
         public const string UrlAccess = "server.io.net.url";
+        public const string ShellInjection = "server.sys.shell.cmd";
         public const string RequestMethod = "server.request.method";
         public const string RequestQuery = "server.request.query";
         public const string RequestCookies = "server.request.cookies";
