@@ -263,7 +263,7 @@ internal static partial class IastModule
         }
     }
 
-    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
+    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string>? argumentList, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
