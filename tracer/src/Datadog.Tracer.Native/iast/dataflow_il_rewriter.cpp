@@ -412,7 +412,7 @@ namespace iast
     }
 
 
-    ILInstr* ILRewriter::NewILInstr(OPCODE opcode, ULONG32 arg)
+    ILInstr* ILRewriter::NewILInstr(OPCODE opcode, ULONG32 arg, bool isNew)
     {
         //m_bDirty = true;
         m_nInstrs++;
@@ -421,6 +421,7 @@ namespace iast
         res->m_opcode = opcode;
         res->m_Arg32 = arg;
         res->m_originalArg64 = res->m_Arg64;
+        res->m_isNew = isNew;
         return res;
     }
 
