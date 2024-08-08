@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Data;
+using System.Numerics;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -57,7 +59,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             returnedComment.Should().Be(expectedComment);
@@ -75,7 +77,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.MySql, out var traceParentInjected);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.MySql, out var traceParentInjected);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
@@ -94,7 +96,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, dbName, host, span, IntegrationId.MySql, out var traceParentInjected);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, service, dbName, host, span, IntegrationId.MySql, out var traceParentInjected);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
@@ -115,10 +117,55 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority(samplingPriority);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             returnedComment.Should().Be(expectedComment);
+        }
+
+        [Theory]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000beef0000000000000000000000000000cafe")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000beef0000000000000000000000000000cafe")]
+        [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, false, null)]
+        // disabled for all db types except mysql for now
+        [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, false, null)]
+        [InlineData("full", "mysql", SamplingPriorityValues.UserKeep, false, null)]
+        public void ExpectedContextSet(string propagationMode, string integration, int? samplingPriority, bool shouldInject, string expectedContext)
+        {
+            Enum.TryParse(propagationMode, ignoreCase: true, out DbmPropagationLevel dbmPropagationLevel);
+            Enum.TryParse(integration, ignoreCase: true, out IntegrationId integrationId);
+
+            // capture command and parameter sent
+            string sql = null;
+            var context = BigInteger.Zero;
+            var connectionMock = new Mock<IDbConnection>(MockBehavior.Strict);
+            var commandMock = new Mock<IDbCommand>();
+            var parameterMock = new Mock<IDbDataParameter>();
+            connectionMock.Setup(c => c.CreateCommand()).Returns(commandMock.Object);
+            commandMock.SetupSet(c => c.CommandText = It.IsAny<string>())
+                       .Callback<string>(value => sql = value);
+            commandMock.Setup(c => c.CreateParameter()).Returns(parameterMock.Object);
+            commandMock.SetupGet(c => c.Parameters).Returns(Mock.Of<IDataParameterCollection>());
+            parameterMock.SetupSet(p => p.Value = It.IsAny<BigInteger>())
+                         .Callback<object>(value => context = (BigInteger)value);
+
+            var span = _v0Tracer.StartSpan("mysql.query", parent: SpanContext.None, serviceName: "pouet", traceId: (TraceId)0xCAFE, spanId: 0xBEEF);
+            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+
+            DatabaseMonitoringPropagator.PropagateDataViaContext(_v0Tracer, dbmPropagationLevel, integrationId, connectionMock.Object, "pouet", new Scope(parent: null, span, scopeManager: null, finishOnClose: false), new SqlTags());
+
+            if (shouldInject)
+            {
+                sql.Should().StartWith("set context_info ");
+                context.ToString("x50").Should().Be(expectedContext);
+            }
+            else
+            {
+                sql.Should().BeNull();
+                context.IsZero.Should().BeTrue();
+            }
         }
     }
 }
