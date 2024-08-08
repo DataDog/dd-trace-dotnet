@@ -4,16 +4,20 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Caching;
+using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal static class ProbeExpressionParserHelper
 {
-    private static readonly ConcurrentDictionary<ReflectionMethodIdentifier, MethodInfo> Methods = new();
+    private static readonly ThreadSafeConfigurableCache<ReflectionMethodIdentifier, MethodInfo> Methods = new();
+
+    private static readonly ThreadSafeConfigurableCache<string, Type> Types = new(comparer: StringComparer.OrdinalIgnoreCase);
 
     internal static readonly Type UndefinedValueType = typeof(UndefinedValue);
 
@@ -54,6 +58,16 @@ internal static class ProbeExpressionParserHelper
 
             return method;
         }
+    }
+
+    internal static bool TryGetTypeFromCache(string typeName, out Type type)
+    {
+        return Types.TryGet(typeName, out type);
+    }
+
+    internal static void AddTypeToCache(Type type, params string[] keys)
+    {
+        Types.Add(type, keys);
     }
 
     internal readonly record struct ReflectionMethodIdentifier

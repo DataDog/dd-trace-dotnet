@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -99,6 +101,11 @@ namespace Datadog.Trace.Tests.Debugger
         [MemberData(nameof(ConditionsResources))]
         public async Task TestConditions(string expressionTestFilePath)
         {
+            if (expressionTestFilePath.EndsWith("IsInstanceOfTypeFromAnotherAssembly.json"))
+            {
+                LoadDynamicAssembly();
+            }
+
             await Test(expressionTestFilePath);
         }
 
@@ -318,6 +325,35 @@ namespace Datadog.Trace.Tests.Debugger
             // The expression.ToString returns different string depend on runtime version
             error.Expression = error.Expression.Replace("Convert(CollectionLocal.get_Item(100), String))", "Convert(CollectionLocal.get_Item(100)))");
             return error;
+        }
+
+        private Type LoadDynamicAssembly()
+        {
+            // Create a dynamic assembly
+            AssemblyName assemblyName = new AssemblyName("DynamicAssembly");
+            AssemblyBuilder assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+
+            // Create a dynamic module
+            ModuleBuilder moduleBuilder = assemblyBuilder.DefineDynamicModule("DynamicModule");
+
+            // Define a new type
+            TypeBuilder typeBuilder = moduleBuilder.DefineType("DynamicTypeForExpressionLanguageTesting", TypeAttributes.Public);
+
+            // Define a method in the type
+            MethodBuilder methodBuilder = typeBuilder.DefineMethod(
+                "SayHello",
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(string),
+                Type.EmptyTypes);
+
+            // Generate IL for the method
+            ILGenerator ilGenerator = methodBuilder.GetILGenerator();
+            ilGenerator.Emit(OpCodes.Ldstr, "Hello from dynamic assembly!");
+            ilGenerator.Emit(OpCodes.Ret);
+
+            // Create the type
+            Type dynamicType = typeBuilder.CreateType();
+            return dynamicType;
         }
 
         internal struct TestStruct
