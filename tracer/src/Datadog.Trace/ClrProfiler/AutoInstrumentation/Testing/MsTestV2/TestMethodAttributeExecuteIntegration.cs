@@ -103,13 +103,13 @@ public static class TestMethodAttributeExecuteIntegration
                     }
 
                     var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
-                    allowRetries = allowRetries || result != TestStatus.Skip;
+                    allowRetries = allowRetries || result != InternalTestStatus.Skip;
                 }
             }
             else
             {
                 Common.Log.Warning("Failed to extract TestResult from return value");
-                testMethodState.Test.Close(TestStatus.Fail);
+                testMethodState.Test.Close(InternalTestStatus.Fail);
                 return new CallTargetReturn<TReturn>(returnValue);
             }
 
@@ -166,7 +166,7 @@ public static class TestMethodAttributeExecuteIntegration
         return new CallTargetReturn<TReturn>(returnValue);
     }
 
-    private static TestStatus HandleTestResult(Test test, ITestMethod testMethod, object? testResultObject, Exception? exception)
+    private static InternalTestStatus HandleTestResult(Test test, ITestMethod testMethod, object? testResultObject, Exception? exception)
     {
         if (testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
         {
@@ -195,31 +195,31 @@ public static class TestMethodAttributeExecuteIntegration
 
             if (exception is not null)
             {
-                test.Close(TestStatus.Fail);
-                return TestStatus.Fail;
+                test.Close(InternalTestStatus.Fail);
+                return InternalTestStatus.Fail;
             }
 
             switch (testResult.Outcome)
             {
                 case UnitTestOutcome.Error or UnitTestOutcome.Failed or UnitTestOutcome.Timeout:
-                    test.Close(TestStatus.Fail);
-                    return TestStatus.Fail;
+                    test.Close(InternalTestStatus.Fail);
+                    return InternalTestStatus.Fail;
                 case UnitTestOutcome.Inconclusive or UnitTestOutcome.NotRunnable:
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, testException?.Message ?? string.Empty);
-                    return TestStatus.Skip;
+                    test.Close(InternalTestStatus.Skip, TimeSpan.Zero, testException?.Message ?? string.Empty);
+                    return InternalTestStatus.Skip;
                 case UnitTestOutcome.Passed:
-                    test.Close(TestStatus.Pass);
-                    return TestStatus.Pass;
+                    test.Close(InternalTestStatus.Pass);
+                    return InternalTestStatus.Pass;
                 default:
                     Common.Log.Warning("Failed to handle the test status: {Outcome}", testResult.Outcome);
-                    test.Close(TestStatus.Fail);
-                    return TestStatus.Fail;
+                    test.Close(InternalTestStatus.Fail);
+                    return InternalTestStatus.Fail;
             }
         }
 
         Common.Log.Warning("Failed to cast {TestResultObject} to TestResultStruct", testResultObject);
-        test.Close(TestStatus.Fail);
-        return TestStatus.Fail;
+        test.Close(InternalTestStatus.Fail);
+        return InternalTestStatus.Fail;
     }
 
     private static IList GetFinalResults(IList[] executionStatuses)

@@ -53,7 +53,7 @@ public class SpanExtensionsSetUserIntegration
         }
 
         realSpan?.SetUserInternal(
-            new UserDetails(id)
+            new InternalUserDetails(id)
             {
                 Email = email,
                 Name = name,

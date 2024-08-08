@@ -74,7 +74,7 @@ public class SpanContextInjectorExtractorTests
     public void InjectionWithDsm()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        Tracer.Configure(InternalTracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
         var injector = new SpanContextInjector();
         var headers = new Dictionary<string, string>();
@@ -155,7 +155,7 @@ public class SpanContextInjectorExtractorTests
     public void CanExtractDsmAfterDsmInjection()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        Tracer.Configure(InternalTracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
         var injector = new SpanContextInjector();
         var headers = new Dictionary<string, string>();
@@ -192,7 +192,7 @@ public class SpanContextInjectorExtractorTests
     public void ShouldReadPathwaySetByKafkaIntegrationOnExtract()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        Tracer.Configure(InternalTracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
         var headers = new Dictionary<string, string>
         {

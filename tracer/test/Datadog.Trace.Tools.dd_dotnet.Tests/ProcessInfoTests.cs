@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 mainModule: Path.Combine(Environment.CurrentDirectory, "noAppConfig.exe"),
                 GetModulesForNetFramework());
 
-            var settings = new ExporterSettings(process.ExtractConfigurationSource(null, null));
+            var settings = new InternalExporterSettings(process.ExtractConfigurationSource(null, null));
 
             settings.AgentUri.Should().Be("http://environment/");
         }
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 mainModule: Path.Combine(Environment.CurrentDirectory, "CallDatadogConfigJson.exe"),
                 GetModulesForNetFramework());
 
-            var settings = new ExporterSettings(process.ExtractConfigurationSource(null, null));
+            var settings = new InternalExporterSettings(process.ExtractConfigurationSource(null, null));
 
             settings.AgentUri.Should().Be("http://datadogConfig.json/");
         }
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 mainModule: Path.Combine(Environment.CurrentDirectory, "CallDatadogConfigJson.exe"),
                 GetModulesForNetCore());
 
-            var settings = new ExporterSettings(process.ExtractConfigurationSource(null, null));
+            var settings = new InternalExporterSettings(process.ExtractConfigurationSource(null, null));
 
             settings.AgentUri.Should().Be("http://datadog.json/");
         }
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 mainModule: Path.Combine(Environment.CurrentDirectory, "noAppConfig.exe"),
                 GetModulesForNetFramework());
 
-            var settings = new ExporterSettings(process.ExtractConfigurationSource(null, null));
+            var settings = new InternalExporterSettings(process.ExtractConfigurationSource(null, null));
 
             settings.AgentUri.Should().Be("http://datadogConfig.json/");
         }
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 mainModule: Path.Combine(Environment.CurrentDirectory, "DoNotCallDatadogConfigJson.exe"),
                 GetModulesForNetFramework());
 
-            var settings = new ExporterSettings(process.ExtractConfigurationSource(null, null));
+            var settings = new InternalExporterSettings(process.ExtractConfigurationSource(null, null));
 
             settings.AgentUri.Should().Be("http://app.config/");
         }

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenNoActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 ServiceName = "TestService",
                 ServiceVersion = "1.2.3",
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 ServiceName = "TestService",
                 ServiceVersion = "1.2.3",

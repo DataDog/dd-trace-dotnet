@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathNullInNonFunctionEnvironments()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
+            var settings = new InternalImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
             path.Should().BeNull();
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathValidInGCPFunction()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+            var settings = new InternalImmutableTracerSettings(CreateConfigurationSource(
                 (ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "value"),
                 (ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "value")));
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathValidInLinuxAzureFunction()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+            var settings = new InternalImmutableTracerSettings(CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
                 (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathValidInWindowsAzureFunction()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+            var settings = new InternalImmutableTracerSettings(CreateConfigurationSource(
                 (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
                 (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
                 (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),

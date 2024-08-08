@@ -40,11 +40,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
             var tracer = Tracer.Instance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal &&
-                !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
+                !loggingEvent.Properties.Contains(InternalCorrelationIdentifier.ServiceKey))
             {
-                loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
-                loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersionInternal ?? string.Empty;
-                loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.EnvironmentInternal ?? string.Empty;
+                loggingEvent.Properties[InternalCorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                loggingEvent.Properties[InternalCorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersionInternal ?? string.Empty;
+                loggingEvent.Properties[InternalCorrelationIdentifier.EnvKey] = tracer.Settings.EnvironmentInternal ?? string.Empty;
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null)
@@ -57,8 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 
                     if (hasTraceId && hasSpanId)
                     {
-                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
-                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
+                        loggingEvent.Properties[InternalCorrelationIdentifier.TraceIdKey] = traceId;
+                        loggingEvent.Properties[InternalCorrelationIdentifier.SpanIdKey] = spanId;
                     }
                 }
             }

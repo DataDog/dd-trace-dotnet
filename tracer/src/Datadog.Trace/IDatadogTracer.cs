@@ -19,7 +19,7 @@ namespace Datadog.Trace
 
         IGitMetadataTagsProvider GitMetadataTagsProvider { get; }
 
-        ImmutableTracerSettings Settings { get; }
+        InternalImmutableTracerSettings Settings { get; }
 
         PerTraceSettings PerTraceSettings { get; }
 

@@ -25,7 +25,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new InternalTracerSettings
         {
             StartupDiagnosticLogEnabled = false
         };
@@ -37,7 +37,7 @@ public class EventTrackingSdkTests
 
         var id = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackUserLoginSuccessEvent(id, null, tracer);
+        InternalEventTrackingSdk.TrackUserLoginSuccessEvent(id, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack));
@@ -50,7 +50,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new InternalTracerSettings
         {
             StartupDiagnosticLogEnabled = false
         };
@@ -68,7 +68,7 @@ public class EventTrackingSdkTests
             { "key2", "value2" }
         };
 
-        EventTrackingSdk.TrackUserLoginSuccessEvent(id, meta, tracer);
+        InternalEventTrackingSdk.TrackUserLoginSuccessEvent(id, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack));
@@ -87,7 +87,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new InternalTracerSettings
         {
             StartupDiagnosticLogEnabled = false
         };
@@ -99,7 +99,7 @@ public class EventTrackingSdkTests
 
         var id = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackUserLoginFailureEvent(id, true, null, tracer);
+        InternalEventTrackingSdk.TrackUserLoginFailureEvent(id, true, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId));
@@ -113,7 +113,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new InternalTracerSettings
         {
             StartupDiagnosticLogEnabled = false
         };
@@ -131,7 +131,7 @@ public class EventTrackingSdkTests
             { "key2", "value2" }
         };
 
-        EventTrackingSdk.TrackUserLoginFailureEvent(id, false, meta, tracer);
+        InternalEventTrackingSdk.TrackUserLoginFailureEvent(id, false, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack));
@@ -150,7 +150,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new InternalTracerSettings
         {
             StartupDiagnosticLogEnabled = false
         };
@@ -162,7 +162,7 @@ public class EventTrackingSdkTests
 
         var eventName = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackCustomEvent(eventName, null, tracer);
+        InternalEventTrackingSdk.TrackCustomEvent(eventName, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
@@ -174,7 +174,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false };
+        var settings = new InternalTracerSettings { StartupDiagnosticLogEnabled = false };
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -185,7 +185,7 @@ public class EventTrackingSdkTests
 
         var eventName = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackCustomEvent(eventName, meta, tracer);
+        InternalEventTrackingSdk.TrackCustomEvent(eventName, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));

@@ -470,7 +470,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Rules,
                 configurationFromRcm ? _configurationStatus : null,
                 _settings.UseUnsafeEncoder,
-                GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
+                InternalGlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
             {
                 // we don't reapply configurations to the waf here because it's all done in the subscription function, as new data might have been received at the same time as the enable command, we don't want to update twice (here and in the subscription)

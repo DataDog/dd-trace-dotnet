@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// CI Visibility test session
 /// </summary>
-[DuckType("Datadog.Trace.Internal.Ci.TestSession", "Datadog.Trace")]
+[DuckType("Datadog.Trace.Internal.Ci.InternalTestSession", "Datadog.Trace")]
 public interface ITestSession
 {
     /// <summary>

@@ -30,7 +30,7 @@ internal sealed class TestSuite
     private readonly Span _span;
     private int _finished;
 
-    internal TestSuite(TestModule module, string name, DateTimeOffset? startDate)
+    internal TestSuite(InternalTestModule module, string name, DateTimeOffset? startDate)
     {
         Module = module;
         Name = name;
@@ -81,7 +81,7 @@ internal sealed class TestSuite
     /// <summary>
     /// Gets the test module for this suite
     /// </summary>
-    public TestModule Module { get; }
+    public InternalTestModule Module { get; }
 
     /// <summary>
     /// Gets or sets the current TestSuite

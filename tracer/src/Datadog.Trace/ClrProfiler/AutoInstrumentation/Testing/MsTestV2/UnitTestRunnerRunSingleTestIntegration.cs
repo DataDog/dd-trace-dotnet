@@ -62,7 +62,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                         {
                             // This instrumentation catches all tests being ignored
                             MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false)?
-                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                               .Close(InternalTestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                         }
                     }
                 }

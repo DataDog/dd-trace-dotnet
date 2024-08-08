@@ -229,7 +229,7 @@ internal sealed class Test
     /// Set Test parameters
     /// </summary>
     /// <param name="parameters">TestParameters instance</param>
-    public void SetParameters(TestParameters parameters)
+    public void SetParameters(InternalTestParameters parameters)
     {
         if (parameters is not null)
         {
@@ -243,7 +243,7 @@ internal sealed class Test
     /// </summary>
     /// <param name="hostInfo">Host info</param>
     /// <param name="jobInfo">Job info</param>
-    public void SetBenchmarkMetadata(in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
+    public void SetBenchmarkMetadata(in InternalBenchmarkHostInfo hostInfo, in InternalBenchmarkJobInfo jobInfo)
     {
         ((TestSpanTags)_scope.Span.Tags).Type = TestTags.TypeBenchmark;
 
@@ -287,7 +287,7 @@ internal sealed class Test
     /// <param name="measureType">Measure type</param>
     /// <param name="info">Measure info</param>
     /// <param name="statistics">Statistics values</param>
-    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
+    public void AddBenchmarkData(BenchmarkMeasureType measureType, string info, in InternalBenchmarkDiscreteStats statistics)
     {
         var measureTypeAsString = measureType switch
         {
@@ -334,7 +334,7 @@ internal sealed class Test
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>
-    public void Close(TestStatus status)
+    public void Close(InternalTestStatus status)
     {
         Close(status, null, null);
     }
@@ -344,7 +344,7 @@ internal sealed class Test
     /// </summary>
     /// <param name="status">Test status</param>
     /// <param name="duration">Duration of the test suite</param>
-    public void Close(TestStatus status, TimeSpan? duration)
+    public void Close(InternalTestStatus status, TimeSpan? duration)
     {
         Close(status, duration, null);
     }
@@ -355,7 +355,7 @@ internal sealed class Test
     /// <param name="status">Test status</param>
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
-    public void Close(TestStatus status, TimeSpan? duration, string? skipReason)
+    public void Close(InternalTestStatus status, TimeSpan? duration, string? skipReason)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
@@ -381,7 +381,7 @@ internal sealed class Test
                 CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
                 CIVisibility.Manager?.WriteEvent(testCoverage);
             }
-            else if (status != TestStatus.Skip)
+            else if (status != InternalTestStatus.Skip)
             {
                 var testName = scope.Span.ResourceName;
                 CIVisibility.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
@@ -391,14 +391,14 @@ internal sealed class Test
         // Set status
         switch (status)
         {
-            case TestStatus.Pass:
+            case InternalTestStatus.Pass:
                 tags.Status = TestTags.StatusPass;
                 break;
-            case TestStatus.Fail:
+            case InternalTestStatus.Fail:
                 tags.Status = TestTags.StatusFail;
                 Suite.Tags.Status = TestTags.StatusFail;
                 break;
-            case TestStatus.Skip:
+            case InternalTestStatus.Skip:
                 tags.Status = TestTags.StatusSkip;
                 tags.SkipReason = skipReason;
                 if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)

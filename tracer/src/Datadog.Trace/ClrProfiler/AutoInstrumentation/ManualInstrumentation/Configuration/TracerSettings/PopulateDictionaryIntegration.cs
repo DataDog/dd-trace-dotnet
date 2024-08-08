@@ -33,8 +33,8 @@ public class PopulateDictionaryIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(Dictionary<string, object?> values, bool useDefaultSources)
     {
         var settings = useDefaultSources
-                           ? Internal.Configuration.TracerSettings.FromDefaultSourcesInternal()
-                           : new Internal.Configuration.TracerSettings(null, new ConfigurationTelemetry());
+                           ? Internal.Configuration.InternalTracerSettings.FromDefaultSourcesInternal()
+                           : new Internal.Configuration.InternalTracerSettings(null, new ConfigurationTelemetry());
 
         PopulateSettings(values, settings);
 
@@ -42,7 +42,7 @@ public class PopulateDictionaryIntegration
     }
 
     // Internal for testing
-    internal static void PopulateSettings(Dictionary<string, object?> values, Internal.Configuration.TracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, Internal.Configuration.InternalTracerSettings settings)
     {
         // record all the settings in the dictionary
         values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;
@@ -50,7 +50,7 @@ public class PopulateDictionaryIntegration
         values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabledInternal;
 #pragma warning restore CS0618 // Type or member is obsolete
         values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRulesInternal;
-        values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
+        values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = InternalGlobalSettings.Instance.DiagnosticSourceEnabled;
         values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.DisabledIntegrationNamesInternal;
         values[TracerSettingKeyConstants.EnvironmentKey] = settings.EnvironmentInternal;
         values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRateInternal;
@@ -72,7 +72,7 @@ public class PopulateDictionaryIntegration
         values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
     }
 
-    private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
+    private static Dictionary<string, object?[]>? BuildIntegrationSettings(InternalIntegrationSettingsCollection settings)
     {
         if (settings.Settings.Length == 0)
         {

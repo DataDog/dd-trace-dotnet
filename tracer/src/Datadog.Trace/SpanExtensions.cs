@@ -28,13 +28,13 @@ namespace Datadog.Trace.Internal
         /// <param name="span">The span to be tagged</param>
         /// <param name="userDetails">The details of the current logged on user</param>
         [PublicApi]
-        public static void SetUser(this ISpan span, UserDetails userDetails)
+        public static void SetUser(this ISpan span, InternalUserDetails userDetails)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
             SetUserInternal(span, userDetails);
         }
 
-        internal static void SetUserInternal(this ISpan span, UserDetails userDetails)
+        internal static void SetUserInternal(this ISpan span, InternalUserDetails userDetails)
         {
             if (span is null)
             {

@@ -52,9 +52,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
             if (tracer.Settings.LogsInjectionEnabledInternal)
             {
                 var dict = loggingEvent.DuckCast<LogEventProxy>().Properties;
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersionInternal);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.EnvironmentInternal);
+                AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
+                AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersionInternal);
+                AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogEnvKey, tracer.Settings.EnvironmentInternal);
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null)
@@ -66,8 +66,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
                                     spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                     if (hasTraceId && hasSpanId)
                     {
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, traceId);
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, spanId);
+                        AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogTraceIdKey, traceId);
+                        AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogSpanIdKey, spanId);
                     }
                 }
             }

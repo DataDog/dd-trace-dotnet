@@ -39,7 +39,7 @@ public class TestExtensionsAddBenchmarkDataIntegration
 
         if (test is IDuckType { Instance: Test automaticTest })
         {
-            var stats = new BenchmarkDiscreteStats(
+            var stats = new InternalBenchmarkDiscreteStats(
                 n: statistics.N,
                 max: statistics.Max,
                 min: statistics.Min,

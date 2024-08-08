@@ -28,7 +28,7 @@ namespace Datadog.Trace.Ci
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
         public CITracerManager(
-            ImmutableTracerSettings settings,
+            InternalImmutableTracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -131,7 +131,7 @@ namespace Datadog.Trace.Ci
         internal class LockedManager : CITracerManager, ILockedTracer
         {
             public LockedManager(
-                ImmutableTracerSettings settings,
+                InternalImmutableTracerSettings settings,
                 IAgentWriter agentWriter,
                 IScopeManager scopeManager,
                 IDogStatsd statsd,

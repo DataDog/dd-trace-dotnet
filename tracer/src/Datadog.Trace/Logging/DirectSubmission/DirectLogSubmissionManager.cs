@@ -32,7 +32,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public static DirectLogSubmissionManager Create(
             DirectLogSubmissionManager? previous,
-            ImmutableTracerSettings settings,
+            InternalImmutableTracerSettings settings,
             ImmutableDirectLogSubmissionSettings directLogSettings,
             ImmutableAzureAppServiceSettings? azureAppServiceSettings,
             string serviceName,

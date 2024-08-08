@@ -77,9 +77,9 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var oldSettings = new TracerSettings
+                var oldSettings = new InternalTracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    Exporter = new InternalExporterSettings()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
@@ -92,9 +92,9 @@ namespace Datadog.Trace.Tests
                 var scope = Tracer.Instance.StartActive("Test span");
                 (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
-                var newSettings = new TracerSettings
+                var newSettings = new InternalTracerSettings
                 {
-                    Exporter = new ExporterSettings()
+                    Exporter = new InternalExporterSettings()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(new ImmutableTracerSettings(new TracerSettings()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>())
+                : base(new InternalImmutableTracerSettings(new InternalTracerSettings()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>())
             {
             }
         }

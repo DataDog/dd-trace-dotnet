@@ -112,7 +112,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                        new InternalImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -212,7 +212,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -422,12 +422,12 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        internal static IApiRequestFactory GetRequestFactory(InternalImmutableTracerSettings settings)
         {
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(InternalImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
             var exporterSettings = tracerSettings.ExporterInternal;
@@ -562,7 +562,7 @@ namespace Datadog.Trace.Ci
                     test.SetErrorInfo(exception);
                 }
 
-                test.Close(TestStatus.Fail);
+                test.Close(InternalTestStatus.Fail);
             }
 
             foreach (var testSuite in TestSuite.ActiveTestSuites)
@@ -575,7 +575,7 @@ namespace Datadog.Trace.Ci
                 testSuite.Close();
             }
 
-            foreach (var testModule in TestModule.ActiveTestModules)
+            foreach (var testModule in InternalTestModule.ActiveTestModules)
             {
                 if (exception is not null)
                 {
@@ -585,14 +585,14 @@ namespace Datadog.Trace.Ci
                 await testModule.CloseAsync().ConfigureAwait(false);
             }
 
-            foreach (var testSession in TestSession.ActiveTestSessions)
+            foreach (var testSession in InternalTestSession.ActiveTestSessions)
             {
                 if (exception is not null)
                 {
                     testSession.SetErrorInfo(exception);
                 }
 
-                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+                await testSession.CloseAsync(InternalTestStatus.Fail).ConfigureAwait(false);
             }
 
             await FlushAsync().ConfigureAwait(false);

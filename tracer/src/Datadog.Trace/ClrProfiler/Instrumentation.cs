@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
             try
             {
-                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
+                if (InternalGlobalSettings.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
                     var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);

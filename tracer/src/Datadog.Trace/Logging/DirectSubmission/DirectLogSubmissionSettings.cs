@@ -166,7 +166,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         /// <summary>
         /// Gets the global tags, which are applied to all directly submitted logs. If not provided,
-        /// <see cref="TracerSettings.GlobalTags"/> are used instead
+        /// <see cref="InternalTracerSettings.GlobalTags"/> are used instead
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
         internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; }

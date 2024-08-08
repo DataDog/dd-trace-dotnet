@@ -90,7 +90,7 @@ internal class TracerFlareManager : ITracerFlareManager
         if (!_wasDebugLogEnabled)
         {
             _debugEnabledConfigPath = null;
-            GlobalSettings.SetDebugEnabledInternal(false);
+            InternalGlobalSettings.SetDebugEnabledInternal(false);
         }
     }
 
@@ -142,8 +142,8 @@ internal class TracerFlareManager : ITracerFlareManager
             {
                 // This product means "prepare for sending a tracer flare."
                 // We may consider doing more than just enabling debug mode in the future
-                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
-                GlobalSettings.SetDebugEnabledInternal(true);
+                _wasDebugLogEnabled = InternalGlobalSettings.Instance.DebugEnabledInternal;
+                InternalGlobalSettings.SetDebugEnabledInternal(true);
 
                 // The timer is a fallback, in case we never receive a "send flare" product
                 var timer = new Timer(

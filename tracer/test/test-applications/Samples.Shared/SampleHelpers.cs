@@ -12,18 +12,18 @@ namespace Samples
     {
         private static readonly Type InstrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
         private static readonly Type NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
-        private static readonly Type TracerType = Type.GetType("Datadog.Trace.Internal.Tracer, Datadog.Trace");
+        private static readonly Type TracerType = Type.GetType("Datadog.Trace.Internal.InternalTracer, Datadog.Trace");
         private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
         private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
-        private static readonly Type SpanContextExtractorType = Type.GetType("Datadog.Trace.Internal.SpanContextExtractor, Datadog.Trace");
-        private static readonly Type SpanContextInjectorType = Type.GetType("Datadog.Trace.Internal.SpanContextInjector, Datadog.Trace");
-        private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.Internal.CorrelationIdentifier, Datadog.Trace");
-        private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.Internal.SpanCreationSettings, Datadog.Trace");
-        private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.Internal.SpanContext, Datadog.Trace");
-        private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Internal.Configuration.TracerSettings, Datadog.Trace");
+        private static readonly Type SpanContextExtractorType = Type.GetType("Datadog.Trace.Internal.InternalSpanContextExtractor, Datadog.Trace");
+        private static readonly Type SpanContextInjectorType = Type.GetType("Datadog.Trace.Internal.InternalSpanContextInjector, Datadog.Trace");
+        private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.Internal.InternalCorrelationIdentifier, Datadog.Trace");
+        private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.Internal.InternalSpanCreationSettings, Datadog.Trace");
+        private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.Internal.InternalSpanContext, Datadog.Trace");
+        private static readonly Type TracerSettingsType = Type.GetType("Datadog.Trace.Internal.InternalConfiguration.TracerSettings, Datadog.Trace");
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
         private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
-        private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.Internal.UserDetails, Datadog.Trace");
+        private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.Internal.InternalUserDetails, Datadog.Trace");
         private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.Internal.SpanExtensions, Datadog.Trace");
         public static readonly Type IpcClientType = Type.GetType("Datadog.Trace.Ci.Ipc.IpcClient, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);

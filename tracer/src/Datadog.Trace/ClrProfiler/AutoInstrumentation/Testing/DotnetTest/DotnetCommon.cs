@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
         }
 
-        internal static TestSession? CreateSession()
+        internal static InternalTestSession? CreateSession()
         {
             // We create test session if not DataCollector
             if (IsDataCollectorDomain)
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     workingDirectory = Environment.CurrentDirectory;
                 }
 
-                var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
+                var session = InternalTestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return null;
         }
 
-        internal static void FinalizeSession(TestSession? session, int exitCode, Exception? exception)
+        internal static void FinalizeSession(InternalTestSession? session, int exitCode, Exception? exception)
         {
             if (session is null)
             {
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
             }
 
-            session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+            session.Close(exitCode == 0 ? InternalTestStatus.Pass : InternalTestStatus.Fail);
         }
 
         internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)

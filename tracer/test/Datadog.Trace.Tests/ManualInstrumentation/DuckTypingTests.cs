@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 public class DuckTypingTests
 {
     private readonly AsyncLocalScopeManager _scopeManager = new();
-    private readonly TracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
+    private readonly InternalTracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
     private readonly Tracer _tracer;
 
     public DuckTypingTests()
@@ -89,7 +89,7 @@ public class DuckTypingTests
     [Fact]
     public void CanDuckTypeManualTestSessionAsISession()
     {
-        var autoSession = TestSession.GetOrCreate("blah");
+        var autoSession = InternalTestSession.GetOrCreate("blah");
 
         var session = autoSession.DuckCast<ManualITestSession>();
 
@@ -138,7 +138,7 @@ public class DuckTypingTests
         tags.Parameters
             .Should()
             .NotBeNull()
-            .And.Be(new TestParameters { Arguments = new(), Metadata = new() }.ToJSON());
+            .And.Be(new InternalTestParameters { Arguments = new(), Metadata = new() }.ToJSON());
 
         test.Close(TestStatus.Pass);
         suite.Close();

@@ -81,7 +81,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                                 NUnitIntegration.GetOrCreateTest(workItem.Test) is { IsClosed: false } test)
                             {
                                 test.SetErrorInfo(exceptionType, resultMessage, result.StackTrace);
-                                test.Close(Internal.Ci.TestStatus.Fail);
+                                test.Close(Internal.Ci.InternalTestStatus.Fail);
                             }
                         }
                     }
@@ -109,7 +109,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                                         if (NUnitIntegration.GetOrCreateTest(childWorkItem.Test) is { IsClosed: false } test)
                                         {
                                             var skipReason = childWorkItem.Result.Message?.Replace("OneTimeSetUp:", string.Empty).Trim();
-                                            test.Close(Internal.Ci.TestStatus.Skip, TimeSpan.Zero, skipReason);
+                                            test.Close(Internal.Ci.InternalTestStatus.Skip, TimeSpan.Zero, skipReason);
                                         }
                                     }
                                 }
@@ -124,7 +124,7 @@ public static class NUnitWorkItemWorkItemCompleteIntegration
                                         if (NUnitIntegration.GetOrCreateTest(childTest) is { IsClosed: false } test)
                                         {
                                             var skipReason = childCompositeWorkItem.Result.Message?.Replace("OneTimeSetUp:", string.Empty).Trim();
-                                            test.Close(Internal.Ci.TestStatus.Skip, TimeSpan.Zero, skipReason);
+                                            test.Close(Internal.Ci.InternalTestStatus.Skip, TimeSpan.Zero, skipReason);
                                         }
                                     }
                                 }

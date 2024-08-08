@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         [Metric(Internal.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
-        public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
+        public void SetAnalyticsSampleRate(IntegrationId integration, InternalImmutableTracerSettings settings, bool enabledWithGlobalSetting)
         {
             if (settings != null)
             {

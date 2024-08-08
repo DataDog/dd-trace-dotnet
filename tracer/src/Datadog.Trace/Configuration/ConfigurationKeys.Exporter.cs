@@ -17,35 +17,35 @@ namespace Datadog.Trace.Internal.Configuration
         /// Overridden by <see cref="AgentUri"/> if present.
         /// Default value is "localhost".
         /// </summary>
-        /// <seealso cref="ExporterSettings.AgentUri"/>
+        /// <seealso cref="InternalExporterSettings.AgentUri"/>
         public const string AgentHost = "DD_AGENT_HOST";
 
         /// <summary>
         /// Configuration key for the Agent port where the Tracer can send traces.
         /// Default value is 8126.
         /// </summary>
-        /// <seealso cref="ExporterSettings.AgentUri"/>
+        /// <seealso cref="InternalExporterSettings.AgentUri"/>
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
 
         /// <summary>
         /// Configuration key for the named pipe where the Tracer can send traces.
         /// Default value is <c>null</c>.
         /// </summary>
-        /// <seealso cref="ExporterSettings.TracesPipeName"/>
+        /// <seealso cref="InternalExporterSettings.TracesPipeName"/>
         public const string TracesPipeName = "DD_TRACE_PIPE_NAME";
 
         /// <summary>
         /// Configuration key for setting the timeout in milliseconds for named pipes communication.
         /// Default value is <c>0</c>.
         /// </summary>
-        /// <seealso cref="ExporterSettings.TracesPipeTimeoutMs"/>
+        /// <seealso cref="InternalExporterSettings.TracesPipeTimeoutMs"/>
         public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
 
         /// <summary>
         /// Configuration key for the named pipe that DogStatsD binds to.
         /// Default value is <c>null</c>.
         /// </summary>
-        /// <seealso cref="ExporterSettings.MetricsPipeName"/>
+        /// <seealso cref="InternalExporterSettings.MetricsPipeName"/>
         public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Internal.Configuration
         /// Used to force a specific port binding for the Trace Agent.
         /// Default value is 8126.
         /// </summary>
-        /// <seealso cref="ExporterSettings.AgentUri"/>
+        /// <seealso cref="InternalExporterSettings.AgentUri"/>
         public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
 
         /// <summary>
@@ -61,47 +61,47 @@ namespace Datadog.Trace.Internal.Configuration
         /// Overrides values in <see cref="AgentHost"/> and <see cref="AgentPort"/> if present.
         /// Default value is "http://localhost:8126".
         /// </summary>
-        /// <seealso cref="ExporterSettings.AgentUri"/>
+        /// <seealso cref="InternalExporterSettings.AgentUri"/>
         public const string AgentUri = "DD_TRACE_AGENT_URL";
 
         /// <summary>
         /// Configuration key for the DogStatsd port where the Tracer can send metrics.
         /// Default value is 8125.
         /// </summary>
-        /// <seealso cref="ExporterSettings.DogStatsdPort"/>
+        /// <seealso cref="InternalExporterSettings.DogStatsdPort"/>
         public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
 
         /// <summary>
         /// Configuration key to enable sending partial traces to the agent
         /// </summary>
-        /// <seealso cref="ExporterSettings.PartialFlushEnabled"/>
+        /// <seealso cref="InternalExporterSettings.PartialFlushEnabled"/>
         public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
 
         /// <summary>
         /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
         /// </summary>
-        /// <seealso cref="ExporterSettings.PartialFlushMinSpans"/>
+        /// <seealso cref="InternalExporterSettings.PartialFlushMinSpans"/>
         public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
 
         /// <summary>
         /// Configuration key for the unix domain socket where the Tracer can send traces.
         /// Default value is <c>null</c>.
         /// </summary>
-        /// <seealso cref="ExporterSettings.TracesUnixDomainSocketPath"/>
+        /// <seealso cref="InternalExporterSettings.TracesUnixDomainSocketPath"/>
         public const string TracesUnixDomainSocketPath = "DD_APM_RECEIVER_SOCKET";
 
         /// <summary>
         /// Configuration key for the unix domain socket that DogStatsD binds to.
         /// Default value is <c>null</c>.
         /// </summary>
-        /// <seealso cref="ExporterSettings.MetricsUnixDomainSocketPath"/>
+        /// <seealso cref="InternalExporterSettings.MetricsUnixDomainSocketPath"/>
         public const string MetricsUnixDomainSocketPath = "DD_DOGSTATSD_SOCKET";
 
         /// <summary>
         /// Configuration key for the location where the Tracer can send DogStatsD metrics.
         /// Default value is "udp://127.0.0.1:8125".
         /// </summary>
-        /// <seealso cref="ExporterSettings.AgentUri"/>
+        /// <seealso cref="InternalExporterSettings.AgentUri"/>
         public const string MetricsUri = "DD_DOGSTATSD_URL";
     }
 }

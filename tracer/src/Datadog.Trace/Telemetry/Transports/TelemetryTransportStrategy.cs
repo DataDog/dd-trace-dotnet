@@ -30,7 +30,7 @@ internal static class TelemetryTransportStrategy
 #endif
     }
 
-    public static IApiRequestFactory GetAgentIntakeFactory(ImmutableExporterSettings settings)
+    public static IApiRequestFactory GetAgentIntakeFactory(InternalImmutableExporterSettings settings)
         => AgentTransportStrategy.Get(
             settings,
             productName: "telemetry",

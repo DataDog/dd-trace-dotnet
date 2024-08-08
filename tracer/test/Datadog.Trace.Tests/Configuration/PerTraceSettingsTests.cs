@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ApplyServiceMappingToNewTraces()
         {
-            Tracer.Configure(TracerSettings.Create(new()
+            Tracer.Configure(InternalTracerSettings.Create(new()
             {
                 [ConfigurationKeys.ServiceNameMappings] = "test:before"
             }));
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Configuration
             Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
                .Should().Be("before");
 
-            Tracer.Configure(TracerSettings.Create(new()
+            Tracer.Configure(InternalTracerSettings.Create(new()
             {
                 [ConfigurationKeys.ServiceNameMappings] = "test:after"
             }));

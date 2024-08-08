@@ -33,7 +33,7 @@ internal class ItrSkipTestMethodExecutor
         {
             // Create ITR skip span
             MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType(), isRetry: false)?
-                             .Close(TestStatus.Skip, TimeSpan.Zero, IntelligentTestRunnerTags.SkippedByReason);
+                             .Close(InternalTestStatus.Skip, TimeSpan.Zero, IntelligentTestRunnerTags.SkippedByReason);
         }
 
         return _arrayInstance;

@@ -26,7 +26,7 @@ public class TraceTags
     {
         // make it so all traces are initially dropped so we can override with keep,
         // otherwise we can't change the sampling mechanism
-        var settings = new TracerSettings { GlobalSamplingRate = 0 };
+        var settings = new InternalTracerSettings { GlobalSamplingRate = 0 };
 
         _testApi = new MockApi();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);

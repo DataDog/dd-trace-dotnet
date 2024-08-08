@@ -51,9 +51,9 @@ namespace Datadog.Trace.Tests
         {
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new InternalTracerSettings
             {
-                Exporter = new ExporterSettings()
+                Exporter = new InternalExporterSettings()
                 {
                     PartialFlushEnabled = partialFlush,
                     PartialFlushMinSpans = 5
@@ -131,9 +131,9 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new InternalTracerSettings
             {
-                Exporter = new ExporterSettings()
+                Exporter = new InternalExporterSettings()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
@@ -183,9 +183,9 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new InternalTracerSettings
             {
-                Exporter = new ExporterSettings()
+                Exporter = new InternalExporterSettings()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold

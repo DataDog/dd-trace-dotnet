@@ -39,7 +39,7 @@ public class ExecutorExecuteIntegration
 
     internal static CallTargetReturn<int> OnMethodEnd<TTarget>(int returnValue, Exception? exception, in CallTargetState state)
     {
-        DotnetCommon.FinalizeSession(state.State as TestSession, returnValue, exception);
+        DotnetCommon.FinalizeSession(state.State as InternalTestSession, returnValue, exception);
         return new CallTargetReturn<int>(returnValue);
     }
 }

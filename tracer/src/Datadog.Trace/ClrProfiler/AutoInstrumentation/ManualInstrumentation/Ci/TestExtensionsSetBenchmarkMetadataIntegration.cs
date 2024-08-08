@@ -40,7 +40,7 @@ public class TestExtensionsSetBenchmarkMetadataIntegration
 
         if (test is IDuckType { Instance: Test automaticTest })
         {
-            var host = new BenchmarkHostInfo
+            var host = new InternalBenchmarkHostInfo
             {
                 ProcessorName = hostInfo.ProcessorName,
                 ProcessorCount = hostInfo.ProcessorCount,
@@ -53,7 +53,7 @@ public class TestExtensionsSetBenchmarkMetadataIntegration
                 ChronometerResolution = hostInfo.ChronometerResolution,
             };
 
-            var job = new BenchmarkJobInfo()
+            var job = new InternalBenchmarkJobInfo()
             {
                 Description = jobInfo.Description,
                 Platform = jobInfo.Platform,

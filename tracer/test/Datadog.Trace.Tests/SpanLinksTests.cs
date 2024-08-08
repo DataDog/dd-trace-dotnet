@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
 
         public SpanLinksTests()
         {
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 

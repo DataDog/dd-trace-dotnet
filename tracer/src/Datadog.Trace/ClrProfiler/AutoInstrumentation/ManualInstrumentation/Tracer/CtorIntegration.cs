@@ -41,7 +41,7 @@ public class CtorIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static void PopulateSettings(Dictionary<string, object?> values, ImmutableTracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, InternalImmutableTracerSettings settings)
     {
         // record all the settings in the dictionary
         values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;
@@ -49,7 +49,7 @@ public class CtorIntegration
         values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabledInternal;
 #pragma warning restore CS0618 // Type or member is obsolete
         values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRulesInternal;
-        values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
+        values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = InternalGlobalSettings.Instance.DiagnosticSourceEnabled;
         values[TracerSettingKeyConstants.EnvironmentKey] = settings.EnvironmentInternal;
         values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRateInternal;
         values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabledInternal;
@@ -72,7 +72,7 @@ public class CtorIntegration
         values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
     }
 
-    private static Dictionary<string, object?[]>? BuildIntegrationSettings(ImmutableIntegrationSettingsCollection settings)
+    private static Dictionary<string, object?[]>? BuildIntegrationSettings(InternalImmutableIntegrationSettingsCollection settings)
     {
         if (settings.Settings.Length == 0)
         {

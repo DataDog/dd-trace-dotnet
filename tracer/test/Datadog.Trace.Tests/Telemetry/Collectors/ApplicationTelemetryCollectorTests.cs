@@ -25,7 +25,7 @@ public class ApplicationTelemetryCollectorTests
         const string env = "serializer-tests";
         const string serviceVersion = "1.2.3";
         var configurationTelemetry = new ConfigurationTelemetry();
-        var settings = new TracerSettings(
+        var settings = new InternalTracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection
                 {
@@ -41,7 +41,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(new InternalImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -69,7 +69,7 @@ public class ApplicationTelemetryCollectorTests
         const string env = "serializer-tests";
         const string serviceVersion = "1.2.3";
         var configurationTelemetry = new ConfigurationTelemetry();
-        var settings = new TracerSettings(
+        var settings = new InternalTracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection
                 {
@@ -83,7 +83,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetApplicationData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(new InternalImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetApplicationData());
@@ -111,7 +111,7 @@ public class ApplicationTelemetryCollectorTests
         const string env = "serializer-tests";
         const string serviceVersion = "1.2.3";
         var configurationTelemetry = new ConfigurationTelemetry();
-        var settings = new TracerSettings(
+        var settings = new InternalTracerSettings(
             new NameValueConfigurationSource(
                 new NameValueCollection
                 {
@@ -127,7 +127,7 @@ public class ApplicationTelemetryCollectorTests
 
         collector.GetHostData().Should().BeNull();
 
-        collector.RecordTracerSettings(new ImmutableTracerSettings(settings), ServiceName);
+        collector.RecordTracerSettings(new InternalImmutableTracerSettings(settings), ServiceName);
 
         // calling twice should give same results
         AssertData(collector.GetHostData());

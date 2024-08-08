@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings(
+            var settings = new InternalTracerSettings(
                 new NameValueConfigurationSource(
                     new NameValueCollection
                     {

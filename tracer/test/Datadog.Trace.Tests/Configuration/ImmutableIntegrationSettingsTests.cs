@@ -18,12 +18,12 @@ namespace Datadog.Trace.Tests.Configuration
         public void ImmutableSettingsRespectsOverride(bool initiallyEnabled)
         {
             var name = nameof(IntegrationId.Kafka);
-            var settings = new IntegrationSettings(name, source: null)
+            var settings = new InternalIntegrationSettings(name, source: null)
             {
                 Enabled = initiallyEnabled
             };
 
-            var immutableSettings = new ImmutableIntegrationSettings(settings, isExplicitlyDisabled: true);
+            var immutableSettings = new InternalImmutableIntegrationSettings(settings, isExplicitlyDisabled: true);
 
             immutableSettings.Enabled.Should().BeFalse();
         }
@@ -34,12 +34,12 @@ namespace Datadog.Trace.Tests.Configuration
         public void ImmutableSettingsRespectsOriginalIfNotOverridden(bool initiallyEnabled)
         {
             var name = nameof(IntegrationId.Kafka);
-            var settings = new IntegrationSettings(name, source: null)
+            var settings = new InternalIntegrationSettings(name, source: null)
             {
                 Enabled = initiallyEnabled
             };
 
-            var immutableSettings = new ImmutableIntegrationSettings(settings, isExplicitlyDisabled: false);
+            var immutableSettings = new InternalImmutableIntegrationSettings(settings, isExplicitlyDisabled: false);
 
             immutableSettings.Enabled.Should().Be(initiallyEnabled);
         }

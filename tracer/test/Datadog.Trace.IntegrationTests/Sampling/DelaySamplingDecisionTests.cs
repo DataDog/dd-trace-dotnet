@@ -23,7 +23,7 @@ public class DelaySamplingDecisionTests
     [Fact]
     public void SamplingDecisionIsNotMadeUntilLastSpanEnds()
     {
-        var settings = new TracerSettings();
+        var settings = new InternalTracerSettings();
         var agentWriter = new Mock<IAgentWriter>();
         var sampler = new Mock<ITraceSampler>();
         var scopeManager = new AsyncLocalScopeManager();
@@ -60,7 +60,7 @@ public class DelaySamplingDecisionTests
     [Fact]
     public void SamplingDecisionIsMadeWhenPropagating()
     {
-        var settings = new TracerSettings();
+        var settings = new InternalTracerSettings();
         var agentWriter = new Mock<IAgentWriter>();
         var sampler = new Mock<ITraceSampler>();
         var scopeManager = new AsyncLocalScopeManager();

@@ -29,7 +29,7 @@ internal class LiveDebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
 
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, InternalImmutableTracerSettings tracerSettings, string serviceName, ITelemetryController telemetry, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         if (!debuggerSettings.Enabled)
         {
@@ -67,7 +67,7 @@ internal class LiveDebuggerFactory
                 dogStats: statsd);
     }
 
-    private static IDogStatsd GetDogStatsd(ImmutableTracerSettings tracerSettings, string serviceName)
+    private static IDogStatsd GetDogStatsd(InternalImmutableTracerSettings tracerSettings, string serviceName)
     {
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
@@ -104,14 +104,14 @@ internal class LiveDebuggerFactory
         return debuggerSink;
     }
 
-    private static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    private static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, InternalImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceName);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceName);
         return symbolsUploader;
     }
 
-    private static IApiRequestFactory GetApiFactory(ImmutableTracerSettings tracerSettings, bool isMultipart)
+    private static IApiRequestFactory GetApiFactory(InternalImmutableTracerSettings tracerSettings, bool isMultipart)
     {
         return AgentTransportStrategy.Get(
             tracerSettings.ExporterInternal,

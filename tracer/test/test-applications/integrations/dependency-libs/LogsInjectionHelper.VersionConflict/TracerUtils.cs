@@ -60,7 +60,7 @@ namespace LogsInjectionHelper.VersionConflict
 
             if (tracerType is null)
             {
-                tracerType = _automaticAssembly.GetType("Datadog.Trace.Internal.Tracer");
+                tracerType = _automaticAssembly.GetType("Datadog.Trace.Internal.InternalTracer");
             }
 
             // Invoke 'Tracer.Instance'

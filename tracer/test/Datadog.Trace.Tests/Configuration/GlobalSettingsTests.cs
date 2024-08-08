@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DebugEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DebugEnabled, value));
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new InternalGlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DebugEnabled.Should().Be(expected);
         }
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.DebugEnabled, value),
                 (otelKey, otelValue));
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new InternalGlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DebugEnabled.Should().Be(expected);
         }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DiagnosticSourceEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DiagnosticSourceEnabled, value));
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+            var settings = new InternalGlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.DiagnosticSourceEnabled.Should().Be(expected);
         }

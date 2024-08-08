@@ -58,7 +58,7 @@ public static class TestMethodRunnerExecuteIntegration
                         {
                             // This instrumentation catches all tests being ignored
                             MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false)?
-                               .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                               .Close(InternalTestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                         }
                     }
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
@@ -70,7 +70,7 @@ public static class TestMethodRunnerExecuteIntegration
                                 MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
                             {
                                 test.SetErrorInfo(classInitializationException);
-                                test.Close(TestStatus.Fail);
+                                test.Close(InternalTestStatus.Fail);
                             }
                         }
                         else
@@ -99,7 +99,7 @@ public static class TestMethodRunnerExecuteIntegration
                                 MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType(), isRetry: false) is { } test)
                             {
                                 test.SetErrorInfo(assemblyInitializationException);
-                                test.Close(TestStatus.Fail);
+                                test.Close(InternalTestStatus.Fail);
                             }
                         }
                         else

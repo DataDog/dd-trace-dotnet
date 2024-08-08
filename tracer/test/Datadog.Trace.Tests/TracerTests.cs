@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests
 
         public TracerTests()
         {
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
@@ -403,7 +403,7 @@ namespace Datadog.Trace.Tests
         [InlineData("test")]
         public async Task SetEnv(string env)
         {
-            var settings = new TracerSettings { Environment = env };
+            var settings = new InternalTracerSettings { Environment = env };
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -416,7 +416,7 @@ namespace Datadog.Trace.Tests
         [InlineData("1.2.3")]
         public async Task SetVersion(string version)
         {
-            var settings = new TracerSettings { ServiceVersion = version };
+            var settings = new InternalTracerSettings { ServiceVersion = version };
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -434,7 +434,7 @@ namespace Datadog.Trace.Tests
         [InlineData("tracerService", "spanService", "spanService")]
         public async Task SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
-            var settings = new TracerSettings()
+            var settings = new InternalTracerSettings()
             {
                 ServiceName = tracerServiceName,
             };
@@ -529,7 +529,7 @@ namespace Datadog.Trace.Tests
         {
             var agent = new Mock<IAgentWriter>();
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StartupDiagnosticLogEnabled = false
             };
@@ -546,7 +546,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StartupDiagnosticLogEnabled = false
             };
@@ -563,7 +563,7 @@ namespace Datadog.Trace.Tests
             var role = "admin";
             var scope = "read:message, write:files";
 
-            var userDetails = new UserDetails()
+            var userDetails = new InternalUserDetails()
             {
                 Email = email,
                 Name = name,
@@ -588,7 +588,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StartupDiagnosticLogEnabled = false
             };
@@ -604,7 +604,7 @@ namespace Datadog.Trace.Tests
             var role = "admin";
             var scope = "read:message, write:files";
 
-            var userDetails = new UserDetails()
+            var userDetails = new InternalUserDetails()
             {
                 Email = email,
                 Name = name,
@@ -638,7 +638,7 @@ namespace Datadog.Trace.Tests
             var role = "admin";
             var scope = "read:message, write:files";
 
-            var userDetails = new UserDetails()
+            var userDetails = new InternalUserDetails()
             {
                 Email = email,
                 Name = name,
@@ -664,7 +664,7 @@ namespace Datadog.Trace.Tests
 
             var email = "test@adventure-works.com";
 
-            var userDetails = new UserDetails()
+            var userDetails = new InternalUserDetails()
             {
                 Email = email,
             };
@@ -678,7 +678,7 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StartupDiagnosticLogEnabled = false
             };
@@ -688,7 +688,7 @@ namespace Datadog.Trace.Tests
 
             var id = Guid.NewGuid().ToString();
 
-            var userDetails = new UserDetails()
+            var userDetails = new InternalUserDetails()
             {
                 Id = id,
                 PropagateId = true,

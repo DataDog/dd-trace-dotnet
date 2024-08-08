@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tests.Propagators
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
-            var user = new UserDetails("12345")
+            var user = new InternalUserDetails("12345")
             {
                 PropagateId = true,
                 Email = "user@example.com"

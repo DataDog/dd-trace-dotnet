@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
         private static Tracer CreateTracer()
         {
-            return new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
+            return new Tracer(new InternalTracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
         }
     }
 }

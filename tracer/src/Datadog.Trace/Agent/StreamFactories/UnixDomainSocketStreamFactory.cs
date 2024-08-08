@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent.StreamFactories
 
         public UnixDomainSocketStreamFactory(string serverName)
         {
-            _path = serverName.Replace(ExporterSettings.UnixDomainSocketPrefix, string.Empty);
+            _path = serverName.Replace(InternalExporterSettings.UnixDomainSocketPrefix, string.Empty);
             _endPoint = new UnixDomainSocketEndPoint(_path);
         }
 

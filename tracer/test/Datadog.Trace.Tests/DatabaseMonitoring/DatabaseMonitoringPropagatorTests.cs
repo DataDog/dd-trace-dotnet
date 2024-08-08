@@ -28,13 +28,13 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
 
         public DatabaseMonitoringPropagatorTests(ITestOutputHelper output)
         {
-            var v0Settings = new TracerSettings();
+            var v0Settings = new InternalTracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
             _v0Tracer = new Tracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
-            var v1Settings = TracerSettings.Create(
+            var v1Settings = InternalTracerSettings.Create(
                 new() { { ConfigurationKeys.MetadataSchemaVersion, SchemaVersion.V1.ToString() } });
 
             _v1Tracer = new Tracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);

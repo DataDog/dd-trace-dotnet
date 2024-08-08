@@ -19,14 +19,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
     public class ApmAgentWriterTests
     {
         private readonly ApmAgentWriter _ciAgentWriter;
-        private readonly ImmutableTracerSettings _settings;
+        private readonly InternalImmutableTracerSettings _settings;
         private readonly Mock<IApi> _api;
 
         public ApmAgentWriterTests()
         {
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
-            _settings = new ImmutableTracerSettings(Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings);
+            _settings = new InternalImmutableTracerSettings(Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings);
 
             _api = new Mock<IApi>();
             _ciAgentWriter = new ApmAgentWriter(_api.Object);

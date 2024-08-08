@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Propagators
                     new("x-datadog-origin", Origin),
                 };
 
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.TagPropagation.HeaderMaxLength, 0 } });
+            var settings = InternalTracerSettings.Create(new() { { ConfigurationKeys.TagPropagation.HeaderMaxLength, 0 } });
             var tracer = new Tracer(settings, agentWriter: Mock.Of<IAgentWriter>(), sampler: null, scopeManager: null, null, telemetry: null);
 
             var traceContext = new TraceContext(tracer);

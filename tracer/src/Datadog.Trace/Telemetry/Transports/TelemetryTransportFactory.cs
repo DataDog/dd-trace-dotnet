@@ -13,7 +13,7 @@ namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {
-        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
+        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, InternalImmutableExporterSettings exporterSettings)
         {
             var agentProxy = telemetrySettings is { AgentProxyEnabled: true }
                                  ? GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled)
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Telemetry.Transports
             return new TelemetryTransports(agentProxy, agentless);
         }
 
-        private static ITelemetryTransport GetAgentFactory(ImmutableExporterSettings exporterSettings, bool debugEnabled)
+        private static ITelemetryTransport GetAgentFactory(InternalImmutableExporterSettings exporterSettings, bool debugEnabled)
             => new AgentTelemetryTransport(
                 TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
                 debugEnabled: debugEnabled);

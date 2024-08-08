@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
             // We should unskip this once we have resolved the issues around Hierarchical IDs
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SimpleSpansAndActivitiesTest()
         {
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 

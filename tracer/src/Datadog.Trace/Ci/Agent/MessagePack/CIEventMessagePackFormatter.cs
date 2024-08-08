@@ -31,7 +31,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         private readonly ArraySegment<byte> _envelopBytes;
 
-        public CIEventMessagePackFormatter(TracerSettings tracerSettings)
+        public CIEventMessagePackFormatter(InternalTracerSettings tracerSettings)
         {
             if (!string.IsNullOrEmpty(tracerSettings.EnvironmentInternal))
             {

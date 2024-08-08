@@ -62,9 +62,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ApplyTagsToDirectLogs()
         {
-            var tracerSettings = new TracerSettings();
+            var tracerSettings = new InternalTracerSettings();
             tracerSettings.GlobalTagsInternal.Add("key1", "value1");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
@@ -77,11 +77,11 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DoesNotOverrideDirectLogsTags()
         {
-            var tracerSettings = new TracerSettings();
+            var tracerSettings = new InternalTracerSettings();
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags.Add("key1", "value1");
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("test");
             tracerSettings.GlobalTagsInternal.Add("key2", "value2");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
 
@@ -94,8 +94,8 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void EnableTracing()
         {
-            var tracerSettings = new TracerSettings();
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+            var tracerSettings = new InternalTracerSettings();
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             // tracing is enabled by default
             TracerManager.Instance.Settings.TraceEnabled.Should().BeTrue();
@@ -120,12 +120,12 @@ namespace Datadog.Trace.Tests.Configuration
 
             var localSamplingRulesJson = JsonConvert.SerializeObject(localSamplingRulesConfig);
 
-            var tracerSettings = TracerSettings.Create(new()
+            var tracerSettings = InternalTracerSettings.Create(new()
             {
                 { "DD_TRACE_SAMPLING_RULES", localSamplingRulesJson }
             });
 
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.Settings.CustomSamplingRulesInternal.Should().Be(localSamplingRulesJson);
             TracerManager.Instance.Settings.CustomSamplingRulesIsRemote.Should().BeFalse();

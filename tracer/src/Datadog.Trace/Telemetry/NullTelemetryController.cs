@@ -26,7 +26,7 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+        public void RecordTracerSettings(InternalImmutableTracerSettings settings, string defaultServiceName)
         {
         }
 

@@ -41,9 +41,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             var disabledIntegrations = new HashSet<string> { "foobar", "MongoDb", "Msmq" };
 
-            var builderCollection = new IntegrationSettingsCollection(source);
+            var builderCollection = new InternalIntegrationSettingsCollection(source);
 
-            var final = new ImmutableIntegrationSettingsCollection(builderCollection, disabledIntegrations);
+            var final = new InternalImmutableIntegrationSettingsCollection(builderCollection, disabledIntegrations);
 
             var kafka = final[IntegrationId.Kafka];
             kafka.Enabled.Should().BeTrue();
@@ -76,8 +76,8 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsIntegrationWhenUsingIncorrectCasing()
         {
-            var mutable = new IntegrationSettingsCollection(null);
-            var settings = new ImmutableIntegrationSettingsCollection(mutable, new HashSet<string>());
+            var mutable = new InternalIntegrationSettingsCollection(null);
+            var settings = new InternalImmutableIntegrationSettingsCollection(mutable, new HashSet<string>());
 
             var log4NetByName = settings["LOG4NET"];
             var log4NetById = settings[IntegrationId.Log4Net];
@@ -88,8 +88,8 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsDefaultSettingsForUnknownIntegration()
         {
-            var mutable = new IntegrationSettingsCollection(null);
-            var settings = new ImmutableIntegrationSettingsCollection(mutable, new HashSet<string>());
+            var mutable = new InternalIntegrationSettingsCollection(null);
+            var settings = new InternalImmutableIntegrationSettingsCollection(mutable, new HashSet<string>());
 
             var integrationName = "blobby";
             var instance1 = settings[integrationName];

@@ -32,7 +32,7 @@ public class EventTrackingSdkTrackUserLoginFailureEventIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId, bool exists)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent);
-        EventTrackingSdk.TrackUserLoginFailureEvent(userId, exists, null, Internal.Tracer.Instance);
+        InternalEventTrackingSdk.TrackUserLoginFailureEvent(userId, exists, null, Internal.Tracer.Instance);
         return CallTargetState.GetDefault();
     }
 }

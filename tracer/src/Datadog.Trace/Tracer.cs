@@ -66,19 +66,19 @@ namespace Datadog.Trace.Internal
         /// for all <see cref="Tracer"/> instances in the application.
         /// </summary>
         /// <param name="settings">
-        /// A <see cref="TracerSettings"/> instance with the desired settings,
+        /// A <see cref="InternalTracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings
         /// </param>
         [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
                   "If you were using this API to configure the global Tracer.Instance in code, use the static "
                 + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         [PublicApi]
-        public Tracer(TracerSettings settings)
+        public Tracer(InternalTracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : new InternalImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -90,8 +90,8 @@ namespace Datadog.Trace.Internal
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
+        internal Tracer(InternalTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new InternalImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
         {
         }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings => TracerManager.Settings;
+        public InternalImmutableTracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
         /// Gets the tracer's settings for the current trace.
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        ImmutableTracerSettings ITracer.Settings => Settings;
+        InternalImmutableTracerSettings ITracer.Settings => Settings;
 
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
@@ -263,16 +263,16 @@ namespace Datadog.Trace.Internal
         /// Replaces the global Tracer settings used by all <see cref="Tracer"/> instances,
         /// including automatic instrumentation
         /// </summary>
-        /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
+        /// <param name="settings"> A <see cref="InternalTracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
         [PublicApi]
-        public static void Configure(TracerSettings settings)
+        public static void Configure(InternalTracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings is null ? null : new ImmutableTracerSettings(settings, true));
+            ConfigureInternal(settings is null ? null : new InternalImmutableTracerSettings(settings, true));
         }
 
-        internal static void ConfigureInternal(ImmutableTracerSettings settings)
+        internal static void ConfigureInternal(InternalImmutableTracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Instance.TracerManager.Start();

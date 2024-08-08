@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.ServiceNameMappings, MappingsString },
             };
 
-            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+            var tracer = new LockedTracer(new InternalTracerSettings(new NameValueConfigurationSource(collection)));
 
             foreach (var kvp in Mappings)
             {
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.ServiceNameMappings, MappingsString },
             };
 
-            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+            var tracer = new LockedTracer(new InternalTracerSettings(new NameValueConfigurationSource(collection)));
 
             foreach (var key in UnmappedKeys)
             {
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { ConfigurationKeys.RemoveClientServiceNamesEnabled, removeClientServiceNamesEnabled.ToString() },
             };
 
-            var tracer = new LockedTracer(new TracerSettings(new NameValueConfigurationSource(collection)));
+            var tracer = new LockedTracer(new InternalTracerSettings(new NameValueConfigurationSource(collection)));
 
             foreach (var key in UnmappedKeys)
             {
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         private class LockedTracer : Tracer
         {
-            internal LockedTracer(TracerSettings tracerSettings)
+            internal LockedTracer(InternalTracerSettings tracerSettings)
                 : base(new LockedTracerManager(tracerSettings))
             {
             }
@@ -119,8 +119,8 @@ namespace Datadog.Trace.Tests.Configuration
 
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
-            public LockedTracerManager(TracerSettings tracerSettings)
-                : base(new ImmutableTracerSettings(tracerSettings), null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null)
+            public LockedTracerManager(InternalTracerSettings tracerSettings)
+                : base(new InternalImmutableTracerSettings(tracerSettings), null, Mock.Of<IScopeManager>(), null, null, null, null, null, null, null, null, null, null, null, null, null)
             {
             }
         }

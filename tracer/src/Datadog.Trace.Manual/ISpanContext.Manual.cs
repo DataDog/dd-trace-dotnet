@@ -11,7 +11,7 @@ namespace Datadog.Trace;
 /// <summary>
 /// Span context interface.
 /// </summary>
-[DuckType("Datadog.Trace.Internal.SpanContext", "Datadog.Trace")]
+[DuckType("Datadog.Trace.Internal.InternalSpanContext", "Datadog.Trace")]
 public partial interface ISpanContext
 {
 }

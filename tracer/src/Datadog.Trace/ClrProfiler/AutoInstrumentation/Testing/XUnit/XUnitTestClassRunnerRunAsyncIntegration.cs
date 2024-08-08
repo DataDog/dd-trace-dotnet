@@ -41,7 +41,7 @@ public static class XUnitTestClassRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (TestModule.Current is { } testModule)
+        if (InternalTestModule.Current is { } testModule)
         {
             var classRunnerInstance = instance.DuckCast<TestClassRunnerStruct>();
             return new CallTargetState(null, testModule.InternalGetOrCreateSuite(classRunnerInstance.TestClass.Class.Name ?? string.Empty));

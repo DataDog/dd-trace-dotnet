@@ -31,20 +31,20 @@ internal class CheckAgentCommand : Command
 
     private async Task ExecuteAsync(InvocationContext context)
     {
-        ExporterSettings settings;
+        InternalExporterSettings settings;
 
         var url = _urlArgument.GetValue(context);
 
         if (url == null)
         {
             // Try to autodetect the agent settings
-            settings = new ExporterSettings(new EnvironmentConfigurationSource());
+            settings = new InternalExporterSettings(new EnvironmentConfigurationSource());
 
             AnsiConsole.WriteLine("No Agent URL provided, using environment variables");
         }
         else
         {
-            settings = new ExporterSettings(url);
+            settings = new InternalExporterSettings(url);
         }
 
         var result = await AgentConnectivityCheck.RunAsync(settings).ConfigureAwait(false);

@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Configuration
                                                               { settingName, settingValue }
                                                           });
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new InternalIntegrationSettings("FOO", source);
             Assert.Equal(expected, settings.Enabled);
         }
 
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Configuration
                                                               { settingName, settingValue }
                                                           });
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new InternalIntegrationSettings("FOO", source);
             Assert.Equal(expected, settings.AnalyticsEnabled);
         }
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests.Configuration
                                                               { settingName, settingValue }
                                                           });
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new InternalIntegrationSettings("FOO", source);
             Assert.Equal(expected, settings.AnalyticsSampleRate);
         }
     }

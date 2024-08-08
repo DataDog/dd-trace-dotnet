@@ -105,14 +105,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         public static void RemoveMdcState(MappedDiagnosticsContextSetterProxy mdc, bool removeTraceIds)
         {
-            mdc.Remove(CorrelationIdentifier.ServiceKey);
-            mdc.Remove(CorrelationIdentifier.VersionKey);
-            mdc.Remove(CorrelationIdentifier.EnvKey);
+            mdc.Remove(InternalCorrelationIdentifier.ServiceKey);
+            mdc.Remove(InternalCorrelationIdentifier.VersionKey);
+            mdc.Remove(InternalCorrelationIdentifier.EnvKey);
 
             if (removeTraceIds)
             {
-                mdc.Remove(CorrelationIdentifier.TraceIdKey);
-                mdc.Remove(CorrelationIdentifier.SpanIdKey);
+                mdc.Remove(InternalCorrelationIdentifier.TraceIdKey);
+                mdc.Remove(InternalCorrelationIdentifier.SpanIdKey);
             }
         }
 
@@ -133,20 +133,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     hasTraceIds = true;
                     return new[]
                     {
-                        new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
+                        new KeyValuePair<string, object>(InternalCorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
+                        new KeyValuePair<string, object>(InternalCorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
+                        new KeyValuePair<string, object>(InternalCorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
+                        new KeyValuePair<string, object>(InternalCorrelationIdentifier.TraceIdKey, traceId),
+                        new KeyValuePair<string, object>(InternalCorrelationIdentifier.SpanIdKey, spanId)
                     };
                 }
             }
 
             return new[]
             {
-                new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
+                new KeyValuePair<string, object>(InternalCorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
+                new KeyValuePair<string, object>(InternalCorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
+                new KeyValuePair<string, object>(InternalCorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
             };
         }
 

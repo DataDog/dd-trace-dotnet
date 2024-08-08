@@ -46,13 +46,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
 
         private readonly JsonTextWriter _writer;
         private readonly StringBuilder _sb;
-        private readonly ImmutableTracerSettings _tracerSettings;
+        private readonly InternalImmutableTracerSettings _tracerSettings;
         private readonly ImmutableDirectLogSubmissionSettings _directLogSettings;
 
         public LogFormatterTests()
         {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
-            _tracerSettings = new ImmutableTracerSettings(tracerSettings);
+            var tracerSettings = new InternalTracerSettings(new NameValueConfigurationSource(Defaults));
+            _tracerSettings = new InternalImmutableTracerSettings(tracerSettings);
             _directLogSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
             _directLogSettings.IsEnabled.Should().BeTrue();
 

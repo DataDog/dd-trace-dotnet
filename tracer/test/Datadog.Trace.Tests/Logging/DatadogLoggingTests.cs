@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Logging
         {
             Environment.SetEnvironmentVariable(ConfigurationKeys.LogFileRetentionDays, "36");
 
-            GlobalSettings.Reload();
+            InternalGlobalSettings.Reload();
 
             _logEventSink = new CollectionSink();
             _logger = new LoggerConfiguration()
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Logging
         public void Dispose()
         {
             // On test cleanup, reload the GlobalSettings
-            GlobalSettings.Reload();
+            InternalGlobalSettings.Reload();
             _clockDisposable?.Dispose();
         }
 
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging
             _logger.Debug("First debug level message");
 
             // Enable Debug-level logging
-            GlobalSettings.SetDebugEnabled(true);
+            InternalGlobalSettings.SetDebugEnabled(true);
 
             _logger.Debug("Second debug level message");
 

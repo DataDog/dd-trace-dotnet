@@ -406,8 +406,8 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
             configurationSource.AddInternal(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
-            var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
+            var tracerSettings = new InternalTracerSettings(configurationSource, new ConfigurationTelemetry());
+            var settings = new InternalImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
             Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
             var discoveryService = DiscoveryService.Create(

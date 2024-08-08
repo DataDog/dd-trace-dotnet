@@ -416,11 +416,11 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
-        private static ImmutableTracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
+        private static InternalImmutableTracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
         {
             var settings = statsComputationIntervalSeconds.HasValue
-                               ? TracerSettings.Create(new() { { ConfigurationKeys.StatsComputationInterval, statsComputationIntervalSeconds.Value } })
-                               : new TracerSettings();
+                               ? InternalTracerSettings.Create(new() { { ConfigurationKeys.StatsComputationInterval, statsComputationIntervalSeconds.Value } })
+                               : new InternalTracerSettings();
 
             return settings.Build();
         }

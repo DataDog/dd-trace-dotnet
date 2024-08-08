@@ -56,7 +56,7 @@ public class AwsSqsCommonTests
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
-        var settings = new TracerSettings(source);
+        var settings = new InternalTracerSettings(source);
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 

@@ -547,7 +547,7 @@ namespace Datadog.Trace.Tests.Agent
             return new ArraySegment<Span>(spans);
         }
 
-        private static TracerSettings SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
+        private static InternalTracerSettings SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
         {
             var rules = new SpanSamplingRule.SpanSamplingRuleConfig[]
             {
@@ -559,7 +559,7 @@ namespace Datadog.Trace.Tests.Agent
                 }
             };
 
-            return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
+            return InternalTracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
         }
     }
 }

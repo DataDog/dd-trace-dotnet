@@ -31,7 +31,7 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (GlobalSettings.Instance.DebugEnabledInternal)
+                if (InternalGlobalSettings.Instance.DebugEnabledInternal)
                 {
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }

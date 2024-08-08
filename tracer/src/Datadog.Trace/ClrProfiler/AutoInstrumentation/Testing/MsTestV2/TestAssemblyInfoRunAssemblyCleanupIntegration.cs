@@ -55,7 +55,7 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        if (state.State is TestModule module)
+        if (state.State is InternalTestModule module)
         {
             if (exception is not null)
             {

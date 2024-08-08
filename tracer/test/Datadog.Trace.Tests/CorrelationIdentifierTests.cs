@@ -28,8 +28,8 @@ namespace Datadog.Trace.Tests
             {
                 using (var childScope = Tracer.Instance.StartActive("child"))
                 {
-                    Assert.Equal<ulong>(childScope.Span.SpanId, CorrelationIdentifier.SpanId);
-                    Assert.Equal<ulong>(childScope.Span.TraceId, CorrelationIdentifier.TraceId);
+                    Assert.Equal<ulong>(childScope.Span.SpanId, InternalCorrelationIdentifier.SpanId);
+                    Assert.Equal<ulong>(childScope.Span.TraceId, InternalCorrelationIdentifier.TraceId);
                 }
             }
         }
@@ -43,8 +43,8 @@ namespace Datadog.Trace.Tests
                 // Do nothing
             }
 
-            Assert.Equal<ulong>(0, CorrelationIdentifier.SpanId);
-            Assert.Equal<ulong>(0, CorrelationIdentifier.TraceId);
+            Assert.Equal<ulong>(0, InternalCorrelationIdentifier.SpanId);
+            Assert.Equal<ulong>(0, InternalCorrelationIdentifier.TraceId);
         }
 
         [Fact]
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
             const string version = "1.0.0";
             const string env = "staging";
 
-            var settings = new TracerSettings()
+            var settings = new InternalTracerSettings()
             {
                 ServiceName = service,
                 ServiceVersion = version,
@@ -66,48 +66,48 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(service, CorrelationIdentifier.Service);
-                Assert.Equal(version, CorrelationIdentifier.Version);
-                Assert.Equal(env, CorrelationIdentifier.Env);
+                Assert.Equal(service, InternalCorrelationIdentifier.Service);
+                Assert.Equal(version, InternalCorrelationIdentifier.Version);
+                Assert.Equal(env, InternalCorrelationIdentifier.Env);
             }
 
-            Assert.Equal(service, CorrelationIdentifier.Service);
-            Assert.Equal(version, CorrelationIdentifier.Version);
-            Assert.Equal(env, CorrelationIdentifier.Env);
+            Assert.Equal(service, InternalCorrelationIdentifier.Service);
+            Assert.Equal(version, InternalCorrelationIdentifier.Version);
+            Assert.Equal(env, InternalCorrelationIdentifier.Env);
         }
 
         [Fact]
         public void VersionAndEnv_EmptyStringIfUnset()
         {
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-                Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+                Assert.Equal(string.Empty, InternalCorrelationIdentifier.Version);
+                Assert.Equal(string.Empty, InternalCorrelationIdentifier.Env);
             }
 
-            Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-            Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+            Assert.Equal(string.Empty, InternalCorrelationIdentifier.Version);
+            Assert.Equal(string.Empty, InternalCorrelationIdentifier.Env);
         }
 
         [Fact]
         public void Service_DefaultServiceNameIfUnset()
         {
-            var settings = new TracerSettings();
+            var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+                Assert.Equal(InternalCorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
             }
 
-            Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            Assert.Equal(InternalCorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tools.dd_dotnet
     /// This class is just there to expose the ExporterSettings to the integration tests project,
     /// without causing conflicts with the ExporterSettings from the tracer project.
     /// </summary>
-    internal class ToolExporterSettings : ExporterSettings
+    internal class ToolExporterSettings : InternalExporterSettings
     {
         public ToolExporterSettings(IConfigurationSource? configuration)
             : base(configuration)

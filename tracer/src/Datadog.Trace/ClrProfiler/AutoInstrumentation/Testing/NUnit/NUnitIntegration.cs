@@ -64,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             switch (testResult.ResultState.Status)
             {
                 case TestStatus.Skipped or TestStatus.Inconclusive:
-                    test.Close(Internal.Ci.TestStatus.Skip, TimeSpan.Zero, resultMessage);
+                    test.Close(Internal.Ci.InternalTestStatus.Skip, TimeSpan.Zero, resultMessage);
                     break;
                 case TestStatus.Failed:
                     test.SetErrorInfo(exceptionType, resultMessage, testResult.StackTrace);
-                    test.Close(Internal.Ci.TestStatus.Fail);
+                    test.Close(Internal.Ci.InternalTestStatus.Fail);
                     break;
                 default:
                     if (!string.IsNullOrEmpty(resultMessage))
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                         test.SetTag(TestTags.Message, resultMessage);
                     }
 
-                    test.Close(Internal.Ci.TestStatus.Pass);
+                    test.Close(Internal.Ci.InternalTestStatus.Pass);
                     break;
             }
         }
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return testCommand;
         }
 
-        internal static TestModule? GetTestModuleFrom(ITest? test)
+        internal static InternalTestModule? GetTestModuleFrom(ITest? test)
         {
             if (test is null)
             {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (test is not null &&
                 ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
-                moduleObject is TestModule module)
+                moduleObject is InternalTestModule module)
             {
                 return module;
             }
@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return null;
         }
 
-        internal static void SetTestModuleTo(ITest test, TestModule module)
+        internal static void SetTestModuleTo(ITest test, InternalTestModule module)
         {
             if (test.TestType == TestModuleConst)
             {
@@ -239,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
-                var testParameters = new TestParameters();
+                var testParameters = new InternalTestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
                 testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
@@ -303,7 +303,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Skip tests
             if (skipReason is not null)
             {
-                test.Close(Internal.Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+                test.Close(Internal.Ci.InternalTestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
                 return test;
             }
 

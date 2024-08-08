@@ -50,13 +50,13 @@ namespace Datadog.Trace.IntegrationTests
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StatsComputationEnabled = true,
                 ServiceName = "default-service",
                 ServiceVersion = "v1",
                 Environment = "test",
-                Exporter = new ExporterSettings
+                Exporter = new InternalExporterSettings
                 {
                     AgentUri = new Uri($"http://localhost:{agent.Port}"),
                 }
@@ -198,13 +198,13 @@ namespace Datadog.Trace.IntegrationTests
         {
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
-            var settings = new TracerSettings
+            var settings = new InternalTracerSettings
             {
                 StatsComputationEnabled = true,
                 ServiceName = "default-service",
                 ServiceVersion = "v1",
                 Environment = "test",
-                Exporter = new ExporterSettings
+                Exporter = new InternalExporterSettings
                 {
                     AgentUri = new Uri($"http://localhost:{agent.Port}"),
                 }
@@ -355,7 +355,7 @@ namespace Datadog.Trace.IntegrationTests
                 tracesWaitEvent.Set();
             };
 
-            var settings = new TracerSettings(
+            var settings = new InternalTracerSettings(
                 new NameValueConfigurationSource(
                     new()
                     {
@@ -529,7 +529,7 @@ namespace Datadog.Trace.IntegrationTests
                 droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1", "0", "2" });
             }
 
-            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, ImmutableTracerSettings tracerSettings)
+            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, InternalImmutableTracerSettings tracerSettings)
             {
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
                 var span = scope.Span;

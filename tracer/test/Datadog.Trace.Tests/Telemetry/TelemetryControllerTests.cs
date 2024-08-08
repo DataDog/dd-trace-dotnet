@@ -46,7 +46,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -70,7 +70,7 @@ public class TelemetryControllerTests
         var sha = "testCommitSha";
         var repo = "testRepositoryUrl";
         controller.RecordGitMetadata(new GitMetadata(sha, repo));
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -116,7 +116,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
@@ -151,7 +151,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        var settings = new ImmutableTracerSettings(new TracerSettings());
+        var settings = new InternalImmutableTracerSettings(new InternalTracerSettings());
         controller.RecordTracerSettings(settings, "DefaultServiceName");
 
         // Just basic check that we have the same number of config values
@@ -200,7 +200,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var requiredHeartbeats = 10;
@@ -245,7 +245,7 @@ public class TelemetryControllerTests
             transportManager,
             _flushInterval);
 
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         var allData = await WaitForRequestStarted(transport, _timeout);
@@ -290,7 +290,7 @@ public class TelemetryControllerTests
         File.ReadAllText(tempFile).Should().BeNullOrEmpty();
 
         // after starting telemetry
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
+        controller.RecordTracerSettings(new InternalImmutableTracerSettings(new InternalTracerSettings()), "DefaultServiceName");
         controller.Start();
 
         await WaitForRequestStarted(transport, _timeout);

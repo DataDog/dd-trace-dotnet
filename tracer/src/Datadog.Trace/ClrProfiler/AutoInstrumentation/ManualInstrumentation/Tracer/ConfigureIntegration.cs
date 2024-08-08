@@ -42,20 +42,20 @@ public class ConfigureIntegration
 
         // Get the starting point
         var settings = isFromDefaults
-                           ? TracerSettings.FromDefaultSourcesInternal()
-                           : new TracerSettings(null, new ConfigurationTelemetry());
+                           ? InternalTracerSettings.FromDefaultSourcesInternal()
+                           : new InternalTracerSettings(null, new ConfigurationTelemetry());
 
         // Update the settings based on the values they set
         UpdateSettings(values, settings);
 
         // Update the global instance
-        Internal.Tracer.ConfigureInternal(new ImmutableTracerSettings(settings, true));
+        Internal.Tracer.ConfigureInternal(new InternalImmutableTracerSettings(settings, true));
 
         return CallTargetState.GetDefault();
     }
 
     // Internal for testing
-    internal static void UpdateSettings(Dictionary<string, object?> dictionary, TracerSettings tracerSettings)
+    internal static void UpdateSettings(Dictionary<string, object?> dictionary, InternalTracerSettings tracerSettings)
     {
         foreach (var setting in dictionary)
         {
@@ -230,7 +230,7 @@ public class ConfigureIntegration
 #pragma warning restore DD0002
         }
 
-        static void UpdateIntegrations(TracerSettings settings, Dictionary<string, object?[]>? updated)
+        static void UpdateIntegrations(InternalTracerSettings settings, Dictionary<string, object?[]>? updated)
         {
             if (updated is null || updated.Count == 0)
             {

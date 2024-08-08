@@ -1,0 +1,35 @@
+// <copyright file="InternalBenchmarkJobInfo.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+using Datadog;
+
+namespace Datadog.Trace.Internal.Ci;
+
+/// <summary>
+/// Benchmark job info
+/// </summary>
+internal struct InternalBenchmarkJobInfo
+{
+    /// <summary>
+    /// Job description
+    /// </summary>
+    public string? Description;
+
+    /// <summary>
+    /// Job platform
+    /// </summary>
+    public string? Platform;
+
+    /// <summary>
+    /// Job runtime name
+    /// </summary>
+    public string? RuntimeName;
+
+    /// <summary>
+    /// Job runtime moniker
+    /// </summary>
+    public string? RuntimeMoniker;
+}

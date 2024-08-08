@@ -43,7 +43,7 @@ internal static class XUnitIntegration
         var methodParameters = testMethod?.GetParameters();
         if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
         {
-            var testParameters = new TestParameters();
+            var testParameters = new InternalTestParameters();
             testParameters.Metadata = new Dictionary<string, object>();
             testParameters.Arguments = new Dictionary<string, object>();
             testParameters.Metadata[TestTags.MetadataTestName] = runnerInstance.TestCase.DisplayName ?? string.Empty;
@@ -130,7 +130,7 @@ internal static class XUnitIntegration
         // Skip tests
         if (runnerInstance.SkipReason is { } skipReason)
         {
-            test.Close(TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+            test.Close(InternalTestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return null;
         }
 
@@ -157,23 +157,23 @@ internal static class XUnitIntegration
             {
                 if (exception.GetType().Name == "SkipException")
                 {
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, exception.Message);
+                    test.Close(InternalTestStatus.Skip, TimeSpan.Zero, exception.Message);
                 }
                 else
                 {
                     test.SetErrorInfo(exception);
-                    test.Close(TestStatus.Fail, duration);
+                    test.Close(InternalTestStatus.Fail, duration);
                 }
             }
             else
             {
-                test.Close(TestStatus.Pass, duration);
+                test.Close(InternalTestStatus.Pass, duration);
             }
         }
         catch (Exception ex)
         {
             CIVisibility.Log.Warning(ex, "Error finishing test scope");
-            test.Close(TestStatus.Pass);
+            test.Close(InternalTestStatus.Pass);
         }
     }
 

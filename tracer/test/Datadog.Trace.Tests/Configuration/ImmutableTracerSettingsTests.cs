@@ -23,15 +23,15 @@ namespace Datadog.Trace.Tests.Configuration
         // These properties are present on TracerSettings, but not on ImmutableTracerSettings
         private static readonly string[] ExcludedProperties =
         {
-            nameof(TracerSettings.DisabledIntegrationNames),
-            nameof(TracerSettings.DiagnosticSourceEnabled),
-            nameof(TracerSettings.ProfilingEnabledInternal)
+            nameof(InternalTracerSettings.DisabledIntegrationNames),
+            nameof(InternalTracerSettings.DiagnosticSourceEnabled),
+            nameof(InternalTracerSettings.ProfilingEnabledInternal)
         };
 
         [Fact]
         public void OnlyHasReadOnlyProperties()
         {
-            var type = typeof(ImmutableTracerSettings);
+            var type = typeof(InternalImmutableTracerSettings);
 
             using var scope = new AssertionScope();
 
@@ -56,13 +56,13 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void HasSamePropertiesAsTracerSettings()
         {
-            var mutableProperties = typeof(TracerSettings)
+            var mutableProperties = typeof(InternalTracerSettings)
                                    .GetProperties(Flags)
                                    .Where(x => !x.HasAttribute<GeneratePublicApiAttribute>())
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
-            var immutableProperties = typeof(ImmutableTracerSettings)
+            var immutableProperties = typeof(InternalImmutableTracerSettings)
                                      .GetProperties(Flags)
                                      .Select(x => x.Name);
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CopiesTelemetryFromTracerSettings()
         {
             var config = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, config);
+            var tracerSettings = new InternalTracerSettings(NullConfigurationSource.Instance, config);
 
             var immutable = tracerSettings.Build();
             var immutableTelemetry = immutable.Telemetry;
@@ -92,9 +92,9 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DoesntInvokeBuiltInToStringMethod()
         {
-            var settings = new ImmutableTracerSettings(NullConfigurationSource.Instance);
+            var settings = new InternalImmutableTracerSettings(NullConfigurationSource.Instance);
             var result = settings.ToString();
-            result.Should().Be(typeof(ImmutableTracerSettings).FullName);
+            result.Should().Be(typeof(InternalImmutableTracerSettings).FullName);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
             var telemetry = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(source, telemetry);
+            var tracerSettings = new InternalTracerSettings(source, telemetry);
             var immutable = tracerSettings.Build();
 
             var config = immutable
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version" },
             });
 
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new InternalTracerSettings(source);
             var immutableTracerSettings = tracerSettings.Build();
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
             });
 
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new InternalTracerSettings(source);
             var immutableTracerSettings = tracerSettings.Build();
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
             });
 
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new InternalTracerSettings(source);
             var immutableTracerSettings = tracerSettings.Build();
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");

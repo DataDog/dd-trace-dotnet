@@ -528,7 +528,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
         {
-            var settings = new TracerSettings(configSource);
+            var settings = new InternalTracerSettings(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
