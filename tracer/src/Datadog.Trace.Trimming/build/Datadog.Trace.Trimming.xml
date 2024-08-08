@@ -574,7 +574,6 @@
       <type fullname="System.GC" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
-      <type fullname="System.Globalization.NumberFormatInfo" />
       <type fullname="System.Globalization.NumberStyles" />
       <type fullname="System.Guid" />
       <type fullname="System.HashCode" />
