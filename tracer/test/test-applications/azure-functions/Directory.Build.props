@@ -8,6 +8,12 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <LangVersion>latest</LangVersion>
+
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
+
   </PropertyGroup>
 
   <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
