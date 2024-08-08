@@ -30,14 +30,11 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings(
-                new NameValueConfigurationSource(
-                    new NameValueCollection
-                    {
-                        { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
-                        { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
-                    }),
-                new ConfigurationTelemetry());
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
+                { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
+            });
 
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
