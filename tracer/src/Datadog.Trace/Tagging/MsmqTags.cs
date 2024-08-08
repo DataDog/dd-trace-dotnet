@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class MsmqTags : InstrumentationTags
     {
-        public MsmqTags() => SpanKind = SpanKinds.Consumer;
+        public MsmqTags() => SpanKind = InternalSpanKinds.Consumer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MsmqTags"/> class.
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? (SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer) ?
+            get => _peerServiceOverride ?? (SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer) ?
                                                 Host
                                                 : null);
             private set => _peerServiceOverride = value;
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tagging
             {
                 return _peerServiceOverride is not null
                            ? Tags.PeerService
-                           : SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer)
+                           : SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer)
                                ? Tags.OutHost
                                : null;
             }

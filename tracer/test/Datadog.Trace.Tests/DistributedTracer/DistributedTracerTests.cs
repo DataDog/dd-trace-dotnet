@@ -23,19 +23,19 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var distributedTracer = new Mock<IDistributedTracer>();
 
-            var spanContext = new SpanContext(1, 2, SamplingPriority.UserKeep);
+            var spanContext = new InternalSpanContext(1, 2, InternalSamplingPriority.UserKeep);
 
             distributedTracer.Setup(t => t.GetSpanContext()).Returns(spanContext);
             distributedTracer.Setup(t => t.GetRuntimeId()).Returns(Guid.NewGuid().ToString());
 
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
 
-            using var parentScope = Tracer.Instance.StartActive("Parent");
-            using var scope = (Scope)Tracer.Instance.StartActive("Test");
+            using var parentScope = InternalTracer.Instance.StartActive("Parent");
+            using var scope = (Scope)InternalTracer.Instance.StartActive("Test");
 
             distributedTracer.Verify(t => t.GetSpanContext(), Times.Exactly(2));
             scope.Span.TraceId128.Should().Be(spanContext.TraceId128);
-            ((ISpan)scope.Span).TraceId.Should().Be(spanContext.TraceId);
+            ((IInternalSpan)scope.Span).TraceId.Should().Be(spanContext.TraceId);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(spanContext.SamplingPriority);
         }
 
@@ -48,13 +48,13 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
 
-            using (var scope = (Scope)Tracer.Instance.StartActive("Test"))
+            using (var scope = (Scope)InternalTracer.Instance.StartActive("Test"))
             {
                 distributedTracer.Verify(t => t.SetSpanContext(scope.Span.Context), Times.Once);
             }
 
             distributedTracer.Verify(t => t.SetSpanContext(null), Times.Once);
-            distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<SpanContext>()), Times.Exactly(2));
+            distributedTracer.Verify(t => t.SetSpanContext(It.IsAny<InternalSpanContext>()), Times.Exactly(2));
         }
     }
 }

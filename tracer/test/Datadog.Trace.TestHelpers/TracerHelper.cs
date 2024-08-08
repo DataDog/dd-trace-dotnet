@@ -39,7 +39,7 @@ namespace Datadog.Trace.TestHelpers
             return new ScopedTracer(settings, Mock.Of<IAgentWriter>());
         }
 
-        public class ScopedTracer : Tracer, IAsyncDisposable
+        public class ScopedTracer : InternalTracer, IAsyncDisposable
         {
             public ScopedTracer(InternalTracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
                 : base(settings, agentWriter, sampler, scopeManager, statsd)

@@ -32,7 +32,7 @@ public class GetActiveScopeIntegration
         where TTarget : ITracerProxy
     {
         // TODO: Add telemetry for public API?
-        var tracer = (Internal.Tracer)instance.AutomaticTracer;
+        var tracer = (Internal.InternalTracer)instance.AutomaticTracer;
         var scope = tracer.ActiveScope;
 
         return new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>());

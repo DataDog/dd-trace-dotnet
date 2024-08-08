@@ -44,7 +44,7 @@ public class GrpcCallRunCallIntegration
     {
         if (GrpcCoreApiVersionHelper.IsSupported)
         {
-            var scope = GrpcDotNetClientCommon.CreateClientSpan(Tracer.Instance, instance, requestMessage);
+            var scope = GrpcDotNetClientCommon.CreateClientSpan(InternalTracer.Instance, instance, requestMessage);
             return new CallTargetState(scope);
         }
 

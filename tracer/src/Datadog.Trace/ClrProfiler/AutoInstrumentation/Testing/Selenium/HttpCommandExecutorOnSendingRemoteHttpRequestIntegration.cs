@@ -33,12 +33,12 @@ public class HttpCommandExecutorOnSendingRemoteHttpRequestIntegration
         // Remove all IPC http requests to the WebDriver server from tracing
         if (eventArgs.TryDuckCast<ISendingRemoteHttpRequestEventArgsV4Proxy>(out var v4EventArgs))
         {
-            v4EventArgs.AddHeader(HttpHeaderNames.TracingEnabled, "false");
+            v4EventArgs.AddHeader(InternalHttpHeaderNames.TracingEnabled, "false");
         }
         else if (eventArgs.TryDuckCast<ISendingRemoteHttpRequestEventArgsProxy>(out var v3EventArgs) &&
                  v3EventArgs.Request is HttpWebRequest request)
         {
-            request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            request.Headers.Add(InternalHttpHeaderNames.TracingEnabled, "false");
         }
 
         return CallTargetState.GetDefault();

@@ -62,7 +62,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "version" tag
             // Fallback to static instance if no tracer associated with the trace
-            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
+            var tracer = span.Context.TraceContext?.Tracer ?? InternalTracer.Instance;
             if (tracer.Settings.ServiceVersionInternal is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
@@ -191,7 +191,7 @@ namespace Datadog.Trace.Activity
             // Update Type with a reasonable default
             if (string.IsNullOrWhiteSpace(span.Type))
             {
-                span.Type = activity5 is null ? SpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
+                span.Type = activity5 is null ? InternalSpanTypes.Custom : AgentSpanKind2Type(activity5.Kind, span);
             }
 
             // extract any ActivityLinks
@@ -228,22 +228,22 @@ namespace Datadog.Trace.Activity
                 var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
                 var samplingPriority = traceParentSample switch
                 {
-                    true when traceState.SamplingPriority != null && SamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
-                    true => SamplingPriorityValues.AutoKeep,
-                    false when traceState.SamplingPriority != null && SamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
-                    false => SamplingPriorityValues.AutoReject
+                    true when traceState.SamplingPriority != null && InternalSamplingPriorityValues.IsKeep(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    true => InternalSamplingPriorityValues.AutoKeep,
+                    false when traceState.SamplingPriority != null && InternalSamplingPriorityValues.IsDrop(traceState.SamplingPriority.Value) => traceState.SamplingPriority.Value,
+                    false => InternalSamplingPriorityValues.AutoReject
                 };
 
-                if (traceParentSample && SamplingPriorityValues.IsDrop(samplingPriority))
+                if (traceParentSample && InternalSamplingPriorityValues.IsDrop(samplingPriority))
                 {
                     traceTags.SetTag(Tags.Propagated.DecisionMaker, "-0");
                 }
-                else if (!traceParentSample && SamplingPriorityValues.IsKeep(samplingPriority))
+                else if (!traceParentSample && InternalSamplingPriorityValues.IsKeep(samplingPriority))
                 {
                     traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
                 }
 
-                var spanContext = new SpanContext(
+                var spanContext = new InternalSpanContext(
                     newActivityTraceId,
                     newActivitySpanId,
                     samplingPriority: samplingPriority,
@@ -290,11 +290,11 @@ namespace Datadog.Trace.Activity
         internal static string GetSpanKind(ActivityKind activityKind) =>
             activityKind switch
             {
-                ActivityKind.Server => SpanKinds.Server,
-                ActivityKind.Client => SpanKinds.Client,
-                ActivityKind.Producer => SpanKinds.Producer,
-                ActivityKind.Consumer => SpanKinds.Consumer,
-                _ => SpanKinds.Internal,
+                ActivityKind.Server => InternalSpanKinds.Server,
+                ActivityKind.Client => InternalSpanKinds.Client,
+                ActivityKind.Producer => InternalSpanKinds.Producer,
+                ActivityKind.Consumer => InternalSpanKinds.Consumer,
+                _ => InternalSpanKinds.Internal,
             };
 
         internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true)
@@ -560,14 +560,14 @@ namespace Datadog.Trace.Activity
         // See trace agent func spanKind2Type: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L621
         internal static string AgentSpanKind2Type(ActivityKind kind, Span span) => kind switch
         {
-            ActivityKind.Server => SpanTypes.Web,
+            ActivityKind.Server => InternalSpanTypes.Web,
             ActivityKind.Client => span.GetTag("db.system") switch
             {
                 "redis" or "memcached" => "cache",
                 string => "db",
                 _ => "http",
             },
-            _ => SpanTypes.Custom,
+            _ => InternalSpanTypes.Custom,
         };
 
         // This algorithm implements Go function strconv.ParseBool, which the trace agent uses

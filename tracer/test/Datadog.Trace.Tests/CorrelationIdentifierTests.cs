@@ -24,9 +24,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TraceIdSpanId_MatchActiveSpan()
         {
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
+            using (var parentScope = InternalTracer.Instance.StartActive("parent"))
             {
-                using (var childScope = Tracer.Instance.StartActive("child"))
+                using (var childScope = InternalTracer.Instance.StartActive("child"))
                 {
                     Assert.Equal<ulong>(childScope.Span.SpanId, InternalCorrelationIdentifier.SpanId);
                     Assert.Equal<ulong>(childScope.Span.TraceId, InternalCorrelationIdentifier.TraceId);
@@ -37,8 +37,8 @@ namespace Datadog.Trace.Tests
         [Fact(Skip = "This test is not compatible with the xUnit integration. Neither TraceId or SpanId are Zero.")]
         public void TraceIdSpanId_ZeroOutsideActiveSpan()
         {
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = InternalTracer.Instance.StartActive("parent"))
+            using (var childScope = InternalTracer.Instance.StartActive("child"))
             {
                 // Do nothing
             }
@@ -61,10 +61,10 @@ namespace Datadog.Trace.Tests
                 Environment = env
             };
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            InternalTracer.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = InternalTracer.Instance.StartActive("parent"))
+            using (var childScope = InternalTracer.Instance.StartActive("child"))
             {
                 Assert.Equal(service, InternalCorrelationIdentifier.Service);
                 Assert.Equal(version, InternalCorrelationIdentifier.Version);
@@ -81,10 +81,10 @@ namespace Datadog.Trace.Tests
         {
             var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            InternalTracer.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = InternalTracer.Instance.StartActive("parent"))
+            using (var childScope = InternalTracer.Instance.StartActive("child"))
             {
                 Assert.Equal(string.Empty, InternalCorrelationIdentifier.Version);
                 Assert.Equal(string.Empty, InternalCorrelationIdentifier.Env);
@@ -99,15 +99,15 @@ namespace Datadog.Trace.Tests
         {
             var settings = new InternalTracerSettings();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            InternalTracer.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = InternalTracer.Instance.StartActive("parent"))
+            using (var childScope = InternalTracer.Instance.StartActive("child"))
             {
-                Assert.Equal(InternalCorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+                Assert.Equal(InternalCorrelationIdentifier.Service, InternalTracer.Instance.DefaultServiceName);
             }
 
-            Assert.Equal(InternalCorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            Assert.Equal(InternalCorrelationIdentifier.Service, InternalTracer.Instance.DefaultServiceName);
         }
     }
 }

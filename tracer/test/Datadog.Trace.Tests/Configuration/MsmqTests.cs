@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.Configuration
     {
         public static IEnumerable<object[]> GetOperationNameParams()
             => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
-               from spanKind in new[] { SpanKinds.Producer, SpanKinds.Consumer, SpanKinds.Client }
+               from spanKind in new[] { InternalSpanKinds.Producer, InternalSpanKinds.Consumer, InternalSpanKinds.Client }
                select new[] { schemaVersion, spanKind };
 
         [Theory]
@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new InternalTracerSettings(configSourceMock.Object, new ConfigurationTelemetry());
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             MsmqCommon.GetOperationName(tracer, spanKind).Should().Be(GetExpectedOperationName(schemaVersion, spanKind));
         }
@@ -50,9 +50,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             switch (spanKind)
             {
-                case SpanKinds.Producer:
+                case InternalSpanKinds.Producer:
                     return "msmq.send";
-                case SpanKinds.Consumer:
+                case InternalSpanKinds.Consumer:
                     return "msmq.process";
                 default:
                     return MsmqConstants.MsmqCommand;

@@ -32,11 +32,11 @@ namespace Datadog.Trace.ClrProfiler
 
         bool IDistributedTracer.IsChildTracer => true;
 
-        IScope IDistributedTracer.GetActiveScope()
+        IInternalScope IDistributedTracer.GetActiveScope()
         {
             var activeTrace = _parent.GetDistributedTrace();
 
-            if (activeTrace is SpanContext)
+            if (activeTrace is InternalSpanContext)
             {
                 // This is a local trace, no need to mock anything
                 return null;
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                return activeScope.DuckCast<IScope>();
+                return activeScope.DuckCast<IInternalScope>();
             }
             catch (Exception ex)
             {
@@ -63,11 +63,11 @@ namespace Datadog.Trace.ClrProfiler
 
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        InternalSpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
 
-            if (values is SpanContext spanContext)
+            if (values is InternalSpanContext spanContext)
             {
                 return spanContext;
             }

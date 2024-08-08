@@ -851,7 +851,7 @@ namespace Datadog.Trace.Coverage.Collector
                 lock (PadLock)
                 {
                     // Copying the Datadog.Trace assembly
-                    var assembly = typeof(Tracer).Assembly;
+                    var assembly = typeof(InternalTracer).Assembly;
                     var assemblyLocation = assembly.Location;
                     var outputAssemblyDllLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileName(assemblyLocation));
                     var outputAssemblyPdbLocation = Path.Combine(Path.GetDirectoryName(_assemblyFilePath) ?? string.Empty, Path.GetFileNameWithoutExtension(assemblyLocation) + ".pdb");

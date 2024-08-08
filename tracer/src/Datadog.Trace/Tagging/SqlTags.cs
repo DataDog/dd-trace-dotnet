@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tagging
     internal partial class SqlTags : InstrumentationTags
     {
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Client;
+        public override string SpanKind => InternalSpanKinds.Client;
 
         [Tag(Internal.Tags.DbType)]
         public string DbType { get; set; }

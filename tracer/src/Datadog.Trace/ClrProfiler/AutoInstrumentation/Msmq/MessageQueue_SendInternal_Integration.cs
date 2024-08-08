@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             where TMessageQueue : IMessageQueue
         {
             // Given this is an instance method, it's safe to assume instance.Instance is not null
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance, messageQueueTransaction != null || messageQueueTransactionType != MessageQueueTransactionType.None);
+            var scope = MsmqCommon.CreateScope(InternalTracer.Instance, Command, InternalSpanKinds.Producer, instance, messageQueueTransaction != null || messageQueueTransactionType != MessageQueueTransactionType.None);
             return new CallTargetState(scope);
         }
 

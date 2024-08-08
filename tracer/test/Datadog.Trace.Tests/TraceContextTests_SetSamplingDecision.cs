@@ -14,11 +14,11 @@ namespace Datadog.Trace.Tests;
 public class TraceContextTests_SetSamplingDecision
 {
         [Theory]
-        [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default)]
-        [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate)]
-        [InlineData(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule)]
-        [InlineData(SamplingPriorityValues.UserReject, SamplingMechanism.Manual)]
-        [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm)]
+        [InlineData(InternalSamplingPriorityValues.AutoKeep, SamplingMechanism.Default)]
+        [InlineData(InternalSamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate)]
+        [InlineData(InternalSamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule)]
+        [InlineData(InternalSamplingPriorityValues.UserReject, SamplingMechanism.Manual)]
+        [InlineData(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm)]
         public void SetSamplingDecision(int samplingPriority, int samplingMechanism)
         {
             var tracer = new Mock<IDatadogTracer>();
@@ -43,12 +43,12 @@ public class TraceContextTests_SetSamplingDecision
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
-            traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
+            traceContext.SamplingPriority.Should().Be(InternalSamplingPriorityValues.AutoKeep);
             traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
-            traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+            traceContext.SamplingPriority.Should().Be(InternalSamplingPriorityValues.UserKeep);
             traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
         }
 
@@ -58,16 +58,16 @@ public class TraceContextTests_SetSamplingDecision
             var tracer = new Mock<IDatadogTracer>();
             var traceContext = new TraceContext(tracer.Object);
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
-            traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep, SamplingMechanism.AgentRate);
+            traceContext.SamplingPriority.Should().Be(InternalSamplingPriorityValues.AutoKeep);
             traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.AgentRate}");
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-            traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserReject);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            traceContext.SamplingPriority.Should().Be(InternalSamplingPriorityValues.UserReject);
             traceContext.Tags.GetTag("_dd.p.dm").Should().BeNull();
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            traceContext.SamplingPriority.Should().Be(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            traceContext.SamplingPriority.Should().Be(InternalSamplingPriorityValues.UserKeep);
             traceContext.Tags.GetTag("_dd.p.dm").Should().Be($"-{SamplingMechanism.Asm}");
         }
 }

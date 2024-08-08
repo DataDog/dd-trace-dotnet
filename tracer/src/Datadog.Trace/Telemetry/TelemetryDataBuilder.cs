@@ -196,7 +196,7 @@ internal class TelemetryDataBuilder
         return new TelemetryData(
             requestType: requestType,
             tracerTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            runtimeId: Tracer.RuntimeId,
+            runtimeId: InternalTracer.RuntimeId,
             seqId: sequence,
             application: application,
             host: host,
@@ -217,7 +217,7 @@ internal class TelemetryDataBuilder
         return new TelemetryData(
             requestType: TelemetryRequestTypes.MessageBatch,
             tracerTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            runtimeId: Tracer.RuntimeId,
+            runtimeId: InternalTracer.RuntimeId,
             seqId: sequence,
             application: application,
             host: host,

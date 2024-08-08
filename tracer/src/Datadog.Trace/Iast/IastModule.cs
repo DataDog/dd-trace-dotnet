@@ -375,7 +375,7 @@ internal static partial class IastModule
         if (Iast.Instance.Settings.Enabled)
         {
             // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+            AddVulnerabilityAsSingleSpan(InternalTracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
         }
     }
 
@@ -384,7 +384,7 @@ internal static partial class IastModule
         if (Iast.Instance.Settings.Enabled)
         {
             // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
+            AddVulnerabilityAsSingleSpan(InternalTracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
         }
     }
 
@@ -406,7 +406,7 @@ internal static partial class IastModule
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
+        AddVulnerabilityAsSingleSpan(InternalTracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose();
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)
@@ -423,7 +423,7 @@ internal static partial class IastModule
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability).SingleSpan?.Dispose();
+        AddVulnerabilityAsSingleSpan(InternalTracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability).SingleSpan?.Dispose();
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
@@ -525,7 +525,7 @@ internal static partial class IastModule
             return null;
         }
 
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var currentSpan = (InternalTracer.Instance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         return traceContext?.IastRequestContext;
     }
@@ -538,7 +538,7 @@ internal static partial class IastModule
     // This method adds web vulnerabilities, with no location, only on web environments
     private static IastModuleResponse AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
-        var tracer = Tracer.Instance;
+        var tracer = InternalTracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
@@ -564,7 +564,7 @@ internal static partial class IastModule
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             traceContext.Tags.SetTag(Tags.Propagated.AppSec, "1");
 
             return IastModuleResponse.Vulnerable;
@@ -575,15 +575,15 @@ internal static partial class IastModule
 
     public static bool AddRequestVulnerabilitiesAllowed()
     {
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var currentSpan = (InternalTracer.Instance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        var isRequest = traceContext?.RootSpan?.Type == InternalSpanTypes.Web;
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
     private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, SecureMarks exclusionSecureMarks = SecureMarks.None)
     {
-        var tracer = Tracer.Instance;
+        var tracer = InternalTracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
@@ -593,7 +593,7 @@ internal static partial class IastModule
         var scope = tracer.ActiveScope as Scope;
         var currentSpan = scope?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
-        var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
+        var isRequest = traceContext?.RootSpan?.Type == InternalSpanTypes.Web;
 
         // We do not have, for now, tainted objects in console apps, so further checking is not neccessary.
         if (!isRequest && taintValidator != null)
@@ -639,7 +639,7 @@ internal static partial class IastModule
         {
             if (isRequest)
             {
-                traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+                traceContext?.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
@@ -665,7 +665,7 @@ internal static partial class IastModule
         return new Location(frameInfo.StackFrame, currentSpanId);
     }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(InternalTracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
@@ -677,7 +677,7 @@ internal static partial class IastModule
         return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
     }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(InternalTracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
@@ -685,7 +685,7 @@ internal static partial class IastModule
         return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
     }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(InternalTracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
     {
         var tags = new IastTags()
         {
@@ -694,9 +694,9 @@ internal static partial class IastModule
         };
 
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        scope.Span.Type = SpanTypes.IastVulnerability;
+        scope.Span.Type = InternalSpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-        scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+        scope.Span.Context.TraceContext?.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         scope.Span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
         return new IastModuleResponse(scope);
     }

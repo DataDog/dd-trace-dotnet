@@ -51,7 +51,7 @@ public class GrpcDotNetTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = await RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
 

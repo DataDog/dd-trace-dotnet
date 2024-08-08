@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
-        public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
+        public static Scope CreateScope<TTarget>(InternalTracer tracer, TTarget target)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                     tags.SetName = hasStatement.Statement.SetName;
                 }
 
-                span.Type = SpanTypes.Aerospike;
+                span.Type = InternalSpanTypes.Aerospike;
                 span.ResourceName = ExtractResourceName(target.GetType());
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);

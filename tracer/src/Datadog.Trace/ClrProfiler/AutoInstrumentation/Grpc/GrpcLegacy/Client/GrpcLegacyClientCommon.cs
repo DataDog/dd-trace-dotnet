@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         private static readonly ConditionalWeakTable<object, string> ChannelToHostMap = new();
 
         public static Scope? CreateClientSpan(
-            Tracer tracer,
+            InternalTracer tracer,
             in CallInvocationDetailsStruct callInvocationDetails,
             in StatusStruct receivedStatus)
         {
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     serviceName: serviceName,
                     startTime: startTime);
 
-                span.Type = SpanTypes.Grpc;
+                span.Type = InternalSpanTypes.Grpc;
                 span.ResourceName = methodFullName;
 
                 span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             return scope;
         }
 
-        public static void InjectHeaders<TMethod, TCallOptions>(Tracer tracer, TMethod method, ref TCallOptions callOptionsInstance)
+        public static void InjectHeaders<TMethod, TCallOptions>(InternalTracer tracer, TMethod method, ref TCallOptions callOptionsInstance)
             where TMethod : IMethod
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || callOptionsInstance is null)
@@ -179,7 +179,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             return normalizedHost;
         }
 
-        private static void AddTemporaryHeaders(IMetadata metadata, int grpcType, string? methodName, string? serviceName, DateTimeOffset startTime, ISpanContext? parentContext)
+        private static void AddTemporaryHeaders(IMetadata metadata, int grpcType, string? methodName, string? serviceName, DateTimeOffset startTime, IInternalSpanContext? parentContext)
         {
             metadata.Add(TemporaryHeaders.MethodKind, GrpcCommon.GetGrpcMethodKind(grpcType));
             if (methodName is not null)
@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
-                var parentService = parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName;
+                var parentService = parentContext is InternalSpanContext s ? s.ServiceNameInternal : parentContext.ServiceName;
                 if (parentService is not null)
                 {
                     metadata.Add(TemporaryHeaders.ParentService, parentService);
@@ -211,7 +211,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             out string? methodName,
             out string? serviceName,
             out DateTimeOffset startTime,
-            out ISpanContext? parentContext)
+            out IInternalSpanContext? parentContext)
         {
             // These should always be available
             var deserializedMethodKind = metadata.Get(TemporaryHeaders.MethodKind)?.DuckCast<MetadataEntryStruct>().Value;
@@ -237,12 +237,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 var parentService = metadata.Get(TemporaryHeaders.ParentService)?.DuckCast<MetadataEntryStruct>().Value;
                 if (!string.IsNullOrEmpty(parentService) && ulong.TryParse(parentIdString, out var parentId))
                 {
-                    parentContext = new ReadOnlySpanContext(traceId, parentId, parentService);
+                    parentContext = new InternalReadOnlySpanContext(traceId, parentId, parentService);
                 }
             }
         }
 
-        private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
+        private static Span CreateInactiveSpan(InternalTracer tracer, string? methodFullName)
         {
             var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
             var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
@@ -251,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
             var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
-            span.Type = SpanTypes.Grpc;
+            span.Type = InternalSpanTypes.Grpc;
             span.ResourceName = methodFullName;
 
             return span;

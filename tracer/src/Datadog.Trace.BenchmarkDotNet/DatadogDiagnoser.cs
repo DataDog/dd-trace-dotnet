@@ -209,7 +209,7 @@ public class DatadogDiagnoser : IDiagnoser
     private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig)
     {
         BenchmarkMetadata.GetIds(parameters.BenchmarkCase, out var traceId, out var spanId);
-        var tracer = Tracer.Instance;
+        var tracer = InternalTracer.Instance;
         var environment = parameters.Process.StartInfo.Environment;
         if (!environment.TryGetValue(ConfigurationKeys.ServiceName, out _))
         {

@@ -34,13 +34,13 @@ public class SpanMessagePackFormatterTests
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
 
-        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+        var parentContext = new InternalSpanContext(new TraceId(0, 1), 2, (int)InternalSamplingPriority.UserKeep, "ServiceName1", "origin1");
 
         var spans = new[]
         {
             new Span(parentContext, DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+            new Span(new InternalSpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new InternalSpanContext(new TraceId(0, 5), 6, (int)InternalSamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
 
         spans[1].Tags.SetTag("Tag1", "Value1");
@@ -129,13 +129,13 @@ public class SpanMessagePackFormatterTests
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
 
-        var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
+        var parentContext = new InternalSpanContext(new TraceId(0, 1), 2, (int)InternalSamplingPriority.UserKeep, "ServiceName1", "origin1");
 
         var spans = new[]
         {
             new Span(parentContext, DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
-            new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
+            new Span(new InternalSpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new InternalSpanContext(new TraceId(0, 5), 6, (int)InternalSamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
         var attributesToAdd = new List<KeyValuePair<string, string>>
         {
@@ -212,7 +212,7 @@ public class SpanMessagePackFormatterTests
         var mockApi = new MockApi();
         var settings = InternalTracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+        var tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
         {
@@ -253,7 +253,7 @@ public class SpanMessagePackFormatterTests
         var mockApi = new MockApi();
         var settings = InternalTracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
         var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+        var tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (var scope = tracer.StartActiveInternal("root"))
         {

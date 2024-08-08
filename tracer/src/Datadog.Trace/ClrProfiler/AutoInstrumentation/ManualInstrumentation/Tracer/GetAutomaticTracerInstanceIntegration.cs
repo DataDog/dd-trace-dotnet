@@ -29,6 +29,6 @@ public class GetAutomaticTracerInstanceIntegration
     internal static CallTargetReturn<object> OnMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
     {
         // Used by Datadog.Trace.Manual.Tracer.Instance to create a new Datadog.Trace.Manual.Tracer instance
-        return new CallTargetReturn<object>(Internal.Tracer.Instance);
+        return new CallTargetReturn<object>(Internal.InternalTracer.Instance);
     }
 }

@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // The current span should be started in KafkaProduceSyncIntegration.OnMethodBegin
                 // The OnMethodBegin and OnMethodEnd of this integration happens between KafkaProduceSyncIntegration.OnMethodBegin
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
-                var activeScope = Tracer.Instance?.InternalActiveScope;
+                var activeScope = InternalTracer.Instance?.InternalActiveScope;
                 var span = activeScope?.Span;
                 if (span is null)
                 {
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                         if (!isError)
                         {
-                            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                            var dataStreams = InternalTracer.Instance.TracerManager.DataStreamsManager;
                             dataStreams.TrackBacklog(
                                 $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce",
                                 report.Offset.Value);

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior)
         {
-            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(InternalTracer.Instance, (IDbCommand)instance));
         }
 
         /// <summary>

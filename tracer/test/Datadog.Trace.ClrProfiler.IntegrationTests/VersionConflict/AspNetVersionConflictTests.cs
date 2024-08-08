@@ -150,20 +150,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             var httpSpans = spans.Where(s => s.Name == "http.request");
             httpSpans.Should()
                 .HaveCount(2)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserReject);
 
             // Check that the sampling priority got propagated to the target service
             var targetSpans = spans.Where(s => s.Name == "aspnet.request" && s.ParentId != null);
             targetSpans.Should()
                 .HaveCount(2)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
-                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserReject);
 
             // The sampling priority for the root trace should be UserReject
             // Depending on the parentTrace argument, the root trace is either the manual one or the automatic one
             var rootTrace = parentTrace ? rootTraces.Single() : rootTraces.First(s => s.Name == "Manual");
-            rootTrace.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
+            rootTrace.Metrics[Metrics.SamplingPriority].Should().Be((double)InternalSamplingPriority.UserReject);
         }
 
         [SkippableFact]
@@ -194,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             var rootSpan = spans.Single(s => s.Name == "aspnet.request");
 
-            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, SamplingPriorityValues.UserKeep));
+            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, InternalSamplingPriorityValues.UserKeep));
 
             var result = JObject.Parse(content);
 

@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return null;
             }
 
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             try
             {
-                SpanContext? propagatedContext = null;
+                InternalSpanContext? propagatedContext = null;
                 string? host = null;
                 string? userAgent = null;
                 string? httpMethod = null;
@@ -190,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return action;
             }
 
-            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            if (InternalTracer.Instance.Settings.WcfObfuscationEnabled)
             {
                 return UriHelpers.GetCleanUriPath(requestHeaders?.To?.LocalPath);
             }

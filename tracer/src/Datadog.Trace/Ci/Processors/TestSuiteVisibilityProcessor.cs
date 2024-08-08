@@ -57,7 +57,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
 
         // If we are not in agentless we remove the spans for Suite, Module and Session
         // The reason to do this is because those spans are not supported in the APM intake.
-        return span.Type is SpanTypes.TestSuite or SpanTypes.TestModule or SpanTypes.TestSession ? null : span;
+        return span.Type is InternalSpanTypes.TestSuite or InternalSpanTypes.TestModule or InternalSpanTypes.TestSession ? null : span;
     }
 
     public ITagProcessor GetTagProcessor()

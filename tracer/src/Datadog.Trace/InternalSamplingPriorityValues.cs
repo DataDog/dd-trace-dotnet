@@ -1,4 +1,4 @@
-// <copyright file="SamplingPriorityValues.cs" company="Datadog">
+// <copyright file="InternalSamplingPriorityValues.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Globalization;
 
 namespace Datadog.Trace.Internal
 {
-    internal static class SamplingPriorityValues
+    internal static class InternalSamplingPriorityValues
     {
         /// <summary>
         /// The default sampling priority used when there is no sampler available

@@ -17,7 +17,7 @@ namespace Datadog.Trace.Tagging
         private const string TriggerTypeTagName = Tags.AzureFunctionTriggerType;
 
         [Tag(Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Server;
+        public override string SpanKind => InternalSpanKinds.Server;
 
         [Tag(Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;

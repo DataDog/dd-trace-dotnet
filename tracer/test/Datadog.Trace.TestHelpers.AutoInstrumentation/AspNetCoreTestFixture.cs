@@ -29,8 +29,8 @@ namespace Datadog.Trace.TestHelpers
         public AspNetCoreTestFixture()
         {
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
+            _httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
+            _httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.UserAgent, "testhelper");
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName1WithMapping, TracingHeaderValue1);
             _httpClient.DefaultRequestHeaders.Add(TracingHeaderName2, TracingHeaderValue2);
 

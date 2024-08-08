@@ -115,7 +115,7 @@ namespace Datadog.Trace.Propagators
             Sampled = 1,
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(InternalSpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
@@ -131,10 +131,10 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static string CreateTraceParentHeader(SpanContext context)
+        internal static string CreateTraceParentHeader(InternalSpanContext context)
         {
-            var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
-            var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
+            var samplingPriority = context.GetOrMakeSamplingDecision() ?? InternalSamplingPriorityValues.Default;
+            var sampled = InternalSamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
 
 #if NET6_0_OR_GREATER
             return string.Create(null, stackalloc char[128], $"00-{context.RawTraceId}-{context.RawSpanId}-{sampled}");
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Propagators
 #endif
         }
 
-        internal static string CreateTraceStateHeader(SpanContext context)
+        internal static string CreateTraceStateHeader(InternalSpanContext context)
         {
             var sb = StringBuilderCache.Acquire(100);
 
@@ -154,7 +154,7 @@ namespace Datadog.Trace.Propagators
                 // sampling priority ("s:<value>")
                 if (context.GetOrMakeSamplingDecision() is { } samplingPriority)
                 {
-                    sb.Append("s:").Append(SamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
+                    sb.Append("s:").Append(InternalSamplingPriorityValues.ToString(samplingPriority)).Append(TraceStateDatadogPairsSeparator);
                 }
 
                 // origin ("o:<value>")
@@ -593,7 +593,7 @@ namespace Datadog.Trace.Propagators
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
             TCarrierGetter carrierGetter,
-            [NotNullWhen(true)] out SpanContext? spanContext)
+            [NotNullWhen(true)] out InternalSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -620,9 +620,9 @@ namespace Datadog.Trace.Propagators
             var samplingPriority = traceParent.Sampled switch
             {
                 true when traceState.SamplingPriority is > 0 => traceState.SamplingPriority.Value,
-                true => SamplingPriorityValues.AutoKeep,
+                true => InternalSamplingPriorityValues.AutoKeep,
                 false when traceState.SamplingPriority is <= 0 => traceState.SamplingPriority.Value,
-                false => SamplingPriorityValues.AutoReject,
+                false => InternalSamplingPriorityValues.AutoReject,
             };
 
             var traceTags = TagPropagation.ParseHeader(traceState.PropagatedTags);
@@ -636,7 +636,7 @@ namespace Datadog.Trace.Propagators
                 traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
             }
 
-            spanContext = new SpanContext(
+            spanContext = new InternalSpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,

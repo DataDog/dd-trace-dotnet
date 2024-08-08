@@ -17,7 +17,7 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class OriginTagSendTraces
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
         private readonly MockApi _testApi;
 
         public OriginTagSendTraces()
@@ -25,7 +25,7 @@ namespace Datadog.Trace.IntegrationTests
             var settings = new InternalTracerSettings();
             _testApi = new MockApi();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [SkippableFact]

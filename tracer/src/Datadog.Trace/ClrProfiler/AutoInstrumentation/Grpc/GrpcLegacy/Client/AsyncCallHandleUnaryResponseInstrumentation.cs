@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         {
             // receivedStatus can change in the middle of this method, so we need to wait for the method to finish,
             // to grab the final status.
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 // using CreateFrom to avoid boxing ClientSideStatus struct

@@ -194,11 +194,11 @@ namespace Datadog.Trace.Tests.Sampling
 
                 var decision = sampler.MakeSamplingDecision(scope.Span);
 
-                if (decision.Priority == SamplingPriorityValues.AutoKeep)
+                if (decision.Priority == InternalSamplingPriorityValues.AutoKeep)
                 {
                     autoKeeps++;
                 }
-                else if (decision.Priority == SamplingPriorityValues.UserKeep)
+                else if (decision.Priority == InternalSamplingPriorityValues.UserKeep)
                 {
                     userKeeps++;
                 }

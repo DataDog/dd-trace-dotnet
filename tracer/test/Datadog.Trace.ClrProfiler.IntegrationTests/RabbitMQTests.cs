@@ -38,9 +38,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
-                SpanKinds.Consumer => span.IsRabbitMQInbound(metadataSchemaVersion),
-                SpanKinds.Producer => span.IsRabbitMQOutbound(metadataSchemaVersion),
-                SpanKinds.Client => span.IsRabbitMQAdmin(metadataSchemaVersion),
+                InternalSpanKinds.Consumer => span.IsRabbitMQInbound(metadataSchemaVersion),
+                InternalSpanKinds.Producer => span.IsRabbitMQOutbound(metadataSchemaVersion),
+                InternalSpanKinds.Client => span.IsRabbitMQAdmin(metadataSchemaVersion),
                 _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the RabbitMQ integration: {span.Tags["span.kind"]}", nameof(span)),
             };
 

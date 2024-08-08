@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), IntegrationId.HttpMessageHandler, out _))
             {
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, "GET", null, IntegrationId.HttpMessageHandler, out _))
             {
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var settings = InternalTracerSettings.Create(dictionary);
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             const string method = "GET";
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             const string method = "GET";
             const string url = "http://www.contoso.com";
@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Manually create a span decorated with HTTP information
             using (var manualScope = tracer.StartActive("http.request"))
             {
-                manualScope.Span.Type = SpanTypes.Http;
+                manualScope.Span.Type = InternalSpanTypes.Http;
                 manualScope.Span.ResourceName = $"{method} {url}";
                 manualScope.Span.ServiceName = $"{tracer.DefaultServiceName}-http-client";
 

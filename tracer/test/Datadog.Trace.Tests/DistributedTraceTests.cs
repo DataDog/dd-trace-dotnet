@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
             ulong traceId;
             ulong parentSpanId;
             string samplingPriorityText;
-            var expectedSamplingPriority = SamplingPriorityValues.UserKeep;
+            var expectedSamplingPriority = InternalSamplingPriorityValues.UserKeep;
 
             using (var scope = tracer.StartActive("manual.trace"))
             {
@@ -34,9 +34,9 @@ namespace Datadog.Trace.Tests
                 }
             }
 
-            var distributedTraceContext = new SpanContext(traceId, parentSpanId);
+            var distributedTraceContext = new InternalSpanContext(traceId, parentSpanId);
             await using var secondTracer = TracerHelper.CreateWithFakeAgent();
-            var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
+            var spanCreationSettings = new InternalSpanCreationSettings() { Parent = distributedTraceContext };
 
             using (var scope = secondTracer.StartActive("manual.trace", spanCreationSettings))
             {

@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ex
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SpanExtensionsSetTraceSamplingPriorityIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, SamplingPriority samplingPriority)
+    internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, InternalSamplingPriority samplingPriority)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
 

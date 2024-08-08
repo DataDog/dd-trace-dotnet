@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IMessage msg, ITransportHeaders requestHeaders, Stream requestStream, ref ITransportHeaders responseHeaders, ref Stream responseStream)
         {
             // Create a new trace_id/span_id for the child WebRequest span
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
             {
                 // If we create a scope, we can update the following attributes in other automatic instrumentation methods:

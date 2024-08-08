@@ -85,7 +85,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(InternalTracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="InternalTracer(Datadog.Trace.Internal.Configuration.InternalTracerSettings,Datadog.Trace.Agent.IAgentWriter,Datadog.Trace.Sampling.ITraceSampler,Datadog.Trace.IScopeManager,Datadog.Trace.Vendors.StatsdClient.IDogStatsd,Datadog.Trace.Telemetry.ITelemetryController,Datadog.Trace.Agent.DiscoveryService.IDiscoveryService)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             InternalImmutableTracerSettings settings,
@@ -409,7 +409,7 @@ namespace Datadog.Trace
                 $"lang_interpreter:{FrameworkDescription.Instance.Name}",
                 $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
                 $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
+                $"{Tags.RuntimeId}:{InternalTracer.RuntimeId}"
             };
 
             if (customTagCount > 0)

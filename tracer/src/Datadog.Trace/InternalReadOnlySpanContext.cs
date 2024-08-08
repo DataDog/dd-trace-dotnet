@@ -1,13 +1,13 @@
-// <copyright file="ReadOnlySpanContext.cs" company="Datadog">
+// <copyright file="InternalReadOnlySpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 namespace Datadog.Trace.Internal
 {
-    internal class ReadOnlySpanContext : ISpanContext
+    internal class InternalReadOnlySpanContext : IInternalSpanContext
     {
-        public ReadOnlySpanContext(TraceId traceId, ulong spanId, string serviceName)
+        public InternalReadOnlySpanContext(TraceId traceId, ulong spanId, string serviceName)
         {
             TraceId128 = traceId;
             SpanId = spanId;
@@ -17,7 +17,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets the lower 64 bits of the 128-bit trace identifier.
         /// </summary>
-        ulong ISpanContext.TraceId => TraceId128.Lower;
+        ulong IInternalSpanContext.TraceId => TraceId128.Lower;
 
         /// <summary>
         /// Gets the 128-bit trace identifier.

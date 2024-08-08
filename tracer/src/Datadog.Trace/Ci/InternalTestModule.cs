@@ -169,15 +169,15 @@ internal sealed class InternalTestModule
         // Check if Intelligent Test Runner has skippable tests and set the flag according to that
         tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
 
-        var span = Tracer.Instance.StartSpan(
+        var span = InternalTracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
-        span.Type = SpanTypes.TestModule;
+        span.Type = InternalSpanTypes.TestModule;
         span.ResourceName = name;
-        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.ModuleId = span.SpanId;

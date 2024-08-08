@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tagging
         // though the RabbitMQ integration should use the constructor that takes a spanKind
         // so the setter is only invoked once
         public RabbitMQTags()
-            : this(SpanKinds.Client)
+            : this(InternalSpanKinds.Client)
         {
         }
 
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tagging
             {
                 return _peerServiceOverride is not null
                            ? Tags.PeerService
-                           : SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer)
+                           : SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer)
                                ? Tags.OutHost
                                : null;
             }

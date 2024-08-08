@@ -34,7 +34,7 @@ public class AASTagsTests
         var source = GetMockVariables();
         var settings = new InternalTracerSettings(source);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
         {
@@ -51,7 +51,7 @@ public class AASTagsTests
     {
         var settings = new InternalTracerSettings(null);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
         {
@@ -75,12 +75,12 @@ public class AASTagsTests
         var source = GetMockVariables();
         var settings = new InternalTracerSettings(source);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
         using (var scope1 = tracer.StartActive("1"))
         {

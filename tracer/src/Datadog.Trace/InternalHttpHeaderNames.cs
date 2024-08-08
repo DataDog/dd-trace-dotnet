@@ -1,4 +1,4 @@
-// <copyright file="HttpHeaderNames.cs" company="Datadog">
+// <copyright file="InternalHttpHeaderNames.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ namespace Datadog.Trace.Internal
     /// <summary>
     /// Names of HTTP headers that can be used tracing inbound or outbound HTTP requests.
     /// </summary>
-    public static class HttpHeaderNames
+    public static class InternalHttpHeaderNames
     {
         /// <summary>
         /// ID of a distributed trace.

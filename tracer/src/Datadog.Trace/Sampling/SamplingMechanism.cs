@@ -17,21 +17,21 @@ internal static class SamplingMechanism
     /// <summary>
     /// Sampling decision was made using the default mechanism. Used before the tracer
     /// receives any rates from agent and there are no rules configured.
-    /// The only available sampling priority <see cref="SamplingPriorityValues.AutoKeep"/> (1).
+    /// The only available sampling priority <see cref="InternalSamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int Default = 0;
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the Agent.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
-    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.AutoReject"/> (0)
+    /// and <see cref="InternalSamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int AgentRate = 1;
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the backend.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
-    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.AutoReject"/> (0)
+    /// and <see cref="InternalSamplingPriorityValues.AutoKeep"/> (1).
     /// (Reserved for future use.)
     /// </summary>
     [Obsolete("This value is reserved for future use.")]
@@ -40,28 +40,28 @@ internal static class SamplingMechanism
     /// <summary>
     /// A sampling decision was made using a trace sampling rule or
     /// the global trace sampling rate configured by the user on the tracer.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
-    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int LocalTraceSamplingRule = 3;
 
     /// <summary>
     /// A sampling decision was made manually by the user.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
-    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int Manual = 4;
 
     /// <summary>
     /// A sampling decision was made by ASM (formerly AppSec), probably due to a security event.
-    /// The sampling priority is always <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The sampling priority is always <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int Asm = 5;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by the user.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
-    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// (Reserved for future use.)
     /// </summary>
     [Obsolete("This value is reserved for future use.")]
@@ -76,7 +76,7 @@ internal static class SamplingMechanism
 
     /// <summary>
     /// A sampling decision was made using a span sampling rule configured by the user on the tracer.
-    /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The only available sampling priority is <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int SpanSamplingRule = 8;
 
@@ -94,16 +94,16 @@ internal static class SamplingMechanism
     /// <summary>
     /// A sampling decision was made using a trace sampling rule that was configured remotely by the user
     /// and sent via remote configuration (RCM).
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
-    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int RemoteUserSamplingRule = 11;
 
     /// <summary>
     /// A sampling decision was made using a trace sampling rule that was computed remotely by Datadog
     /// and sent via remote configuration (RCM).
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
-    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="InternalSamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="InternalSamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int RemoteAdaptiveSamplingRule = 12;
 

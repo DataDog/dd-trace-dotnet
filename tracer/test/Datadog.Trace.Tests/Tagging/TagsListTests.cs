@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Tagging
 {
     public class TagsListTests
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
         private readonly MockApi _testApi;
 
         public TagsListTests()
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Tagging
             var settings = new InternalTracerSettings();
             _testApi = new MockApi();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
-            deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
+            deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, InternalTracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(SamplingMechanism.Default));
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
-            deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
+            deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, InternalTracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
@@ -209,7 +209,7 @@ namespace Datadog.Trace.Tests.Tagging
             using (var scope = _tracer.StartActiveInternal("root", serviceName: "service1", tags: tags))
             {
                 // Read only property, so shouldn't be able to set it
-                tags.SetTag(Tags.SpanKind, SpanKinds.Client);
+                tags.SetTag(Tags.SpanKind, InternalSpanKinds.Client);
             }
 
             await _tracer.FlushAsync();
@@ -217,7 +217,7 @@ namespace Datadog.Trace.Tests.Tagging
             var traceChunks = _testApi.Wait(TimeSpan.FromSeconds(20));
 
             var deserializedSpan = traceChunks.Should().ContainSingle().Which.Should().ContainSingle().Subject;
-            deserializedSpan.Tags.Should().Contain(Tags.SpanKind, SpanKinds.Server);
+            deserializedSpan.Tags.Should().Contain(Tags.SpanKind, InternalSpanKinds.Server);
         }
 
         [Fact]
@@ -235,11 +235,11 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Theory]
-        [InlineData(SpanKinds.Client)]
-        [InlineData(SpanKinds.Server)]
-        [InlineData(SpanKinds.Producer)]
-        [InlineData(SpanKinds.Consumer)]
-        [InlineData(SpanKinds.Internal)]
+        [InlineData(InternalSpanKinds.Client)]
+        [InlineData(InternalSpanKinds.Server)]
+        [InlineData(InternalSpanKinds.Producer)]
+        [InlineData(InternalSpanKinds.Consumer)]
+        [InlineData(InternalSpanKinds.Internal)]
         [InlineData("other")]
         public async Task Serialize_LanguageTag_AutomaticInstrumentation(string spanKind)
         {

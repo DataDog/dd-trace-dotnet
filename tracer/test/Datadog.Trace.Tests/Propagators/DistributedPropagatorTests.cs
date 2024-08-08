@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Propagators;
 
 public class DistributedPropagatorTests
 {
-    private const int SamplingPriority = SamplingPriorityValues.UserReject;
+    private const int SamplingPriority = InternalSamplingPriorityValues.UserReject;
     private const string Origin = "origin";
     private const string PropagatedTagsString = "_dd.p.key1=value1,_dd.p.key2=value2";
     private const string AdditionalW3CTraceState = "key3=value3,key4=value4";
@@ -143,8 +143,8 @@ public class DistributedPropagatorTests
         traceContext.AdditionalW3CTraceState = AdditionalW3CTraceState;
 
         // create and populate SpanContext
-        IReadOnlyDictionary<string, string> context = new SpanContext(
-            parent: SpanContext.None,
+        IReadOnlyDictionary<string, string> context = new InternalSpanContext(
+            parent: InternalSpanContext.None,
             traceContext,
             serviceName: null,
             TraceId,

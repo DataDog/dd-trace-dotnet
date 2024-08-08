@@ -467,9 +467,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                                   .Subject;
 
             AssertTagHasValue(parentSpan, Tags.InstrumentationName, "aspnet_core");
-            parentSpan.Type.Should().Be(SpanTypes.Web);
+            parentSpan.Type.Should().Be(InternalSpanTypes.Web);
             parentSpan.ResourceName.Should().Be(resourceName);
-            AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
+            AssertTagHasValue(parentSpan, Tags.SpanKind, InternalSpanKinds.Server);
             AssertTagHasValue(parentSpan, Tags.HttpStatusCode, ((int)statusCode).ToString());
             parentSpan.Error.Should().Be(isError);
 
@@ -488,9 +488,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 var childSpan = trace.First(x => x.OperationName == "aspnet_core_mvc.request");
 
                 AssertTagHasValue(childSpan, Tags.InstrumentationName, "aspnet_core");
-                childSpan.Type.Should().Be(SpanTypes.Web);
+                childSpan.Type.Should().Be(InternalSpanTypes.Web);
                 childSpan.ResourceName.Should().Be(childSpan1ResourceName ?? resourceName);
-                AssertTagHasValue(childSpan, Tags.SpanKind, SpanKinds.Server);
+                AssertTagHasValue(childSpan, Tags.SpanKind, InternalSpanKinds.Server);
 
                 if (firstChildSpanTags is not null)
                 {
@@ -506,9 +506,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                     childSpan2.Should().NotBe(childSpan);
 
                     AssertTagHasValue(childSpan2, Tags.InstrumentationName, "aspnet_core");
-                    childSpan2.Type.Should().Be(SpanTypes.Web);
+                    childSpan2.Type.Should().Be(InternalSpanTypes.Web);
                     childSpan2.ResourceName.Should().Be(childSpan2ResourceName);
-                    AssertTagHasValue(childSpan2, Tags.SpanKind, SpanKinds.Server);
+                    AssertTagHasValue(childSpan2, Tags.SpanKind, InternalSpanKinds.Server);
 
                     if (secondChildSpanTags is not null)
                     {
@@ -526,13 +526,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             span.GetTag(tagName).Should().Be(expected, $"'{tagName}' should have correct value");
         }
 
-        private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
+        private static InternalTracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
         {
             var settings = new InternalTracerSettings(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+            return new InternalTracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private class AgentWriterStub : IAgentWriter

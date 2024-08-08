@@ -26,12 +26,12 @@ namespace Datadog.Trace.Security.Unit.Tests;
 public class ApiSecurityTests
 {
     [Theory]
-    [InlineData(true, true, SamplingPriorityValues.UserKeep, true, "route0")]
-    [InlineData(true, true, SamplingPriorityValues.AutoKeep, true, "route1")]
-    [InlineData(true, true, SamplingPriorityValues.AutoReject, false, "route2")]
-    [InlineData(true, false, SamplingPriorityValues.AutoKeep, false, "route3")]
-    [InlineData(false, false, SamplingPriorityValues.AutoKeep, false, "route4")]
-    [InlineData(true, true, SamplingPriorityValues.AutoKeep, false, null)]
+    [InlineData(true, true, InternalSamplingPriorityValues.UserKeep, true, "route0")]
+    [InlineData(true, true, InternalSamplingPriorityValues.AutoKeep, true, "route1")]
+    [InlineData(true, true, InternalSamplingPriorityValues.AutoReject, false, "route2")]
+    [InlineData(true, false, InternalSamplingPriorityValues.AutoKeep, false, "route3")]
+    [InlineData(false, false, InternalSamplingPriorityValues.AutoKeep, false, "route4")]
+    [InlineData(true, true, InternalSamplingPriorityValues.AutoKeep, false, null)]
     public void ApiSecurityTest(bool enable, bool lastCall, int samplingPriority, bool expectedResult, string route)
     {
         var apiSec = new ApiSecurity(
@@ -42,7 +42,7 @@ public class ApiSecurityTests
         var dic = new Dictionary<string, object>();
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
         tc.SetSamplingPriority(samplingPriority);
-        var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), DateTimeOffset.Now);
+        var span = new Span(new InternalSpanContext(InternalSpanContext.None, tc, "Test"), DateTimeOffset.Now);
         span.SetTag(Tags.HttpRoute, route);
         var statusCode = "200";
         span.SetTag(Tags.HttpStatusCode, statusCode);
@@ -83,9 +83,9 @@ public class ApiSecurityTests
             queue.Enqueue(resHash);
             var dic = new Dictionary<string, object>();
             var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
-            tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+            tc.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
 
-            var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
+            var span = new Span(new InternalSpanContext(InternalSpanContext.None, tc, "Test"), dt);
             span.SetTag(Tags.HttpRoute, route);
             span.SetTag(Tags.HttpStatusCode, statusCode);
             span.SetTag(Tags.HttpMethod, method);
@@ -110,10 +110,10 @@ public class ApiSecurityTests
                 new NullConfigurationTelemetry()));
         var dic = new Dictionary<string, object> { { "controller", "test" }, { "action", "test" } };
         var tc = new TraceContext(Mock.Of<IDatadogTracer>(), new TraceTagCollection());
-        tc.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        tc.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
         var dt = DateTime.UtcNow;
 
-        var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
+        var span = new Span(new InternalSpanContext(InternalSpanContext.None, tc, "Test"), dt);
         span.SetTag(Tags.HttpRoute, "{controller}/{action}");
         span.SetTag(Tags.HttpStatusCode, "200");
         span.SetTag(Tags.HttpMethod, "GET");

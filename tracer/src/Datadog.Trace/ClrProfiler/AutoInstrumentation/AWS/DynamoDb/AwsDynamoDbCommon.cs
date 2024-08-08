@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsDynamoDb;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        public static Scope CreateScope(InternalTracer tracer, string operation, out AwsDynamoDbTags tags, IInternalSpanContext parentContext = null)
         {
             tags = null;
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
                 // This is needed to showcase the DynamoDB action in the
                 // span details. This will also cause to repeat an HTTP span.
-                span.Type = SpanTypes.DynamoDb;
+                span.Type = InternalSpanTypes.DynamoDb;
                 span.ResourceName = $"{DynamoDbServiceName}.{operation}";
 
                 tags.Service = DynamoDbServiceName;

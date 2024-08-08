@@ -70,7 +70,7 @@ namespace Datadog.Trace.Ci
         {
             get
             {
-                if (Tracer.Instance.TracerManager is CITracerManager cITracerManager)
+                if (InternalTracer.Instance.TracerManager is CITracerManager cITracerManager)
                 {
                     return cITracerManager;
                 }
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Ci
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
-            _ = Tracer.Instance;
+            _ = InternalTracer.Instance;
 
             // Initialize FrameworkDescription
             _ = FrameworkDescription.Instance;
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Ci
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(new InternalImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
-            _ = Tracer.Instance;
+            _ = InternalTracer.Instance;
 
             // Initialize FrameworkDescription
             _ = FrameworkDescription.Instance;
@@ -268,12 +268,12 @@ namespace Datadog.Trace.Ci
                 if (Settings.Logs)
                 {
                     await Task.WhenAll(
-                        Tracer.Instance.FlushAsync(),
-                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
+                        InternalTracer.Instance.FlushAsync(),
+                        InternalTracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
                 }
                 else
                 {
-                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                    await InternalTracer.Instance.FlushAsync().ConfigureAwait(false);
                 }
 
                 Log.Debug("Integration flushed.");

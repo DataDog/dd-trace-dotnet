@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetClientCommon));
 
-        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
+        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(InternalTracer tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Grpc;
+                span.Type = InternalSpanTypes.Grpc;
                 span.ResourceName = method.FullName;
 
                 // add distributed tracing headers to the HTTP request
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             return scope;
         }
 
-        public static void RecordResponseMetadataAndStatus<TGrpcCall>(Tracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
+        public static void RecordResponseMetadataAndStatus<TGrpcCall>(InternalTracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || instance is null
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
-            GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);
+            GrpcCommon.RecordFinalClientSpanStatus(InternalTracer.Instance, grpcStatusCode, errorMessage, ex);
         }
     }
 }

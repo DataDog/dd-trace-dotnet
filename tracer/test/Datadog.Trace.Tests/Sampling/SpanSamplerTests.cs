@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1, rule2 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeFalse();
 
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "test"), DateTimeOffset.Now) { OperationName = "test" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "test"), DateTimeOffset.Now) { OperationName = "test" };
 
             sampler.MakeSamplingDecision(span).Should().BeFalse();
 
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1, rule2 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeTrue();
 
@@ -143,7 +143,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1, rule2 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeTrue();
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1, rule2 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeFalse();
 
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void NoRules_ShouldNot_TagSpan()
         {
             var sampler = new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeFalse();
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests.Sampling
                 maxPerSecond: 1000.0f);
 
             var sampler = new SpanSampler(new List<SpanSamplingRule> { rule });
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
 
             sampler.MakeSamplingDecision(span).Should().BeTrue();
 
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Tests.Sampling
                 maxPerSecond: 1000.0f);
 
             var sampler = new SpanSampler(new List<SpanSamplingRule> { rule });
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "serrvice"), DateTimeOffset.Now) { OperationName = "opperation" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "serrvice"), DateTimeOffset.Now) { OperationName = "opperation" };
 
             sampler.MakeSamplingDecision(span).Should().BeFalse();
 
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeTrue();
 
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rules = new List<SpanSamplingRule> { rule1 };
             var sampler = new SpanSampler(rules);
-            var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span).Should().BeTrue();
 
@@ -400,7 +400,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private Span GetSpan(ulong traceId)
         {
-            var span = new Span(new SpanContext(traceId, RandomIdGenerator.Shared.NextSpanId(), samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+            var span = new Span(new InternalSpanContext(traceId, RandomIdGenerator.Shared.NextSpanId(), samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
             return span;
         }
     }

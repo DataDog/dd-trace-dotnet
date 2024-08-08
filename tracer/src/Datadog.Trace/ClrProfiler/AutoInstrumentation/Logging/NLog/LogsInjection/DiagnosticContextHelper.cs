@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return null;
         }
 
-        public static IDisposable SetScopeContextState(IScopeContextSetterProxy scopeContext, Tracer tracer)
+        public static IDisposable SetScopeContextState(IScopeContextSetterProxy scopeContext, InternalTracer tracer)
         {
             var entries = CreateEntriesList(tracer, out _);
             var state = scopeContext.PushProperties(entries);
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return state;
         }
 
-        public static bool SetMdcState(MappedDiagnosticsContextSetterProxy mdc, Tracer tracer)
+        public static bool SetMdcState(MappedDiagnosticsContextSetterProxy mdc, InternalTracer tracer)
         {
             var entries = CreateEntriesList(tracer, out var removeTraceIds);
             foreach (var kvp in entries)
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return removeTraceIds;
         }
 
-        public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, Tracer tracer)
+        public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, InternalTracer tracer)
         {
             var entries = CreateEntriesList(tracer, out _);
             var state = mdlc.SetScoped(entries);
@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             }
         }
 
-        private static IReadOnlyList<KeyValuePair<string, object>> CreateEntriesList(Tracer tracer, out bool hasTraceIds)
+        private static IReadOnlyList<KeyValuePair<string, object>> CreateEntriesList(InternalTracer tracer, out bool hasTraceIds)
         {
             hasTraceIds = false;
             var spanContext = tracer.DistributedSpanContext;
@@ -124,10 +124,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
-                                 spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
-                                spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
+                var hasTraceId = spanContext.TryGetValue(InternalSpanContext.Keys.TraceId, out string traceId) ||
+                                 spanContext.TryGetValue(InternalHttpHeaderNames.TraceId, out traceId);
+                var hasSpanId = spanContext.TryGetValue(InternalSpanContext.Keys.ParentId, out string spanId) ||
+                                spanContext.TryGetValue(InternalHttpHeaderNames.ParentId, out spanId);
                 if (hasTraceId && hasSpanId)
                 {
                     hasTraceIds = true;

@@ -1,4 +1,4 @@
-// <copyright file="SpanContext.cs" company="Datadog">
+// <copyright file="InternalSpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Internal
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public partial class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
+    public partial class InternalSpanContext : IInternalSpanContext, IReadOnlyDictionary<string, string>
     {
         private static readonly string[] KeyNames =
         {
@@ -35,18 +35,18 @@ namespace Datadog.Trace.Internal
             Keys.LastParentId,
 
             // For mismatch version support we need to keep supporting old keys.
-            HttpHeaderNames.TraceId,
-            HttpHeaderNames.ParentId,
-            HttpHeaderNames.SamplingPriority,
-            HttpHeaderNames.Origin,
+            InternalHttpHeaderNames.TraceId,
+            InternalHttpHeaderNames.ParentId,
+            InternalHttpHeaderNames.SamplingPriority,
+            InternalHttpHeaderNames.Origin,
         };
 
         /// <summary>
-        /// An <see cref="ISpanContext"/> with default values. Can be used as the value for
-        /// <see cref="SpanCreationSettings.Parent"/> in <see cref="Tracer.StartActive(string, SpanCreationSettings)"/>
+        /// An <see cref="IInternalSpanContext"/> with default values. Can be used as the value for
+        /// <see cref="InternalSpanCreationSettings.Parent"/> in <see cref="InternalTracer.StartActive(string, InternalSpanCreationSettings)"/>
         /// to specify that the new span should not inherit the currently active scope as its parent.
         /// </summary>
-        public static readonly ISpanContext None = new ReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
+        public static readonly IInternalSpanContext None = new InternalReadOnlySpanContext(traceId: Trace.TraceId.Zero, spanId: 0, serviceName: null);
 
         private string _rawTraceId;
         private string _rawSpanId;
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Internal
         private string _additionalW3CTraceState;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContext"/> class
         /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Internal
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         [PublicApi]
-        public SpanContext(ulong? traceId, ulong spanId, SamplingPriority? samplingPriority = null, string serviceName = null)
+        public InternalSpanContext(ulong? traceId, ulong spanId, InternalSamplingPriority? samplingPriority = null, string serviceName = null)
             : this((TraceId)(traceId ?? 0), serviceName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContext_Ctor);
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContext"/> class
         /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
@@ -84,8 +84,8 @@ namespace Datadog.Trace.Internal
         /// <param name="samplingPriority">The propagated sampling priority.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="origin">The propagated origin of the trace.</param>
-        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, bool isRemote = false)
+        /// <param name="isRemote">Whether this <see cref="InternalSpanContext"/> was from a distributed context.</param>
+        internal InternalSpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -95,7 +95,7 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContext"/> class
         /// from a propagated context. <see cref="ParentInternal"/> will be null
         /// since this is a root context locally.
         /// </summary>
@@ -106,8 +106,8 @@ namespace Datadog.Trace.Internal
         /// <param name="origin">The propagated origin of the trace.</param>
         /// <param name="rawTraceId">The raw propagated trace id</param>
         /// <param name="rawSpanId">The raw propagated span id</param>
-        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
-        internal SpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId, bool isRemote = false)
+        /// <param name="isRemote">Whether this <see cref="InternalSpanContext"/> was from a distributed context.</param>
+        internal InternalSpanContext(TraceId traceId, ulong spanId, int? samplingPriority, string serviceName, string origin, string rawTraceId, string rawSpanId, bool isRemote = false)
             : this(traceId, serviceName)
         {
             SpanId = spanId;
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContext"/> class
         /// that is the child of the specified parent context.
         /// </summary>
         /// <param name="parent">The parent context.</param>
@@ -129,8 +129,8 @@ namespace Datadog.Trace.Internal
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        /// <param name="isRemote">Whether this <see cref="SpanContext"/> was from a distributed context.</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool isRemote = false)
+        /// <param name="isRemote">Whether this <see cref="InternalSpanContext"/> was from a distributed context.</param>
+        internal InternalSpanContext(IInternalSpanContext parent, TraceContext traceContext, string serviceName, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool isRemote = false)
             : this(GetTraceId(parent, traceId), serviceName)
         {
             // if 128-bit trace ids are enabled, also use full uint64 for span id,
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Internal
             ParentInternal = parent;
             TraceContext = traceContext;
 
-            if (parent is SpanContext spanContext)
+            if (parent is InternalSpanContext spanContext)
             {
                 _rawTraceId = spanContext._rawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
@@ -155,7 +155,7 @@ namespace Datadog.Trace.Internal
             IsRemote = isRemote;
         }
 
-        private SpanContext(TraceId traceId, string serviceName)
+        private InternalSpanContext(TraceId traceId, string serviceName)
         {
             TraceId128 = traceId == Trace.TraceId.Zero
                           ? RandomIdGenerator.Shared.NextTraceId(useAllBits: false)
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Internal
         /// Gets the parent context.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.SpanContext_Parent_Get)]
-        internal ISpanContext ParentInternal { get; }
+        internal IInternalSpanContext ParentInternal { get; }
 
         /// <summary>
         /// Gets the 128-bit trace id.
@@ -288,7 +288,7 @@ namespace Datadog.Trace.Internal
         internal PathwayContext? PathwayContext { get; private set; }
 
         /// <summary>
-        ///  Gets a value indicating whether this <see cref="SpanContext"/> was propagated from a remote parent.
+        ///  Gets a value indicating whether this <see cref="InternalSpanContext"/> was propagated from a remote parent.
         /// </summary>
         internal bool IsRemote { get; }
 
@@ -364,25 +364,25 @@ namespace Datadog.Trace.Internal
             switch (key)
             {
                 case Keys.TraceId:
-                case HttpHeaderNames.TraceId:
+                case InternalHttpHeaderNames.TraceId:
                     // use the lower 64-bits for backwards compat, truncate using TraceId128.Lower
                     value = TraceId128.Lower.ToString(invariant);
                     return true;
 
                 case Keys.ParentId:
-                case HttpHeaderNames.ParentId:
+                case InternalHttpHeaderNames.ParentId:
                     // returns the 64-bit span id in decimal encoding
                     value = SpanId.ToString(invariant);
                     return true;
 
                 case Keys.SamplingPriority:
-                case HttpHeaderNames.SamplingPriority:
+                case InternalHttpHeaderNames.SamplingPriority:
                     var samplingPriority = GetOrMakeSamplingDecision();
                     value = samplingPriority?.ToString(invariant);
                     return true;
 
                 case Keys.Origin:
-                case HttpHeaderNames.Origin:
+                case InternalHttpHeaderNames.Origin:
                     value = Origin;
                     return true;
 
@@ -397,7 +397,7 @@ namespace Datadog.Trace.Internal
                     return true;
 
                 case Keys.PropagatedTags:
-                case HttpHeaderNames.PropagatedTags:
+                case InternalHttpHeaderNames.PropagatedTags:
                     value = PrepareTagsHeaderForPropagation();
                     return true;
 
@@ -416,7 +416,7 @@ namespace Datadog.Trace.Internal
             }
         }
 
-        private static TraceId GetTraceId(ISpanContext context, TraceId fallback)
+        private static TraceId GetTraceId(IInternalSpanContext context, TraceId fallback)
         {
             return context switch
             {
@@ -425,7 +425,7 @@ namespace Datadog.Trace.Internal
                 null or { TraceId: 0 } => fallback,
 
                 // use the 128-bit trace id from SpanContext if possible
-                SpanContext sc => sc.TraceId128,
+                InternalSpanContext sc => sc.TraceId128,
 
                 // otherwise use the 64-bit trace id from ISpanContext
                 _ => (TraceId)context.TraceId

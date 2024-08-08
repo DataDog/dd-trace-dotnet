@@ -14,7 +14,7 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 
 /// <summary>
-/// Instrumentation for <see cref="SpanContextInjector.InjectIncludingDsm{TCarrier}"/>
+/// Instrumentation for <see cref="InternalSpanContextInjector.InjectIncludingDsm{TCarrier}"/>
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
@@ -38,7 +38,7 @@ public class SpanContextInjectorInjectIncludingDsmIntegration
 
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
-            SpanContextInjector.InjectInternal(carrier, inject, spanContext, messageType, target);
+            InternalSpanContextInjector.InjectInternal(carrier, inject, spanContext, messageType, target);
         }
 
         return CallTargetState.GetDefault();

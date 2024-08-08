@@ -81,7 +81,7 @@ public class ActivityTagsTests
 
         activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-        var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+        var span = new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow);
         OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
         switch (expectedTagKind)
@@ -108,7 +108,7 @@ public class ActivityTagsTests
 
         activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-        var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+        var span = new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow);
         OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
         foreach (var keyValue in expectedTagValues)

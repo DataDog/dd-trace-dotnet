@@ -1,4 +1,4 @@
-// <copyright file="Tracer.cs" company="Datadog">
+// <copyright file="InternalTracer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Internal
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
+    public class InternalTracer : IInternalTracer, IDatadogTracer, IInternalDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
 
@@ -38,18 +38,18 @@ namespace Datadog.Trace.Internal
         /// </summary>
         private static int _liveTracerCount;
 
-        private static Tracer _instance;
+        private static InternalTracer _instance;
         private static volatile bool _globalInstanceInitialized;
 
         private readonly TracerManager _tracerManager;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
+        /// Initializes a new instance of the <see cref="InternalTracer"/> class with default settings. Replaces the
         /// settings for all tracers in the application with the default settings.
         /// </summary>
         [Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create spans.")]
         [PublicApi]
-        public Tracer()
+        public InternalTracer()
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor);
             // Don't call Configure because it will call Start on the TracerManager
@@ -61,9 +61,9 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/>
+        /// Initializes a new instance of the <see cref="InternalTracer"/>
         /// class using the specified <see cref="IConfigurationSource"/>. This constructor updates the global settings
-        /// for all <see cref="Tracer"/> instances in the application.
+        /// for all <see cref="InternalTracer"/> instances in the application.
         /// </summary>
         /// <param name="settings">
         /// A <see cref="InternalTracerSettings"/> instance with the desired settings,
@@ -71,9 +71,9 @@ namespace Datadog.Trace.Internal
         /// </param>
         [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
                   "If you were using this API to configure the global Tracer.Instance in code, use the static "
-                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
+                + nameof(InternalTracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         [PublicApi]
-        public Tracer(InternalTracerSettings settings)
+        public InternalTracer(InternalTracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
@@ -85,23 +85,23 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class.
+        /// Initializes a new instance of the <see cref="InternalTracer"/> class.
         /// For testing only.
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(InternalTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+        internal InternalTracer(InternalTracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
             : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new InternalImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class.
+        /// Initializes a new instance of the <see cref="InternalTracer"/> class.
         /// Should only be called DIRECTLY for testing purposes.
         /// If non-null the provided <see cref="TracerManager"/> will be tied to this TracerInstance (for testing purposes only)
         /// If null, the global <see cref="TracerManager"/> will be fetched or created, but will not be modified.
         /// </summary>
-        private protected Tracer(TracerManager tracerManager)
+        private protected InternalTracer(TracerManager tracerManager)
         {
             _tracerManager = tracerManager;
             if (tracerManager is null)
@@ -116,20 +116,20 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Finalizes an instance of the <see cref="Tracer"/> class.
+        /// Finalizes an instance of the <see cref="InternalTracer"/> class.
         /// </summary>
-        ~Tracer()
+        ~InternalTracer()
         {
             // update the count of Tracer instances
             Interlocked.Decrement(ref _liveTracerCount);
         }
 
         /// <summary>
-        /// Gets or sets the global <see cref="Tracer"/> instance.
+        /// Gets or sets the global <see cref="InternalTracer"/> instance.
         /// Used by all automatic instrumentation and recommended
         /// as the entry point for manual instrumentation.
         /// </summary>
-        public static Tracer Instance
+        public static InternalTracer Instance
         {
             get
             {
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Internal
                     return _instance;
                 }
 
-                Tracer instance;
+                InternalTracer instance;
                 lock (GlobalInstanceLock)
                 {
                     if (_globalInstanceInitialized)
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Internal
                         return _instance;
                     }
 
-                    instance = new Tracer(tracerManager: null); // don't replace settings, use existing
+                    instance = new InternalTracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;
                     _globalInstanceInitialized = true;
                 }
@@ -156,7 +156,7 @@ namespace Datadog.Trace.Internal
             }
 
             // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
+            [Obsolete("Use " + nameof(InternalTracer) + "." + nameof(Configure) + " to configure the global Tracer" +
                       " instance in code.")]
             [PublicApi]
             set
@@ -187,7 +187,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public IScope ActiveScope
+        public IInternalScope ActiveScope
         {
             get
             {
@@ -233,12 +233,12 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        IScope ITracer.ActiveScope => ActiveScope;
+        IInternalScope IInternalTracer.ActiveScope => ActiveScope;
 
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        InternalImmutableTracerSettings ITracer.Settings => Settings;
+        InternalImmutableTracerSettings IInternalTracer.Settings => Settings;
 
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Replaces the global Tracer settings used by all <see cref="Tracer"/> instances,
+        /// Replaces the global Tracer settings used by all <see cref="InternalTracer"/> instances,
         /// including automatic instrumentation
         /// </summary>
         /// <param name="settings"> A <see cref="InternalTracerSettings"/> instance with the desired settings,
@@ -283,7 +283,7 @@ namespace Datadog.Trace.Internal
         /// Intended use is for unit testing
         /// </summary>
         /// <param name="instance">Tracer instance</param>
-        internal static void UnsafeSetTracerInstance(Tracer instance)
+        internal static void UnsafeSetTracerInstance(InternalTracer instance)
         {
             lock (GlobalInstanceLock)
             {
@@ -294,18 +294,18 @@ namespace Datadog.Trace.Internal
             instance?.TracerManager.Start();
         }
 
-        /// <inheritdoc cref="ITracer" />
+        /// <inheritdoc cref="IInternalTracer" />
         [PublicApi]
-        IScope ITracer.StartActive(string operationName)
+        IInternalScope IInternalTracer.StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             return StartActiveInternal(operationName);
         }
 
-        /// <inheritdoc cref="ITracer" />
+        /// <inheritdoc cref="IInternalTracer" />
         [PublicApi]
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
+        IInternalScope IInternalTracer.StartActive(string operationName, InternalSpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
@@ -319,7 +319,7 @@ namespace Datadog.Trace.Internal
         /// <param name="operationName">The span's operation name</param>
         /// <returns>A scope wrapping the newly created span</returns>
         [PublicApi]
-        public IScope StartActive(string operationName)
+        public IInternalScope StartActive(string operationName)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
@@ -330,10 +330,10 @@ namespace Datadog.Trace.Internal
         /// This creates a new span with the given parameters and makes it active.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
-        /// <param name="settings">Settings for the new <see cref="IScope"/></param>
+        /// <param name="settings">Settings for the new <see cref="IInternalScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
         [PublicApi]
-        public IScope StartActive(string operationName, SpanCreationSettings settings)
+        public IInternalScope StartActive(string operationName, InternalSpanCreationSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Internal
         }
 
         /// <summary>
-        /// Creates a new <see cref="ISpan"/> with the specified parameters.
+        /// Creates a new <see cref="IInternalSpan"/> with the specified parameters.
         /// </summary>
         /// <param name="operationName">The span's operation name</param>
         /// <param name="parent">The span's parent</param>
@@ -350,14 +350,14 @@ namespace Datadog.Trace.Internal
         /// <param name="startTime">An explicit start time for that span</param>
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <returns>The newly created span</returns>
-        ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
+        IInternalSpan IInternalDatadogOpenTracingTracer.StartSpan(string operationName, IInternalSpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
             if (ignoreActiveScope && parent == null)
             {
                 // don't set the span's parent,
                 // even if there is an active span
-                parent = SpanContext.None;
+                parent = InternalSpanContext.None;
             }
 
             var span = StartSpan(operationName, tags: null, parent, serviceName: null, startTime);
@@ -406,14 +406,14 @@ namespace Datadog.Trace.Internal
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
+        internal InternalSpanContext CreateSpanContext(IInternalSpanContext parent = null, string serviceName = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null)
         {
             // null parent means use the currently active span
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
             string lastParentId = null;
             TraceContext traceContext;
 
-            if (parent is SpanContext parentSpanContext)
+            if (parent is InternalSpanContext parentSpanContext)
             {
                 // if the parent's TraceContext is not null, parent is a local span
                 // and the new span we are creating belongs in the same TraceContext
@@ -430,7 +430,7 @@ namespace Datadog.Trace.Internal
                     if (Settings?.AppsecStandaloneEnabledInternal == true)
                     {
                         // If the trace has appsec propagation tag, the default priority is user keep
-                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.AppSec) == "1" ? SamplingPriorityValues.UserKeep : null;
+                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.AppSec) == "1" ? InternalSamplingPriorityValues.UserKeep : null;
                     }
 
                     // If parent is SpanContext but its TraceContext is null, then it was extracted from propagation headers.
@@ -496,7 +496,7 @@ namespace Datadog.Trace.Internal
                 traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             }
 
-            var context = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            var context = new InternalSpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
             context.LastParentId = lastParentId; // lastParentId is only non-null when parent is extracted from W3C headers
             return context;
         }
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Internal
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
         /// </remarks>
-        internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
+        internal Scope StartActiveInternal(string operationName, IInternalSpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, startTime);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
@@ -519,7 +519,7 @@ namespace Datadog.Trace.Internal
         /// and the span count metric is incremented. Alternatively, if this is not being called from an
         /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
         /// </remarks>
-        internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
+        internal Span StartSpan(string operationName, ITags tags = null, IInternalSpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
 

@@ -11,7 +11,7 @@ namespace Datadog.Trace
     {
         /// <summary>
         /// Tag set to specify the sampling decision that was taken
-        /// <seealso cref="SamplingPriorityValues"/>
+        /// <seealso cref="InternalSamplingPriorityValues"/>
         /// </summary>
         public const string SamplingPriority = "_sampling_priority_v1";
 

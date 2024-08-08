@@ -13,16 +13,16 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    internal partial class Scope : IScope
+    internal partial class Scope : IInternalScope
     {
         /// <summary>
         /// Gets the active span wrapped in this scope
         /// </summary>
-        ISpan IScope.Span => Span;
+        IInternalSpan IInternalScope.Span => Span;
 
         /// <summary>
         /// Closes the current scope and makes its parent scope active
         /// </summary>
-        void IScope.Close() => Close();
+        void IInternalScope.Close() => Close();
     }
 }

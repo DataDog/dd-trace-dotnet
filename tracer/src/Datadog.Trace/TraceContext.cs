@@ -166,7 +166,7 @@ namespace Datadog.Trace
             ArraySegment<Span> spansToWrite = default;
 
             // Propagate the resource name to the profiler for root web spans
-            if (span is { IsRootSpan: true, Type: SpanTypes.Web })
+            if (span is { IsRootSpan: true, Type: InternalSpanTypes.Web })
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
@@ -279,7 +279,7 @@ namespace Datadog.Trace
 
                 // note we do not set SamplingDecision
                 // so it remains null and we can try again later
-                return SamplingPriorityValues.Default;
+                return InternalSamplingPriorityValues.Default;
             }
 
             var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
@@ -304,12 +304,12 @@ namespace Datadog.Trace
 
             SamplingPriority = p;
 
-            if (SamplingPriorityValues.IsKeep(p) && mechanism is { } m)
+            if (InternalSamplingPriorityValues.IsKeep(p) && mechanism is { } m)
             {
                 // add the tag once if trace is sampled, but never overwrite an existing tag
                 Tags.TryAddTag(Internal.Tags.Propagated.DecisionMaker, SamplingMechanism.GetTagValue(m));
             }
-            else if (SamplingPriorityValues.IsDrop(p))
+            else if (InternalSamplingPriorityValues.IsDrop(p))
             {
                 // remove tag if trace is not sampled
                 Tags.RemoveTag(Internal.Tags.Propagated.DecisionMaker);
@@ -328,7 +328,7 @@ namespace Datadog.Trace
                 return;
             }
 
-            if (SamplingPriority is { } samplingPriority && SamplingPriorityValues.IsDrop(samplingPriority))
+            if (SamplingPriority is { } samplingPriority && InternalSamplingPriorityValues.IsDrop(samplingPriority))
             {
                 for (int i = 0; i < spans.Count; i++)
                 {

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests
     [Collection(nameof(WebRequestCollection))]
     public class TracerTests
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
 
         public TracerTests()
         {
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_IgnoreActiveScope_RootSpan()
         {
             var firstScope = _tracer.StartActive("First");
-            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = SpanContext.None });
+            var secondScope = (Scope)_tracer.StartActive("Second", new InternalSpanCreationSettings { Parent = InternalSpanContext.None });
             var secondSpan = secondScope.Span;
 
             Assert.True(secondSpan.IsRootSpan);
@@ -154,7 +154,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
         {
-            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var spanCreationSettings = new InternalSpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
             var span = scope.Span;
             Assert.False(span.IsFinished);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsDisposed()
         {
-            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var spanCreationSettings = new InternalSpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
             var span = scope.Span;
             Assert.False(span.IsFinished);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests
         [InlineData(true)]
         public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsClosed(bool newFinishOnClose)
         {
-            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var spanCreationSettings = new InternalSpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
             var span = scope.Span;
             Assert.False(span.IsFinished);
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tests
         [InlineData(true)]
         public void StartActive_NoFinishOnClose_SpanIsFinishedCorrectlyWhenSetFinishOnCloseAndScopeIsDisposed(bool newFinishOnClose)
         {
-            var spanCreationSettings = new SpanCreationSettings() { FinishOnClose = false };
+            var spanCreationSettings = new InternalSpanCreationSettings() { FinishOnClose = false };
             var scope = (Scope)_tracer.StartActive("Operation", spanCreationSettings);
             var span = scope.Span;
             Assert.False(span.IsFinished);
@@ -218,7 +218,7 @@ namespace Datadog.Trace.Tests
         {
             var parent = _tracer.StartSpan("Parent");
 
-            var spanCreationSettings = new SpanCreationSettings() { Parent = parent.Context };
+            var spanCreationSettings = new InternalSpanCreationSettings() { Parent = parent.Context };
             var childScope = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = childScope.Span;
 
@@ -230,10 +230,10 @@ namespace Datadog.Trace.Tests
         {
             var traceId = (TraceId)11;
             const ulong parentId = 7;
-            const int samplingPriority = SamplingPriorityValues.UserKeep;
+            const int samplingPriority = InternalSamplingPriorityValues.UserKeep;
 
-            var parent = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
-            var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
+            var parent = new InternalSpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
+            var spanCreationSettings = new InternalSpanCreationSettings() { Parent = parent };
             var child = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = child.Span;
 
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetStartTime_StartTimeIsProperlySet()
         {
             var startTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
-            var spanCreationSettings = new SpanCreationSettings() { StartTime = startTime };
+            var spanCreationSettings = new InternalSpanCreationSettings() { StartTime = startTime };
             var scope = _tracer.StartActive("Operation", spanCreationSettings);
             var span = (Span)scope.Span;
 
@@ -326,7 +326,7 @@ namespace Datadog.Trace.Tests
         {
             var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartSpan("Second", parent: SpanContext.None);
+            var secondSpan = _tracer.StartSpan("Second", parent: InternalSpanContext.None);
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -375,7 +375,7 @@ namespace Datadog.Trace.Tests
             var root = (Scope)_tracer.StartActive("Root");
             var rootSpan = root.Span;
 
-            Func<Tracer, Task<IScope>> createSpanAsync = async (t) =>
+            Func<InternalTracer, Task<IInternalScope>> createSpanAsync = async (t) =>
             {
                 await tcs.Task;
                 return t.StartActive("AsyncChild");
@@ -440,7 +440,7 @@ namespace Datadog.Trace.Tests
             };
 
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            ISpan span = tracer.StartSpan("operationName", serviceName: spanServiceName);
+            IInternalSpan span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)
             {
@@ -460,13 +460,13 @@ namespace Datadog.Trace.Tests
         {
             var traceId = (TraceId)9;
             const ulong spanId = 7;
-            const int samplingPriority = SamplingPriorityValues.UserKeep;
+            const int samplingPriority = InternalSamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new InternalSpanContext(traceId, spanId, samplingPriority, null, origin);
             Assert.Equal(origin, propagatedContext.Origin);
 
-            var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
+            var spanCreationSettings = new InternalSpanCreationSettings() { Parent = propagatedContext };
             using var firstScope = (Scope)_tracer.StartActive("First Span", spanCreationSettings);
             var firstSpan = (Span)firstScope.Span;
 
@@ -474,7 +474,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(origin, firstSpan.Context.Origin);
             Assert.Equal(origin, firstSpan.GetTag(Tags.Origin));
 
-            var spanCreationSettings2 = new SpanCreationSettings() { Parent = firstSpan.Context };
+            var spanCreationSettings2 = new InternalSpanCreationSettings() { Parent = firstSpan.Context };
             using var secondScope = (Scope)_tracer.StartActive("Child", spanCreationSettings2);
             var secondSpan = (Span)secondScope.Span;
 
@@ -488,16 +488,16 @@ namespace Datadog.Trace.Tests
         {
             var traceId = (TraceId)9;
             const ulong spanId = 7;
-            const int samplingPriority = SamplingPriorityValues.UserKeep;
+            const int samplingPriority = InternalSamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new InternalSpanContext(traceId, spanId, samplingPriority, null, origin);
 
-            var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
+            var spanCreationSettings = new InternalSpanCreationSettings() { Parent = propagatedContext };
             using var firstScope = (Scope)_tracer.StartActive("First Span", spanCreationSettings);
             var firstSpan = firstScope.Span;
 
-            var spanCreationSettings2 = new SpanCreationSettings() { Parent = firstSpan.Context };
+            var spanCreationSettings2 = new InternalSpanCreationSettings() { Parent = firstSpan.Context };
             using var secondScope = (Scope)_tracer.StartActive("Child", spanCreationSettings2);
             var secondSpan = secondScope.Span;
 
@@ -515,10 +515,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void RuntimeId()
         {
-            var runtimeId = Tracer.RuntimeId;
+            var runtimeId = InternalTracer.RuntimeId;
 
             // Runtime id should be stable for a given process
-            Tracer.RuntimeId.Should().Be(runtimeId);
+            InternalTracer.RuntimeId.Should().Be(runtimeId);
 
             // Runtime id should be a UUID
             Guid.TryParse(runtimeId, out _).Should().BeTrue();
@@ -534,7 +534,7 @@ namespace Datadog.Trace.Tests
                 StartupDiagnosticLogEnabled = false
             };
 
-            var tracer = new Tracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
+            var tracer = new InternalTracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
             await tracer.ForceFlushAsync();
 
@@ -550,7 +550,7 @@ namespace Datadog.Trace.Tests
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new InternalTracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -592,7 +592,7 @@ namespace Datadog.Trace.Tests
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new InternalTracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -682,7 +682,7 @@ namespace Datadog.Trace.Tests
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new InternalTracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
@@ -702,7 +702,7 @@ namespace Datadog.Trace.Tests
             Assert.Equal(base64UserId, traceContext.Tags.GetTag(TagPropagation.PropagatedTagPrefix + Tags.User.Id));
         }
 
-        private class SpanStub : ISpan
+        private class SpanStub : IInternalSpan
         {
             private Dictionary<string, string> _tags = new Dictionary<string, string>();
 
@@ -720,7 +720,7 @@ namespace Datadog.Trace.Tests
 
             public ulong SpanId => 1ul;
 
-            public ISpanContext Context => null;
+            public IInternalSpanContext Context => null;
 
             public void Dispose()
             {
@@ -744,7 +744,7 @@ namespace Datadog.Trace.Tests
             {
             }
 
-            public ISpan SetTag(string key, string value)
+            public IInternalSpan SetTag(string key, string value)
             {
                 _tags[key] = value;
                 return this;

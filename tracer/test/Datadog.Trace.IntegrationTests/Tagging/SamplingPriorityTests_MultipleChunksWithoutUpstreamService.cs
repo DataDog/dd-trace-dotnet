@@ -21,7 +21,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     private const int SamplingPriorityValue = 1;
 
     private readonly MockApi _testApi;
-    private readonly Tracer _tracer;
+    private readonly InternalTracer _tracer;
 
     public SamplingPriorityTests_MultipleChunksWithoutUpstreamService()
     {
@@ -29,7 +29,7 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
 
         var settings = new InternalTracerSettings();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]
@@ -76,10 +76,10 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task MultipleChunks_3_and_1_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
         using (var scope1 = _tracer.StartActive("1"))
         {
@@ -147,10 +147,10 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task MultipleChunks_2_and_2_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
         using (var scope1 = _tracer.StartActive("1"))
         {
@@ -217,10 +217,10 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task MultipleChunks_1_and_3_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
         using (var scope1 = _tracer.StartActive("1"))
         {
@@ -287,10 +287,10 @@ public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
     [Fact]
     public async Task FourChunks_1_Span_Each()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
         using (var scope1 = _tracer.StartActive("1"))
         {

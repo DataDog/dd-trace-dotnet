@@ -388,30 +388,30 @@ namespace Datadog.Trace.Debugger.Expressions
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                        InternalTracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
+                        InternalTracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
                         if (decoration.Errors?.Length > 0)
                         {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                            InternalTracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
                         }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                        else if (InternalTracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
                         {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
+                            InternalTracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
                         }
 
                         attachedTags = true;
 
                         break;
                     case TargetSpan.Active:
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                        InternalTracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
+                        InternalTracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
                         if (decoration.Errors?.Length > 0)
                         {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                            InternalTracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
                         }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                        else if (InternalTracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
                         {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
+                            InternalTracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
                         }
 
                         attachedTags = true;

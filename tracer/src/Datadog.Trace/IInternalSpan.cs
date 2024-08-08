@@ -1,4 +1,4 @@
-// <copyright file="ISpan.cs" company="Datadog">
+// <copyright file="IInternalSpan.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Internal
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public interface ISpan : IDisposable
+    public interface IInternalSpan : IDisposable
     {
         /// <summary>
         /// Gets or sets operation name
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Internal
         /// Gets or sets the type of request this span represents (ex: web, db).
         /// Not to be confused with span kind.
         /// </summary>
-        /// <seealso cref="SpanTypes"/>
+        /// <seealso cref="InternalSpanTypes"/>
         string? Type { get; set; }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// Gets the span's span context
         /// </summary>
-        ISpanContext Context { get; }
+        IInternalSpanContext Context { get; }
 
         /// <summary>
         /// Add a the specified tag to this span.
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Internal
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        ISpan SetTag(string key, string? value);
+        IInternalSpan SetTag(string key, string? value);
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.

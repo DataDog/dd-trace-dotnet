@@ -236,8 +236,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
-                SpanKinds.Client => span.IsGrpcClient(metadataSchemaVersion, ExcludeTags),
-                SpanKinds.Server => span.IsGrpcServer(metadataSchemaVersion, ExcludeTags),
+                InternalSpanKinds.Client => span.IsGrpcClient(metadataSchemaVersion, ExcludeTags),
+                InternalSpanKinds.Server => span.IsGrpcServer(metadataSchemaVersion, ExcludeTags),
                 _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the gRPC integration: {span.Tags["span.kind"]}", nameof(span)),
             };
 
@@ -356,7 +356,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         // These _may_ not get the expected values (though the _client_ spans always will)
                         // Depending on how the server handles them
                         var verySlowGrpcServerSpans = spans
-                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
+                                                    .Where(x => x.Type == InternalSpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "server")
                                                     .ToList();
                         foreach (var span in verySlowGrpcServerSpans)
                         {
@@ -382,7 +382,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         if (httpClientIntegrationType != HttpClientIntegrationType.Disabled)
                         {
                             var httpClientSpans = spans
-                                                .Where(x => x.Type == SpanTypes.Http && x.Resource.EndsWith("VerySlow"))
+                                                .Where(x => x.Type == InternalSpanTypes.Http && x.Resource.EndsWith("VerySlow"))
                                                 .ToList();
                             httpClientSpans.Should().HaveCount(2);
 
@@ -400,7 +400,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     static void FixVerySlowClientSpans(IImmutableList<MockSpan> spans)
                     {
                         var verySlowGrpcClientSpans = spans
-                                                    .Where(x => x.Type == SpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
+                                                    .Where(x => x.Type == InternalSpanTypes.Grpc && x.Resource.EndsWith("VerySlow") && x.Tags["span.kind"] == "client")
                                                     .ToList();
 
                         // Grpc.Core 2.45.0 started using very different paths and messages in the

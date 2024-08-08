@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                     var fileName = Path.GetFileName(jsonFilePath);
 
                     CIVisibility.Initialize();
-                    Tracer tracer = Tracer.Instance;
+                    InternalTracer tracer = InternalTracer.Instance;
 
                     foreach (var jobItem in result.JobResults.Jobs)
                     {
@@ -106,8 +106,8 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp, serviceName: "crank");
 
-                        span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-                        span.Type = SpanTypes.Test;
+                        span.Context.TraceContext?.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
+                        span.Type = InternalSpanTypes.Test;
                         span.ResourceName = $"{fileName}/{jobItem.Key}";
                         CIEnvironmentValues.Instance.DecorateSpan(span);
 

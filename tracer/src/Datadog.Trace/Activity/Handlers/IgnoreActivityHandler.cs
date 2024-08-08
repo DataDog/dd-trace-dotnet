@@ -77,7 +77,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             // Propagate Trace and Parent Span ids
-            IgnoreActivity(activity, (Span?)Tracer.Instance.ActiveScope?.Span);
+            IgnoreActivity(activity, (Span?)InternalTracer.Instance.ActiveScope?.Span);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)

@@ -115,9 +115,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
 
                 // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
+                agent.SpanFilters.Add(s => s.Type == InternalSpanTypes.Web || s.Type == InternalSpanTypes.Custom);
                 var spans = agent.WaitForSpans(expectedSpanCount);
-                ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+                ValidateIntegrationSpans(spans.Where(s => s.Type == InternalSpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
@@ -157,9 +157,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
                 // The test adds a custom span to show that propagation works with WCF headers
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
+                agent.SpanFilters.Add(s => s.Type == InternalSpanTypes.Web || s.Type == InternalSpanTypes.Custom);
                 var spans = agent.WaitForSpans(expectedSpanCount);
-                ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+                ValidateIntegrationSpans(spans.Where(s => s.Type == InternalSpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 

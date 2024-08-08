@@ -70,9 +70,9 @@ internal static class RaspModule
             return;
         }
 
-        var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
+        var rootSpan = InternalTracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != InternalSpanTypes.Web)
         {
             return;
         }
@@ -153,7 +153,7 @@ internal static class RaspModule
     {
         if (result?.ReturnCode == WafReturnCode.Match && result?.Data is not null)
         {
-            var spanId = Tracer.Instance.InternalActiveScope.Span.SpanId;
+            var spanId = InternalTracer.Instance.InternalActiveScope.Span.SpanId;
 
             foreach (var item in result.Data)
             {

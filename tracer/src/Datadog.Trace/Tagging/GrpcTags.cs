@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tagging
     internal partial class GrpcServerTags : GrpcTags
     {
         public GrpcServerTags()
-            : base(SpanKinds.Server)
+            : base(InternalSpanKinds.Server)
         {
         }
     }
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tagging
     internal partial class GrpcClientTags : GrpcTags
     {
         public GrpcClientTags()
-            : base(SpanKinds.Client)
+            : base(InternalSpanKinds.Client)
         {
         }
 

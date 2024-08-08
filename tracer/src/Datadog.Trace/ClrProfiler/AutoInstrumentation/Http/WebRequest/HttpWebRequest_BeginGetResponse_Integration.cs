@@ -45,10 +45,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         {
             if (instance is HttpWebRequest request && WebRequestCommon.IsTracingEnabled(request))
             {
-                var tracer = Tracer.Instance;
+                var tracer = InternalTracer.Instance;
 
                 // We may have already set headers
-                if (request.Headers.Get(HttpHeaderNames.TraceId) is null)
+                if (request.Headers.Get(InternalHttpHeaderNames.TraceId) is null)
                 {
                     var span = ScopeFactory.CreateInactiveOutboundHttpSpan(
                         tracer,

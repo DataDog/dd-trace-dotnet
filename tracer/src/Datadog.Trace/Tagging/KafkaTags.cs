@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tagging
         // so the setter is only invoked once
         [Obsolete("Use constructor that takes a SpanKind")]
         public KafkaTags()
-            : this(SpanKinds.Producer)
+            : this(InternalSpanKinds.Producer)
         {
         }
 
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tagging
         // so the setter is only invoked once
         [Obsolete("Use constructor that takes a SpanKind")]
         public KafkaV1Tags()
-            : this(SpanKinds.Producer)
+            : this(InternalSpanKinds.Producer)
         {
         }
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Internal.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? (SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer) ?
+            get => _peerServiceOverride ?? (SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer) ?
                        BootstrapServers
                        : null);
             private set => _peerServiceOverride = value;
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tagging
             {
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer) ?
+                           : SpanKind.Equals(InternalSpanKinds.Client) || SpanKind.Equals(InternalSpanKinds.Producer) ?
                                Internal.Tags.KafkaBootstrapServers
                                : null;
             }

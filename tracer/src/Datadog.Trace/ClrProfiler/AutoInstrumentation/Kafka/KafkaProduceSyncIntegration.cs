@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             // https://github.com/confluentinc/confluent-kafka-dotnet/blob/65362199f13bdad8a0831541f53d92e1e95a8a37/src/Confluent.Kafka/Producer.cs#L869
             if (
                 deliveryHandler == null &&
-                Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled &&
+                InternalTracer.Instance.TracerManager.DataStreamsManager.IsEnabled &&
                 ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
             {
                 deliveryHandler = handler;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             // as a generic parameter, for injecting headers
             var partition = topicPartition.DuckCast<ITopicPartition>();
             Scope scope = KafkaHelper.CreateProducerScope(
-                Tracer.Instance,
+                InternalTracer.Instance,
                 instance,
                 partition,
                 isTombstone: message.Value is null,
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
                     scope.Span,
-                    Tracer.Instance.TracerManager.DataStreamsManager,
+                    InternalTracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message);
                 return new CallTargetState(scope);

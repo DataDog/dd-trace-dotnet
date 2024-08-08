@@ -42,15 +42,15 @@ namespace Datadog.Trace.Tests.Propagators
 
         [Theory]
         [InlineData(0, 123456789, 987654321, null, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
-        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.UserReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
-        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.AutoReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
-        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.AutoKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
-        [InlineData(0, 123456789, 987654321, SamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
+        [InlineData(0, 123456789, 987654321, InternalSamplingPriorityValues.UserReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
+        [InlineData(0, 123456789, 987654321, InternalSamplingPriorityValues.AutoReject, "00-000000000000000000000000075bcd15-000000003ade68b1-00")]
+        [InlineData(0, 123456789, 987654321, InternalSamplingPriorityValues.AutoKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
+        [InlineData(0, 123456789, 987654321, InternalSamplingPriorityValues.UserKeep, "00-000000000000000000000000075bcd15-000000003ade68b1-01")]
         [InlineData(0x0123456789ABCDEF, 0x1122334455667788, 0x000000003ade68b1, null, @"00-0123456789abcdef1122334455667788-000000003ade68b1-01")]
         public void CreateTraceParentHeader(ulong traceIdUpper, ulong traceIdLower, ulong spanId, int? samplingPriority, string expected)
         {
             var traceId = new TraceId(traceIdUpper, traceIdLower);
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
+            var context = new InternalSpanContext(traceId, spanId, samplingPriority, serviceName: null, "origin");
             var traceparent = W3CTraceContextPropagator.CreateTraceParentHeader(context);
 
             traceparent.Should().Be(expected);
@@ -62,10 +62,10 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData(null, "", "", "", "dd=s:1;p:0000000000000002")]
         [InlineData(null, " ", " ", " ", "dd=s:1;p:0000000000000002")]
         // sampling priority only
-        [InlineData(SamplingPriorityValues.UserReject, null, null, null, "dd=s:-1;p:0000000000000002")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, null, null, "dd=s:0;p:0000000000000002")]
-        [InlineData(SamplingPriorityValues.AutoKeep, null, null, null, "dd=s:1;p:0000000000000002")]
-        [InlineData(SamplingPriorityValues.UserKeep, null, null, null, "dd=s:2;p:0000000000000002")]
+        [InlineData(InternalSamplingPriorityValues.UserReject, null, null, null, "dd=s:-1;p:0000000000000002")]
+        [InlineData(InternalSamplingPriorityValues.AutoReject, null, null, null, "dd=s:0;p:0000000000000002")]
+        [InlineData(InternalSamplingPriorityValues.AutoKeep, null, null, null, "dd=s:1;p:0000000000000002")]
+        [InlineData(InternalSamplingPriorityValues.UserKeep, null, null, null, "dd=s:2;p:0000000000000002")]
         [InlineData(3, null, null, null, "dd=s:3;p:0000000000000002")]
         [InlineData(-5, null, null, null, "dd=s:-5;p:0000000000000002")]
         // origin only
@@ -79,10 +79,10 @@ namespace Datadog.Trace.Tests.Propagators
         // additional state only
         [InlineData(null, null, null, "key1=value1,key2=value2", "dd=s:1;p:0000000000000002,key1=value1,key2=value2")]
         // combined
-        [InlineData(SamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum;p:0000000000000002,key1=value1")]
-        [InlineData(SamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;p:0000000000000002;t.a:b,key1=value1")]
+        [InlineData(InternalSamplingPriorityValues.UserKeep, "rum", null, "key1=value1", "dd=s:2;o:rum;p:0000000000000002,key1=value1")]
+        [InlineData(InternalSamplingPriorityValues.AutoReject, null, "_dd.p.a=b", "key1=value1", "dd=s:0;p:0000000000000002;t.a:b,key1=value1")]
         [InlineData(null, "rum", "_dd.p.a=b", "key1=value1", "dd=s:1;o:rum;p:0000000000000002;t.a:b,key1=value1")]
-        [InlineData(SamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;p:0000000000000002;t.dm:-4;t.usr.id:12345,key1=value1")]
+        [InlineData(InternalSamplingPriorityValues.AutoKeep, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1", "dd=s:1;o:rum;p:0000000000000002;t.dm:-4;t.usr.id:12345,key1=value1")]
         public void CreateTraceStateHeader(int? samplingPriority, string origin, string tags, string additionalState, string expected)
         {
             var propagatedTags = TagPropagation.ParseHeader(tags);
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             traceContext.SetSamplingPriority(samplingPriority, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_WithPublicPropagatedTags()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
             var span = new Span(spanContext, DateTimeOffset.Now);
 
             var user = new InternalUserDetails("12345")
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests.Propagators
             };
 
             // use public APIs to add propagated tags
-            span.SetTraceSamplingPriority(SamplingPriority.UserKeep); // adds "_dd.p.dm" and sampling priority
+            span.SetTraceSamplingPriority(InternalSamplingPriority.UserKeep); // adds "_dd.p.dm" and sampling priority
             span.SetUser(user);                                       // adds "_dd.p.usr.id"
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
@@ -128,10 +128,10 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_With128Bit_TraceId()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: traceId, spanId: 2);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId: traceId, spanId: 2);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
@@ -149,8 +149,8 @@ namespace Datadog.Trace.Tests.Propagators
                 AdditionalW3CTraceState = "key1=value1"
             };
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object);
@@ -172,8 +172,8 @@ namespace Datadog.Trace.Tests.Propagators
                 AdditionalW3CTraceState = "key1=value1"
             };
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId, spanId, rawTraceId: traceId.ToString(), rawSpanId: spanId.ToString("x16"));
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId, spanId, rawTraceId: traceId.ToString(), rawSpanId: spanId.ToString("x16"));
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object);
@@ -192,8 +192,8 @@ namespace Datadog.Trace.Tests.Propagators
                 AdditionalW3CTraceState = "key1=value1"
             };
 
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
-            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new InternalSpanContext(parent: InternalSpanContext.None, traceContext, serviceName: null, traceId: (TraceId)123456789, spanId: 987654321, rawTraceId: null, rawSpanId: null);
             var headers = new Mock<IHeadersCollection>();
 
             W3CPropagator.Inject(spanContext, headers.Object, (carrier, name, value) => carrier.Set(name, value));
@@ -352,7 +352,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = PropagatedTagsCollection,
                            IsRemote = true,
@@ -436,7 +436,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = PropagatedTagsCollection,
                            IsRemote = true,
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = PropagatedTagsCollection,
                            AdditionalW3CTraceState = "abc=123,foo=bar",
@@ -546,7 +546,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.AutoKeep,
                            Origin = null,
                            PropagatedTags = EmptyPropagatedTags,
                            IsRemote = true,
@@ -578,10 +578,10 @@ namespace Datadog.Trace.Tests.Propagators
                                 rawTraceId: traceId,
                                 rawParentId: parentId));
 
-            var spanContext = new SpanContext(
+            var spanContext = new InternalSpanContext(
                 traceParent.TraceId,
                 traceParent.ParentId,
-                samplingPriority: SamplingPriorityValues.AutoKeep,
+                samplingPriority: InternalSamplingPriorityValues.AutoKeep,
                 serviceName: null,
                 origin: null,
                 traceParent.RawTraceId,
@@ -652,8 +652,8 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(SamplingPriorityValues.AutoKeep)]
-        [InlineData(SamplingPriorityValues.UserKeep)]
+        [InlineData(InternalSamplingPriorityValues.AutoKeep)]
+        [InlineData(InternalSamplingPriorityValues.UserKeep)]
         [InlineData(3)]
         public void Extract_MatchingSampled1_UsesTracestateSamplingPriority(int samplingPriority)
         {
@@ -693,8 +693,8 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(SamplingPriorityValues.AutoReject)]
-        [InlineData(SamplingPriorityValues.UserReject)]
+        [InlineData(InternalSamplingPriorityValues.AutoReject)]
+        [InlineData(InternalSamplingPriorityValues.UserReject)]
         [InlineData(-2)]
         public void Extract_MatchingSampled0_UsesTracestateSamplingPriority(int samplingPriority)
         {

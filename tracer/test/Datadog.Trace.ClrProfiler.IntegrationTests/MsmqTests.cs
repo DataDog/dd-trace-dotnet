@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
-                SpanKinds.Consumer => span.IsMsmqInbound(metadataSchemaVersion),
-                SpanKinds.Producer => span.IsMsmqOutbound(metadataSchemaVersion),
-                SpanKinds.Client => span.IsMsmqClient(metadataSchemaVersion),
+                InternalSpanKinds.Consumer => span.IsMsmqInbound(metadataSchemaVersion),
+                InternalSpanKinds.Producer => span.IsMsmqOutbound(metadataSchemaVersion),
+                InternalSpanKinds.Client => span.IsMsmqClient(metadataSchemaVersion),
                 _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the MSMQ integration: {span.Tags["span.kind"]}", nameof(span)),
             };
 
@@ -91,25 +91,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (string.Equals(command, "msmq.send", StringComparison.OrdinalIgnoreCase))
                 {
                     span.Tags[Tags.MsmqMessageWithTransaction].Should().Be(span.Tags[Tags.MsmqIsTransactionalQueue], "The program is supposed to send messages within transactions to transactional queues, and outside of transactions to non transactional queues");
-                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Producer);
+                    span.Tags[Tags.SpanKind].Should().Be(InternalSpanKinds.Producer);
                     span.Resource.Should().Be($"msmq.send {span.Tags[Tags.MsmqQueuePath]}");
                     sendCount++;
                 }
                 else if (string.Equals(command, "msmq.receive", StringComparison.OrdinalIgnoreCase))
                 {
-                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
+                    span.Tags[Tags.SpanKind].Should().Be(InternalSpanKinds.Consumer);
                     span.Resource.Should().Be($"msmq.receive {span.Tags[Tags.MsmqQueuePath]}");
                     receiveCount++;
                 }
                 else if (string.Equals(command, "msmq.peek", StringComparison.OrdinalIgnoreCase))
                 {
-                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Consumer);
+                    span.Tags[Tags.SpanKind].Should().Be(InternalSpanKinds.Consumer);
                     span.Resource.Should().Be($"msmq.peek {span.Tags[Tags.MsmqQueuePath]}");
                     peekCount++;
                 }
                 else if (string.Equals(command, "msmq.purge", StringComparison.OrdinalIgnoreCase))
                 {
-                    span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Client);
+                    span.Tags[Tags.SpanKind].Should().Be(InternalSpanKinds.Client);
                     span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MsmqQueuePath]}");
                     purgeCount++;
                 }

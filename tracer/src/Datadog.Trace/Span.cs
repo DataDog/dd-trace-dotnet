@@ -26,7 +26,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    internal partial class Span : ISpan
+    internal partial class Span : IInternalSpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -34,12 +34,12 @@ namespace Datadog.Trace
         private int _isFinished;
         private bool _baseServiceTagSet;
 
-        internal Span(SpanContext context, DateTimeOffset? start)
+        internal Span(InternalSpanContext context, DateTimeOffset? start)
             : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(InternalSpanContext context, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
             Context = context;
@@ -65,7 +65,7 @@ namespace Datadog.Trace
         /// Gets or sets the type of request this span represents (ex: web, db).
         /// Not to be confused with span kind.
         /// </summary>
-        /// <seealso cref="SpanTypes"/>
+        /// <seealso cref="InternalSpanTypes"/>
         internal string Type { get; set; }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal InternalSpanContext Context { get; }
 
         internal List<SpanLink> SpanLinks { get; private set; }
 
@@ -140,7 +140,7 @@ namespace Datadog.Trace
                                  || Context.ParentInternal.SpanId == 0
                                  || Context.ParentInternal switch
                                  {
-                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     InternalSpanContext s => s.ServiceNameInternal != ServiceName,
                                      { } s => s.ServiceName != ServiceName,
                                  };
 
@@ -179,7 +179,7 @@ namespace Datadog.Trace
             sb.AppendLine($"Error: {Error}");
 
             var samplingPriority = Context.TraceContext?.SamplingPriority;
-            sb.AppendLine($"TraceSamplingPriority: {SamplingPriorityValues.ToString(samplingPriority) ?? "not set"}");
+            sb.AppendLine($"TraceSamplingPriority: {InternalSamplingPriorityValues.ToString(samplingPriority) ?? "not set"}");
 
             sb.AppendLine($"Meta: {Tags}");
 
@@ -192,7 +192,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        internal ISpan SetTag(string key, string value)
+        internal IInternalSpan SetTag(string key, string value)
         {
             if (IsFinished)
             {
@@ -265,7 +265,7 @@ namespace Datadog.Trace
                     {
                         Context.TraceContext.SetSamplingPriority(samplingPriorityInt32, SamplingMechanism.Manual);
                     }
-                    else if (Enum.TryParse<SamplingPriority>(value, out var samplingPriorityEnum))
+                    else if (Enum.TryParse<InternalSamplingPriority>(value, out var samplingPriorityEnum))
                     {
                         Context.TraceContext.SetSamplingPriority((int?)samplingPriorityEnum, SamplingMechanism.Manual);
                     }
@@ -281,7 +281,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
-                        Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+                        Context.TraceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
                     }
 
                     break;
@@ -295,7 +295,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
-                        Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+                        Context.TraceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserReject, SamplingMechanism.Manual);
                     }
 
                     break;
@@ -451,7 +451,7 @@ namespace Datadog.Trace
             // allow retrieval through any span in the trace
             return key switch
             {
-                Internal.Tags.SamplingPriority => SamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
+                Internal.Tags.SamplingPriority => InternalSamplingPriorityValues.ToString(Context.TraceContext?.SamplingPriority),
                 Internal.Tags.Env => Context.TraceContext?.Environment,
                 Internal.Tags.Version => Context.TraceContext?.ServiceVersion,
                 Internal.Tags.Origin => Context.TraceContext?.Origin,

@@ -80,14 +80,14 @@ namespace Datadog.Trace.AspNet
 
         internal static void AddHeaderTagsFromHttpResponse(HttpContext httpContext, Scope scope)
         {
-            if (!Tracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
+            if (!InternalTracer.Instance.Settings.HeaderTagsInternal.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
                 _canReadHttpResponseHeaders)
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), InternalTracer.Instance.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {
@@ -108,7 +108,7 @@ namespace Datadog.Trace.AspNet
             bool shouldDisposeScope = true;
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = InternalTracer.Instance;
 
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
@@ -132,7 +132,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                InternalSpanContext propagatedContext = null;
                 if (tracer.InternalActiveScope == null)
                 {
                     try
@@ -148,7 +148,7 @@ namespace Datadog.Trace.AspNet
                 }
 
                 string host = httpRequest.Headers.Get("Host");
-                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
+                var userAgent = httpRequest.Headers.Get(InternalHttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
@@ -225,7 +225,7 @@ namespace Datadog.Trace.AspNet
 
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = InternalTracer.Instance;
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
@@ -320,12 +320,12 @@ namespace Datadog.Trace.AspNet
                                 status = 400;
                             }
 
-                            rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                            rootSpan.SetHttpStatusCode(status, isServer: true, InternalTracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
 
                             if (scope.Span != rootSpan)
                             {
-                                scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
+                                scope.Span.SetHttpStatusCode(status, isServer: true, InternalTracer.Instance.Settings);
                                 AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
                         }
@@ -369,7 +369,7 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = InternalTracer.Instance;
 
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {

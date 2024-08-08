@@ -38,7 +38,7 @@ public class SpanContextInjectorInjectIntegration
 
         if (SpanContextHelper.GetContext(context) is { } spanContext)
         {
-            SpanContextInjector.InjectInternal(carrier, inject, spanContext);
+            InternalSpanContextInjector.InjectInternal(carrier, inject, spanContext);
         }
 
         return CallTargetState.GetDefault();

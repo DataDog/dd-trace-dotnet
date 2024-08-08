@@ -39,7 +39,7 @@ internal static class SeleniumCommon
     private static Type? _seleniumCookieType;
     private static long _openPageCount;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => CIVisibility.IsRunning && InternalTracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static void OnBeforePageLoad<TTarget>(TTarget instance, Dictionary<string, object>? parameters)
         where TTarget : IWebDriverProxy => PreClose(instance);
@@ -88,7 +88,7 @@ internal static class SeleniumCommon
                 Interlocked.Increment(ref _openPageCount);
 
                 // Tag the current test with browser information
-                span.Type = SpanTypes.Browser;
+                span.Type = InternalSpanTypes.Browser;
                 tags.BrowserDriver = "selenium";
                 tags.BrowserDriverVersion = instance.Type.Assembly.GetName().Version?.ToString() ?? "unknown";
 

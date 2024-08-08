@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(expectedPeerServiceName, span.GetTag(Tags.PeerService));
                     Assert.Equal(expectedPeerServiceFromName, span.GetTag(Tags.PeerServiceRemappedFrom));
-                    Assert.Equal(SpanTypes.Http, span.Type);
+                    Assert.Equal(InternalSpanTypes.Http, span.Type);
                 }
 
                 VerifyInstrumentation(processResult.Process);

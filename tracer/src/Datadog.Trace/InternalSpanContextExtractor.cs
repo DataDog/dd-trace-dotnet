@@ -1,4 +1,4 @@
-// <copyright file="SpanContextExtractor.cs" company="Datadog">
+// <copyright file="InternalSpanContextExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,38 +19,38 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.Internal
 {
     /// <summary>
-    /// The <see cref="SpanContextExtractor"/> is responsible for extracting <see cref="ISpanContext"/> in the rare cases
+    /// The <see cref="InternalSpanContextExtractor"/> is responsible for extracting <see cref="IInternalSpanContext"/> in the rare cases
     /// where the Tracer couldn't propagate it itself. This can happen for instance when libraries add an extra
     /// layer above the instrumented ones (eg consuming Kafka messages and enqueuing them prior to generate a span).
     /// When messageType and target are specified, also used to set data streams monitoring checkpoints (if enabled).
     /// </summary>
-    public class SpanContextExtractor
+    public class InternalSpanContextExtractor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<InternalSpanContextExtractor>();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContextExtractor"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContextExtractor"/> class
         /// </summary>
         [PublicApi]
-        public SpanContextExtractor()
+        public InternalSpanContextExtractor()
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Ctor);
         }
 
-        internal SpanContextExtractor(bool unusedParamNotToUsePublicApi)
+        internal InternalSpanContextExtractor(bool unusedParamNotToUsePublicApi)
         {
             // unused parameter is to give us a non-public API we can use
         }
 
         /// <summary>
-        /// Given a SpanContext carrier and a function to access the values, this method will extract the <see cref="ISpanContext"/> if any.
+        /// Given a SpanContext carrier and a function to access the values, this method will extract the <see cref="IInternalSpanContext"/> if any.
         /// </summary>
         /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
         /// <param name="getter">Given a key name, returns values from the carrier. Should return an empty collection if the requested key is not present.</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
-        /// <returns>A potentially null Datadog <see cref="ISpanContext"/></returns>
+        /// <returns>A potentially null Datadog <see cref="IInternalSpanContext"/></returns>
         [PublicApi]
-        public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        public IInternalSpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
             return ExtractInternal(carrier, getter);
@@ -69,13 +69,13 @@ namespace Datadog.Trace.Internal
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog SpanContext</returns>
         [PublicApi]
-        public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
+        public IInternalSpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
             return ExtractInternal(carrier, getter, messageType, source);
         }
 
-        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
+        internal static InternalSpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
             if (messageType != null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Internal
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
 
             if (spanContext is not null
-             && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
+             && InternalTracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
                 if (getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault() is { Length: > 0 } base64PathwayContext)
                 {

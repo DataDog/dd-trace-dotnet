@@ -22,14 +22,14 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.ExtensionMethods
 {
     /// <summary>
-    /// Extension methods for the <see cref="ISpan"/> class.
+    /// Extension methods for the <see cref="IInternalSpan"/> class.
     /// </summary>
     public static class SpanExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
 
         /// <summary>
-        /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
+        /// Sets the sampling priority for the trace that contains the specified <see cref="IInternalSpan"/>.
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
@@ -37,24 +37,24 @@ namespace Datadog.Trace.ExtensionMethods
         /// This public extension method is meant for external users only. Internal Datadog calls should
         /// use the methods on <see cref="TraceContext"/> instead.</remarks>
         [PublicApi]
-        public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
+        public static void SetTraceSamplingPriority(this IInternalSpan span, InternalSamplingPriority samplingPriority)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTraceSamplingPriority);
             SetTraceSamplingPriorityInternal(span, samplingPriority);
         }
 
-        internal static void SetTraceSamplingPriorityInternal(this ISpan span, SamplingPriority samplingPriority)
+        internal static void SetTraceSamplingPriorityInternal(this IInternalSpan span, InternalSamplingPriority samplingPriority)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
-            if (span.Context is SpanContext { TraceContext: { } traceContext })
+            if (span.Context is InternalSpanContext { TraceContext: { } traceContext })
             {
                 traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
             }
         }
 
         internal static void DecorateWebServerSpan(
-            this ISpan span,
+            this IInternalSpan span,
             string resourceName,
             string method,
             string host,
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ExtensionMethods
             string userAgent,
             WebTags tags)
         {
-            span.Type = SpanTypes.Web;
+            span.Type = InternalSpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
             if (tags is not null)
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
+        internal static void SetHeaderTags<T>(this IInternalSpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
             where T : IHeadersCollection
         {
             if (headerTags is not null && !headerTags.IsEmpty())
@@ -134,7 +134,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static string GetTraceIdStringForLogs(this ISpan span)
+        internal static string GetTraceIdStringForLogs(this IInternalSpan span)
         {
             if (span is not Span s)
             {

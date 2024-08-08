@@ -27,19 +27,19 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact(Skip = "Disabled until service mapping is re-implemented in dynamic config")]
         public void ApplyServiceMappingToNewTraces()
         {
-            var scope = Tracer.Instance.StartActive("Trace1");
+            var scope = InternalTracer.Instance.StartActive("Trace1");
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
-               .Should().Be($"{Tracer.Instance.DefaultServiceName}-test");
+            InternalTracer.Instance.CurrentTraceSettings.GetServiceName(InternalTracer.Instance, "test")
+               .Should().Be($"{InternalTracer.Instance.DefaultServiceName}-test");
 
             DynamicConfigurationManager.OnlyForTests_ApplyConfiguration(CreateConfig(("tracing_service_mapping", "test:ok")));
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
-               .Should().Be($"{Tracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
+            InternalTracer.Instance.CurrentTraceSettings.GetServiceName(InternalTracer.Instance, "test")
+               .Should().Be($"{InternalTracer.Instance.DefaultServiceName}-test", "the old configuration should be used inside of the active trace");
 
             scope.Close();
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
+            InternalTracer.Instance.CurrentTraceSettings.GetServiceName(InternalTracer.Instance, "test")
                .Should().Be("ok", "the new configuration should be used outside of the active trace");
         }
 

@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal static CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TRules, TUserContext, TInputs>(TTarget instance, string originalQuery, TSchema schema, TDocument document, TRules rules, TUserContext userContext, TInputs inputs)
             where TDocument : IDocument
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document.OriginalQuery));
+            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(InternalTracer.Instance, document.OriginalQuery));
         }
 
         /// <summary>

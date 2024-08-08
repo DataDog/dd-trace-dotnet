@@ -32,7 +32,7 @@ internal class SpanContextMock
 
     public string LastParentId { get; set; }
 
-    public ISpanContext Parent { get; set; }
+    public IInternalSpanContext Parent { get; set; }
 
     public ulong? ParentId { get; set; }
 

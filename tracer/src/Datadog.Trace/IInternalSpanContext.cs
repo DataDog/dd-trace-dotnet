@@ -1,4 +1,4 @@
-// <copyright file="ISpanContext.cs" company="Datadog">
+// <copyright file="IInternalSpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ namespace Datadog.Trace.Internal
     /// <summary>
     /// Span context interface.
     /// </summary>
-    public partial interface ISpanContext
+    public partial interface IInternalSpanContext
     {
         /// <summary>
         /// Gets the 64-bit trace id, or the lower 64 bits of a 128-bit trace id.

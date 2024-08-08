@@ -21,7 +21,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     private const int SamplingPriorityValue = 1;
 
     private readonly MockApi _testApi;
-    private readonly Tracer _tracer;
+    private readonly InternalTracer _tracer;
     private AgentWriter _agentWriter;
 
     public SamplingPriorityTests_MultipleChunksWithUpstreamService()
@@ -30,14 +30,14 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
 
         var settings = new InternalTracerSettings();
         _agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, _agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new InternalTracer(settings, _agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]
     public async Task SingleChunk()
     {
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
+        var propagatedContext = new InternalSpanContext(traceId: 1, spanId: 10);
+        var settings = new InternalSpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {
@@ -80,13 +80,13 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     [Fact]
     public async Task MultipleChunks_3_and_1_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
+        var propagatedContext = new InternalSpanContext(traceId: 1, spanId: 10);
+        var settings = new InternalSpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {
@@ -154,13 +154,13 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     [Fact]
     public async Task MultipleChunks_2_and_2_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
+        var propagatedContext = new InternalSpanContext(traceId: 1, spanId: 10);
+        var settings = new InternalSpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {
@@ -227,13 +227,13 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     [Fact]
     public async Task MultipleChunks_1_and_3_Spans()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
+        var propagatedContext = new InternalSpanContext(traceId: 1, spanId: 10);
+        var settings = new InternalSpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {
@@ -300,13 +300,13 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     [Fact]
     public async Task FourChunks_1_Span_Each()
     {
-        ISpan span1;
-        ISpan span11;
-        ISpan span12;
-        ISpan span121;
+        IInternalSpan span1;
+        IInternalSpan span11;
+        IInternalSpan span12;
+        IInternalSpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
+        var propagatedContext = new InternalSpanContext(traceId: 1, spanId: 10);
+        var settings = new InternalSpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
         {

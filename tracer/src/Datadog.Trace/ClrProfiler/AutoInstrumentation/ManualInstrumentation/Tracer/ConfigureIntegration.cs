@@ -49,7 +49,7 @@ public class ConfigureIntegration
         UpdateSettings(values, settings);
 
         // Update the global instance
-        Internal.Tracer.ConfigureInternal(new InternalImmutableTracerSettings(settings, true));
+        Internal.InternalTracer.ConfigureInternal(new InternalImmutableTracerSettings(settings, true));
 
         return CallTargetState.GetDefault();
     }

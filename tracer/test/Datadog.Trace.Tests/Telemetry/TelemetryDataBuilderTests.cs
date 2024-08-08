@@ -153,7 +153,7 @@ public class TelemetryDataBuilderTests
 
         result.Application.Should().Be(_application);
         result.ApiVersion.Should().Be(TelemetryConstants.ApiVersionV2);
-        result.RuntimeId.Should().Be(Tracer.RuntimeId);
+        result.RuntimeId.Should().Be(InternalTracer.RuntimeId);
         result.TracerTime.Should().BeInRange(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
         if (result.Payload is MessageBatchPayload messageBatch)

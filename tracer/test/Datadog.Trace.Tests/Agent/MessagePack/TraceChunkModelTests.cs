@@ -468,10 +468,10 @@ public class TraceChunkModelTests
     }
 
     [Theory]
-    [InlineData(SamplingPriorityValues.UserReject)]
-    [InlineData(SamplingPriorityValues.UserKeep)]
-    [InlineData(SamplingPriorityValues.AutoReject)]
-    [InlineData(SamplingPriorityValues.AutoKeep)]
+    [InlineData(InternalSamplingPriorityValues.UserReject)]
+    [InlineData(InternalSamplingPriorityValues.UserKeep)]
+    [InlineData(InternalSamplingPriorityValues.AutoReject)]
+    [InlineData(InternalSamplingPriorityValues.AutoKeep)]
     public void Override_SamplingPriority_WhenPresent(int samplingPriority)
     {
         var spans = new[]
@@ -492,9 +492,9 @@ public class TraceChunkModelTests
 
     private Span CreateSpan(ulong traceId, ulong spanId, ulong parentId)
     {
-        var parentContent = new SpanContext(traceId, parentId);
+        var parentContent = new InternalSpanContext(traceId, parentId);
         var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-        var spanContext = new SpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
+        var spanContext = new InternalSpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
         return new Span(spanContext, DateTimeOffset.UtcNow);
     }
 }

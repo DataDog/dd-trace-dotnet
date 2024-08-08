@@ -57,7 +57,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
         private readonly Security _security;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
@@ -72,7 +72,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security)
+        public AspNetCoreDiagnosticObserver(InternalTracer tracer, Security security)
         {
             _tracer = tracer;
             _security = security;
@@ -80,7 +80,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
+        private InternalTracer CurrentTracer => _tracer ?? InternalTracer.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
 
@@ -295,7 +295,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         private static Span StartMvcCoreSpan(
-            Tracer tracer,
+            InternalTracer tracer,
             AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
             BeforeActionStruct typedArg,
             HttpContext httpContext,
@@ -306,7 +306,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             var span = mvcScope.Span;
-            span.Type = SpanTypes.Web;
+            span.Type = InternalSpanTypes.Web;
 
             // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
             var rootSpan = trackingFeature.RootScope.Span;

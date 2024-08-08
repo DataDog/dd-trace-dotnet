@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 isError,
                 expectedErrorType: null,
                 expectedErrorMessage: null,
-                SpanTypes.Web,
+                InternalSpanTypes.Web,
                 expectedResourceName,
                 "1.0.0");
         }
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var httpClient = new HttpClient())
             {
                 // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
 
                 var response = await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}" + "/Database/Elasticsearch");
                 var content = await response.Content.ReadAsStringAsync();

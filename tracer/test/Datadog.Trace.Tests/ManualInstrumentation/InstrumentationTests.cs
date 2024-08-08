@@ -84,7 +84,7 @@ public abstract class InstrumentationTests<T>
 
     private static IEnumerable<(Type Type, InstrumentMethodAttribute Attribute)> GetAllInstrumentations(string assemblyName)
     {
-        return typeof(Tracer)
+        return typeof(InternalTracer)
               .Assembly
               .GetTypes()
               .SelectMany(t => t.GetCustomAttributes(typeof(InstrumentMethodAttribute), false)

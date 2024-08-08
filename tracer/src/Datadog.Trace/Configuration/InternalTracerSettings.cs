@@ -73,7 +73,7 @@ namespace Datadog.Trace.Internal.Configuration
         /// <remarks>
         /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
         /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(InternalTracerSettings)"/>
+        /// in <see cref="InternalTracer.Configure(InternalTracerSettings)"/>
         /// </remarks>
         [PublicApi]
         public InternalTracerSettings(IConfigurationSource? source)
@@ -1095,9 +1095,9 @@ namespace Datadog.Trace.Internal.Configuration
         }
 
         /// <summary>
-        /// Create an instance of <see cref="InternalImmutableTracerSettings"/> that can be used to build a <see cref="Tracer"/>
+        /// Create an instance of <see cref="InternalImmutableTracerSettings"/> that can be used to build a <see cref="InternalTracer"/>
         /// </summary>
-        /// <returns>The <see cref="InternalImmutableTracerSettings"/> that can be passed to a <see cref="Tracer"/> instance</returns>
+        /// <returns>The <see cref="InternalImmutableTracerSettings"/> that can be passed to a <see cref="InternalTracer"/> instance</returns>
         [PublicApi]
         public InternalImmutableTracerSettings Build()
         {

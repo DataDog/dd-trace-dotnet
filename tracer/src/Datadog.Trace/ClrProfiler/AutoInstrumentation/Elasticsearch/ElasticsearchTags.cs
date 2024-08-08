@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
     internal partial class ElasticsearchTags : InstrumentationTags
     {
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Client;
+        public override string SpanKind => InternalSpanKinds.Client;
 
         [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;

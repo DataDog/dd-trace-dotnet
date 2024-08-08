@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tagging
     internal partial class CouchbaseTags : InstrumentationTags
     {
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Client;
+        public override string SpanKind => InternalSpanKinds.Client;
 
         [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Couchbase);

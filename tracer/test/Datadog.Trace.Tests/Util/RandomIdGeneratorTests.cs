@@ -153,7 +153,7 @@ public class RandomIdGeneratorTests
     [Fact]
     public void Default_Is_128Bit_TraceId()
     {
-        var tracer = new Tracer(
+        var tracer = new InternalTracer(
             new InternalTracerSettings(),
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
@@ -173,7 +173,7 @@ public class RandomIdGeneratorTests
     {
         var settings = InternalTracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
 
-        var tracer = new Tracer(
+        var tracer = new InternalTracer(
             settings,
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
@@ -193,7 +193,7 @@ public class RandomIdGeneratorTests
     {
         var settings = InternalTracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, true } });
 
-        var tracer = new Tracer(
+        var tracer = new InternalTracer(
             settings,
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),

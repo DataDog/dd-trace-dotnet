@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
+        internal static Scope? CreateScope<TMessageQueue>(InternalTracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
             if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Queue;
+                span.Type = InternalSpanTypes.Queue;
                 span.ResourceName = $"{command} {tags.Path}";
 
                 // TODO: PBT: I think this span should be measured when span kind is consumer or producer
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         }
 
         // internal for testing
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(InternalTracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
             {
@@ -93,8 +93,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             return spanKind switch
             {
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
+                InternalSpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
+                InternalSpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
                 _ => MsmqConstants.MsmqCommand
             };
         }

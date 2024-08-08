@@ -17,7 +17,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// </summary>
         internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =
         {
-            new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
+            new(InternalHttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
         };
     }
 }

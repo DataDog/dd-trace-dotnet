@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 var manualSpan = spans.Single(s => s.Name == "Manual");
 
-                manualSpan.Metrics[Metrics.SamplingPriority].Should().Be(SamplingPriorityValues.UserReject);
+                manualSpan.Metrics[Metrics.SamplingPriority].Should().Be(InternalSamplingPriorityValues.UserReject);
             }
         }
     }

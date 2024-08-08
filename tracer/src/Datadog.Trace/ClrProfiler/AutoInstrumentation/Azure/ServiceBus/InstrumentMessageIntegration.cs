@@ -42,8 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IDictionary<string, object> properties, string activityName, ref string traceparent, ref string tracestate)
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            if (InternalTracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && InternalTracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
             {
                 // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Two:
                 // In between the OnMethodBegin and OnMethodEnd, a new Activity will be created to represent

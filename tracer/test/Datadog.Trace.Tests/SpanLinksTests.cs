@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests
 {
     public class SpanLinksTests
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
 
         public SpanLinksTests()
         {
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]

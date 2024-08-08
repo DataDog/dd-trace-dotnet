@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tagging
     internal partial class AwsSnsTags : AwsSdkTags
     {
         public AwsSnsTags()
-            : this(SpanKinds.Client)
+            : this(InternalSpanKinds.Client)
         {
         }
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tagging
         // so the setter is only invoked once
         [Obsolete("Use constructor that takes a SpanKind")]
         public AwsSnsV1Tags()
-            : this(SpanKinds.Client)
+            : this(InternalSpanKinds.Client)
         {
         }
 
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                if (SpanKind == SpanKinds.Consumer)
+                if (SpanKind == InternalSpanKinds.Consumer)
                 {
                     return null;
                 }
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                if (SpanKind == SpanKinds.Consumer)
+                if (SpanKind == InternalSpanKinds.Consumer)
                 {
                     return null;
                 }

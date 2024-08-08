@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcLegacyServerCommon));
 
-        public static Scope? CreateServerSpan<TTarget>(Tracer tracer, TTarget target, IMetadata? metadata)
+        public static Scope? CreateServerSpan<TTarget>(InternalTracer tracer, TTarget target, IMetadata? metadata)
         {
             var serverHandler = target.DuckCast<ServerCallHandlerStruct>();
             var method = serverHandler.Method;
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 scope = tracer.StartActiveInternal(operationName, parent: spanContext, tags: tags, serviceName: serviceName);
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Grpc;
+                span.Type = InternalSpanTypes.Grpc;
                 span.ResourceName = method.FullName;
 
                 if (metadata?.Count > 0)
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(IMetadata? metadata)
+        private static InternalSpanContext? ExtractPropagatedContext(IMetadata? metadata)
         {
             try
             {

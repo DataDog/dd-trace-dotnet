@@ -18,7 +18,7 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceContextPropertyTests
 {
-    private readonly Tracer _tracer;
+    private readonly InternalTracer _tracer;
     private readonly MockApi _testApi;
 
     public TraceContextPropertyTests()
@@ -27,14 +27,14 @@ public class TraceContextPropertyTests
 
         var settings = new InternalTracerSettings();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]
-    [InlineData(SamplingPriorityValues.UserReject)]
-    [InlineData(SamplingPriorityValues.AutoReject)]
-    [InlineData(SamplingPriorityValues.AutoKeep)]
-    [InlineData(SamplingPriorityValues.UserKeep)]
+    [InlineData(InternalSamplingPriorityValues.UserReject)]
+    [InlineData(InternalSamplingPriorityValues.AutoReject)]
+    [InlineData(InternalSamplingPriorityValues.AutoKeep)]
+    [InlineData(InternalSamplingPriorityValues.UserKeep)]
     [InlineData(-10)]
     [InlineData(100)]
     public async Task SamplingPriority(int samplingPriority)
@@ -107,7 +107,7 @@ public class TraceContextPropertyTests
         await AssertTag("_dd.origin", after);
     }
 
-    private static Scope CreateTrace(Tracer tracer)
+    private static Scope CreateTrace(InternalTracer tracer)
     {
         var rootScope = tracer.StartActive("root");
 

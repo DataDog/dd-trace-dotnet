@@ -64,13 +64,13 @@ namespace Datadog.Trace.Tests
 
             void AddAndCloseSpan()
             {
-                var span = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+                var span = new Span(new InternalSpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
                 traceContext.AddSpan(span);
                 traceContext.CloseSpan(span);
             }
 
-            var rootSpan = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var rootSpan = new Span(new InternalSpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             traceContext.AddSpan(rootSpan);
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 3;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new InternalSpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>((s) => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -179,7 +179,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 2;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new InternalSpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -198,7 +198,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>((s) => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 

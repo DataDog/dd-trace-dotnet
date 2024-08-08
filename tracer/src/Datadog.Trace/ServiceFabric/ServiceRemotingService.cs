@@ -49,7 +49,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingServiceEvents_ReceiveRequest(object? sender, EventArgs? e)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
 
             if (!_initialized || !tracer.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-            SpanContext? spanContext = null;
+            InternalSpanContext? spanContext = null;
 
             try
             {
@@ -93,12 +93,12 @@ namespace Datadog.Trace.ServiceFabric
         /// or <c>IServiceRemotingFailedResponseEventArgs2</c> on failure.</param>
         private static void ServiceRemotingServiceEvents_SendResponse(object? sender, EventArgs? e)
         {
-            if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
+            if (!_initialized || !InternalTracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
                 return;
             }
 
-            ServiceRemotingHelpers.FinishSpan(e, SpanKinds.Server);
+            ServiceRemotingHelpers.FinishSpan(e, InternalSpanKinds.Server);
         }
 
         private readonly struct ServiceRemotingRequestMessageHeaderGetter : ICarrierGetter<IServiceRemotingRequestMessageHeader>

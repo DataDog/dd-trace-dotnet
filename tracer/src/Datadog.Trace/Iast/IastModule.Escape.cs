@@ -24,7 +24,7 @@ internal static partial class IastModule
                 return encoded;
             }
 
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Xss))
             {
                 return encoded;

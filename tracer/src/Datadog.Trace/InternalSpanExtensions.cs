@@ -1,4 +1,4 @@
-// <copyright file="SpanExtensions.cs" company="Datadog">
+// <copyright file="InternalSpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,9 +18,9 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.Internal
 {
     /// <summary>
-    /// Extension methods for the <see cref="ISpan"/> interface
+    /// Extension methods for the <see cref="IInternalSpan"/> interface
     /// </summary>
-    public static partial class SpanExtensions
+    public static partial class InternalSpanExtensions
     {
         /// <summary>
         /// Sets the details of the user on the local root span
@@ -28,13 +28,13 @@ namespace Datadog.Trace.Internal
         /// <param name="span">The span to be tagged</param>
         /// <param name="userDetails">The details of the current logged on user</param>
         [PublicApi]
-        public static void SetUser(this ISpan span, InternalUserDetails userDetails)
+        public static void SetUser(this IInternalSpan span, InternalUserDetails userDetails)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetUser);
             SetUserInternal(span, userDetails);
         }
 
-        internal static void SetUserInternal(this ISpan span, InternalUserDetails userDetails)
+        internal static void SetUserInternal(this IInternalSpan span, InternalUserDetails userDetails)
         {
             if (span is null)
             {
@@ -97,13 +97,13 @@ namespace Datadog.Trace.Internal
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
         [PublicApi]
-        public static ISpan SetTag(this ISpan span, string key, double? value)
+        public static IInternalSpan SetTag(this IInternalSpan span, string key, double? value)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
             return span.SetTagInternal(key, value);
         }
 
-        internal static ISpan SetTagInternal(this ISpan span, string key, double? value)
+        internal static IInternalSpan SetTagInternal(this IInternalSpan span, string key, double? value)
         {
             if (span is null)
             {
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Internal
             return span.SetTag(key, value?.ToString());
         }
 
-        internal static bool IsCiVisibilitySpan(this ISpan span)
-            => span.Type is SpanTypes.TestSession or SpanTypes.TestModule or SpanTypes.TestSuite or SpanTypes.Test or SpanTypes.Browser;
+        internal static bool IsCiVisibilitySpan(this IInternalSpan span)
+            => span.Type is InternalSpanTypes.TestSession or InternalSpanTypes.TestModule or InternalSpanTypes.TestSuite or InternalSpanTypes.Test or InternalSpanTypes.Browser;
     }
 }

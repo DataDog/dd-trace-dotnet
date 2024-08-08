@@ -433,7 +433,7 @@ namespace Datadog.Trace.Agent
                     {
                         // we need to set the sampling priority of the chunk to be user keep so the agent handles it correctly
                         // this will override the TraceContext sampling priority when we do a SpanBuffer.TryWrite
-                        chunkSamplingPriority = SamplingPriorityValues.UserKeep;
+                        chunkSamplingPriority = InternalSamplingPriorityValues.UserKeep;
                         Interlocked.Increment(ref _droppedP0Traces); // increment since we are sampling out the entire trace
                         var spansDropped = spans.Count - singleSpanSamplingSpans.Count;
                         Interlocked.Add(ref _droppedP0Spans, spansDropped);

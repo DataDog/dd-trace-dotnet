@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal const string IntegrationName = nameof(IntegrationId.AwsKinesis);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsKinesis;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, ISpanContext? parentContext, out AwsKinesisTags? tags)
+        public static Scope? CreateScope(InternalTracer tracer, string operation, string spanKind, IInternalSpanContext? parentContext, out AwsKinesisTags? tags)
         {
             tags = null;
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
-                span.Type = SpanTypes.Http;
+                span.Type = InternalSpanTypes.Http;
                 span.ResourceName = $"{KinesisServiceName}.{operation}";
 
                 tags.Service = KinesisServiceName;

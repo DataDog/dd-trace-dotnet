@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         private static long _totalTestCases;
         private static long _newTestCases;
 
-        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.IsRunning && InternalTracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
         {
@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             test.SetTestMethodInfo(testMethod);
 
             // Telemetry
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            InternalTracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             // Skip tests
             if (skipReason is not null)

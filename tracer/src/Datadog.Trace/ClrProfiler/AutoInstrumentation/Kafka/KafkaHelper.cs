@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
         internal static Scope? CreateProducerScope(
-            Tracer tracer,
+            InternalTracer tracer,
             object producer,
             ITopicPartition topicPartition,
             bool isTombstone,
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
+                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(InternalSpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Queue;
+                span.Type = InternalSpanTypes.Queue;
                 span.ResourceName = resourceName;
                 if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
                 {
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         internal static Scope? CreateConsumerScope(
-            Tracer tracer,
+            InternalTracer tracer,
             DataStreamsManager dataStreamsManager,
             object consumer,
             string topic,
@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                SpanContext? propagatedContext = null;
+                InternalSpanContext? propagatedContext = null;
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
@@ -187,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
+                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(InternalSpanKinds.Consumer);
 
                 scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
@@ -195,7 +195,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Queue;
+                span.Type = InternalSpanTypes.Queue;
                 span.ResourceName = resourceName;
 
                 if (partition is not null)
@@ -266,7 +266,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        internal static void CloseConsumerScope(Tracer tracer)
+        internal static void CloseConsumerScope(InternalTracer tracer)
         {
             try
             {

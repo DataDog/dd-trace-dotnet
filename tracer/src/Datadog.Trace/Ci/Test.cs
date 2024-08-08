@@ -45,7 +45,7 @@ internal sealed class Test
         var module = suite.Module;
 
         var tags = new TestSpanTags(Suite.Tags, name);
-        var tracer = Tracer.Instance;
+        var tracer = InternalTracer.Instance;
         var span = tracer.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
             tags: tags,
@@ -54,9 +54,9 @@ internal sealed class Test
             spanId: spanId);
         var scope = tracer.TracerManager.ScopeManager.Activate(span, true);
 
-        scope.Span.Type = SpanTypes.Test;
+        scope.Span.Type = InternalSpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
+        scope.Span.Context.TraceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
         scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
@@ -466,7 +466,7 @@ internal sealed class Test
         _scope.Span.ResetStartTime();
     }
 
-    internal ISpan GetInternalSpan()
+    internal IInternalSpan GetInternalSpan()
     {
         return _scope.Span;
     }

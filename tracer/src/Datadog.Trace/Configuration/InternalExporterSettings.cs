@@ -70,7 +70,7 @@ namespace Datadog.Trace.Internal.Configuration
         /// <remarks>
         /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
         /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure(InternalTracerSettings)"/>
+        /// in <see cref="InternalTracer.Configure(InternalTracerSettings)"/>
         /// </remarks>
         [PublicApi]
         public InternalExporterSettings(IConfigurationSource? source)

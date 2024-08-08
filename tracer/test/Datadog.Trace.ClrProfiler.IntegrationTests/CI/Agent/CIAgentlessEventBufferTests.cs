@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             {
                 for (int j = 0; j < spanCount; j++)
                 {
-                    events.Add(new SpanEvent(new Span(new SpanContext((ulong)i, (ulong)i), DateTimeOffset.UtcNow)));
+                    events.Add(new SpanEvent(new Span(new InternalSpanContext((ulong)i, (ulong)i), DateTimeOffset.UtcNow)));
                 }
             }
 
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             Assert.False(buffer.IsFull);
 
-            var spanEvent = new SpanEvent(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            var spanEvent = new SpanEvent(new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow));
 
             var result = buffer.TryWrite(spanEvent);
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public void LockingBuffer()
         {
             var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10 * 1024 * 1024, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
-            var spanEvent = new SpanEvent(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            var spanEvent = new SpanEvent(new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow));
 
             Assert.True(buffer.TryWrite(spanEvent));
 
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public void ClearingBuffer()
         {
             var buffer = new Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>(10 * 1024 * 1024, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
-            var spanEvent = new SpanEvent(new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow));
+            var spanEvent = new SpanEvent(new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow));
 
             Assert.True(buffer.TryWrite(spanEvent));
 

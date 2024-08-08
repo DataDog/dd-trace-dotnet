@@ -33,7 +33,7 @@ public class CtorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? automaticTracer, Dictionary<string, object?> values)
     {
-        if (automaticTracer is Internal.Tracer tracer)
+        if (automaticTracer is Internal.InternalTracer tracer)
         {
             PopulateSettings(values, tracer.Settings);
         }

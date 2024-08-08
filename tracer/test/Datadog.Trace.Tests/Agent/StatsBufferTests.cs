@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Agent
             result.Version.Should().Be(payload.Version);
             result.Lang.Should().Be(TracerConstants.Language);
             result.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
-            result.RuntimeId.Should().Be(Tracer.RuntimeId);
+            result.RuntimeId.Should().Be(InternalTracer.RuntimeId);
             result.Sequence.Should().Be(1);
             result.AgentAggregation.Should().BeNull();
             result.Service.Should().BeNull();

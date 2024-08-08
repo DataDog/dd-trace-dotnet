@@ -35,7 +35,7 @@ namespace Datadog.Trace.Internal
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_Service_Get);
-                return Tracer.Instance.DefaultServiceName ?? string.Empty;
+                return InternalTracer.Instance.DefaultServiceName ?? string.Empty;
             }
         }
 
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Internal
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_Version_Get);
-                return Tracer.Instance.Settings.ServiceVersionInternal ?? string.Empty;
+                return InternalTracer.Instance.Settings.ServiceVersionInternal ?? string.Empty;
             }
         }
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Internal
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_Env_Get);
-                return Tracer.Instance.Settings.EnvironmentInternal ?? string.Empty;
+                return InternalTracer.Instance.Settings.EnvironmentInternal ?? string.Empty;
             }
         }
 
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Internal
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_TraceId_Get);
-                return Tracer.Instance.ActiveScope?.Span?.TraceId ?? 0;
+                return InternalTracer.Instance.ActiveScope?.Span?.TraceId ?? 0;
             }
         }
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Internal
             get
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Correlation_Identifier_SpanId_Get);
-                return Tracer.Instance.ActiveScope?.Span?.SpanId ?? 0;
+                return InternalTracer.Instance.ActiveScope?.Span?.SpanId ?? 0;
             }
         }
     }

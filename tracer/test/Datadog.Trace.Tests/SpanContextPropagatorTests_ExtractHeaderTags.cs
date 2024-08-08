@@ -180,11 +180,11 @@ namespace Datadog.Trace.Tests
             var headers = new NameValueCollection().Wrap();
 
             // Add headers
-            headers.Add(HttpHeaderNames.UserAgent, uaInHeaders);
+            headers.Add(InternalHttpHeaderNames.UserAgent, uaInHeaders);
 
             // Initialize header-tag arguments and expectations
             var headerTags = new Dictionary<string, string>();
-            headerTags.Add(HttpHeaderNames.UserAgent, tagName);
+            headerTags.Add(InternalHttpHeaderNames.UserAgent, tagName);
 
             // Test no user agent
             var processor = new HeaderTagsProcessor();

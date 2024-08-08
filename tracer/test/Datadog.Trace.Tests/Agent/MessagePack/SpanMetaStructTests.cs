@@ -108,7 +108,7 @@ public class SpanMetaStructTests
     [Theory]
     public static void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded(List<Tuple<string, object?>> dataToEncode)
     {
-        var span = new Span(new SpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+        var span = new Span(new InternalSpanContext(5, 6, samplingPriority: null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
         List<string> visitedKeys = new();
 
         // We add the elements to the meta struct

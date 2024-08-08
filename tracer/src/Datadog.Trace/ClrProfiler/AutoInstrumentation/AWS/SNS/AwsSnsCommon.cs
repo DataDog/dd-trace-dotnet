@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSns;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSnsTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(InternalTracer tracer, string operation, string spanKind, out AwsSnsTags? tags, IInternalSpanContext? parentContext = null)
         {
             tags = null;
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
-                span.Type = SpanTypes.Http;
+                span.Type = InternalSpanTypes.Http;
                 span.ResourceName = $"{SnsServiceName}.{operation}";
 
                 tags.Service = SnsServiceName;
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return topicArn.Substring(lastSeparationIndex);
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(InternalTracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
             {
@@ -84,8 +84,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
+                InternalSpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
+                InternalSpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
                 _ => $"{SnsOperationName}.request"
             };
         }

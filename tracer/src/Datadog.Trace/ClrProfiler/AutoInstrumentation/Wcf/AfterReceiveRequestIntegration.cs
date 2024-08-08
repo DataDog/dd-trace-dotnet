@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TMessageRpc>(TTarget instance, ref TMessageRpc rpc)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !tracer.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 // OnMethodBegin started an active span that can be accessed by IDispatchMessageInspector's and the actual WCF endpoint
                 // Before returning, we must reset the scope to the previous active scope, so that callers of this method do not see this scope
                 // Don't worry, this will be accessed and closed by the BeforeSendReplyIntegration
-                if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+                if (InternalTracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = state.PreviousScope;
                     DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);

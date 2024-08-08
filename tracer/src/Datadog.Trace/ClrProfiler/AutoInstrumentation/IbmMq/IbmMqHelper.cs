@@ -28,7 +28,7 @@ internal static class IbmMqHelper
         return NoopAdapter;
     }
 
-    internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)
+    internal static Scope? CreateProducerScope(InternalTracer tracer, IMqQueue queue, IMqMessage message)
     {
         Scope? scope = null;
 
@@ -42,7 +42,7 @@ internal static class IbmMqHelper
 
             var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(InternalSpanKinds.Consumer);
             tags.TopicName = queue.Name;
 
             scope = tracer.StartActiveInternal(
@@ -54,9 +54,9 @@ internal static class IbmMqHelper
             var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
 
             var span = scope.Span;
-            span.Type = SpanTypes.Queue;
+            span.Type = InternalSpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
+            span.SetTag(Tags.SpanKind, InternalSpanKinds.Producer);
 
             SpanContextPropagator.Instance.Inject(span.Context, GetHeadersAdapter(message));
         }
@@ -69,7 +69,7 @@ internal static class IbmMqHelper
     }
 
     internal static Scope? CreateConsumerScope(
-        Tracer tracer,
+        InternalTracer tracer,
         DateTimeOffset? spanStartTime,
         IMqQueue queue,
         IMqMessage message)
@@ -93,7 +93,7 @@ internal static class IbmMqHelper
                 return null;
             }
 
-            SpanContext? propagatedContext = null;
+            InternalSpanContext? propagatedContext = null;
 
             try
             {
@@ -105,7 +105,7 @@ internal static class IbmMqHelper
             }
 
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(InternalSpanKinds.Producer);
             tags.TopicName = queue.Name;
             scope = tracer.StartActiveInternal(
                 operationName,
@@ -118,9 +118,9 @@ internal static class IbmMqHelper
             var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
 
             var span = scope.Span;
-            span.Type = SpanTypes.Queue;
+            span.Type = InternalSpanTypes.Queue;
             span.ResourceName = resourceName;
-            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.SetTag(Tags.SpanKind, InternalSpanKinds.Consumer);
         }
         catch (Exception ex)
         {

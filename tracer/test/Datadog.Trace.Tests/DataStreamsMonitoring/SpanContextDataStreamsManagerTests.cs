@@ -20,7 +20,7 @@ public class SpanContextDataStreamsManagerTests
     public void SetCheckpoint_SetsTheSpanPathwayContext()
     {
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = new InternalSpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
         spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
@@ -32,7 +32,7 @@ public class SpanContextDataStreamsManagerTests
     public void SetCheckpoint_BatchProduceDoesNotCreateChain()
     {
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = new InternalSpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
         spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, new[] { "some-edge" }, payloadSizeBytes: 100, timeInQueueMs: 0, parent: null);
@@ -52,7 +52,7 @@ public class SpanContextDataStreamsManagerTests
     public void SetCheckpoint_BatchConsumeDoesNotCreateChain()
     {
         var dsm = GetEnabledDataStreamManager();
-        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        var spanContext = new InternalSpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
         var parentCtx = new PathwayContext(new PathwayHash(value: 12), pathwayStartNs: 5, edgeStartNs: 8);
 

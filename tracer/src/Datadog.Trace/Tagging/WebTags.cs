@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tagging
     internal partial class WebTags : InstrumentationTags, IHasStatusCode
     {
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Server;
+        public override string SpanKind => InternalSpanKinds.Server;
 
         [Tag(Internal.Tags.HttpUserAgent)]
         public string HttpUserAgent { get; set; }

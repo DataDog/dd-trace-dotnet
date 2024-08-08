@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            return new CallTargetState(AerospikeCommon.CreateScope(Tracer.Instance, instance));
+            return new CallTargetState(AerospikeCommon.CreateScope(InternalTracer.Instance, instance));
         }
 
         /// <summary>

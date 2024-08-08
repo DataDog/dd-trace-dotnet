@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tagging
         {
             get => MessagingOperation switch
                 {
-                    "receive" => SpanKinds.Consumer, // Override the Azure Service Bus implementation to mark receive-related operations as consumers
+                    "receive" => InternalSpanKinds.Consumer, // Override the Azure Service Bus implementation to mark receive-related operations as consumers
                     _ => _spanKind,
                 };
             set => _spanKind = value;
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                if (SpanKind == SpanKinds.Consumer)
+                if (SpanKind == InternalSpanKinds.Consumer)
                 {
                     return null;
                 }
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
-                if (SpanKind == SpanKinds.Consumer)
+                if (SpanKind == InternalSpanKinds.Consumer)
                 {
                     return null;
                 }

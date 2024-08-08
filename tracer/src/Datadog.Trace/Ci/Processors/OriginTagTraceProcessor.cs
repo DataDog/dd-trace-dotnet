@@ -48,13 +48,13 @@ namespace Datadog.Trace.Ci.Processors
                 {
                     var span = trace.Array![i];
                     if (span.Context.ParentInternal is null &&
-                        span.Type != SpanTypes.Test &&
-                        span.Type != SpanTypes.Browser &&
-                        span.Type != SpanTypes.TestSuite &&
-                        span.Type != SpanTypes.TestModule &&
-                        span.Type != SpanTypes.TestSession &&
-                        span.Type != SpanTypes.Benchmark &&
-                        span.Type != SpanTypes.Build)
+                        span.Type != InternalSpanTypes.Test &&
+                        span.Type != InternalSpanTypes.Browser &&
+                        span.Type != InternalSpanTypes.TestSuite &&
+                        span.Type != InternalSpanTypes.TestModule &&
+                        span.Type != InternalSpanTypes.TestSession &&
+                        span.Type != InternalSpanTypes.Benchmark &&
+                        span.Type != InternalSpanTypes.Build)
                     {
                         if (TraceClock.Instance.UtcNow - _warningLastTime > TimeSpan.FromSeconds(1))
                         {

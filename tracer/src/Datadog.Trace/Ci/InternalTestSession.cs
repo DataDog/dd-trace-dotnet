@@ -62,15 +62,15 @@ internal sealed class InternalTestSession
 
         tags.SetCIEnvironmentValues(environment);
 
-        var span = Tracer.Instance.StartSpan(
+        var span = InternalTracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
-        span.Type = SpanTypes.TestSession;
+        span.Type = InternalSpanTypes.TestSession;
         span.ResourceName = $"{span.OperationName}.{command}";
-        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
         span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
 
         tags.SessionId = span.SpanId;

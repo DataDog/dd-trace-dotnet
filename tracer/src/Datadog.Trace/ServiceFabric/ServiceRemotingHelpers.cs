@@ -91,8 +91,8 @@ namespace Datadog.Trace.ServiceFabric
         }
 
         public static Span CreateSpan(
-            Tracer tracer,
-            ISpanContext? context,
+            InternalTracer tracer,
+            IInternalSpanContext? context,
             ServiceRemotingTags tags,
             IServiceRemotingRequestEventArgs? eventArgs,
             IServiceRemotingRequestMessageHeader? messageHeader)
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                var scope = Tracer.Instance.InternalActiveScope;
+                var scope = InternalTracer.Instance.InternalActiveScope;
 
                 if (scope == null)
                 {
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ServiceFabric
                     return;
                 }
 
-                string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
+                string expectedSpanName = GetOperationName(InternalTracer.Instance, spanKind);
 
                 if (expectedSpanName != scope.Span.OperationName)
                 {
@@ -184,7 +184,7 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(InternalTracer tracer, string spanKind)
         {
 #if NET6_0_OR_GREATER
             var requestType = string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}");
@@ -199,8 +199,8 @@ namespace Datadog.Trace.ServiceFabric
 
             return spanKind switch
             {
-                SpanKinds.Client => tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForRequestType(requestType),
-                SpanKinds.Server => tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForRequestType(requestType),
+                InternalSpanKinds.Client => tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForRequestType(requestType),
+                InternalSpanKinds.Server => tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForRequestType(requestType),
                 _ => requestType,
             };
         }

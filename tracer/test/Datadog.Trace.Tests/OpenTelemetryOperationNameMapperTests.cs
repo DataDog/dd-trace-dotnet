@@ -20,27 +20,27 @@ namespace Datadog.Trace.Tests
         public static TheoryData<string, string, SerializableDictionary> NameData => new()
         {
             // expected_operation_name, span_kind, tags_related_to_operation_name
-            { "http.server.request", SpanKinds.Server, new SerializableDictionary { { "http.request.method", "GET" } } },
-            { "http.client.request", SpanKinds.Client, new SerializableDictionary { { "http.request.method", "GET" } } },
-            { "redis.query", SpanKinds.Client, new SerializableDictionary { { "db.system", "Redis" } } },
-            { "kafka.receive", SpanKinds.Client, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-            { "kafka.receive", SpanKinds.Server, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-            { "kafka.receive", SpanKinds.Producer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-            { "kafka.receive", SpanKinds.Consumer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
-            { "aws.s3.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
-            { "aws.client.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" } } },
-            { "grpc.client.request", SpanKinds.Client, new SerializableDictionary { { "rpc.system", "GRPC" } } },
-            { "grpc.server.request", SpanKinds.Server, new SerializableDictionary { { "rpc.system", "GRPC" } } },
-            { "aws.my-function.invoke", SpanKinds.Client, new SerializableDictionary { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
-            { "datasource.invoke", SpanKinds.Server, new SerializableDictionary { { "faas.trigger", "Datasource" } } },
-            { "graphql.server.request", SpanKinds.Server, new SerializableDictionary { { "graphql.operation.type", "query" } } },
-            { "amqp.server.request", SpanKinds.Server, new SerializableDictionary { { "network.protocol.name", "Amqp" } } },
-            { "server.request", SpanKinds.Server, new SerializableDictionary() },
-            { "amqp.client.request", SpanKinds.Client, new SerializableDictionary() { { "network.protocol.name", "Amqp" } } },
-            { "client.request", SpanKinds.Client, new SerializableDictionary() },
-            { "internal", SpanKinds.Internal, new SerializableDictionary() },
-            { "consumer", SpanKinds.Consumer, new SerializableDictionary() },
-            { "producer", SpanKinds.Producer, new SerializableDictionary() },
+            { "http.server.request", InternalSpanKinds.Server, new SerializableDictionary { { "http.request.method", "GET" } } },
+            { "http.client.request", InternalSpanKinds.Client, new SerializableDictionary { { "http.request.method", "GET" } } },
+            { "redis.query", InternalSpanKinds.Client, new SerializableDictionary { { "db.system", "Redis" } } },
+            { "kafka.receive", InternalSpanKinds.Client, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", InternalSpanKinds.Server, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", InternalSpanKinds.Producer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "kafka.receive", InternalSpanKinds.Consumer, new SerializableDictionary { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+            { "aws.s3.request", InternalSpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
+            { "aws.client.request", InternalSpanKinds.Client, new SerializableDictionary { { "rpc.system", "aws-api" } } },
+            { "grpc.client.request", InternalSpanKinds.Client, new SerializableDictionary { { "rpc.system", "GRPC" } } },
+            { "grpc.server.request", InternalSpanKinds.Server, new SerializableDictionary { { "rpc.system", "GRPC" } } },
+            { "aws.my-function.invoke", InternalSpanKinds.Client, new SerializableDictionary { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
+            { "datasource.invoke", InternalSpanKinds.Server, new SerializableDictionary { { "faas.trigger", "Datasource" } } },
+            { "graphql.server.request", InternalSpanKinds.Server, new SerializableDictionary { { "graphql.operation.type", "query" } } },
+            { "amqp.server.request", InternalSpanKinds.Server, new SerializableDictionary { { "network.protocol.name", "Amqp" } } },
+            { "server.request", InternalSpanKinds.Server, new SerializableDictionary() },
+            { "amqp.client.request", InternalSpanKinds.Client, new SerializableDictionary() { { "network.protocol.name", "Amqp" } } },
+            { "client.request", InternalSpanKinds.Client, new SerializableDictionary() },
+            { "internal", InternalSpanKinds.Internal, new SerializableDictionary() },
+            { "consumer", InternalSpanKinds.Consumer, new SerializableDictionary() },
+            { "producer", InternalSpanKinds.Producer, new SerializableDictionary() },
             { "internal", null, new SerializableDictionary() },
         };
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(NameData))]
         public void OperationName_ShouldBeSet_BasedOnTags(string expectedOperationName, string expectedActivityKind, SerializableDictionary tags)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
 
             if (!string.IsNullOrEmpty(expectedActivityKind))
             {
@@ -69,14 +69,14 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(SpanKinds.Server)]
-        [InlineData(SpanKinds.Client)]
-        [InlineData(SpanKinds.Consumer)]
-        [InlineData(SpanKinds.Producer)]
-        [InlineData(SpanKinds.Internal)]
+        [InlineData(InternalSpanKinds.Server)]
+        [InlineData(InternalSpanKinds.Client)]
+        [InlineData(InternalSpanKinds.Consumer)]
+        [InlineData(InternalSpanKinds.Producer)]
+        [InlineData(InternalSpanKinds.Internal)]
         public void OperationName_ShouldFollow_PriorityOrder(string expectedActivityKind)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = new Span(new InternalSpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
             var order = new Queue<OperationNameData>();
             span.Tags.SetTag("span.kind", expectedActivityKind);
             foreach (var data in NameData)

@@ -36,9 +36,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAzureServiceBusInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAzureServiceBusOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAzureServiceBusRequest(metadataSchemaVersion),
+            InternalSpanKinds.Consumer => span.IsAzureServiceBusInbound(metadataSchemaVersion),
+            InternalSpanKinds.Producer => span.IsAzureServiceBusOutbound(metadataSchemaVersion),
+            InternalSpanKinds.Client => span.IsAzureServiceBusRequest(metadataSchemaVersion),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SQS integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 

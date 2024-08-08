@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         {
             if (instance is HttpWebRequest request && WebRequestCommon.IsTracingEnabled(request))
             {
-                var tracer = Tracer.Instance;
+                var tracer = InternalTracer.Instance;
 
                 if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
                 {

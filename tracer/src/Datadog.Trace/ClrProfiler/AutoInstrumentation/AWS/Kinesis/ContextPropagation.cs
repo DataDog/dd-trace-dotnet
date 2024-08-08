@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, SpanContext context)
+        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, InternalSpanContext context)
             where TRecordsRequest : IPutRecordsRequest
         {
             // request.Records is not null and has at least one element
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
-        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, SpanContext context)
+        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, InternalSpanContext context)
             where TRecordRequest : IContainsData
         {
             if (record.Data is null)

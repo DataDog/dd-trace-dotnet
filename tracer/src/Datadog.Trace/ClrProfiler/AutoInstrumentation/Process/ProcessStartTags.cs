@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tagging
         public static string Component => "process";
 
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Internal;
+        public override string SpanKind => InternalSpanKinds.Internal;
 
         [Tag(Internal.Tags.ProcessEnvironmentVariables)]
         public string EnvironmentVariables { get; set; }

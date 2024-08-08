@@ -1,4 +1,4 @@
-// <copyright file="SpanContextInjector.cs" company="Datadog">
+// <copyright file="InternalSpanContextInjector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,13 +19,13 @@ namespace Datadog.Trace.Internal
     /// The SpanContextInjector is responsible for injecting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
     /// This can happen for instance when we don't support a specific library
     /// </summary>
-    public class SpanContextInjector
+    public class InternalSpanContextInjector
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanContextInjector"/> class
+        /// Initializes a new instance of the <see cref="InternalSpanContextInjector"/> class
         /// </summary>
         [PublicApi]
-        public SpanContextInjector()
+        public InternalSpanContextInjector()
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Ctor);
         }
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Internal
         /// <param name="context">The context you want to inject</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         [PublicApi]
-        public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
+        public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, IInternalSpanContext context)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
             InjectInternal(carrier, setter, context);
@@ -59,20 +59,20 @@ namespace Datadog.Trace.Internal
         /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         [PublicApi]
-        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
+        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, IInternalSpanContext context, string messageType, string target)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
             InjectInternal(carrier, setter, context, messageType, target);
         }
 
-        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string? messageType = null, string? target = null)
+        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, IInternalSpanContext context, string? messageType = null, string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
             else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
             if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
 
-            if (context is SpanContext spanContext)
+            if (context is InternalSpanContext spanContext)
             {
                 SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
 
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Internal
                     return;
                 }
 
-                var dsm = Tracer.Instance.TracerManager.DataStreamsManager;
+                var dsm = InternalTracer.Instance.TracerManager.DataStreamsManager;
                 if (dsm != null && dsm.IsEnabled)
                 {
                     var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };

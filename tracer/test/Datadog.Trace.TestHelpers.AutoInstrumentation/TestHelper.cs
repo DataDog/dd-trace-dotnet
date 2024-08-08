@@ -517,8 +517,8 @@ namespace Datadog.Trace.TestHelpers
             using var httpClient = new HttpClient();
 
             // disable tracing for this HttpClient request
-            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
+            httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
+            httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();
@@ -558,7 +558,7 @@ namespace Datadog.Trace.TestHelpers
             using (var httpClient = new HttpClient())
             {
                 // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
                 var testStart = DateTimeOffset.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
@@ -603,7 +603,7 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 // other tags
-                Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+                Assert.Equal(InternalSpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
                 Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
             }
 
@@ -633,7 +633,7 @@ namespace Datadog.Trace.TestHelpers
             using (var httpClient = new HttpClient())
             {
                 // disable tracing for this HttpClient request
-                httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
                 var testStart = DateTimeOffset.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
@@ -661,7 +661,7 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
 
             // other tags
-            Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+            Assert.Equal(InternalSpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
@@ -673,6 +673,6 @@ namespace Datadog.Trace.TestHelpers
         }
 
         private bool IsServerSpan(MockSpan span) =>
-            span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
+            span.Tags.GetValueOrDefault(Tags.SpanKind) == InternalSpanKinds.Server;
     }
 }

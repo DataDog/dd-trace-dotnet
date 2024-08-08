@@ -85,7 +85,7 @@ internal readonly partial struct SecurityCoordinator
         {
             span = TryGetRoot(span);
             security.WafInitResult.Reported = true;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            span.Context.TraceContext?.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
             if (security.WafInitResult.HasErrors)
@@ -152,7 +152,7 @@ internal readonly partial struct SecurityCoordinator
 
             if (status is not null)
             {
-                _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+                _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, InternalTracer.Instance.Settings);
             }
         }
 

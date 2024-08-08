@@ -32,7 +32,7 @@ public class SpanExtensionsSetUserIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TSpan>(ref TSpan span, string? email, string? name, string id, bool propagateId, string? sessionId, string? role, string? scope)
     {
         // Annoyingly, this takes an ISpan, so we have to do some duckTyping to make it work
-        ISpan? realSpan = null;
+        IInternalSpan? realSpan = null;
 
         // it's most likely to be a duck-typed Span, so try that first
         if (span is IDuckType { Instance: Span s })

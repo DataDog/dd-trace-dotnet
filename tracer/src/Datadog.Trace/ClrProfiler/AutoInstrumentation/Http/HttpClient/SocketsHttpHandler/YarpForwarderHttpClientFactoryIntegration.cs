@@ -47,7 +47,7 @@ public class YarpForwarderHttpClientFactoryIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 context, ref System.Net.Http.SocketsHttpHandler handler)
     {
         // If our HttpClient and SocketsHttpHandler integrations are not enabled, do not modify the factory behavior
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || !Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId))
+        if (!InternalTracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || !InternalTracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId))
         {
             return CallTargetState.GetDefault();
         }

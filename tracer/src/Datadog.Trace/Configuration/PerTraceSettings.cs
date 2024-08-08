@@ -33,7 +33,7 @@ namespace Datadog.Trace.Configuration
 
         public NamingSchema Schema { get; }
 
-        internal string GetServiceName(Tracer tracer, string serviceName)
+        internal string GetServiceName(InternalTracer tracer, string serviceName)
         {
             if (ServiceNames.TryGetValue(serviceName, out var name))
             {

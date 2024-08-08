@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
                 {
-                    agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+                    agent.SpanFilters.Add(s => s.Type == InternalSpanTypes.Http);
                     var spans = agent.WaitForSpans(expectedSpanCount);
                     Assert.Equal(expectedSpanCount, spans.Count);
                     ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
@@ -134,9 +134,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
 
                     // parse http headers from stdout
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.PropagatedTags);
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.ParentId);
+                    var propagatedTags = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.PropagatedTags);
 
                     var firstSpan = spans.First();
                     Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
@@ -204,12 +204,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
                 {
-                    var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
+                    var spans = agent.Spans.Where(s => s.Type == InternalSpanTypes.Http);
                     Assert.Empty(spans);
 
-                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                    var traceId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TraceId);
+                    var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.ParentId);
+                    var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TracingEnabled);
 
                     Assert.Null(traceId);
                     Assert.Null(parentSpanId);

@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
-        private class LockedTracer : Tracer
+        private class LockedTracer : InternalTracer
         {
             internal LockedTracer(InternalTracerSettings tracerSettings)
                 : base(new LockedTracerManager(tracerSettings))

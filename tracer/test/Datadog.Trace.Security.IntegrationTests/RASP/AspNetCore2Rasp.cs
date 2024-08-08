@@ -88,7 +88,7 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);
         settings.AddIastScrubbing();
@@ -107,7 +107,7 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         var agent = Fixture.Agent;
         _ = await SendRequestsAsync(agent, "/Iast/PopulateDDBB", null, 1, 1, string.Empty, "application/json", null);
         var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web && !x.Resource.Contains("/Iast/PopulateDDBB")).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web && !x.Resource.Contains("/Iast/PopulateDDBB")).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit, body);
         settings.AddIastScrubbing();

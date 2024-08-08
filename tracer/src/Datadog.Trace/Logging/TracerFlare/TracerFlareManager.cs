@@ -162,7 +162,7 @@ internal class TracerFlareManager : ITracerFlareManager
                 {
                     // the filename here is chosen so that it will get cleaned up in the normal log rotation
                     ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
-                    var rid = Tracer.RuntimeId;
+                    var rid = InternalTracer.RuntimeId;
                     var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     var telemetryPath = Path.Combine(logDir, $"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log");
                     Log.Debug("Requesting telemetry dump to {FileName}", telemetryPath);

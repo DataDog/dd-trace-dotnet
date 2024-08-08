@@ -52,7 +52,7 @@ public class AwsSqsCommonTests
         AwsSqsCommon.GetOperationName(tracer, spanKind).Should().Be(expected);
     }
 
-    private static Tracer GetTracer(string schemaVersion)
+    private static InternalTracer GetTracer(string schemaVersion)
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -60,6 +60,6 @@ public class AwsSqsCommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
     }
 }

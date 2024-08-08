@@ -116,11 +116,11 @@ namespace Datadog.Trace.Sampling
                            {
                                // default sampling rule based on sampling rates from agent response or from a cold start.
                                // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
-                               SamplingMechanism.AgentRate or SamplingMechanism.Default => sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject,
+                               SamplingMechanism.AgentRate or SamplingMechanism.Default => sample ? InternalSamplingPriorityValues.AutoKeep : InternalSamplingPriorityValues.AutoReject,
 
                                // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
                                // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
-                               _ => sample && _limiter.Allowed(span) ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject
+                               _ => sample && _limiter.Allowed(span) ? InternalSamplingPriorityValues.UserKeep : InternalSamplingPriorityValues.UserReject
                            };
 
             return new SamplingDecision(priority, mechanism);

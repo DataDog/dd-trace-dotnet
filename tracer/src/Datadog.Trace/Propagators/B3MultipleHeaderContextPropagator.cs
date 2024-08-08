@@ -36,7 +36,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(InternalSpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3Multi);
@@ -47,7 +47,7 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, Sampled, sampled);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out InternalSpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -68,17 +68,17 @@ namespace Datadog.Trace.Propagators
 
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3Multi);
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+            spanContext = new InternalSpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
             return true;
         }
 
-        internal static void CreateHeaders(SpanContext context, out string traceId, out string spanId, out string sampled)
+        internal static void CreateHeaders(InternalSpanContext context, out string traceId, out string spanId, out string sampled)
         {
             traceId = context.RawTraceId;
             spanId = context.RawSpanId;
 
-            var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
-            sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
+            var samplingPriority = context.GetOrMakeSamplingDecision() ?? InternalSamplingPriorityValues.Default;
+            sampled = InternalSamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";
         }
     }
 }

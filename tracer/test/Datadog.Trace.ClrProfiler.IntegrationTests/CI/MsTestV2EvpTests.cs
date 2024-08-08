@@ -89,8 +89,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
             var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(InternalHttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(InternalHttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
 
@@ -135,15 +135,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 {
                                     if (@event.Content.ToString() is { } eventContent)
                                     {
-                                        if (@event.Type == SpanTypes.Test)
+                                        if (@event.Type == InternalSpanTypes.Test)
                                         {
                                             tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
                                         }
-                                        else if (@event.Type == SpanTypes.TestSuite)
+                                        else if (@event.Type == InternalSpanTypes.TestSuite)
                                         {
                                             testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
                                         }
-                                        else if (@event.Type == SpanTypes.TestModule)
+                                        else if (@event.Type == InternalSpanTypes.TestModule)
                                         {
                                             testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
                                         }
@@ -385,8 +385,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
             var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(InternalHttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+            SetEnvironmentVariable(InternalHttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
             SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
 
@@ -436,15 +436,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             {
                                 if (@event.Content.ToString() is { } eventContent)
                                 {
-                                    if (@event.Type == SpanTypes.Test)
+                                    if (@event.Type == InternalSpanTypes.Test)
                                     {
                                         tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
                                     }
-                                    else if (@event.Type == SpanTypes.TestSuite)
+                                    else if (@event.Type == InternalSpanTypes.TestSuite)
                                     {
                                         testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
                                     }
-                                    else if (@event.Type == SpanTypes.TestModule)
+                                    else if (@event.Type == InternalSpanTypes.TestModule)
                                     {
                                         testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
                                     }

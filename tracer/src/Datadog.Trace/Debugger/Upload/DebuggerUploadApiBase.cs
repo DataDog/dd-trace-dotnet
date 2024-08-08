@@ -61,13 +61,13 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 
         try
         {
-            var environment = TraceUtil.NormalizeTag(Tracer.Instance.Settings.EnvironmentInternal);
+            var environment = TraceUtil.NormalizeTag(InternalTracer.Instance.Settings.EnvironmentInternal);
             if (!string.IsNullOrEmpty(environment))
             {
                 sb.Append($"env:{environment},");
             }
 
-            var version = Tracer.Instance.Settings.ServiceVersionInternal;
+            var version = InternalTracer.Instance.Settings.ServiceVersionInternal;
             if (!string.IsNullOrEmpty(version))
             {
                 sb.Append($"version:{version},");
@@ -79,7 +79,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
                 sb.Append($"host:{hostName},");
             }
 
-            var runtimeId = Tracer.RuntimeId;
+            var runtimeId = InternalTracer.RuntimeId;
             if (!string.IsNullOrEmpty(runtimeId))
             {
                 sb.Append($"{Tags.RuntimeId}:{runtimeId},");
@@ -93,7 +93,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
                 sb.Append($"{CommonTags.GitCommit}:{gitMetadata.CommitSha},");
             }
 
-            foreach (var kvp in Tracer.Instance.Settings.GlobalTagsInternal)
+            foreach (var kvp in InternalTracer.Instance.Settings.GlobalTagsInternal)
             {
                 sb.Append($"{kvp.Key}:{kvp.Value},");
             }

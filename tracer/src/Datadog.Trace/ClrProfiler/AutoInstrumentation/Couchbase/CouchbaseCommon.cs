@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, IClusterNode clusterNode)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation, string normalizedSeedNodes)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             return CommonOnMethodBegin(tracer, tags);
         }
 
-        private static CallTargetState CommonOnMethodBegin(Tracer tracer, CouchbaseTags tags)
+        private static CallTargetState CommonOnMethodBegin(InternalTracer tracer, CouchbaseTags tags)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
 
                 var scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
-                scope.Span.Type = SpanTypes.Db;
+                scope.Span.Type = InternalSpanTypes.Db;
                 scope.Span.ResourceName = tags.OperationCode;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                 tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);

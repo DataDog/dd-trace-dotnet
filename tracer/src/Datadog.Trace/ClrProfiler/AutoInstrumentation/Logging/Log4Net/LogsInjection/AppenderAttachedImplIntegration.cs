@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal &&
                 !loggingEvent.Properties.Contains(InternalCorrelationIdentifier.ServiceKey))
@@ -50,10 +50,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 if (spanContext is not null)
                 {
                     // For mismatch version support we need to keep requesting old keys.
-                    var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
-                                     spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                    var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
-                                    spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
+                    var hasTraceId = spanContext.TryGetValue(InternalSpanContext.Keys.TraceId, out string traceId) ||
+                                     spanContext.TryGetValue(InternalHttpHeaderNames.TraceId, out traceId);
+                    var hasSpanId = spanContext.TryGetValue(InternalSpanContext.Keys.ParentId, out string spanId) ||
+                                    spanContext.TryGetValue(InternalHttpHeaderNames.ParentId, out spanId);
 
                     if (hasTraceId && hasSpanId)
                     {

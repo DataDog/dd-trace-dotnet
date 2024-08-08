@@ -35,9 +35,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
-            SpanKinds.Consumer => span.IsAwsSqsInbound(metadataSchemaVersion),
-            SpanKinds.Producer => span.IsAwsSqsOutbound(metadataSchemaVersion),
-            SpanKinds.Client => span.IsAwsSqsRequest(metadataSchemaVersion),
+            InternalSpanKinds.Consumer => span.IsAwsSqsInbound(metadataSchemaVersion),
+            InternalSpanKinds.Producer => span.IsAwsSqsOutbound(metadataSchemaVersion),
+            InternalSpanKinds.Client => span.IsAwsSqsRequest(metadataSchemaVersion),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SQS integration: {span.Tags["span.kind"]}", nameof(span)),
         };
 

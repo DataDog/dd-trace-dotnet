@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             // Need to inject _everything_ required to recreate the span later, in the "finished" integrations
             if (GrpcCoreApiVersionHelper.IsSupported)
             {
-                GrpcLegacyClientCommon.InjectHeaders(Tracer.Instance, method, ref callOptions);
+                GrpcLegacyClientCommon.InjectHeaders(InternalTracer.Instance, method, ref callOptions);
             }
 
             return CallTargetState.GetDefault();

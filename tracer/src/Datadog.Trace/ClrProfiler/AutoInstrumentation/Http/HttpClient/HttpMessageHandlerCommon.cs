@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 return CallTargetState.GetDefault();
             }
 
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             var headers = requestMessage.Headers;
             if (IsTracingEnabled(headers, implementationIntegrationId) &&
                 ScopeFactory.CreateOutboundHttpScope(tracer, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out var tags) is { } scope)
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             {
                 if (responseMessage.Instance is not null)
                 {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, InternalTracer.Instance.Settings);
                 }
 
                 if (exception != null)
@@ -74,12 +74,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
         private static bool IsTracingEnabled(IRequestHeaders headers, IntegrationId? implementationIntegrationId)
         {
-            if (implementationIntegrationId != null && !Tracer.Instance.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
+            if (implementationIntegrationId != null && !InternalTracer.Instance.Settings.IsIntegrationEnabled(implementationIntegrationId.Value))
             {
                 return false;
             }
 
-            if (headers.TryGetValues(HttpHeaderNames.TracingEnabled, out var headerValues))
+            if (headers.TryGetValues(InternalHttpHeaderNames.TracingEnabled, out var headerValues))
             {
                 if (headerValues is string[] arrayValues)
                 {

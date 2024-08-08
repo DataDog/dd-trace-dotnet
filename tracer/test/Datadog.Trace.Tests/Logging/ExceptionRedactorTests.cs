@@ -233,9 +233,9 @@ public class ExceptionRedactorTests
         public static List<object> MethodsToNotRedact() =>
         [
             typeof(ExceptionRedactorTests.TestData).GetMethod(nameof(NoParameters)),
-            typeof(Tracer).GetMethod(nameof(Tracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
-            typeof(Tracer).GetProperty(nameof(Tracer.Instance))?.GetMethod,
-            typeof(Tracer).GetProperty(nameof(Tracer.Instance))?.SetMethod,
+            typeof(InternalTracer).GetMethod(nameof(InternalTracer.UnsafeSetTracerInstance), BindingFlags.Static | BindingFlags.NonPublic),
+            typeof(InternalTracer).GetProperty(nameof(InternalTracer.Instance))?.GetMethod,
+            typeof(InternalTracer).GetProperty(nameof(InternalTracer.Instance))?.SetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),

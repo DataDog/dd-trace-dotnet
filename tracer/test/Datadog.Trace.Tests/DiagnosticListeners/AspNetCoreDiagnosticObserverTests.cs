@@ -83,8 +83,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.Equal("aspnet_core.request", span.OperationName);
             Assert.Equal("aspnet_core", span.GetTag(Tags.InstrumentationName));
-            Assert.Equal(SpanTypes.Web, span.Type);
-            Assert.Equal(SpanKinds.Server, span.GetTag(Tags.SpanKind));
+            Assert.Equal(InternalSpanTypes.Web, span.Type);
+            Assert.Equal(InternalSpanKinds.Server, span.GetTag(Tags.SpanKind));
             Assert.Equal("GET", span.GetTag(Tags.HttpMethod));
             Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
@@ -94,13 +94,13 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
-        private static Tracer GetTracer()
+        private static InternalTracer GetTracer()
         {
             var settings = new InternalTracerSettings();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            return new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private static HttpContext GetHttpContext()

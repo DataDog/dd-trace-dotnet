@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
         private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = filename;
-                scope.Span.Type = SpanTypes.System;
+                scope.Span.Type = InternalSpanTypes.System;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             };
 
             // Don't populate further with command line information if shell collection is disabled
-            if (!Tracer.Instance.Settings.CommandsCollectionEnabled)
+            if (!InternalTracer.Instance.Settings.CommandsCollectionEnabled)
             {
                 return tags;
             }

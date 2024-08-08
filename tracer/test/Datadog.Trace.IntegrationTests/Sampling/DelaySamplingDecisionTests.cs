@@ -29,7 +29,7 @@ public class DelaySamplingDecisionTests
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        var tracer = new InternalTracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
 
         using (var scope1 = (Scope)tracer.StartActive("operation"))
@@ -66,7 +66,7 @@ public class DelaySamplingDecisionTests
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        var tracer = new InternalTracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
         int samplingPriority;
 
@@ -84,7 +84,7 @@ public class DelaySamplingDecisionTests
             // sampling decision IS taken before propagating
             sampler.Verify(s => s.MakeSamplingDecision(It.IsAny<Span>()), Times.Once);
             traceContext.SamplingPriority.Should().NotBeNull();
-            headers["x-datadog-sampling-priority"].Should().Be(SamplingPriorityValues.ToString(traceContext.SamplingPriority));
+            headers["x-datadog-sampling-priority"].Should().Be(InternalSamplingPriorityValues.ToString(traceContext.SamplingPriority));
 
             samplingPriority = traceContext.SamplingPriority!.Value;
         }

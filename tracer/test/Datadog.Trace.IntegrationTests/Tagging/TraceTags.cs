@@ -19,7 +19,7 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceTags
 {
-    private readonly Tracer _tracer;
+    private readonly InternalTracer _tracer;
     private readonly MockApi _testApi;
 
     public TraceTags()
@@ -30,7 +30,7 @@ public class TraceTags
 
         _testApi = new MockApi();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]
@@ -44,7 +44,7 @@ public class TraceTags
         using (var scope = _tracer.StartActiveInternal("root"))
         {
             var traceContext = scope.Span.Context.TraceContext;
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep, samplingMechanism);
         }
 
         await _tracer.FlushAsync();

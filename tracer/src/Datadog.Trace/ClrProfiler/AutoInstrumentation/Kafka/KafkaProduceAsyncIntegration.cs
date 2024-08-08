@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             var partition = topicPartition.DuckCast<ITopicPartition>();
             Scope scope = KafkaHelper.CreateProducerScope(
-                Tracer.Instance,
+                InternalTracer.Instance,
                 instance,
                 partition,
                 isTombstone: message.Value is null,
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(
                     scope.Span,
-                    Tracer.Instance.TracerManager.DataStreamsManager,
+                    InternalTracer.Instance.TracerManager.DataStreamsManager,
                     partition?.Topic,
                     message);
                 return new CallTargetState(scope);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Partition = deliveryResult.Partition.ToString();
                     tags.Offset = deliveryResult.Offset.ToString();
 
-                    var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                    var dataStreams = InternalTracer.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled)
                     {
                         dataStreams.TrackBacklog(

@@ -64,7 +64,7 @@ namespace Datadog.Trace.ServiceFabric
     internal partial class ServiceRemotingServerTags : ServiceRemotingTags
     {
         public ServiceRemotingServerTags()
-            : base(SpanKinds.Server)
+            : base(InternalSpanKinds.Server)
         {
         }
     }
@@ -72,7 +72,7 @@ namespace Datadog.Trace.ServiceFabric
     internal partial class ServiceRemotingClientTags : ServiceRemotingTags
     {
         public ServiceRemotingClientTags()
-            : base(SpanKinds.Client)
+            : base(InternalSpanKinds.Client)
         {
         }
     }

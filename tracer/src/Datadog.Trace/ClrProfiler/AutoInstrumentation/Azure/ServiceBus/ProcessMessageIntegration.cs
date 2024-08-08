@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             // when the following requirements are met:
             // - AzureServiceBus integration enabled
             // - DD_TRACE_OTEL_ENABLED=true
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)

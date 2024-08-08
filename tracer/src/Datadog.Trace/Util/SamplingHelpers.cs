@@ -40,7 +40,7 @@ namespace Datadog.Trace.Util
         {
             if (TraceContext.GetTraceContext(trace)?.SamplingPriority is { } samplingPriority)
             {
-                return SamplingPriorityValues.IsKeep(samplingPriority);
+                return InternalSamplingPriorityValues.IsKeep(samplingPriority);
             }
 
             return false;

@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tagging
     internal partial class RemotingClientTags : RemotingTags
     {
         public RemotingClientTags()
-            : base(SpanKinds.Client)
+            : base(InternalSpanKinds.Client)
         {
         }
     }
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Tagging
     internal partial class RemotingServerTags : RemotingTags
     {
         public RemotingServerTags()
-            : base(SpanKinds.Server)
+            : base(InternalSpanKinds.Server)
         {
         }
     }

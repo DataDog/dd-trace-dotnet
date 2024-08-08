@@ -1,4 +1,4 @@
-// <copyright file="SpanCreationSettings.cs" company="Datadog">
+// <copyright file="InternalSpanCreationSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,9 @@ using System;
 namespace Datadog.Trace.Internal
 {
     /// <summary>
-    /// Settings to use when creating a new <see cref="IScope"/> and <see cref="ISpan"/>.
+    /// Settings to use when creating a new <see cref="IInternalScope"/> and <see cref="IInternalSpan"/>.
     /// </summary>
-    public struct SpanCreationSettings
+    public struct InternalSpanCreationSettings
     {
         /// <summary>
         /// Gets or sets an explicit start time for the new span. If not set, uses the current time.
@@ -21,10 +21,10 @@ namespace Datadog.Trace.Internal
 
         /// <summary>
         /// Gets or sets the new span's parent. To prevent a new span from inheriting a parent,
-        /// set to <see cref="SpanContext.None"/>. If not set, defaults to <c>null</c> and
+        /// set to <see cref="InternalSpanContext.None"/>. If not set, defaults to <c>null</c> and
         /// the currently active span (if any) is used as the parent.
         /// </summary>
-        public ISpanContext? Parent { get; set; }
+        public IInternalSpanContext? Parent { get; set; }
 
         /// <summary>
         /// Gets or sets whether closing the new scope will close the contained span.

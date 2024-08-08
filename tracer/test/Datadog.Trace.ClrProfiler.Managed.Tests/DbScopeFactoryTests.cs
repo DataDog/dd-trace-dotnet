@@ -296,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return TracerHelper.Create(tracerSettings);
         }
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+        private static Scope CreateDbCommandScope(InternalTracer tracer, IDbCommand command)
         {
             var methodName = nameof(DbScopeFactory.Cache<object>.CreateDbCommandScope);
             var arguments = new object[] { tracer, command };

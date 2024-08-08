@@ -195,7 +195,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             var vars = AzureAppServiceHelper.GetRequiredAasConfigurationValues(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var settings = new InternalTracerSettings(vars);
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            var spans = new List<ISpan>();
+            var spans = new List<IInternalSpan>();
             var iterations = 5;
             var remaining = iterations;
 

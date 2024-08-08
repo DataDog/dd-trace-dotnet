@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var traceContext = new TraceContext(tracer);
-            var spanContext = new SpanContext(null, traceContext, "Weeeee");
+            var spanContext = new InternalSpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
             var rateLimiter = new TracerRateLimiter(maxTracesPerInterval: null, intervalMilliseconds: null);
             var allowed = rateLimiter.Allowed(span);
@@ -115,7 +115,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var traceContext = new TraceContext(tracer);
-            var spanContext = new SpanContext(null, traceContext, "Weeeee");
+            var spanContext = new InternalSpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
 
             var remaining = howManyTimes;
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Tests.Sampling
                             for (int j = 0; j < numberPerThread; j++)
                             {
                                 // trace id and span id are not used in rate-limiting
-                                var spanContext = new SpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
+                                var spanContext = new InternalSpanContext(traceId: 1, spanId: 1, serviceName: "Weeeee");
 
                                 // pass a specific start time since there is no TraceContext
                                 var span = new Span(spanContext, DateTimeOffset.UtcNow);

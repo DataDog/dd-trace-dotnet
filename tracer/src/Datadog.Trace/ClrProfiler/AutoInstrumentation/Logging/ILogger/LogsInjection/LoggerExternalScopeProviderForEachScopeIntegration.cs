@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TAction, TState>(TTarget instance, TAction callback, TState state)
         {
-            LoggerIntegrationCommon.AddScope(Tracer.Instance, callback, state);
+            LoggerIntegrationCommon.AddScope(InternalTracer.Instance, callback, state);
             return new CallTargetState(scope: null, state: null);
         }
 

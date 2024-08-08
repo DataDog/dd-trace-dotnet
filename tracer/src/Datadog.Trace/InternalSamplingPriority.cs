@@ -1,4 +1,4 @@
-// <copyright file="SamplingPriority.cs" company="Datadog">
+// <copyright file="InternalSamplingPriority.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,32 +24,32 @@ namespace Datadog.Trace.Internal
     /// the decision originated from.
     /// </para>
     /// </remarks>
-    public enum SamplingPriority
+    public enum InternalSamplingPriority
     {
         /// <summary>
         /// Trace should be dropped (not sampled).
         /// Sampling decision made explicitly by user through
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
-        UserReject = SamplingPriorityValues.UserReject,
+        UserReject = InternalSamplingPriorityValues.UserReject,
 
         /// <summary>
         /// Trace should be dropped (not sampled).
         /// Sampling decision made by the built-in sampler.
         /// </summary>
-        AutoReject = SamplingPriorityValues.AutoReject,
+        AutoReject = InternalSamplingPriorityValues.AutoReject,
 
         /// <summary>
         /// Trace should be kept (sampled).
         /// Sampling decision made by the built-in sampler.
         /// </summary>
-        AutoKeep = SamplingPriorityValues.AutoKeep,
+        AutoKeep = InternalSamplingPriorityValues.AutoKeep,
 
         /// <summary>
         /// Trace should be kept (sampled).
         /// Sampling decision made explicitly by user through
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
-        UserKeep = SamplingPriorityValues.UserKeep,
+        UserKeep = InternalSamplingPriorityValues.UserKeep,
     }
 }

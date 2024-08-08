@@ -27,7 +27,7 @@ public static class InternalEventTrackingSdk
     public static void TrackUserLoginSuccessEvent(string userId)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent);
-        TrackUserLoginSuccessEvent(userId, null, Tracer.Instance);
+        TrackUserLoginSuccessEvent(userId, null, InternalTracer.Instance);
     }
 
     /// <summary>
@@ -39,10 +39,10 @@ public static class InternalEventTrackingSdk
     public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata);
-        TrackUserLoginSuccessEvent(userId, metadata, Tracer.Instance);
+        TrackUserLoginSuccessEvent(userId, metadata, InternalTracer.Instance);
     }
 
-    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, InternalTracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -85,7 +85,7 @@ public static class InternalEventTrackingSdk
     public static void TrackUserLoginFailureEvent(string userId, bool exists)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent);
-        TrackUserLoginFailureEvent(userId, exists, null, Tracer.Instance);
+        TrackUserLoginFailureEvent(userId, exists, null, InternalTracer.Instance);
     }
 
     /// <summary>
@@ -98,10 +98,10 @@ public static class InternalEventTrackingSdk
     public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
-        TrackUserLoginFailureEvent(userId, exists, metadata, Tracer.Instance);
+        TrackUserLoginFailureEvent(userId, exists, metadata, InternalTracer.Instance);
     }
 
-    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, InternalTracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -144,7 +144,7 @@ public static class InternalEventTrackingSdk
     public static void TrackCustomEvent(string eventName)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent);
-        TrackCustomEvent(eventName, null, Tracer.Instance);
+        TrackCustomEvent(eventName, null, InternalTracer.Instance);
     }
 
     /// <summary>
@@ -156,10 +156,10 @@ public static class InternalEventTrackingSdk
     public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
-        TrackCustomEvent(eventName, metadata, Tracer.Instance);
+        TrackCustomEvent(eventName, metadata, InternalTracer.Instance);
     }
 
-    internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, InternalTracer tracer)
     {
         if (string.IsNullOrEmpty(eventName))
         {

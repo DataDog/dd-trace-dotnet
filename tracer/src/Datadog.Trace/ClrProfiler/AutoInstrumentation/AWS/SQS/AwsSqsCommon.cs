@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
+        public static Scope? CreateScope(InternalTracer tracer, string operation, out AwsSqsTags? tags, IInternalSpanContext? parentContext = null, string spanKind = InternalSpanKinds.Client)
         {
             tags = null;
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
-                span.Type = SpanTypes.Http;
+                span.Type = InternalSpanTypes.Http;
                 span.ResourceName = $"{SqsServiceName}.{operation}";
 
                 tags.Service = SqsServiceName;
@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             return queueUrl.Substring(lastSeparationIndex);
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(InternalTracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
             {
@@ -84,8 +84,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SqsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SqsOperationName),
+                InternalSpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SqsOperationName),
+                InternalSpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SqsOperationName),
                 _ => $"{SqsOperationName}.request"
             };
         }

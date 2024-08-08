@@ -22,8 +22,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
 {
     public class DatabaseMonitoringPropagatorTests
     {
-        private readonly Tracer _v0Tracer;
-        private readonly Tracer _v1Tracer;
+        private readonly InternalTracer _v0Tracer;
+        private readonly InternalTracer _v1Tracer;
         private readonly Mock<IAgentWriter> _writerMock;
 
         public DatabaseMonitoringPropagatorTests(ITestOutputHelper output)
@@ -32,22 +32,22 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _v0Tracer = new Tracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _v0Tracer = new InternalTracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             var v1Settings = InternalTracerSettings.Create(
                 new() { { ConfigurationKeys.MetadataSchemaVersion, SchemaVersion.V1.ToString() } });
 
-            _v1Tracer = new Tracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _v1Tracer = new InternalTracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Theory]
-        [InlineData("string100", SamplingPriorityValues.UserKeep, "npgsql", "", "", false)]
-        [InlineData("full", SamplingPriorityValues.UserKeep, "sqlite", "", "", false)]
-        [InlineData("disabled", SamplingPriorityValues.UserKeep, "sqlclient", "", "", false)]
-        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
-        [InlineData("full", SamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
-        [InlineData("full", SamplingPriorityValues.UserReject, "oracle", "Test.Service-oracle", "/*dddbs='Test.Service-oracle',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
-        [InlineData("fUlL", SamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/", true)]
+        [InlineData("string100", InternalSamplingPriorityValues.UserKeep, "npgsql", "", "", false)]
+        [InlineData("full", InternalSamplingPriorityValues.UserKeep, "sqlite", "", "", false)]
+        [InlineData("disabled", InternalSamplingPriorityValues.UserKeep, "sqlclient", "", "", false)]
+        [InlineData("Service", InternalSamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
+        [InlineData("full", InternalSamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
+        [InlineData("full", InternalSamplingPriorityValues.UserReject, "oracle", "Test.Service-oracle", "/*dddbs='Test.Service-oracle',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", false)]
+        [InlineData("fUlL", InternalSamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/", true)]
         public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment, bool traceParentInjected)
         {
             DbmPropagationLevel dbmPropagationLevel;
@@ -56,8 +56,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             IntegrationId integrationId;
             Enum.TryParse(integration, true, out integrationId);
 
-            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
-            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: InternalSpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            span.SetTraceSamplingPriority((InternalSamplingPriority)samplingPriority.Value);
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
 
@@ -72,10 +72,10 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("/*dddbs='Test.Service-mysql',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/", null, null)]
         public void ExpectedTagsInjected(string expectedComment, string env = null, string version = null)
         {
-            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: InternalSpanContext.None, serviceName: "Test.Service-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = env;
             span.Context.TraceContext.ServiceVersion = version;
-            span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+            span.SetTraceSamplingPriority(InternalSamplingPriority.AutoKeep);
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.MySql, out var traceParentInjected);
 
@@ -91,10 +91,10 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("/*dddbs='Test.Service%20%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D-mysql',dde='te%23%27sti%2F%2Ang',ddps='Test.Service%20%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D',dddb='My_Database',ddh='192.168.0.1',ddpv='1.%2A0.0'*/", "Test.Service !#$%&'()*+,/:;=?@[]", "My_Database", "192.168.0.1", "te#'sti/*ng", "1.*0.0")]
         public void ExpectedTagsEncoded(string expectedComment, string service, string dbName, string host, string env, string version)
         {
-            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: $"{service}-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: InternalSpanContext.None, serviceName: $"{service}-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = env;
             span.Context.TraceContext.ServiceVersion = version;
-            span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+            span.SetTraceSamplingPriority(InternalSamplingPriority.AutoKeep);
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, dbName, host, span, IntegrationId.MySql, out var traceParentInjected);
 
@@ -108,13 +108,13 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         {
             var dbmPropagationLevel = DbmPropagationLevel.Service;
             var integrationId = IntegrationId.Npgsql;
-            var samplingPriority = SamplingPriority.AutoReject;
+            var samplingPriority = InternalSamplingPriority.AutoReject;
             var dbServiceName = "Test.Service-postgres";
             var expectedComment = "/*dddbs='dbname',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
             var traceParentInjected = false;
             var dbName = "dbname";
 
-            var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "mysql.query", parent: InternalSpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority(samplingPriority);
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);

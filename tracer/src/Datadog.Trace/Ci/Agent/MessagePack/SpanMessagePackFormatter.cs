@@ -70,10 +70,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             // these must serialized as msgpack float64 (Double in .NET).
             _samplingPriorityValueBytes =
             [
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
-                MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep)
+                MessagePackSerializer.Serialize((double)InternalSamplingPriorityValues.UserReject),
+                MessagePackSerializer.Serialize((double)InternalSamplingPriorityValues.AutoReject),
+                MessagePackSerializer.Serialize((double)InternalSamplingPriorityValues.AutoKeep),
+                MessagePackSerializer.Serialize((double)InternalSamplingPriorityValues.UserKeep)
             ];
         }
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             }
 
             var isSpan = false;
-            if (value.Type is not (SpanTypes.TestSuite or SpanTypes.TestModule or SpanTypes.TestSession))
+            if (value.Type is not (InternalSpanTypes.TestSuite or InternalSpanTypes.TestModule or InternalSpanTypes.TestSession))
             {
                 // we need to add TraceId and SpanId
                 len++;
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 isSpan = true;
             }
 
-            var correlationId = value.Type is SpanTypes.Test or SpanTypes.Browser ? CIVisibility.GetSkippableTestsCorrelationId() : null;
+            var correlationId = value.Type is InternalSpanTypes.Test or InternalSpanTypes.Browser ? CIVisibility.GetSkippableTestsCorrelationId() : null;
             if (correlationId is not null)
             {
                 len++;
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
             ITagProcessor[] tagProcessors = null;
-            if (context.TraceContext?.Tracer is Tracer tracer)
+            if (context.TraceContext?.Tracer is InternalTracer tracer)
             {
                 tagProcessors = tracer.TracerManager.TagProcessors;
             }
@@ -264,7 +264,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             // add "language=dotnet" tag to all spans, except those that
             // represents a downstream service or external dependency
-            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+            if (span.Tags is not InstrumentationTags { SpanKind: InternalSpanKinds.Client or InternalSpanKinds.Producer })
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);

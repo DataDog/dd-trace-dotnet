@@ -147,8 +147,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             public OwinFixture()
             {
                 _httpClient = new HttpClient();
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
+                _httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.TracingEnabled, "false");
+                _httpClient.DefaultRequestHeaders.Add(InternalHttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
             }
 
             public MockTracerAgent.TcpUdpAgent Agent { get; private set; }

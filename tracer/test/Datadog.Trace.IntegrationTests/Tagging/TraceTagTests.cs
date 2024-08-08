@@ -18,7 +18,7 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TraceTagTests
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
         private readonly MockApi _testApi;
 
         public TraceTagTests()
@@ -27,7 +27,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new InternalTracerSettings();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
@@ -38,16 +38,16 @@ namespace Datadog.Trace.IntegrationTests
                 using (var childScope = _tracer.StartActive("child1"))
                 {
                     // add a trace tag using the first child span
-                    ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key1", "value1");
+                    ((InternalSpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key1", "value1");
                 }
 
                 // add a trace tag using the root span
-                ((SpanContext)rootScope.Span.Context).TraceContext.Tags.SetTag("key2", "value2");
+                ((InternalSpanContext)rootScope.Span.Context).TraceContext.Tags.SetTag("key2", "value2");
 
                 using (var childScope = _tracer.StartActive("child2"))
                 {
                     // add a trace tag using the second child span
-                    ((SpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key3", "value3");
+                    ((InternalSpanContext)childScope.Span.Context).TraceContext.Tags.SetTag("key3", "value3");
                 }
             }
 

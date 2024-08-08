@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
 
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.RuntimeId);
-        private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(InternalTracer.RuntimeId);
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Internal.Tags.Env);
 
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             ITagProcessor[] tagProcessors = null;
-            if (span.Context.TraceContext?.Tracer is Tracer tracer)
+            if (span.Context.TraceContext?.Tracer is InternalTracer tracer)
             {
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }

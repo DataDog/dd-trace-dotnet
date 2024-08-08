@@ -15,8 +15,8 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// The name of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="SpanContext.ServiceName"/>
-        /// or <see cref="Tracer.DefaultServiceName"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="InternalSpanContext.ServiceName"/>
+        /// or <see cref="InternalTracer.DefaultServiceName"/>.
         /// </summary>
         internal const string Service = "service";
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Internal
         /// <summary>
         /// The kind of span (e.g. client, server). Not to be confused with <see cref="Span.Type"/>.
         /// </summary>
-        /// <seealso cref="SpanKinds"/>
+        /// <seealso cref="InternalSpanKinds"/>
         public const string SpanKind = "span.kind";
 
         /// <summary>
@@ -156,12 +156,12 @@ namespace Datadog.Trace.Internal
         public const string SamplingPriority = "sampling.priority";
 
         /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="SamplingPriority.UserKeep"/>.
+        /// A user-friendly tag that sets the sampling priority to <see cref="InternalSamplingPriority.UserKeep"/>.
         /// </summary>
         public const string ManualKeep = "manual.keep";
 
         /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="SamplingPriority.UserReject"/>.
+        /// A user-friendly tag that sets the sampling priority to <see cref="InternalSamplingPriority.UserReject"/>.
         /// </summary>
         public const string ManualDrop = "manual.drop";
 

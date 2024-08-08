@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal static Scope? CreateScope<TConnection>(object? wireProtocol, TConnection connection)
             where TConnection : IConnection
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
 
             if (wireProtocol is null || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                span.Type = SpanTypes.MongoDb;
+                span.Type = InternalSpanTypes.MongoDb;
                 span.ResourceName = resourceName;
                 tags.DbName = databaseName;
                 tags.Query = query;
@@ -157,14 +157,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             return true;
         }
 
-        private static Scope? GetActiveMongoDbScope(Tracer tracer)
+        private static Scope? GetActiveMongoDbScope(InternalTracer tracer)
         {
             var scope = tracer.InternalActiveScope;
 
             var parent = scope?.Span;
 
             if (parent != null &&
-                parent.Type == SpanTypes.MongoDb &&
+                parent.Type == InternalSpanTypes.MongoDb &&
                 parent.GetTag(Tags.InstrumentationName) != null)
             {
                 return scope;

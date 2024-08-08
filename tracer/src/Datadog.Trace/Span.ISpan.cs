@@ -16,38 +16,38 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    internal partial class Span : ISpan
+    internal partial class Span : IInternalSpan
     {
         /// <inheritdoc />
-        string? ISpan.OperationName
+        string? IInternalSpan.OperationName
         {
             get => OperationName;
             set => OperationName = value;
         }
 
         /// <inheritdoc />
-        string? ISpan.ResourceName
+        string? IInternalSpan.ResourceName
         {
             get => ResourceName;
             set => ResourceName = value;
         }
 
         /// <inheritdoc />
-        string? ISpan.Type
+        string? IInternalSpan.Type
         {
             get => Type;
             set => Type = value;
         }
 
         /// <inheritdoc />
-        bool ISpan.Error
+        bool IInternalSpan.Error
         {
             get => Error;
             set => Error = value;
         }
 
         /// <inheritdoc />
-        string? ISpan.ServiceName
+        string? IInternalSpan.ServiceName
         {
             get => ServiceName;
             set => ServiceName = value;
@@ -55,27 +55,27 @@ namespace Datadog.Trace
 
         /// <inheritdoc />
         // this public API always returns the lower 64-bits, truncate using TraceId128.Lower
-        ulong ISpan.TraceId => TraceId128.Lower;
+        ulong IInternalSpan.TraceId => TraceId128.Lower;
 
         /// <inheritdoc />
-        ulong ISpan.SpanId => SpanId;
+        ulong IInternalSpan.SpanId => SpanId;
 
         /// <inheritdoc />
-        ISpanContext ISpan.Context => Context;
+        IInternalSpanContext IInternalSpan.Context => Context;
 
         /// <inheritdoc />
-        ISpan ISpan.SetTag(string key, string? value) => SetTag(key, value);
+        IInternalSpan IInternalSpan.SetTag(string key, string? value) => SetTag(key, value);
 
         /// <inheritdoc />
-        void ISpan.Finish() => Finish();
+        void IInternalSpan.Finish() => Finish();
 
         /// <inheritdoc />
-        void ISpan.Finish(DateTimeOffset finishTimestamp) => Finish(finishTimestamp);
+        void IInternalSpan.Finish(DateTimeOffset finishTimestamp) => Finish(finishTimestamp);
 
         /// <inheritdoc />
-        void ISpan.SetException(Exception exception) => SetException(exception);
+        void IInternalSpan.SetException(Exception exception) => SetException(exception);
 
         /// <inheritdoc />
-        string ISpan.GetTag(string key) => GetTag(key);
+        string IInternalSpan.GetTag(string key) => GetTag(key);
     }
 }

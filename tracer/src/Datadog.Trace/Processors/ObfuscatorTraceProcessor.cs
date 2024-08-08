@@ -65,7 +65,7 @@ namespace Datadog.Trace.Processors
             {
                 span.ResourceName = ObfuscateSqlResource(span.ResourceName);
             }
-            else if (span.Type == SpanTypes.Redis)
+            else if (span.Type == InternalSpanTypes.Redis)
             {
                 span.ResourceName = ObfuscateRedisResource(span.ResourceName);
             }

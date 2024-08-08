@@ -162,7 +162,7 @@ namespace Datadog.Trace.Coverage.Collector
 
             var processedDirectories = new HashSet<string>();
             var numAssemblies = 0;
-            var tracerAssemblyName = typeof(Tracer).Assembly.GetName().Name;
+            var tracerAssemblyName = typeof(InternalTracer).Assembly.GetName().Name;
 
             // Process assemblies in parallel.
             Parallel.ForEach(

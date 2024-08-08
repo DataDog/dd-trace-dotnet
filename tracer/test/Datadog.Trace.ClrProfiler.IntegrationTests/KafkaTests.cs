@@ -52,8 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
-                SpanKinds.Consumer => span.IsKafkaInbound(metadataSchemaVersion),
-                SpanKinds.Producer => span.IsKafkaOutbound(metadataSchemaVersion),
+                InternalSpanKinds.Consumer => span.IsKafkaInbound(metadataSchemaVersion),
+                InternalSpanKinds.Producer => span.IsKafkaOutbound(metadataSchemaVersion),
                 _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the Kafka integration: {span.Tags["span.kind"]}", nameof(span)),
             };
 

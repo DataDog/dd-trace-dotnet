@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
                 using (var rootWebScope = tracer.StartActive("Root"))
                 {
                     expectedSpanId = rootWebScope.Span.SpanId;
-                    rootWebScope.Span.Type = SpanTypes.Web;
+                    rootWebScope.Span.Type = InternalSpanTypes.Web;
                     rootWebScope.Span.ResourceName = "Wrong endpoint";
 
                     // The resource name of this scope shouldn't be propagated because it's not root
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
                 // The resource name of this scope shouldn't be propagated because it's not web
                 using (var rootOtherScope = tracer.StartActive("Root2"))
                 {
-                    rootOtherScope.Span.Type = SpanTypes.Http;
+                    rootOtherScope.Span.Type = InternalSpanTypes.Http;
                     rootOtherScope.Span.ResourceName = "Wrong endpoint";
                 }
 
@@ -70,9 +70,9 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
             }
         }
 
-        private static Tracer CreateTracer()
+        private static InternalTracer CreateTracer()
         {
-            return new Tracer(new InternalTracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
+            return new InternalTracer(new InternalTracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
         }
     }
 }

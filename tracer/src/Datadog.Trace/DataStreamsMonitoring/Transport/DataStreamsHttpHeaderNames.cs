@@ -19,7 +19,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Transport
             {
                 new(AgentHttpHeaderNames.Language, ".NET"),
                 new(AgentHttpHeaderNames.TracerVersion, TracerConstants.AssemblyVersion),
-                new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
+                new(InternalHttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
                 new(AgentHttpHeaderNames.LanguageInterpreter, FrameworkDescription.Instance.Name),
                 new(AgentHttpHeaderNames.LanguageVersion, FrameworkDescription.Instance.ProductVersion),
             };

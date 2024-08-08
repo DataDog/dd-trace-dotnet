@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IThreadContext
         {
-            if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+            if (InternalTracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
             {
                 rawAccess.Active = null;
             }

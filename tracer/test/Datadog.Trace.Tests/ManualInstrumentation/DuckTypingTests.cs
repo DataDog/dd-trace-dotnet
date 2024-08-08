@@ -44,11 +44,11 @@ public class DuckTypingTests
 {
     private readonly AsyncLocalScopeManager _scopeManager = new();
     private readonly InternalTracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
-    private readonly Tracer _tracer;
+    private readonly InternalTracer _tracer;
 
     public DuckTypingTests()
     {
-        _tracer = new Tracer(_settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object, scopeManager: _scopeManager, statsd: null);
+        _tracer = new InternalTracer(_settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object, scopeManager: _scopeManager, statsd: null);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class DuckTypingTests
         // it misses some checks compared to creating an instance and accessing the properties,
         // but it's a good sanity check
         var targetAssembly = typeof(ManualIScope).Assembly;
-        var proxiesAssembly = typeof(Tracer).Assembly;
+        var proxiesAssembly = typeof(InternalTracer).Assembly;
 
         TestDuckTypes(proxiesAssembly, targetAssembly);
     }
@@ -164,7 +164,7 @@ public class DuckTypingTests
         // This test ensures we can do the duck typing without needing to create an instance of the type
         // it misses some checks compared to creating an instance and accessing the properties,
         // but it's a good sanity check
-        var targetAssembly = typeof(Tracer).Assembly;
+        var targetAssembly = typeof(InternalTracer).Assembly;
         var proxiesAssembly = typeof(ManualIScope).Assembly;
 
         TestDuckTypes(proxiesAssembly, targetAssembly);
@@ -184,7 +184,7 @@ public class DuckTypingTests
                            .Any(member => member.GetCustomAttributes<ManualDuckTypeTargetAttribute>().Any()));
 
         var duckTypeTypes =
-            typeof(Tracer)
+            typeof(InternalTracer)
                .Assembly
                .GetTypes()
                .SelectMany(

@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         }
 
         [Tag(Internal.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Server;
+        public override string SpanKind => InternalSpanKinds.Server;
 
         [Tag(Internal.Tags.InstrumentationName)]
         public string InstrumentationName { get; }

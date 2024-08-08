@@ -105,7 +105,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="Tracer"/> instances
+        /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="InternalTracer"/> instances
         /// </summary>
         public static TracerManager Instance
         {
@@ -166,7 +166,7 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings { get; }
 
         /// <summary>
-        /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
+        /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="InternalTracer"/> instances
         /// which use the global <see cref="TracerManager"/>
         /// </summary>
         /// <param name="settings">The settings to use </param>
@@ -463,7 +463,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.ExporterInternal.PartialFlushMinSpansInternal);
 
                     writer.WritePropertyName("runtime_id");
-                    writer.WriteValue(Tracer.RuntimeId);
+                    writer.WriteValue(InternalTracer.RuntimeId);
 
                     writer.WritePropertyName("agent_reachable");
                     writer.WriteValue(agentError == null);
@@ -729,7 +729,7 @@ namespace Datadog.Trace
             // send traces to the Agent
             if (_instance?.Settings.TracerMetricsEnabledInternal == true)
             {
-                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, InternalTracer.LiveTracerCount);
             }
         }
 

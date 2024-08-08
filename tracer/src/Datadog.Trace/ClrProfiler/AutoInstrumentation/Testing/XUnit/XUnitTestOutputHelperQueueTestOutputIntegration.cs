@@ -45,7 +45,7 @@ public static class XUnitTestOutputHelperQueueTestOutputIntegration
             return CallTargetState.GetDefault();
         }
 
-        var tracer = Tracer.Instance;
+        var tracer = InternalTracer.Instance;
         if (tracer.TracerManager.DirectLogSubmission.Settings.MinimumLevel < DirectSubmissionLogLevel.Information)
         {
             return CallTargetState.GetDefault();

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
         private static bool _dbCommandCachingLogged = false;
 
-        private static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
+        private static Scope? CreateDbCommandScope(InternalTracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 var parent = tracer.InternalActiveScope?.Span;
 
-                if (parent is { Type: SpanTypes.Sql } &&
+                if (parent is { Type: InternalSpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
                     (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix)))
                 {
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
-                scope.Span.Type = SpanTypes.Sql;
+                scope.Span.Type = InternalSpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex) when (ex is not BlockException)
@@ -226,7 +226,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
+            public static Scope? CreateDbCommandScope(InternalTracer tracer, IDbCommand command)
             {
                 var commandType = command.GetType();
 
@@ -264,7 +264,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
-            private static string GetServiceName(Tracer tracer, string dbTypeName)
+            private static string GetServiceName(InternalTracer tracer, string dbTypeName)
             {
                 if (!tracer.CurrentTraceSettings.ServiceNames.TryGetValue(dbTypeName, out var serviceName))
                 {

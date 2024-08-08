@@ -147,7 +147,7 @@ public class AwsDynamoDbCommonTests
         span.ResourceName.Should().Be("DynamoDB.BatchWriteItem");
     }
 
-    private static Tracer GetTracer(string schemaVersion = "v1")
+    private static InternalTracer GetTracer(string schemaVersion = "v1")
     {
         var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
         IConfigurationSource source = new NameValueConfigurationSource(collection);
@@ -155,6 +155,6 @@ public class AwsDynamoDbCommonTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
 
-        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+        return new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
     }
 }

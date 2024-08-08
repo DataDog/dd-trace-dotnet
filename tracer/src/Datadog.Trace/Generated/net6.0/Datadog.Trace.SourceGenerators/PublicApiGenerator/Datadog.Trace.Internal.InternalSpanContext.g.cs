@@ -7,14 +7,14 @@
 #nullable enable
 
 namespace Datadog.Trace.Internal;
-partial class SpanContext
+partial class InternalSpanContext
 {
 
         /// <summary>
         /// Gets the parent context.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public Datadog.Trace.Internal.ISpanContext Parent
+    public Datadog.Trace.Internal.IInternalSpanContext Parent
     {
         get
         {

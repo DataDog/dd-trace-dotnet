@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
-        internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
+        internal static Scope? CreateScope(InternalTracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+            if (!InternalTracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
             var parent = tracer.ActiveScope?.Span;
             if (parent != null &&
-                parent.Type == SpanTypes.Redis &&
+                parent.Type == InternalSpanTypes.Redis &&
                 parent.GetTag(Tags.InstrumentationName) != null)
             {
                 return null;
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 }
 
                 var span = scope.Span;
-                span.Type = SpanTypes.Redis;
+                span.Type = InternalSpanTypes.Redis;
                 span.ResourceName = command;
                 tags.RawCommand = rawCommand;
                 tags.Host = host;

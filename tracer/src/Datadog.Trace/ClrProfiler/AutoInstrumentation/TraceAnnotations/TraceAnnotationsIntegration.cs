@@ -42,9 +42,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations
                 key => TraceAnnotationInfoFactory.Create(MethodBase.GetMethodFromHandle(key.MethodHandle, key.TypeHandle)));
 
             var tags = new TraceAnnotationTags();
-            var scope = Tracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
+            var scope = InternalTracer.Instance.StartActiveInternal(info.OperationName, tags: tags);
             scope.Span.ResourceName = info.ResourceName;
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            InternalTracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return new CallTargetState(scope);
         }
 

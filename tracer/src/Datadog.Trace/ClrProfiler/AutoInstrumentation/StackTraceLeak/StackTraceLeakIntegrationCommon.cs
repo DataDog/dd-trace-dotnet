@@ -19,7 +19,7 @@ internal static class StackTraceLeakIntegrationCommon
 
     internal static CallTargetState OnExceptionLeak(IntegrationId integrationId, Exception exception)
     {
-        if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+        if (!InternalTracer.Instance.Settings.IsIntegrationEnabled(integrationId))
         {
             return CallTargetState.GetDefault();
         }

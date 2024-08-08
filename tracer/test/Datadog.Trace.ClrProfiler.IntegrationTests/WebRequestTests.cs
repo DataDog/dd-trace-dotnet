@@ -56,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
+                var spans = agent.Spans.Where(s => s.Type == InternalSpanTypes.Http);
                 Assert.Empty(spans);
 
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
-                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TracingEnabled);
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.ParentId);
+                var tracingEnabled = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TracingEnabled);
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start).ToList();
                 allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
 
-                var spans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
+                var spans = allSpans.Where(s => s.Type == InternalSpanTypes.Http).ToList();
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
@@ -105,8 +105,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 teapotSpans.Should().OnlyContain(s => s.Error == 1);
 
                 var firstSpan = spans.First();
-                var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
-                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
+                var traceId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.TraceId);
+                var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, InternalHttpHeaderNames.ParentId);
 
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);

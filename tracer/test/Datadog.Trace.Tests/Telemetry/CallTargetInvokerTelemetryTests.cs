@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var settings = new InternalTracerSettings() { ServiceName = "DefaultService" };
             var telemetry = new TestTelemetryController();
-            var tracer = new Tracer(
+            var tracer = new InternalTracer(
                 settings,
                 new Mock<IAgentWriter>().Object,
                 new Mock<ITraceSampler>().Object,
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 statsd: null,
                 telemetry: telemetry);
 
-            Tracer.UnsafeSetTracerInstance(tracer);
+            InternalTracer.UnsafeSetTracerInstance(tracer);
             telemetry.RunningInvocations.Should().BeEmpty();
 
             try

@@ -10,12 +10,12 @@ namespace Datadog.Trace;
 
 internal class TaggingUtils
 {
-    internal static Action<string, string> GetSpanSetter(ISpan span)
+    internal static Action<string, string> GetSpanSetter(IInternalSpan span)
     {
         return GetSpanSetter(span, out _);
     }
 
-    internal static Action<string, string> GetSpanSetter(ISpan span, out Span spanClass, bool replaceIfExists = true)
+    internal static Action<string, string> GetSpanSetter(IInternalSpan span, out Span spanClass, bool replaceIfExists = true)
     {
         TraceContext traceContext = null;
         if (span is Span spanClassTemp)

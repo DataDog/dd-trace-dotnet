@@ -144,12 +144,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Inject_All_IHeadersCollection()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new InternalSpanContext(
+                parent: InternalSpanContext.None,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,
@@ -181,15 +181,15 @@ namespace Datadog.Trace.Tests.Propagators
         public void Inject_All_IHeadersCollection_128Bit_TraceId()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             var spanId = 1UL;
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new InternalSpanContext(
+                parent: InternalSpanContext.None,
                 traceContext,
                 serviceName: null,
                 traceId: traceId,
@@ -223,12 +223,12 @@ namespace Datadog.Trace.Tests.Propagators
         public void Inject_All_CarrierAndDelegate()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new InternalSpanContext(
+                parent: InternalSpanContext.None,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,
@@ -261,15 +261,15 @@ namespace Datadog.Trace.Tests.Propagators
         public void Inject_All_CarrierAndDelegate_128Bit_TraceId()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+            traceContext.SetSamplingPriority(InternalSamplingPriorityValues.UserKeep);
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             var spanId = 1UL;
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new InternalSpanContext(
+                parent: InternalSpanContext.None,
                 traceContext,
                 serviceName: null,
                 traceId: traceId,
@@ -327,7 +327,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.AutoKeep,
                            IsRemote = true,
                        });
         }
@@ -353,7 +353,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawTraceId = "00000000075bcd15",
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.AutoKeep,
                            IsRemote = true,
                        });
         }
@@ -383,7 +383,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
                            Origin = null,
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.AutoKeep,
                            PropagatedTags = EmptyPropagatedTags,
                            IsRemote = true,
                            LastParentId = ZeroLastParentId,
@@ -418,7 +418,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "000000000000000000000000075bcd15",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.UserKeep,
                            Origin = "rum",
                            PropagatedTags = PropagatedTagsCollection,
                            Parent = null,
@@ -462,7 +462,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawSpanId = "000000003ade68b1",
                            Origin = "rum",
-                           SamplingPriority = SamplingPriorityValues.AutoKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.AutoKeep,
                            PropagatedTags = PropagatedTagsCollection,
                            IsRemote = true,
                        });
@@ -606,7 +606,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "11111111111111110000000000000001",
                            RawSpanId = "000000003ade68b1",
-                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           SamplingPriority = InternalSamplingPriorityValues.UserKeep,
                            PropagatedTags = propagatedTags,
                            Origin = "rum",
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,

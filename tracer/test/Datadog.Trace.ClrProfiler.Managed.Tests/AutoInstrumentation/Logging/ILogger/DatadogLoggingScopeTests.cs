@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 Environment = "test"
             };
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            var tracer = new InternalTracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
 
             var scope = new DatadogLoggingScope(tracer);
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 Environment = "test"
             };
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            var tracer = new InternalTracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
             using var spanScope = tracer.StartActive("test");
             var scope = new DatadogLoggingScope(tracer);
 

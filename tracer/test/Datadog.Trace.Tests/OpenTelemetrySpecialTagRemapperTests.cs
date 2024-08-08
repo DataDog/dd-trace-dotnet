@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
     [Collection(nameof(OpenTelemetrySpecialTagRemapperTests))]
     public class OpenTelemetrySpecialTagRemapperTests
     {
-        private readonly Tracer _tracer;
+        private readonly InternalTracer _tracer;
 
         public OpenTelemetrySpecialTagRemapperTests()
         {
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = new InternalTracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]

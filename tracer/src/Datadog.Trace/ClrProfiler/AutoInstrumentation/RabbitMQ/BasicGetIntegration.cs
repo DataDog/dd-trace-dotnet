@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             string? queue = (string?)state.State;
             DateTimeOffset? startTime = state.StartTime;
 
-            SpanContext? propagatedContext = null;
+            InternalSpanContext? propagatedContext = null;
             IBasicProperties? basicProperties = null;
             string? messageSize = null;
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            using (var scope = RabbitMQIntegration.CreateScope(InternalTracer.Instance, out var tags, Command, parentContext: propagatedContext, spanKind: InternalSpanKinds.Consumer, queue: queue, startTime: startTime))
             {
                 if (scope != null)
                 {
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     if (basicProperties != null && tags is not null)
                     {
                         RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                            Tracer.Instance,
+                            InternalTracer.Instance,
                             scope.Span,
                             tags,
                             basicProperties.Headers,

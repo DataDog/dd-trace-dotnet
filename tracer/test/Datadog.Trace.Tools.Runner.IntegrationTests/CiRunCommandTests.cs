@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 {
                     foreach (var @event in payload.Events)
                     {
-                        if (@event.Type == SpanTypes.TestSession)
+                        if (@event.Type == InternalSpanTypes.TestSession)
                         {
                             testSession = JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString());
                             break;

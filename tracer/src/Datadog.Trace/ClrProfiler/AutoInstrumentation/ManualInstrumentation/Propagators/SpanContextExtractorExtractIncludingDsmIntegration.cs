@@ -18,7 +18,7 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 
 /// <summary>
-/// Instrumentation for <see cref="SpanContextExtractor.ExtractIncludingDsm{TCarrier}"/>
+/// Instrumentation for <see cref="InternalSpanContextExtractor.ExtractIncludingDsm{TCarrier}"/>
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.Trace.Manual",
@@ -37,7 +37,7 @@ public class SpanContextExtractorExtractIncludingDsmIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
         var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
-        var extracted = SpanContextExtractor.ExtractInternal(carrier, extract, messageType, source);
+        var extracted = InternalSpanContextExtractor.ExtractInternal(carrier, extract, messageType, source);
         return new CallTargetState(scope: null, extracted);
     }
 

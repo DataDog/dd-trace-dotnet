@@ -1013,8 +1013,8 @@ internal class IntelligentTestRunnerClient
 
     private void SetRequestHeader(IApiRequest request)
     {
-        request.AddHeader(HttpHeaderNames.TraceId, _id);
-        request.AddHeader(HttpHeaderNames.ParentId, _id);
+        request.AddHeader(InternalHttpHeaderNames.TraceId, _id);
+        request.AddHeader(InternalHttpHeaderNames.ParentId, _id);
         if (_eventPlatformProxySupport is EventPlatformProxySupport.V2 or EventPlatformProxySupport.V4)
         {
             request.AddHeader(EvpSubdomainHeader, "api");

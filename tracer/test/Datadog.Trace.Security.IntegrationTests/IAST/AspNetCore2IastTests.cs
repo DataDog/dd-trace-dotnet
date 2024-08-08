@@ -56,7 +56,7 @@ public class AspNetCore2IastTestsSpanTelemetryIastEnabled : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -188,7 +188,7 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -260,7 +260,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, url, "property=Execute&property3=2&Property2=nonexisting.exe", 1, 1, string.Empty, "application/x-www-form-urlencoded", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
@@ -287,7 +287,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, url, body, 1, 1, string.Empty, "application/json", null);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
         var nameRegex = new Regex(@"""name"": ""(\w+)""");
         settings.AddRegexScrubber(nameRegex, string.Empty);
@@ -309,7 +309,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -329,7 +329,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -349,7 +349,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -370,7 +370,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -391,7 +391,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -413,7 +413,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -432,7 +432,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -451,7 +451,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -498,7 +498,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 1, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web || x.Type == InternalSpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -521,7 +521,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web || x.Type == InternalSpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
@@ -542,7 +542,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+        var spansFiltered = spans.Where(x => x.Type == InternalSpanTypes.Web || x.Type == InternalSpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();

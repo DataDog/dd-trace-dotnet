@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 rootSpan.Name.Should().Be("Manual");
                 rootSpan.Metrics.Should().ContainKey(Metrics.SamplingPriority);
-                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
+                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)InternalSamplingPriority.UserReject);
 
                 var httpSpans = spans.Where(s => s.Name == "http.request").ToList();
 
@@ -70,8 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 httpSpans.Should()
                     .HaveCount(2)
                     .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
-                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
-                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserKeep)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == InternalSamplingPriorityValues.UserReject);
 #endif
 
                 // Check the headers of the outbound http requests

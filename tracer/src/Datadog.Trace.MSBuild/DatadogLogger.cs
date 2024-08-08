@@ -34,7 +34,7 @@ namespace Datadog.Trace.MSBuild
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
         private readonly ConcurrentDictionary<int, Span> _projects = new();
-        private Tracer _tracer;
+        private InternalTracer _tracer;
         private Span _buildSpan;
 
         static DatadogLogger()
@@ -83,7 +83,7 @@ namespace Datadog.Trace.MSBuild
 
             try
             {
-                _tracer = Tracer.Instance;
+                _tracer = InternalTracer.Instance;
 
                 // Attach to the eventSource events only if we successfully get the tracer instance.
                 eventSource.BuildStarted += EventSource_BuildStarted;
@@ -115,11 +115,11 @@ namespace Datadog.Trace.MSBuild
 
                 if (_buildSpan.Context.TraceContext is { } traceContext)
                 {
-                    traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
+                    traceContext.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
                     traceContext.Origin = TestTags.CIAppTestOriginName;
                 }
 
-                _buildSpan.Type = SpanTypes.Build;
+                _buildSpan.Type = InternalSpanTypes.Build;
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
 
                 _buildSpan.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
@@ -194,8 +194,8 @@ namespace Datadog.Trace.MSBuild
                     projectSpan.ServiceName = projectName;
                 }
 
-                projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-                projectSpan.Type = SpanTypes.Build;
+                projectSpan.Context.TraceContext?.SetSamplingPriority(InternalSamplingPriorityValues.AutoKeep);
+                projectSpan.Type = InternalSpanTypes.Build;
 
                 string targetFramework = null;
                 foreach (KeyValuePair<string, string> prop in e.GlobalProperties)

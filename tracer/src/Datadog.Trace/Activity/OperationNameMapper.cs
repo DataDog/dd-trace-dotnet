@@ -11,7 +11,7 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.Activity
 {
     /// <summary>
-    /// Helper class to map <see cref="SpanKinds"/> and various tags on an <c>Activity</c> or OpenTelemetry Span to a <see cref="Span.OperationName"/>.
+    /// Helper class to map <see cref="InternalSpanKinds"/> and various tags on an <c>Activity</c> or OpenTelemetry Span to a <see cref="Span.OperationName"/>.
     /// </summary>
     internal static class OperationNameMapper
     {
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Activity
             {
                 // when there is no SpanKind defined (possible on Activity objects without "Kind")
                 // fallback to using "internal" for the name.
-                operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : SpanKinds.Internal;
+                operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : InternalSpanKinds.Internal;
             }
 
             span.OperationName = operationName.ToLowerInvariant();
@@ -93,67 +93,67 @@ namespace Datadog.Trace.Activity
 
         private static bool IsHttpServer(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.HttpRequestMethod);
+            return tags.SpanKind == InternalSpanKinds.Server && !string.IsNullOrEmpty(tags.HttpRequestMethod);
         }
 
         private static bool IsHttpClient(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.HttpRequestMethod);
+            return tags.SpanKind == InternalSpanKinds.Client && !string.IsNullOrEmpty(tags.HttpRequestMethod);
         }
 
         private static bool IsDatabase(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.DbSystem);
+            return tags.SpanKind == InternalSpanKinds.Client && !string.IsNullOrEmpty(tags.DbSystem);
         }
 
         private static bool IsMessaging(this OpenTelemetryTags tags)
         {
-            return (tags.SpanKind == SpanKinds.Client ||
-                    tags.SpanKind == SpanKinds.Server ||
-                    tags.SpanKind == SpanKinds.Producer ||
-                    tags.SpanKind == SpanKinds.Consumer)
+            return (tags.SpanKind == InternalSpanKinds.Client ||
+                    tags.SpanKind == InternalSpanKinds.Server ||
+                    tags.SpanKind == InternalSpanKinds.Producer ||
+                    tags.SpanKind == InternalSpanKinds.Consumer)
                 && !string.IsNullOrEmpty(tags.MessagingSystem) &&
                    !string.IsNullOrEmpty(tags.MessagingOperation);
         }
 
         private static bool IsAwsClient(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client && string.Equals(tags.RpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase);
+            return tags.SpanKind == InternalSpanKinds.Client && string.Equals(tags.RpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsRpcClient(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.RpcSystem);
+            return tags.SpanKind == InternalSpanKinds.Client && !string.IsNullOrEmpty(tags.RpcSystem);
         }
 
         private static bool IsRpcServer(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.RpcSystem);
+            return tags.SpanKind == InternalSpanKinds.Server && !string.IsNullOrEmpty(tags.RpcSystem);
         }
 
         private static bool IsFaasServer(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.FaasTrigger);
+            return tags.SpanKind == InternalSpanKinds.Server && !string.IsNullOrEmpty(tags.FaasTrigger);
         }
 
         private static bool IsFaasClient(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client && !string.IsNullOrEmpty(tags.FaasInvokedProvider) && !string.IsNullOrEmpty(tags.FaasInvokedName);
+            return tags.SpanKind == InternalSpanKinds.Client && !string.IsNullOrEmpty(tags.FaasInvokedProvider) && !string.IsNullOrEmpty(tags.FaasInvokedName);
         }
 
         private static bool IsGraphQLServer(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server && !string.IsNullOrEmpty(tags.GraphQlOperationType);
+            return tags.SpanKind == InternalSpanKinds.Server && !string.IsNullOrEmpty(tags.GraphQlOperationType);
         }
 
         private static bool IsGenericServer(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Server;
+            return tags.SpanKind == InternalSpanKinds.Server;
         }
 
         private static bool IsGenericClient(this OpenTelemetryTags tags)
         {
-            return tags.SpanKind == SpanKinds.Client;
+            return tags.SpanKind == InternalSpanKinds.Client;
         }
     }
 }

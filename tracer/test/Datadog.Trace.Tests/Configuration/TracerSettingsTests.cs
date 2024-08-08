@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new InternalTracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), value);
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new InternalTracerSettings(source);
             Assert.True(settings.GlobalTags.Any());
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), envValue);
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(ddTagKey), expectedValue);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             _writerMock.Invocations.Clear();
 
-            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new InternalTracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("TestTracerDisabled");
             span.Dispose();
 

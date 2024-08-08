@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromBootstrapServers()
         {
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Producer);
+            var tags = new KafkaV1Tags(InternalSpanKinds.Producer);
 
             tags.BootstrapServers = bootstrapServer;
 
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new KafkaV1Tags(SpanKinds.Producer);
+            var tags = new KafkaV1Tags(InternalSpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Producer);
+            var tags = new KafkaV1Tags(InternalSpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.BootstrapServers = bootstrapServer;
@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_ConsumerHasNoPeerService()
         {
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(InternalSpanKinds.Consumer);
 
             tags.BootstrapServers = bootstrapServer;
 
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Producer);
+            var tags = new MsmqV1Tags(InternalSpanKinds.Producer);
 
             tags.Host = host;
 
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new MsmqV1Tags(SpanKinds.Producer);
+            var tags = new MsmqV1Tags(InternalSpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Producer);
+            var tags = new MsmqV1Tags(InternalSpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.Host = host;
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_ConsumerHasNoPeerService()
         {
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(InternalSpanKinds.Consumer);
 
             tags.Host = host;
 

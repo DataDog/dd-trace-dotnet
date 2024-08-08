@@ -18,7 +18,7 @@ namespace Datadog.Trace.Telemetry
             {
                 new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
                 new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
-                new KeyValuePair<string, string>(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
+                new KeyValuePair<string, string>(InternalHttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             };
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Telemetry
 
             headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
             headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
-            headers[2] = new(HttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
+            headers[2] = new(InternalHttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
             headers[3] = new(TelemetryConstants.ApiKeyHeader, settings.ApiKey);
 
             if (settings.Cloud is { } cloud)

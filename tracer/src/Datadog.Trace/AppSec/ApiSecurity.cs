@@ -38,7 +38,7 @@ internal class ApiSecurity
         {
             var samplingPriority = localRootSpan.Context.TraceContext.GetOrMakeSamplingDecision();
 
-            if (_enabled && lastWafCall && SamplingPriorityValues.IsKeep(samplingPriority))
+            if (_enabled && lastWafCall && InternalSamplingPriorityValues.IsKeep(samplingPriority))
             {
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);

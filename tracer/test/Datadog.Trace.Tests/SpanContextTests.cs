@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests
             var expectedTraceId = (TraceId)41;
             const ulong expectedSpanId = 42;
 
-            var spanContext = new SpanContext(parent: null, traceContext: null, serviceName: "service", traceId: expectedTraceId, spanId: expectedSpanId);
+            var spanContext = new InternalSpanContext(parent: null, traceContext: null, serviceName: "service", traceId: expectedTraceId, spanId: expectedSpanId);
 
             spanContext.SpanId.Should().Be(expectedSpanId);
             spanContext.TraceId128.Should().Be(expectedTraceId);
@@ -37,9 +37,9 @@ namespace Datadog.Trace.Tests
             var childTraceId = (TraceId)43;
             const ulong childSpanId = 44;
 
-            var parent = new SpanContext(parentTraceId, parentSpanId, samplingPriority: null, serviceName: null, origin: null);
+            var parent = new InternalSpanContext(parentTraceId, parentSpanId, samplingPriority: null, serviceName: null, origin: null);
 
-            var spanContext = new SpanContext(parent: parent, traceContext: null, serviceName: "service", traceId: childTraceId, spanId: childSpanId);
+            var spanContext = new InternalSpanContext(parent: parent, traceContext: null, serviceName: "service", traceId: childTraceId, spanId: childSpanId);
 
             spanContext.SpanId.Should().Be(childSpanId);
             spanContext.TraceId128.Should().Be(parentTraceId, "trace id shouldn't be overriden if a parent trace exists. Doing so would break the HttpWebRequest.GetRequestStream/GetResponse integration.");
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests
             const ulong spanId = 2;
             const string rawTraceId = "1a";
             const string rawSpanId = "2b";
-            const int samplingPriority = SamplingPriorityValues.UserReject;
+            const int samplingPriority = InternalSamplingPriorityValues.UserReject;
             const string origin = "origin";
             const string additionalW3CTraceState = "key3=value3,key4=value4";
             const string lastParentId = "0123456789abcdef";
@@ -153,8 +153,8 @@ namespace Datadog.Trace.Tests
             traceContext.Origin = origin;
             traceContext.AdditionalW3CTraceState = additionalW3CTraceState;
 
-            return new SpanContext(
-                parent: SpanContext.None,
+            return new InternalSpanContext(
+                parent: InternalSpanContext.None,
                 traceContext,
                 serviceName: null,
                 traceId,

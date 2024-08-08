@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal)
             {
@@ -60,10 +60,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
                 if (spanContext is not null)
                 {
                     // For mismatch version support we need to keep requesting old keys.
-                    var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
-                                     spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                    var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
-                                    spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
+                    var hasTraceId = spanContext.TryGetValue(InternalSpanContext.Keys.TraceId, out string traceId) ||
+                                     spanContext.TryGetValue(InternalHttpHeaderNames.TraceId, out traceId);
+                    var hasSpanId = spanContext.TryGetValue(InternalSpanContext.Keys.ParentId, out string spanId) ||
+                                    spanContext.TryGetValue(InternalHttpHeaderNames.ParentId, out spanId);
                     if (hasTraceId && hasSpanId)
                     {
                         AddPropertyIfAbsent(dict, InternalCorrelationIdentifier.SerilogTraceIdKey, traceId);

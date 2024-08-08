@@ -21,9 +21,9 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var commonTracer = new CommonTracerImpl();
 
-            var expectedSamplingPriority = SamplingPriorityValues.UserKeep;
+            var expectedSamplingPriority = InternalSamplingPriorityValues.UserKeep;
 
-            using var scope = (Scope)Tracer.Instance.StartActive("Test");
+            using var scope = (Scope)InternalTracer.Instance.StartActive("Test");
 
             commonTracer.SetSamplingPriority(expectedSamplingPriority);
 

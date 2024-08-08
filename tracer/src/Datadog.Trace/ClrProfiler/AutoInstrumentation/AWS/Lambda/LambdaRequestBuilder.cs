@@ -31,7 +31,7 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
     {
         var request = WebRequest.Create(Uri + StartInvocationPath);
         request.Method = "POST";
-        request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+        request.Headers.Set(InternalHttpHeaderNames.TracingEnabled, "false");
         request.ContentType = MimeTypes.Json;
         return request;
     }
@@ -40,40 +40,40 @@ internal class LambdaRequestBuilder : ILambdaExtensionRequest
     {
         var request = WebRequest.Create(Uri + EndInvocationPath);
         request.Method = "POST";
-        request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+        request.Headers.Set(InternalHttpHeaderNames.TracingEnabled, "false");
 
         if (scope is { Span: var span })
         {
             // TODO: add support for 128-bit trace ids in serverless
-            request.Headers.Set(HttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
-            request.Headers.Set(HttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
+            request.Headers.Set(InternalHttpHeaderNames.TraceId, span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture));
+            request.Headers.Set(InternalHttpHeaderNames.SpanId, span.SpanId.ToString(CultureInfo.InvariantCulture));
 
             var samplingPriority = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-            request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
+            request.Headers.Set(InternalHttpHeaderNames.SamplingPriority, InternalSamplingPriorityValues.ToString(samplingPriority));
 
             var errorMessage = span.GetTag("error.msg");
             if (errorMessage != null)
             {
-                request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, errorMessage);
+                request.Headers.Set(InternalHttpHeaderNames.InvocationErrorMsg, errorMessage);
             }
 
             var errorType = span.GetTag("error.type");
             if (errorType != null)
             {
-                request.Headers.Set(HttpHeaderNames.InvocationErrorType, errorType);
+                request.Headers.Set(InternalHttpHeaderNames.InvocationErrorType, errorType);
             }
 
             var errorStack = span.GetTag("error.stack");
             if (errorStack != null)
             {
                 var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
-                request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
+                request.Headers.Set(InternalHttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
             }
         }
 
         if (isError)
         {
-            request.Headers.Set(HttpHeaderNames.InvocationError, "true");
+            request.Headers.Set(InternalHttpHeaderNames.InvocationError, "true");
         }
 
         return request;

@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
     {
         internal static CallTargetState OnMethodBegin<TTarget, TStatus>(TTarget instance, bool success, in TStatus clientSideStatus)
         {
-            var tracer = Tracer.Instance;
+            var tracer = InternalTracer.Instance;
             if (GrpcCoreApiVersionHelper.IsSupported && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
                 var asyncCall = instance.DuckCast<AsyncCallStruct>();

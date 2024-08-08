@@ -1,4 +1,4 @@
-// <copyright file="SpanTypes.cs" company="Datadog">
+// <copyright file="InternalSpanTypes.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,8 +9,8 @@ namespace Datadog.Trace.Internal
     /// A set of standard span types that can be used by integrations.
     /// Not to be confused with span kinds.
     /// </summary>
-    /// <seealso cref="SpanKinds"/>
-    public static class SpanTypes
+    /// <seealso cref="InternalSpanKinds"/>
+    public static class InternalSpanTypes
     {
         /// <summary>
         /// The span type for a Redis client integration.

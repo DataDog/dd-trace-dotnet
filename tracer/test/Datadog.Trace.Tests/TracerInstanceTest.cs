@@ -31,15 +31,15 @@ namespace Datadog.Trace.Tests
             await using var tracerTwo = TracerHelper.CreateWithFakeAgent();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            InternalTracer.Instance.Should().Be(tracerOne);
+            InternalTracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            InternalTracer.Instance.Should().Be(tracerTwo);
+            InternalTracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            InternalTracer.Instance.Should().BeNull();
         }
 
         [Fact]
@@ -49,22 +49,22 @@ namespace Datadog.Trace.Tests
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            InternalTracer.Instance.Should().Be(tracerOne);
+            InternalTracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            InternalTracer.Instance.Should().BeNull();
 
             // Set the locked tracer
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            InternalTracer.Instance.Should().Be(tracerTwo);
+            InternalTracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             // We test the locked tracer cannot be replaced.
 #pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
+            Assert.Throws<InvalidOperationException>(() => InternalTracer.Instance = tracerOne);
 
-            Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
+            Assert.Throws<ArgumentNullException>(() => InternalTracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings, NullDiscoveryService.Instance, false)));
@@ -87,9 +87,9 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
                 };
-                Tracer.Configure(oldSettings);
+                InternalTracer.Configure(oldSettings);
 
-                var scope = Tracer.Instance.StartActive("Test span");
+                var scope = InternalTracer.Instance.StartActive("Test span");
                 (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
                 var newSettings = new InternalTracerSettings
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
                 };
 
-                Tracer.Configure(newSettings);
+                InternalTracer.Configure(newSettings);
 
                 scope.Dispose();
 
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        private class LockedTracer : Tracer
+        private class LockedTracer : InternalTracer
         {
             internal LockedTracer()
                 : base(new LockedTracerManager())
