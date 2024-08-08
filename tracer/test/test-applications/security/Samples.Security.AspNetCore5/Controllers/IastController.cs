@@ -1100,5 +1100,42 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return new string(original.AsEnumerable().ToArray());
         }
+
+        [HttpGet("DatabaseSourceInjection")]
+        [Route("DatabaseSourceInjection")]
+        public ActionResult DatabaseSourceInjection(string host, bool injectOnlyDatabase)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (injectOnlyDatabase) { host = GetDbValue(); }
+                else { host += GetDbValue(); }
+                result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
+        }
+
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli()
+        {
+            try
+            {
+                var username = GetDbValue();
+                var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
+                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
+                return Content($"Result: " + rname);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
     }
 }

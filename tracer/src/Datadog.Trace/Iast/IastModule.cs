@@ -59,6 +59,29 @@ internal static partial class IastModule
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
 
+    internal static bool NoDbSource(TaintedObject tainted)
+    {
+        // Reject any vuln with all ranges coming from a db source
+        try
+        {
+            foreach (var range in tainted.Ranges)
+            {
+                if (range.Source?.Origin != SourceType.SqlRowValue)
+                {
+                    return true;
+                }
+           }
+
+            return false;
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "Error while checking for non Database tainted origins.");
+        }
+
+        return true;
+    }
+
     internal static string? OnUnvalidatedRedirect(string? evidence)
     {
         if (Iast.Instance.Settings.Enabled && evidence != null && OnUnvalidatedRedirect(evidence, IntegrationId.UnvalidatedRedirect).VulnerabilityAdded)
@@ -79,7 +102,7 @@ internal static partial class IastModule
                 {
                     if (range.Source is null) { continue; }
                     var origin = range.Source.Origin;
-                    // TODO: reenable when SourceTypeName.Database gets defined -> if (origin == SourceType.Database) { continue; }
+                    if (origin == SourceType.SqlRowValue) { continue; }
                     if (origin == SourceType.RequestPath) { continue; }
                     if (origin == SourceType.RequestHeaderValue && range.Source.Name == "Host") { continue; }
 
@@ -138,7 +161,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, Always);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -157,7 +180,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, Always);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -176,7 +199,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, Always);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -214,7 +237,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, Always);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -272,7 +295,7 @@ internal static partial class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, Always);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -286,7 +309,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.ReflectionInjection);
-            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, Always);
+            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -764,7 +787,7 @@ internal static partial class IastModule
 
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
-        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
+        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, NoDbSource, false, hash);
     }
 
     internal static IastModuleResponse OnXpathInjection(string xpath)
@@ -777,7 +800,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);
-            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, Always);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -808,7 +831,7 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS
-        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: NoDbSource, exclusionSecureMarks: SecureMarks.Xss);
     }
 
     internal static void RegisterDbRecord(object instance)
