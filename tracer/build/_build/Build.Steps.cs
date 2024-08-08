@@ -1350,6 +1350,7 @@ partial class Build
             {
                 // This does some "unnecessary" rebuilding and restoring
                 var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+                var includeInstrumentation = TracerDirectory.GlobFiles("test/test-applications/instrumentation/**/*.csproj");
                 // Don't build aspnet full framework sample in this step
                 var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
@@ -1358,6 +1359,7 @@ partial class Build
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
 
                 var projects = includeIntegration
+                    .Concat(includeInstrumentation)
                     .Concat(includeSecurity)
                     .Select(x => Solution.GetProject(x))
                     .Where(project =>
