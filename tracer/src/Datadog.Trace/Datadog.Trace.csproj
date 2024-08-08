@@ -74,7 +74,6 @@
 
   <ItemGroup>
     <Folder Include="Public\" />
-    <Folder Include="Public\DuckTyping\" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

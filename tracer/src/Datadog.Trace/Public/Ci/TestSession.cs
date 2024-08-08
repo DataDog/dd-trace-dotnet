@@ -6,6 +6,8 @@
 
 using System;
 using Datadog.Trace.Ci.Stubs;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci;
@@ -67,5 +69,13 @@ public static class TestSession
 
     [Instrumented]
     internal static ITestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
-        => NullTestSession.Instance;
+    {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            var state = TestSessionInternalGetOrCreateIntegration.OnMethodBegin<object>(command, workingDirectory!, framework!, startDate, propagateEnvironmentVariables);
+            return TestSessionInternalGetOrCreateIntegration.OnMethodEnd<object, ITestSession>(default!, default!, state).GetReturnValue()!;
+        }
+
+        return NullTestSession.Instance;
+    }
 }

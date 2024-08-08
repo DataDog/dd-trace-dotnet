@@ -5,7 +5,9 @@
 
 #nullable enable
 
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.IntegrationSettings;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -15,13 +17,14 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 public sealed class IntegrationSettings
 {
+    private readonly string _integrationName;
     private OverrideValue<bool?> _enabled;
     private OverrideValue<bool?> _analyticsEnabled;
     private OverrideValue<double> _analyticsSampleRate;
 
     internal IntegrationSettings(string integrationName, bool? enabled, bool? analyticsEnabled, double analyticsSampleRate)
     {
-        IntegrationName = integrationName;
+        _integrationName = integrationName;
         _enabled = new(enabled);
         _analyticsEnabled = new(analyticsEnabled);
         _analyticsSampleRate = new(analyticsSampleRate);
@@ -31,7 +34,18 @@ public sealed class IntegrationSettings
     /// Gets the name of the integration. Used to retrieve integration-specific settings.
     /// </summary>
     [Instrumented]
-    public string IntegrationName { get; }
+    public string IntegrationName
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                IntegrationNameGetIntegration.OnMethodBegin(this);
+            }
+
+            return _integrationName;
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating whether
@@ -40,7 +54,16 @@ public sealed class IntegrationSettings
     public bool? Enabled
     {
         [Instrumented]
-        get => _enabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                EnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _enabled.Value;
+        }
+
         set => _enabled = _enabled.Override(value);
     }
 
@@ -51,7 +74,16 @@ public sealed class IntegrationSettings
     public bool? AnalyticsEnabled
     {
         [Instrumented]
-        get => _analyticsEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AnalyticsEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _analyticsEnabled.Value;
+        }
+
         set => _analyticsEnabled = _analyticsEnabled.Override(value);
     }
 
@@ -62,7 +94,16 @@ public sealed class IntegrationSettings
     public double AnalyticsSampleRate
     {
         [Instrumented]
-        get => _analyticsSampleRate.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AnalyticsSampleRateGetIntegration.OnMethodBegin(this);
+            }
+
+            return _analyticsSampleRate.Value;
+        }
+
         set => _analyticsSampleRate = _analyticsSampleRate.Override(value);
     }
 

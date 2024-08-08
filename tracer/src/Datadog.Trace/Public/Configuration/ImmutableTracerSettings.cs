@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.ImmutableTracerSettings;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -18,34 +20,60 @@ namespace Datadog.Trace.Configuration;
 /// </summary>
 public sealed class ImmutableTracerSettings
 {
+    private readonly string? _environment;
+    private readonly Uri _agentUri;
+
+    [Obsolete("This property is obsolete and will be removed in a future version. To get the AgentUri, use the AgentUri property")]
+    private readonly ImmutableExporterSettings _exporter;
+
+    private readonly string? _serviceName;
+    private readonly string? _serviceVersion;
+    private readonly bool _traceEnabled;
+
+    [Obsolete(DeprecationMessages.AppAnalytics)]
+    private readonly bool _analyticsEnabled;
+
+    private readonly bool _logsInjectionEnabled;
+    private readonly int _maxTracesSubmittedPerSecond;
+    private readonly string? _customSamplingRules;
+    private readonly double? _globalSamplingRate;
+    private readonly ImmutableIntegrationSettingsCollection _integrations;
+    private readonly IReadOnlyDictionary<string, string> _globalTags;
+    private readonly IReadOnlyDictionary<string, string> _grpcTags;
+    private readonly IReadOnlyDictionary<string, string> _headerTags;
+    private readonly bool _tracerMetricsEnabled;
+    private readonly bool _statsComputationEnabled;
+    private readonly bool _kafkaCreateConsumerScopeEnabled;
+    private readonly bool _startupDiagnosticLogEnabled;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class.
     /// </summary>
     internal ImmutableTracerSettings(Dictionary<string, object?> initialValues)
     {
-        AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
-        CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
-        Environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
-        GlobalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
-        GlobalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
-        GrpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
-        HeaderTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
-        KafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
-        LogsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
-        MaxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
-        ServiceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
-        ServiceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
-        StartupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
-        StatsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
-        TraceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
-        TracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
+        _agentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
+        _customSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
+        _environment = GetValue<string?>(initialValues, TracerSettingKeyConstants.EnvironmentKey, null);
+        _globalSamplingRate = GetValue<double?>(initialValues, TracerSettingKeyConstants.GlobalSamplingRateKey, null);
+        _globalTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GlobalTagsKey, null) ?? new ConcurrentDictionary<string, string>();
+        _grpcTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.GrpcTags, null) ?? new ConcurrentDictionary<string, string>();
+        _headerTags = GetValue<IReadOnlyDictionary<string, string>?>(initialValues, TracerSettingKeyConstants.HeaderTags, null) ?? new ConcurrentDictionary<string, string>();
+        _kafkaCreateConsumerScopeEnabled = GetValue(initialValues, TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey, true);
+        _logsInjectionEnabled = GetValue(initialValues, TracerSettingKeyConstants.LogsInjectionEnabledKey, false);
+        _maxTracesSubmittedPerSecond = GetValue(initialValues, TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey, 100);
+        _serviceName = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceNameKey, null);
+        _serviceVersion = GetValue<string?>(initialValues, TracerSettingKeyConstants.ServiceVersionKey, null);
+        _startupDiagnosticLogEnabled = GetValue(initialValues, TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey, true);
+        _statsComputationEnabled = GetValue(initialValues, TracerSettingKeyConstants.StatsComputationEnabledKey, false);
+        _traceEnabled = GetValue(initialValues, TracerSettingKeyConstants.TraceEnabledKey, true);
+        _tracerMetricsEnabled = GetValue(initialValues, TracerSettingKeyConstants.TracerMetricsEnabledKey, false);
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        Exporter = new ImmutableExporterSettings(this);
-        AnalyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
+        _exporter = new ImmutableExporterSettings(this);
+        _analyticsEnabled = GetValue(initialValues, TracerSettingKeyConstants.AnalyticsEnabledKey, false);
 #pragma warning restore CS0618 // Type or member is obsolete
 
-        Integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);
+        _integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);
 
         static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
         {
@@ -63,41 +91,107 @@ public sealed class ImmutableTracerSettings
     /// Gets the default environment name applied to all spans.
     /// </summary>
     [Instrumented]
-    public string? Environment { get; }
+    public string? Environment
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                EnvironmentGetIntegration.OnMethodBegin(this);
+            }
+
+            return _environment;
+        }
+    }
 
     /// <summary>
     /// Gets the Uri where the Tracer can connect to the Agent.
     /// </summary>
     [Instrumented]
-    public Uri AgentUri { get; }
+    public Uri AgentUri
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AgentUriIntegration.OnMethodBegin(this);
+            }
+
+            return _agentUri;
+        }
+    }
 
     /// <summary>
     /// Gets the exporter settings that dictate how the tracer exports data.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To get the AgentUri, use the AgentUri property")]
     [Instrumented]
-    public ImmutableExporterSettings Exporter { get; }
+    public ImmutableExporterSettings Exporter
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ExporterGetIntegration.OnMethodBegin(this);
+            }
+
+            return _exporter;
+        }
+    }
 
     /// <summary>
     /// Gets the service name applied to top-level spans and used to build derived service names.
     /// </summary>
     /// <seealso cref="TracerSettings.ServiceName"/>
     [Instrumented]
-    public string? ServiceName { get; }
+    public string? ServiceName
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ServiceNameGetIntegration.OnMethodBegin(this);
+            }
+
+            return _serviceName;
+        }
+    }
 
     /// <summary>
     /// Gets the version tag applied to all spans.
     /// </summary>
     /// <seealso cref="TracerSettings.ServiceVersion"/>
     [Instrumented]
-    public string? ServiceVersion { get; }
+    public string? ServiceVersion
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ServiceVersionGetIntegration.OnMethodBegin(this);
+            }
+
+            return _serviceVersion;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether tracing is enabled.
     /// Default is <c>true</c>.
     /// </summary>
     [Instrumented]
-    public bool TraceEnabled { get; }
+    public bool TraceEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                TraceEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _traceEnabled;
+        }
+    }
 
 #pragma warning disable CS1574 // AnalyticsEnabled is obsolete
     /// <summary>
@@ -110,7 +204,18 @@ public sealed class ImmutableTracerSettings
 #pragma warning restore CS1574
     [Obsolete(DeprecationMessages.AppAnalytics)]
     [Instrumented]
-    public bool AnalyticsEnabled { get; }
+    public bool AnalyticsEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AnalyticsEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _analyticsEnabled;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether correlation identifiers are
@@ -118,76 +223,208 @@ public sealed class ImmutableTracerSettings
     /// Default is <c>false</c>.
     /// </summary>
     [Instrumented]
-    public bool LogsInjectionEnabled { get; }
+    public bool LogsInjectionEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                LogsInjectionEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _logsInjectionEnabled;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
     /// Default is <c>100</c>.
     /// </summary>
     [Instrumented]
-    public int MaxTracesSubmittedPerSecond { get; }
+    public int MaxTracesSubmittedPerSecond
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                MaxTracesSubmittedPerSecondGetIntegration.OnMethodBegin(this);
+            }
+
+            return _maxTracesSubmittedPerSecond;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating custom sampling rules.
     /// </summary>
     [Instrumented]
-    public string? CustomSamplingRules { get; }
+    public string? CustomSamplingRules
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                CustomSamplingRulesGetIntegration.OnMethodBegin(this);
+            }
+
+            return _customSamplingRules;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating a global rate for sampling.
     /// </summary>
     [Instrumented]
-    public double? GlobalSamplingRate { get; }
+    public double? GlobalSamplingRate
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GlobalSamplingRateGetIntegration.OnMethodBegin(this);
+            }
+
+            return _globalSamplingRate;
+        }
+    }
 
     /// <summary>
     /// Gets a collection of <see cref="ImmutableIntegrationSettings"/> keyed by integration name.
     /// </summary>
     [Instrumented]
-    public ImmutableIntegrationSettingsCollection Integrations { get; }
+    public ImmutableIntegrationSettingsCollection Integrations
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                IntegrationsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _integrations;
+        }
+    }
 
     /// <summary>
     /// Gets the global tags, which are applied to all <see cref="ISpan"/>s.
     /// </summary>
     [Instrumented]
-    public IReadOnlyDictionary<string, string> GlobalTags { get; }
+    public IReadOnlyDictionary<string, string> GlobalTags
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GlobalTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _globalTags;
+        }
+    }
 
     /// <summary>
     /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="ISpan"/>
     /// of incoming and outgoing GRPC requests.
     /// </summary>
     [Instrumented]
-    public IReadOnlyDictionary<string, string> GrpcTags { get; }
+    public IReadOnlyDictionary<string, string> GrpcTags
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GrpcTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _grpcTags;
+        }
+    }
 
     /// <summary>
     /// Gets the map of header keys to tag names, which are applied to the root <see cref="ISpan"/>
     /// of incoming and outgoing requests.
     /// </summary>
     [Instrumented]
-    public IReadOnlyDictionary<string, string> HeaderTags { get; }
+    public IReadOnlyDictionary<string, string> HeaderTags
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                HeaderTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _headerTags;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether internal metrics
     /// are enabled and sent to DogStatsd.
     /// </summary>
     [Instrumented]
-    public bool TracerMetricsEnabled { get; }
+    public bool TracerMetricsEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                TracerMetricsEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _tracerMetricsEnabled;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether stats are computed on the tracer side
     /// </summary>
     [Instrumented]
-    public bool StatsComputationEnabled { get; }
+    public bool StatsComputationEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StatsComputationEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _statsComputationEnabled;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
     /// Consumer.Consume() call, and closed on entering Consumer.Consume().
     /// </summary>
     [Instrumented]
-    public bool KafkaCreateConsumerScopeEnabled { get; }
+    public bool KafkaCreateConsumerScopeEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                KafkaCreateConsumerScopeEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _kafkaCreateConsumerScopeEnabled;
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether the diagnostic log at startup is enabled
     /// </summary>
     [Instrumented]
-    public bool StartupDiagnosticLogEnabled { get; }
+    public bool StartupDiagnosticLogEnabled
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StartupDiagnosticLogEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _startupDiagnosticLogEnabled;
+        }
+    }
 }

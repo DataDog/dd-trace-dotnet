@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 using Datadog.Trace.SourceGenerators;
 
 #nullable enable
@@ -22,6 +24,10 @@ namespace Datadog.Trace
         [Instrumented]
         public SpanContextInjector()
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                SpanContextInjectorConstructorIntegration.OnMethodBegin(this);
+            }
         }
 
         /// <summary>
@@ -36,6 +42,10 @@ namespace Datadog.Trace
         [Instrumented]
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                SpanContextInjectorInjectIntegration.OnMethodBegin(this, carrier, setter, context);
+            }
         }
 
         /// <summary>
@@ -53,6 +63,10 @@ namespace Datadog.Trace
         [Instrumented]
         public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                SpanContextInjectorInjectIncludingDsmIntegration.OnMethodBegin(this, carrier, setter, context, messageType, target);
+            }
         }
     }
 }

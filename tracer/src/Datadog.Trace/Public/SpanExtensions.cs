@@ -1,10 +1,12 @@
-﻿// <copyright file="SpanExtensions.cs" company="Datadog">
+// <copyright file="SpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
@@ -22,7 +24,15 @@ public static class SpanExtensions
     /// <param name="value">The tag's value.</param>
     /// <returns>This span to allow method chaining.</returns>
     [Instrumented]
-    public static ISpan SetTag(this ISpan span, string key, double? value) => span;
+    public static ISpan SetTag(this ISpan span, string key, double? value)
+    {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            SpanExtensionsSetTagIntegration.OnMethodBegin<ISpan, ISpan>(ref span, ref key, ref value);
+        }
+
+        return span;
+    }
 
     /// <summary>
     /// Sets the details of the user on the local root span
@@ -43,5 +53,9 @@ public static class SpanExtensions
         string? role,
         string? scope)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            SpanExtensionsSetUserIntegration.OnMethodBegin<ISpan, ISpan>(ref span, email, name, id, propagateId, sessionId, role, scope);
+        }
     }
 }

@@ -9,7 +9,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
@@ -22,6 +24,9 @@ public sealed class TracerSettings
 {
     private readonly bool _diagnosticSourceEnabled;
     private readonly bool _isFromDefaultSources;
+    private readonly IntegrationSettingsCollection _integrations;
+    [Obsolete]
+    private readonly ExporterSettings _exporter;
 
     private OverrideValue<string?> _environment;
     private OverrideValue<string?> _serviceName;
@@ -55,6 +60,10 @@ public sealed class TracerSettings
         // TODO: _Currently_ this doesn't load _any_ configuration, so it feels like an error for customers to use it?
         // I'm wondering if we should _always_ populate from the default sources instead, as otherwise seems
         // like an obvious point of confusion?
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            CtorIntegration.OnMethodBegin(this);
+        }
     }
 
     /// <summary>
@@ -68,6 +77,10 @@ public sealed class TracerSettings
     public TracerSettings(bool useDefaultSources)
         : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            CtorUseDefaultSourcesIntegration.OnMethodBegin(this);
+        }
     }
 
     // Internal for testing
@@ -98,10 +111,12 @@ public sealed class TracerSettings
 
         // This is just a bunch of indirection to not change the public API for now
 #pragma warning disable CS0618 // Type or member is obsolete
-        Exporter = new ExporterSettings(this);
+#pragma warning disable CS0612 // Type or member is obsolete
+        _exporter = new ExporterSettings(this);
+#pragma warning restore CS0612 // Type or member is obsolete
 #pragma warning restore CS0618 // Type or member is obsolete
 
-        Integrations = IntegrationSettingsHelper.ParseFromAutomatic(initialValues);
+        _integrations = IntegrationSettingsHelper.ParseFromAutomatic(initialValues);
 
         static OverrideValue<HashSet<string>> GetAsHashSet(Dictionary<string, object?> results, string key)
         {
@@ -149,13 +164,25 @@ public sealed class TracerSettings
     [Instrumented]
     public bool DiagnosticSourceEnabled
     {
-        get => _diagnosticSourceEnabled;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                DiagnosticSourceEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _diagnosticSourceEnabled;
+        }
 
         [Obsolete("This value cannot be set in code. Instead, set it using the DD_DIAGNOSTIC_SOURCE_ENABLED environment variable, or in configuration files")]
         set
         {
             // As this was previously obsolete, we could just remove it?
             // Alternatively, mark it as an error instead?
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                DiagnosticSourceEnabledSetIntegration.OnMethodBegin(this, ref value);
+            }
         }
     }
 
@@ -166,7 +193,16 @@ public sealed class TracerSettings
     public string? Environment
     {
         [Instrumented]
-        get => _environment.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                EnvironmentGetIntegration.OnMethodBegin(this);
+            }
+
+            return _environment.Value;
+        }
+
         set => _environment = _environment.Override(value);
     }
 
@@ -177,7 +213,16 @@ public sealed class TracerSettings
     public string? ServiceName
     {
         [Instrumented]
-        get => _serviceName.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ServiceNameGetIntegration.OnMethodBegin(this);
+            }
+
+            return _serviceName.Value;
+        }
+
         set => _serviceName = _serviceName.Override(value);
     }
 
@@ -187,7 +232,16 @@ public sealed class TracerSettings
     public string? ServiceVersion
     {
         [Instrumented]
-        get => _serviceVersion.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ServiceVersionGetIntegration.OnMethodBegin(this);
+            }
+
+            return _serviceVersion.Value;
+        }
+
         set => _serviceVersion = _serviceVersion.Override(value);
     }
 
@@ -201,7 +255,16 @@ public sealed class TracerSettings
     public bool AnalyticsEnabled
     {
         [Instrumented]
-        get => _analyticsEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AnalyticsEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _analyticsEnabled.Value;
+        }
+
         set => _analyticsEnabled = _analyticsEnabled.Override(value);
     }
 
@@ -211,7 +274,16 @@ public sealed class TracerSettings
     public double? GlobalSamplingRate
     {
         [Instrumented]
-        get => _globalSamplingRate.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GlobalSamplingRateGetIntegration.OnMethodBegin(this);
+            }
+
+            return _globalSamplingRate.Value;
+        }
+
         set => _globalSamplingRate = _globalSamplingRate.Override(value);
     }
 
@@ -221,7 +293,16 @@ public sealed class TracerSettings
     public IDictionary<string, string> GlobalTags
     {
         [Instrumented]
-        get => _globalTags.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GlobalTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _globalTags.Value;
+        }
+
         set => _globalTags = _globalTags.Override(value);
     }
 
@@ -232,7 +313,15 @@ public sealed class TracerSettings
     public IDictionary<string, string> GrpcTags
     {
         [Instrumented]
-        get => _grpcTags.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                GrpcTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _grpcTags.Value;
+        }
         set => _grpcTags = _grpcTags.Override(value);
     }
 
@@ -243,7 +332,16 @@ public sealed class TracerSettings
     public IDictionary<string, string> HeaderTags
     {
         [Instrumented]
-        get => _headerTags.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                HeaderTagsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _headerTags.Value;
+        }
+
         set => _headerTags = _headerTags.Override(value);
     }
 
@@ -254,7 +352,15 @@ public sealed class TracerSettings
     public bool KafkaCreateConsumerScopeEnabled
     {
         [Instrumented]
-        get => _kafkaCreateConsumerScopeEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                KafkaCreateConsumerScopeEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _kafkaCreateConsumerScopeEnabled.Value;
+        }
         set => _kafkaCreateConsumerScopeEnabled = _kafkaCreateConsumerScopeEnabled.Override(value);
     }
 
@@ -266,7 +372,16 @@ public sealed class TracerSettings
     public bool LogsInjectionEnabled
     {
         [Instrumented]
-        get => _logsInjectionEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                LogsInjectionEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _logsInjectionEnabled.Value;
+        }
+
         set => _logsInjectionEnabled = _logsInjectionEnabled.Override(value);
     }
 
@@ -277,7 +392,16 @@ public sealed class TracerSettings
     public int MaxTracesSubmittedPerSecond
     {
         [Instrumented]
-        get => _maxTracesSubmittedPerSecond.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                MaxTracesSubmittedPerSecondGetIntegration.OnMethodBegin(this);
+            }
+
+            return _maxTracesSubmittedPerSecond.Value;
+        }
+
         set => _maxTracesSubmittedPerSecond = _maxTracesSubmittedPerSecond.Override(value);
     }
 
@@ -287,7 +411,16 @@ public sealed class TracerSettings
     public string? CustomSamplingRules
     {
         [Instrumented]
-        get => _customSamplingRules.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                CustomSamplingRulesGetIntegration.OnMethodBegin(this);
+            }
+
+            return _customSamplingRules.Value;
+        }
+
         set => _customSamplingRules = _customSamplingRules.Override(value);
     }
 
@@ -297,7 +430,15 @@ public sealed class TracerSettings
     public bool StartupDiagnosticLogEnabled
     {
         [Instrumented]
-        get => _startupDiagnosticLogEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StartupDiagnosticLogEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _startupDiagnosticLogEnabled.Value;
+        }
         set => _startupDiagnosticLogEnabled = _startupDiagnosticLogEnabled.Override(value);
     }
 
@@ -308,7 +449,16 @@ public sealed class TracerSettings
     public bool TraceEnabled
     {
         [Instrumented]
-        get => _traceEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                TraceEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _traceEnabled.Value;
+        }
+
         set => _traceEnabled = _traceEnabled.Override(value);
     }
 
@@ -318,7 +468,16 @@ public sealed class TracerSettings
     public HashSet<string> DisabledIntegrationNames
     {
         [Instrumented]
-        get => _disabledIntegrationNames.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                DisabledIntegrationNamesGetIntegration.OnMethodBegin(this);
+            }
+
+            return _disabledIntegrationNames.Value;
+        }
+
         set => _disabledIntegrationNames = _disabledIntegrationNames.Override(value);
     }
 
@@ -329,7 +488,16 @@ public sealed class TracerSettings
     public bool TracerMetricsEnabled
     {
         [Instrumented]
-        get => _tracerMetricsEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                TracerMetricsEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _tracerMetricsEnabled.Value;
+        }
+
         set => _tracerMetricsEnabled = _tracerMetricsEnabled.Override(value);
     }
 
@@ -339,7 +507,16 @@ public sealed class TracerSettings
     public bool StatsComputationEnabled
     {
         [Instrumented]
-        get => _statsComputationEnabled.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StatsComputationEnabledGetIntegration.OnMethodBegin(this);
+            }
+
+            return _statsComputationEnabled.Value;
+        }
+
         set => _statsComputationEnabled = _statsComputationEnabled.Override(value);
     }
 
@@ -350,7 +527,16 @@ public sealed class TracerSettings
     public Uri AgentUri
     {
         [Instrumented]
-        get => _agentUri.Value;
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                AgentUriGetIntegration.OnMethodBegin(this);
+            }
+
+            return _agentUri.Value;
+        }
+
         set => _agentUri = _agentUri.Override(value);
     }
 
@@ -358,21 +544,51 @@ public sealed class TracerSettings
     /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
     /// </summary>
     [Instrumented]
-    public IntegrationSettingsCollection Integrations { get; }
+    public IntegrationSettingsCollection Integrations
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                IntegrationsGetIntegration.OnMethodBegin(this);
+            }
+
+            return _integrations;
+        }
+    }
 
     /// <summary>
     /// Gets the transport settings that dictate how the tracer connects to the agent.
     /// </summary>
     [Obsolete("This property is obsolete and will be removed in a future version. To set the AgentUri, use the TracerSettings.AgentUri property")]
     [Instrumented]
-    public ExporterSettings Exporter { get; }
+    public ExporterSettings Exporter
+    {
+        get
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ExporterGetIntegration.OnMethodBegin(this);
+            }
+
+            return _exporter;
+        }
+    }
 
     /// <summary>
     /// Create a <see cref="TracerSettings"/> populated from the default sources.
     /// </summary>
     /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
     [Instrumented]
-    public static TracerSettings FromDefaultSources() => new(PopulateDictionary(new(), useDefaultSources: true), isFromDefaultSources: true);
+    public static TracerSettings FromDefaultSources()
+    {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            FromDefaultSourcesIntegration.OnMethodBegin<TracerSettings>();
+        }
+
+        return new TracerSettings(PopulateDictionary(new(), useDefaultSources: true), isFromDefaultSources: true);
+    }
 
     /// <summary>
     /// Sets the HTTP status code that should be marked as errors for client integrations.
@@ -427,6 +643,11 @@ public sealed class TracerSettings
     [Instrumented]
     private static Dictionary<string, object?> PopulateDictionary(Dictionary<string, object?> values, bool useDefaultSources)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            PopulateDictionaryIntegration.OnMethodBegin<TracerSettings>(values, useDefaultSources);
+        }
+
         // The automatic tracer populates the dictionary with values which are then used to create the tracer
         _ = useDefaultSources;
         return values;

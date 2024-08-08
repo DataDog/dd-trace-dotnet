@@ -6,6 +6,8 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Configuration;
@@ -32,6 +34,11 @@ public sealed class ImmutableIntegrationSettingsCollection
     {
         get
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ImmutableIntegrationSettingsCollectionIndexerIntegration.OnMethodBegin(this, ref integrationName);
+            }
+
             if (Settings.TryGetValue(integrationName, out var setting))
             {
                 return setting;

@@ -9,8 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Stubs;
 
@@ -19,13 +24,18 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public sealed class Tracer : ITracer, IDatadogOpenTracingTracer
+    public sealed class Tracer : ITracer, IDatadogOpenTracingTracer, ITracerProxy
     {
         private static Tracer? _instance;
 
         [Instrumented]
         private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                CtorIntegration.OnMethodBegin<Tracer>(this, automaticTracer, initialValues);
+            }
+
             AutomaticTracer = automaticTracer;
             Settings = new ImmutableTracerSettings(initialValues);
         }
@@ -62,16 +72,43 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Gets the AutomaticTracer
+        /// </summary>
+        object ITracerProxy.AutomaticTracer => AutomaticTracer!;
+
+        /// <summary>
         /// Gets the active scope
         /// </summary>
         [Instrumented]
-        public IScope? ActiveScope => null;
+        public IScope? ActiveScope
+        {
+            get
+            {
+                if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+                {
+                    return GetActiveScopeIntegration.OnMethodEnd<Tracer, IScope>(this, default!, default!, default).GetReturnValue();
+                }
+
+                return default;
+            }
+        }
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
         [Instrumented]
-        public string DefaultServiceName => string.Empty;
+        public string DefaultServiceName
+        {
+            get
+            {
+                if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+                {
+                    return GetDefaultServiceNameIntegration.OnMethodEnd(this, default!, default!, default).GetReturnValue()!;
+                }
+
+                return string.Empty;
+            }
+        }
 
         /// <summary>
         /// Gets this tracer's settings.
@@ -92,12 +129,26 @@ namespace Datadog.Trace
         /// <inheritdoc cref="ITracer" />
         [Instrumented]
         public IScope StartActive(string operationName)
-            => StartActive(operationName, parent: null, serviceName: null, null, finishOnClose: true);
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StartActiveOperationNameIntegration.OnMethodBegin(this, ref operationName);
+            }
+
+            return StartActive(operationName, parent: null, serviceName: null, null, finishOnClose: true);
+        }
 
         /// <inheritdoc cref="ITracer" />
         [Instrumented]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
-            => StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose);
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                StartActiveSpanCreationSettingsIntegration.OnMethodBegin(this, operationName, settings);
+            }
+
+            return StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, settings.FinishOnClose);
+        }
 
         /// <summary>
         /// Forces the tracer to immediately flush pending traces and send them to the agent.
@@ -105,7 +156,15 @@ namespace Datadog.Trace
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
         [Instrumented]
-        public Task ForceFlushAsync() => Task.CompletedTask;
+        public Task ForceFlushAsync()
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                return ForceFlushAsyncIntegration.OnMethodEnd(this, default!, default!, default).GetReturnValue()!;
+            }
+
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and reconfigures the automatic tracer
@@ -113,6 +172,11 @@ namespace Datadog.Trace
         [Instrumented]
         private static void Configure(Dictionary<string, object?> settings)
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                ConfigureIntegration.OnMethodBegin<Tracer>(settings);
+            }
+
             _ = settings;
         }
 
@@ -120,14 +184,30 @@ namespace Datadog.Trace
         /// Automatic instrumentation intercepts this method and returns the global tracer instance
         /// </summary>
         [Instrumented]
-        private static object? GetAutomaticTracerInstance() => null;
+        private static object? GetAutomaticTracerInstance()
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                return GetAutomaticTracerInstanceIntegration.OnMethodEnd<Tracer>(default!, default!, default).GetReturnValue();
+            }
+
+            return default;
+        }
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.
         /// </summary>
         [Instrumented]
         private IScope StartActive(string operationName, ISpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
-            => NullScope.Instance;
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                var state = StartActiveImplementationIntegration.OnMethodBegin(this, operationName, parent, serviceName, startTime, finishOnClose);
+                return StartActiveImplementationIntegration.OnMethodEnd(this, (IScope?)null, default, state).GetReturnValue()!;
+            }
+
+            return NullScope.Instance;
+        }
 
         /// <summary>
         /// Creates a new <see cref="ISpan"/> with the specified parameters.
@@ -140,6 +220,14 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         [Instrumented]
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext? parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
-            => NullSpan.Instance;
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                var state = StartSpanIntegration.OnMethodBegin(this, operationName, parent, serviceName, startTime, ignoreActiveScope);
+                return StartSpanIntegration.OnMethodEnd<Tracer, ISpan>(this, default!, default!, state).GetReturnValue()!;
+            }
+
+            return NullSpan.Instance;
+        }
     }
 }

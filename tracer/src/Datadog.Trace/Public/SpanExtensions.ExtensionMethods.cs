@@ -7,6 +7,10 @@
 
 #nullable enable
 
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extensions;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Internal;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ExtensionMethods;
@@ -24,5 +28,9 @@ public static class SpanExtensions
     [Instrumented]
     public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            SpanExtensionsSetTraceSamplingPriorityIntegration.OnMethodBegin<ISpan, ISpan>(ref span, samplingPriority.DuckCast<InternalSamplingPriority>());
+        }
     }
 }

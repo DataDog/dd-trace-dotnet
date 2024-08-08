@@ -6,6 +6,8 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.AppSec;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.AppSec;
@@ -22,6 +24,10 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginSuccessEvent(string userId)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackUserLoginSuccessEventIntegration.OnMethodBegin<object>(userId);
+        }
     }
 
     /// <summary>
@@ -32,6 +38,10 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackUserLoginSuccessEventMetadataIntegration.OnMethodBegin<object>(userId, metadata);
+        }
     }
 
     /// <summary>
@@ -42,6 +52,10 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginFailureEvent(string userId, bool exists)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackUserLoginFailureEventIntegration.OnMethodBegin<object>(userId, exists);
+        }
     }
 
     /// <summary>
@@ -53,6 +67,10 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackUserLoginFailureEventMetadataIntegration.OnMethodBegin<object>(userId, exists, metadata);
+        }
     }
 
     /// <summary>
@@ -62,6 +80,10 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackCustomEvent(string eventName)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackCustomEventIntegration.OnMethodBegin<object>(eventName);
+        }
     }
 
     /// <summary>
@@ -72,5 +94,9 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
     {
+        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        {
+            EventTrackingSdkTrackCustomEventMetadataIntegration.OnMethodBegin<object>(eventName, metadata);
+        }
     }
 }

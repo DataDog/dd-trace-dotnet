@@ -73,6 +73,12 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
+        /// Gets a value indicating whether automatic instrumentation is enabled
+        /// </summary>
+        /// <returns>True if automatic instrumentation is enabled, False otherwise</returns>
+        public static bool IsAutomaticInstrumentationEnabled() => false;
+
+        /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
         /// is rewritten by the profiler.
         /// </summary>

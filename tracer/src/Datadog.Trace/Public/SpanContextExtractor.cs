@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Propagators;
 using Datadog.Trace.SourceGenerators;
 
 #nullable enable
@@ -25,6 +27,10 @@ namespace Datadog.Trace
         [Instrumented]
         public SpanContextExtractor()
         {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                SpanContextExtractorConstructorIntegration.OnMethodBegin(this);
+            }
         }
 
         /// <summary>
@@ -36,7 +42,15 @@ namespace Datadog.Trace
         /// <returns>A potentially null Datadog <see cref="ISpanContext"/></returns>
         [Instrumented]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
-            => null;
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                var state = SpanContextExtractorExtractIntegration.OnMethodBegin(this, carrier, getter);
+                return SpanContextExtractorExtractIntegration.OnMethodEnd(this, (ISpanContext?)default, default!, state).GetReturnValue();
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// Given a SpanContext carrier and a function to access the values, this method will extract the SpanContext
@@ -52,6 +66,14 @@ namespace Datadog.Trace
         /// <returns>A potentially null Datadog SpanContext</returns>
         [Instrumented]
         public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
-            => null;
+        {
+            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            {
+                var state = SpanContextExtractorExtractIncludingDsmIntegration.OnMethodBegin(this, carrier, getter, messageType, source);
+                return SpanContextExtractorExtractIncludingDsmIntegration.OnMethodEnd(this, (ISpanContext?)default, default!, state).GetReturnValue();
+            }
+
+            return null;
+        }
     }
 }
