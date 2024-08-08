@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
@@ -33,7 +34,7 @@ public class PopulateDictionaryIntegration
     {
         var settings = useDefaultSources
                            ? Trace.Configuration.TracerSettings.FromDefaultSourcesInternal()
-                           : new Trace.Configuration.TracerSettings(null, new ConfigurationTelemetry());
+                           : new Trace.Configuration.TracerSettings(null, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         PopulateSettings(values, settings);
 

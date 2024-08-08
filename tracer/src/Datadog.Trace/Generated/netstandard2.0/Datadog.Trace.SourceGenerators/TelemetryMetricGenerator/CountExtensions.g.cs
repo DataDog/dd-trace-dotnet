@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 39;
+    public const int Length = 41;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -41,6 +41,8 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => "stats_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => "stats_api.errors",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigHiddenByDatadogConfig => "otel.env.hiding",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigInvalid => "otel.env.invalid",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry_api.errors",
@@ -90,6 +92,8 @@ internal static partial class CountExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "general",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigHiddenByDatadogConfig => "tracers",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigInvalid => "tracers",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry",
