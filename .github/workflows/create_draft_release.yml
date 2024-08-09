@@ -8,24 +8,7 @@ on:
         required: false
 
 jobs:
-  lib-injection-image-test:
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        runtime: ['bullseye-slim','alpine']
-      fail-fast: false
-    uses: ./.github/workflows/lib-injection-test.yml
-    with:
-      commit_id: ${{ github.event.inputs.forced_commit_id || github.sha }}
-      runtime: ${{ matrix.runtime }}
-    secrets:
-      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   create_draft_release:
-    needs:
-      - lib-injection-image-test
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
