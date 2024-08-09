@@ -17,6 +17,7 @@ using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.Git;
 using Octokit;
 using Octokit.GraphQL;
@@ -1102,6 +1103,78 @@ partial class Build
                  return build;
              }
          });
+
+    Target VerifyReleaseReadiness => _ => _
+            .Unlisted()
+            .Requires(() => GitHubToken)
+            .Requires(() => CommitSha)
+            .Executes(async () =>
+            {
+                Logger.Information("Verifying SSI artifact build succeeded for commit {Commit}...", CommitSha);
+                var client = GetGitHubClient();
+                var statuses = await client.Repository.Status.GetAll(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    reference: CommitSha);
+
+                // find all the gitlab-related SSI statuses, they _all_ need to have passed
+                // (apart from the serverless one, we'll ignore that for now)
+                // This includes the _full_ list, so we just want to check that we have a success for each unique job
+                var ssiStatuses = statuses
+                    .Where(x => x.Context.StartsWith("dd-gitlab/") && x.Context != "dd-gitlab/benchmark-serverless")
+                    .ToLookup(x => x.Context, x => x);
+
+                // System.Diagnostics.Debugger.Launch();
+                if (ssiStatuses.Count == 0)
+                {
+                    throw new Exception("No GitLab builds for SSI artifacts found. Please check the commit and try again");
+                }
+
+                var failedSsi = ssiStatuses
+                    .Where(x => !x.Any(status => status.State == CommitState.Success))
+                    .ToList();
+
+                if (failedSsi.Any())
+                {
+                    Logger.Warning("The following gitlab jobs did not complete successfully. Please check the builds for details about why");
+                    foreach (var failed in failedSsi)
+                    {
+                        var build = failed.OrderBy(c => c.State.Value).First();
+                        Logger.Warning("- {Job} ({Status}) {Link}", failed.Key, build.State, build.TargetUrl);
+                    }
+                    
+                    throw new Exception("Some gitlab jobs did not build/test successfully. Please check the builds for details about why.");
+                }
+
+                var stages = string.Join(", ", ssiStatuses.Select(x => x.Key));
+                Logger.Information("All gitlab build stages ({Stages}) completed successfully", stages);
+                
+                // assert that the docker image for the commit is present
+                var image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:{CommitSha}";
+                VerifyDockerImageExists(image);
+                
+                if(new Version(Version).Major < 3)
+                {
+                    image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet:{CommitSha}-musl";
+                    VerifyDockerImageExists(image);
+                }
+
+                static void VerifyDockerImageExists(string image)
+                {
+                    try
+                    {
+                        Logger.Information("Checking for presence of SSI image '{Image}'", image);
+                        DockerTasks.DockerManifest(
+                            s => s.SetCommand($"inspect")
+                                .SetProcessArgumentConfigurator(c => c.Add(image)));
+                        Logger.Information("SSI image '{Image}' exists", image);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Error verifying SSI artifacts: '{image}' could not be found. Ensure GitLab has successfully built and pushed the image", ex);
+                    }
+                }
+            });
 
     async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)
     {
