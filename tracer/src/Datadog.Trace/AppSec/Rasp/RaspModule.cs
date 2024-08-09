@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
@@ -175,6 +176,34 @@ internal static class RaspModule
         if (stack is not null)
         {
             rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+        }
+    }
+
+    internal static void OnCommandInjection(ProcessStartInfo startInfo)
+    {
+        if (!Security.Instance.RaspEnabled)
+        {
+            return;
+        }
+
+        try
+        {
+            if (RaspShellInjectionHelper.IsShellInvocation(startInfo))
+            {
+#if NETCOREAPP3_1_OR_GREATER
+            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList);
+#else
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, null);
+#endif
+                if (!string.IsNullOrEmpty(commandLine))
+                {
+                    CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
 }

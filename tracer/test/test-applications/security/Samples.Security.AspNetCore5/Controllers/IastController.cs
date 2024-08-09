@@ -266,18 +266,31 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
-        public IActionResult ExecuteCommand(string file, string argumentLine)
+        public IActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
-            return ExecuteCommandInternal(file, argumentLine);
+            return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
-        private IActionResult ExecuteCommandInternal(string file, string argumentLine)
+        private IActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
             try
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    var result = Process.Start(file, argumentLine);
+                    Process result;
+                    if (fromShell)
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                        startInfo.FileName = file;
+                        startInfo.Arguments = argumentLine;
+                        startInfo.UseShellExecute = true;
+                        result = Process.Start(startInfo);
+                    }
+                    else
+                    {
+                        result = Process.Start(file, argumentLine);
+                    }
+                    
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -288,10 +301,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             catch (Win32Exception ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
         }
 
