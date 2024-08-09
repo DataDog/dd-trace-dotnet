@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
@@ -185,17 +186,24 @@ internal static class RaspModule
             return;
         }
 
-        if (RaspShellInjectionHelper.IsShellInvocation(startInfo))
+        try
         {
+            if (RaspShellInjectionHelper.IsShellInvocation(startInfo))
+            {
 #if NETCOREAPP3_1_OR_GREATER
             var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList);
 #else
-            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, null);
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, null);
 #endif
-            if (!string.IsNullOrEmpty(commandLine))
-            {
-                CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+                if (!string.IsNullOrEmpty(commandLine))
+                {
+                    CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+                }
             }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
 }
