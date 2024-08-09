@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -430,9 +431,9 @@ internal partial class ProbeExpressionParser<T>
         }
 
         if (typeof(T).IsNumeric()
-            && typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
+            && TryConvertToNumericType<T>(finalExpr, out var result))
         {
-            return CallConvertToNumericType<T>(finalExpr);
+            return result;
         }
 
         if (typeof(T) != typeof(string))
