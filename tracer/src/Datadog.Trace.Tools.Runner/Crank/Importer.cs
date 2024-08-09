@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                     var fileName = Path.GetFileName(jsonFilePath);
 
                     CIVisibility.Initialize();
-                    Tracer tracer = Tracer.Instance;
+                    TracerInternal tracer = TracerInternal.Instance;
 
                     foreach (var jobItem in result.JobResults.Jobs)
                     {

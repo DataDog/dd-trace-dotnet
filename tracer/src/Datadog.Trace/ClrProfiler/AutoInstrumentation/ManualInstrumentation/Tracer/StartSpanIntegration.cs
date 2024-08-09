@@ -36,7 +36,7 @@ public class StartSpanIntegration
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Datadog.Trace.TracerInternal)instance.AutomaticTracer;
         var span = ((IDatadogOpenTracingTracer)tracer).StartSpan(operationName, parentContext, serviceName, startTime, ignoreActiveScope);
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
 

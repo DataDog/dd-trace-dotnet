@@ -33,7 +33,7 @@ namespace Datadog.Trace.Ci.Agent
         public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
-            _isDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+            _isDebugEnabled = GlobalSettingsInternal.Instance.DebugEnabledInternal;
             Log.Information("CIWriterHttpSender Initialized.");
         }
 

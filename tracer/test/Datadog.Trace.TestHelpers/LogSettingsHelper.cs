@@ -14,7 +14,7 @@ namespace Datadog.Trace.TestHelpers
     internal class LogSettingsHelper
     {
         public static LogFormatter GetFormatter() => new(
-            new ImmutableTracerSettings(new TracerSettings(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance, new OverrideErrorLog())),
+            new ImmutableTracerSettingsInternal(new TracerSettingsInternal(null, Configuration.Telemetry.NullConfigurationTelemetry.Instance, new OverrideErrorLog())),
             GetValidSettings(),
             aasSettings: null,
             serviceName: "MyTestService",
@@ -24,7 +24,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static ImmutableDirectLogSubmissionSettings GetValidSettings()
         {
-            var tracerSettings = TracerSettings.Create(new()
+            var tracerSettings = TracerSettingsInternal.Create(new()
             {
                 { ConfigurationKeys.ApiKey, "abcdef" },
                 { ConfigurationKeys.DirectLogSubmission.Host, "some_host" },

@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Fact]
         public void ValidDefaultsAreValid()
         {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(Defaults));
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeTrue();
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var nameValueCollection = new NameValueCollection(Defaults);
             nameValueCollection[ConfigurationKeys.ApiKey] = apiKey;
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(nameValueCollection));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(nameValueCollection));
 
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         {
             var updatedSettings = new NameValueCollection(Defaults);
             updatedSettings[ConfigurationKeys.DirectLogSubmission.MinimumLevel] = value;
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(updatedSettings));
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeTrue();
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var updatedSettings = new NameValueCollection(Defaults);
             updatedSettings[setting] = value;
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(updatedSettings));
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeFalse();
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var updatedSettings = new NameValueCollection(Defaults);
             updatedSettings[setting] = value;
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(updatedSettings));
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeTrue();
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             };
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
+            var tracerSettings = new TracerSettingsInternal(source);
 
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var config = new NameValueCollection(Defaults);
             config[ConfigurationKeys.DirectLogSubmission.EnabledIntegrations] = integration;
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(config));
             var logSettings = ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
 
             logSettings.IsEnabled.Should().BeTrue();
@@ -192,8 +192,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
             }
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(config));
+            var immutableSettings = new ImmutableTracerSettingsInternal(tracerSettings);
 
             immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             immutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
@@ -214,10 +214,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
             }
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(config));
             tracerSettings.LogsInjectionEnabled = logsInjectionEnabled;
 
-            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+            var immutableSettings = new ImmutableTracerSettingsInternal(tracerSettings);
 
             immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             immutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
@@ -236,8 +236,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
             }
 
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
+            var tracerSettings = new TracerSettingsInternal(new NameValueConfigurationSource(config));
+            var immutableSettings = new ImmutableTracerSettingsInternal(tracerSettings);
 
             immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
             immutableSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);

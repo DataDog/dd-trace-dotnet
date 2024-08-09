@@ -64,7 +64,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
             }
 
             CIVisibility.WaitForSkippableTaskToFinish();
-            var module = TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
+            var module = TestModuleInternal.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             module.EnableIpcClient();
             return new CallTargetState(null, module);
         }
@@ -84,13 +84,13 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
     /// <returns>Return value of the method</returns>
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
     {
-        if (state.State == TestModule.Current)
+        if (state.State == TestModuleInternal.Current)
         {
             // Restore the AsyncLocal set
             // This is used to mimic the ExecutionContext copy from the StateMachine
             // CallTarget integrations does this automatically when using a normal `Scope`
             // in this case we have to do it manually.
-            TestModule.Current = null;
+            TestModuleInternal.Current = null;
         }
 
         return new CallTargetReturn<TResult>(returnValue);
@@ -108,7 +108,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        if (state.State is TestModule testModule)
+        if (state.State is TestModuleInternal testModule)
         {
             await testModule.CloseAsync().ConfigureAwait(false);
 

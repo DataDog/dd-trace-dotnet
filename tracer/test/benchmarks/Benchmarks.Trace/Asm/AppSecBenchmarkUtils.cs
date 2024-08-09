@@ -15,7 +15,7 @@ internal class AppSecBenchmarkUtils
 {
     internal static void SetupDummyAgent()
     {
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false, MaxTracesSubmittedPerSecond = 0 };
+        var settings = new TracerSettingsInternal { StartupDiagnosticLogEnabled = false, MaxTracesSubmittedPerSecond = 0 };
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
     }
 

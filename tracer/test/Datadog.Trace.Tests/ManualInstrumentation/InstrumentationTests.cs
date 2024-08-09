@@ -83,7 +83,7 @@ public abstract class InstrumentationTests<T>
 
     private static IEnumerable<(Type Type, InstrumentMethodAttribute Attribute)> GetAllInstrumentations(string assemblyName)
     {
-        return typeof(Datadog.Trace.Tracer)
+        return typeof(Datadog.Trace.TracerInternal)
               .Assembly
               .GetTypes()
               .SelectMany(t => t.GetCustomAttributes(typeof(InstrumentMethodAttribute), false)

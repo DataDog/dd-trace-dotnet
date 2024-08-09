@@ -23,11 +23,11 @@ public class SpanContextInjectorExtractorTests
     [Fact]
     public void BasicInjectionInDict()
     {
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
         const ulong traceId = 123456789101112;
         const ulong spanId = 109876543210;
-        var context = new SpanContext(traceId, spanId);
+        var context = new SpanContextInternal(traceId, spanId);
 
         injector.Inject(headers, (h, k, v) => h[k] = v, context);
 
@@ -43,9 +43,9 @@ public class SpanContextInjectorExtractorTests
     [Fact]
     public void BasicInjectionInStringBuilder()
     {
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new StringBuilder();
-        var context = new SpanContext(traceId: 123456789101112, spanId: 109876543210);
+        var context = new SpanContextInternal(traceId: 123456789101112, spanId: 109876543210);
 
         headers.Append("{");
         injector.Inject(headers, (h, k, v) => h.Append("{" + k + "," + v + "},"), context);
@@ -58,10 +58,10 @@ public class SpanContextInjectorExtractorTests
     [Fact]
     public void ShouldNotInjectIfSpanNotOurs()
     {
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
         // type of context is not a Datadog.Trace.SpanContext
-        var context = new ReadOnlySpanContext(new TraceId(), spanId: 1, "myService");
+        var context = new ReadOnlySpanContextInternal(new TraceId(), spanId: 1, "myService");
 
         injector.Inject(headers, (h, k, v) => h[k] = v, context);
 
@@ -72,11 +72,11 @@ public class SpanContextInjectorExtractorTests
     public void InjectionWithDsm()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        TracerInternal.Configure(TracerSettingsInternal.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
-        var context = new SpanContext(traceId: 1, spanId: 2);
+        var context = new SpanContextInternal(traceId: 1, spanId: 2);
 
         injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
@@ -103,9 +103,9 @@ public class SpanContextInjectorExtractorTests
     {
         // DSM is disabled by default
 
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
-        var context = new SpanContext(traceId: 1, spanId: 2);
+        var context = new SpanContextInternal(traceId: 1, spanId: 2);
 
         injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
@@ -122,13 +122,13 @@ public class SpanContextInjectorExtractorTests
     [Fact]
     public void CanExtractAfterInjection()
     {
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
-        var context = new SpanContext(traceId: 123, spanId: 456);
+        var context = new SpanContextInternal(traceId: 123, spanId: 456);
 
         injector.Inject(headers, (h, k, v) => h[k] = v, context);
 
-        var extractor = new SpanContextExtractor();
+        var extractor = new SpanContextExtractorInternal();
 
         var newContext = extractor.Extract(
             headers,
@@ -144,24 +144,24 @@ public class SpanContextInjectorExtractorTests
 
         newContext.Should().NotBeNull();
         newContext.TraceId.Should().Be(context.TraceId);
-        newContext.Should().BeOfType(typeof(SpanContext));
-        ((SpanContext)newContext).SpanId.Should().Be(context.SpanId);
-        ((SpanContext)newContext).SamplingPriority.Should().Be(context.SamplingPriority);
+        newContext.Should().BeOfType(typeof(SpanContextInternal));
+        ((SpanContextInternal)newContext).SpanId.Should().Be(context.SpanId);
+        ((SpanContextInternal)newContext).SamplingPriority.Should().Be(context.SamplingPriority);
     }
 
     [Fact]
     public void CanExtractDsmAfterDsmInjection()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        TracerInternal.Configure(TracerSettingsInternal.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
-        var injector = new SpanContextInjector();
+        var injector = new SpanContextInjectorInternal();
         var headers = new Dictionary<string, string>();
-        var context = new SpanContext(traceId: 123, spanId: 456);
+        var context = new SpanContextInternal(traceId: 123, spanId: 456);
 
         injector.InjectIncludingDsm(headers, (h, k, v) => h[k] = v, context, "Pneumatic Tube", "cashier1");
 
-        var extractor = new SpanContextExtractor();
+        var extractor = new SpanContextExtractorInternal();
 
         var extractedContext = extractor.ExtractIncludingDsm(
             headers,
@@ -179,18 +179,18 @@ public class SpanContextInjectorExtractorTests
 
         extractedContext.Should().NotBeNull();
         extractedContext.TraceId.Should().Be(context.TraceId);
-        extractedContext.Should().BeOfType(typeof(SpanContext));
-        ((SpanContext)extractedContext).SpanId.Should().Be(context.SpanId);
-        ((SpanContext)extractedContext).SamplingPriority.Should().Be(context.SamplingPriority);
-        ((SpanContext)extractedContext).PathwayContext.Should().NotBeNull();
-        ((SpanContext)extractedContext).PathwayContext.Should().NotBeEquivalentTo(context.PathwayContext);
+        extractedContext.Should().BeOfType(typeof(SpanContextInternal));
+        ((SpanContextInternal)extractedContext).SpanId.Should().Be(context.SpanId);
+        ((SpanContextInternal)extractedContext).SamplingPriority.Should().Be(context.SamplingPriority);
+        ((SpanContextInternal)extractedContext).PathwayContext.Should().NotBeNull();
+        ((SpanContextInternal)extractedContext).PathwayContext.Should().NotBeEquivalentTo(context.PathwayContext);
     }
 
     [Fact]
     public void ShouldReadPathwaySetByKafkaIntegrationOnExtract()
     {
         // enable DSM
-        Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
+        TracerInternal.Configure(TracerSettingsInternal.Create(new Dictionary<string, object> { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } }));
 
         var headers = new Dictionary<string, string>
         {
@@ -203,12 +203,12 @@ public class SpanContextInjectorExtractorTests
             { "tracestate", string.Empty },
             { DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, "VGhlIHF1aWMWIGJyb3duIGZveCBqdW1wcyBvdmVyIDEzIGxhenkgZG9ncy4=" } // it's a semi-random base64 string that's good enough to pass the parsing checks
         };
-        var extractor = new SpanContextExtractor();
+        var extractor = new SpanContextExtractorInternal();
 
         var newContext = extractor.Extract(headers, (h, k) => [h[k]]);
 
         newContext.Should().NotBeNull();
-        ((SpanContext)newContext).PathwayContext.Should().NotBeNull();
-        ((SpanContext)newContext).PathwayContext.Value.Hash.Value.Should().Be(expected: 7163385811044755540UL);
+        ((SpanContextInternal)newContext).PathwayContext.Should().NotBeNull();
+        ((SpanContextInternal)newContext).PathwayContext.Value.Hash.Value.Should().Be(expected: 7163385811044755540UL);
     }
 }

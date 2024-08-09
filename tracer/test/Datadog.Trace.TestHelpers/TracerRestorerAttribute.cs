@@ -13,13 +13,13 @@ namespace Datadog.Trace.TestHelpers
     [AttributeUsage(AttributeTargets.Class, Inherited = true)]
     public class TracerRestorerAttribute : BeforeAfterTestAttribute
     {
-        private Tracer _tracer;
+        private TracerInternal _tracer;
         private TracerManager _tracerManager;
         private IDistributedTracer _distributedTracer;
 
         public override void Before(MethodInfo methodUnderTest)
         {
-            _tracer = Tracer.Instance;
+            _tracer = TracerInternal.Instance;
             _tracerManager = _tracer.TracerManager;
             _distributedTracer = ClrProfiler.DistributedTracer.Instance;
             base.Before(methodUnderTest);
@@ -32,10 +32,10 @@ namespace Datadog.Trace.TestHelpers
             base.After(methodUnderTest);
         }
 
-        internal static void SetTracer(Tracer tracer, TracerManager manager = null)
+        internal static void SetTracer(TracerInternal tracer, TracerManager manager = null)
         {
             // CI Visibility tracer cannot be replaced, so we use an internal api to ensure the set.
-            Tracer.UnsafeSetTracerInstance(tracer);
+            TracerInternal.UnsafeSetTracerInstance(tracer);
             manager ??= tracer?.TracerManager;
             if (manager is not null)
             {

@@ -38,7 +38,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
             if (_integrationId.Value is { } integrationId)
             {
                 TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.DuckTyping);
-                Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
+                TracerInternal.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
             }
 
             _disableIntegration = true;
@@ -49,7 +49,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
             if (_integrationId.Value is { } integrationId)
             {
                 TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Invoker);
-                Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
+                TracerInternal.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
             }
 
             _disableIntegration = true;
@@ -68,7 +68,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
     {
         if (_integrationId.Value is { } integrationIdValue)
         {
-            Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(integrationIdValue);
+            TracerInternal.Instance.TracerManager.Telemetry.IntegrationRunning(integrationIdValue);
         }
     }
 }

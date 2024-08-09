@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal static Scope? CreateScope<TConnection>(object? wireProtocol, TConnection connection)
             where TConnection : IConnection
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (wireProtocol is null || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             return true;
         }
 
-        private static Scope? GetActiveMongoDbScope(Tracer tracer)
+        private static Scope? GetActiveMongoDbScope(TracerInternal tracer)
         {
             var scope = tracer.InternalActiveScope;
 

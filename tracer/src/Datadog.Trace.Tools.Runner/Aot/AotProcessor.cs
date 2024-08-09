@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
             if (processed > 0)
             {
-                var tracerAssembly = typeof(Datadog.Trace.Tracer).Assembly.Location;
+                var tracerAssembly = typeof(Datadog.Trace.TracerInternal).Assembly.Location;
                 File.Copy(tracerAssembly, Path.Combine(outputFolder, Path.GetFileName(Path.GetFileName(tracerAssembly))), true);
 
                 AnsiConsole.WriteLine("Patching deps.json file");

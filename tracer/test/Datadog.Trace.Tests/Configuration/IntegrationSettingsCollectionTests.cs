@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsIntegrationWhenUsingIncorrectCasing()
         {
-            var settings = new IntegrationSettingsCollection(null);
+            var settings = new IntegrationSettingsCollectionInternal(null);
 
             var log4NetByName = settings["LOG4NET"];
             var log4NetById = settings[nameof(IntegrationId.Log4Net)];
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsDefaultSettingsForUnknownIntegration()
         {
-            var settings = new IntegrationSettingsCollection(null);
+            var settings = new IntegrationSettingsCollectionInternal(null);
 
             var integrationName = "blobby";
             var instance1 = settings[integrationName];

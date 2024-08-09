@@ -24,13 +24,13 @@ namespace Datadog.Trace.Tests.Configuration
         // These properties are present on ExporterSettings, but not on ImmutableExporterSettings
         private static readonly string[] ExcludedProperties =
         {
-            nameof(ExporterSettings.Telemetry),
+            nameof(ExporterSettingsInternal.Telemetry),
         };
 
         [Fact]
         public void OnlyHasReadOnlyProperties()
         {
-            var type = typeof(ImmutableExporterSettings);
+            var type = typeof(ImmutableExporterSettingsInternal);
 
             using var scope = new AssertionScope();
 
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void HasSamePropertiesAsExporterSettings()
         {
-            var mutableProperties = typeof(ExporterSettings)
+            var mutableProperties = typeof(ExporterSettingsInternal)
                                    .GetProperties(Flags)
                                    .Where(// Exclude "internal" properties
                                         x => !(x.HasAttribute<GeneratePublicApiAttribute>()
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests.Configuration
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
-            var immutableProperties = typeof(ImmutableExporterSettings)
+            var immutableProperties = typeof(ImmutableExporterSettingsInternal)
                                      .GetProperties(Flags)
                                      .Select(x => x.Name);
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void AllPropertyValuesMatch()
         {
-            var equalityCheckers = new List<Func<ExporterSettings, ImmutableExporterSettings, bool>>()
+            var equalityCheckers = new List<Func<ExporterSettingsInternal, ImmutableExporterSettingsInternal, bool>>()
             {
                 (e, i) => e.MetricsPipeName == i.MetricsPipeName,
                 (e, i) => e.TracesPipeName == i.TracesPipeName,
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (e, i) => e.ValidationWarnings.Count == i.ValidationWarnings.Count,
             };
 
-            var mutableProperties = typeof(ExporterSettings)
+            var mutableProperties = typeof(ExporterSettingsInternal)
                                    .GetProperties(Flags)
                                    .Where(// Exclude "internal" properties
                                         x => !(x.HasAttribute<GeneratePublicApiAttribute>()
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tests.Configuration
             // Ensure that all properties are represented
             Assert.Equal(mutableProperties.Count(), equalityCheckers.Count);
 
-            var exporterSettings = new ExporterSettings();
+            var exporterSettings = new ExporterSettingsInternal();
 
             exporterSettings.AgentUri = new Uri("http://127.0.0.1:8282");
             exporterSettings.MetricsUnixDomainSocketPath = "metricsuds";
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.Configuration
             exporterSettings.DogStatsdPort = 1234;
             exporterSettings.TracesPipeTimeoutMs = 5556;
 
-            var immutableSettings = new ImmutableExporterSettings(exporterSettings);
+            var immutableSettings = new ImmutableExporterSettingsInternal(exporterSettings);
 
             foreach (var equalityCheck in equalityCheckers)
             {

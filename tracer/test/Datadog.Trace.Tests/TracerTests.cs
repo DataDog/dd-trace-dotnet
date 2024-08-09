@@ -28,15 +28,15 @@ namespace Datadog.Trace.Tests
     [Collection(nameof(WebRequestCollection))]
     public class TracerTests
     {
-        private readonly Tracer _tracer;
+        private readonly TracerInternal _tracer;
 
         public TracerTests()
         {
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = new TracerInternal(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_IgnoreActiveScope_RootSpan()
         {
             var firstScope = _tracer.StartActive("First");
-            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = SpanContext.None });
+            var secondScope = (Scope)_tracer.StartActive("Second", new SpanCreationSettings { Parent = SpanContextInternal.None });
             var secondSpan = secondScope.Span;
 
             Assert.True(secondSpan.IsRootSpan);
@@ -230,7 +230,7 @@ namespace Datadog.Trace.Tests
             const ulong parentId = 7;
             const int samplingPriority = SamplingPriorityValues.UserKeep;
 
-            var parent = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin: null);
+            var parent = new SpanContextInternal(traceId, parentId, samplingPriority, serviceName: null, origin: null);
             var spanCreationSettings = new SpanCreationSettings() { Parent = parent };
             var child = (Scope)_tracer.StartActive("Child", spanCreationSettings);
             var childSpan = child.Span;
@@ -324,7 +324,7 @@ namespace Datadog.Trace.Tests
         {
             var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = _tracer.StartSpan("Second", parent: SpanContext.None);
+            var secondSpan = _tracer.StartSpan("Second", parent: SpanContextInternal.None);
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -373,7 +373,7 @@ namespace Datadog.Trace.Tests
             var root = (Scope)_tracer.StartActive("Root");
             var rootSpan = root.Span;
 
-            Func<Tracer, Task<IScope>> createSpanAsync = async (t) =>
+            Func<TracerInternal, Task<IScope>> createSpanAsync = async (t) =>
             {
                 await tcs.Task;
                 return t.StartActive("AsyncChild");
@@ -401,7 +401,7 @@ namespace Datadog.Trace.Tests
         [InlineData("test")]
         public async Task SetEnv(string env)
         {
-            var settings = new TracerSettings { Environment = env };
+            var settings = new TracerSettingsInternal { Environment = env };
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -414,7 +414,7 @@ namespace Datadog.Trace.Tests
         [InlineData("1.2.3")]
         public async Task SetVersion(string version)
         {
-            var settings = new TracerSettings { ServiceVersion = version };
+            var settings = new TracerSettingsInternal { ServiceVersion = version };
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             var scope = (Scope)tracer.StartActive("operation");
 
@@ -432,7 +432,7 @@ namespace Datadog.Trace.Tests
         [InlineData("tracerService", "spanService", "spanService")]
         public async Task SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
-            var settings = new TracerSettings()
+            var settings = new TracerSettingsInternal()
             {
                 ServiceName = tracerServiceName,
             };
@@ -461,7 +461,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new SpanContextInternal(traceId, spanId, samplingPriority, null, origin);
             Assert.Equal(origin, propagatedContext.Origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
@@ -489,7 +489,7 @@ namespace Datadog.Trace.Tests
             const int samplingPriority = SamplingPriorityValues.UserKeep;
             const string origin = "synthetics";
 
-            var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
+            var propagatedContext = new SpanContextInternal(traceId, spanId, samplingPriority, null, origin);
 
             var spanCreationSettings = new SpanCreationSettings() { Parent = propagatedContext };
             using var firstScope = (Scope)_tracer.StartActive("First Span", spanCreationSettings);
@@ -513,10 +513,10 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void RuntimeId()
         {
-            var runtimeId = Tracer.RuntimeId;
+            var runtimeId = TracerInternal.RuntimeId;
 
             // Runtime id should be stable for a given process
-            Tracer.RuntimeId.Should().Be(runtimeId);
+            TracerInternal.RuntimeId.Should().Be(runtimeId);
 
             // Runtime id should be a UUID
             Guid.TryParse(runtimeId, out _).Should().BeTrue();
@@ -527,12 +527,12 @@ namespace Datadog.Trace.Tests
         {
             var agent = new Mock<IAgentWriter>();
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };
 
-            var tracer = new Tracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
+            var tracer = new TracerInternal(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
             await tracer.ForceFlushAsync();
 
@@ -544,11 +544,11 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -586,11 +586,11 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -676,11 +676,11 @@ namespace Datadog.Trace.Tests
         {
             var scopeManager = new AsyncLocalScopeManager();
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
 

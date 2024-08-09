@@ -59,13 +59,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             intSpan.IsFinished.Should().BeTrue();
         }
 
-        private static Tracer GetTracer()
+        private static TracerInternal GetTracer()
         {
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            return new TracerInternal(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
     }
 }

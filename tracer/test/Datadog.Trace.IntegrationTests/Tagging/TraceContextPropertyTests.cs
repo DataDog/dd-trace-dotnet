@@ -16,16 +16,16 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceContextPropertyTests
 {
-    private readonly Tracer _tracer;
+    private readonly TracerInternal _tracer;
     private readonly MockApi _testApi;
 
     public TraceContextPropertyTests()
     {
         _testApi = new MockApi();
 
-        var settings = new TracerSettings();
+        var settings = new TracerSettingsInternal();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new TracerInternal(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]
@@ -105,7 +105,7 @@ public class TraceContextPropertyTests
         await AssertTag("_dd.origin", after);
     }
 
-    private static Scope CreateTrace(Tracer tracer)
+    private static Scope CreateTrace(TracerInternal tracer)
     {
         var rootScope = tracer.StartActive("root");
 

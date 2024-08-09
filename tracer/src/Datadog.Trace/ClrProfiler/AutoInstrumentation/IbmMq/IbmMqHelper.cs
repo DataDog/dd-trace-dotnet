@@ -27,7 +27,7 @@ internal static class IbmMqHelper
         return NoopAdapter;
     }
 
-    internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)
+    internal static Scope? CreateProducerScope(TracerInternal tracer, IMqQueue queue, IMqMessage message)
     {
         Scope? scope = null;
 
@@ -68,7 +68,7 @@ internal static class IbmMqHelper
     }
 
     internal static Scope? CreateConsumerScope(
-        Tracer tracer,
+        TracerInternal tracer,
         DateTimeOffset? spanStartTime,
         IMqQueue queue,
         IMqMessage message)
@@ -92,7 +92,7 @@ internal static class IbmMqHelper
                 return null;
             }
 
-            SpanContext? propagatedContext = null;
+            SpanContextInternal? propagatedContext = null;
 
             try
             {

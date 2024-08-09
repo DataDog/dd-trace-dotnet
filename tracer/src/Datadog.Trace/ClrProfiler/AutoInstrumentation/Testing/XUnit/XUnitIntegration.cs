@@ -21,7 +21,7 @@ internal static class XUnitIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => CIVisibility.IsRunning && TracerInternal.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType, RetryMessageBus? retryMessageBus = null)
     {
@@ -41,7 +41,7 @@ internal static class XUnitIntegration
         var methodParameters = testMethod?.GetParameters();
         if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
         {
-            var testParameters = new TestParameters();
+            var testParameters = new TestParametersInternal();
             testParameters.Metadata = new Dictionary<string, object>();
             testParameters.Arguments = new Dictionary<string, object>();
             testParameters.Metadata[TestTags.MetadataTestName] = runnerInstance.TestCase.DisplayName ?? string.Empty;
@@ -123,7 +123,7 @@ internal static class XUnitIntegration
         }
 
         // Telemetry
-        Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+        TracerInternal.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
         // Skip tests
         if (runnerInstance.SkipReason is { } skipReason)

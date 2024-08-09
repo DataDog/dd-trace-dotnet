@@ -19,7 +19,7 @@ namespace Benchmarks.Trace
 
         static GraphQLBenchmark()
         {
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };

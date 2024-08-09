@@ -21,7 +21,7 @@ namespace Benchmarks.Trace
 
         static ILoggerBenchmark()
         {
-            var logInjectionSettings = new TracerSettings
+            var logInjectionSettings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false,
                 LogsInjectionEnabled = true,

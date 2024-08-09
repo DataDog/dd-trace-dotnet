@@ -26,7 +26,7 @@ namespace Datadog.Trace.Coverage.Collector
         {
             _logger = logger;
             _collectionContext = collectionContext;
-            _isDebugEnabled = GlobalSettings.Instance.DebugEnabledInternal;
+            _isDebugEnabled = GlobalSettingsInternal.Instance.DebugEnabledInternal;
 
             if (DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config).File is { } fileConfig)
             {

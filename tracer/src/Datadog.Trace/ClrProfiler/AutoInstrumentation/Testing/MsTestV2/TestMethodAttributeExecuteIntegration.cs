@@ -58,7 +58,7 @@ public static class TestMethodAttributeExecuteIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (Tracer.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test })
+        if (TracerInternal.Instance.InternalActiveScope is { Span.Type: SpanTypes.Test })
         {
             // Avoid a test inside another test
             return CallTargetState.GetDefault();

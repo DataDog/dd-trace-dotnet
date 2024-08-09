@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     {
         private const string SnsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(SpanContextInternal context, IDictionary messageAttributes)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
-        public static void InjectHeadersIntoBatch<TClientMarker, TBatchRequest>(TBatchRequest request, SpanContext context)
+        public static void InjectHeadersIntoBatch<TClientMarker, TBatchRequest>(TBatchRequest request, SpanContextInternal context)
             where TBatchRequest : IPublishBatchRequest
         {
             // Skip adding Trace Context if entries don't exist or empty.
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             }
         }
 
-        public static void InjectHeadersIntoMessage<TClientMarker, TMessageRequest>(TMessageRequest carrier, SpanContext context)
+        public static void InjectHeadersIntoMessage<TClientMarker, TMessageRequest>(TMessageRequest carrier, SpanContextInternal context)
             where TMessageRequest : IContainsMessageAttributes
         {
             // Skip adding Trace Context if there is no more space left to inject.

@@ -16,7 +16,7 @@ internal static class ServerlessMiniAgent
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServerlessMiniAgent));
 
-    internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettings settings)
+    internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettingsInternal settings)
     {
         if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctionsConsumptionPlan)
         {
@@ -52,7 +52,7 @@ internal static class ServerlessMiniAgent
         return Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
     }
 
-    internal static void StartServerlessMiniAgent(ImmutableTracerSettings settings)
+    internal static void StartServerlessMiniAgent(ImmutableTracerSettingsInternal settings)
     {
         var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform, settings);
         if (string.IsNullOrEmpty(serverlessMiniAgentPath))

@@ -26,7 +26,7 @@ public class ContextPropagationTests
     private static readonly byte[] PersonJsonStringBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(PersonDictionary));
     private static readonly byte[] StreamNameBytes = Encoding.UTF8.GetBytes(StreamName);
 
-    private readonly SpanContext _spanContext;
+    private readonly SpanContextInternal _spanContext;
 
     public ContextPropagationTests()
     {
@@ -35,7 +35,7 @@ public class ContextPropagationTests
 
         var traceId = new TraceId(upper, lower);
         ulong spanId = 6766950223540265769;
-        _spanContext = new SpanContext(traceId, spanId, 1, "test-kinesis", "serverless");
+        _spanContext = new SpanContextInternal(traceId, spanId, 1, "test-kinesis", "serverless");
     }
 
     public static IEnumerable<object[]> MemoryStreamToDictionaryExpectedData

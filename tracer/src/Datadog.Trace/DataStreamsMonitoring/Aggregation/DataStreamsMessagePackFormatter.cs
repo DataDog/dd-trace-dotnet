@@ -47,7 +47,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _backlogTagsBytes = StringEncoding.UTF8.GetBytes("Tags");
         private readonly byte[] _backlogValueBytes = StringEncoding.UTF8.GetBytes("Value");
 
-        public DataStreamsMessagePackFormatter(ImmutableTracerSettings tracerSettings, string defaultServiceName)
+        public DataStreamsMessagePackFormatter(ImmutableTracerSettingsInternal tracerSettings, string defaultServiceName)
             : this(tracerSettings.EnvironmentInternal, defaultServiceName)
         {
         }

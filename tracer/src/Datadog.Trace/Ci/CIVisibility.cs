@@ -67,7 +67,7 @@ namespace Datadog.Trace.Ci
         {
             get
             {
-                if (Tracer.Instance.TracerManager is CITracerManager cITracerManager)
+                if (TracerInternal.Instance.TracerManager is CITracerManager cITracerManager)
                 {
                     return cITracerManager;
                 }
@@ -109,7 +109,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                        new ImmutableExporterSettingsInternal(settings.TracerSettings.ExporterInternal, true),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -141,8 +141,8 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
-            _ = Tracer.Instance;
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettingsInternal(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            _ = TracerInternal.Instance;
 
             // Initialize FrameworkDescription
             _ = FrameworkDescription.Instance;
@@ -209,8 +209,8 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
-            _ = Tracer.Instance;
+            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettingsInternal(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            _ = TracerInternal.Instance;
 
             // Initialize FrameworkDescription
             _ = FrameworkDescription.Instance;
@@ -265,12 +265,12 @@ namespace Datadog.Trace.Ci
                 if (Settings.Logs)
                 {
                     await Task.WhenAll(
-                        Tracer.Instance.FlushAsync(),
-                        Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
+                        TracerInternal.Instance.FlushAsync(),
+                        TracerInternal.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
                 }
                 else
                 {
-                    await Tracer.Instance.FlushAsync().ConfigureAwait(false);
+                    await TracerInternal.Instance.FlushAsync().ConfigureAwait(false);
                 }
 
                 Log.Debug("Integration flushed.");
@@ -419,12 +419,12 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettingsInternal settings)
         {
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettingsInternal tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
             var exporterSettings = tracerSettings.ExporterInternal;
@@ -572,7 +572,7 @@ namespace Datadog.Trace.Ci
                 testSuite.Close();
             }
 
-            foreach (var testModule in TestModule.ActiveTestModules)
+            foreach (var testModule in TestModuleInternal.ActiveTestModules)
             {
                 if (exception is not null)
                 {
@@ -582,7 +582,7 @@ namespace Datadog.Trace.Ci
                 await testModule.CloseAsync().ConfigureAwait(false);
             }
 
-            foreach (var testSession in TestSession.ActiveTestSessions)
+            foreach (var testSession in TestSessionInternal.ActiveTestSessions)
             {
                 if (exception is not null)
                 {

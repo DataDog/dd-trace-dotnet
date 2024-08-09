@@ -22,7 +22,7 @@ namespace Benchmarks.Trace
 
         static Log4netBenchmark()
         {
-            var logInjectionSettings = new TracerSettings
+            var logInjectionSettings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false,
                 LogsInjectionEnabled = true,

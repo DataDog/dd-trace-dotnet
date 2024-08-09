@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
         private static readonly DatadogLoggingScope DatadogScope = new();
 
-        public static void AddScope<TAction, TState>(Tracer tracer, TAction callback, TState state)
+        public static void AddScope<TAction, TState>(TracerInternal tracer, TAction callback, TState state)
         {
             if (tracer.Settings.LogsInjectionEnabledInternal
              && tracer.Settings.IsIntegrationEnabled(IntegrationId)

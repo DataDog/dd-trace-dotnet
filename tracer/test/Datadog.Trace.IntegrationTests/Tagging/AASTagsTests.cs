@@ -30,9 +30,9 @@ public class AASTagsTests
     public async Task AasTagsShouldBeSerialized()
     {
         var source = GetMockVariables();
-        var settings = new TracerSettings(source);
+        var settings = new TracerSettingsInternal(source);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new TracerInternal(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
         {
@@ -47,9 +47,9 @@ public class AASTagsTests
     [Fact]
     public async Task NoAasTagsIfNotInAASContext()
     {
-        var settings = new TracerSettings(null);
+        var settings = new TracerSettingsInternal(null);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new TracerInternal(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         using (tracer.StartActiveInternal("root"))
         {
@@ -71,9 +71,9 @@ public class AASTagsTests
         // Each non local root spans should contain only aas.site.name and aas.site.type tags
 
         var source = GetMockVariables();
-        var settings = new TracerSettings(source);
+        var settings = new TracerSettingsInternal(source);
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        var tracer = new TracerInternal(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
 
         ISpan span1;
         ISpan span11;

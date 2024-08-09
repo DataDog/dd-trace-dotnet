@@ -65,9 +65,9 @@ namespace Datadog.Trace.Configuration
 
         private static void OnConfigurationChanged(ConfigurationBuilder settings)
         {
-            var oldSettings = Tracer.Instance.Settings;
+            var oldSettings = TracerInternal.Instance.Settings;
 
-            var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
+            var headerTags = TracerSettingsInternal.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled: true);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);
 
             var globalTags = settings.WithKeys(ConfigurationKeys.GlobalTags).AsDictionary();
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Configuration
             }
             */
 
-            Tracer.ConfigureInternal(newSettings);
+            TracerInternal.ConfigureInternal(newSettings);
         }
 
         private ApplyDetails[] ConfigurationUpdated(Dictionary<string, List<RemoteConfiguration>> configByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigByProduct)

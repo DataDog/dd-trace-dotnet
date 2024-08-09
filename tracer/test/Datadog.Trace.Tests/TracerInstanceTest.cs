@@ -29,15 +29,15 @@ namespace Datadog.Trace.Tests
             await using var tracerTwo = TracerHelper.CreateWithFakeAgent();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            TracerInternal.Instance.Should().Be(tracerOne);
+            TracerInternal.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            TracerInternal.Instance.Should().Be(tracerTwo);
+            TracerInternal.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            TracerInternal.Instance.Should().BeNull();
         }
 
         [Fact]
@@ -47,22 +47,22 @@ namespace Datadog.Trace.Tests
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            TracerInternal.Instance.Should().Be(tracerOne);
+            TracerInternal.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            TracerInternal.Instance.Should().BeNull();
 
             // Set the locked tracer
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            TracerInternal.Instance.Should().Be(tracerTwo);
+            TracerInternal.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             // We test the locked tracer cannot be replaced.
 #pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
+            Assert.Throws<InvalidOperationException>(() => TracerInternal.Instance = tracerOne);
 
-            Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
+            Assert.Throws<ArgumentNullException>(() => TracerInternal.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings, NullDiscoveryService.Instance, false)));
@@ -75,9 +75,9 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var oldSettings = new TracerSettings
+                var oldSettings = new TracerSettingsInternal
                 {
-                    Exporter = new ExporterSettings()
+                    Exporter = new ExporterSettingsInternal()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
@@ -85,14 +85,14 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
                 };
-                Tracer.Configure(oldSettings);
+                TracerInternal.Configure(oldSettings);
 
-                var scope = Tracer.Instance.StartActive("Test span");
+                var scope = TracerInternal.Instance.StartActive("Test span");
                 (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
-                var newSettings = new TracerSettings
+                var newSettings = new TracerSettingsInternal
                 {
-                    Exporter = new ExporterSettings()
+                    Exporter = new ExporterSettingsInternal()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
                 };
 
-                Tracer.Configure(newSettings);
+                TracerInternal.Configure(newSettings);
 
                 scope.Dispose();
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        private class LockedTracer : Tracer
+        private class LockedTracer : TracerInternal
         {
             internal LockedTracer()
                 : base(new LockedTracerManager())
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests
         private class LockedTracerManager : TracerManager, ILockedTracer
         {
             public LockedTracerManager()
-                : base(new ImmutableTracerSettings(new TracerSettings()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>())
+                : base(new ImmutableTracerSettingsInternal(new TracerSettingsInternal()), null, null, null, null, null, null, null, null, null, null, null, null, Mock.Of<IRemoteConfigurationManager>(), Mock.Of<IDynamicConfigurationManager>(), Mock.Of<ITracerFlareManager>())
             {
             }
         }

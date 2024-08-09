@@ -70,7 +70,7 @@ public class ConfigurationTests
         // Extract user strings from assembly, based on:
         // https://gist.github.com/vbelcik/01d0f803b9db6ec9b90e8693e4b0493b#file-extractexenetstrings-cs
         // Crude, but easier than regex-ing the source code etc
-        var assemblyStrings = ReadAllUserStrings(typeof(Datadog.Trace.Tracer).Assembly);
+        var assemblyStrings = ReadAllUserStrings(typeof(Datadog.Trace.TracerInternal).Assembly);
         assemblyStrings.Should().NotBeNullOrEmpty();
 
         // we know that we generally store config keys in `ConfigurationKeys` so examine all those

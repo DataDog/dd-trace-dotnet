@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         private static long _totalTestCases;
         private static long _newTestCases;
 
-        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.IsRunning && TracerInternal.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Test? GetOrCreateTest(ITest currentTest, int repeatCount = 0)
         {
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return testCommand;
         }
 
-        internal static TestModule? GetTestModuleFrom(ITest? test)
+        internal static TestModuleInternal? GetTestModuleFrom(ITest? test)
         {
             if (test is null)
             {
@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (test is not null &&
                 ModulesItems.TryGetValue(test.Instance!, out var moduleObject) &&
-                moduleObject is TestModule module)
+                moduleObject is TestModuleInternal module)
             {
                 return module;
             }
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return null;
         }
 
-        internal static void SetTestModuleTo(ITest test, TestModule module)
+        internal static void SetTestModuleTo(ITest test, TestModuleInternal module)
         {
             if (test.TestType == TestModuleConst)
             {
@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
-                var testParameters = new TestParameters();
+                var testParameters = new TestParametersInternal();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
                 testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
@@ -296,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             test.SetTestMethodInfo(testMethod);
 
             // Telemetry
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            TracerInternal.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             // Skip tests
             if (skipReason is not null)

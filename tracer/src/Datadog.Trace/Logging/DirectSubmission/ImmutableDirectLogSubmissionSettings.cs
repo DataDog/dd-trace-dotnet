@@ -75,7 +75,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public BatchingSinkOptions BatchingOptions { get; }
 
-        public static ImmutableDirectLogSubmissionSettings Create(TracerSettings settings)
+        public static ImmutableDirectLogSubmissionSettings Create(TracerSettingsInternal settings)
             => Create(settings.LogSubmissionSettings);
 
         public static ImmutableDirectLogSubmissionSettings Create(DirectLogSubmissionSettings settings)

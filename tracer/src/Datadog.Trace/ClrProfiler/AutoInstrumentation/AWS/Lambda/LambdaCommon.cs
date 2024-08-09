@@ -21,7 +21,7 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(TracerInternal tracer, string traceId, string samplingPriority)
     {
         Span span;
 
@@ -61,7 +61,7 @@ internal abstract class LambdaCommon
         var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
         if (ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            return CreatePlaceholderScope(TracerInternal.Instance, traceId, samplingPriority);
         }
 
         return null;
@@ -81,7 +81,7 @@ internal abstract class LambdaCommon
     {
         try
         {
-            await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+            await TracerInternal.Instance.TracerManager.AgentWriter.FlushTracesAsync()
                         .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
                         .ConfigureAwait(false);
         }

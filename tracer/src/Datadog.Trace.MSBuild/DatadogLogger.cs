@@ -32,7 +32,7 @@ namespace Datadog.Trace.MSBuild
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatadogLogger));
 
         private readonly ConcurrentDictionary<int, Span> _projects = new();
-        private Tracer _tracer;
+        private TracerInternal _tracer;
         private Span _buildSpan;
 
         static DatadogLogger()
@@ -81,7 +81,7 @@ namespace Datadog.Trace.MSBuild
 
             try
             {
-                _tracer = Tracer.Instance;
+                _tracer = TracerInternal.Instance;
 
                 // Attach to the eventSource events only if we successfully get the tracer instance.
                 eventSource.BuildStarted += EventSource_BuildStarted;

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
-        internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
+        internal static Scope CreateScopeFromExecuteAsync<T>(TracerInternal tracer, in T request)
             where T : IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string operationName)
+        internal static void UpdateScopeFromExecuteAsync(TracerInternal tracer, string operationType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

@@ -88,7 +88,7 @@ internal class TracerFlareManager : ITracerFlareManager
         if (!_wasDebugLogEnabled)
         {
             _debugEnabledConfigPath = null;
-            GlobalSettings.SetDebugEnabledInternal(false);
+            GlobalSettingsInternal.SetDebugEnabledInternal(false);
         }
     }
 
@@ -140,8 +140,8 @@ internal class TracerFlareManager : ITracerFlareManager
             {
                 // This product means "prepare for sending a tracer flare."
                 // We may consider doing more than just enabling debug mode in the future
-                _wasDebugLogEnabled = GlobalSettings.Instance.DebugEnabledInternal;
-                GlobalSettings.SetDebugEnabledInternal(true);
+                _wasDebugLogEnabled = GlobalSettingsInternal.Instance.DebugEnabledInternal;
+                GlobalSettingsInternal.SetDebugEnabledInternal(true);
 
                 // The timer is a fallback, in case we never receive a "send flare" product
                 var timer = new Timer(
@@ -160,7 +160,7 @@ internal class TracerFlareManager : ITracerFlareManager
                 {
                     // the filename here is chosen so that it will get cleaned up in the normal log rotation
                     ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var pid);
-                    var rid = Tracer.RuntimeId;
+                    var rid = TracerInternal.RuntimeId;
                     var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                     var telemetryPath = Path.Combine(logDir, $"dotnet-tracer-telemetry-{pid}-{rid}-{timestamp}.log");
                     Log.Debug("Requesting telemetry dump to {FileName}", telemetryPath);

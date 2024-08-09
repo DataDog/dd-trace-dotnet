@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             where TMessageQueue : IMessageQueue
         {
             // Given this is an instance method, it's safe to assume instance.Instance is not null
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, action != 0 ? CommandPeek : CommandReceive, SpanKinds.Consumer, instance);
+            var scope = MsmqCommon.CreateScope(TracerInternal.Instance, action != 0 ? CommandPeek : CommandReceive, SpanKinds.Consumer, instance);
             return new CallTargetState(scope);
         }
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanCreationSettings.cs" company="Datadog">
+// <copyright file="SpanCreationSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the new span's parent. To prevent a new span from inheriting a parent,
-        /// set to <see cref="SpanContext.None"/>. If not set, defaults to <c>null</c> and
+        /// set to <see cref="SpanContextInternal.None"/>. If not set, defaults to <c>null</c> and
         /// the currently active span (if any) is used as the parent.
         /// </summary>
         public ISpanContext? Parent { get; set; }

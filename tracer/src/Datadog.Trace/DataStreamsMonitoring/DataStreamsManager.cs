@@ -43,7 +43,7 @@ internal class DataStreamsManager
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
 
     public static DataStreamsManager Create(
-        ImmutableTracerSettings settings,
+        ImmutableTracerSettingsInternal settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
     {

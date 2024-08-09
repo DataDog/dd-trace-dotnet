@@ -19,7 +19,7 @@ namespace Datadog.Trace.TestHelpers
         /// Create a test instance of the Tracer, that doesn't used any shared instances
         /// </summary>
         public static ScopedTracer Create(
-            TracerSettings settings = null,
+            TracerSettingsInternal settings = null,
             IAgentWriter agentWriter = null,
             ITraceSampler sampler = null,
             IScopeManager scopeManager = null,
@@ -32,14 +32,14 @@ namespace Datadog.Trace.TestHelpers
         /// Create a test instance of the Tracer, that doesn't used any shared instances
         /// </summary>
         public static ScopedTracer CreateWithFakeAgent(
-            TracerSettings settings = null)
+            TracerSettingsInternal settings = null)
         {
             return new ScopedTracer(settings, Mock.Of<IAgentWriter>());
         }
 
-        public class ScopedTracer : Tracer, IAsyncDisposable
+        public class ScopedTracer : TracerInternal, IAsyncDisposable
         {
-            public ScopedTracer(TracerSettings settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
+            public ScopedTracer(TracerSettingsInternal settings = null, IAgentWriter agentWriter = null, ITraceSampler sampler = null, IScopeManager scopeManager = null, IDogStatsd statsd = null)
                 : base(settings, agentWriter, sampler, scopeManager, statsd)
             {
             }

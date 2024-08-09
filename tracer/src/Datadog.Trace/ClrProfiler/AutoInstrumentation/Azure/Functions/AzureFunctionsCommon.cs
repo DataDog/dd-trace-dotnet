@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+        internal static Scope? CreateScope<TFunction>(TracerInternal tracer, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
             Scope? scope = null;
@@ -177,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext)
             where T : IFunctionContext
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -192,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        internal static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T context)
+        internal static Scope? CreateIsolatedFunctionScope<T>(TracerInternal tracer, T context)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
-                SpanContext? spanContext = null;
+                SpanContextInternal? spanContext = null;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
@@ -280,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        internal static void OverridePropagatedContext<TTarget, TTypeData>(Tracer tracer, TTypeData typedData, string? useNullableHeadersCapability)
+        internal static void OverridePropagatedContext<TTarget, TTypeData>(TracerInternal tracer, TTypeData typedData, string? useNullableHeadersCapability)
             where TTypeData : ITypedData
         {
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId)
@@ -299,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static SpanContext? ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static SpanContextInternal? ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context

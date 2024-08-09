@@ -33,12 +33,12 @@ namespace Datadog.Trace
         private int _isFinished;
         private bool _baseServiceTagSet;
 
-        internal Span(SpanContext context, DateTimeOffset? start)
+        internal Span(SpanContextInternal context, DateTimeOffset? start)
             : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(SpanContextInternal context, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
             Context = context;
@@ -119,7 +119,7 @@ namespace Datadog.Trace
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal SpanContextInternal Context { get; }
 
         internal List<SpanLink> SpanLinks { get; private set; }
 
@@ -139,7 +139,7 @@ namespace Datadog.Trace
                                  || Context.ParentInternal.SpanId == 0
                                  || Context.ParentInternal switch
                                  {
-                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     SpanContextInternal s => s.ServiceNameInternal != ServiceName,
                                      { } s => s.ServiceName != ServiceName,
                                  };
 

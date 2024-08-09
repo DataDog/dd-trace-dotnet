@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests
                 }
             }
 
-            var distributedTraceContext = new SpanContext(traceId, parentSpanId);
+            var distributedTraceContext = new SpanContextInternal(traceId, parentSpanId);
             await using var secondTracer = TracerHelper.CreateWithFakeAgent();
             var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
 

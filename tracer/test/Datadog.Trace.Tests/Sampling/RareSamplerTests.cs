@@ -19,8 +19,8 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task SampleUniqueSpans()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
             var trace1 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
             trace1[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
@@ -48,8 +48,8 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task OnlySampleRejectPriorities(int priority, bool expected)
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
             var trace = new[] { tracer.StartSpan("1") };
             trace[0].Context.TraceContext.SetSamplingPriority(priority);
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void DisabledByDefault()
         {
-            var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings()));
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(new TracerSettingsInternal()));
 
             sampler.IsEnabled.Should().BeFalse();
         }
@@ -79,8 +79,8 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(false)]
         public void Configuration(bool enabled)
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, enabled } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, enabled } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
             sampler.IsEnabled.Should().Be(enabled);
         }
@@ -88,10 +88,10 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void DoNotSampleIfDisabled()
         {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, false } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, false } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
-            var trace = new[] { Tracer.Instance.StartSpan("1") };
+            var trace = new[] { TracerInternal.Instance.StartSpan("1") };
             trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace)).Should().BeFalse();
@@ -102,8 +102,8 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task OnlySampleTopLevelSpans()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
             var knownTrace = new[] { tracer.StartSpan("1") };
             knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
@@ -128,8 +128,8 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task SampleSpecialMetrics(string metricName)
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
-            var sampler = new RareSampler(new ImmutableTracerSettings(settings));
+            var settings = TracerSettingsInternal.Create(new() { { ConfigurationKeys.RareSamplerEnabled, true } });
+            var sampler = new RareSampler(new ImmutableTracerSettingsInternal(settings));
 
             var knownTrace = new[] { tracer.StartSpan("1") };
             knownTrace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);

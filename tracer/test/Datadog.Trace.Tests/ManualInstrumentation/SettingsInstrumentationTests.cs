@@ -26,7 +26,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_AllDefaultSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings();
+        var automatic = new TracerSettingsInternal();
         Dictionary<string, object> serializedSettings = new();
         PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
@@ -38,7 +38,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_IncludesAllExpectedKeys()
     {
-        var automatic = new TracerSettings();
+        var automatic = new TracerSettingsInternal();
         Dictionary<string, object> serializedSettings = new();
         PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
 
@@ -50,7 +50,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_CustomSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
+        var automatic = new TracerSettingsInternal
         {
             AnalyticsEnabled = true,
             CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
@@ -101,7 +101,7 @@ public class SettingsInstrumentationTests
     {
         // change all the defaults to make sure we add the keys to the dictionary
         Dictionary<string, object> originalSettings = new();
-        PopulateDictionaryIntegration.PopulateSettings(originalSettings, new TracerSettings());
+        PopulateDictionaryIntegration.PopulateSettings(originalSettings, new TracerSettingsInternal());
         var manual = new ManualSettings(originalSettings, isFromDefaultSources: false)
         {
             AgentUri = new Uri("http://localhost:1234"),
@@ -141,7 +141,7 @@ public class SettingsInstrumentationTests
     public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
     {
         Dictionary<string, object> initialValues = new();
-        PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
+        PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettingsInternal());
 
         var manual = new ManualSettings(initialValues, isFromDefaultSources: false)
         {
@@ -180,19 +180,19 @@ public class SettingsInstrumentationTests
 
         var changedValues = manual.ToDictionary();
 
-        var automatic = new TracerSettings();
+        var automatic = new TracerSettingsInternal();
         ConfigureIntegration.UpdateSettings(changedValues, automatic);
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
-        automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", clientErrors)));
-        automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettings.ParseHttpCodesToArray(string.Join(",", serverErrors)));
+        automatic.HttpClientErrorStatusCodes.Should().Equal(TracerSettingsInternal.ParseHttpCodesToArray(string.Join(",", clientErrors)));
+        automatic.HttpServerErrorStatusCodes.Should().Equal(TracerSettingsInternal.ParseHttpCodesToArray(string.Join(",", serverErrors)));
     }
 
     [Fact]
     public void AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
+        var automatic = new TracerSettingsInternal
         {
             AnalyticsEnabled = true,
             CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
@@ -246,7 +246,7 @@ public class SettingsInstrumentationTests
         manual.TracerMetricsEnabled.Should().Be(immutable.TracerMetricsEnabled);
     }
 
-    private static void AssertEquivalent(ManualSettings manual, TracerSettings automatic)
+    private static void AssertEquivalent(ManualSettings manual, TracerSettingsInternal automatic)
     {
         // AgentUri gets transformed in exporter settings, so hacking around that here
         GetTransformedAgentUri(manual.AgentUri).Should().Be(automatic.Exporter.AgentUri);
@@ -271,7 +271,7 @@ public class SettingsInstrumentationTests
 
         Uri GetTransformedAgentUri(Uri agentUri)
         {
-            var e = new ExporterSettings();
+            var e = new ExporterSettingsInternal();
             e.AgentUri = agentUri;
             return e.AgentUri;
         }

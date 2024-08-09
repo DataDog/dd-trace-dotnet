@@ -27,7 +27,7 @@ internal class SpanLink
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
     /// <param name="decoratedSpan">Reference to the span you're adding SpanLinks to</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    public SpanLink(SpanContext spanLinkContext, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
+    public SpanLink(SpanContextInternal spanLinkContext, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
     {
         Context = spanLinkContext;
         DecoratedSpan = decoratedSpan;
@@ -41,7 +41,7 @@ internal class SpanLink
 
     public List<KeyValuePair<string, string>>? Attributes { get; private set; }
 
-    public SpanContext Context { get;  }
+    public SpanContextInternal Context { get;  }
 
     public Span DecoratedSpan { get; }
 

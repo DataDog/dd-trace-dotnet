@@ -25,7 +25,7 @@ internal static class MsTestIntegration
 
     internal static readonly ThreadLocal<MethodInfoCacheItem> IsTestMethodRunnableThreadLocal = new();
 
-    internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestModuleInternal> TestModuleByTestAssemblyInfos = new();
     internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
 
     private static readonly Dictionary<string, string> MsTestVersionByModuleId = new()
@@ -61,7 +61,7 @@ internal static class MsTestIntegration
     private static long _totalTestCases;
     private static long _newTestCases;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => CIVisibility.IsRunning && TracerInternal.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
@@ -128,7 +128,7 @@ internal static class MsTestIntegration
         var methodParameters = testMethod.GetParameters();
         if (methodParameters?.Length > 0)
         {
-            var testParameters = new TestParameters
+            var testParameters = new TestParametersInternal
             {
                 Metadata = new Dictionary<string, object>(),
                 Arguments = new Dictionary<string, object>()
@@ -248,7 +248,7 @@ internal static class MsTestIntegration
         return itrShouldSkip && !isUnskippable;
     }
 
-    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
+    internal static TestModuleInternal GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
         where TAsmInfo : ITestAssemblyInfo
     {
         if (testAssemblyInfo.Instance is not { } objTestAssemblyInfo)
@@ -285,7 +285,7 @@ internal static class MsTestIntegration
                 }
 
                 Common.Log.Debug("Module: {Module}, Framework version: {Version}", assemblyName, frameworkVersion);
-                var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+                var newModule = TestModuleInternal.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
                 newModule.EnableIpcClient();
                 return newModule;
             });
@@ -303,7 +303,7 @@ internal static class MsTestIntegration
             objTestClassInfo,
             key =>
             {
-                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+                var module = TestModuleInternal.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
                 if (module is null)
                 {
                     Common.Log.Error("There is no current module, a new suite cannot be created.");

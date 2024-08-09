@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpWebResponse response, ref ITransportHeaders returnHeaders, ref Stream returnStream)
         {
-            if (Tracer.Instance.InternalActiveScope is var scope)
+            if (TracerInternal.Instance.InternalActiveScope is var scope)
             {
                 return new CallTargetState(scope, state: response);
             }
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         {
             if (state.Scope is not null && state.State is HttpWebResponse response)
             {
-                state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
+                state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, TracerInternal.Instance.Settings);
             }
 
             return CallTargetReturn.GetDefault();

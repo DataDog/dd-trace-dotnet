@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
             }
 
             // Extract span context
-            SpanContext? propagatedContext = null;
+            SpanContextInternal? propagatedContext = null;
             try
             {
                 propagatedContext = SpanContextPropagator.Instance.Extract(requestHeaders, (headers, key) =>

@@ -46,7 +46,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
             var userStrings = new UserStringInterop[UserStringsArraySize];
             while (_started)
             {
-                if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
+                if (TracerInternal.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
                     int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
                     Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());

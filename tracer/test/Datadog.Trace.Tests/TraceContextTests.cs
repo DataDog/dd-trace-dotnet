@@ -49,9 +49,9 @@ namespace Datadog.Trace.Tests
         {
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettingsInternal
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new Trace.Configuration.ExporterSettingsInternal()
                 {
                     PartialFlushEnabled = partialFlush,
                     PartialFlushMinSpans = 5
@@ -62,13 +62,13 @@ namespace Datadog.Trace.Tests
 
             void AddAndCloseSpan()
             {
-                var span = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+                var span = new Span(new SpanContextInternal(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
                 traceContext.AddSpan(span);
                 traceContext.CloseSpan(span);
             }
 
-            var rootSpan = new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var rootSpan = new Span(new SpanContextInternal(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             traceContext.AddSpan(rootSpan);
 
@@ -125,13 +125,13 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 3;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContextInternal(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettingsInternal
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new Trace.Configuration.ExporterSettingsInternal()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold
@@ -177,13 +177,13 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 2;
 
-            Span CreateSpan() => new Span(new SpanContext(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContextInternal(42, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettingsInternal
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
+                Exporter = new Trace.Configuration.ExporterSettingsInternal()
                 {
                     PartialFlushEnabled = true,
                     PartialFlushMinSpans = partialFlushThreshold

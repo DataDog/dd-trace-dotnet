@@ -203,7 +203,7 @@ public class DataStreamsManagerTests
     public void WhenEnabled_SetCheckpoint_SetsSpanTags()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
+        var span = new Span(new SpanContextInternal(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
 
         span.SetDataStreamsCheckpoint(dsm,  CheckpointKind.Produce, new[] { "direction:out" }, 100, 0);
         span.Tags.GetTag("pathway.hash").Should().NotBeNull();

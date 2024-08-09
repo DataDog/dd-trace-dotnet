@@ -135,19 +135,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
                 switch (jsonAttributeProxy.Name)
                 {
-                    case CorrelationIdentifier.EnvKey:
+                    case CorrelationIdentifierInternal.EnvKey:
                         containsEnv = true;
                         continue;
-                    case CorrelationIdentifier.ServiceKey:
+                    case CorrelationIdentifierInternal.ServiceKey:
                         containsService = true;
                         continue;
-                    case CorrelationIdentifier.VersionKey:
+                    case CorrelationIdentifierInternal.VersionKey:
                         containsVersion = true;
                         continue;
-                    case CorrelationIdentifier.TraceIdKey:
+                    case CorrelationIdentifierInternal.TraceIdKey:
                         containsTraceId = true;
                         continue;
-                    case CorrelationIdentifier.SpanIdKey:
+                    case CorrelationIdentifierInternal.SpanIdKey:
                         containsSpanId = true;
                         continue;
                 }
@@ -164,11 +164,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             try
             {
-                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.EnvKey);
-                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.TraceIdKey);
-                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.SpanIdKey);
-                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.VersionKey);
-                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.ServiceKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifierInternal.EnvKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifierInternal.TraceIdKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifierInternal.SpanIdKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifierInternal.VersionKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifierInternal.ServiceKey);
             }
             catch (Exception ex)
             {

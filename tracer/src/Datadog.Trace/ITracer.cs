@@ -23,7 +23,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        ImmutableTracerSettings Settings { get; }
+        ImmutableTracerSettingsInternal Settings { get; }
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.

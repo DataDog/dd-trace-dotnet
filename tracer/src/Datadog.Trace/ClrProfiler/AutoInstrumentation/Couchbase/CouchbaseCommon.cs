@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation, IClusterNode clusterNode)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation, string normalizedSeedNodes)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             return CommonOnMethodBegin(tracer, tags);
         }
 
-        private static CallTargetState CommonOnMethodBegin(Tracer tracer, CouchbaseTags tags)
+        private static CallTargetState CommonOnMethodBegin(TracerInternal tracer, CouchbaseTags tags)
         {
             try
             {

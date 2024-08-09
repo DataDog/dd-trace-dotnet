@@ -24,7 +24,7 @@ namespace Benchmarks.Trace
         private static readonly ArraySegment<Span> EnrichedSpans;
         static AgentWriterBenchmark()
         {
-            var settings = TracerSettings.FromDefaultSources();
+            var settings = TracerSettingsInternal.FromDefaultSources();
 
             settings.StartupDiagnosticLogEnabled = false;
             settings.TraceEnabled = false;

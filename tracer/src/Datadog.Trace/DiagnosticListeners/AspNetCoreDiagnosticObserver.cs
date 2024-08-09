@@ -56,7 +56,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
-        private readonly Tracer _tracer;
+        private readonly TracerInternal _tracer;
         private readonly Security _security;
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
         }
 
-        public AspNetCoreDiagnosticObserver(Tracer tracer, Security security)
+        public AspNetCoreDiagnosticObserver(TracerInternal tracer, Security security)
         {
             _tracer = tracer;
             _security = security;
@@ -79,7 +79,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
+        private TracerInternal CurrentTracer => _tracer ?? TracerInternal.Instance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
 
@@ -294,7 +294,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         private static Span StartMvcCoreSpan(
-            Tracer tracer,
+            TracerInternal tracer,
             AspNetCoreHttpRequestHandler.RequestTrackingFeature trackingFeature,
             BeforeActionStruct typedArg,
             HttpContext httpContext,

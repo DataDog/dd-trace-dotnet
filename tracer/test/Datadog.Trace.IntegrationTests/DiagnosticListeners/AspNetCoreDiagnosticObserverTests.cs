@@ -524,13 +524,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             span.GetTag(tagName).Should().Be(expected, $"'{tagName}' should have correct value");
         }
 
-        private static Tracer GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
+        private static TracerInternal GetTracer(IAgentWriter writer = null, IConfigurationSource configSource = null)
         {
-            var settings = new TracerSettings(configSource);
+            var settings = new TracerSettingsInternal(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
             var samplerMock = new Mock<ITraceSampler>();
 
-            return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
+            return new TracerInternal(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         private class AgentWriterStub : IAgentWriter

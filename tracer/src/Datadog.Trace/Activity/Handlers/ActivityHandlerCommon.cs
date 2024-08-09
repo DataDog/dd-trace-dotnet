@@ -38,11 +38,11 @@ namespace Datadog.Trace.Activity.Handlers
         public static void ActivityStarted<T>(string sourceName, T activity, OpenTelemetryTags? tags, out ActivityMapping activityMapping)
             where T : IActivity
         {
-            Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
-            var activeSpan = Tracer.Instance.ActiveScope?.Span as Span;
+            TracerInternal.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
+            var activeSpan = TracerInternal.Instance.ActiveScope?.Span as Span;
 
             // Propagate Trace and Parent Span ids
-            SpanContext? parent = null;
+            SpanContextInternal? parent = null;
             TraceId traceId = default;
             ulong spanId = 0;
             string? rawTraceId = null;
@@ -77,8 +77,8 @@ namespace Datadog.Trace.Activity.Handlers
                             _ = HexString.TryParseTraceId(activityTraceId, out var newActivityTraceId);
                             _ = HexString.TryParseUInt64(parentSpanId, out var newActivitySpanId);
 
-                            parent = Tracer.Instance.CreateSpanContext(
-                                SpanContext.None,
+                            parent = TracerInternal.Instance.CreateSpanContext(
+                                SpanContextInternal.None,
                                 traceId: newActivityTraceId,
                                 spanId: newActivitySpanId,
                                 rawTraceId: activityTraceId,
@@ -184,9 +184,9 @@ namespace Datadog.Trace.Activity.Handlers
                 activityMapping = default;
             }
 
-            static Scope CreateScopeFromActivity(T activity, ITags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(T activity, ITags? tags, SpanContextInternal? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
-                var span = Tracer.Instance.StartSpan(
+                var span = TracerInternal.Instance.StartSpan(
                     activity.OperationName,
                     tags: tags,
                     parent: parent,
@@ -196,8 +196,8 @@ namespace Datadog.Trace.Activity.Handlers
                     rawTraceId: rawTraceId,
                     rawSpanId: rawSpanId);
 
-                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-                return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
+                TracerInternal.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                return TracerInternal.Instance.ActivateSpan(span, finishOnClose: false);
             }
         }
 

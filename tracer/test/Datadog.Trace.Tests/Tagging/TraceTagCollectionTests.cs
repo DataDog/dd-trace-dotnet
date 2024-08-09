@@ -210,7 +210,7 @@ public class TraceTagCollectionTests
     {
         var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
 
-        var context = new SpanContext(
+        var context = new SpanContextInternal(
             traceId: traceId,
             spanId: 1UL,
             samplingPriority: SamplingPriorityValues.UserKeep,
@@ -238,7 +238,7 @@ public class TraceTagCollectionTests
     {
         var traceId = new TraceId(0, 0x1122334455667788);
 
-        var context = new SpanContext(
+        var context = new SpanContextInternal(
             traceId: traceId,
             spanId: 1UL,
             samplingPriority: SamplingPriorityValues.UserKeep,

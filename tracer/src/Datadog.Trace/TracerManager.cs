@@ -53,7 +53,7 @@ namespace Datadog.Trace
         private volatile bool _isClosing = false;
 
         public TracerManager(
-            ImmutableTracerSettings settings,
+            ImmutableTracerSettingsInternal settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -104,7 +104,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="Tracer"/> instances
+        /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="TracerInternal"/> instances
         /// </summary>
         public static TracerManager Instance
         {
@@ -128,7 +128,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings { get; }
+        public ImmutableTracerSettingsInternal Settings { get; }
 
         public IAgentWriter AgentWriter { get; }
 
@@ -165,12 +165,12 @@ namespace Datadog.Trace
         public PerTraceSettings PerTraceSettings { get; }
 
         /// <summary>
-        /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances
+        /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="TracerInternal"/> instances
         /// which use the global <see cref="TracerManager"/>
         /// </summary>
         /// <param name="settings">The settings to use </param>
         /// <param name="factory">The factory to use to create the <see cref="TracerManager"/></param>
-        public static void ReplaceGlobalManager(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        public static void ReplaceGlobalManager(ImmutableTracerSettingsInternal settings, TracerManagerFactory factory)
         {
             TracerManager oldManager;
             TracerManager newManager;
@@ -392,7 +392,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.ExporterInternal.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
-                    writer.WriteValue(GlobalSettings.Instance.DebugEnabledInternal);
+                    writer.WriteValue(GlobalSettingsInternal.Instance.DebugEnabledInternal);
 
                     writer.WritePropertyName("health_checks_enabled");
                     writer.WriteValue(instanceSettings.TracerMetricsEnabledInternal);
@@ -462,7 +462,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.ExporterInternal.PartialFlushMinSpansInternal);
 
                     writer.WritePropertyName("runtime_id");
-                    writer.WriteValue(Tracer.RuntimeId);
+                    writer.WriteValue(TracerInternal.RuntimeId);
 
                     writer.WritePropertyName("agent_reachable");
                     writer.WriteValue(agentError == null);
@@ -634,7 +634,7 @@ namespace Datadog.Trace
         }
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
-        private static TracerManager CreateInitializedTracer(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        private static TracerManager CreateInitializedTracer(ImmutableTracerSettingsInternal settings, TracerManagerFactory factory)
         {
             if (_instance is ILockedTracer)
             {
@@ -731,7 +731,7 @@ namespace Datadog.Trace
             // send traces to the Agent
             if (_instance?.Settings.TracerMetricsEnabledInternal == true)
             {
-                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+                _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, TracerInternal.LiveTracerCount);
             }
         }
 

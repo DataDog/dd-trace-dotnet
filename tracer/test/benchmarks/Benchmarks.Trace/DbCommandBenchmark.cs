@@ -17,7 +17,7 @@ namespace Benchmarks.Trace
 
         static DbCommandBenchmark()
         {
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };

@@ -39,7 +39,7 @@ internal static class BeginMethodHandler<TIntegration, TTarget>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static CallTargetState Invoke(TTarget? instance)
     {
-        var activeScope = Tracer.Instance.InternalActiveScope;
+        var activeScope = TracerInternal.Instance.InternalActiveScope;
         // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
         // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
         var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;

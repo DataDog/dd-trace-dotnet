@@ -37,7 +37,7 @@ public static class UnitTestRunnerRunCleanupIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        if (TestModule.Current is { } module)
+        if (TestModuleInternal.Current is { } module)
         {
             module.Close();
 

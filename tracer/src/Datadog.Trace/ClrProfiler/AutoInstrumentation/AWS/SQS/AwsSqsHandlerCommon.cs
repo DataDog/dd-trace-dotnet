@@ -29,7 +29,7 @@ internal static class AwsSqsHandlerCommon
         // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
         var requestProxy = request.DuckCast<IAmazonSQSRequestWithQueueUrl>();
 
-        var scope = AwsSqsCommon.CreateScope(Tracer.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
+        var scope = AwsSqsCommon.CreateScope(TracerInternal.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
 
         var queueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
         if (tags is not null && requestProxy.QueueUrl is not null)
@@ -40,7 +40,7 @@ internal static class AwsSqsHandlerCommon
 
         if (scope?.Span.Context != null && !string.IsNullOrEmpty(queueName))
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+            var dataStreamsManager = TracerInternal.Instance.TracerManager.DataStreamsManager;
 
             if (sendType == SendType.SingleMessage)
             {
@@ -109,7 +109,7 @@ internal static class AwsSqsHandlerCommon
         }
 
         var queueName = AwsSqsCommon.GetQueueName(request.QueueUrl);
-        var scope = AwsSqsCommon.CreateScope(Tracer.Instance, "ReceiveMessage", out var tags, spanKind: SpanKinds.Consumer);
+        var scope = AwsSqsCommon.CreateScope(TracerInternal.Instance, "ReceiveMessage", out var tags, spanKind: SpanKinds.Consumer);
         if (tags is not null && request.QueueUrl is not null)
         {
             tags.QueueUrl = request.QueueUrl;
@@ -143,7 +143,7 @@ internal static class AwsSqsHandlerCommon
     {
         if (response.Instance != null && response.Messages is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+            var dataStreamsManager = TracerInternal.Instance.TracerManager.DataStreamsManager;
             if (dataStreamsManager is { IsEnabled: true })
             {
                 var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:sqs" };

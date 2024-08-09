@@ -18,14 +18,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenNoActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 ServiceName = "TestService",
                 ServiceVersion = "1.2.3",
                 Environment = "test"
             };
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            var tracer = new TracerInternal(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
 
             var scope = new DatadogLoggingScope(tracer);
 
@@ -37,14 +37,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 ServiceName = "TestService",
                 ServiceVersion = "1.2.3",
                 Environment = "test"
             };
 
-            var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
+            var tracer = new TracerInternal(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
             using var spanScope = tracer.StartActive("test");
             var scope = new DatadogLoggingScope(tracer);
 

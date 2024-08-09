@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         {
             if (msg is IMethodReturnMessage methodReturnMessage)
             {
-                var scope = Tracer.Instance.InternalActiveScope;
+                var scope = TracerInternal.Instance.InternalActiveScope;
                 if (scope?.Span.Tags is RemotingTags tags)
                 {
                     if (methodReturnMessage.Exception is Exception exception)

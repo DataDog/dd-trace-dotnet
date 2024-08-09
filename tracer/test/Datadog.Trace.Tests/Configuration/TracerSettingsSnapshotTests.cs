@@ -24,7 +24,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_HasNoChangesWhenNoChanges()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
 
         snapshot.RecordChanges(settings, collector);
@@ -35,7 +35,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_RecordsBasicSettingChange()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
         settings.ServiceName = "New service";
 
@@ -47,7 +47,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_RecordsChangeToHashSet()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
         settings.DisabledIntegrationNames.Add("Testing");
 
@@ -59,7 +59,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_RecordsReplacementOfHashSet()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
         settings.DisabledIntegrationNames = new HashSet<string> { "Testing" };
 
@@ -71,7 +71,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_RecordsUpdatesToExporterSettings()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
         settings.Exporter.DogStatsdPort = 1234;
 
@@ -83,7 +83,7 @@ public class TracerSettingsSnapshotTests
     public void Snapshot_RecordsUpdatesToLogSettings()
     {
         var collector = new ConfigurationTelemetry();
-        var settings = new TracerSettings(NullConfigurationSource.Instance);
+        var settings = new TracerSettingsInternal(NullConfigurationSource.Instance);
         var snapshot = new TracerSettingsSnapshot(settings);
         settings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
 

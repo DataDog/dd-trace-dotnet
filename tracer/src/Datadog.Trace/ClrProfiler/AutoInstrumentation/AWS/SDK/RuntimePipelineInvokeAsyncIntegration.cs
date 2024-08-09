@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 return CallTargetState.GetDefault();
             }
 
-            var scope = Tracer.Instance.InternalActiveScope;
+            var scope = TracerInternal.Instance.InternalActiveScope;
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (response.Instance is not null)
                 {
                     tags.RequestId = response.ResponseMetadata?.RequestId;
-                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, TracerInternal.Instance.Settings);
                 }
             }
 

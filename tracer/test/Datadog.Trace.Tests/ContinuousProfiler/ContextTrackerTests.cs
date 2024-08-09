@@ -68,9 +68,9 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
             }
         }
 
-        private static Tracer CreateTracer()
+        private static TracerInternal CreateTracer()
         {
-            return new Tracer(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
+            return new TracerInternal(new TracerSettingsInternal(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), null, null);
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3SingleHeader);
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Propagators
             carrierSetter.Set(carrier, B3, header);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
+                spanContext = new SpanContextInternal(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
 #else
                 string? rawTraceId;
                 string? rawSpanId;
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Propagators
                 }
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
-                spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+                spanContext = new SpanContextInternal(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
 #endif
 
                 TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3SingleHeader);
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        internal static string CreateHeader(SpanContext context)
+        internal static string CreateHeader(SpanContextInternal context)
         {
             var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "1" : "0";

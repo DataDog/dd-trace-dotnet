@@ -22,11 +22,11 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new TracerSettingsInternal
         {
             StartupDiagnosticLogEnabled = false
         };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -34,7 +34,7 @@ public class EventTrackingSdkTests
 
         var id = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackUserLoginSuccessEvent(id, null, tracer);
+        EventTrackingSdkInternal.TrackUserLoginSuccessEvent(id, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack));
@@ -47,11 +47,11 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new TracerSettingsInternal
         {
             StartupDiagnosticLogEnabled = false
         };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -65,7 +65,7 @@ public class EventTrackingSdkTests
             { "key2", "value2" }
         };
 
-        EventTrackingSdk.TrackUserLoginSuccessEvent(id, meta, tracer);
+        EventTrackingSdkInternal.TrackUserLoginSuccessEvent(id, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack));
@@ -84,11 +84,11 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new TracerSettingsInternal
         {
             StartupDiagnosticLogEnabled = false
         };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -96,7 +96,7 @@ public class EventTrackingSdkTests
 
         var id = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackUserLoginFailureEvent(id, true, null, tracer);
+        EventTrackingSdkInternal.TrackUserLoginFailureEvent(id, true, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal(id, traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId));
@@ -110,11 +110,11 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new TracerSettingsInternal
         {
             StartupDiagnosticLogEnabled = false
         };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -128,7 +128,7 @@ public class EventTrackingSdkTests
             { "key2", "value2" }
         };
 
-        EventTrackingSdk.TrackUserLoginFailureEvent(id, false, meta, tracer);
+        EventTrackingSdkInternal.TrackUserLoginFailureEvent(id, false, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack));
@@ -147,11 +147,11 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
+        var settings = new TracerSettingsInternal
         {
             StartupDiagnosticLogEnabled = false
         };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -159,7 +159,7 @@ public class EventTrackingSdkTests
 
         var eventName = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackCustomEvent(eventName, null, tracer);
+        EventTrackingSdkInternal.TrackCustomEvent(eventName, null, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));
@@ -171,8 +171,8 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false };
-        var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
+        var settings = new TracerSettingsInternal { StartupDiagnosticLogEnabled = false };
+        var tracer = new TracerInternal(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
         var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -182,7 +182,7 @@ public class EventTrackingSdkTests
 
         var eventName = Guid.NewGuid().ToString();
 
-        EventTrackingSdk.TrackCustomEvent(eventName, meta, tracer);
+        EventTrackingSdkInternal.TrackCustomEvent(eventName, meta, tracer);
 
         var traceContext = rootTestScope.Span.Context.TraceContext;
         Assert.Equal("true", traceContext.Tags.GetTag(Tags.AppSec.Track(eventName)));

@@ -28,9 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        internal static Scope? CreateServerScope(IMessage msg, SpanContext? spanContext)
+        internal static Scope? CreateServerScope(IMessage msg, SpanContextInternal? spanContext)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         internal static Scope? CreateClientScope(IMessage msg)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

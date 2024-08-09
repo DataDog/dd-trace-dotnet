@@ -114,7 +114,7 @@ namespace Datadog.Trace.Propagators
             Sampled = 1,
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static string CreateTraceParentHeader(SpanContext context)
+        internal static string CreateTraceParentHeader(SpanContextInternal context)
         {
             var samplingPriority = context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default;
             var sampled = SamplingPriorityValues.IsKeep(samplingPriority) ? "01" : "00";
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Propagators
 #endif
         }
 
-        internal static string CreateTraceStateHeader(SpanContext context)
+        internal static string CreateTraceStateHeader(SpanContextInternal context)
         {
             var sb = StringBuilderCache.Acquire(100);
 
@@ -592,7 +592,7 @@ namespace Datadog.Trace.Propagators
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
             TCarrierGetter carrierGetter,
-            [NotNullWhen(true)] out SpanContext? spanContext)
+            [NotNullWhen(true)] out SpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -635,7 +635,7 @@ namespace Datadog.Trace.Propagators
                 traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
             }
 
-            spanContext = new SpanContext(
+            spanContext = new SpanContextInternal(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,

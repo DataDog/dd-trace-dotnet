@@ -22,12 +22,12 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void TraceIdSpanId_MatchActiveSpan()
         {
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
+            using (var parentScope = TracerInternal.Instance.StartActive("parent"))
             {
-                using (var childScope = Tracer.Instance.StartActive("child"))
+                using (var childScope = TracerInternal.Instance.StartActive("child"))
                 {
-                    Assert.Equal<ulong>(childScope.Span.SpanId, CorrelationIdentifier.SpanId);
-                    Assert.Equal<ulong>(childScope.Span.TraceId, CorrelationIdentifier.TraceId);
+                    Assert.Equal<ulong>(childScope.Span.SpanId, CorrelationIdentifierInternal.SpanId);
+                    Assert.Equal<ulong>(childScope.Span.TraceId, CorrelationIdentifierInternal.TraceId);
                 }
             }
         }
@@ -35,14 +35,14 @@ namespace Datadog.Trace.Tests
         [Fact(Skip = "This test is not compatible with the xUnit integration. Neither TraceId or SpanId are Zero.")]
         public void TraceIdSpanId_ZeroOutsideActiveSpan()
         {
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = TracerInternal.Instance.StartActive("parent"))
+            using (var childScope = TracerInternal.Instance.StartActive("child"))
             {
                 // Do nothing
             }
 
-            Assert.Equal<ulong>(0, CorrelationIdentifier.SpanId);
-            Assert.Equal<ulong>(0, CorrelationIdentifier.TraceId);
+            Assert.Equal<ulong>(0, CorrelationIdentifierInternal.SpanId);
+            Assert.Equal<ulong>(0, CorrelationIdentifierInternal.TraceId);
         }
 
         [Fact]
@@ -52,60 +52,60 @@ namespace Datadog.Trace.Tests
             const string version = "1.0.0";
             const string env = "staging";
 
-            var settings = new TracerSettings()
+            var settings = new TracerSettingsInternal()
             {
                 ServiceName = service,
                 ServiceVersion = version,
                 Environment = env
             };
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            TracerInternal.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = TracerInternal.Instance.StartActive("parent"))
+            using (var childScope = TracerInternal.Instance.StartActive("child"))
             {
-                Assert.Equal(service, CorrelationIdentifier.Service);
-                Assert.Equal(version, CorrelationIdentifier.Version);
-                Assert.Equal(env, CorrelationIdentifier.Env);
+                Assert.Equal(service, CorrelationIdentifierInternal.Service);
+                Assert.Equal(version, CorrelationIdentifierInternal.Version);
+                Assert.Equal(env, CorrelationIdentifierInternal.Env);
             }
 
-            Assert.Equal(service, CorrelationIdentifier.Service);
-            Assert.Equal(version, CorrelationIdentifier.Version);
-            Assert.Equal(env, CorrelationIdentifier.Env);
+            Assert.Equal(service, CorrelationIdentifierInternal.Service);
+            Assert.Equal(version, CorrelationIdentifierInternal.Version);
+            Assert.Equal(env, CorrelationIdentifierInternal.Env);
         }
 
         [Fact]
         public void VersionAndEnv_EmptyStringIfUnset()
         {
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            TracerInternal.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = TracerInternal.Instance.StartActive("parent"))
+            using (var childScope = TracerInternal.Instance.StartActive("child"))
             {
-                Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-                Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+                Assert.Equal(string.Empty, CorrelationIdentifierInternal.Version);
+                Assert.Equal(string.Empty, CorrelationIdentifierInternal.Env);
             }
 
-            Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-            Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+            Assert.Equal(string.Empty, CorrelationIdentifierInternal.Version);
+            Assert.Equal(string.Empty, CorrelationIdentifierInternal.Env);
         }
 
         [Fact]
         public void Service_DefaultServiceNameIfUnset()
         {
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
+            TracerInternal.UnsafeSetTracerInstance(tracer);
 
-            using (var parentScope = Tracer.Instance.StartActive("parent"))
-            using (var childScope = Tracer.Instance.StartActive("child"))
+            using (var parentScope = TracerInternal.Instance.StartActive("parent"))
+            using (var childScope = TracerInternal.Instance.StartActive("child"))
             {
-                Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+                Assert.Equal(CorrelationIdentifierInternal.Service, TracerInternal.Instance.DefaultServiceName);
             }
 
-            Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            Assert.Equal(CorrelationIdentifierInternal.Service, TracerInternal.Instance.DefaultServiceName);
         }
     }
 }

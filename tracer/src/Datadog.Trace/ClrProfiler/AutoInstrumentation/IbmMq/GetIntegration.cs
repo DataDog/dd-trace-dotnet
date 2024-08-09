@@ -42,8 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
             {
                 if (state.State != null && state.State.TryDuckCast<IMqMessage>(out var msg))
                 {
-                    var scope = IbmMqHelper.CreateConsumerScope(Tracer.Instance, state.StartTime, instance, msg);
-                    var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                    var scope = IbmMqHelper.CreateConsumerScope(TracerInternal.Instance, state.StartTime, instance, msg);
+                    var dataStreams = TracerInternal.Instance.TracerManager.DataStreamsManager;
                     if (dataStreams.IsEnabled && exception == null && scope != null)
                     {
                         var adapter = IbmMqHelper.GetHeadersAdapter(msg);

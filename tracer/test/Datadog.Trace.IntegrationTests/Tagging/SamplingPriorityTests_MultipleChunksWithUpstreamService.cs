@@ -19,22 +19,22 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
     private const int SamplingPriorityValue = 1;
 
     private readonly MockApi _testApi;
-    private readonly Tracer _tracer;
+    private readonly TracerInternal _tracer;
     private AgentWriter _agentWriter;
 
     public SamplingPriorityTests_MultipleChunksWithUpstreamService()
     {
         _testApi = new MockApi();
 
-        var settings = new TracerSettings();
+        var settings = new TracerSettingsInternal();
         _agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null, automaticFlush: false);
-        _tracer = new Tracer(settings, _agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new TracerInternal(settings, _agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Fact]
     public async Task SingleChunk()
     {
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = new SpanContextInternal(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -83,7 +83,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = new SpanContextInternal(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -157,7 +157,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = new SpanContextInternal(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -230,7 +230,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = new SpanContextInternal(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))
@@ -303,7 +303,7 @@ public class SamplingPriorityTests_MultipleChunksWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
+        var propagatedContext = new SpanContextInternal(traceId: 1, spanId: 10);
         var settings = new SpanCreationSettings { Parent = propagatedContext };
 
         using (var scope1 = _tracer.StartActive("1", settings))

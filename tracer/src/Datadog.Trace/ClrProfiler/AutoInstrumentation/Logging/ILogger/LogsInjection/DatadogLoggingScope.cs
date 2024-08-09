@@ -15,15 +15,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly string _service;
         private readonly string _env;
         private readonly string _version;
-        private readonly Tracer _tracer;
+        private readonly TracerInternal _tracer;
         private readonly string _cachedFormat;
 
         public DatadogLoggingScope()
-            : this(Tracer.Instance)
+            : this(TracerInternal.Instance)
         {
         }
 
-        internal DatadogLoggingScope(Tracer tracer)
+        internal DatadogLoggingScope(TracerInternal tracer)
         {
             _tracer = tracer;
             _service = tracer.DefaultServiceName ?? string.Empty;
@@ -50,8 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                     0 => new KeyValuePair<string, object>("dd_service", _service),
                     1 => new KeyValuePair<string, object>("dd_env", _env),
                     2 => new KeyValuePair<string, object>("dd_version", _version),
-                    3 => new KeyValuePair<string, object>("dd_trace_id", distContext?[SpanContext.Keys.TraceId] ?? distContext?[HttpHeaderNames.TraceId] ?? "0"),
-                    4 => new KeyValuePair<string, object>("dd_span_id", distContext?[SpanContext.Keys.ParentId] ?? distContext?[HttpHeaderNames.ParentId] ?? "0"),
+                    3 => new KeyValuePair<string, object>("dd_trace_id", distContext?[SpanContextInternal.Keys.TraceId] ?? distContext?[HttpHeaderNames.TraceId] ?? "0"),
+                    4 => new KeyValuePair<string, object>("dd_span_id", distContext?[SpanContextInternal.Keys.ParentId] ?? distContext?[HttpHeaderNames.ParentId] ?? "0"),
                     _ => throw new ArgumentOutOfRangeException(nameof(index))
                 };
             }
@@ -63,9 +63,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                var hasTraceId = spanContext.TryGetValue(SpanContextInternal.Keys.TraceId, out string traceId) ||
                                  spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                var hasSpanId = spanContext.TryGetValue(SpanContextInternal.Keys.ParentId, out string spanId) ||
                                 spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                 if (hasTraceId && hasSpanId)
                 {
@@ -91,9 +91,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                var hasTraceId = spanContext.TryGetValue(SpanContextInternal.Keys.TraceId, out string traceId) ||
                                  spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                var hasSpanId = spanContext.TryGetValue(SpanContextInternal.Keys.ParentId, out string spanId) ||
                                 spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
 
                 if (hasTraceId && hasSpanId)

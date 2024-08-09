@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x0123456789abcdef, 0x1122334455667788); // 0x0123456789abcdef1122334455667788
             ulong spanId = 0x000000003ade68b1;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContextInternal(traceId, spanId, samplingPriority, serviceName: null, null);
             var headers = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(context, headers.Object);
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract default (no sampler) sampling from trace context
-            var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
+            var newContext = new SpanContextInternal(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(newContext, newHeaders.Object);
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x0123456789abcdef, 0x1122334455667788); // 0x0123456789abcdef1122334455667788
             ulong spanId = 0x000000003ade68b1;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, null);
+            var context = new SpanContextInternal(traceId, spanId, samplingPriority, serviceName: null, null);
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract default (no sampler) sampling from trace context
-            var newContext = new SpanContext(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
+            var newContext = new SpanContextInternal(parent: null, new TraceContext(Mock.Of<IDatadogTracer>()), serviceName: null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
 
             B3Propagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
@@ -109,7 +109,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = (TraceId)0x00000000075bcd15; // 123456789
             ulong spanId = 0x000000003ade68b1;         // 987654321;
             var samplingPriority = SamplingPriorityValues.UserKeep;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
+            var context = new SpanContextInternal(traceId, spanId, samplingPriority, serviceName: null, origin: null);
 
             B3MultipleHeaderContextPropagator.CreateHeaders(context, out var traceIdHeader, out var spanIdHeader, out _);
             traceIdHeader.Should().Be("000000000000000000000000075bcd15");
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             ulong spanId = 0x000000003ade68b1;
             var samplingPriority = SamplingPriorityValues.AutoReject;
-            var context = new SpanContext(traceId, spanId, samplingPriority, serviceName: null, origin: null);
+            var context = new SpanContextInternal(traceId, spanId, samplingPriority, serviceName: null, origin: null);
 
             B3MultipleHeaderContextPropagator.CreateHeaders(context, out var traceIdHeader, out var spanIdHeader, out _);
             traceIdHeader.Should().Be("1234567890abcdef1122334455667788");

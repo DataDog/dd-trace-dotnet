@@ -31,7 +31,7 @@ public class EventTrackingSdkTrackCustomEventIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string eventName)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent);
-        EventTrackingSdk.TrackCustomEvent(eventName, null, Datadog.Trace.Tracer.Instance);
+        EventTrackingSdkInternal.TrackCustomEvent(eventName, null, Datadog.Trace.TracerInternal.Instance);
         return CallTargetState.GetDefault();
     }
 }

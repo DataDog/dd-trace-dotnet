@@ -54,7 +54,7 @@ public class DataStreamsMonitoringTransportTests
         // We don't want to trigger a flush based on the timer, only based on the disposal of the writer
         // That ensures we only get a single payload
         var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
-        var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
+        var tracerSettings = new TracerSettingsInternal { Exporter = GetExporterSettings(agent) };
         var api = new DataStreamsApi(
             DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
 
@@ -124,13 +124,13 @@ public class DataStreamsMonitoringTransportTests
             _ => throw new InvalidOperationException("Unknown transport type " + transportType),
         };
 
-    private ExporterSettings GetExporterSettings(MockTracerAgent agent)
+    private ExporterSettingsInternal GetExporterSettings(MockTracerAgent agent)
         => agent switch
         {
-            MockTracerAgent.TcpUdpAgent x => new ExporterSettings { AgentUri = new Uri($"http://localhost:{x.Port}") },
-            MockTracerAgent.NamedPipeAgent x => new ExporterSettings(new NameValueConfigurationSource(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName } })),
+            MockTracerAgent.TcpUdpAgent x => new ExporterSettingsInternal { AgentUri = new Uri($"http://localhost:{x.Port}") },
+            MockTracerAgent.NamedPipeAgent x => new ExporterSettingsInternal(new NameValueConfigurationSource(new() { { ConfigurationKeys.TracesPipeName, x.TracesWindowsPipeName } })),
 #if NETCOREAPP3_1_OR_GREATER
-            MockTracerAgent.UdsAgent x =>  new ExporterSettings { AgentUri = new Uri(ExporterSettings.UnixDomainSocketPrefix + x.TracesUdsPath) },
+            MockTracerAgent.UdsAgent x =>  new ExporterSettingsInternal { AgentUri = new Uri(ExporterSettingsInternal.UnixDomainSocketPrefix + x.TracesUdsPath) },
 #endif
             _ => throw new InvalidOperationException("Unknown agent type " + agent.GetType()),
         };

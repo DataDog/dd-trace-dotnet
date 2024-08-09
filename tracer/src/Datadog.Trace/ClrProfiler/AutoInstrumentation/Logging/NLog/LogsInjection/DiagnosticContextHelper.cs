@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return null;
         }
 
-        public static IDisposable SetScopeContextState(IScopeContextSetterProxy scopeContext, Tracer tracer)
+        public static IDisposable SetScopeContextState(IScopeContextSetterProxy scopeContext, TracerInternal tracer)
         {
             var entries = CreateEntriesList(tracer, out _);
             var state = scopeContext.PushProperties(entries);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return state;
         }
 
-        public static bool SetMdcState(MappedDiagnosticsContextSetterProxy mdc, Tracer tracer)
+        public static bool SetMdcState(MappedDiagnosticsContextSetterProxy mdc, TracerInternal tracer)
         {
             var entries = CreateEntriesList(tracer, out var removeTraceIds);
             foreach (var kvp in entries)
@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return removeTraceIds;
         }
 
-        public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, Tracer tracer)
+        public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, TracerInternal tracer)
         {
             var entries = CreateEntriesList(tracer, out _);
             var state = mdlc.SetScoped(entries);
@@ -104,18 +104,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         public static void RemoveMdcState(MappedDiagnosticsContextSetterProxy mdc, bool removeTraceIds)
         {
-            mdc.Remove(CorrelationIdentifier.ServiceKey);
-            mdc.Remove(CorrelationIdentifier.VersionKey);
-            mdc.Remove(CorrelationIdentifier.EnvKey);
+            mdc.Remove(CorrelationIdentifierInternal.ServiceKey);
+            mdc.Remove(CorrelationIdentifierInternal.VersionKey);
+            mdc.Remove(CorrelationIdentifierInternal.EnvKey);
 
             if (removeTraceIds)
             {
-                mdc.Remove(CorrelationIdentifier.TraceIdKey);
-                mdc.Remove(CorrelationIdentifier.SpanIdKey);
+                mdc.Remove(CorrelationIdentifierInternal.TraceIdKey);
+                mdc.Remove(CorrelationIdentifierInternal.SpanIdKey);
             }
         }
 
-        private static IReadOnlyList<KeyValuePair<string, object>> CreateEntriesList(Tracer tracer, out bool hasTraceIds)
+        private static IReadOnlyList<KeyValuePair<string, object>> CreateEntriesList(TracerInternal tracer, out bool hasTraceIds)
         {
             hasTraceIds = false;
             var spanContext = tracer.DistributedSpanContext;
@@ -123,29 +123,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (spanContext is not null)
             {
                 // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                var hasTraceId = spanContext.TryGetValue(SpanContextInternal.Keys.TraceId, out string traceId) ||
                                  spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                var hasSpanId = spanContext.TryGetValue(SpanContextInternal.Keys.ParentId, out string spanId) ||
                                 spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                 if (hasTraceId && hasSpanId)
                 {
                     hasTraceIds = true;
                     return new[]
                     {
-                        new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
+                        new KeyValuePair<string, object>(CorrelationIdentifierInternal.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
+                        new KeyValuePair<string, object>(CorrelationIdentifierInternal.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
+                        new KeyValuePair<string, object>(CorrelationIdentifierInternal.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
+                        new KeyValuePair<string, object>(CorrelationIdentifierInternal.TraceIdKey, traceId),
+                        new KeyValuePair<string, object>(CorrelationIdentifierInternal.SpanIdKey, spanId)
                     };
                 }
             }
 
             return new[]
             {
-                new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
+                new KeyValuePair<string, object>(CorrelationIdentifierInternal.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
+                new KeyValuePair<string, object>(CorrelationIdentifierInternal.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
+                new KeyValuePair<string, object>(CorrelationIdentifierInternal.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
             };
         }
 
