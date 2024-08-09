@@ -2,7 +2,12 @@
 Segments: 
 
 {
-    "ref": "Nested"
+    "getmember": [
+        {
+            "ref": "this"
+        },
+        "NullableNullValue"
+    ]
 }
 Expressions: 
 (
@@ -36,10 +41,10 @@ Expressions:
     var StringArg = (string)scopeMemberArray[14].Value;
     var CollectionArg = (List<string>)scopeMemberArray[15].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[16].Value;
-    var $dd_el_result = (this.Nested == null)
+    var $dd_el_result = (this.NullableNullValue == null)
         ? "null"
         : {
-            fieldsArray = this.Nested
+            fieldsArray = this.NullableNullValue
                 .GetType()
                 .GetFields(
                     BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
@@ -53,7 +58,7 @@ Expressions:
                 {
                     fieldValues.Append(
                         ProbeExpressionParser<string>.DumpObject(
-                            fieldsArray[index].GetValue((object)this.Nested),
+                            fieldsArray[index].GetValue(this.NullableNullValue),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
                             0));
@@ -80,4 +85,4 @@ Expressions:
 
     return $dd_el_result;
 }
-Result: The result of the expression is: ParentProtectedStaticMember=Hello from parent protected static member, _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, ...
+Result: The result of the expression is: null
