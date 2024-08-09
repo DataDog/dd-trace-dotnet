@@ -64,7 +64,7 @@ internal static class RaspModule
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled)
+        if (!security.RaspEnabled || !security.AddressEnabled(address))
         {
             return;
         }

@@ -23,6 +23,7 @@ public class AspNetCore5IastAsm : RcmBase
     public AspNetCore5IastAsm(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5IastAsm))
     {
+        EnableRasp(false);
     }
 
     [SkippableFact]
