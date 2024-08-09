@@ -1,0 +1,4 @@
+System.ArgumentOutOfRangeException
+   at MyApp.Collections.CustomList`1.get_Item(Int32 index)
+   at MyApp.Controllers.CollectionController.GetItem(Int32 index)
+Resulting Hash: -991079971
