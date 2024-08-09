@@ -25,6 +25,7 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ManualAndAutomatic()
     {
+        SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "1");
         const int expectedSpans = 36;
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -43,6 +44,7 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ManualOnly()
     {
+        SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "0");
         EnvironmentHelper.SetAutomaticInstrumentation(false);
         // with automatic instrumentation disabled, we don't expect _any_ spans
         using var telemetry = this.ConfigureTelemetry();
