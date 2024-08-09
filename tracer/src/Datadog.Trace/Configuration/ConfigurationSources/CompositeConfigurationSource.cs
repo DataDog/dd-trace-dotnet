@@ -166,21 +166,21 @@ namespace Datadog.Trace.Configuration
 
         /// <inheritdoc />
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key)
+        public IDictionary<string, string?>? GetDictionary(string key)
         {
             var value = _sources
                        .Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
-                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string?>>.NotFound());
             return value.IsValid ? value.Result : null;
         }
 
         /// <inheritdoc />
         [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
+        public IDictionary<string, string?>? GetDictionary(string key, bool allowOptionalMappings)
         {
             var value = _sources
                        .Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, separator: ':'))
-                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string?>>.NotFound());
             return value.IsValid ? value.Result : null;
         }
 
@@ -213,16 +213,16 @@ namespace Datadog.Trace.Configuration
               .FirstOrDefault(value => value.IsValid, ConfigurationResult<bool>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string?>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator)
             => _sources
               .Select(source => source.GetDictionary(key, telemetry, validator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string?>>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string?>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string?>, bool>? validator, bool allowOptionalMappings, char separator)
             => _sources
               .Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator))
-              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string?>>.NotFound());
 
         /// <inheritdoc />
         ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 #if NETFRAMEWORK
 
@@ -103,7 +104,7 @@ namespace Datadog.Trace.AspNet
 
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
-            Scope scope = null;
+            Scope? scope = null;
             bool shouldDisposeScope = true;
             try
             {
@@ -131,7 +132,7 @@ namespace Datadog.Trace.AspNet
 
                 HttpRequest httpRequest = httpContext.Request;
                 NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                SpanContext? propagatedContext = null;
                 if (tracer.InternalActiveScope == null)
                 {
                     try
@@ -309,7 +310,7 @@ namespace Datadog.Trace.AspNet
                         //
                         // Note: HttpServerUtility.TransferRequest cannot be invoked more than once, so we'll have at most two nested (in-process)
                         // aspnet.request spans at any given time: https://referencesource.microsoft.com/#System.Web/Hosting/IIS7WorkerRequest.cs,2400
-                        if (!rootSpan.HasHttpStatusCode())
+                        if (rootSpan != null && !rootSpan.HasHttpStatusCode())
                         {
                             var response = app.Context.Response;
                             var status = response.StatusCode;

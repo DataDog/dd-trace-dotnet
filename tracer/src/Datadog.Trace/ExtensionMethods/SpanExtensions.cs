@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -53,12 +54,12 @@ namespace Datadog.Trace.ExtensionMethods
 
         internal static void DecorateWebServerSpan(
             this ISpan span,
-            string resourceName,
-            string method,
-            string host,
-            string httpUrl,
-            string userAgent,
-            WebTags tags)
+            string? resourceName,
+            string? method,
+            string? host,
+            string? httpUrl,
+            string? userAgent,
+            WebTags? tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -72,14 +73,14 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
+        internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string?>? headerTags, string defaultTagPrefix)
             where T : IHeadersCollection
         {
             if (headerTags is not null && !headerTags.IsEmpty())
             {
                 try
                 {
-                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags, defaultTagPrefix);
+                    SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headerTags!, defaultTagPrefix);
                 }
                 catch (Exception ex)
                 {
@@ -132,7 +133,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static string GetTraceIdStringForLogs(this ISpan span)
+        internal static string? GetTraceIdStringForLogs(this ISpan? span)
         {
             if (span is not Span s)
             {

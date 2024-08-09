@@ -48,19 +48,19 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             return jobject;
         }
 
-        private static Dictionary<string, string> ReadHeaderTags(JToken token)
+        private static Dictionary<string, string?> ReadHeaderTags(JToken token)
         {
-            return ((JArray)token).ToDictionary(t => t["header"]!.Value<string>()!, t => t["tag_name"]!.Value<string>()!);
+            return ((JArray)token).ToDictionary(t => t["header"]!.Value<string>()!, t => t["tag_name"]!.Value<string>());
         }
 
-        private static Dictionary<string, string> ReadServiceMapping(JToken token)
+        private static Dictionary<string, string?> ReadServiceMapping(JToken token)
         {
-            return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>()!);
+            return ((JArray)token).ToDictionary(t => t["from_key"]!.Value<string>()!, t => t["to_name"]!.Value<string>());
         }
 
-        private static Dictionary<string, string> ReadGlobalTags(JToken token)
+        private static Dictionary<string, string?> ReadGlobalTags(JToken token)
         {
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, string?>();
 
             foreach (var item in (JArray)token)
             {
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
             return base.SelectToken(Mapping.TryGetValue(key, out var newKey) ? newKey : key);
         }
 
-        private protected override IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        private protected override IDictionary<string, string?>? ConvertToDictionary(string key, JToken token)
         {
             if (!Mapping.TryGetValue(key, out var mappedKey))
             {

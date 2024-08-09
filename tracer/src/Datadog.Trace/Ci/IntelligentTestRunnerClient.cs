@@ -59,7 +59,7 @@ internal class IntelligentTestRunnerClient
     private readonly string? _workingDirectory;
     private readonly string _environment;
     private readonly string _serviceName;
-    private readonly Dictionary<string, string>? _customConfigurations;
+    private readonly Dictionary<string, string?>? _customConfigurations;
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _settingsUrl;
     private readonly Uri _searchCommitsUrl;
@@ -166,9 +166,9 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    internal static Dictionary<string, string>? GetCustomTestsConfigurations(IDictionary<string, string> globalTags)
+    internal static Dictionary<string, string?>? GetCustomTestsConfigurations(IDictionary<string, string?>? globalTags)
     {
-        Dictionary<string, string>? customConfiguration = null;
+        Dictionary<string, string?>? customConfiguration = null;
         if (globalTags is not null)
         {
             foreach (var tag in globalTags)
@@ -182,7 +182,7 @@ internal class IntelligentTestRunnerClient
                         continue;
                     }
 
-                    customConfiguration ??= new Dictionary<string, string>();
+                    customConfiguration ??= new Dictionary<string, string?>();
                     customConfiguration[key] = tag.Value;
                 }
             }

@@ -187,7 +187,7 @@ partial record ImmutableTracerSettings
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags
+    public System.Collections.Generic.IReadOnlyDictionary<string, string?> GlobalTags
     {
         get
         {
@@ -202,7 +202,7 @@ partial record ImmutableTracerSettings
         /// of incoming and outgoing requests.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags
+    public System.Collections.Generic.IReadOnlyDictionary<string, string?> HeaderTags
     {
         get
         {
@@ -217,7 +217,7 @@ partial record ImmutableTracerSettings
         /// of incoming and outgoing GRPC requests.
         /// </summary>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags
+    public System.Collections.Generic.IReadOnlyDictionary<string, string?> GrpcTags
     {
         get
         {

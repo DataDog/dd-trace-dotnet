@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections;
@@ -61,7 +62,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                         if (!MsTestIntegration.ShouldSkip(testMethodInfo, out _, out _))
                         {
                             // This instrumentation catches all tests being ignored
-                            MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false)?
+                            MsTestIntegration.OnMethodBegin(testMethodInfo, instance?.GetType(), isRetry: false)?
                                .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                         }
                     }

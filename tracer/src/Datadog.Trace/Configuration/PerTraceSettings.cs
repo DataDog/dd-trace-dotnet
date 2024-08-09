@@ -16,7 +16,7 @@ namespace Datadog.Trace.Configuration
     {
         private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
-        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, IReadOnlyDictionary<string, string> serviceNames, NamingSchema schema)
+        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, IReadOnlyDictionary<string, string?> serviceNames, NamingSchema schema)
         {
             TraceSampler = traceSampler;
             SpanSampler = spanSampler;
@@ -28,13 +28,13 @@ namespace Datadog.Trace.Configuration
 
         public ISpanSampler? SpanSampler { get; }
 
-        public IReadOnlyDictionary<string, string> ServiceNames { get; }
+        public IReadOnlyDictionary<string, string?> ServiceNames { get; }
 
         public NamingSchema Schema { get; }
 
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
-            if (ServiceNames.TryGetValue(serviceName, out var name))
+            if (ServiceNames.TryGetValue(serviceName, out var name) && name != null)
             {
                 return name;
             }

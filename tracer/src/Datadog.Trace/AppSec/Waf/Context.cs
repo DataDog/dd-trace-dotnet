@@ -58,13 +58,13 @@ namespace Datadog.Trace.AppSec.Waf
             return new Context(contextHandle, waf, wafLibraryInvoker, encoder);
         }
 
-        public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
+        public IResult? Run(IDictionary<string, object?> addressData, ulong timeoutMicroSeconds)
             => RunInternal(addressData, null, timeoutMicroSeconds);
 
-        public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
+        public IResult? RunWithEphemeral(IDictionary<string, object?> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
             => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
 
-        private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
+        private unsafe IResult? RunInternal(IDictionary<string, object?>? persistentAddressData, IDictionary<string, object?>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
         {
             if (_disposed)
             {

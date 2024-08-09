@@ -68,8 +68,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                             .AsDictionary();
 
             DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                                       .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
-                                         ?? new Dictionary<string, string>();
+                                                       .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim())
+                                         ?? new Dictionary<string, string?>();
 
             var logSubmissionIntegrations = config
                                            .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// <see cref="TracerSettings.GlobalTags"/> are used instead
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
-        internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; }
+        internal IDictionary<string, string?> DirectLogSubmissionGlobalTags { get; }
 
         /// <summary>
         /// Gets the url to send logs to

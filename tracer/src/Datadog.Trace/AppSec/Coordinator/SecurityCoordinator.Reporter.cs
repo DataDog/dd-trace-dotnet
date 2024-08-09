@@ -67,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
         SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
     }
 
-    private static void LogAddressIfDebugEnabled(IDictionary<string, object> args)
+    private static void LogAddressIfDebugEnabled(IDictionary<string, object?> args)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {

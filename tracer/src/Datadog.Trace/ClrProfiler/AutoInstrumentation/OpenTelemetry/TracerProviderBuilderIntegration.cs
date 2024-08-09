@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -32,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.OpenTelemetry);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.OpenTelemetry;
-        private static Func<object, object, object> _cachedAddProcessorDelegate;
-        private static Type _cachedProcessorType;
+        private static Func<object?, object?, object?>? _cachedAddProcessorDelegate;
+        private static Type? _cachedProcessorType;
 
         static TracerProviderBuilderIntegration()
         {
@@ -63,12 +64,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             return CallTargetState.GetDefault();
         }
 
-        private static Func<object, object, object> CreateAddProcessorDelegate()
+        private static Func<object?, object?, object?>? CreateAddProcessorDelegate()
         {
-            Type builderExtensionsType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilderExtensions, OpenTelemetry", throwOnError: false);
-            Type builderType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilder, OpenTelemetry.Api", throwOnError: false);
-            Type baseProcessorType = Type.GetType("OpenTelemetry.BaseProcessor`1, OpenTelemetry", throwOnError: false);
-            Type activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
+            var builderExtensionsType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilderExtensions, OpenTelemetry", throwOnError: false);
+            var builderType = Type.GetType("OpenTelemetry.Trace.TracerProviderBuilder, OpenTelemetry.Api", throwOnError: false);
+            var baseProcessorType = Type.GetType("OpenTelemetry.BaseProcessor`1, OpenTelemetry", throwOnError: false);
+            var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
             if (builderExtensionsType is null || builderType is null || baseProcessorType is null || activityType is null)
             {
@@ -76,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             }
 
             // Get the extension method from the API
-            Type baseProcessorOfActivityType = baseProcessorType.MakeGenericType(activityType);
+            var baseProcessorOfActivityType = baseProcessorType.MakeGenericType(activityType);
             var targetAddProcessorMethod = builderExtensionsType?.GetMethod("AddProcessor", new Type[] { builderType, baseProcessorOfActivityType });
             if (targetAddProcessorMethod is null)
             {
@@ -99,13 +100,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
             ilWriter.EmitCall(OpCodes.Call, targetAddProcessorMethod, null);
             ilWriter.Emit(OpCodes.Ret);
 
-            return (Func<object, object, object>)dynMethod.CreateDelegate(typeof(Func<object, object, object>));
+            return (Func<object?, object?, object?>)dynMethod.CreateDelegate(typeof(Func<object?, object?, object?>));
         }
 
-        private static Type CreateProcessorType()
+        private static Type? CreateProcessorType()
         {
-            Type activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
-            Type baseProcessorType = Type.GetType("OpenTelemetry.BaseProcessor`1, OpenTelemetry", throwOnError: false);
+            var activityType = Type.GetType("System.Diagnostics.Activity, System.Diagnostics.DiagnosticSource", throwOnError: false);
+            var baseProcessorType = Type.GetType("OpenTelemetry.BaseProcessor`1, OpenTelemetry", throwOnError: false);
 
             if (activityType is null || baseProcessorType is null)
             {

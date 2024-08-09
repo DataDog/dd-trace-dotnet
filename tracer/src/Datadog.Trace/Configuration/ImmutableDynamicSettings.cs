@@ -26,11 +26,11 @@ namespace Datadog.Trace.Configuration
 
         public bool? LogsInjectionEnabled { get; init; }
 
-        public IReadOnlyDictionary<string, string>? HeaderTags { get; init; }
+        public IReadOnlyDictionary<string, string?>? HeaderTags { get; init; }
 
-        public IReadOnlyDictionary<string, string>? ServiceNameMappings { get; init; }
+        public IReadOnlyDictionary<string, string?>? ServiceNameMappings { get; init; }
 
-        public IReadOnlyDictionary<string, string>? GlobalTags { get; init; }
+        public IReadOnlyDictionary<string, string?>? GlobalTags { get; init; }
 
         public bool Equals(ImmutableDynamicSettings? other)
         {
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Configuration
                 LogsInjectionEnabled);
         }
 
-        private static bool AreEqual(IReadOnlyDictionary<string, string>? dictionary1, IReadOnlyDictionary<string, string>? dictionary2)
+        private static bool AreEqual(IReadOnlyDictionary<string, string?>? dictionary1, IReadOnlyDictionary<string, string?>? dictionary2)
         {
             if (dictionary1 == null || dictionary2 == null)
             {

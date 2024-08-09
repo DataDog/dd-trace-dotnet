@@ -31,7 +31,7 @@ internal class ApiSecurity
         _maxRoutesSize = maxRouteSize;
     }
 
-    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, string? statusCode, IDictionary<string, object>? routeValues)
+    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object?> args, string? statusCode, IDictionary<string, object>? routeValues)
     {
         try
         {
