@@ -496,7 +496,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys(key)
-                        .AsString(_ => Default, validator: null, converter: _converter);
+                        .AsString(() => Default, validator: null, converter: _converter);
 
             actual.Should().Be(expected);
         }
@@ -534,7 +534,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: _ => _default,
+                             getDefaultValue: () => _default,
                              validator: null,
                              converter: _converter);
 
@@ -554,7 +554,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid?>(
-                             getDefaultValue: _ => _default,
+                             getDefaultValue: () => _default,
                              validator: null,
                              converter: _nullableConverter);
 
@@ -575,7 +575,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, telemetry)
                         .WithKeys(key)
                         .GetAs<Guid?>(
-                             getDefaultValue: _ => _default,
+                             getDefaultValue: () => _default,
                              validator: null,
                              converter: _nullableConverter);
 
@@ -603,7 +603,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, telemetry)
                         .WithKeys(key)
                         .GetAs<Guid?>(
-                             getDefaultValue: _ => new DefaultResult<Guid?>(_default, stringifiedDefault),
+                             getDefaultValue: () => new DefaultResult<Guid?>(_default, stringifiedDefault),
                              validator: null,
                              converter: _nullableConverter);
 
@@ -647,7 +647,7 @@ public class ConfigurationBuilderTests
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
                         .GetAs<Guid>(
-                             getDefaultValue: _ => _default,
+                             getDefaultValue: () => _default,
                              validator: x => x.ToString()[0] != '5',
                              converter: _converter);
 
@@ -748,7 +748,7 @@ public class ConfigurationBuilderTests
             var source = _factory.GetSource(collection);
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys(key)
-                        .AsBool(_ => Default, validator: null, converter: _converter);
+                        .AsBool(() => Default, validator: null, converter: _converter);
 
             actual.Should().Be(expected);
         }
