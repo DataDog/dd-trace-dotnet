@@ -40,6 +40,7 @@ namespace Samples.Computer01
         Obfuscation,
         ThreadSpikes,
         StringConcat, // parameter = number of strings to concatenate
+        LinuxDlIteratePhdrDeadlock,
     }
 
     public class Program
@@ -76,6 +77,7 @@ namespace Samples.Computer01
             // 24: use an obfuscated library
             // 25: create thread spikes
             // 26: string concatenation
+            // 27: custom dl_iterate_phdr deadlock
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

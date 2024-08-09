@@ -44,6 +44,7 @@ namespace Samples.Computer01
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
         private SigSegvHandlerExecution _sigsegvHandler;
+        private LinuxDlIteratePhdrDeadlock _linuxDlIteratePhdrDeadlock;
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
@@ -181,6 +182,10 @@ namespace Samples.Computer01
                     StartStringConcat(parameter);
                     break;
 
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StartLinuxDlIteratePhdrDeadlock();
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -310,6 +315,10 @@ namespace Samples.Computer01
 
                 case Scenario.StringConcat:
                     StopStringConcat();
+                    break;
+
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StopLinuxDlIteratePhdrDeadlock();
                     break;
             }
         }
@@ -575,6 +584,12 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Start();
         }
 
+        private void StartLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock = new LinuxDlIteratePhdrDeadlock();
+            _linuxDlIteratePhdrDeadlock.Start();
+        }
+
         private void StartMeasureAllocations()
         {
             _measureAllocations = new MeasureAllocations();
@@ -747,6 +762,11 @@ namespace Samples.Computer01
         private void StopLinuxMallocDeadlock()
         {
             _linuxMallockDeadlock.Stop();
+        }
+
+        private void StopLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock.Stop();
         }
 
         private void StopMeasureAllocations()
