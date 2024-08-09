@@ -23,12 +23,12 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 WORKDIR /app
 
 ARG CHANNEL_32_BIT
+COPY ./build/_build/bootstrap/dotnet-install.ps1 .
 RUN if($env:CHANNEL_32_BIT){ \
     echo 'Installing x86 dotnet runtime ' + $env:CHANNEL_32_BIT; \
-    curl 'https://dot.net/v1/dotnet-install.ps1' -o dotnet-install.ps1; \
     ./dotnet-install.ps1 -Architecture x86 -Runtime aspnetcore -Channel $env:CHANNEL_32_BIT -InstallDir c:\cli; \
     [Environment]::SetEnvironmentVariable('Path',  'c:\cli;' + $env:Path, [EnvironmentVariableTarget]::Machine); \
-    rm ./dotnet-install.ps1; }
+    }; rm ./dotnet-install.ps1;
 
 RUN mkdir /logs
 

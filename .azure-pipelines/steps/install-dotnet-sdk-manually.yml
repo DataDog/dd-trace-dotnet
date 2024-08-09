@@ -19,8 +19,14 @@ steps:
       $channel = "${{ parameters.channel }}"
       $sdkVersion = "${{ parameters.sdkVersion }}"
 
-      echo "Downloading dotnet-install.ps1"
-      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+      $dotnetInstall = "$(System.DefaultWorkingDirectory)\tracer\build\_build\bootstrap\dotnet-install.ps1"
+      if (Test-Path $dotnetInstall -PathType Leaf) {
+        echo "Found dotnet-install.ps1 at '$dotnetInstall', skipping download"
+      } else {
+        echo "Downloading dotnet-install.ps1"
+        Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+        $dotnetInstall = ./dotnet-install.ps1
+      }
 
       if( "${{ parameters.is64bit }}" -eq "true") {
         $path = "$HOME\AppData\Local\Microsoft\dotnet"
@@ -39,12 +45,16 @@ steps:
       echo "Installing dotnet ($arch) to $path"
 
       if($sdkVersion) {
-        ./dotnet-install.ps1 -Version $sdkVersion -Architecture $arch -NoPath:$True -InstallDir $path
+        & $dotnetInstall -Version $sdkVersion -Architecture $arch -NoPath:$True -InstallDir $path
       } else {
-        ./dotnet-install.ps1 -Channel $channel -Architecture $arch -NoPath:$True -InstallDir $path
+        & $dotnetInstall -Channel $channel -Architecture $arch -NoPath:$True -InstallDir $path
       }
 
-      rm ./dotnet-install.ps1
+      if (Test-Path ./dotnet-install.ps1 -PathType Leaf) {
+        echo "Removing temporary dotnet-install file"
+        rm ./dotnet-install.ps1
+      }
+
       echo "Install complete"
     displayName: Install dotnet core sdk ${{ parameters.sdkVersion }} (64bit:${{ parameters.is64bit }} ${{ parameters.sdkVersion }})
     retryCountOnTaskFailure: 5
