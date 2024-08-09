@@ -32,10 +32,10 @@ namespace Datadog.Trace.Tests.Configuration
             var schemaVersion = (SchemaVersion)schemaVersionObject;
             var configSourceMock = new Mock<IConfigurationSource>();
             configSourceMock.Setup(c => c.GetString(It.Is<string>(s => s.Equals(ConfigurationKeys.MetadataSchemaVersion)))).Returns(schemaVersion.ToString());
-            var settings = new TracerSettings(configSourceMock.Object, new ConfigurationTelemetry(), new OverrideErrorLog());
+            var settings = new TracerSettingsInternal(configSourceMock.Object, new ConfigurationTelemetry(), new OverrideErrorLog());
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
-            var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            var tracer = new TracerInternal(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
             MsmqCommon.GetOperationName(tracer, spanKind).Should().Be(GetExpectedOperationName(schemaVersion, spanKind));
         }

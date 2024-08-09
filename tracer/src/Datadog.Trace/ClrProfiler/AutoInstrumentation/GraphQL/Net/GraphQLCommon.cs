@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             nameof(OperationTypeProxy.Subscription)
         };
 
-        internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
+        internal static Scope CreateScopeFromValidate(TracerInternal tracer, string documentSource)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
+        internal static Scope CreateScopeFromExecuteAsync(TracerInternal tracer, IExecutionContext executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
+        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(TracerInternal tracer, IExecutionContextV5AndV7 executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

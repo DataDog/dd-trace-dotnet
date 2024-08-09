@@ -27,15 +27,15 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var tags = Tracer.Instance.CurrentTraceSettings.Schema.Client.CreateAzureServiceBusTags();
+            var tags = TracerInternal.Instance.CurrentTraceSettings.Schema.Client.CreateAzureServiceBusTags();
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: tags, out var activityMapping);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+            var dataStreamsManager = TracerInternal.Instance.TracerManager.DataStreamsManager;
+            if (TracerInternal.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
                 && dataStreamsManager.IsEnabled
                 && activity.Instance is not null
                 && activity.OperationName == "Message"

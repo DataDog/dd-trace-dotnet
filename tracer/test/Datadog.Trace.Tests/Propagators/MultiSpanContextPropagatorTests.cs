@@ -147,8 +147,8 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new SpanContextInternal(
+                parent: SpanContextInternal.None,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,
@@ -187,8 +187,8 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             var spanId = 1UL;
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new SpanContextInternal(
+                parent: SpanContextInternal.None,
                 traceContext,
                 serviceName: null,
                 traceId: traceId,
@@ -226,8 +226,8 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.Origin = "rum";
             traceContext.Tags.SetTags(PropagatedTagsCollection);
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new SpanContextInternal(
+                parent: SpanContextInternal.None,
                 traceContext,
                 serviceName: null,
                 (TraceId)123456789,
@@ -267,8 +267,8 @@ namespace Datadog.Trace.Tests.Propagators
             var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
             var spanId = 1UL;
 
-            var context = new SpanContext(
-                parent: SpanContext.None,
+            var context = new SpanContextInternal(
+                parent: SpanContextInternal.None,
                 traceContext,
                 serviceName: null,
                 traceId: traceId,

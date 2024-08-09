@@ -15,8 +15,8 @@ namespace Datadog.Trace
         /// <summary>
         /// The name of the instrumented service. Its value is usually constant for the lifetime of a process,
         /// but can technically change for each trace if the user sets it manually.
-        /// This tag is added during MessagePack serialization using the value from <see cref="SpanContext.ServiceName"/>
-        /// or <see cref="Tracer.DefaultServiceName"/>.
+        /// This tag is added during MessagePack serialization using the value from <see cref="SpanContextInternal.ServiceName"/>
+        /// or <see cref="TracerInternal.DefaultServiceName"/>.
         /// </summary>
         internal const string Service = "service";
 

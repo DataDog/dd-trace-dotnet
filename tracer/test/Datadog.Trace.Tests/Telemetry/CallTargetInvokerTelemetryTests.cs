@@ -34,9 +34,9 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void RecordsRelevantTelemetry()
         {
-            var settings = new TracerSettings() { ServiceName = "DefaultService" };
+            var settings = new TracerSettingsInternal() { ServiceName = "DefaultService" };
             var telemetry = new TestTelemetryController();
-            var tracer = new Tracer(
+            var tracer = new TracerInternal(
                 settings,
                 new Mock<IAgentWriter>().Object,
                 new Mock<ITraceSampler>().Object,
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 statsd: null,
                 telemetry: telemetry);
 
-            Tracer.UnsafeSetTracerInstance(tracer);
+            TracerInternal.UnsafeSetTracerInstance(tracer);
             telemetry.RunningInvocations.Should().BeEmpty();
 
             try
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 ErrorInvocations.Add((info, error));
             }
 
-            public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+            public void RecordTracerSettings(ImmutableTracerSettingsInternal settings, string defaultServiceName)
             {
             }
 

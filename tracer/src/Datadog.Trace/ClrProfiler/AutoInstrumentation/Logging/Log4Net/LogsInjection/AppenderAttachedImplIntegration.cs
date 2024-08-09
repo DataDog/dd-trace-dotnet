@@ -36,28 +36,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal &&
-                !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
+                !loggingEvent.Properties.Contains(CorrelationIdentifierInternal.ServiceKey))
             {
-                loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
-                loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersionInternal ?? string.Empty;
-                loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.EnvironmentInternal ?? string.Empty;
+                loggingEvent.Properties[CorrelationIdentifierInternal.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                loggingEvent.Properties[CorrelationIdentifierInternal.VersionKey] = tracer.Settings.ServiceVersionInternal ?? string.Empty;
+                loggingEvent.Properties[CorrelationIdentifierInternal.EnvKey] = tracer.Settings.EnvironmentInternal ?? string.Empty;
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null)
                 {
                     // For mismatch version support we need to keep requesting old keys.
-                    var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                    var hasTraceId = spanContext.TryGetValue(SpanContextInternal.Keys.TraceId, out string traceId) ||
                                      spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                    var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                    var hasSpanId = spanContext.TryGetValue(SpanContextInternal.Keys.ParentId, out string spanId) ||
                                     spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
 
                     if (hasTraceId && hasSpanId)
                     {
-                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
-                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
+                        loggingEvent.Properties[CorrelationIdentifierInternal.TraceIdKey] = traceId;
+                        loggingEvent.Properties[CorrelationIdentifierInternal.SpanIdKey] = spanId;
                     }
                 }
             }

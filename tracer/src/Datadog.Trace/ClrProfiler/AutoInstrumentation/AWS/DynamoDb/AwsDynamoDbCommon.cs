@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsDynamoDb);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsDynamoDb;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
+        public static Scope CreateScope(TracerInternal tracer, string operation, out AwsDynamoDbTags tags, ISpanContext parentContext = null)
         {
             tags = null;
 

@@ -90,7 +90,7 @@ namespace Datadog.Trace.ServiceFabric
         }
 
         public static Span CreateSpan(
-            Tracer tracer,
+            TracerInternal tracer,
             ISpanContext? context,
             ServiceRemotingTags tags,
             IServiceRemotingRequestEventArgs? eventArgs,
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                var scope = Tracer.Instance.InternalActiveScope;
+                var scope = TracerInternal.Instance.InternalActiveScope;
 
                 if (scope == null)
                 {
@@ -152,7 +152,7 @@ namespace Datadog.Trace.ServiceFabric
                     return;
                 }
 
-                string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
+                string expectedSpanName = GetOperationName(TracerInternal.Instance, spanKind);
 
                 if (expectedSpanName != scope.Span.OperationName)
                 {
@@ -183,7 +183,7 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(TracerInternal tracer, string spanKind)
         {
 #if NET6_0_OR_GREATER
             var requestType = string.Create(null, stackalloc char[128], $"{SpanNamePrefix}.{spanKind}");

@@ -37,7 +37,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
     [Fact]
     public void RemoteConfigIsAvailableByDefault()
     {
-        var settings = TracerSettings.FromDefaultSourcesInternal().Build();
+        var settings = TracerSettingsInternal.FromDefaultSourcesInternal().Build();
         settings.IsRemoteConfigurationAvailable.Should().BeTrue();
 
         _manager = CreateTracerManager(settings);
@@ -60,7 +60,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         Environment.SetEnvironmentVariable("K_SERVICE", "something");
         Environment.SetEnvironmentVariable("_DD_EXTENSION_PATH", Path.GetTempFileName());
 
-        var settings = TracerSettings.FromDefaultSourcesInternal().Build();
+        var settings = TracerSettingsInternal.FromDefaultSourcesInternal().Build();
 
         settings.IsRemoteConfigurationAvailable.Should().BeFalse();
 
@@ -71,7 +71,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         _manager.TracerFlareManager.Should().BeOfType<NullTracerFlareManager>();
     }
 
-    private static TracerManager CreateTracerManager(ImmutableTracerSettings settings)
+    private static TracerManager CreateTracerManager(ImmutableTracerSettingsInternal settings)
     {
         return new TracerManagerFactory().CreateTracerManager(
             settings,
@@ -91,8 +91,8 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         static DirectLogSubmissionManager BuildLogSubmissionManager()
             => DirectLogSubmissionManager.Create(
                 previous: null,
-                settings: new ImmutableTracerSettings(NullConfigurationSource.Instance),
-                directLogSettings: ImmutableDirectLogSubmissionSettings.Create(new TracerSettings()),
+                settings: new ImmutableTracerSettingsInternal(NullConfigurationSource.Instance),
+                directLogSettings: ImmutableDirectLogSubmissionSettings.Create(new TracerSettingsInternal()),
                 azureAppServiceSettings: null,
                 serviceName: "test",
                 env: "test",

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
         private static bool? _isDataCollectorDomainCache;
 
-        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
+        internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && TracerInternal.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
         internal static bool IsDataCollectorDomain
         {
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
         }
 
-        internal static TestSession? CreateSession()
+        internal static TestSessionInternal? CreateSession()
         {
             // We create test session if not DataCollector
             if (IsDataCollectorDomain)
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     workingDirectory = Environment.CurrentDirectory;
                 }
 
-                var session = TestSession.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
+                var session = TestSessionInternal.InternalGetOrCreate(commandLine, workingDirectory, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, ciVisibilitySettings.TestsSkippingEnabled == true ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, ciVisibilitySettings.CodeCoverageEnabled == true ? "true" : "false");
                 if (ciVisibilitySettings.EarlyFlakeDetectionEnabled == true)
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return null;
         }
 
-        internal static void FinalizeSession(TestSession? session, int exitCode, Exception? exception)
+        internal static void FinalizeSession(TestSessionInternal? session, int exitCode, Exception? exception)
         {
             if (session is null)
             {

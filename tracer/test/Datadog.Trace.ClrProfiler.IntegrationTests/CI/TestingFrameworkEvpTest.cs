@@ -173,7 +173,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     protected virtual void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest, string? repository = null, string? branch = null, string? commitSha = null)
     {
-        var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
+        var context = new SpanContextInternal(parent: null, traceContext: null, serviceName: null);
         var span = new Span(context, DateTimeOffset.UtcNow);
         ((CIEnvironmentValues?)CIValues)?.DecorateSpan(span);
 

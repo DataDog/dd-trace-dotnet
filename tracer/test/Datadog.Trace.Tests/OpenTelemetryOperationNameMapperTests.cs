@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(NameData))]
         public void OperationName_ShouldBeSet_BasedOnTags(string expectedOperationName, string expectedActivityKind, SerializableDictionary tags)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = new Span(new SpanContextInternal(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
 
             if (!string.IsNullOrEmpty(expectedActivityKind))
             {
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Tests
         [InlineData(SpanKinds.Internal)]
         public void OperationName_ShouldFollow_PriorityOrder(string expectedActivityKind)
         {
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            var span = new Span(new SpanContextInternal(1, 1), DateTimeOffset.UtcNow, new OpenTelemetryTags());
             var order = new Queue<OperationNameData>();
             span.Tags.SetTag("span.kind", expectedActivityKind);
             foreach (var data in NameData)

@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci.Configuration
 {
     internal class CIVisibilitySettings
     {
-        private TracerSettings? _tracerSettings;
+        private TracerSettingsInternal? _tracerSettings;
 
         public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
@@ -173,7 +173,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets the tracer settings
         /// </summary>
-        public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
+        public TracerSettingsInternal TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
 
         public static CIVisibilitySettings FromDefaultSources()
         {
@@ -215,7 +215,7 @@ namespace Datadog.Trace.Ci.Configuration
             IntelligentTestRunnerEnabled = false;
         }
 
-        private TracerSettings InitializeTracerSettings()
+        private TracerSettingsInternal InitializeTracerSettings()
         {
             var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
             var defaultExcludedUrlSubstrings = string.Empty;
@@ -232,7 +232,7 @@ namespace Datadog.Trace.Ci.Configuration
                                       },
                                       ConfigurationOrigins.Calculated));
 
-            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
+            var tracerSettings = new TracerSettingsInternal(source, new ConfigurationTelemetry(), new OverrideErrorLog());
 
             if (Logs)
             {

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
         internal static Scope? CreateProducerScope(
-            Tracer tracer,
+            TracerInternal tracer,
             object producer,
             ITopicPartition topicPartition,
             bool isTombstone,
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         internal static Scope? CreateConsumerScope(
-            Tracer tracer,
+            TracerInternal tracer,
             DataStreamsManager dataStreamsManager,
             object consumer,
             string topic,
@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                SpanContext? propagatedContext = null;
+                SpanContextInternal? propagatedContext = null;
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
@@ -265,7 +265,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        internal static void CloseConsumerScope(Tracer tracer)
+        internal static void CloseConsumerScope(TracerInternal tracer)
         {
             try
             {

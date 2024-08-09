@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
-        internal static Scope? CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
+        internal static Scope? CreateScope<TMessageQueue>(TracerInternal tracer, string command, string spanKind, TMessageQueue messageQueue, bool? isMessagePartOfTransaction = null)
             where TMessageQueue : IMessageQueue
         {
             if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         }
 
         // internal for testing
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(TracerInternal tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
             {

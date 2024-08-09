@@ -142,8 +142,8 @@ public class DistributedPropagatorTests
         traceContext.AdditionalW3CTraceState = AdditionalW3CTraceState;
 
         // create and populate SpanContext
-        IReadOnlyDictionary<string, string> context = new SpanContext(
-            parent: SpanContext.None,
+        IReadOnlyDictionary<string, string> context = new SpanContextInternal(
+            parent: SpanContextInternal.None,
             traceContext,
             serviceName: null,
             TraceId,

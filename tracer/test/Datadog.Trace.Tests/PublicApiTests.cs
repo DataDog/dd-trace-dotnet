@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.PublicApiTests
     public class DatadogTraceTests : PublicApiTestsBase
     {
         public DatadogTraceTests(ITestOutputHelper output)
-            : base(typeof(Tracer).Assembly, output)
+            : base(typeof(TracerInternal).Assembly, output)
         {
         }
 

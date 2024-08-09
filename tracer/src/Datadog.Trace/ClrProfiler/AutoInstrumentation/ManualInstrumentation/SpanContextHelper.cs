@@ -18,10 +18,10 @@ internal static class SpanContextHelper
         => context switch
         {
             null => null,
-            SpanContext c => c,
+            SpanContextInternal c => c,
             ISpanContext c => c,
-            IDuckType { Instance: SpanContext c } => c,
-            _ when context.TryDuckCast<SpanContextProxy>(out var spanContextProxy) => new SpanContext(
+            IDuckType { Instance: SpanContextInternal c } => c,
+            _ when context.TryDuckCast<SpanContextProxy>(out var spanContextProxy) => new SpanContextInternal(
                 new TraceId(Upper: spanContextProxy.TraceIdUpper, Lower: spanContextProxy.TraceId),
                 spanContextProxy.SpanId,
                 spanContextProxy.SamplingPriority,
@@ -30,10 +30,10 @@ internal static class SpanContextHelper
             _ => GetISpanContext(context),
         };
 
-    private static SpanContext GetISpanContext<T>(T parent)
+    private static SpanContextInternal GetISpanContext<T>(T parent)
     {
         var context = parent.DuckCast<ISpanContextProxy>();
-        return new SpanContext(
+        return new SpanContextInternal(
             new TraceId(Upper: 0, Lower: context.TraceId),
             context.SpanId,
             samplingPriority: null,

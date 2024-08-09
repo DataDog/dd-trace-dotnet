@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetClientCommon));
 
-        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(Tracer tracer, TGrpcCall instance, TRequest requestMessage)
+        public static Scope? CreateClientSpan<TGrpcCall, TRequest>(TracerInternal tracer, TGrpcCall instance, TRequest requestMessage)
             where TRequest : IHttpRequestMessage
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || instance is null)
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             return scope;
         }
 
-        public static void RecordResponseMetadataAndStatus<TGrpcCall>(Tracer tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
+        public static void RecordResponseMetadataAndStatus<TGrpcCall>(TracerInternal tracer, TGrpcCall instance, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || instance is null
@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
-            GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);
+            GrpcCommon.RecordFinalClientSpanStatus(TracerInternal.Instance, grpcStatusCode, errorMessage, ex);
         }
     }
 }

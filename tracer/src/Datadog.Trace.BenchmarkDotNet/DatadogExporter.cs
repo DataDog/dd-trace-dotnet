@@ -24,7 +24,7 @@ namespace Datadog.Trace.BenchmarkDotNet;
 /// </summary>
 internal class DatadogExporter : IExporter
 {
-    private readonly Dictionary<Assembly, TestModule> _testModules = new();
+    private readonly Dictionary<Assembly, TestModuleInternal> _testModules = new();
 
     /// <summary>
     /// Default DatadogExporter instance
@@ -45,13 +45,13 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
+        TestSession = TestSessionInternal.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
     }
 
     /// <inheritdoc />
     public string Name => nameof(DatadogExporter);
 
-    internal TestSession TestSession { get; }
+    internal TestSessionInternal TestSession { get; }
 
     /// <inheritdoc />
     public void ExportToLog(Summary summary, ILogger logger)
@@ -148,7 +148,7 @@ internal class DatadogExporter : IExporter
 
                             if (benchmarkCase.HasParameters)
                             {
-                                var testParameters = new TestParameters { Arguments = new Dictionary<string, object>(), Metadata = new Dictionary<string, object>() };
+                                var testParameters = new TestParametersInternal { Arguments = new Dictionary<string, object>(), Metadata = new Dictionary<string, object>() };
                                 foreach (var parameter in benchmarkCase.Parameters.Items)
                                 {
                                     var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);

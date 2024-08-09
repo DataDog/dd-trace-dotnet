@@ -30,8 +30,8 @@ internal readonly struct SkippableTest
         Configurations = configurations;
     }
 
-    public TestParameters? GetParameters()
+    public TestParametersInternal? GetParameters()
     {
-        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonConvert.DeserializeObject<TestParameters>(RawParameters!);
+        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonConvert.DeserializeObject<TestParametersInternal>(RawParameters!);
     }
 }

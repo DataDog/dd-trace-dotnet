@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler
             return null;
         }
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        SpanContextInternal IDistributedTracer.GetSpanContext()
         {
             if (_child is null)
             {
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler
 
             var value = DistributedTrace.Value;
 
-            if (value is SpanContext spanContext)
+            if (value is SpanContextInternal spanContext)
             {
                 return spanContext;
             }
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public object GetAutomaticActiveScope()
         {
-            return Tracer.Instance.InternalActiveScope;
+            return TracerInternal.Instance.InternalActiveScope;
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler
             // This is a compromise: we add an additional asynclocal read for the manual tracer when there is no parent trace,
             // but it allows us to remove the asynclocal write for the automatic tracer when running without manual instrumentation.
 
-            return DistributedTrace.Value ?? Tracer.Instance.InternalActiveScope?.Span?.Context;
+            return DistributedTrace.Value ?? TracerInternal.Instance.InternalActiveScope?.Span?.Context;
         }
 
         /// <summary>

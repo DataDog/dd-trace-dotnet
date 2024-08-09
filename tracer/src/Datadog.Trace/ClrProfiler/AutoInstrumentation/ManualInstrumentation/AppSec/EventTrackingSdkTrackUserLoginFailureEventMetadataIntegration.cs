@@ -33,7 +33,7 @@ public class EventTrackingSdkTrackUserLoginFailureEventMetadataIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(string userId, bool exists, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
-        EventTrackingSdk.TrackUserLoginFailureEvent(userId, exists, metadata, Datadog.Trace.Tracer.Instance);
+        EventTrackingSdkInternal.TrackUserLoginFailureEvent(userId, exists, metadata, Datadog.Trace.TracerInternal.Instance);
         return CallTargetState.GetDefault();
     }
 }

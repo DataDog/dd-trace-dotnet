@@ -21,7 +21,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(SpanContextInternal context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Datadog);
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Propagators
             // and the upper 64 bits in "_dd.p.tid"
             var traceId = GetFullTraceId((ulong)traceIdLower, traceTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, isRemote: true)
+            spanContext = new SpanContextInternal(traceId, parentId, samplingPriority, serviceName: null, origin, isRemote: true)
                           {
                               PropagatedTags = traceTags,
                           };

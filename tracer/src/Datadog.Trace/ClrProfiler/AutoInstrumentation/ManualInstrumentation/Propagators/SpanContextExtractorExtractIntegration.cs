@@ -35,7 +35,7 @@ public class SpanContextExtractorExtractIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
         var extract = (Func<TCarrier, string, IEnumerable<string?>>)(object)getter!;
-        var extracted = SpanContextExtractor.ExtractInternal(carrier, extract);
+        var extracted = SpanContextExtractorInternal.ExtractInternal(carrier, extract);
         return new CallTargetState(scope: null, state: extracted);
     }
 

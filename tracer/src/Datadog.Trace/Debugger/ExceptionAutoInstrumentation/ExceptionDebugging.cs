@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static void InitSnapshotsSink()
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             var debuggerSettings = DebuggerSettings.FromDefaultSource();
 
             // Set configs relevant for DI and Exception Debugging, using DI's environment keys.

@@ -38,10 +38,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                 return CallTargetState.GetDefault();
             }
 
-            var scope = IbmMqHelper.CreateProducerScope(Tracer.Instance, instance, msg);
+            var scope = IbmMqHelper.CreateProducerScope(TracerInternal.Instance, instance, msg);
             if (scope is not null)
             {
-                var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                var dataStreams = TracerInternal.Instance.TracerManager.DataStreamsManager;
                 if (dataStreams.IsEnabled && (instance).Instance != null && (msg).Instance != null)
                 {
                     var edgeTags = new[] { "direction:out", $"topic:{instance.Name}", $"type:{IbmMqConstants.QueueType}" };

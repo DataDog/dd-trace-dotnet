@@ -28,13 +28,13 @@ public sealed class TestSuite
     private readonly Span _span;
     private int _finished;
 
-    internal TestSuite(TestModule module, string name, DateTimeOffset? startDate)
+    internal TestSuite(TestModuleInternal module, string name, DateTimeOffset? startDate)
     {
         Module = module;
         Name = name;
 
         var tags = new TestSuiteSpanTags(module.Tags, name);
-        var span = Tracer.Instance.StartSpan(
+        var span = TracerInternal.Instance.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
             tags: tags,
             startTime: startDate);
@@ -79,7 +79,7 @@ public sealed class TestSuite
     /// <summary>
     /// Gets the test module for this suite
     /// </summary>
-    public TestModule Module { get; }
+    public TestModuleInternal Module { get; }
 
     /// <summary>
     /// Gets or sets the current TestSuite

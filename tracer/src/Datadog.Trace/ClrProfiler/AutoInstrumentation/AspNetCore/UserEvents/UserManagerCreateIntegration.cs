@@ -50,7 +50,7 @@ public static class UserManagerCreateIntegration
         var security = Security.Instance;
         if (security.TrackUserEvents)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             var scope = tracer.InternalActiveScope;
             return new CallTargetState(scope, user);
         }

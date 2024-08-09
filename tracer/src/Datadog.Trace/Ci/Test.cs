@@ -43,7 +43,7 @@ public sealed class Test
         var module = suite.Module;
 
         var tags = new TestSpanTags(Suite.Tags, name);
-        var tracer = Tracer.Instance;
+        var tracer = TracerInternal.Instance;
         var span = tracer.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
             tags: tags,
@@ -227,7 +227,7 @@ public sealed class Test
     /// Set Test parameters
     /// </summary>
     /// <param name="parameters">TestParameters instance</param>
-    public void SetParameters(TestParameters parameters)
+    public void SetParameters(TestParametersInternal parameters)
     {
         if (parameters is not null)
         {

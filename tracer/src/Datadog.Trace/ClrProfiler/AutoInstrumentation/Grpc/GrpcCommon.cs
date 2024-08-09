@@ -16,10 +16,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
         public const string RequestMetadataTagPrefix = "grpc.request.metadata";
         public const string ResponseMetadataTagPrefix = "grpc.response.metadata";
 
-        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, int grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
+        public static void AddGrpcTags(GrpcTags tags, TracerInternal tracer, int grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
             => AddGrpcTags(tags, tracer, GetGrpcMethodKind(grpcType), name, path, serviceName, analyticsEnabledWithGlobalSetting);
 
-        public static void AddGrpcTags(GrpcTags tags, Tracer tracer, string grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
+        public static void AddGrpcTags(GrpcTags tags, TracerInternal tracer, string grpcType, string? name, string? path, string? serviceName, bool analyticsEnabledWithGlobalSetting = false)
         {
             tags.MethodKind = grpcType;
             tags.MethodName = name;
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
                 _ => "Unknown", // No other values are valid, but don't want to throw here
             };
 
-        public static void RecordFinalClientSpanStatus(Tracer tracer, int grpcStatusCode, string errorMessage, Exception? ex)
+        public static void RecordFinalClientSpanStatus(TracerInternal tracer, int grpcStatusCode, string errorMessage, Exception? ex)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              || tracer.ActiveScope?.Span is not Span { Tags: GrpcClientTags } span)

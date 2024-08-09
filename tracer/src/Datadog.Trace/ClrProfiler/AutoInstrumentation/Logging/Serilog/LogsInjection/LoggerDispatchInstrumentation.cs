@@ -46,27 +46,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal)
             {
                 var dict = loggingEvent.DuckCast<LogEventProxy>().Properties;
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersionInternal);
-                AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.EnvironmentInternal);
+                AddPropertyIfAbsent(dict, CorrelationIdentifierInternal.SerilogServiceKey, tracer.DefaultServiceName);
+                AddPropertyIfAbsent(dict, CorrelationIdentifierInternal.SerilogVersionKey, tracer.Settings.ServiceVersionInternal);
+                AddPropertyIfAbsent(dict, CorrelationIdentifierInternal.SerilogEnvKey, tracer.Settings.EnvironmentInternal);
 
                 var spanContext = tracer.DistributedSpanContext;
                 if (spanContext is not null)
                 {
                     // For mismatch version support we need to keep requesting old keys.
-                    var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
+                    var hasTraceId = spanContext.TryGetValue(SpanContextInternal.Keys.TraceId, out string traceId) ||
                                      spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                    var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
+                    var hasSpanId = spanContext.TryGetValue(SpanContextInternal.Keys.ParentId, out string spanId) ||
                                     spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
                     if (hasTraceId && hasSpanId)
                     {
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, traceId);
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, spanId);
+                        AddPropertyIfAbsent(dict, CorrelationIdentifierInternal.SerilogTraceIdKey, traceId);
+                        AddPropertyIfAbsent(dict, CorrelationIdentifierInternal.SerilogSpanIdKey, spanId);
                     }
                 }
             }

@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 Span span = null;
                 // integration enabled, go create a scope!
-                var tracer = Tracer.Instance;
+                var tracer = TracerInternal.Instance;
                 if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = $"{httpMethod} {controllerName}.{actionName}";
                     }
 
-                    SpanContext propagatedContext = null;
+                    SpanContextInternal propagatedContext = null;
                     NameValueHeadersCollection? headers = null;
 
                     if (tracer.InternalActiveScope == null)

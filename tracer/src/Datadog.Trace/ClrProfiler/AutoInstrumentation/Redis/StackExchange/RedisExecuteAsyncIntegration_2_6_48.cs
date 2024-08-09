@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             var hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
 
             var scope = RedisHelper.CreateScope(
-                Tracer.Instance,
+                TracerInternal.Instance,
                 IntegrationId,
                 IntegrationName,
                 hostAndPort.Host,

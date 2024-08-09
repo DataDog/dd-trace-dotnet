@@ -191,7 +191,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
             ITagProcessor[] tagProcessors = null;
-            if (context.TraceContext?.Tracer is Tracer tracer)
+            if (context.TraceContext?.Tracer is TracerInternal tracer)
             {
                 tagProcessors = tracer.TracerManager.TagProcessors;
             }

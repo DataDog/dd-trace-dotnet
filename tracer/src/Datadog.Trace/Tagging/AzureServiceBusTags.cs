@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
 
-        public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
+        public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettingsInternal settings, bool enabledWithGlobalSetting)
         {
             if (settings != null)
             {

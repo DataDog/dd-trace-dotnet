@@ -46,14 +46,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Since it is possible for users to manually propagate headers (which we should
                 // overwrite), check our cache which will be populated with header objects
                 // that we have injected context into
-                SpanContext spanContext = null;
+                SpanContextInternal spanContext = null;
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
                     spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
                 }
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
-                var tracer = Tracer.Instance;
+                var tracer = TracerInternal.Instance;
                 bool setSamplingPriority = spanContext?.SamplingPriority != null && tracer.ActiveScope == null;
 
                 Scope scope = null;

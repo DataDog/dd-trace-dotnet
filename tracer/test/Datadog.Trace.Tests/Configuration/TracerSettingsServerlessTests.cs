@@ -44,7 +44,7 @@ public class TracerSettingsServerlessTests : SettingsTestsBase
                 (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
                 (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
 
-            var settings = new TracerSettings(source);
+            var settings = new TracerSettingsInternal(source);
 
             settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
         }

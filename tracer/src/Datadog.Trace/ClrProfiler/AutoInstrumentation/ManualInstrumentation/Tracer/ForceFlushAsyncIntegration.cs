@@ -35,7 +35,7 @@ public class ForceFlushAsyncIntegration
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_ForceFlushAsync);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        var tracer = (Datadog.Trace.TracerInternal)instance.AutomaticTracer;
         return new CallTargetReturn<Task>(tracer.FlushAsync());
     }
 }

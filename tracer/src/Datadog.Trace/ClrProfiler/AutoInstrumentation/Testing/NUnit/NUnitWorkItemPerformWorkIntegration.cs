@@ -52,7 +52,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                 var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                 var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                 CIVisibility.WaitForSkippableTaskToFinish();
-                var newModule = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
+                var newModule = TestModuleInternal.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion);
                 newModule.EnableIpcClient();
                 NUnitIntegration.SetTestModuleTo(item, newModule);
                 break;

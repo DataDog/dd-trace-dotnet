@@ -21,13 +21,13 @@ public class DelaySamplingDecisionTests
     [Fact]
     public void SamplingDecisionIsNotMadeUntilLastSpanEnds()
     {
-        var settings = new TracerSettings();
+        var settings = new TracerSettingsInternal();
         var agentWriter = new Mock<IAgentWriter>();
         var sampler = new Mock<ITraceSampler>();
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        var tracer = new TracerInternal(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
 
         using (var scope1 = (Scope)tracer.StartActive("operation"))
@@ -58,13 +58,13 @@ public class DelaySamplingDecisionTests
     [Fact]
     public void SamplingDecisionIsMadeWhenPropagating()
     {
-        var settings = new TracerSettings();
+        var settings = new TracerSettingsInternal();
         var agentWriter = new Mock<IAgentWriter>();
         var sampler = new Mock<ITraceSampler>();
         var scopeManager = new AsyncLocalScopeManager();
         var statsd = new NoOpStatsd();
 
-        var tracer = new Tracer(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
+        var tracer = new TracerInternal(settings, agentWriter.Object, sampler.Object, scopeManager, statsd);
         TraceContext traceContext;
         int samplingPriority;
 

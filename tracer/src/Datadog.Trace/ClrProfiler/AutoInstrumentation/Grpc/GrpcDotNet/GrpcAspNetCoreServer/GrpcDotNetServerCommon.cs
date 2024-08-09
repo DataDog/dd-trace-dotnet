@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetServerCommon));
 
-        public static Scope? CreateServerSpan<T>(Tracer tracer, T instance, HttpRequest requestMessage)
+        public static Scope? CreateServerSpan<T>(TracerInternal tracer, T instance, HttpRequest requestMessage)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
             {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(HttpRequest request)
+        private static SpanContextInternal? ExtractPropagatedContext(HttpRequest request)
         {
             try
             {

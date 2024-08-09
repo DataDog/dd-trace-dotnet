@@ -21,7 +21,7 @@ public class ContextPropagationTests
     private const string DatadogKey = "_datadog";
     private const string TopicArn = "arn:aws:sns:region:000000000:my-topic-name";
 
-    private readonly SpanContext _spanContext;
+    private readonly SpanContextInternal _spanContext;
 
     public ContextPropagationTests()
     {
@@ -30,7 +30,7 @@ public class ContextPropagationTests
 
         var traceId = new TraceId(upper, lower);
         const ulong spanId = 6766950223540265769;
-        _spanContext = new SpanContext(traceId, spanId, 1, "test-sns", "serverless");
+        _spanContext = new SpanContextInternal(traceId, spanId, 1, "test-sns", "serverless");
     }
 
     public static PublishBatchRequest GeneratePublishBatchRequest(List<PublishBatchRequestEntry> entries)

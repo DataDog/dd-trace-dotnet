@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DebugEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DebugEnabled, value));
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            var settings = new GlobalSettingsInternal(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
             settings.DebugEnabled.Should().Be(expected);
         }
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.DebugEnabled, value),
                 (otelKey, otelValue));
             var errorLog = new OverrideErrorLog();
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+            var settings = new GlobalSettingsInternal(source, NullConfigurationTelemetry.Instance, errorLog);
 
             settings.DebugEnabled.Should().Be(expected);
             errorLog.ShouldHaveExpectedOtelMetric(metric, ConfigurationKeys.OpenTelemetry.LogLevel.ToLowerInvariant(), ConfigurationKeys.DebugEnabled.ToLowerInvariant());
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void DiagnosticSourceEnabled(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DiagnosticSourceEnabled, value));
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            var settings = new GlobalSettingsInternal(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
             settings.DiagnosticSourceEnabled.Should().Be(expected);
         }

@@ -48,20 +48,20 @@ namespace Datadog.Trace.IntegrationTests
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StatsComputationEnabled = true,
                 ServiceName = "default-service",
                 ServiceVersion = "v1",
                 Environment = "test",
-                Exporter = new ExporterSettings
+                Exporter = new ExporterSettingsInternal
                 {
                     AgentUri = new Uri($"http://localhost:{agent.Port}"),
                 }
             };
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new TracerInternal(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -196,20 +196,20 @@ namespace Datadog.Trace.IntegrationTests
         {
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StatsComputationEnabled = true,
                 ServiceName = "default-service",
                 ServiceVersion = "v1",
                 Environment = "test",
-                Exporter = new ExporterSettings
+                Exporter = new ExporterSettingsInternal
                 {
                     AgentUri = new Uri($"http://localhost:{agent.Port}"),
                 }
             };
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new TracerInternal(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -353,7 +353,7 @@ namespace Datadog.Trace.IntegrationTests
                 tracesWaitEvent.Set();
             };
 
-            var settings = new TracerSettings(
+            var settings = new TracerSettingsInternal(
                 new NameValueConfigurationSource(
                     new()
                     {
@@ -369,7 +369,7 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
 
             var discovery = DiscoveryService.Create(immutableSettings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new TracerInternal(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
@@ -527,7 +527,7 @@ namespace Datadog.Trace.IntegrationTests
                 droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1", "0", "2" });
             }
 
-            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, ImmutableTracerSettings tracerSettings)
+            Scope CreateCommonSpan(TracerInternal tracer, bool finishSpansOnClose, ImmutableTracerSettingsInternal tracerSettings)
             {
                 var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
                 var span = scope.Span;
@@ -589,7 +589,7 @@ namespace Datadog.Trace.IntegrationTests
                 stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
                 stats.AgentAggregation.Should().Be(null);
                 stats.Lang.Should().Be(TracerConstants.Language);
-                stats.RuntimeId.Should().Be(Tracer.RuntimeId);
+                stats.RuntimeId.Should().Be(TracerInternal.RuntimeId);
                 stats.Stats.Should().HaveCount(1);
 
                 var bucket = stats.Stats[0];

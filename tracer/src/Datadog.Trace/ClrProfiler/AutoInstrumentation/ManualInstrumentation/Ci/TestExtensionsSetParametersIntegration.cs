@@ -38,7 +38,7 @@ public class TestExtensionsSetParametersIntegration
 
         if (test is IDuckType { Instance: Test automaticTest } && parameters.Instance is not null)
         {
-            automaticTest.SetParameters(new TestParameters { Arguments = parameters.Arguments, Metadata = parameters.Metadata });
+            automaticTest.SetParameters(new TestParametersInternal { Arguments = parameters.Arguments, Metadata = parameters.Metadata });
         }
 
         return CallTargetState.GetDefault();

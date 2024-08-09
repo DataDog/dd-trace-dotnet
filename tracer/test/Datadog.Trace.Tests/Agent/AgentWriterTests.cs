@@ -43,10 +43,10 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
 
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            var tracer = new TracerInternal(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            var spanContext = new SpanContext(null, traceContext, "service");
+            var spanContext = new SpanContextInternal(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
@@ -71,10 +71,10 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            var tracer = new TracerInternal(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
-            var spanContext = new SpanContext(null, traceContext, "service");
+            var spanContext = new SpanContextInternal(null, traceContext, "service");
             var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(span);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
@@ -102,13 +102,13 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "*");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            var tracer = new TracerInternal(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-            var rootSpanContext = new SpanContext(null, traceContext, "service");
+            var rootSpanContext = new SpanContextInternal(null, traceContext, "service");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
-            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var keptChildSpan = new Span(new SpanContextInternal(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(rootSpan); // IS single span sampled
             traceContext.AddSpan(keptChildSpan); // IS single span sampled
 
@@ -138,15 +138,15 @@ namespace Datadog.Trace.Tests.Agent
             statsAggregator.Setup(x => x.ShouldKeepTrace(It.IsAny<ArraySegment<Span>>())).Returns(false);
             var settings = SpanSamplingRule("*", "operation");
             var agent = new AgentWriter(api.Object, statsAggregator.Object, statsd: null, automaticFlush: false);
-            var tracer = new Tracer(settings, agent, sampler: null, scopeManager: null, statsd: null);
+            var tracer = new TracerInternal(settings, agent, sampler: null, scopeManager: null, statsd: null);
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-            var rootSpanContext = new SpanContext(null, traceContext, "service");
+            var rootSpanContext = new SpanContextInternal(null, traceContext, "service");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
-            var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
-            var droppedChildSpan2 = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me_also" };
-            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var droppedChildSpan = new Span(new SpanContextInternal(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
+            var droppedChildSpan2 = new Span(new SpanContextInternal(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me_also" };
+            var keptChildSpan = new Span(new SpanContextInternal(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(rootSpan); // IS single span sampled
             traceContext.AddSpan(droppedChildSpan); // is NOT single span sampled
             traceContext.AddSpan(droppedChildSpan2); // is NOT single span sampled
@@ -424,9 +424,9 @@ namespace Datadog.Trace.Tests.Agent
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
             var traceContext = new TraceContext(tracer.Object);
-            var rootSpanContext = new SpanContext(null, traceContext, null);
+            var rootSpanContext = new SpanContextInternal(null, traceContext, null);
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow);
-            var childSpan = new Span(new SpanContext(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
+            var childSpan = new Span(new SpanContextInternal(rootSpanContext, traceContext, null), DateTimeOffset.UtcNow);
             traceContext.AddSpan(rootSpan);
             traceContext.AddSpan(childSpan);
             var spans = new ArraySegment<Span>(new[] { rootSpan, childSpan });
@@ -538,14 +538,14 @@ namespace Datadog.Trace.Tests.Agent
 
             for (ulong i = 0; i < (ulong)spanCount; i++)
             {
-                var spanContext = new SpanContext(startingId + i, startingId + i);
+                var spanContext = new SpanContextInternal(startingId + i, startingId + i);
                 spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
             }
 
             return new ArraySegment<Span>(spans);
         }
 
-        private static TracerSettings SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
+        private static TracerSettingsInternal SpanSamplingRule(string serviceName, string operationName, float sampleRate = 1.0f)
         {
             var rules = new SpanSamplingRule.SpanSamplingRuleConfig[]
             {
@@ -557,7 +557,7 @@ namespace Datadog.Trace.Tests.Agent
                 }
             };
 
-            return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
+            return TracerSettingsInternal.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
         }
     }
 }

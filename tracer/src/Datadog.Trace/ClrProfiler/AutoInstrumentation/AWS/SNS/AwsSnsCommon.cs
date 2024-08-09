@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSns;
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSnsTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(TracerInternal tracer, string operation, string spanKind, out AwsSnsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return topicArn.Substring(lastSeparationIndex);
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind)
+        internal static string GetOperationName(TracerInternal tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
             {

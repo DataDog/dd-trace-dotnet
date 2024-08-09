@@ -139,7 +139,7 @@ public abstract class TestingFrameworkTest : TestHelper
 
     protected virtual void CheckCIEnvironmentValuesDecoration(MockSpan targetSpan)
     {
-        var context = new SpanContext(parent: null, traceContext: null, serviceName: null);
+        var context = new SpanContextInternal(parent: null, traceContext: null, serviceName: null);
         var span = new Span(context, DateTimeOffset.UtcNow);
         ((CIEnvironmentValues?)CIValues)?.DecorateSpan(span);
 

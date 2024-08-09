@@ -29,7 +29,7 @@ public class KafkaConsumerCommitAllIntegration
     internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : ITopicPartitionOffsets, IDuckType
     {
-        var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+        var dataStreams = TracerInternal.Instance.TracerManager.DataStreamsManager;
         if (exception is null && response.Instance is not null && dataStreams.IsEnabled && instance != null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);

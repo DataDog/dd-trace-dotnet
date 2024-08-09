@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
-        public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
+        public static Scope CreateScope<TTarget>(TracerInternal tracer, TTarget target)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, TracerConstants.AssemblyVersion);
 
             MessagePackBinary.WriteString(stream, "RuntimeID");
-            MessagePackBinary.WriteString(stream, Tracer.RuntimeId);
+            MessagePackBinary.WriteString(stream, TracerInternal.RuntimeId);
 
             MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());

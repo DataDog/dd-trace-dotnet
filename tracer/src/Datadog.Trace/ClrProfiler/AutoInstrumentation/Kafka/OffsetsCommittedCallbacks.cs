@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         {
             if (result.TryDuckCast<ICommittedOffsets>(out var committedOffsets))
             {
-                var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+                var dataStreams = TracerInternal.Instance.TracerManager.DataStreamsManager;
                 for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
                 {
                     var item = committedOffsets.Offsets[i];

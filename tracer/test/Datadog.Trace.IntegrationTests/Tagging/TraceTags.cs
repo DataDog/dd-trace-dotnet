@@ -17,18 +17,18 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceTags
 {
-    private readonly Tracer _tracer;
+    private readonly TracerInternal _tracer;
     private readonly MockApi _testApi;
 
     public TraceTags()
     {
         // make it so all traces are initially dropped so we can override with keep,
         // otherwise we can't change the sampling mechanism
-        var settings = new TracerSettings { GlobalSamplingRate = 0 };
+        var settings = new TracerSettingsInternal { GlobalSamplingRate = 0 };
 
         _testApi = new MockApi();
         var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+        _tracer = new TracerInternal(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
     }
 
     [Theory]

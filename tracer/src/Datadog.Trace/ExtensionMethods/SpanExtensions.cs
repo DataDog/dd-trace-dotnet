@@ -45,7 +45,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
-            if (span.Context is SpanContext { TraceContext: { } traceContext })
+            if (span.Context is SpanContextInternal { TraceContext: { } traceContext })
             {
                 traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
             }
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettingsInternal tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)
             {

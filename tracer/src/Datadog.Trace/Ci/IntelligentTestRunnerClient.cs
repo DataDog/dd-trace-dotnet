@@ -87,7 +87,7 @@ internal class IntelligentTestRunnerClient
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();
         _getShaTask = GetCommitShaAsync();
-        _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettings(_settings.TracerSettings, true), TimeSpan.FromSeconds(45));
+        _apiRequestFactory = CIVisibility.GetRequestFactory(new ImmutableTracerSettingsInternal(_settings.TracerSettings, true), TimeSpan.FromSeconds(45));
 
         const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
         const string searchCommitsUrlPath = "api/v2/git/repository/search_commits";

@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 QueueHelper.SetQueue(consumer, queue);
             }
 
-            return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Consumer, queue: queue));
+            return new CallTargetState(RabbitMQIntegration.CreateScope(TracerInternal.Instance, out _, Command, SpanKinds.Consumer, queue: queue));
         }
 
         /// <summary>

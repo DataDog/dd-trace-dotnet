@@ -47,7 +47,7 @@ public static class XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegr
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        if (TestModule.Current is { } testModule)
+        if (TestModuleInternal.Current is { } testModule)
         {
             await testModule.CloseAsync().ConfigureAwait(false);
 

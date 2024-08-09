@@ -54,7 +54,7 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private SpanContext ExtractPropagatedContext(HttpRequest request)
+        private SpanContextInternal ExtractPropagatedContext(HttpRequest request)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
+        private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, TracerInternal tracer)
         {
             var settings = tracer.Settings;
 
@@ -96,7 +96,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, HttpContext httpContext, string resourceName)
+        public Scope StartAspNetCorePipelineScope(TracerInternal tracer, Security security, HttpContext httpContext, string resourceName)
         {
             var request = httpContext.Request;
             string host = request.Host.Value;
@@ -106,7 +106,7 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            SpanContext propagatedContext = ExtractPropagatedContext(request);
+            SpanContextInternal propagatedContext = ExtractPropagatedContext(request);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
@@ -138,7 +138,7 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
-        public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope rootScope, HttpContext httpContext)
+        public void StopAspNetCorePipelineScope(TracerInternal tracer, Security security, Scope rootScope, HttpContext httpContext)
         {
             if (rootScope != null)
             {
@@ -182,7 +182,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public void HandleAspNetCoreException(Tracer tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
+        public void HandleAspNetCoreException(TracerInternal tracer, Security security, Span rootSpan, HttpContext httpContext, Exception exception)
         {
             // WARNING: This code assumes that the rootSpan passed in is the aspnetcore.request
             // root span. In "normal" operation, this will be the same span returned by

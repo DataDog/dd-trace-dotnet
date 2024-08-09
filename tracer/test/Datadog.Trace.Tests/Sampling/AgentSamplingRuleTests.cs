@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Sampling
         public async Task KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
         {
             // create span, setting service and environment
-            var settings = new TracerSettings { ServiceName = expectedService };
+            var settings = new TracerSettingsInternal { ServiceName = expectedService };
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
             using var scope = (Scope)tracer.StartActive("root");
             scope.Span.Context.TraceContext.Environment = expectedEnv;
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var rule = new AgentSamplingRule();
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
 
             var firstScope = (Scope)tracer.StartActive("first");

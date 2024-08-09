@@ -20,9 +20,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RedisHelper));
 
-        internal static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
+        internal static Scope? CreateScope(TracerInternal tracer, IntegrationId integrationId, string integrationName, string? host, string? port, string rawCommand, long? databaseIndex)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
+            if (!TracerInternal.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

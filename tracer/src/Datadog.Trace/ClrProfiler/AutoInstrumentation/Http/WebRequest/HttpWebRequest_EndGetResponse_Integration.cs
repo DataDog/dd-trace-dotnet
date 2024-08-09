@@ -68,21 +68,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Since it is possible for users to manually propagate headers (which we should
                 // overwrite), check our cache which will be populated with header objects
                 // that we have injected context into
-                SpanContext existingSpanContext = null;
+                SpanContextInternal existingSpanContext = null;
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
                     existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
                 }
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
-                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
+                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && TracerInternal.Instance.ActiveScope == null;
 
                 Scope scope = null;
 
                 try
                 {
                     scope = ScopeFactory.CreateOutboundHttpScope(
-                        Tracer.Instance,
+                        TracerInternal.Instance,
                         request.Method,
                         request.RequestUri,
                         WebRequestCommon.IntegrationId,
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, TracerInternal.Instance.Settings);
                             scope.Dispose();
                         }
                         else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                             // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
                             scope.Span.SetExceptionTags(exception);
 
-                            scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, TracerInternal.Instance.Settings);
                             scope.Dispose();
                         }
                         else

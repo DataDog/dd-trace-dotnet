@@ -38,7 +38,7 @@ namespace Datadog.Trace.Ci
         }
 
         protected override TracerManager CreateTracerManagerFrom(
-            ImmutableTracerSettings settings,
+            ImmutableTracerSettingsInternal settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -65,24 +65,24 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        protected override ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        protected override ITelemetryController CreateTelemetryController(ImmutableTracerSettingsInternal settings, IDiscoveryService discoveryService)
         {
             return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService, isAgentAvailable: !_settings.Agentless);
         }
 
-        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager, ITelemetryController telemetry)
+        protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettingsInternal settings, IScopeManager scopeManager, ITelemetryController telemetry)
         {
             return new CIGitMetadataTagsProvider(telemetry);
         }
 
-        protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)
+        protected override ITraceSampler GetSampler(ImmutableTracerSettingsInternal settings)
         {
             return new CISampler();
         }
 
-        protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings) => false;
+        protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettingsInternal settings) => false;
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettingsInternal settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -108,7 +108,7 @@ namespace Datadog.Trace.Ci
             return new ApmAgentWriter(settings, updateSampleRates, discoveryService, traceBufferSize);
         }
 
-        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettingsInternal settings)
             => _discoveryService;
     }
 }

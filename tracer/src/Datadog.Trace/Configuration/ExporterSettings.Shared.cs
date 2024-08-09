@@ -17,7 +17,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Methods of ExporterSettings shared with other projects
     /// </summary>
-    public partial class ExporterSettings
+    public partial class ExporterSettingsInternal
     {
         /// <summary>
         /// The default host value for <see cref="AgentUriInternal"/>.

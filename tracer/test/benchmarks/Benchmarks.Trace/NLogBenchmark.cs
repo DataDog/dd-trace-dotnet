@@ -19,7 +19,7 @@ namespace Benchmarks.Trace
 
         static NLogBenchmark()
         {
-            var logInjectionSettings = new TracerSettings
+            var logInjectionSettings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false,
                 LogsInjectionEnabled = true,

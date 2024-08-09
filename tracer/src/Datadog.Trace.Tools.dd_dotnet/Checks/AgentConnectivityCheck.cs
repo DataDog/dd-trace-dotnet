@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine(DdAgentChecks);
 
-            var settings = new ExporterSettings(configurationSource);
+            var settings = new ExporterSettingsInternal(configurationSource);
 
             var url = settings.AgentUri.ToString();
 
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             return RunAsync(settings);
         }
 
-        public static async Task<bool> RunAsync(ExporterSettings settings)
+        public static async Task<bool> RunAsync(ExporterSettingsInternal settings)
         {
             var payload = new byte[] { 0x90 };
 
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                           ? $"{baseUri}{relativePath}"
                           : $"{baseUri}/{relativePath}");
 
-        private static HttpClient CreateHttpClient(ExporterSettings settings)
+        private static HttpClient CreateHttpClient(ExporterSettingsInternal settings)
         {
             switch (settings.TracesTransport)
             {
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
         }
 
-        private static void DisplayInfoMessage(ExporterSettings settings)
+        private static void DisplayInfoMessage(ExporterSettingsInternal settings)
         {
             string transport;
             string endpoint;

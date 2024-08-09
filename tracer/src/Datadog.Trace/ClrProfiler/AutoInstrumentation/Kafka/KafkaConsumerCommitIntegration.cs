@@ -34,7 +34,7 @@ public class KafkaConsumerCommitIntegration
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
-        var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+        var dataStreams = TracerInternal.Instance.TracerManager.DataStreamsManager;
         if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);

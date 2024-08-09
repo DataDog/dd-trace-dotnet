@@ -21,7 +21,7 @@ public class StandaloneASMBillingTests
         {
             { ConfigurationKeys.AppsecStandaloneEnabled, true }
         });
-        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+        var tracerSettings = new TracerSettingsInternal(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         Assert.True(tracerSettings.AppsecStandaloneEnabledInternal);
     }
 
@@ -33,7 +33,7 @@ public class StandaloneASMBillingTests
             { ConfigurationKeys.AppsecStandaloneEnabled, true },
             { ConfigurationKeys.StatsComputationEnabled, true }
         });
-        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+        var tracerSettings = new TracerSettingsInternal(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
         // Should ignore the configuration set by the customer
         Assert.False(tracerSettings.StatsComputationEnabled);

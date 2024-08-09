@@ -19,7 +19,7 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContextInternal? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             spanContext = null;
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            var traceIdLower = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.TraceId);
+            var traceIdLower = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContextInternal.Keys.TraceId);
 
             if (traceIdLower is null or 0)
             {
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawTraceId);
+            var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, SpanContextInternal.Keys.RawTraceId);
             TraceId traceId = default;
 
             if (!string.IsNullOrEmpty(rawTraceId))
@@ -45,12 +45,12 @@ namespace Datadog.Trace.Propagators
                 _ = HexString.TryParseTraceId(rawTraceId!, out traceId);
             }
 
-            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContext.Keys.ParentId) ?? 0;
-            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, SpanContext.Keys.SamplingPriority);
-            var origin = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.Origin);
-            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.RawSpanId);
-            var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.PropagatedTags);
-            var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContext.Keys.AdditionalW3CTraceState);
+            var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, SpanContextInternal.Keys.ParentId) ?? 0;
+            var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, SpanContextInternal.Keys.SamplingPriority);
+            var origin = ParseUtility.ParseString(carrier, carrierGetter, SpanContextInternal.Keys.Origin);
+            var rawSpanId = ParseUtility.ParseString(carrier, carrierGetter, SpanContextInternal.Keys.RawSpanId);
+            var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, SpanContextInternal.Keys.PropagatedTags);
+            var w3CTraceState = ParseUtility.ParseString(carrier, carrierGetter, SpanContextInternal.Keys.AdditionalW3CTraceState);
             var traceTags = TagPropagation.ParseHeader(propagatedTraceTags);
 
             if (traceId == TraceId.Zero)
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Propagators
             }
 
             // we don't consider contexts coming from this as "remote" as it could be from a version conflict scenario
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId, isRemote: false)
+            spanContext = new SpanContextInternal(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId, isRemote: false)
                           {
                               PropagatedTags = traceTags,
                               AdditionalW3CTraceState = w3CTraceState,

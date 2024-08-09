@@ -70,7 +70,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     public long PointsDropped => Interlocked.Read(ref _pointsDropped);
 
     public static DataStreamsWriter Create(
-        ImmutableTracerSettings settings,
+        ImmutableTracerSettingsInternal settings,
         IDiscoveryService discoveryService,
         string defaultServiceName)
         => new DataStreamsWriter(

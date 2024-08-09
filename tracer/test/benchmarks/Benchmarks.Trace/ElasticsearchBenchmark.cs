@@ -24,7 +24,7 @@ namespace Benchmarks.Trace
 
         static ElasticsearchBenchmark()
         {
-            var settings = new TracerSettings
+            var settings = new TracerSettingsInternal
             {
                 StartupDiagnosticLogEnabled = false
             };

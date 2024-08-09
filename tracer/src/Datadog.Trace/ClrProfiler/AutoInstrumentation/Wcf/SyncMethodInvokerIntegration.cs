@@ -40,12 +40,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, ref object[] outputs)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            if (!TracerInternal.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !TracerInternal.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            return new CallTargetState(Tracer.Instance.ActiveScope as Scope);
+            return new CallTargetState(TracerInternal.Instance.ActiveScope as Scope);
         }
 
         /// <summary>

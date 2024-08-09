@@ -337,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
             try
             {
-                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
+                if (GlobalSettingsInternal.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
                     var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
@@ -385,7 +385,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (TracerInternal.Instance.Settings.IsActivityListenerEnabled)
                 {
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
@@ -398,7 +398,7 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization of non native parts finished.");
 
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             if (tracer is null)
             {
                 Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
@@ -413,7 +413,7 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeTracer(Stopwatch sw)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             if (tracer is null)
             {
                 Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
@@ -509,7 +509,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
+            if (TracerInternal.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
@@ -523,7 +523,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        private static void InitLiveDebugger(Tracer tracer)
+        private static void InitLiveDebugger(TracerInternal tracer)
         {
             var settings = tracer.Settings;
             var debuggerSettings = DebuggerSettings.FromDefaultSource();

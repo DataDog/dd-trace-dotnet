@@ -33,7 +33,7 @@ namespace Datadog.Trace.Telemetry
         /// Called when a tracer is initialized to record the tracer's settings
         /// Only the first tracer registered is recorded
         /// </summary>
-        void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName);
+        void RecordTracerSettings(ImmutableTracerSettingsInternal settings, string defaultServiceName);
 
         /// <summary>
         /// Called to record profiler-related telemetry

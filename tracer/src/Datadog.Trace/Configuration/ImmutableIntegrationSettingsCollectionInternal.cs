@@ -1,0 +1,82 @@
+// <copyright file="ImmutableIntegrationSettingsCollectionInternal.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System.Collections.Generic;
+using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
+
+namespace Datadog.Trace.Configuration
+{
+    /// <summary>
+    /// A collection of <see cref="ImmutableIntegrationSettingsInternal"/> instances, referenced by name.
+    /// </summary>
+    public class ImmutableIntegrationSettingsCollectionInternal
+    {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ImmutableIntegrationSettingsCollectionInternal>();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ImmutableIntegrationSettingsCollectionInternal"/> class.
+        /// </summary>
+        /// <param name="settings">The <see cref="IntegrationSettingsCollectionInternal"/> to populate the immutable settings.</param>
+        /// <param name="disabledIntegrationNames">Additional integrations that should be disabled</param>
+        internal ImmutableIntegrationSettingsCollectionInternal(
+            IntegrationSettingsCollectionInternal settings,
+            HashSet<string> disabledIntegrationNames)
+        {
+            Settings = GetIntegrationSettingsById(settings, disabledIntegrationNames);
+        }
+
+        internal ImmutableIntegrationSettingsInternal[] Settings { get; }
+
+        /// <summary>
+        /// Gets the <see cref="ImmutableIntegrationSettingsInternal"/> for the specified integration.
+        /// </summary>
+        /// <param name="integrationName">The name of the integration.</param>
+        /// <returns>The integration-specific settings for the specified integration.</returns>
+        [PublicApi]
+        public ImmutableIntegrationSettingsInternal this[string integrationName]
+        {
+            get
+            {
+                TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableIntegrationSettingsCollection_Indexer_Name);
+                if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
+                {
+                    return Settings[(int)integrationId];
+                }
+
+                Log.Warning(
+                    "Accessed integration settings for unknown integration {IntegrationName}. Returning default settings",
+                    integrationName);
+
+                return new ImmutableIntegrationSettingsInternal(integrationName);
+            }
+        }
+
+        internal ImmutableIntegrationSettingsInternal this[IntegrationId integration]
+            => Settings[(int)integration];
+
+        private static ImmutableIntegrationSettingsInternal[] GetIntegrationSettingsById(
+            IntegrationSettingsCollectionInternal settings,
+            HashSet<string> disabledIntegrationNames)
+        {
+            var allExistingSettings = settings.Settings;
+            var integrations = new ImmutableIntegrationSettingsInternal[allExistingSettings.Length];
+
+            for (int i = 0; i < integrations.Length; i++)
+            {
+                var existingSettings = allExistingSettings[i];
+                var explicitlyDisabled = disabledIntegrationNames.Contains(existingSettings.IntegrationNameInternal);
+
+                integrations[i] = new ImmutableIntegrationSettingsInternal(existingSettings, explicitlyDisabled);
+            }
+
+            return integrations;
+        }
+    }
+}

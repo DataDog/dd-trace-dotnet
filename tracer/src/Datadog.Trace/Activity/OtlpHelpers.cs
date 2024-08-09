@@ -61,7 +61,7 @@ namespace Datadog.Trace.Activity
 
             // Fixup "version" tag
             // Fallback to static instance if no tracer associated with the trace
-            var tracer = span.Context.TraceContext?.Tracer ?? Tracer.Instance;
+            var tracer = span.Context.TraceContext?.Tracer ?? TracerInternal.Instance;
             if (tracer.Settings.ServiceVersionInternal is null
              && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Activity
                     traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
                 }
 
-                var spanContext = new SpanContext(
+                var spanContext = new SpanContextInternal(
                     newActivityTraceId,
                     newActivitySpanId,
                     samplingPriority: samplingPriority,

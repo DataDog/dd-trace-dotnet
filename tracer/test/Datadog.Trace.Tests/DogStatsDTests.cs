@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tests
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            var settings = new TracerSettingsInternal(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, agentUri },
                 { ConfigurationKeys.AgentHost, agentHost },
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tests
 
             using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = true });
 
-            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            var settings = new TracerSettingsInternal(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
             })).Build();
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests
             var metricsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesPath, metricsPath) { UseDogstatsD = true });
 
-            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            var settings = new TracerSettingsInternal(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
                 { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tests
             using var udsAgent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesPath, null) { UseDogstatsD = false });
             using var udpAgent = MockTracerAgent.Create(_output, useStatsd: true);
 
-            var settings = new TracerSettings(new NameValueConfigurationSource(new()
+            var settings = new TracerSettingsInternal(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
             })).Build();
@@ -232,9 +232,9 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var settings = new TracerSettings
+                var settings = new TracerSettingsInternal
                 {
-                    Exporter = new ExporterSettings()
+                    Exporter = new ExporterSettingsInternal()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },

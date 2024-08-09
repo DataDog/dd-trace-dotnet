@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var activeTrace = _parent.GetDistributedTrace();
 
-            if (activeTrace is SpanContext)
+            if (activeTrace is SpanContextInternal)
             {
                 // This is a local trace, no need to mock anything
                 return null;
@@ -62,11 +62,11 @@ namespace Datadog.Trace.ClrProfiler
 
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
 
-        SpanContext IDistributedTracer.GetSpanContext()
+        SpanContextInternal IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
 
-            if (values is SpanContext spanContext)
+            if (values is SpanContextInternal spanContext)
             {
                 return spanContext;
             }

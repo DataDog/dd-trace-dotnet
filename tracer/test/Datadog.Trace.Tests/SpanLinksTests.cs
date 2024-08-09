@@ -14,15 +14,15 @@ namespace Datadog.Trace.Tests
 {
     public class SpanLinksTests
     {
-        private readonly Tracer _tracer;
+        private readonly TracerInternal _tracer;
 
         public SpanLinksTests()
         {
-            var settings = new TracerSettings();
+            var settings = new TracerSettingsInternal();
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _tracer = new TracerInternal(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Fact]

@@ -58,8 +58,8 @@ namespace Datadog.Trace.Tests.Sampling
             const string config = """[{ "sample_rate":0.3, resource: "/api/v1/.*" }]""";
             var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
 
-            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
-            var nonMatchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
+            var matchingSpan = new Span(new SpanContextInternal(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v1/user/123" };
+            var nonMatchingSpan = new Span(new SpanContextInternal(1, 1, serviceName: "foo"), DateTimeOffset.Now) { ResourceName = "/api/v2/user/123" };
 
             VerifyRate(rule, 0.3f);
             VerifySingleRule(rule, matchingSpan, expected: true);
@@ -72,14 +72,14 @@ namespace Datadog.Trace.Tests.Sampling
             const string config = """[{ "sample_rate":0.3, tags: { "http.method": "GE.", "http.status_code": "200" } }]""";
             var rule = LocalCustomSamplingRule.BuildFromConfigurationString(config, SamplingRulesFormat.Regex, Timeout).Single();
 
-            var matchingSpan = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            var matchingSpan = new Span(new SpanContextInternal(1, 1, serviceName: "foo"), DateTimeOffset.Now);
             matchingSpan.SetTag("http.method", "GET");
             matchingSpan.SetMetric("http.status_code", 200);
 
-            var nonMatchingSpan1 = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            var nonMatchingSpan1 = new Span(new SpanContextInternal(1, 1, serviceName: "foo"), DateTimeOffset.Now);
             nonMatchingSpan1.SetTag("http.method", "GET");
 
-            var nonMatchingSpan2 = new Span(new SpanContext(1, 1, serviceName: "foo"), DateTimeOffset.Now);
+            var nonMatchingSpan2 = new Span(new SpanContextInternal(1, 1, serviceName: "foo"), DateTimeOffset.Now);
             nonMatchingSpan2.SetTag("http.method", "POST");
 
             VerifyRate(rule, 0.3f);

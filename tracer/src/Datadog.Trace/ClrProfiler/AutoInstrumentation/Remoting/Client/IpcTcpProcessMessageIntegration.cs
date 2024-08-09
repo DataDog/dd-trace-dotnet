@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IMessage msg, ITransportHeaders requestHeaders, Stream requestStream, ref ITransportHeaders responseHeaders, ref Stream responseStream)
         {
-            var tracer = Tracer.Instance;
+            var tracer = TracerInternal.Instance;
             if (tracer.Settings.IsIntegrationEnabled(RemotingIntegration.IntegrationId) && tracer.InternalActiveScope is var scope)
             {
                 SpanContextPropagator.Instance.Inject(scope.Span.Context, requestHeaders, (headers, key, value) => headers[key] = value);

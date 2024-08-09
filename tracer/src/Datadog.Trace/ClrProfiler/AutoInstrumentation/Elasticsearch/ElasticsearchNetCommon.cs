@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ElasticsearchNetCommon));
 
-        public static Scope? CreateScope<T>(Tracer tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
+        public static Scope? CreateScope<T>(TracerInternal tracer, IntegrationId integrationId, RequestPipelineStruct pipeline, T requestData)
             where T : IRequestData
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             return scope;
         }
 
-        public static Scope? CreateScope(Tracer tracer, IntegrationId integrationId, string? method, object? requestParameters, out ElasticsearchTags? tags)
+        public static Scope? CreateScope(TracerInternal tracer, IntegrationId integrationId, string? method, object? requestParameters, out ElasticsearchTags? tags)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
