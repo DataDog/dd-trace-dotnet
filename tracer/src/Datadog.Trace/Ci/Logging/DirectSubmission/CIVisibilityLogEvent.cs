@@ -16,9 +16,9 @@ namespace Datadog.Trace.Ci.Logging.DirectSubmission
         private readonly string _source;
         private readonly string? _logLevel;
         private readonly string _message;
-        private readonly ISpan? _span;
+        private readonly Span? _span;
 
-        public CIVisibilityLogEvent(string source, string? logLevel, string message, ISpan? span)
+        public CIVisibilityLogEvent(string source, string? logLevel, string message, Span? span)
         {
             _source = source;
             _logLevel = logLevel;

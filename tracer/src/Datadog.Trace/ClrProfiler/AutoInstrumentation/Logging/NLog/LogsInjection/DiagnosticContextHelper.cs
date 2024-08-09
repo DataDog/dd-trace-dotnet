@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -115,38 +114,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             }
         }
 
-        private static IReadOnlyList<KeyValuePair<string, object>> CreateEntriesList(Tracer tracer, out bool hasTraceIds)
+        private static KeyValuePair<string, object>[] CreateEntriesList(Tracer tracer, out bool hasTraceIds)
         {
             hasTraceIds = false;
-            var spanContext = tracer.DistributedSpanContext;
 
-            if (spanContext is not null)
+            if (tracer.DistributedSpanContext is { } context &&
+                LogContext.TryGetValues(context, out var traceId, out var spanId, tracer.Settings.TraceId128BitLoggingEnabled))
             {
-                // For mismatch version support we need to keep requesting old keys.
-                var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
-                                 spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
-                                spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
-                if (hasTraceId && hasSpanId)
-                {
-                    hasTraceIds = true;
-                    return new[]
-                    {
-                        new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
-                    };
-                }
+                hasTraceIds = true;
+
+                return
+                [
+                    new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
+                    new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
+                ];
             }
 
-            return new[]
-            {
+            return
+            [
                 new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
                 new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
                 new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
-            };
+            ];
         }
 
         internal static class Cache<TMarker>
