@@ -157,9 +157,10 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
 
         rawSample.Timestamp = timestamp;
         auto cs = _callstackProvider.Get();
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
+        const auto nbFrames = std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
+        auto end_stack = stack.begin() + nbFrames;
         std::copy(stack.begin(), end_stack, cs.begin());
-        cs.SetCount(std::min(stack.size(), static_cast<std::size_t>(cs.Capacity())));
+        cs.SetCount(nbFrames);
         rawSample.Stack = std::move(cs);
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
