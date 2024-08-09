@@ -408,16 +408,23 @@ partial class Build
 
                 listTasks.Add(Task.Run(async () =>
                 {
-                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                    try
+                    {
+                        await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                    CopyDirectoryRecursively(
-                        source: extractLocation,
-                        target: snapshotsDirectory,
-                        DirectoryExistsPolicy.Merge,
-                        FileExistsPolicy.Skip,
-                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                        CopyDirectoryRecursively(
+                            source: extractLocation,
+                            target: snapshotsDirectory,
+                            DirectoryExistsPolicy.Merge,
+                            FileExistsPolicy.Skip,
+                            excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                    DeleteDirectory(extractLocation);
+                        DeleteDirectory(extractLocation);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Warning(e, $"Ignoring issue downloading: '{artifact}'");
+                    }
                 }));
             }
 

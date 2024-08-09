@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.AppSec.Rcm;
 /// </summary>
 internal record ConfigurationStatus
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConfigurationStatus>();
+
     internal const string WafRulesKey = "rules";
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
@@ -48,6 +51,8 @@ internal record ConfigurationStatus
 
     internal bool? EnableAsm { get; set; } = null;
 
+    internal string? AutoUserInstrumMode { get; set; } = null;
+
     internal Dictionary<string, RuleOverride[]> RulesOverridesByFile { get; } = new();
 
     internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
@@ -57,6 +62,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, RuleSet> RulesByFile { get; } = new();
 
     internal Dictionary<string, AsmFeature> AsmFeaturesByFile { get; } = new();
+
+    internal Dictionary<string, AutoUserInstrum> AutoUserInstrumByFile { get; } = new();
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
@@ -231,9 +238,28 @@ internal record ConfigurationStatus
                 }
 
                 // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
+                // (the enable of auto user instrumentation as added to asm_features)
                 _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
-                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value.Enabled == true);
+
+                EnableAsm = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value?.Enabled is null or true);
+
+                // empty, one value, or all values the same are valid states, anything else is an error
+                var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault(x => x?.Mode is not null);
+                if (autoUserInstrumMode == null ||
+                    AutoUserInstrumByFile.All(x => x.Value?.Mode is null || x.Value?.Mode == autoUserInstrumMode?.Mode))
+                {
+                    AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
+                }
+                else
+                {
+                    AutoUserInstrumMode = "unknown value";
+                    Log.Error(
+                        "AutoUserInstrumMode was 'unknown value', source data: {AutoUserInstrumByFile}",
+                        string.Join(",", AutoUserInstrumByFile.Values.Select(x => x?.Mode)));
+                }
+
+                AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
             }
         }
 

@@ -28,7 +28,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnableRasp(false);
             if (userTrackingMode != null)
             {
-                EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                if (userTrackingMode is "ident" or "anon")
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE", userTrackingMode);
+                }
+                else
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                }
             }
         }
 
@@ -82,6 +89,22 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         public AspNetCore5AutoUserEventsExtendedModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base(fixture, outputHelper, true, "extended")
+        {
+        }
+    }
+
+    public class AspNetCore5AutoUserEventsIndentModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsIndentModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "ident")
+        {
+        }
+    }
+
+    public class AspNetCore5AutoUserEventsAnonModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsAnonModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "anon")
         {
         }
     }
