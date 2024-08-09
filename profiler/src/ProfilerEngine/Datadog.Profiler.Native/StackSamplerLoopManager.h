@@ -27,7 +27,7 @@
 #include "StackSamplerLoop.h"
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
-
+#include "ServiceBase.h"
 
 // forward declaration
 class IClrLifetime;
@@ -70,7 +70,10 @@ constexpr bool LogDuringStackSampling_Unsafe = false;
 ///   The LogDuringStackSampling_Unsafe allows turning on such unsafe logging during investigations.
 ///   Don't be surprised if the application deadlock while using that flag!
 /// </summary>
-class StackSamplerLoopManager : public IStackSamplerLoopManager
+class StackSamplerLoopManager
+    :
+    public IStackSamplerLoopManager,
+    public ServiceBase
 {
 public:
     StackSamplerLoopManager(

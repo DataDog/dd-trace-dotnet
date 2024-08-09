@@ -1165,7 +1165,6 @@ namespace Datadog.Trace.Tests.Configuration
 
         // profiling takes precedence over SSI
         // "auto" is a special profiling value that enables profiling when deployed via SSI
-        // the ssi env var is not used yet to enable the profiler
         [Theory]
         [InlineData("1", null, true)]
         [InlineData("0", null, false)]
@@ -1175,13 +1174,13 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("0", "not used", false)]
         [InlineData("true", "not used", true)]
         [InlineData("auto", "not used", true)]
-        [InlineData("invalid", "", false)]
-        [InlineData("invalid", "anything", false)]
+        [InlineData("invalid", "", true)]
+        [InlineData("invalid", "anything", true)]
         [InlineData("", null, false)]
-        [InlineData("", "anything", false)]
+        [InlineData("", "anything", true)]
         [InlineData(null, null, false)]
-        [InlineData(null, "", false)]
-        [InlineData(null, "anything", false)]
+        [InlineData(null, "", true)]
+        [InlineData(null, "anything", true)]
         public void ProfilingEnabled(string profilingValue, string ssiValue, bool expected)
         {
             var values = new List<(string, string)>();

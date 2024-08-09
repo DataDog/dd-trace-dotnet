@@ -342,4 +342,30 @@ std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
     return manager;
 }
 
+double GetProcessLifetime()
+{
+    FILETIME creationTime;
+    FILETIME exitTime;
+    FILETIME userTime;
+    FILETIME kernelTime;
+    if (!::GetProcessTimes(::GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime))
+    {
+        return 0;
+    }
+
+    ::GetSystemTimeAsFileTime(&exitTime);
+
+    // Convert the FILETIME structures to ULARGE_INTEGER to make arithmetic calculations easier.
+    ULARGE_INTEGER start;
+    ULARGE_INTEGER end;
+    start.LowPart = creationTime.dwLowDateTime;
+    start.HighPart = creationTime.dwHighDateTime;
+    end.LowPart = exitTime.dwLowDateTime;
+    end.HighPart = exitTime.dwHighDateTime;
+
+    // Calculate the difference and convert it from 100-nanosecond intervals to seconds.
+    double duration = static_cast<double>(end.QuadPart - start.QuadPart) / 10000000.0;
+    return duration;
+}
+
 } // namespace OsSpecificApi

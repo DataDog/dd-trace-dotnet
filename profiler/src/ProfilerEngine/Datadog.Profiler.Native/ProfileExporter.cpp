@@ -15,6 +15,7 @@
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -76,13 +77,16 @@ ProfileExporter::ProfileExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
+    ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
-    _configuration{configuration}
+    _configuration{configuration},
+    _runtimeInfo{runtimeInfo},
+    _ssiManager{ssiManager}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -160,6 +164,11 @@ void ProfileExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
 {
     assert(provider != nullptr);
     _processSamplesProviders.push_back(provider);
+}
+
+void ProfileExporter::RegisterApplication(std::string_view runtimeId)
+{
+    GetOrCreateInfo(runtimeId);
 }
 
 libdatadog::Tags ProfileExporter::CreateTags(
@@ -265,7 +274,7 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
     return buffer.str();
 }
 
-std::string ProfileExporter::BuildAgentEndpoint(IConfiguration* configuration)
+std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configuration)
 {
     // handle "with agent" case
     auto url = configuration->GetAgentUrl(); // copy expected here
@@ -448,7 +457,7 @@ void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<
     }
 }
 
-bool ProfileExporter::Export()
+bool ProfileExporter::Export(bool lastCall)
 {
     bool exported = false;
 
@@ -527,7 +536,22 @@ bool ProfileExporter::Export()
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
+
+            if (applicationInfo.Worker != nullptr)
+            {
+                applicationInfo.Worker->IncNumberOfProfiles(false);
+                if (lastCall)
+                    applicationInfo.Worker->IncNumberOfApplications();
+            }
+
             continue;
+        }
+
+        if (applicationInfo.Worker != nullptr)
+        {
+            applicationInfo.Worker->IncNumberOfProfiles(true);
+            if (lastCall)
+                applicationInfo.Worker->IncNumberOfApplications();
         }
 
         if (_exporter == nullptr)
@@ -570,7 +594,10 @@ bool ProfileExporter::Export()
         if (!error_code)
         {
             Log::Error(error_code.message());
+
+            // TODO: send telemetry about failed sendings
         }
+
         exported &= error_code;
     }
 

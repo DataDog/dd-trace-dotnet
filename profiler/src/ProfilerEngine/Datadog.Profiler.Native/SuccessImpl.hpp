@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,6 +24,13 @@ struct SuccessImpl
         SuccessImpl(FfiHelper::GetErrorMessage(error))
     {
         ddog_Error_drop(&error);
+    }
+
+    SuccessImpl(ddog_MaybeError error) :
+        SuccessImpl(FfiHelper::GetErrorMessage(error.some))
+    {
+        assert(error.tag == DDOG_OPTION_ERROR_SOME_ERROR);
+        ddog_MaybeError_drop(error);
     }
 
     SuccessImpl(std::string message) :

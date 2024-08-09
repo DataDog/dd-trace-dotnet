@@ -964,7 +964,7 @@ TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::ManuallyEnabled;
+    auto expectedValue = EnablementStatus::SsiEnabled;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
@@ -1080,4 +1080,38 @@ TEST_F(ConfigurationTest, CheckCpuProfilingIntervalIsNotBelowDefault)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingInterval, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetCpuProfilingInterval(), 9ms);
+}
+
+TEST_F(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
+}
+
+TEST_F(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
+}
+
+TEST_F(ConfigurationTest, CheckLongLivedThresholdWhenEnvVarIsCorrectlySet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("42001"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 42'001ms);
+}
+
+TEST_F(ConfigurationTest, CheckLongLivedThresholdIsSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 0ms);
+}
+
+TEST_F(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToNegativeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("-1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }

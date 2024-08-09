@@ -11,12 +11,12 @@
 
 namespace libdatadog {
 
-Tags::Tags() :
-    _impl{std::make_unique<TagsImpl>()}
+Tags::Tags(bool releaseOnClose) :
+    _impl{std::make_unique<TagsImpl>(releaseOnClose)}
 {
 }
-Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags) :
-    Tags()
+Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags, bool releaseOnClose) :
+    Tags(releaseOnClose)
 {
     for (auto&& [name, value] : tags)
     {

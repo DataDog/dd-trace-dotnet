@@ -75,9 +75,10 @@ public:
     bool IsEtwLoggingEnabled() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
+    std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
+    bool IsTelemetryToDiskEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
-
 
 private:
     static tags ExtractUserTags();
@@ -101,6 +102,7 @@ private:
     static int32_t ExtractCodeHotspotsThreadsThreshold();
     static bool GetContention();
     EnablementStatus ExtractEnablementStatus();
+    std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -167,6 +169,8 @@ private:
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
     EnablementStatus _enablementStatus;
+    std::chrono::milliseconds _ssiLongLivedThreshold;
+    bool _isTelemetryToDiskEnabled;
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
 };

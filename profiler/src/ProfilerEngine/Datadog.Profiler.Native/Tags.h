@@ -12,8 +12,8 @@ class AgentProxy;
 class Tags
 {
 public:
-    Tags();
-    Tags(std::initializer_list<std::pair<std::string, std::string>> tags);
+    Tags(bool releaseOnClose = true);
+    Tags(std::initializer_list<std::pair<std::string, std::string>> tags, bool releaseOnClose = true);
     ~Tags();
 
     Tags(Tags const&) = delete;
@@ -26,6 +26,8 @@ public:
 private:
     friend class ExporterBuilder; // due to the libdatadog design, we need to access the implementation of the tags
     friend class AgentProxy;
+    friend class TelemetryMetricsWorker;
+    friend class ProfilerTelemetry;
     std::unique_ptr<TagsImpl> _impl;
 };
 } // namespace libdatadog

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 enum class DeploymentMode
 {
     Manual,
