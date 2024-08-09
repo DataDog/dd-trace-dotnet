@@ -1005,9 +1005,27 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("Xss");
         }
 
-        private string GetDbValue()
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli()
         {
-            var taintedQuery = "SELECT Details from Persons where name = 'Name1'";
+            try
+            {
+                var details = GetDbValue("Michael");
+                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
+                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
+                return Content($"Result: " + rname);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+
+        private string GetDbValue(string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
             var reader = new SQLiteCommand(taintedQuery, DbConnection).ExecuteReader();
             reader.Read();
             var res = reader.GetString(0);
@@ -1118,24 +1136,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content(result, "text/html");
-        }
-
-
-        [HttpGet("StoredSqli")]
-        [Route("StoredSqli")]
-        public IActionResult StoredSqli()
-        {
-            try
-            {
-                var username = GetDbValue();
-                var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
-                return Content($"Result: " + rname);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500);
-            }
         }
     }
 }
