@@ -245,7 +245,7 @@ internal static class DatadogLoggingFactory
         var maxLogFileSize = new ConfigurationBuilder(source, telemetry)
                             .WithKeys(ConfigurationKeys.MaxLogFileSize)
                             .GetAs(
-                                 _ => DefaultMaxLogFileSize,
+                                 () => DefaultMaxLogFileSize,
                                  converter: x => long.TryParse(x, out var maxLogSize)
                                                      ? maxLogSize
                                                      : ParsingResult<long>.Failure(),

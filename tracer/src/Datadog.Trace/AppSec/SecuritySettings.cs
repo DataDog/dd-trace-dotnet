@@ -60,7 +60,7 @@ namespace Datadog.Trace.AppSec
             WafTimeoutMicroSeconds = (ulong)config
                                            .WithKeys(ConfigurationKeys.AppSec.WafTimeout)
                                            .GetAs<int>(
-                                                getDefaultValue: _ => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
+                                                getDefaultValue: () => 100_000, // Default timeout of 100 ms, only extreme conditions should cause timeout
                                                 converter: ParseWafTimeout,
                                                 validator: wafTimeout => wafTimeout > 0);
 
@@ -72,28 +72,44 @@ namespace Datadog.Trace.AppSec
                                             .WithKeys(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex)
                                             .AsString(SecurityConstants.ObfuscationParameterValueRegexDefault, x => !string.IsNullOrWhiteSpace(x));
 
-            string GetLegacyUserTracking() =>
+            var newConfig =
                 config
-                   .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
-                   .AsString(
-                        isPresent => isPresent ? UserTrackingDisabled : UserTrackingIdentMode,
+                   .WithKeys(ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode)
+                   .AsStringResult(
                         val =>
                             val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
-                         || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
-                         || val.Equals(DeprecatedUserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
-                   .ToLowerInvariant();
+                         || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(UserTrackingIdentShortMode, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase)
+                         || val.Equals(UserTrackingAnonShortMode, StringComparison.OrdinalIgnoreCase),
+                        ParsingResult<string>.Success);
 
-            UserEventsAutoInstrumentationMode = config
-                                               .WithKeys(ConfigurationKeys.AppSec.UserEventsAutoInstrumentationMode)
-                                               .AsString(
-                                                    isPresent => isPresent ? UserTrackingDisabled : GetLegacyUserTracking(),
-                                                    val =>
-                                                        val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
-                                                     || val.Equals(UserTrackingIdentMode, StringComparison.OrdinalIgnoreCase)
-                                                     || val.Equals(UserTrackingIdentShortMode, StringComparison.OrdinalIgnoreCase)
-                                                     || val.Equals(UserTrackingAnonMode, StringComparison.OrdinalIgnoreCase)
-                                                     || val.Equals(UserTrackingAnonShortMode, StringComparison.OrdinalIgnoreCase))
-                                               .ToLowerInvariant();
+            if (newConfig.ConfigurationResult.IsPresent)
+            {
+                UserEventsAutoInstrumentationMode = newConfig.ConfigurationResult.IsValid ? newConfig.ConfigurationResult.Result : UserTrackingDisabled;
+            }
+            else
+            {
+                var oldConfig =
+                    config
+                       .WithKeys(ConfigurationKeys.AppSec.UserEventsAutomatedTracking)
+                       .AsStringResult(
+                            val =>
+                                val.Equals(UserTrackingDisabled, StringComparison.OrdinalIgnoreCase)
+                             || val.Equals(DeprecatedUserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
+                             || val.Equals(DeprecatedUserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase),
+                            ParsingResult<string>.Success);
+
+                if (oldConfig.ConfigurationResult.IsPresent)
+                {
+                    UserEventsAutoInstrumentationMode = oldConfig.ConfigurationResult.IsValid ? oldConfig.ConfigurationResult.Result : UserTrackingDisabled;
+                }
+                else
+                {
+                    // ident mode is default with nothing present
+                    UserEventsAutoInstrumentationMode = UserTrackingIdentMode;
+                }
+            }
 
             if (UserEventsAutoInstrumentationMode == DeprecatedUserTrackingSafeMode
                 || UserEventsAutoInstrumentationMode == UserTrackingAnonShortMode)

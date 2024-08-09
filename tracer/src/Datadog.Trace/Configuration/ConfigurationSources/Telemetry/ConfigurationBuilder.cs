@@ -64,7 +64,7 @@ internal readonly struct ConfigurationBuilder
         string key,
         ConfigurationResult<T> result,
         bool recordValue,
-        Func<bool, DefaultResult<T>>? getDefaultValue,
+        Func<DefaultResult<T>>? getDefaultValue,
         [NotNullIfNotNull(nameof(getDefaultValue))] out T? value)
     {
         if (result is { Result: { } ddResult, IsValid: true })
@@ -82,7 +82,7 @@ internal readonly struct ConfigurationBuilder
             return false;
         }
 
-        var defaultValue = getDefaultValue(result.IsPresent);
+        var defaultValue = getDefaultValue();
         RecordTelemetry(telemetry, key, recordValue, defaultValue);
 
         // The compiler complains about this, because technically you _could_ call it as `TryHandleResult<int?>` (for example)
@@ -143,7 +143,7 @@ internal readonly struct ConfigurationBuilder
             => AsString(getDefaultValue: null, validator: null, converter: null, recordValue: false);
 
         public string AsRedactedString(string defaultValue)
-            => AsString(_ => defaultValue, validator: null, converter: null, recordValue: false);
+            => AsString(() => defaultValue, validator: null, converter: null, recordValue: false);
 
         /// <summary>
         /// Beware, this function won't record telemetry if the config isn't explicitly set.
@@ -162,22 +162,22 @@ internal readonly struct ConfigurationBuilder
         public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
 
         public string AsString(string defaultValue, Func<string, bool>? validator)
-            => AsString(_ => defaultValue, validator, recordValue: true);
+            => AsString(() => defaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<bool, DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator)
+        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator)
             => AsString(getDefaultValue, validator, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public string? AsString(Func<bool, DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
+        public string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>> converter)
             => AsString(getDefaultValue, validator, converter, recordValue: true);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<bool, DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
+        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, bool recordValue)
             => AsString(getDefaultValue, validator, converter: null, recordValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private string? AsString(Func<bool, DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
+        private string? AsString(Func<DefaultResult<string>>? getDefaultValue, Func<string, bool>? validator, Func<string, ParsingResult<string>>? converter, bool recordValue)
         {
             var result = GetStringResult(validator, converter, recordValue);
             return TryHandleResult(Telemetry, Key, result, recordValue, getDefaultValue, out var value) ? value : null;
@@ -185,7 +185,7 @@ internal readonly struct ConfigurationBuilder
 
         // We have to use different methods for class/struct when we _don't_ have a null value, because NRTs don't work properly otherwise
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T GetAs<T>(Func<bool, DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        public T GetAs<T>(Func<DefaultResult<T>> getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
             var result = GetAs(validator, converter);
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value)
@@ -216,19 +216,19 @@ internal readonly struct ConfigurationBuilder
         // ****************
         public bool? AsBool() => AsBool(getDefaultValue: null, validator: null);
 
-        public bool AsBool(bool defaultValue) => AsBool(_ => defaultValue, validator: null).Value;
+        public bool AsBool(bool defaultValue) => AsBool(() => defaultValue, validator: null).Value;
 
         public bool? AsBool(Func<bool, bool> validator) => AsBool(null, validator);
 
         public bool AsBool(bool defaultValue, Func<bool, bool>? validator)
-            => AsBool(_ => defaultValue, validator).Value;
+            => AsBool(() => defaultValue, validator).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<bool, DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator)
+        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator)
             => AsBool(getDefaultValue, validator, converter: null);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))] // This doesn't work with nullables, but it still expresses intent
-        public bool? AsBool(Func<bool, DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
+        public bool? AsBool(Func<DefaultResult<bool>>? getDefaultValue, Func<bool, bool>? validator, Func<string, ParsingResult<bool>>? converter)
         {
             var result = GetBoolResult(validator, converter);
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
@@ -251,7 +251,7 @@ internal readonly struct ConfigurationBuilder
         public int? AsInt32(int? defaultValue, Func<int, bool>? validator, Func<string, ParsingResult<int>>? converter)
         {
             var result = GetInt32Result(validator, converter);
-            Func<bool, DefaultResult<int>>? getDefaultValue = defaultValue.HasValue ? _ => defaultValue.Value : null;
+            Func<DefaultResult<int>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
@@ -269,7 +269,7 @@ internal readonly struct ConfigurationBuilder
         public double? AsDouble(double? defaultValue, Func<double, bool>? validator, Func<string, ParsingResult<double>>? converter)
         {
             var result = GetDoubleResult(validator, converter);
-            Func<bool, DefaultResult<double>>? getDefaultValue = defaultValue.HasValue ? _ => defaultValue.Value : null;
+            Func<DefaultResult<double>>? getDefaultValue = defaultValue.HasValue ? () => defaultValue.Value : null;
             return TryHandleResult(Telemetry, Key, result, recordValue: true, getDefaultValue, out var value) ? value : null;
         }
 
@@ -277,10 +277,10 @@ internal readonly struct ConfigurationBuilder
         // Dictionary accessors
         // ****************
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(Func<bool, DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
+        public IDictionary<string, string>? AsDictionary(Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null) => AsDictionary(allowOptionalMappings: false, getDefaultValue: getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<bool, DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
+        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, Func<DefaultResult<IDictionary<string, string>>>? getDefaultValue = null)
         {
             // TODO: Handle/allow default values + validation?
             var result = GetDictionaryResult(allowOptionalMappings, separator: ':');
@@ -488,9 +488,9 @@ internal readonly struct ConfigurationBuilder
         public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
 
         public T WithDefault(T defaultValue)
-            => WithDefault(getDefaultValue: _ => defaultValue);
+            => WithDefault(getDefaultValue: () => defaultValue);
 
-        public T WithDefault(Func<bool, DefaultResult<T>> getDefaultValue)
+        public T WithDefault(Func<DefaultResult<T>> getDefaultValue)
         {
             if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
             {
@@ -536,9 +536,9 @@ internal readonly struct ConfigurationBuilder
         public readonly ConfigurationResult<T> ConfigurationResult = configurationResult;
 
         public T WithDefault(T defaultValue)
-            => WithDefault(getDefaultValue: _ => defaultValue);
+            => WithDefault(getDefaultValue: () => defaultValue);
 
-        public T WithDefault(Func<bool, DefaultResult<T>> getDefaultValue)
+        public T WithDefault(Func<DefaultResult<T>> getDefaultValue)
         {
             if (TryHandleResult(Telemetry, Key, ConfigurationResult, RecordValue, getDefaultValue, out var value))
             {
@@ -551,7 +551,6 @@ internal readonly struct ConfigurationBuilder
         public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
             => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: null);
 
-<<<<<<< HEAD
         public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
             => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: () => defaultValue);
 
@@ -560,16 +559,6 @@ internal readonly struct ConfigurationBuilder
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
         private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>>? getDefaultValue)
-=======
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, T defaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue: _ => defaultValue);
-
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, Func<bool, DefaultResult<T>> getDefaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue);
-
-        [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, Func<bool, DefaultResult<T>>? getDefaultValue)
->>>>>>> a0bb2d3da (working with old tests)
         {
             if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
