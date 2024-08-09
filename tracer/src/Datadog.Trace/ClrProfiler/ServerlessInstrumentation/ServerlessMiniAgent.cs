@@ -18,7 +18,7 @@ internal static class ServerlessMiniAgent
 
     internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettings settings)
     {
-        if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctionsConsumptionPlan)
+        if (!settings.IsRunningInGCPFunctions && !settings.IsRunningMiniAgentInAzureFunctions)
         {
             return null;
         }
