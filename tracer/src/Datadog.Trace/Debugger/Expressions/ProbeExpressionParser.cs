@@ -349,6 +349,11 @@ internal partial class ProbeExpressionParser<T>
                             return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32));
                         }
 
+                    case JsonToken.Float:
+                        {
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double));
+                        }
+
                     case JsonToken.StartArray:
                         {
                             _arrayStack++;

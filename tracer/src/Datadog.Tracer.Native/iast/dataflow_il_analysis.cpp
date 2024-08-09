@@ -736,7 +736,8 @@ namespace iast
         default:
             break;
         }
-        auto res = "IL" + Hex(instruction->m_offset) + " : " + _instructionNames[instruction->m_opcode] + " " + argument;
+        auto sep = instruction->IsDirty() ? "*: " : " : ";
+        auto res = "IL" + Hex(instruction->m_offset) + sep + _instructionNames[instruction->m_opcode] + " " + argument;
         return res;
     }
 
@@ -787,7 +788,6 @@ namespace iast
             for (ILInstr* instruction = _body->GetILList()->m_pNext; instruction != _body->GetILList(); instruction = instruction->m_pNext)
             {
                 if (instruction->m_opcode == CEE_SWITCH_ARG) { continue; }
-                bool written = false;
                 EHClause* exitBlock = nullptr;
                 auto hs = Get<ILInstr*, std::vector<EHClause*>>(handlers, instruction);
                 if (hs != nullptr)
@@ -826,7 +826,7 @@ namespace iast
                         }
                     }
                 }
-                if (!written) { trace::Logger::Info(indent, ToString(_body, instruction)); } // Write current instruction
+                trace::Logger::Info(indent, ToString(_body, instruction)); // Write current instruction
                 if (instruction->m_opcode == CEE_ENDFILTER || instruction->m_opcode == CEE_ENDFINALLY || instruction->m_opcode == CEE_LEAVE || instruction->m_opcode == CEE_LEAVE_S)
                 {
                     if (nesting.size() > 0)

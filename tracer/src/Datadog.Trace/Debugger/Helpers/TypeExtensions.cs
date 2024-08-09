@@ -12,51 +12,45 @@ namespace Datadog.Trace.Debugger.Helpers
     {
         internal static bool IsNumeric(this Type type)
         {
-            if (type == null)
+            while (true)
             {
-                return false;
-            }
-
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                return IsNumeric(Nullable.GetUnderlyingType(type));
-            }
-
-            switch (Type.GetTypeCode(type))
-            {
-                case TypeCode.Byte:
-                case TypeCode.SByte:
-                case TypeCode.Int16:
-                case TypeCode.Int32:
-                case TypeCode.Int64:
-                case TypeCode.UInt16:
-                case TypeCode.UInt32:
-                case TypeCode.UInt64:
-                case TypeCode.Decimal:
-                case TypeCode.Double:
-                case TypeCode.Single:
-                    return true;
-                default:
+                if (type == null)
+                {
                     return false;
+                }
+
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    type = Nullable.GetUnderlyingType(type);
+                    continue;
+                }
+
+                return Type.GetTypeCode(type) switch
+                {
+                    TypeCode.Byte or TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16 or TypeCode.Int32 or TypeCode.Int64 or TypeCode.UInt32 or TypeCode.UInt64 or TypeCode.Double or TypeCode.Single or TypeCode.Decimal => true,
+                    TypeCode.Empty or TypeCode.Object or TypeCode.DBNull or TypeCode.Boolean or TypeCode.Char or TypeCode.DateTime or TypeCode.String => false,
+                    _ => false
+                };
             }
         }
 
         internal static bool IsSimple(Type type)
         {
-            if (type == null)
+            while (true)
             {
-                return false;
-            }
+                if (type == null)
+                {
+                    return false;
+                }
 
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                return IsSimple(type.GetGenericArguments()[0]);
-            }
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    type = Nullable.GetUnderlyingType(type);
+                    continue;
+                }
 
-            return type.IsPrimitive
-                || type.IsEnum
-                || type.Equals(typeof(string))
-                || type.Equals(typeof(decimal));
+                return type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal);
+            }
         }
 
         internal static bool IsDefaultValue<T>(ref T value)
