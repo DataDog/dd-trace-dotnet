@@ -24,7 +24,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Serilog.Core;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
