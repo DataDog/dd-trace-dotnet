@@ -28,6 +28,7 @@ namespace iast
 
         unsigned        m_opcode;
         unsigned        m_offset;
+        bool            m_isNew;
 
         union
         {
@@ -45,7 +46,7 @@ namespace iast
             INT32       m_originalArg32;
             INT64       m_originalArg64;
         };
-        inline bool IsNew() { return m_offset == -1; }
+        inline bool IsNew() { return m_isNew; }
         inline bool IsDirty() { return IsNew() || m_Arg64 != m_originalArg64; }
         inline int GetLine() { return (IsNew() && m_pNext) ? m_pNext->GetLine() : -((int)m_offset); }
     };
@@ -104,7 +105,7 @@ namespace iast
         //void SetDirty();
         HRESULT Import();
         HRESULT Import(LPCBYTE pMethodIL);
-        ILInstr* NewILInstr(OPCODE opcode = CEE_COUNT, ULONG32 arg = 0);
+        ILInstr* NewILInstr(OPCODE opcode = CEE_COUNT, ULONG32 arg = 0, bool isNew = false);
         ILInstr* InsertBefore(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
         ILInstr* InsertAfter(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
         HRESULT Export();

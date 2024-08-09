@@ -8,6 +8,7 @@ using System;
 using System.Collections.Specialized;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
@@ -231,7 +232,7 @@ namespace Datadog.Trace.Ci.Configuration
                                       },
                                       ConfigurationOrigins.Calculated));
 
-            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry());
+            var tracerSettings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
 
             if (Logs)
             {

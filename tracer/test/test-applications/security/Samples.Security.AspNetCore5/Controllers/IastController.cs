@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
@@ -995,6 +996,75 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             
             return Content("TestJsonTagSizeExceeded");
+        }
+
+        [HttpGet("Email")]
+        [Route("Email")]
+        public IActionResult Email(string param)
+        {
+            return View("Email");
+        }
+
+        [HttpGet("SendEmailSmtpData")]
+        [Route("SendEmailSmtpData")]
+        public IActionResult SendEmailSmtpData(string email, string name, string lastname,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587)
+        {
+            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+        }
+
+        [HttpGet("SendEmail")]
+        [Route("SendEmail")]
+        public IActionResult SendEmail(string email, string name, string lastname)
+        {
+            return SendMailAux(name, lastname, email);
+        }
+
+        private IActionResult SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587, bool escape = false)
+        {
+            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
+                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
+                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
+
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = firstName + " welcome!";
+
+            if (string.IsNullOrEmpty(smtpUsername))
+            {
+                smtpUsername = email;
+            }
+
+            try
+            {
+
+                var mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress(smtpUsername);
+                mailMessage.To.Add(email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = contentHtml;
+                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+                var client = new SmtpClient(smtpserver, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = true,
+                    Timeout = 1000
+                };
+                client.Send(mailMessage);
+            }
+            catch (SmtpException)
+            {
+                return StatusCode(200, "Mail message was not sent");
+            }
+
+            return Content("Email sent");
         }
 
         static string CopyStringAvoidTainting(string original)

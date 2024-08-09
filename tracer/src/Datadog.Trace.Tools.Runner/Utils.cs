@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -405,7 +406,7 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
             configurationSource.AddInternal(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
+            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
             Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);

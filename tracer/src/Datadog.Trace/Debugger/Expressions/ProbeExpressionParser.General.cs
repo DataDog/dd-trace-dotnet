@@ -19,63 +19,81 @@ internal partial class ProbeExpressionParser<T>
 {
     private const BindingFlags GetMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
 
-    private static Expression ConvertToDouble(Expression expr)
+    // https://learn.microsoft.com/en-us/dotnet/standard/base-types/conversion-tables
+    private static Type GetWiderNumericType(Type left, Type right)
     {
-        if (expr.Type == typeof(double))
+        if (left == right)
         {
-            return expr;
+            return left;
         }
 
-        if (expr.Type.IsNumeric())
+        if (left == typeof(decimal) || right == typeof(decimal))
         {
-            return Expression.Convert(expr, typeof(double));
+            return typeof(decimal);
         }
 
-        return expr;
+        if (left == typeof(double) || right == typeof(double))
+        {
+            if (left != typeof(ulong) && right != typeof(long))
+            {
+                return typeof(double);
+            }
+
+            return typeof(decimal);
+        }
+
+        if (left == typeof(float) || right == typeof(float))
+        {
+            if ((left != typeof(ulong) && left != typeof(long) && left != typeof(int) && left != typeof(uint)) &&
+                (right != typeof(ulong) && right != typeof(long) && right != typeof(int) && right != typeof(uint)))
+            {
+                return typeof(double);
+            }
+
+            return typeof(decimal);
+        }
+
+        if (left == typeof(ulong) || right == typeof(ulong))
+        {
+            return typeof(ulong);
+        }
+
+        if (left == typeof(long) || right == typeof(long))
+        {
+            return typeof(long);
+        }
+
+        if (left == typeof(uint) || right == typeof(uint))
+        {
+            return typeof(uint);
+        }
+
+        if (left == typeof(int) || right == typeof(int))
+        {
+            return typeof(int);
+        }
+
+        if (left == typeof(ushort) || right == typeof(ushort))
+        {
+            return typeof(ushort);
+        }
+
+        if (left == typeof(short) || right == typeof(short))
+        {
+            return typeof(short);
+        }
+
+        if (left == typeof(byte) || right == typeof(byte))
+        {
+            return typeof(byte);
+        }
+
+        return typeof(sbyte);
     }
 
-    private static bool IsIntegralNumericType(Type type)
+    private static Expression CallConvertToNumericType<TNumeric>(Expression finalExpr)
     {
-        if (type == typeof(byte)
-         || type == typeof(sbyte)
-         || type == typeof(short)
-         || type == typeof(ushort)
-         || type == typeof(int)
-         || type == typeof(uint)
-         || type == typeof(nint)
-         || type == typeof(nuint))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    private static MethodCallExpression CallConvertToNumericType<TNumeric>(Expression finalExpr)
-    {
-        var convertMethodName = typeof(TNumeric) switch
-        {
-            { } @int when @int == typeof(byte) => nameof(IConvertible.ToByte),
-            { } @int when @int == typeof(sbyte) => nameof(IConvertible.ToSByte),
-            { } @int when @int == typeof(short) => nameof(IConvertible.ToInt16),
-            { } @int when @int == typeof(ushort) => nameof(IConvertible.ToUInt16),
-            { } @int when @int == typeof(int) => nameof(IConvertible.ToInt32),
-            { } @int when @int == typeof(uint) => nameof(IConvertible.ToUInt32),
-            { } @int when @int == typeof(long) => nameof(IConvertible.ToInt64),
-            { } @int when @int == typeof(ulong) => nameof(IConvertible.ToUInt64),
-            { } @int when @int == typeof(float) => nameof(IConvertible.ToSingle),
-            { } @int when @int == typeof(double) => nameof(IConvertible.ToDouble),
-            { } @int when @int == typeof(decimal) => nameof(IConvertible.ToDecimal),
-            _ => null
-        };
-
-        return convertMethodName == null
-                   ? null
-                   : Expression.Call(
-                       Expression.Convert(finalExpr, typeof(IConvertible)),
-                       ProbeExpressionParserHelper.GetMethodByReflection(
-                           typeof(IConvertible), convertMethodName, new[] { typeof(IFormatProvider) }),
-                       Expression.Constant(NumberFormatInfo.CurrentInfo));
+        return typeof(TNumeric).IsNumeric() ? Expression.Convert(finalExpr, typeof(TNumeric)) : null;
     }
 
     private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)

@@ -485,20 +485,20 @@ namespace iast
                 if (methodRef == 0) { continue; } //Disabled Spot
                 if (instructionToProcess.behavior == AspectBehavior::InsertBefore)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef, true);
                     processor->InsertBefore(instructionToProcess.instruction, aspectInstruction);
                 }
                 else if (instructionToProcess.behavior == AspectBehavior::InsertAfter)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef, true);
                     auto inserted = processor->InsertAfter(instructionToProcess.instruction, aspectInstruction);
 
                     if (_aspect->_boxParam[instructionToProcess.paramIndex])
                     {
                         // Retrieve type of the valueType in target argument
                         auto paramType = _targetParamTypeToken[instructionToProcess.paramIndex];
-                        processor->InsertBefore(aspectInstruction, processor->NewILInstr(CEE_BOX, paramType));
-                        inserted = processor->InsertAfter(aspectInstruction, processor->NewILInstr(CEE_UNBOX_ANY, paramType));
+                        processor->InsertBefore(aspectInstruction, processor->NewILInstr(CEE_BOX, paramType, true));
+                        inserted = processor->InsertAfter(aspectInstruction, processor->NewILInstr(CEE_UNBOX_ANY, paramType, true));
                     }
 
                     if (instructionToProcess.instruction == instruction)
@@ -525,7 +525,7 @@ namespace iast
                                      paramCount - _aspect->_paramShift[x] - 1)) // Locate param load instruction
                             {
                                 auto paramType = _targetParamTypeToken[x];
-                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType));
+                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType, true));
 
                                 // Figure out if param is byref
                                 if (iInfo->IsArgument())
@@ -534,7 +534,7 @@ namespace iast
                                     auto param = sig->_params[iInfo->_instruction->m_Arg32];
                                     if (param->IsByRef())
                                     {
-                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType));
+                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType, true));
                                     }
                                 }
 
