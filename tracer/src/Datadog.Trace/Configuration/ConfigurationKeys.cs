@@ -100,6 +100,13 @@ namespace Datadog.Trace.Configuration
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
+        /// Configuration key for a list of OpenTelemetry integrations where their ActivitySource's will not be listened to.
+        /// Default is empty (all OpenTelemetry integrations will be listened to).
+        /// Supports multiple values separated with semi-colons.
+        /// </summary>
+        public const string DisabledOpenTelemetryIntegrations = "DD_DISABLED_OPENTELEMETRY_INTEGRATIONS";
+
+        /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
         /// <seealso cref="TracerSettings.AnalyticsEnabled"/>

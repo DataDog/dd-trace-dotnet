@@ -16,6 +16,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         ServiceVersionInternal = settings.ServiceVersionInternal;
         TraceEnabledInternal = settings.TraceEnabledInternal;
         DisabledIntegrationNamesInternal = GetHashSet(settings.DisabledIntegrationNamesInternal);
+        DisabledOpenTelemetryIntegrationNamesInternal = settings.DisabledOpenTelemetryIntegrationNamesInternal;
         AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
         MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
         CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
@@ -35,6 +36,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
     private string? ServiceVersionInternal { get; }
     private bool TraceEnabledInternal { get; }
     private System.Collections.Generic.HashSet<string>? DisabledIntegrationNamesInternal { get; }
+    private string? DisabledOpenTelemetryIntegrationNamesInternal { get; }
     private bool AnalyticsEnabledInternal { get; }
     private int MaxTracesSubmittedPerSecondInternal { get; }
     private string? CustomSamplingRulesInternal { get; }
@@ -54,6 +56,7 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
         RecordIfChanged(telemetry, "DD_VERSION", ServiceVersionInternal, settings.ServiceVersionInternal);
         RecordIfChanged(telemetry, "DD_TRACE_ENABLED", TraceEnabledInternal, settings.TraceEnabledInternal);
         RecordIfChanged(telemetry, "DD_DISABLED_INTEGRATIONS", DisabledIntegrationNamesInternal, GetHashSet(settings.DisabledIntegrationNamesInternal));
+        RecordIfChanged(telemetry, "DD_DISABLED_OPENTELEMETRY_INTEGRATIONS", DisabledOpenTelemetryIntegrationNamesInternal, settings.DisabledOpenTelemetryIntegrationNamesInternal);
         RecordIfChanged(telemetry, "DD_TRACE_ANALYTICS_ENABLED", AnalyticsEnabledInternal, settings.AnalyticsEnabledInternal);
         RecordIfChanged(telemetry, "DD_TRACE_RATE_LIMIT", MaxTracesSubmittedPerSecondInternal, settings.MaxTracesSubmittedPerSecondInternal);
         RecordIfChanged(telemetry, "DD_TRACE_SAMPLING_RULES", CustomSamplingRulesInternal, settings.CustomSamplingRulesInternal);

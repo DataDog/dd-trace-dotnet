@@ -172,6 +172,13 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNamesInternal = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            var disabledOpenTelemetryIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledOpenTelemetryIntegrations)
+                                                              .AsString()
+                                                              ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                                        Enumerable.Empty<string>();
+
+            DisabledOpenTelemetryIntegrationNamesInternal = config.WithKeys(ConfigurationKeys.DisabledOpenTelemetryIntegrations).AsString();
+
             IntegrationsInternal = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
 
             ExporterInternal = new ExporterSettings(source, _telemetry);
@@ -594,6 +601,13 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set)]
         [ConfigKey(ConfigurationKeys.DisabledIntegrations)]
         internal HashSet<string> DisabledIntegrationNamesInternal { get; set; }
+
+        /// <summary>
+        /// Gets or sets the names of disabled OpenTelemetry integrations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledOpenTelemetryIntegrations"/>
+        [ConfigKey(ConfigurationKeys.DisabledOpenTelemetryIntegrations)]
+        internal string? DisabledOpenTelemetryIntegrationNamesInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
