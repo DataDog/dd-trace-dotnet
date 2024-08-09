@@ -24,7 +24,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginSuccessEvent(string userId)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackUserLoginSuccessEventIntegration.OnMethodBegin<object>(userId);
         }
@@ -38,7 +38,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackUserLoginSuccessEventMetadataIntegration.OnMethodBegin<object>(userId, metadata);
         }
@@ -52,7 +52,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginFailureEvent(string userId, bool exists)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackUserLoginFailureEventIntegration.OnMethodBegin<object>(userId, exists);
         }
@@ -67,7 +67,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackUserLoginFailureEventMetadataIntegration.OnMethodBegin<object>(userId, exists, metadata);
         }
@@ -80,7 +80,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackCustomEvent(string eventName)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackCustomEventIntegration.OnMethodBegin<object>(eventName);
         }
@@ -94,7 +94,7 @@ public static class EventTrackingSdk
     [Instrumented]
     public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             EventTrackingSdkTrackCustomEventMetadataIntegration.OnMethodBegin<object>(eventName, metadata);
         }

@@ -34,7 +34,7 @@ namespace Datadog.Trace.Configuration
         {
             get
             {
-                if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+                if (Instrumentation.SafeIsManualInstrumentationOnly())
                 {
                     IntegrationSettingsCollectionIndexerIntegration.OnMethodBegin(this, ref integrationName);
                 }

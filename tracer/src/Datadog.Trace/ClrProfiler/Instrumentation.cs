@@ -24,6 +24,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -41,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         private static int _firstInitialization = 1;
         private static int _firstNonNativePartsInitialization = 1;
+        private static bool? _isManualInstrumentationOnly;
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -71,6 +73,27 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether automatic instrumentation is enabled
+        /// </summary>
+        /// <returns>False if automatic instrumentation is enabled, True otherwise</returns>
+        public static bool SafeIsManualInstrumentationOnly()
+        {
+            if (_isManualInstrumentationOnly == null)
+            {
+                _isManualInstrumentationOnly = Tracer.GetAutomaticTracerInstance() is InternalTracer;
+            }
+
+            return _isManualInstrumentationOnly.Value;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether automatic instrumentation is enabled
+        /// </summary>
+        /// <returns>False if automatic instrumentation is enabled, True otherwise</returns>
+        [Instrumented]
+        public static bool IsManualInstrumentationOnly() => true;
 
         /// <summary>
         /// Gets a value indicating whether automatic instrumentation is enabled
@@ -596,6 +619,11 @@ namespace Datadog.Trace.ClrProfiler
                 tc.TrySetResult(true);
                 discoveryService.RemoveSubscription(Callback);
             }
+        }
+
+        internal static void DisableManualInstrumentation()
+        {
+            _isManualInstrumentationOnly = false;
         }
 
         internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)

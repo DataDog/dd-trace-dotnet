@@ -95,7 +95,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 EnvironmentGetIntegration.OnMethodBegin(this);
             }
@@ -112,7 +112,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AgentUriIntegration.OnMethodBegin(this);
             }
@@ -130,7 +130,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ExporterGetIntegration.OnMethodBegin(this);
             }
@@ -148,7 +148,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ServiceNameGetIntegration.OnMethodBegin(this);
             }
@@ -166,7 +166,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ServiceVersionGetIntegration.OnMethodBegin(this);
             }
@@ -184,7 +184,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 TraceEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -208,7 +208,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -227,7 +227,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 LogsInjectionEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -245,7 +245,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 MaxTracesSubmittedPerSecondGetIntegration.OnMethodBegin(this);
             }
@@ -262,7 +262,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 CustomSamplingRulesGetIntegration.OnMethodBegin(this);
             }
@@ -279,7 +279,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GlobalSamplingRateGetIntegration.OnMethodBegin(this);
             }
@@ -296,7 +296,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 IntegrationsGetIntegration.OnMethodBegin(this);
             }
@@ -313,7 +313,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GlobalTagsGetIntegration.OnMethodBegin(this);
             }
@@ -331,7 +331,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GrpcTagsGetIntegration.OnMethodBegin(this);
             }
@@ -349,7 +349,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 HeaderTagsGetIntegration.OnMethodBegin(this);
             }
@@ -367,7 +367,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 TracerMetricsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -384,7 +384,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StatsComputationEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -402,7 +402,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 KafkaCreateConsumerScopeEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -419,7 +419,7 @@ public sealed class ImmutableTracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StartupDiagnosticLogEnabledGetIntegration.OnMethodBegin(this);
             }

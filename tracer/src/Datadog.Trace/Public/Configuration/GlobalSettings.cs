@@ -26,7 +26,7 @@ public sealed class GlobalSettings
     [Instrumented]
     public static void SetDebugEnabled(bool enabled)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             GlobalSettingsSetDebugEnabledIntegration.OnMethodBegin<GlobalSettings>(enabled);
         }

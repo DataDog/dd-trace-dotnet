@@ -31,7 +31,7 @@ namespace Datadog.Trace
         [Instrumented]
         private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 CtorIntegration.OnMethodBegin<Tracer>(this, automaticTracer, initialValues);
             }
@@ -51,6 +51,7 @@ namespace Datadog.Trace
             get
             {
                 var automaticTracer = GetAutomaticTracerInstance();
+
                 var current = Volatile.Read(ref _instance);
 
                 if (current is not null)
@@ -84,7 +85,7 @@ namespace Datadog.Trace
         {
             get
             {
-                if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+                if (Instrumentation.SafeIsManualInstrumentationOnly())
                 {
                     return GetActiveScopeIntegration.OnMethodEnd<Tracer, IScope>(this, default!, default!, default).GetReturnValue();
                 }
@@ -101,7 +102,7 @@ namespace Datadog.Trace
         {
             get
             {
-                if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+                if (Instrumentation.SafeIsManualInstrumentationOnly())
                 {
                     return GetDefaultServiceNameIntegration.OnMethodEnd(this, default!, default!, default).GetReturnValue()!;
                 }
@@ -130,7 +131,7 @@ namespace Datadog.Trace
         [Instrumented]
         public IScope StartActive(string operationName)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StartActiveOperationNameIntegration.OnMethodBegin(this, ref operationName);
             }
@@ -142,7 +143,7 @@ namespace Datadog.Trace
         [Instrumented]
         public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StartActiveSpanCreationSettingsIntegration.OnMethodBegin(this, operationName, settings);
             }
@@ -158,7 +159,7 @@ namespace Datadog.Trace
         [Instrumented]
         public Task ForceFlushAsync()
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 return ForceFlushAsyncIntegration.OnMethodEnd(this, default!, default!, default).GetReturnValue()!;
             }
@@ -172,7 +173,7 @@ namespace Datadog.Trace
         [Instrumented]
         private static void Configure(Dictionary<string, object?> settings)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ConfigureIntegration.OnMethodBegin<Tracer>(settings);
             }
@@ -184,9 +185,9 @@ namespace Datadog.Trace
         /// Automatic instrumentation intercepts this method and returns the global tracer instance
         /// </summary>
         [Instrumented]
-        private static object? GetAutomaticTracerInstance()
+        internal static object? GetAutomaticTracerInstance()
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.IsManualInstrumentationOnly())
             {
                 return GetAutomaticTracerInstanceIntegration.OnMethodEnd<Tracer>(default!, default!, default).GetReturnValue();
             }
@@ -200,7 +201,7 @@ namespace Datadog.Trace
         [Instrumented]
         private IScope StartActive(string operationName, ISpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 var state = StartActiveImplementationIntegration.OnMethodBegin(this, operationName, parent, serviceName, startTime, finishOnClose);
                 return StartActiveImplementationIntegration.OnMethodEnd(this, (IScope?)null, default, state).GetReturnValue()!;
@@ -221,7 +222,7 @@ namespace Datadog.Trace
         [Instrumented]
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext? parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 var state = StartSpanIntegration.OnMethodBegin(this, operationName, parent, serviceName, startTime, ignoreActiveScope);
                 return StartSpanIntegration.OnMethodEnd<Tracer, ISpan>(this, default!, default!, state).GetReturnValue()!;

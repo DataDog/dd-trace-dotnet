@@ -60,7 +60,7 @@ public sealed class TracerSettings
         // TODO: _Currently_ this doesn't load _any_ configuration, so it feels like an error for customers to use it?
         // I'm wondering if we should _always_ populate from the default sources instead, as otherwise seems
         // like an obvious point of confusion?
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             CtorIntegration.OnMethodBegin(this);
         }
@@ -77,7 +77,7 @@ public sealed class TracerSettings
     public TracerSettings(bool useDefaultSources)
         : this(PopulateDictionary(new(), useDefaultSources), useDefaultSources)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             CtorUseDefaultSourcesIntegration.OnMethodBegin(this);
         }
@@ -166,7 +166,7 @@ public sealed class TracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 DiagnosticSourceEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -179,7 +179,7 @@ public sealed class TracerSettings
         {
             // As this was previously obsolete, we could just remove it?
             // Alternatively, mark it as an error instead?
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 DiagnosticSourceEnabledSetIntegration.OnMethodBegin(this, ref value);
             }
@@ -195,7 +195,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 EnvironmentGetIntegration.OnMethodBegin(this);
             }
@@ -215,7 +215,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ServiceNameGetIntegration.OnMethodBegin(this);
             }
@@ -234,7 +234,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ServiceVersionGetIntegration.OnMethodBegin(this);
             }
@@ -257,7 +257,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -276,7 +276,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GlobalSamplingRateGetIntegration.OnMethodBegin(this);
             }
@@ -295,7 +295,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GlobalTagsGetIntegration.OnMethodBegin(this);
             }
@@ -315,7 +315,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 GrpcTagsGetIntegration.OnMethodBegin(this);
             }
@@ -334,7 +334,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 HeaderTagsGetIntegration.OnMethodBegin(this);
             }
@@ -354,7 +354,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 KafkaCreateConsumerScopeEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -374,7 +374,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 LogsInjectionEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -394,7 +394,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 MaxTracesSubmittedPerSecondGetIntegration.OnMethodBegin(this);
             }
@@ -413,7 +413,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 CustomSamplingRulesGetIntegration.OnMethodBegin(this);
             }
@@ -432,7 +432,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StartupDiagnosticLogEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -451,7 +451,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 TraceEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -470,7 +470,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 DisabledIntegrationNamesGetIntegration.OnMethodBegin(this);
             }
@@ -490,7 +490,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 TracerMetricsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -509,7 +509,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 StatsComputationEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -529,7 +529,7 @@ public sealed class TracerSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AgentUriGetIntegration.OnMethodBegin(this);
             }
@@ -548,7 +548,7 @@ public sealed class TracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 IntegrationsGetIntegration.OnMethodBegin(this);
             }
@@ -566,7 +566,7 @@ public sealed class TracerSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ExporterGetIntegration.OnMethodBegin(this);
             }
@@ -582,7 +582,7 @@ public sealed class TracerSettings
     [Instrumented]
     public static TracerSettings FromDefaultSources()
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             FromDefaultSourcesIntegration.OnMethodBegin<TracerSettings>();
         }
@@ -643,7 +643,7 @@ public sealed class TracerSettings
     [Instrumented]
     private static Dictionary<string, object?> PopulateDictionary(Dictionary<string, object?> values, bool useDefaultSources)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             PopulateDictionaryIntegration.OnMethodBegin<TracerSettings>(values, useDefaultSources);
         }

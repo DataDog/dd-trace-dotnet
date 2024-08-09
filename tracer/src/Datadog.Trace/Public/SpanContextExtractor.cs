@@ -27,7 +27,7 @@ namespace Datadog.Trace
         [Instrumented]
         public SpanContextExtractor()
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 SpanContextExtractorConstructorIntegration.OnMethodBegin(this);
             }
@@ -43,7 +43,7 @@ namespace Datadog.Trace
         [Instrumented]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 var state = SpanContextExtractorExtractIntegration.OnMethodBegin(this, carrier, getter);
                 return SpanContextExtractorExtractIntegration.OnMethodEnd(this, (ISpanContext?)default, default!, state).GetReturnValue();
@@ -67,7 +67,7 @@ namespace Datadog.Trace
         [Instrumented]
         public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 var state = SpanContextExtractorExtractIncludingDsmIntegration.OnMethodBegin(this, carrier, getter, messageType, source);
                 return SpanContextExtractorExtractIncludingDsmIntegration.OnMethodEnd(this, (ISpanContext?)default, default!, state).GetReturnValue();

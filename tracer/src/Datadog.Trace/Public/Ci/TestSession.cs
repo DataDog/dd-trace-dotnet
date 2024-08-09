@@ -70,7 +70,7 @@ public static class TestSession
     [Instrumented]
     internal static ITestSession InternalGetOrCreate(string command, string? workingDirectory, string? framework, DateTimeOffset? startDate, bool propagateEnvironmentVariables = false)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             var state = TestSessionInternalGetOrCreateIntegration.OnMethodBegin<object>(command, workingDirectory!, framework!, startDate, propagateEnvironmentVariables);
             return TestSessionInternalGetOrCreateIntegration.OnMethodEnd<object, ITestSession>(default!, default!, state).GetReturnValue()!;

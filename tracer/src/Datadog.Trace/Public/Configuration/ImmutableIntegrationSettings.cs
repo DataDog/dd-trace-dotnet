@@ -42,7 +42,7 @@ public sealed class ImmutableIntegrationSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 IntegrationNameGetIntegration.OnMethodBegin(this);
             }
@@ -60,7 +60,7 @@ public sealed class ImmutableIntegrationSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 EnabledGetIntegration.OnMethodBegin(this);
             }
@@ -78,7 +78,7 @@ public sealed class ImmutableIntegrationSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -96,7 +96,7 @@ public sealed class ImmutableIntegrationSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsSampleRateGetIntegration.OnMethodBegin(this);
             }

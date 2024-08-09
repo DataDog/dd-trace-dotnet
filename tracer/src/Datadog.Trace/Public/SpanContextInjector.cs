@@ -24,7 +24,7 @@ namespace Datadog.Trace
         [Instrumented]
         public SpanContextInjector()
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 SpanContextInjectorConstructorIntegration.OnMethodBegin(this);
             }
@@ -42,7 +42,7 @@ namespace Datadog.Trace
         [Instrumented]
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 SpanContextInjectorInjectIntegration.OnMethodBegin(this, carrier, setter, context);
             }
@@ -63,7 +63,7 @@ namespace Datadog.Trace
         [Instrumented]
         public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 SpanContextInjectorInjectIncludingDsmIntegration.OnMethodBegin(this, carrier, setter, context, messageType, target);
             }

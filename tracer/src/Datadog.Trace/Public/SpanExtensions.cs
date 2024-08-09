@@ -26,7 +26,7 @@ public static class SpanExtensions
     [Instrumented]
     public static ISpan SetTag(this ISpan span, string key, double? value)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             SpanExtensionsSetTagIntegration.OnMethodBegin<ISpan, ISpan>(ref span, ref key, ref value);
         }
@@ -53,7 +53,7 @@ public static class SpanExtensions
         string? role,
         string? scope)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             SpanExtensionsSetUserIntegration.OnMethodBegin<ISpan, ISpan>(ref span, email, name, id, propagateId, sessionId, role, scope);
         }

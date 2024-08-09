@@ -38,7 +38,7 @@ public sealed class IntegrationSettings
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 IntegrationNameGetIntegration.OnMethodBegin(this);
             }
@@ -56,7 +56,7 @@ public sealed class IntegrationSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 EnabledGetIntegration.OnMethodBegin(this);
             }
@@ -76,7 +76,7 @@ public sealed class IntegrationSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsEnabledGetIntegration.OnMethodBegin(this);
             }
@@ -96,7 +96,7 @@ public sealed class IntegrationSettings
         [Instrumented]
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 AnalyticsSampleRateGetIntegration.OnMethodBegin(this);
             }

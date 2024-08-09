@@ -28,9 +28,9 @@ public static class SpanExtensions
     [Instrumented]
     public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
-            SpanExtensionsSetTraceSamplingPriorityIntegration.OnMethodBegin<ISpan, ISpan>(ref span, samplingPriority.DuckCast<InternalSamplingPriority>());
+            SpanExtensionsSetTraceSamplingPriorityIntegration.OnMethodBegin<ISpan, ISpan>(ref span, (InternalSamplingPriority)(int)samplingPriority);
         }
     }
 }

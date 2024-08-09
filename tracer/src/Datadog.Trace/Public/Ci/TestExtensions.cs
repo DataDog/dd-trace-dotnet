@@ -24,7 +24,7 @@ public static class TestExtensions
     [Instrumented]
     public static void SetParameters(this ITest test, TestParameters parameters)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             TestExtensionsSetParametersIntegration.OnMethodBegin<object, ITest, ITestParameters>(test, parameters.DuckCast<ITestParameters>());
         }
@@ -39,7 +39,7 @@ public static class TestExtensions
     [Instrumented]
     public static void SetBenchmarkMetadata(this ITest test, in BenchmarkHostInfo hostInfo, in BenchmarkJobInfo jobInfo)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             TestExtensionsSetBenchmarkMetadataIntegration.OnMethodBegin<object, ITest, IBenchmarkHostInfo, IBenchmarkJobInfo>(
                 test,
@@ -58,7 +58,7 @@ public static class TestExtensions
     [Instrumented]
     public static void AddBenchmarkData(this ITest test, BenchmarkMeasureType measureType, string info, in BenchmarkDiscreteStats statistics)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             TestExtensionsAddBenchmarkDataIntegration.OnMethodBegin<object, ITest, IBenchmarkDiscreteStats>(
                 test,

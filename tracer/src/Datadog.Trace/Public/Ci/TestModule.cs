@@ -49,7 +49,7 @@ public static class TestModule
     [Instrumented]
     internal static ITestModule InternalCreate(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
-        if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+        if (Instrumentation.SafeIsManualInstrumentationOnly())
         {
             var state = TestModuleInternalCreateIntegration.OnMethodBegin<object>(name, framework!, frameworkVersion!, startDate);
             return TestModuleInternalCreateIntegration.OnMethodEnd<object, ITestModule>(default!, default!, state).GetReturnValue()!;

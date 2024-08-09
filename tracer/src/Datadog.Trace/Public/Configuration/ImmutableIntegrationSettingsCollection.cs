@@ -34,7 +34,7 @@ public sealed class ImmutableIntegrationSettingsCollection
     {
         get
         {
-            if (!Instrumentation.IsAutomaticInstrumentationEnabled())
+            if (Instrumentation.SafeIsManualInstrumentationOnly())
             {
                 ImmutableIntegrationSettingsCollectionIndexerIntegration.OnMethodBegin(this, ref integrationName);
             }
