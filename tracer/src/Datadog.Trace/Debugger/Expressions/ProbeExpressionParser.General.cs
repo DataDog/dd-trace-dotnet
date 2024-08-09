@@ -168,6 +168,15 @@ internal partial class ProbeExpressionParser<T>
         return Expression.TypeIs(value, type);
     }
 
+    private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        return Expression.Property(
+            Expression.Call(
+                ParseTree(reader, parameters, itParameter),
+                ProbeExpressionParserHelper.GetMethodByReflection(typeof(object), "GetType", Type.EmptyTypes)),
+            nameof(Type.FullName));
+    }
+
     private Expression IsUndefined(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
