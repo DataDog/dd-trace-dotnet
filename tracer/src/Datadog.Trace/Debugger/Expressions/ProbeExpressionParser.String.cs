@@ -63,13 +63,20 @@ internal partial class ProbeExpressionParser<T>
 
         if (source.Type == typeof(string))
         {
-            var emptyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.IsNullOrEmpty), Type.EmptyTypes);
-            return Expression.Call(source, emptyMethod);
+            var emptyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.IsNullOrEmpty), [typeof(string)]);
+            return Expression.Call(null, emptyMethod, source);
         }
 
-        // not sure about that, it seems from the RFC that isEmpty should support also collections
-        var collectionCount = CollectionAndStringLengthExpression(source);
-        return Expression.Equal(collectionCount, Expression.Constant(0));
+        try
+        {
+            var collectionCount = CollectionAndStringLengthExpression(source);
+            return Expression.Equal(collectionCount, Expression.Constant(0));
+        }
+        catch (InvalidOperationException e)
+        {
+            AddError($"{source?.ToString() ?? "N/A"}.IsEmpty", e.Message + ", or a string");
+            return ReturnDefaultValueExpression();
+        }
     }
 
     private Expression CallStringMethod(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter, MethodInfo method)

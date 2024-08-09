@@ -1,0 +1,8 @@
+{
+  "dsl": "isEmpty(ref IntNumber)",
+  "isEmpty": [
+    {
+      "ref": "IntNumber"
+    }
+  ]
+}
