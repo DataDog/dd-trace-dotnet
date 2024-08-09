@@ -21,10 +21,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private volatile int _initializationOrTearDownInProgress;
 
-        public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString)
+        public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString, int normalizedExceptionHash)
         {
             ExceptionIdentifier = exceptionId;
             ErrorHash = MD5HashProvider.GetHash(exceptionId);
+            NormalizedExceptionHash = normalizedExceptionHash;
             ExceptionToString = exceptionToString;
             StartCollectingTime = DateTime.MaxValue;
         }
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public string ErrorHash { get; }
 
         public string ExceptionToString { get; }
+
+        public int NormalizedExceptionHash { get; }
 
         public ExceptionCollectionState TrackingExceptionCollectionState { get; private set; } = ExceptionCollectionState.None;
 
@@ -76,7 +79,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier);
                 BeginCollect(@case);
-                CachedDoneExceptions.Remove(ExceptionToString);
+                CachedDoneExceptions.Remove(NormalizedExceptionHash);
             }
         }
 

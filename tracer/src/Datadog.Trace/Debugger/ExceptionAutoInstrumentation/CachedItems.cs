@@ -18,48 +18,46 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal class CachedItems
     {
-        private readonly HashSet<int> cache = new();
-        private readonly ReaderWriterLockSlim cacheLocker = new();
+        private readonly HashSet<int> _cache = new();
+        private readonly ReaderWriterLockSlim _cacheLocker = new();
 
-        internal void Add(string item)
+        internal void Add(int item)
         {
-            cacheLocker.EnterWriteLock();
+            _cacheLocker.EnterWriteLock();
             try
             {
-                cache.Add(Hash(item));
+                _cache.Add(item);
             }
             finally
             {
-                cacheLocker.ExitWriteLock();
+                _cacheLocker.ExitWriteLock();
             }
         }
 
-        internal bool Remove(string item)
+        internal bool Remove(int item)
         {
-            cacheLocker.EnterWriteLock();
+            _cacheLocker.EnterWriteLock();
             try
             {
-                return cache.Remove(Hash(item));
+                return _cache.Remove(item);
             }
             finally
             {
-                cacheLocker.ExitWriteLock();
+                _cacheLocker.ExitWriteLock();
             }
         }
 
-        internal bool Contains(string item)
+        internal bool Contains(int item)
         {
-            cacheLocker.EnterReadLock();
+            _cacheLocker.EnterReadLock();
             try
             {
-                return cache.Contains(Hash(item));
+                return _cache.Contains(item);
             }
             finally
             {
-                cacheLocker.ExitReadLock();
+                _cacheLocker.ExitReadLock();
             }
         }
-
-        private int Hash(string item) => Fnv1aHash.GetFNVHashCode(StringEncoding.UTF8.GetBytes(item));
     }
 }
