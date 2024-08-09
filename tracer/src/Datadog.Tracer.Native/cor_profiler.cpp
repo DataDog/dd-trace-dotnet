@@ -988,7 +988,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
             const auto& assemblyVersion = assemblyImport.version.str();
 
-            Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - Fix PInvoke maps");
+            Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
 
             // Rewrite Instrumentation.IsManualInstrumentationOnly()
             RewriteIsManualInstrumentationOnly(module_metadata, module_id);
