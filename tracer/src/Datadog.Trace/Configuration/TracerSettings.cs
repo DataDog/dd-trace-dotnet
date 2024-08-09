@@ -198,7 +198,7 @@ namespace Datadog.Trace.Configuration
                                 .OverrideWith(
                                      RemapOtelTags(in otelTags),
                                      ErrorLog,
-                                     () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string?>(), string.Empty))
+                                     () => new DefaultResult<IDictionary<string, string?>>(new Dictionary<string, string?>(), string.Empty))
                                  // Filter out tags with empty keys or empty values, and trim whitespace
                                 .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                 .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim());
