@@ -63,6 +63,7 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
     t.tm_hour = st.wHour;
     t.tm_min = st.wMinute;
     t.tm_sec = st.wSecond;
+    t.tm_isdst = -1; // don't mess with daylight saving time (already done by SystemTimeToTzSpecificLocalTime)
     time_t timeSinceEpoch = mktime(&t);
 
     return timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
