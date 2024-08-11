@@ -26,7 +26,7 @@ public static class Utils
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
         {
-            archFolder = "linux-arm64";
+            archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
         }
         else
         {
@@ -42,7 +42,8 @@ public static class Utils
         var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
         {
             ("win", _, _) => "win-x64",
-            ("linux", "Arm64", _) => "linux-arm64",
+            ("linux", "Arm64", false) => "linux-arm64",
+            ("linux", "Arm64", true) => "linux-musl-arm64",
             ("linux", "X64", false) => "linux-x64",
             ("linux", "X64", true) => "linux-musl-x64",
             _ => throw new PlatformNotSupportedException()
