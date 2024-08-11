@@ -232,7 +232,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
         {
-            archFolder = "linux-arm64";
+            archFolder = Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
         }
         else
         {
@@ -471,7 +471,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             {
                 ("win", _, "X64", _) => ("dll", "win-x64"),
                 ("win", _, "X86", _) => ("dll", "win-x86"),
-                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, false) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, true) => ("so", "linux-musl-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),
