@@ -5991,7 +5991,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2022
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
