@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -91,9 +92,49 @@ internal partial class ProbeExpressionParser<T>
         return typeof(sbyte);
     }
 
-    private static Expression CallConvertToNumericType<TNumeric>(Expression finalExpr)
+    private static bool TryConvertToNumericType<TNumeric>(Expression finalExpr, [NotNullWhen(true)] out Expression result)
     {
-        return typeof(TNumeric).IsNumeric() ? Expression.Convert(finalExpr, typeof(TNumeric)) : null;
+        if (typeof(TNumeric).IsNumeric() && finalExpr.Type.IsNumeric())
+        {
+            result = Expression.Convert(finalExpr, typeof(TNumeric));
+            return true;
+        }
+
+        if (typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
+        {
+            result = CallConvertToNumericType<TNumeric>(finalExpr);
+            return true;
+        }
+
+        result = null;
+        return false;
+    }
+
+    private static MethodCallExpression CallConvertToNumericType<TNumeric>(Expression finalExpr)
+    {
+        var convertMethodName = typeof(TNumeric) switch
+        {
+            { } t when t == typeof(byte) => nameof(IConvertible.ToByte),
+            { } t when t == typeof(sbyte) => nameof(IConvertible.ToSByte),
+            { } t when t == typeof(short) => nameof(IConvertible.ToInt16),
+            { } t when t == typeof(ushort) => nameof(IConvertible.ToUInt16),
+            { } t when t == typeof(int) => nameof(IConvertible.ToInt32),
+            { } t when t == typeof(uint) => nameof(IConvertible.ToUInt32),
+            { } t when t == typeof(long) => nameof(IConvertible.ToInt64),
+            { } t when t == typeof(ulong) => nameof(IConvertible.ToUInt64),
+            { } t when t == typeof(float) => nameof(IConvertible.ToSingle),
+            { } t when t == typeof(double) => nameof(IConvertible.ToDouble),
+            { } t when t == typeof(decimal) => nameof(IConvertible.ToDecimal),
+            _ => null
+        };
+
+        return convertMethodName == null
+                   ? null
+                   : Expression.Call(
+                       Expression.Convert(finalExpr, typeof(IConvertible)),
+                       ProbeExpressionParserHelper.GetMethodByReflection(
+                           typeof(IConvertible), convertMethodName, new[] { typeof(IFormatProvider) }),
+                       Expression.Constant(NumberFormatInfo.CurrentInfo));
     }
 
     private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)

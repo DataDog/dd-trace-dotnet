@@ -32,7 +32,7 @@ public class UserStoreMemory : UserStoreBase<IdentityUser, string, IdentityUserC
             {
                 Email = "test@test.com",
                 PasswordHash = "AQAAAAEAACcQAAAAEEo2WoXnHhwB9ZpopSiEVr6A5c9RxYEY7LznE9YhylcyDJM+neVHp3AZ+XjJLKWuaQ==",
-                Id = "9245fe4a-d402-451c-b9ed-9c1a04247482",
+                Id = "bc98f685-9464-463d-ae66-e84b1ef7963e",
                 NormalizedEmail = "TEST@TEST.COM",
                 NormalizedUserName = "TESTUSER",
                 SecurityStamp = "PPJ7EANBPPIM25HTJRHDSZVPOBQJMP7Q",

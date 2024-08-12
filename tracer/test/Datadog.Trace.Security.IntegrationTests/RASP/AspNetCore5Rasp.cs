@@ -11,6 +11,8 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
@@ -34,6 +36,29 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
     public AspNetCore5RaspEnabledIastDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, enableIast: false)
     {
+    }
+
+    [SkippableTheory]
+    [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRaspRequest_ThenDisableRule_ThenEnableAgain(string url, string exploit)
+    {
+        var ruleId = "rasp-001-001";
+        var testName = "RaspRCM.RuleEnableDisableEnable.AspNetCore5";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var fileId = Guid.NewGuid().ToString();
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, "ASM", fileId) });
+        spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, "ASM", fileId) });
+        spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit);
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 }
 
