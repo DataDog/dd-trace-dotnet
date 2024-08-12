@@ -37,7 +37,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
         TestEmailSendCall(() => Send(mailMessage));
-        AssertNotVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        AssertNotVulnerable();
     }
 
     [Fact]
