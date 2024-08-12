@@ -5979,6 +5979,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:\docker-compose\docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -5994,6 +5995,10 @@ stages:
       name: azure-windows-scale-set
 
     steps:
+    - template: steps/install-docker-compose-v1.yml
+      parameters:
+        dockerComposePath: $(dockerComposePath)
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -6012,7 +6017,7 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -6029,6 +6034,7 @@ stages:
         target: 'tracer-home-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
