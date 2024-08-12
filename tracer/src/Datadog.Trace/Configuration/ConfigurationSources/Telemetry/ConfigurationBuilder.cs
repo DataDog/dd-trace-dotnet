@@ -59,32 +59,6 @@ internal readonly struct ConfigurationBuilder
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
-    private static bool TryHandleOverrides<T>(
-        ConfigurationResult<T> datadogConfigResult,
-        ConfigurationResult<T> otelConfigResult,
-        [NotNullWhen(true)] out T? value)
-    {
-        if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
-        {
-            // TODO Log to user and report "otel.env.hiding" telemetry metric
-        }
-        else if (otelConfigResult is { IsPresent: true } config)
-        {
-            if (config is { Result: { } openTelemetryValue, IsValid: true })
-            {
-                {
-                    value = openTelemetryValue;
-                    return true;
-                }
-            }
-
-            // TODO Log to user and report "otel.env.invalid" telemetry metric
-        }
-
-        value = default;
-        return false;
-    }
-
     private static bool TryHandleResult<T>(
         IConfigurationTelemetry telemetry,
         string key,
@@ -526,19 +500,19 @@ internal readonly struct ConfigurationBuilder
             return default; // should never be invoked because we have a value for getDefaultValue
         }
 
-        public T? OverrideWith(in StructConfigurationResultWithKey<T> otelConfig)
-            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+        public T? OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: null);
 
-        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, T defaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue).Value;
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: () => defaultValue).Value;
 
-        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue).Value;
+        public T OverrideWith(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue).Value;
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        private T? CalculateOverrides(in StructConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>>? getDefaultValue)
         {
-            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
                 return overridden;
             }
@@ -574,19 +548,19 @@ internal readonly struct ConfigurationBuilder
             return default!; // should never be invoked because we have a value for getDefaultValue
         }
 
-        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig)
-            => CalculateOverrides(in otelConfig, getDefaultValue: null);
+        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: null);
 
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, T defaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue: () => defaultValue);
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, T defaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue: () => defaultValue);
 
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>> getDefaultValue)
-            => CalculateOverrides(in otelConfig, getDefaultValue);
+        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
+            => CalculateOverrides(in otelConfig, overrideHandler, getDefaultValue);
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, Func<DefaultResult<T>>? getDefaultValue)
+        private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>>? getDefaultValue)
         {
-            if (TryHandleOverrides(ConfigurationResult, otelConfig.ConfigurationResult, out var overridden))
+            if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
             {
                 return overridden;
             }

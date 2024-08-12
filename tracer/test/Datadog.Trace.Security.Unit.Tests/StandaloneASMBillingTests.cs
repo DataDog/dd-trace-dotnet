@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Xunit;
@@ -20,7 +21,7 @@ public class StandaloneASMBillingTests
         {
             { ConfigurationKeys.AppsecStandaloneEnabled, true }
         });
-        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance);
+        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         Assert.True(tracerSettings.AppsecStandaloneEnabledInternal);
     }
 
@@ -32,7 +33,7 @@ public class StandaloneASMBillingTests
             { ConfigurationKeys.AppsecStandaloneEnabled, true },
             { ConfigurationKeys.StatsComputationEnabled, true }
         });
-        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance);
+        var tracerSettings = new TracerSettings(settings, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
         // Should ignore the configuration set by the customer
         Assert.False(tracerSettings.StatsComputationEnabled);

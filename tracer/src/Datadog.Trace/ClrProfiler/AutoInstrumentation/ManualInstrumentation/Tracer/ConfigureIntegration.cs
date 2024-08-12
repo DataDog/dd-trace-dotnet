@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -42,7 +43,7 @@ public class ConfigureIntegration
         // Get the starting point
         var settings = isFromDefaults
                            ? TracerSettings.FromDefaultSourcesInternal()
-                           : new TracerSettings(null, new ConfigurationTelemetry());
+                           : new TracerSettings(null, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         // Update the settings based on the values they set
         UpdateSettings(values, settings);
