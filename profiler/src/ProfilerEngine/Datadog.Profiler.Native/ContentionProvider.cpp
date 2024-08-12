@@ -193,6 +193,9 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {
             rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
+
+            // TODO: do we need to set to -1?
+            //rawSample.AppDomainId = -1;
         }
     }
 
