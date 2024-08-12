@@ -191,7 +191,7 @@ internal static class RaspModule
             if (RaspShellInjectionHelper.IsShellInvocation(startInfo))
             {
 #if NETCOREAPP3_1_OR_GREATER
-            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList);
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList);
 #else
                 var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, null);
 #endif
