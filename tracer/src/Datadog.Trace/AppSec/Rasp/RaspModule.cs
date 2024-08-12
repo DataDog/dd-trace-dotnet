@@ -184,19 +184,16 @@ internal static class RaspModule
     {
         try
         {
-            if (!Security.Instance.RaspEnabled)
+            if (!Security.Instance.RaspEnabled || !useShellExecute)
             {
                 return;
             }
 
-            if (RaspShellInjectionHelper.IsShellInvocation(fileName, useShellExecute))
-            {
-                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
+            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
 
-                if (!string.IsNullOrEmpty(commandLine))
-                {
-                    CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
-                }
+            if (!string.IsNullOrEmpty(commandLine))
+            {
+                CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
             }
         }
         catch (Exception ex) when (ex is not BlockException)

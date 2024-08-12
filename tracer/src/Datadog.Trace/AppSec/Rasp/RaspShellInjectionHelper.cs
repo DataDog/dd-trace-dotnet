@@ -12,53 +12,6 @@ namespace Datadog.Trace.AppSec.Rasp;
 
 internal static class RaspShellInjectionHelper
 {
-    private static readonly HashSet<string> KnownShellExecutables =
-    [
-        // Windows shells
-        "cmd.exe",
-        "powershell.exe",
-        "pwsh.exe",
-        // Unix-like shells (macOS & Linux)
-        "/bin/sh",
-        "/bin/bash",
-        "/bin/dash",
-        "/bin/zsh",
-        "/bin/ksh",
-        "/bin/fish",
-        "/usr/bin/sh",
-        "/usr/bin/bash",
-        "/usr/bin/dash",
-        "/usr/bin/zsh",
-        "/usr/bin/ksh",
-        "/usr/bin/fish",
-        "/usr/local/bin/sh",
-        "/usr/local/bin/bash",
-        "/usr/local/bin/zsh",
-        "/usr/local/bin/ksh",
-        "/sbin/sh",
-        "/sbin/bash",
-        "/sbin/zsh",
-        "/sbin/ksh"
-    ];
-
-    internal static bool IsShellInvocation(string fileName, bool useShellExecute)
-    {
-        // Check if UseShellExecute is true
-        if (useShellExecute)
-        {
-            return true;
-        }
-
-        // Check if the FileName is a known shell executable
-        if (!string.IsNullOrEmpty(fileName) &&
-            KnownShellExecutables.Contains(fileName.ToLower()))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     internal static string BuildCommandInjectionCommand(string file, string argumentLine, Collection<string>? argumentList)
     {
         if (string.IsNullOrEmpty(file))
