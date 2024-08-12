@@ -671,6 +671,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             {
                 std::vector<ModuleID> modulesVector = {module->_id};
                 std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
+                trace::Logger::Debug("RewriteMethod: REJIT requested for ", method->GetKey());
                 m_rejitHandler->RequestRejit(modulesVector, methodsVector);
             }
         }

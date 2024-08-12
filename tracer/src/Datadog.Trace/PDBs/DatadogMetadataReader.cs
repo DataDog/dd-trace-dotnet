@@ -562,20 +562,16 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsCompilerGeneratedAttributeDefinedOnMethod(int methodRid)
         {
-            if (_isDnlibPdbReader)
-            {
-                var attributes = _dnlibModule!.ResolveMethod((uint)methodRid)?.CustomAttributes;
-                return attributes?.IsDefined(CompilerGeneratedAttribute) ?? false;
-            }
+            var method = GetMethodDef(methodRid);
+            var attributes = method.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
+        }
 
-            if (PdbReader != null)
-            {
-                var method = GetMethodDef(methodRid);
-                var attributes = method.GetCustomAttributes();
-                return IsCompilerGeneratedAttributeDefine(attributes);
-            }
-
-            return false;
+        internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeRid)
+        {
+            var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(typeRid));
+            var attributes = nestedType.GetCustomAttributes();
+            return IsCompilerGeneratedAttributeDefine(attributes);
         }
 
         private bool IsCompilerGeneratedAttributeDefine(CustomAttributeHandleCollection attributes)
@@ -610,24 +606,6 @@ namespace Datadog.Trace.Pdb
                 {
                     return true;
                 }
-            }
-
-            return false;
-        }
-
-        internal bool IsCompilerGeneratedAttributeDefinedOnType(int typeRid)
-        {
-            if (_isDnlibPdbReader)
-            {
-                var attributes = _dnlibModule!.ResolveTypeDefOrRef((uint)typeRid).CustomAttributes;
-                return attributes.IsDefined(CompilerGeneratedAttribute);
-            }
-
-            if (PdbReader != null)
-            {
-                var nestedType = MetadataReader.GetTypeDefinition(TypeDefinitionHandle.FromRowId(typeRid));
-                var attributes = nestedType.GetCustomAttributes();
-                return IsCompilerGeneratedAttributeDefine(attributes);
             }
 
             return false;

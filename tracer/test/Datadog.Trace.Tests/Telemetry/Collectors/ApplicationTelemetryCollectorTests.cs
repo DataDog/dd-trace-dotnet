@@ -5,6 +5,7 @@
 
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
@@ -34,7 +35,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.GitCommitSha, "mySha" },
                     { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
-            configurationTelemetry);
+            configurationTelemetry,
+            new OverrideErrorLog());
 
         var collector = new ApplicationTelemetryCollector();
 
@@ -76,7 +78,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, serviceVersion },
                 }),
-            configurationTelemetry);
+            configurationTelemetry,
+            new OverrideErrorLog());
 
         var collector = new ApplicationTelemetryCollector();
 
@@ -120,7 +123,8 @@ public class ApplicationTelemetryCollectorTests
                     { ConfigurationKeys.GitCommitSha, "mySha" },
                     { ConfigurationKeys.GitRepositoryUrl, "https://github.com/gitOrg/gitRepo" },
                 }),
-            configurationTelemetry);
+            configurationTelemetry,
+            new OverrideErrorLog());
 
         var collector = new ApplicationTelemetryCollector();
 

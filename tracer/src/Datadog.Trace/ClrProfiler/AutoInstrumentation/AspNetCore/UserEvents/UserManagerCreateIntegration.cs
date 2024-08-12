@@ -10,6 +10,8 @@ using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -48,7 +50,7 @@ public static class UserManagerCreateIntegration
         where TUser : IIdentityUser
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -63,39 +65,47 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.TrackUserEvents && state.Scope is { Span: { } span })
+        if (security.IsTrackUserEventsEnabled
+            && state.Scope is { Span: { } span })
         {
+            var id = UserEventsCommon.GetId(user);
+            if (id is null)
+            {
+                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                return returnValue;
+            }
+
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
             if (returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.IsExtendedUserTrackingEnabled)
+                if (security.IsAnonUserTrackingMode)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id?.ToString());
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessEmail, user.Email);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserName, user.UserName);
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
-                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                else
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, user!.Id!.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, id);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
                 }
             }
             else
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
-                if (security.IsExtendedUserTrackingEnabled)
+                if (security.IsAnonUserTrackingMode)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id?.ToString());
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureEmail, user.Email);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserName, user.UserName);
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
-                else if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                else
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, user!.Id!.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, id);
+                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
                 }
             }
 
