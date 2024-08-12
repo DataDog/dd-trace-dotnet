@@ -213,6 +213,11 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
 
+    /// <summary>
+    /// Counts the number of times a timeout was hit when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<AuthenticationFramework>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
+
 #endregion
 #region Iast Namespace
 
