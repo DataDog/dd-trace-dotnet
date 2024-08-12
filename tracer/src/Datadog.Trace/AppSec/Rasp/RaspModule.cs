@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
@@ -179,22 +180,19 @@ internal static class RaspModule
         }
     }
 
-    internal static void OnCommandInjection(ProcessStartInfo startInfo)
+    internal static void OnCommandInjection(string fileName, string argumentLine, Collection<string>? argumentList, bool useShellExecute)
     {
-        if (!Security.Instance.RaspEnabled)
-        {
-            return;
-        }
-
         try
         {
-            if (RaspShellInjectionHelper.IsShellInvocation(startInfo))
+            if (!Security.Instance.RaspEnabled)
             {
-#if NETCOREAPP3_1_OR_GREATER
-                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList);
-#else
-                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(startInfo.FileName, startInfo.Arguments, null);
-#endif
+                return;
+            }
+
+            if (RaspShellInjectionHelper.IsShellInvocation(fileName, useShellExecute))
+            {
+                var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
+
                 if (!string.IsNullOrEmpty(commandLine))
                 {
                     CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);

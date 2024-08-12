@@ -41,17 +41,17 @@ internal static class RaspShellInjectionHelper
         "/sbin/ksh"
     ];
 
-    internal static bool IsShellInvocation(ProcessStartInfo processStartInfo)
+    internal static bool IsShellInvocation(string fileName, bool useShellExecute)
     {
         // Check if UseShellExecute is true
-        if (processStartInfo.UseShellExecute)
+        if (useShellExecute)
         {
             return true;
         }
 
         // Check if the FileName is a known shell executable
-        if (processStartInfo.FileName != null &&
-            KnownShellExecutables.Contains(processStartInfo.FileName.ToLower()))
+        if (!string.IsNullOrEmpty(fileName) &&
+            KnownShellExecutables.Contains(fileName.ToLower()))
         {
             return true;
         }
