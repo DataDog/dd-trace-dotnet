@@ -90,7 +90,7 @@ partial class Build
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
     [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
-    [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
+    [LazyPathExecutable(name: "tar")] readonly Lazy<Tool> Tar;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
@@ -854,7 +854,7 @@ partial class Build
         .Executes(() =>
         {
             var fpm = Fpm.Value;
-            var gzip = GZip.Value;
+            var tar = Tar.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
@@ -865,63 +865,68 @@ partial class Build
             {
                 Logger.Information("Creating '{PackageType}' package", packageType);
                 var assetsDirectory = TemporaryDirectory / arch / packageType;
-                var includeMuslArtifacts = packageType == "tar" && !IsAlpine && !IsArm64;
+                var isTar = packageType == "tar";
                 var muslArch = GetUnixArchitectureAndExtension(isOsx: false, isAlpine: true).Arch;
 
-                // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
-                PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
-
-                var args = new List<string>()
+                if (isTar)
                 {
-                    "-f",
-                    "-s dir",
-                    $"-t {packageType}",
-                    $"-n {packageName}",
-                    $"-v {Version}",
-                    packageType == "tar" ? "" : "--prefix /opt/datadog",
-                    $"--chdir {assetsDirectory}",
-                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
-                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
-                    "--license \"Apache License 2.0\"",
-                    "--description \"Datadog APM client library for .NET\"",
-                    "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
-                    "--vendor \"Datadog <package@datadoghq.com>\"",
-                    "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
-                    "createLogPath.sh",
-                    "dd-dotnet.sh",
-                    "netstandard2.0/",
-                    "netcoreapp3.1/",
-                    "net6.0/",
-                    "Datadog.Trace.ClrProfiler.Native.so",
-                    "libddwaf.so",
-                    "continuousprofiler/",
-                    "loader.conf",
-                    $"{arch}/",
-                };
+                    var includeMuslArtifacts = !IsAlpine && !IsArm64;
 
-                // on x64, we also include the musl assets in the glibc package  
-                if (includeMuslArtifacts)
-                {
-                    args.Add("linux-musl-x64/");
+                    // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
+                    PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
+
+                    // technically we don't need these scripts, but we've been including them in the tar, so keep doing that
+                    var scriptsDir = assetsDirectory / ".scripts";
+                    EnsureExistingDirectory(scriptsDir);
+                    CopyFile(BuildDirectory / "artifacts" / FileNames.AfterInstallScript, scriptsDir / "after_install");
+                    CopyFile(BuildDirectory / "artifacts" / FileNames.AfterRemoveScript, scriptsDir / "after_remove");
+
+                    var filename = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
+                    {
+                        (true, Architecture.X64) => $"{packageName}-{Version}-musl.tar.gz",
+                        (true, var a) => $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => $"{packageName}-{Version}.tar.gz",
+                        (false, var a) => $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                    };
+
+                    tar($"-czvf {filename} .", workingDirectory: assetsDirectory);
                 }
+                else
+                {
+                    PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts: false);
 
-                var arguments = string.Join(" ", args);
-                fpm(arguments, workingDirectory: workingDirectory);
+                    var args = new List<string>()
+                    {
+                        "-f",
+                        "-s dir",
+                        $"-t {packageType}",
+                        $"-n {packageName}",
+                        $"-v {Version}",
+                        isTar ? "" : "--prefix /opt/datadog",
+                        $"--chdir {assetsDirectory}",
+                        $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
+                        $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
+                        "--license \"Apache License 2.0\"",
+                        "--description \"Datadog APM client library for .NET\"",
+                        "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
+                        "--vendor \"Datadog <package@datadoghq.com>\"",
+                        "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
+                        "createLogPath.sh",
+                        "dd-dotnet.sh",
+                        "netstandard2.0/",
+                        "netcoreapp3.1/",
+                        "net6.0/",
+                        "Datadog.Trace.ClrProfiler.Native.so",
+                        "libddwaf.so",
+                        "continuousprofiler/",
+                        "loader.conf",
+                        $"{arch}/",
+                    };
+
+                    var arguments = string.Join(" ", args);
+                    fpm(arguments, workingDirectory: workingDirectory);
+                }
             }
-
-            gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
-            var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                ? string.Empty
-                : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
-
-            var versionedName = IsAlpine
-                ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
-                : $"{packageName}-{Version}{suffix}.tar.gz";
-
-            RenameFile(
-                workingDirectory / $"{packageName}.tar.gz",
-                workingDirectory / versionedName);
 
             return;
 
