@@ -334,7 +334,7 @@ internal class EncoderLegacy : IEncoder
             _wafLibraryInvoker = wafLibraryInvoker;
         }
 
-        public ref DdwafObjectStruct ResultDdwafObject => ref _resultDdwafObject;
+        public DdwafObjectStruct ResultDdwafObject => _resultDdwafObject;
 
         public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
     }

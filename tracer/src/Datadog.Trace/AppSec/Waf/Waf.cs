@@ -127,7 +127,8 @@ namespace Datadog.Trace.AppSec.Waf
             var diagnosticsValue = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
             try
             {
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.ResultDdwafObject, ref diagnosticsValue);
+                var updateObject = updateData.ResultDdwafObject;
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateObject, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
