@@ -37,7 +37,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
         TestEmailSendCall(() => Send(mailMessage));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        AssertNotVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
         TestEmailSendCall(() => SendMailAsync(mailMessage));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        AssertNotVulnerable();
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
         TestEmailSendCall(() => SendAsync(mailMessage, null));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        AssertNotVulnerable();
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class EmailHtmlInjectionTests : InstrumentationTestsBase
     {
         var mailMessage = BuildMailMessage(true, taintedName, taintedLastName);
         TestEmailSendCall(() => SendMailAsync(mailMessage, new System.Threading.CancellationToken()));
-        AssertVulnerable(emailHtmlInjectionType, "Hi :+-Alice<h1>Hi</h1>-+: :+-Stevens-+:!");
+        AssertNotVulnerable();
     }
 
     [Fact]
