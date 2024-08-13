@@ -348,8 +348,8 @@ namespace Datadog.Trace.Tests.Debugger
             public Guid? NullableNullValue;
 
             public Guid? NullableNotNullValue;
-			
-			public string EmptyString { get; set; }
+
+            public string EmptyString { get; set; }
 
             internal class NestedObject
             {
