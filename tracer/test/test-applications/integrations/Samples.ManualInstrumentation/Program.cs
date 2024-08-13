@@ -13,6 +13,17 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Samples;
 
+var shouldBeAttached = Environment.GetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED") == "1";
+var runInstrumentationChecks = shouldBeAttached;
+
+var isManualOnly = (bool)typeof(Tracer)
+                          .Assembly
+                          .GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: true)
+                           !.GetMethod("IsManualInstrumentationOnly")
+                           !.Invoke(null, null)!;
+Expect(isManualOnly != shouldBeAttached);
+Expect(SampleHelpers.IsProfilerAttached() == shouldBeAttached);
+
 var count = 0;
 var port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
 Console.WriteLine($"Port {port}");
@@ -25,7 +36,6 @@ GlobalSettings.SetDebugEnabled(true);
 LogCurrentSettings(Tracer.Instance, "Initial");
 
 // verify instrumentation
-var runInstrumentationChecks = SampleHelpers.IsProfilerAttached();
 ThrowIf(string.IsNullOrEmpty(Tracer.Instance.DefaultServiceName));
 
 // Manual + automatic before reconfiguration
