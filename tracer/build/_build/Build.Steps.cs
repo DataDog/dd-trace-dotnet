@@ -89,7 +89,6 @@ partial class Build
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
-    [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
     [LazyPathExecutable(name: "tar")] readonly Lazy<Tool> Tar;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
@@ -851,10 +850,12 @@ partial class Build
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            var fpm = Fpm.Value;
             var tar = Tar.Value;
+
+            // Download nfpm: TODO: Do this in the dockerfile ahead of time
+            var nfpmExe = await DownloadNfpm();
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
@@ -894,37 +895,38 @@ partial class Build
                 else
                 {
                     PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts: false);
-
-                    var args = new List<string>()
+                    var nFpmArch = RuntimeInformation.ProcessArchitecture switch
                     {
-                        "-f",
-                        "-s dir",
-                        $"-t {packageType}",
-                        $"-n {packageName}",
-                        $"-v {Version}",
-                        isTar ? "" : "--prefix /opt/datadog",
-                        $"--chdir {assetsDirectory}",
-                        $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
-                        $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
-                        "--license \"Apache License 2.0\"",
-                        "--description \"Datadog APM client library for .NET\"",
-                        "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
-                        "--vendor \"Datadog <package@datadoghq.com>\"",
-                        "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
-                        "createLogPath.sh",
-                        "dd-dotnet.sh",
-                        "netstandard2.0/",
-                        "netcoreapp3.1/",
-                        "net6.0/",
-                        "Datadog.Trace.ClrProfiler.Native.so",
-                        "libddwaf.so",
-                        "continuousprofiler/",
-                        "loader.conf",
-                        $"{arch}/",
+                        Architecture.X64 => "amd64",
+                        Architecture.Arm64 => "arm64",
+                        _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}")
                     };
 
-                    var arguments = string.Join(" ", args);
-                    fpm(arguments, workingDirectory: workingDirectory);
+                    // language=yaml
+                    var yaml =
+                        $"""
+                         name: "{packageName}"
+                         arch: "{nFpmArch}"
+                         platform: "linux"
+                         version: "{Version}"
+                         maintainer: "Datadog Packages <package@datadoghq.com>"
+                         description: "Datadog APM client library for .NET"
+                         vendor: "Datadog <package@datadoghq.com>"
+                         homepage: "https://github.com/DataDog/dd-trace-dotnet"
+                         license: "Apache License 2.0"
+                         scripts:
+                             after_install: {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}
+                             after_remove: {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}
+                         contents:
+                         - src: {assetsDirectory}/
+                           dst: /opt/datadog
+                           type: tree
+                         """;
+
+                    var npfmConfig = TempDirectory / "nfpm.yaml";
+                    // overwrites if it exists
+                    File.WriteAllText(npfmConfig, yaml);
+                    ProcessTasks.StartProcess(nfpmExe, $"-f '{npfmConfig}' -p {packageType}", workingDirectory: workingDirectory);
                 }
             }
 
@@ -993,7 +995,7 @@ partial class Build
                 }
 
                 // Need to copy in the loader.conf file into the musl arch folder
-                if(includeMuslArtifacts)
+                if (includeMuslArtifacts)
                 {
                     // The files are identical in the glibc and musl folders, as they point to
                     // relative files, so we can just hardlink them
@@ -1021,6 +1023,40 @@ partial class Build
                 // Copy createLogPath.sh script and set the permissions
                 CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
                 chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
+            }
+
+            async Task<string> DownloadNfpm()
+            {
+                var nfpmTempDir = TempDirectory / "nfpm";
+                var nfpm = nfpmTempDir / "nfpm";
+
+                const string nfpmVersion = "2.38.0";
+                if (File.Exists(nfpm))
+                {
+                    return nfpm;
+                }
+
+                var nfpmFilename = IsArm64
+                                       ? $"nfpm_{nfpmVersion}_Linux_arm64.tar.gz"
+                                       : $"nfpm_{nfpmVersion}_Linux_x86_64.tar.gz";
+
+                var tarFile = TempDirectory / nfpmFilename;
+                var uri = $"https://github.com/goreleaser/nfpm/releases/download/v{nfpmVersion}/{nfpmFilename}";
+                using var npmClient = new HttpClient();
+                await using (var fs = File.Create(tarFile))
+                {
+                    await using var stream = await npmClient.GetStreamAsync(uri);
+                    await stream.CopyToAsync(fs);
+                }
+
+                UncompressTarGZip(tarFile, nfpmTempDir);
+                if (!File.Exists(nfpm))
+                {
+                    throw new Exception($"Failed to download nfpm: {nfpm} does not exist");
+                }
+
+                Chmod.Value.Invoke($"+x '{nfpm}'");
+                return nfpm;
             }
         });
 
