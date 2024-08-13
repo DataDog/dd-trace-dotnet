@@ -690,7 +690,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 _result = result;
             }
 
-            public ref DdwafObjectStruct ResultDdwafObject => ref _result;
+            public DdwafObjectStruct ResultDdwafObject => _result;
 
             public void Dispose()
             {
