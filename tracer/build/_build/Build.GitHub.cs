@@ -1124,7 +1124,6 @@ partial class Build
                     .Where(x => x.Context.StartsWith("dd-gitlab/") && x.Context != "dd-gitlab/benchmark-serverless")
                     .ToLookup(x => x.Context, x => x);
 
-                // System.Diagnostics.Debugger.Launch();
                 if (ssiStatuses.Count == 0)
                 {
                     throw new Exception("No GitLab builds for SSI artifacts found. Please check the commit and try again");
