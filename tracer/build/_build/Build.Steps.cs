@@ -1056,6 +1056,8 @@ partial class Build
                     throw new Exception($"Failed to download nfpm: {nfpmExecutable} does not exist");
                 }
 
+                Logger.Information("Nfpm expanded, adding execute permission");
+
                 Chmod.Value.Invoke($"+x '{nfpmExecutable}'");
                 return nfpmExecutable;
             }
