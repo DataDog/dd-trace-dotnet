@@ -24,9 +24,18 @@
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
         {"alloc-samples", "count"},
-        {"alloc-size", "bytes"}});
+        {"alloc-size", "bytes"}
+    }
+);
+
+std::vector<SampleValueType> AllocationsProvider::FrameworkSampleTypeDefinitions(
+    {
+        {"alloc-samples", "count"},
+    }
+);
 
 AllocationsProvider::AllocationsProvider(
+    bool isFramework,
     SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
@@ -41,7 +50,9 @@ AllocationsProvider::AllocationsProvider(
     shared::pmr::memory_resource* memoryResource)
     :
     AllocationsProvider(
-        valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
+        isFramework
+            ? valueTypeProvider.GetOrRegister(FrameworkSampleTypeDefinitions)
+            : valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         pCorProfilerInfo, pManagedThreadList, pFrameStore,
         pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
         pConfiguration,

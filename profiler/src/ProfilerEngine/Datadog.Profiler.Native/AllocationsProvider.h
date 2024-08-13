@@ -34,6 +34,7 @@ class AllocationsProvider
 {
 public:
     AllocationsProvider(
+        bool isFramework,
         SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
@@ -78,6 +79,7 @@ public:
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
+    static std::vector<SampleValueType> FrameworkSampleTypeDefinitions;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
