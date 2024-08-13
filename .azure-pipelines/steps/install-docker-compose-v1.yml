@@ -5,7 +5,7 @@ parameters:
   
   - name: 'dockerComposePath'
     type: string
-    default: 'C:\docker-compose\docker-compose.exe'
+    default: 'C:/docker-compose/docker-compose.exe'
 
 steps:
 - ${{ if eq(parameters.isLinux, true) }}:

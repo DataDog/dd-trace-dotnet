@@ -5979,7 +5979,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    dockerComposePath: 'C:\docker-compose\docker-compose.exe'
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
