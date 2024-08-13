@@ -2,6 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
+
 #if !NETFRAMEWORK
 
 using System;
@@ -18,15 +21,15 @@ internal class AspNetCoreResourceNameHelper
     internal static string SimplifyRoutePattern(
         RoutePattern routePattern,
         RouteValueDictionary routeValueDictionary,
-        string areaName,
-        string controllerName,
-        string actionName,
+        string? areaName,
+        string? controllerName,
+        string? actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.RawText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
+        var maxSize = (routePattern.RawText?.Length ?? 0)
+                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
+                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName!.Length - 10, 0)) // "controller".Length
+                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
@@ -129,15 +132,15 @@ internal class AspNetCoreResourceNameHelper
     internal static string SimplifyRouteTemplate(
         RouteTemplate routePattern,
         RouteValueDictionary routeValueDictionary,
-        string areaName,
-        string controllerName,
-        string actionName,
+        string? areaName,
+        string? controllerName,
+        string? actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.TemplateText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
+        var maxSize = (routePattern.TemplateText?.Length ?? 0)
+                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName!.Length - 4, 0)) // "area".Length
+                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName!.Length - 10, 0)) // "controller".Length
+                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
         var sb = StringBuilderCache.Acquire(maxSize);
@@ -228,7 +231,7 @@ internal class AspNetCoreResourceNameHelper
         return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
     }
 
-    private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
+    private static bool IsIdentifierSegment(object? value, [NotNullWhen(true)] out string? valueAsString)
     {
         valueAsString = value as string ?? value?.ToString();
         if (valueAsString is null)
