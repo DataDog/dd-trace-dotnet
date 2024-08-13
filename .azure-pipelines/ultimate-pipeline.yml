@@ -5454,6 +5454,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -5469,6 +5470,10 @@ stages:
       vmImage: windows-2022
 
     steps:
+    - template: steps/install-docker-compose-v1.yml
+      parameters:
+        dockerComposePath: $(dockerComposePath)
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5492,7 +5497,7 @@ stages:
       displayName: create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5509,9 +5514,10 @@ stages:
         target: 'nuget-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5528,6 +5534,7 @@ stages:
         target: 'nuget-dddotnet-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -5544,6 +5551,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -5559,6 +5567,10 @@ stages:
       vmImage: windows-2022
 
     steps:
+    - template: steps/install-docker-compose-v1.yml
+      parameters:
+        dockerComposePath: $(dockerComposePath)
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5579,7 +5591,7 @@ stages:
       displayName: Create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5595,6 +5607,7 @@ stages:
         target: 'dotnet-tool-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -5611,6 +5624,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -5626,6 +5640,10 @@ stages:
       vmImage: windows-2022
 
     steps:
+    - template: steps/install-docker-compose-v1.yml
+      parameters:
+        dockerComposePath: $(dockerComposePath)
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5646,7 +5664,7 @@ stages:
       displayName: Create test data directories
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5662,6 +5680,7 @@ stages:
         target: 'smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -5678,6 +5697,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -5694,6 +5714,10 @@ stages:
         vmImage: windows-2022
       
       steps:
+        - template: steps/install-docker-compose-v1.yml
+          parameters:
+            dockerComposePath: $(dockerComposePath)
+
         - template: steps/clone-repo.yml
           parameters:
             targetShaId: $(targetShaId)
@@ -5717,7 +5741,7 @@ stages:
           displayName: Create test data directories
 
         - bash: |
-            docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+            $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5733,6 +5757,7 @@ stages:
             target: 'dd-dotnet-smoke-tests.windows'
             snapshotPrefix: "smoke_test"
             isLinux: false
+            dockerComposePath: $(dockerComposePath)
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -5749,6 +5774,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    dockerComposePath: 'C:/docker-compose/docker-compose.exe'
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -5761,9 +5787,13 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2022
+      name: azure-windows-scale-set
 
     steps:
+    - template: steps/install-docker-compose-v1.yml
+      parameters:
+        dockerComposePath: $(dockerComposePath)
+
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
@@ -5782,7 +5812,7 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - bash: |
-        docker-compose -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
+        $(dockerComposePath) -f docker-compose.windows.yml -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
@@ -5799,6 +5829,7 @@ stages:
         target: 'tracer-home-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
+        dockerComposePath: $(dockerComposePath)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
