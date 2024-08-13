@@ -96,6 +96,7 @@ const shared::WSTRING managed_profiler_full_assembly_version =
     WStr("Datadog.Trace, Version=3.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
+const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
 
 const shared::WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
 const shared::WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
