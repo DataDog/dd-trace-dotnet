@@ -169,3 +169,11 @@ steps:
         sudo chmod -R 644 tracer/build_data/dumps/* || true
       displayName: Make dumps uploadable to AzDo
       condition: succeededOrFailed()
+
+- script: |
+    docker network prune -f
+  displayName: Clean up docker networks
+  condition: succeededOrFailed()
+  continueOnError: true
+
+    
