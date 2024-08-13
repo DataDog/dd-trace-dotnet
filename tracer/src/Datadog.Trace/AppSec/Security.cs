@@ -52,6 +52,7 @@ namespace Datadog.Trace.AppSec
         private bool _spanMetaStructs;
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
+        private HashSet<string>? _activeAddresses;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -90,6 +91,7 @@ namespace Datadog.Trace.AppSec
                 SubscribeToChanges(subscriptionsKeys.ToArray());
 
                 SetRemoteConfigCapabilites();
+                UpdateActiveAddresses();
             }
             catch (Exception ex)
             {
@@ -213,6 +215,7 @@ namespace Datadog.Trace.AppSec
                     {
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
+                        UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
@@ -232,6 +235,7 @@ namespace Datadog.Trace.AppSec
                         }
 
                         _configurationStatus.ResetUpdateMarkers();
+                        UpdateActiveAddresses();
                     }
                 }
             }
@@ -602,6 +606,40 @@ namespace Datadog.Trace.AppSec
             }
 
             return _spanMetaStructs;
+        }
+
+        internal void UpdateActiveAddresses()
+        {
+            // So far, RASP is the only one that uses this
+            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            {
+                var addresses = _waf.GetKnownAddresses();
+                Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
+                _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+            }
+            else
+            {
+                _activeAddresses = null;
+            }
+        }
+
+        internal bool AddressEnabled(string address)
+        {
+            // So far, RASP is the only one that uses this
+            if (!_settings.RaspEnabled)
+            {
+                return false;
+            }
+
+            if (_waf?.IsKnowAddressesSuported() == true)
+            {
+                return _activeAddresses?.Contains(address) ?? false;
+            }
+            else
+            {
+                // If we don't support knowAddresses, we will have to call the WAF
+                return true;
+            }
         }
     }
 }
