@@ -27,14 +27,14 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
         }
 
-        var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+        var ifNull = Expression.Equal(expression, Expression.Constant(null));
 
         if (IsSafeException(expression.Type))
         {
             // for known Exception types we can assume it's safe to call .Message
             // whereas the others might have overriden it in a way that could cause side effects
+            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
             var typeNameExpression = Expression.Constant(expression.Type.FullName, typeof(string));
-            var ifNull = Expression.Equal(expression, Expression.Constant(null));
             var exceptionAsString = Expression.Call(
                stringConcat,
                Expression.NewArrayInit(
@@ -48,9 +48,11 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
 
-        return IsSafeCollection(expression.Type) ?
-                   DumpCollectionExpression(expression, scopeMembers) :
-                   DumpFieldsExpression(expression, scopeMembers);
+        var dumpExpression = IsSafeCollection(expression.Type) ?
+                                 DumpCollectionExpression(expression, scopeMembers) :
+                                 DumpFieldsExpression(expression, scopeMembers);
+
+        return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
     }
 
     private Expression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -159,7 +161,7 @@ internal partial class ProbeExpressionParser<T>
            Expression.Call(
                fieldAtIndex,
                GetMethodByReflection(typeof(FieldInfo), nameof(FieldInfo.GetValue), new[] { typeof(object) }),
-               expression);
+               Expression.Convert(expression, typeof(object)));
 
         var dumpObjectCallExpression = Expression.Call(
             result,
