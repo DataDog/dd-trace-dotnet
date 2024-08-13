@@ -92,7 +92,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
                     }
                 }
 
-                await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(2_000, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (Exception err) when (!(err is OperationCanceledException))
