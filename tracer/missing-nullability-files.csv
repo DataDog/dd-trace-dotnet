@@ -44,7 +44,6 @@ src/Datadog.Trace/Agent/IAgentWriter.cs
 src/Datadog.Trace/Agent/IApi.cs
 src/Datadog.Trace/Agent/IApiRequest.cs
 src/Datadog.Trace/Agent/IApiRequestFactory.cs
-src/Datadog.Trace/Agent/IApiResponse.cs
 src/Datadog.Trace/Agent/IApiResponseTelemetryExtensions.cs
 src/Datadog.Trace/Agent/IKeepRateCalculator.cs
 src/Datadog.Trace/Agent/IStatsAggregator.cs
@@ -118,13 +117,11 @@ src/Datadog.Trace/Debugger/ILineProbeResolver.cs
 src/Datadog.Trace/Debugger/LiveDebugger.cs
 src/Datadog.Trace/Debugger/ProbeLocationType.cs
 src/Datadog.Trace/DiagnosticListeners/AspNetCoreDiagnosticObserver.cs
-src/Datadog.Trace/DiagnosticListeners/AspNetCoreResourceNameHelper.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/DiagnosticObserver.cs
 src/Datadog.Trace/DiagnosticListeners/EndpointFeatureProxy.cs
 src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/RouteEndpoint.cs
-src/Datadog.Trace/DiagnosticListeners/RoutePattern.cs
 src/Datadog.Trace/DogStatsd/NoOpStatsd.cs
 src/Datadog.Trace/DogStatsd/StatsdExtensions.cs
 src/Datadog.Trace/DogStatsd/TracerMetricNames.cs
@@ -266,13 +263,10 @@ src/Datadog.Trace/Agent/TraceSamplers/PrioritySampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/RareSampler.cs
 src/Datadog.Trace/Agent/Transports/ApiWebRequest.cs
 src/Datadog.Trace/Agent/Transports/ApiWebRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/ApiWebResponse.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/HttpClientResponse.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/HttpStreamResponse.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
