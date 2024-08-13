@@ -50,7 +50,6 @@ src/Datadog.Trace/Agent/IAgentWriter.cs
 src/Datadog.Trace/Agent/IApi.cs
 src/Datadog.Trace/Agent/IApiRequest.cs
 src/Datadog.Trace/Agent/IApiRequestFactory.cs
-src/Datadog.Trace/Agent/IApiResponse.cs
 src/Datadog.Trace/Agent/IApiResponseTelemetryExtensions.cs
 src/Datadog.Trace/Agent/IKeepRateCalculator.cs
 src/Datadog.Trace/Agent/IStatsAggregator.cs
@@ -272,13 +271,10 @@ src/Datadog.Trace/Agent/TraceSamplers/PrioritySampler.cs
 src/Datadog.Trace/Agent/TraceSamplers/RareSampler.cs
 src/Datadog.Trace/Agent/Transports/ApiWebRequest.cs
 src/Datadog.Trace/Agent/Transports/ApiWebRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/ApiWebResponse.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpClientRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/HttpClientResponse.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
-src/Datadog.Trace/Agent/Transports/HttpStreamResponse.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
