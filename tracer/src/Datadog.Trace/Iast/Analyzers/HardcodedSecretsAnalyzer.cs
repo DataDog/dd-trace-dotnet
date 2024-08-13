@@ -79,7 +79,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
                                         IntegrationId.HardcodedSecret));
                                 }
                             }
-                            catch (Exception err)
+                            catch (Exception err) when (!(err is OperationCanceledException))
                             {
                                 Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
                             }
