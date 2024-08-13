@@ -1028,12 +1028,12 @@ partial class Build
             async Task<string> DownloadNfpm()
             {
                 var nfpmTempDir = TempDirectory / "nfpm";
-                var nfpm = nfpmTempDir / "nfpm" / "nfpm";
+                var nfpmExecutable = nfpmTempDir / "nfpm";
 
                 const string nfpmVersion = "2.38.0";
-                if (File.Exists(nfpm))
+                if (File.Exists(nfpmExecutable))
                 {
-                    return nfpm;
+                    return nfpmExecutable;
                 }
 
                 var nfpmFilename = IsArm64
@@ -1045,18 +1045,19 @@ partial class Build
                 using var npmClient = new HttpClient();
                 await using (var fs = File.Create(tarFile))
                 {
+                    Logger.Information("Downloading from '{Uri}' to '{TarFile}'", uri, tarFile);
                     await using var stream = await npmClient.GetStreamAsync(uri);
                     await stream.CopyToAsync(fs);
                 }
 
                 UncompressTarGZip(tarFile, nfpmTempDir);
-                if (!File.Exists(nfpm))
+                if (!File.Exists(nfpmExecutable))
                 {
-                    throw new Exception($"Failed to download nfpm: {nfpm} does not exist");
+                    throw new Exception($"Failed to download nfpm: {nfpmExecutable} does not exist");
                 }
 
-                Chmod.Value.Invoke($"+x '{nfpm}'");
-                return nfpm;
+                Chmod.Value.Invoke($"+x '{nfpmExecutable}'");
+                return nfpmExecutable;
             }
         });
 
