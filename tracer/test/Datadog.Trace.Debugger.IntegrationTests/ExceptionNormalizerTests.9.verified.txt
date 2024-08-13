@@ -1,0 +1,4 @@
+System.ArgumentNullException
+   at MyApp.Services.UserService.UpdateUser(User user)
+   at MyApp.Controllers.UserController.UpdateUser(User user)
+Resulting Hash: 457877481
