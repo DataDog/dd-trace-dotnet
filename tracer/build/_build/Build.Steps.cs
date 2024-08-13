@@ -1058,7 +1058,7 @@ partial class Build
 
                 Logger.Information("Nfpm expanded, adding execute permission");
 
-                Chmod.Value.Invoke($"+x '{nfpmExecutable}'");
+                Chmod.Value.Invoke($"+x {nfpmExecutable}");
                 return nfpmExecutable;
             }
         });
