@@ -1028,7 +1028,7 @@ partial class Build
             async Task<string> DownloadNfpm()
             {
                 var nfpmTempDir = TempDirectory / "nfpm";
-                var nfpm = nfpmTempDir / "nfpm";
+                var nfpm = nfpmTempDir / "nfpm" / "nfpm";
 
                 const string nfpmVersion = "2.38.0";
                 if (File.Exists(nfpm))
