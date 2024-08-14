@@ -114,7 +114,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                     var parameter = injectionCommand.CreateParameter();
                     parameter.ParameterName = "@context";
                     parameter.Value = contextValue;
-                    parameter.DbType = DbType.VarNumeric;
+                    parameter.DbType = DbType.Binary;
                     injectionCommand.Parameters.Add(parameter);
 
                     injectionCommand.ExecuteNonQuery();
