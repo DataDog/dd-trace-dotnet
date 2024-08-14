@@ -204,9 +204,7 @@ void initLibrary(void)
     // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
     // If not set, set it to 1 so that .NET calls createdump in case of crash
     // (and we will redirect the call to dd-dotnet)
-    // The path to the crash handler is not set, try to deduce it
-    char* crashHandler = NULL;
-    
+    // The path to the crash handler is not set, try to deduce it  
     const char* libraryPath = getLibraryPath();
 
     if (libraryPath != NULL)
