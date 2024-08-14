@@ -3,12 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
+using System.Web;
+using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.Headers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec;
 
@@ -71,6 +72,7 @@ public static class EventTrackingSdk
             if (span is Span internalSpan)
             {
                 Security.Instance.SetTraceSamplingPriority(internalSpan);
+                SecurityCoordinator.CollectHeaders(internalSpan);
             }
         }
 
@@ -131,6 +133,7 @@ public static class EventTrackingSdk
             if (span is Span internalSpan)
             {
                 Security.Instance.SetTraceSamplingPriority(internalSpan);
+                SecurityCoordinator.CollectHeaders(internalSpan);
             }
         }
 

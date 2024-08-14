@@ -56,6 +56,17 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
+    internal static void CollectHeaders(Span internalSpan)
+    {
+        var context = CoreHttpContextStore.Instance.Get();
+
+        if (context != null)
+        {
+            var headers = new HeadersCollectionAdapter(context.Request.Headers);
+            AddRequestHeaders(internalSpan, headers);
+        }
+    }
+
     internal void BlockAndReport(IResult? result)
     {
         if (result is not null)

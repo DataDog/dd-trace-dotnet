@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -110,6 +111,7 @@ public static class UserManagerCreateIntegration
             }
 
             security.SetTraceSamplingPriority(span);
+            SecurityCoordinator.CollectHeaders(span);
         }
 
         return returnValue;
