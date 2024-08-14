@@ -17,7 +17,6 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -121,13 +120,24 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
+        public bool IsKnowAddressesSuported()
+        {
+            return _wafLibraryInvoker.IsKnowAddressesSuported();
+        }
+
+        public string[] GetKnownAddresses()
+        {
+            return _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
+        }
+
         private unsafe UpdateResult UpdateWafAndDispose(IEncodeResult updateData)
         {
             UpdateResult? res = null;
             var diagnosticsValue = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
             try
             {
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateData.ResultDdwafObject, ref diagnosticsValue);
+                var updateObject = updateData.ResultDdwafObject;
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateObject, ref diagnosticsValue);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;

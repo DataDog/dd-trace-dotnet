@@ -343,6 +343,12 @@ internal static class MetricTags
         [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
     }
 
+    public enum AuthenticationFramework
+    {
+        [Description("framework:aspnetcore_identity")] AspNetCoreIdentity,
+        [Description("framework:unknown")] Unknown,
+    }
+
     public enum CIVisibilityTestFramework
     {
         [Description("test_framework:xunit")] XUnit,

@@ -47,6 +47,8 @@ namespace Datadog.Trace.Tests.Debugger
                 AnotherChar = 'A',
                 BooleanValue = true,
                 Null = null,
+                NullableNullValue = null,
+                NullableNotNullValue = new Guid("{00000000-0000-0000-0000-000000000000}"),
                 Nested = new TestStruct.NestedObject { NestedString = "Hello from nested object", Nested = new TestStruct.NestedObject { NestedString = "Hello from another nested object" } },
                 ChildNested = new TestStruct.ChildNestedObject(),
                 ParentAsChildNested = new TestStruct.ChildNestedObject()
@@ -87,11 +89,6 @@ namespace Datadog.Trace.Tests.Debugger
         [MemberData(nameof(TemplatesResources))]
         public async Task TestTemplates(string expressionTestFilePath)
         {
-            if (expressionTestFilePath.EndsWith("DictionaryKeyNotExist.json"))
-            {
-                throw new SkipException("Skip because this test has an issue of not raising a KeyNotFoundException");
-            }
-
             await Test(expressionTestFilePath);
         }
 
@@ -207,6 +204,8 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("BooleanValue", TestObject.BooleanValue.GetType(), TestObject.BooleanValue, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("Char", TestObject.Char.GetType(), TestObject.Char, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("AnotherChar", TestObject.AnotherChar.GetType(), TestObject.AnotherChar, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NullableNotNullValueLocal", typeof(Guid?), TestObject.NullableNotNullValue, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("NullableNullValueLocal", typeof(Guid?), TestObject.NullableNullValue, ScopeMemberKind.Local));
 
             // Add arguments
             scope.AddMember(new ScopeMember("IntArg", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Argument));
@@ -345,6 +344,12 @@ namespace Datadog.Trace.Tests.Debugger
             public NestedObject Null;
 
             public bool BooleanValue;
+
+            public Guid? NullableNullValue;
+
+            public Guid? NullableNotNullValue;
+
+            public string EmptyString { get; set; }
 
             internal class NestedObject
             {

@@ -76,7 +76,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             {
                 if (EnableSecurity != null)
                 {
-                    associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
+                    // AsmFeatures is requested when security is enabled, as it contains info about userId collection
+                    if (EnableSecurity is false)
+                    {
+                        associatedRcmRequest.CachedTargetFiles.Should().BeEmpty();
+                    }
+
                     // Other products may be included, but none of the ASM ones should be
                     var asmProducts = new[] { RcmProducts.Asm, RcmProducts.AsmData, RcmProducts.AsmDd };
                     if (EnableSecurity == false)
