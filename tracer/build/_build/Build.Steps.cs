@@ -882,15 +882,15 @@ partial class Build
                     CopyFile(BuildDirectory / "artifacts" / FileNames.AfterInstallScript, scriptsDir / "after_install");
                     CopyFile(BuildDirectory / "artifacts" / FileNames.AfterRemoveScript, scriptsDir / "after_remove");
 
-                    var filename = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
+                    var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
                     {
-                        (true, Architecture.X64) => $"{packageName}-{Version}-musl.tar.gz",
-                        (true, var a) => $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-                        (false, Architecture.X64) => $"{packageName}-{Version}.tar.gz",
-                        (false, var a) => $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
                     };
 
-                    tar($"-czvf {filename} .", workingDirectory: assetsDirectory);
+                    tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
                 }
                 else
                 {
