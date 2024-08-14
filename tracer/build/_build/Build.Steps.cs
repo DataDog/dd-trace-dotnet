@@ -914,9 +914,11 @@ partial class Build
                          vendor: "Datadog <package@datadoghq.com>"
                          homepage: "https://github.com/DataDog/dd-trace-dotnet"
                          license: "Apache License 2.0"
+                         priority: extra
+                         section: default
                          scripts:
-                             after_install: {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}
-                             after_remove: {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}
+                           postinstall: {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}
+                           postremove: {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}
                          contents:
                          - src: {assetsDirectory}/
                            dst: /opt/datadog
@@ -926,7 +928,11 @@ partial class Build
                     var npfmConfig = TempDirectory / "nfpm.yaml";
                     // overwrites if it exists
                     File.WriteAllText(npfmConfig, yaml);
-                    ProcessTasks.StartProcess(nfpmExe, $"-f '{npfmConfig}' -p {packageType}", workingDirectory: workingDirectory);
+                    var result = ProcessTasks.StartProcess(nfpmExe, $"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
+                    if (!result.WaitForExit() || result.ExitCode != 0)
+                    {
+                        throw new Exception("Error executing nfpm");
+                    }
                 }
             }
 
