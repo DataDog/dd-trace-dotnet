@@ -204,90 +204,81 @@ void initLibrary(void)
     // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
     // If not set, set it to 1 so that .NET calls createdump in case of crash
     // (and we will redirect the call to dd-dotnet)
-    const char* crashHandlerEnv = getenv("DD_INTERNAL_CRASHTRACKING_HANDLER");
+    // The path to the crash handler is not set, try to deduce it
+    char* crashHandler = NULL;
+    
+    const char* libraryPath = getLibraryPath();
 
-    if (crashHandlerEnv == NULL || crashHandlerEnv[0] == '\0')
-    {
-        // The path to the crash handler is not set, try to deduce it
-        const char* libraryPath = getLibraryPath();
+    if (libraryPath != NULL)
+    {            
+        // If the library is in linux-x64 or linux-musl-x64, we use that folder
+        // Otherwise, if the library is in continuousprofiler, we have to call isAlpine()
+        // and use either ../linux-x64/ or ../linux-musl-x64/, or their ARM64 equivalent
+        char* subFolder = getSubfolder(libraryPath);
 
-        if (libraryPath != NULL)
-        {            
-            // If the library is in linux-x64 or linux-musl-x64, we use that folder
-            // Otherwise, if the library is in continuousprofiler, we have to call isAlpine()
-            // and use either ../linux-x64/ or ../linux-musl-x64/, or their ARM64 equivalent
-            char* subFolder = getSubfolder(libraryPath);
+        if (subFolder != NULL)
+        {
+            char* newCrashHandler = NULL;
 
-            if (subFolder != NULL)
+            if (strcmp(subFolder, DdDotnetFolder) == 0
+                || strcmp(subFolder, DdDotnetMuslFolder) == 0)
             {
-                char* newCrashHandler = NULL;
+                // We use the dd-dotnet in that same folder
+                char* folder = getFolder(libraryPath);
 
-                if (strcmp(subFolder, DdDotnetFolder) == 0
-                    || strcmp(subFolder, DdDotnetMuslFolder) == 0)
+                if (folder != NULL)
                 {
-                    // We use the dd-dotnet in that same folder
-                    char* folder = getFolder(libraryPath);
-
-                    if (folder != NULL)
-                    {
-                        asprintf(&newCrashHandler, "%s/dd-dotnet", folder);
-                        free(folder);
-                    }
+                    asprintf(&newCrashHandler, "%s/dd-dotnet", folder);
+                    free(folder);
                 }
-                else
+            }
+            else
+            {
+                char* folder = getFolder(libraryPath);
+
+                if (folder != NULL)
                 {
-                    char* folder = getFolder(libraryPath);
+                    const char* currentDdDotnetFolder;
 
-                    if (folder != NULL)
+                    if (isAlpine() == 0)
                     {
-                        const char* currentDdDotnetFolder;
-
-                        if (isAlpine() == 0)
-                        {
-                            currentDdDotnetFolder = DdDotnetFolder;
-                        }
-                        else
-                        {
-                            currentDdDotnetFolder = DdDotnetMuslFolder;
-                        }
-
-                        if (strcmp(subFolder, "continuousprofiler") == 0)
-                        {
-                            // If we're in continuousprofiler, we need to go up one folder
-                            asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
-                        }
-                        else
-                        {
-                            // Assume we're at the root
-                            asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
-                        }
-                        
-                        free(folder);
-                    }
-                }
-
-                free(subFolder);
-
-                if (newCrashHandler != NULL)
-                {
-                    // Make sure the file exists and has execute permissions
-                    if (access(newCrashHandler, X_OK) == 0)
-                    {
-                        crashHandler = newCrashHandler;
+                        currentDdDotnetFolder = DdDotnetFolder;
                     }
                     else
                     {
-                        free(newCrashHandler);
+                        currentDdDotnetFolder = DdDotnetMuslFolder;
                     }
+
+                    if (strcmp(subFolder, "continuousprofiler") == 0)
+                    {
+                        // If we're in continuousprofiler, we need to go up one folder
+                        asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
+                    }
+                    else
+                    {
+                        // Assume we're at the root
+                        asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
+                    }
+                        
+                    free(folder);
+                }
+            }
+
+            free(subFolder);
+
+            if (newCrashHandler != NULL)
+            {
+                // Make sure the file exists and has execute permissions
+                if (access(newCrashHandler, X_OK) == 0)
+                {
+                    crashHandler = newCrashHandler;
+                }
+                else
+                {
+                    free(newCrashHandler);
                 }
             }
         }
-    }
-    else
-    {
-        // The environment variables can change during the lifetime of the process,
-        // so make a copy of the string
-        crashHandler = strdup(crashHandlerEnv);
     }
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
