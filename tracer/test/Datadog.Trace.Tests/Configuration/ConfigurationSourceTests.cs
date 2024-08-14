@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -238,7 +239,7 @@ namespace Datadog.Trace.Tests.Configuration
         {
             foreach (var (settingGetter, expectedValue) in GetGlobalDefaultTestData())
             {
-                var settings = new GlobalSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+                var settings = new GlobalSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
                 object actualValue = settingGetter(settings);
                 Assert.Equal(expectedValue, actualValue);
             }
@@ -251,7 +252,7 @@ namespace Datadog.Trace.Tests.Configuration
             {
                 var collection = new NameValueCollection { { key, value } };
                 IConfigurationSource source = new NameValueConfigurationSource(collection);
-                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
                 object actualValue = settingGetter(settings);
                 Assert.Equal(expectedValue, actualValue);
             }
@@ -266,7 +267,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 // save original value so we can restore later
                 Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
 
                 object actualValue = settingGetter(settings);
                 Assert.Equal(expectedValue, actualValue);

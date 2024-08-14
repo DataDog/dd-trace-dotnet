@@ -48,8 +48,15 @@ namespace Datadog.Trace.TestHelpers
         {
             if (IisExpress.Process != null && ShutdownPath != null)
             {
-                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
-                request.GetResponse().Close();
+                try
+                {
+                    var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
+                    request.GetResponse().Close();
+                }
+                catch
+                {
+                    // Ignore
+                }
             }
 
             Agent?.Dispose();

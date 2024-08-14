@@ -14,6 +14,8 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
@@ -46,6 +48,7 @@ internal static partial class IastModule
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationNameXss = "xss";
     private const string OperationNameSessionTimeout = "session_timeout";
+    private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -617,7 +620,7 @@ internal static partial class IastModule
             }
         }
 
-        // Contains at least one range that is not not safe (when analyzing a vulnerability that can have secure marks)
+        // Contains at least one range that is not safe (when analyzing a vulnerability that can have secure marks)
         if (exclusionSecureMarks != SecureMarks.None && !Ranges.ContainsUnsafeRange(tainted?.Ranges))
         {
             return IastModuleResponse.Empty;
@@ -783,5 +786,30 @@ internal static partial class IastModule
             Log.Error(ex, "Error while checking for xpath injection.");
             return IastModuleResponse.Empty;
         }
+    }
+
+    internal static void OnEmailHtmlInjection(object? message)
+    {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return;
+        }
+
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
+
+        if (message is null)
+        {
+            return;
+        }
+
+        var messageDuck = message.DuckCast<IMailMessage>();
+
+        if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
+        {
+            return;
+        }
+
+        // We use the same secure marks as XSS
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
     }
 }

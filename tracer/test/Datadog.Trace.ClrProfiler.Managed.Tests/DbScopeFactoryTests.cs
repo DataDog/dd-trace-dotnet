@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -153,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -175,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using (var scope = CreateDbCommandScope(tracer, command))
@@ -211,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -233,7 +234,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, "disabled" }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);

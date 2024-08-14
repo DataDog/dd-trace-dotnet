@@ -42,7 +42,7 @@ public class VulnerabilitiesEnumTests
         var jsonContent = ResourceHelper.ReadAllText<VulnerabilitiesEnumTests>("vulnerability_schema.json");
         var jsonSchema = JObject.Parse(jsonContent);
 
-        var vulnerabilityTypes = (JArray)jsonSchema.SelectToken("properties.vulnerabilities.items.properties.type.enum");
+        var vulnerabilityTypes = (JArray)jsonSchema.SelectToken("definitions.VulnerabilityType.enum");
         if (vulnerabilityTypes is null)
         {
             throw new Exception("The vulnerability_schema.json file is not valid");

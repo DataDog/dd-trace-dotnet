@@ -4,12 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -22,5 +19,9 @@ namespace Datadog.Trace.AppSec.Waf
         internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
         UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus);
+
+        public string[] GetKnownAddresses();
+
+        public bool IsKnowAddressesSuported();
     }
 }

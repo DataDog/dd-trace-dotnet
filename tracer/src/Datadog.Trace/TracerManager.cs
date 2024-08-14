@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -573,6 +574,9 @@ namespace Datadog.Trace
                 }
 
                 Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
+
+                OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
+                instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
             }
             catch (Exception ex)
             {
