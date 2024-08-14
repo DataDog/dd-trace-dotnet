@@ -349,6 +349,8 @@ namespace Datadog.Trace.Tests.Debugger
 
             public Guid? NullableNotNullValue;
 
+            public string EmptyString { get; set; }
+
             internal class NestedObject
             {
 #pragma warning disable SA1401
