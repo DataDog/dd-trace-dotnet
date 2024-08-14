@@ -1,7 +1,48 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.57.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.57.0)
 
+## Summary
 
+- [Tracer] Fixes for potential `NullReferenceException` and native error
+- [Exception Replay] Normalized exception hashing for more fine-grained aggregation
+- [IAST] Hardening of callsites to prevent exception escape
+
+## Changes
+
+### Tracer
+* Disable keep-alive in HttpClientRequestFactory (#5810 -> v2) (#5824)
+* Fix error checking for CallTargetBubbleUpException (#5836 => v2) (#5843)
+* Ensure top-level entry points are wrapped with try-catch (#5838 -> v2) (#5850)
+* Config refactor - Add telemetry to otel config (#5717 -> v2) (#5864)
+* Fix `NullReferenceException` in `HttpClientResponse.GetCharsetEncoding` (#5881 -> v2) (#5887)
+* Fix `NullReferenceException` in ASP.NET Core when `RoutePattern.RawText` is `null` (#5880 -> v2) (#5888)
+
+### ASM
+* [IAST] Broaden AspNet cookies filtering (#5830 -> v2) (#5834)
+* [IAST] Safeguard Insert Before / After aspects with try/catch (#5839 -> v2) (#5849)
+* [IAST] Safeguard Method Replace aspects with try/catch (#5841 -> v2) (#5855)
+* [IAST] Add a mark to the modified instructions in IL dumps (#5854 -> v2) (#5860)
+* [ASM] ensure struct is on the stack before passing to native code (#5886)
+
+### Continuous Profiler
+* [Profiler] Signal-based profiler/Non-Signal-based: prevent deadlock (#5812)
+
+### Debugger
+* [Dynamic Instrumentation] Improved instrumentation matching of symbols received through SymDb (#5829 -> v2) (#5847)
+* [Exception Replay] Normalized exception hashing for more fine-grained aggregation (#5872 -> v2) (#5890)
+
+### Miscellaneous
+* Exclude an SSIS service from auto-tracing (#5813 -> v2) (#5825)
+* [Backport][Crashtracking]  Ensure crashtracking does not prevent coredump collection (#5852 -> v2) (#5863)
+
+### Build / Test
+* Fix builds on release/2.x (#5826)
+* Backport unified pipeline for APM SDKs for SSI artifacts (#5868)
+* Add verification step to create_draft_release to check SSI one-pipeline succeeded (#5865 -> v2) (#5879)
+* Try fix smoke tests (#5889 -> v2) (#5891)
+
+[Changes since 2.56.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.56.0...v2.57.0)
 
 ## [Release 2.56.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.56.0)
 
@@ -33,7 +74,8 @@
 * Package musl assets in linux glibc tar folder (#5801)
 
 
-[Changes since 2.55.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.55.0...v2.56.0)
+[Changes since 2.55.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.55.0...v2.56.0)
+
 
 ## [Release 2.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.55.0)
 
