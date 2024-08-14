@@ -15,10 +15,10 @@ using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.Util;
 
-internal static class QueryStringHelper
+internal static class RequestDataHelper
 {
 #if NETFRAMEWORK
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(QueryStringHelper));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestDataHelper));
 
     // Get the querystring from a HttpRequest
     internal static NameValueCollection? GetQueryString(HttpRequest request)
@@ -37,6 +37,27 @@ internal static class QueryStringHelper
     internal static QueryString GetQueryString(HttpRequest request)
     {
         return request.QueryString;
+    }
+#endif
+
+#if NETFRAMEWORK
+    // Get the cookies from a HttpRequest
+    internal static HttpCookieCollection? GetCookies(HttpRequest request)
+    {
+        try
+        {
+            return request.Cookies;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading Cookies from the request.");
+            return null;
+        }
+    }
+#else
+    internal static IRequestCookieCollection GetCookies(HttpRequest request)
+    {
+        return request.Cookies;
     }
 #endif
 }

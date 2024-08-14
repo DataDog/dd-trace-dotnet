@@ -393,23 +393,28 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.AllKeys.Length);
-        for (var i = 0; i < request.Cookies.Count; i++)
+        var cookies = RequestDataHelper.GetCookies(request);
+
+        if (cookies != null)
         {
-            var cookie = request.Cookies[i];
-            var keyForDictionary = cookie.Name ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-            if (!keyExists)
+            var cookiesDic = new Dictionary<string, List<string>>(cookies.AllKeys.Length);
+            for (var i = 0; i < cookies.Count; i++)
             {
-                cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
-            }
-            else
-            {
-                value.Add(cookie.Value);
+                var cookie = cookies[i];
+                var keyForDictionary = cookie.Name ?? string.Empty;
+                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
+                }
+                else
+                {
+                    value.Add(cookie.Value);
+                }
             }
         }
 
-        var queryString = QueryStringHelper.GetQueryString(request);
+        var queryString = RequestDataHelper.GetQueryString(request);
         Dictionary<string, string[]>? queryDic = null;
 
         if (queryString is not null)

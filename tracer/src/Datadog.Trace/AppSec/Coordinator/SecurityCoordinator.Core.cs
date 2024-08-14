@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -87,19 +88,24 @@ internal readonly partial struct SecurityCoordinator
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
 
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
-        for (var i = 0; i < request.Cookies.Count; i++)
+        var cookies = RequestDataHelper.GetCookies(request);
+
+        if (cookies is not null)
         {
-            var cookie = request.Cookies.ElementAt(i);
-            var currentKey = cookie.Key ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
-            if (!keyExists)
+            var cookiesDic = new Dictionary<string, List<string>>(cookies.Keys.Count);
+            for (var i = 0; i < cookies.Count; i++)
             {
-                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
-            }
-            else
-            {
-                value?.Add(cookie.Value);
+                var cookie = cookies.ElementAt(i);
+                var currentKey = cookie.Key ?? string.Empty;
+                var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
+                }
+                else
+                {
+                    value?.Add(cookie.Value);
+                }
             }
         }
 

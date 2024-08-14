@@ -210,7 +210,7 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
             }
 
-            var queryString = QueryStringHelper.GetQueryString(request);
+            var queryString = RequestDataHelper.GetQueryString(request);
 
             if (queryString != null)
             {
@@ -296,7 +296,7 @@ internal class IastRequestContext
             }
 
             AddQueryPath(request.Path);
-            AddQueryStringRaw(QueryStringHelper.GetQueryString(request).Value);
+            AddQueryStringRaw(RequestDataHelper.GetQueryString(request).Value);
             AddRequestHeaders(request.Headers);
             AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
