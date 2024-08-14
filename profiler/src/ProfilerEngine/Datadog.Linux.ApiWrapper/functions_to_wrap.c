@@ -187,7 +187,7 @@ void initLibrary(void)
 {
     check_init();
 
-    const char* crashHandlerEnabled = getenv("DD_TRACE_CRASH_HANDLER_ENABLED");
+    const char* crashHandlerEnabled = getenv("DD_CRASHTRACKING_ENABLED");
 
     if (crashHandlerEnabled != NULL)
     {
@@ -204,7 +204,7 @@ void initLibrary(void)
     // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
     // If not set, set it to 1 so that .NET calls createdump in case of crash
     // (and we will redirect the call to dd-dotnet)
-    const char* crashHandlerEnv = getenv("DD_TRACE_CRASH_HANDLER");
+    const char* crashHandlerEnv = getenv("DD_INTERNAL_CRASHTRACKING_HANDLER");
 
     if (crashHandlerEnv == NULL || crashHandlerEnv[0] == '\0')
     {
@@ -302,7 +302,7 @@ void initLibrary(void)
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
             // If DOTNET_DbgEnableMiniDump is set, the crash handler should call createdump when done
-            char* passthrough = getenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH");
+            char* passthrough = getenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH");
 
             if (passthrough == NULL || passthrough[0] == '\0')
             {
@@ -311,7 +311,7 @@ void initLibrary(void)
                 //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
                 //  - dotnet then launches the target app
                 //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
-                setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
+                setenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", "1", 1);
             }
         }
         else
@@ -320,7 +320,7 @@ void initLibrary(void)
             // but we instruct it to not call createdump afterwards
             setenv("COMPlus_DbgEnableMiniDump", "1", 1);
             setenv("DOTNET_DbgEnableMiniDump", "1", 1);
-            setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "0", 1);
+            setenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", "0", 1);
         }
 
         originalMiniDumpName = getenv("DOTNET_DbgMiniDumpName");
