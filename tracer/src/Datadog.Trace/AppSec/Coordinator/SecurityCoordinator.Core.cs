@@ -89,10 +89,11 @@ internal readonly partial struct SecurityCoordinator
         var headersDic = ExtractHeadersFromRequest(request.Headers);
 
         var cookies = RequestDataHelper.GetCookies(request);
+        Dictionary<string, List<string>>? cookiesDic = null;
 
         if (cookies is not null)
         {
-            var cookiesDic = new Dictionary<string, List<string>>(cookies.Keys.Count);
+            cookiesDic = new(cookies.Keys.Count);
             for (var i = 0; i < cookies.Count; i++)
             {
                 var cookie = cookies.ElementAt(i);
@@ -136,7 +137,11 @@ internal readonly partial struct SecurityCoordinator
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
-        AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+
+        if (cookiesDic is not null)
+        {
+            AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+        }
 
         return addressesDictionary;
 

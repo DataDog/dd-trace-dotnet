@@ -297,8 +297,8 @@ internal class IastRequestContext
 
             AddQueryPath(request.Path);
             AddQueryStringRaw(RequestDataHelper.GetQueryString(request).Value);
-            AddRequestHeaders(request.Headers);
-            AddRequestCookies(request.Cookies);
+            AddRequestHeaders(RequestDataHelper.GetHeaders(request));
+            AddRequestCookies(RequestDataHelper.GetCookies(request));
             _querySourcesAdded = true;
         }
     }

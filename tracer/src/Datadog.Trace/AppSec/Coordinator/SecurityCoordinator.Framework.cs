@@ -375,29 +375,36 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
-        var headerKeys = request.Headers.Keys;
-        foreach (string originalKey in headerKeys)
+        var headers = RequestDataHelper.GetHeaders(request);
+        Dictionary<string, string[]>? headersDic = null;
+
+        if (headers is not null)
         {
-            var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
-            if (keyForDictionary != "cookie")
+            headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
+            var headerKeys = headers.Keys;
+            foreach (string originalKey in headerKeys)
             {
-                if (!headersDic.ContainsKey(keyForDictionary))
+                var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
+                if (keyForDictionary != "cookie")
                 {
-                    headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
-                }
-                else
-                {
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                    if (!headersDic.ContainsKey(keyForDictionary))
+                    {
+                        headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
+                    }
+                    else
+                    {
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                    }
                 }
             }
         }
 
         var cookies = RequestDataHelper.GetCookies(request);
+        Dictionary<string, List<string>>? cookiesDic = null;
 
         if (cookies != null)
         {
-            var cookiesDic = new Dictionary<string, List<string>>(cookies.AllKeys.Length);
+            cookiesDic = new(cookies.AllKeys.Length);
             for (var i = 0; i < cookies.Count; i++)
             {
                 var cookie = cookies[i];
@@ -449,10 +456,18 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestHeaderNoCookies, headersDic },
-            { AddressesConstants.RequestCookies, cookiesDic },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+
+        if (headersDic is not null)
+        {
+            dict[AddressesConstants.RequestHeaderNoCookies] = headersDic;
+        }
+
+        if (cookiesDic is not null)
+        {
+            dict[AddressesConstants.RequestCookies] = cookiesDic;
+        }
 
         if (queryDic is not null)
         {

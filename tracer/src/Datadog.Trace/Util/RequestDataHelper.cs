@@ -1,4 +1,4 @@
-// <copyright file="QueryStringHelper.cs" company="Datadog">
+// <copyright file="RequestDataHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -58,6 +58,27 @@ internal static class RequestDataHelper
     internal static IRequestCookieCollection GetCookies(HttpRequest request)
     {
         return request.Cookies;
+    }
+#endif
+
+#if NETFRAMEWORK
+    // Get the cookies from a HttpRequest
+    internal static NameValueCollection? GetHeaders(HttpRequest request)
+    {
+        try
+        {
+            return request.Headers;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading Headers from the request.");
+            return null;
+        }
+    }
+#else
+    internal static IHeaderDictionary GetHeaders(HttpRequest request)
+    {
+        return request.Headers;
     }
 #endif
 }
