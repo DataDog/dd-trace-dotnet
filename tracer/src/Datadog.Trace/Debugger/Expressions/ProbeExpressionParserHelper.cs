@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -16,19 +17,35 @@ internal static class ProbeExpressionParserHelper
 
     internal static readonly Type UndefinedValueType = typeof(UndefinedValue);
 
-    internal static MethodInfo GetMethodByReflection(Type type, string name, Type[] parametersTypes)
+    internal static MethodInfo GetMethodByReflection(Type type, string name, Type[] parametersTypes, Type[] genericArguments = null)
     {
         const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.InvokeMethod |
                                           BindingFlags.NonPublic | BindingFlags.Public;
 
-        var reflectionMethodIdentifier = new ReflectionMethodIdentifier(type, name, parametersTypes);
+        var reflectionMethodIdentifier = new ReflectionMethodIdentifier(type, name, parametersTypes, genericArguments);
         return Methods.GetOrAdd(reflectionMethodIdentifier, GetMethodByReflectionInternal);
 
         MethodInfo GetMethodByReflectionInternal(ReflectionMethodIdentifier methodIdentifier)
         {
-            var method = parametersTypes == null ?
+            MethodInfo method = null;
+            if (genericArguments != null)
+            {
+                method = methodIdentifier.Type.GetMethods().
+                                          Where(m =>
+                                                    m.Name == methodIdentifier.MethodName &&
+                                                    m.GetParameters().Length == methodIdentifier.Parameters.Length &&
+                                                    m.ContainsGenericParameters &&
+                                                    m.GetGenericArguments().Length == methodIdentifier.GenericArguments.Length).
+                                          SingleOrDefault(m => m.GetParameters().Select(pi => pi.ParameterType.Name).SequenceEqual(methodIdentifier.Parameters.Select(p => p.Name)));
+
+                method = method?.MakeGenericMethod(methodIdentifier.GenericArguments);
+            }
+            else
+            {
+                method = parametersTypes == null ?
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) :
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
+            }
 
             if (method == null)
             {
@@ -41,11 +58,12 @@ internal static class ProbeExpressionParserHelper
 
     internal readonly record struct ReflectionMethodIdentifier
     {
-        internal ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters)
+        internal ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters, Type[] genericArguments)
         {
             Type = type;
             MethodName = methodName;
             Parameters = parameters;
+            GenericArguments = genericArguments;
         }
 
         internal Type Type { get; }
@@ -53,6 +71,8 @@ internal static class ProbeExpressionParserHelper
         internal string MethodName { get; }
 
         internal Type[] Parameters { get; }
+
+        internal Type[] GenericArguments { get; }
     }
 
     internal readonly ref struct ExpressionBodyAndParameters

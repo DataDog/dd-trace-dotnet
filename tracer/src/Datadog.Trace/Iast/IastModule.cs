@@ -7,12 +7,15 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Iast.Aspects;
 using Datadog.Trace.Iast.Aspects.System;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
@@ -45,11 +48,13 @@ internal static partial class IastModule
     private const string OperationNameReflectionInjection = "reflection_injection";
     private const string OperationNameXss = "xss";
     private const string OperationNameSessionTimeout = "session_timeout";
+    private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
+    internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static IastSettings iastSettings = Iast.Instance.Settings;
+    private static ConcurrentDictionary<string, Exception> errors = new ConcurrentDictionary<string, Exception>();
 
     static IastModule()
     {
@@ -108,13 +113,13 @@ internal static partial class IastModule
             return true;
         }
 
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.UnvalidatedRedirect);
             return GetScope(evidence, integrationId, VulnerabilityTypeName.UnvalidatedRedirect, OperationNameUnvalidatedRedirect, HasInvalidOrigin);
         }
@@ -127,13 +132,13 @@ internal static partial class IastModule
 
     internal static IastModuleResponse OnTrustBoundaryViolation(string name)
     {
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
             return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, Always);
         }
@@ -146,13 +151,13 @@ internal static partial class IastModule
 
     internal static IastModuleResponse OnLdapInjection(string evidence)
     {
-        if (!Iast.Instance.Settings.Enabled)
-        {
-            return IastModuleResponse.Empty;
-        }
-
         try
         {
+            if (!Iast.Instance.Settings.Enabled)
+            {
+                return IastModuleResponse.Empty;
+            }
+
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
             return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, Always);
         }
@@ -615,7 +620,7 @@ internal static partial class IastModule
             }
         }
 
-        // Contains at least one range that is not not safe (when analyzing a vulnerability that can have secure marks)
+        // Contains at least one range that is not safe (when analyzing a vulnerability that can have secure marks)
         if (exclusionSecureMarks != SecureMarks.None && !Ranges.ContainsUnsafeRange(tainted?.Ranges))
         {
             return IastModuleResponse.Empty;
@@ -781,5 +786,30 @@ internal static partial class IastModule
             Log.Error(ex, "Error while checking for xpath injection.");
             return IastModuleResponse.Empty;
         }
+    }
+
+    internal static void OnEmailHtmlInjection(object? message)
+    {
+        if (!Iast.Instance.Settings.Enabled)
+        {
+            return;
+        }
+
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.EmailHtmlInjection);
+
+        if (message is null)
+        {
+            return;
+        }
+
+        var messageDuck = message.DuckCast<IMailMessage>();
+
+        if (messageDuck?.IsBodyHtml is not true || string.IsNullOrEmpty(messageDuck.Body))
+        {
+            return;
+        }
+
+        // We use the same secure marks as XSS
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
     }
 }

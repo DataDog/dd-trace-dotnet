@@ -28,7 +28,15 @@ public partial class PrincipalContextAspect
     [AspectMethodInsertBefore("System.DirectoryServices.AccountManagement.PrincipalContext::.ctor(System.DirectoryServices.AccountManagement.ContextType,System.String,System.String,System.DirectoryServices.AccountManagement.ContextOptions,System.String,System.String)", 3)]
     public static object Init(string path)
     {
-        IastModule.OnLdapInjection(path);
-        return path;
+        try
+        {
+            IastModule.OnLdapInjection(path);
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(PrincipalContextAspect)}.{nameof(Init)}");
+            return path;
+        }
     }
 }

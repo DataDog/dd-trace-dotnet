@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 39;
+    public const int Length = 42;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -41,6 +41,8 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => "stats_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => "stats_api.errors",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigHiddenByDatadogConfig => "otel.env.hiding",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigInvalid => "otel.env.invalid",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry_api.errors",
@@ -57,6 +59,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "rasp.rule.eval",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "rasp.rule.match",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "rasp.timeout",
+            Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "instrum.user_auth.missing_user_id",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "executed.source",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "executed.propagation",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
@@ -90,6 +93,8 @@ internal static partial class CountExtensions
         => metric switch
         {
             Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "general",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigHiddenByDatadogConfig => "tracers",
+            Datadog.Trace.Telemetry.Metrics.Count.OpenTelemetryConfigInvalid => "tracers",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry",
@@ -100,6 +105,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleEval => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "iast",

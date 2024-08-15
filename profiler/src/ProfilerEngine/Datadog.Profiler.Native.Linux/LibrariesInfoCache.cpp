@@ -49,7 +49,7 @@ void LibrariesInfoCache::UpdateCache()
     {
         auto previous = NbCallsToDlopenDlclose;
         NbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose();
-        shouldReload = previous == NbCallsToDlopenDlclose;
+        shouldReload = previous != NbCallsToDlopenDlclose;
     }
 
     if (!shouldReload)

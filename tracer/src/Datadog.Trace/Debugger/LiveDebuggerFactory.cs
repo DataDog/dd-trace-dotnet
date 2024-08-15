@@ -44,7 +44,7 @@ internal class LiveDebuggerFactory
 
         var debuggerUploader = CreateSnaphotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), snapshotStatusSink);
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
-        var lineProbeResolver = LineProbeResolver.Create();
+        var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
         var symbolsUploader = CreateSymbolsUploader(discoveryService, remoteConfigurationManager, tracerSettings, serviceName, debuggerSettings, gitMetadataTagsProvider);

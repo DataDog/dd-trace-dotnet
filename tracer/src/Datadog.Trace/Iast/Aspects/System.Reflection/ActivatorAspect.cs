@@ -38,7 +38,15 @@ public class ActivatorAspect
     [AspectMethodInsertBefore("System.Activator::CreateComInstanceFrom(System.String,System.String,System.Byte[],System.Configuration.Assemblies.AssemblyHashAlgorithm)", 3, 2)]
     public static string ReflectionInjectionParam(string param)
     {
-        IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
-        return param;
+        try
+        {
+            IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
+            return param;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(ActivatorAspect)}.{nameof(ReflectionInjectionParam)}");
+            return param;
+        }
     }
 }

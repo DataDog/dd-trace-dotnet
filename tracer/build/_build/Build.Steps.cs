@@ -38,6 +38,7 @@ partial class Build
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
+    AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
@@ -45,7 +46,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
@@ -2249,12 +2250,16 @@ partial class Build
        .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
        .Executes(() =>
         {
-
-            var serverlessProjects = new List<string> { "Samples.AWS.Lambda.csproj", "Samples.Amazon.Lambda.RuntimeSupport.csproj" };
-            foreach (var target in serverlessProjects.Select(projectName => TracerDirectory.GlobFiles($"test/test-applications/integrations/*/{projectName}").FirstOrDefault())
-                                                     .Select(projectFile => projectFile / ".." / "bin" / "artifacts" / "monitoring-home"))
+            // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda", "Samples.Amazon.Lambda.RuntimeSupport" };
+            foreach (var project in serverlessProjects)
             {
-                CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                var rootSampleFolder = BuildArtifactsDirectory / "bin" / project;
+                CopyDirectoryRecursively(MonitoringHomeDirectory, rootSampleFolder / "monitoring-home", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(
+                    source: TracerDirectory / "build" / "_build" / "docker" / "serverless.lambda.dockerfile",
+                    targetDirectory: rootSampleFolder,
+                    FileExistsPolicy.Skip);
             }
         });
 
@@ -2921,6 +2926,18 @@ partial class Build
                 Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
+        
+        // set variables for subsequent tests
+        var isSsiRun = Environment.GetEnvironmentVariable("IS_SSI_RUN");
+        if (!string.IsNullOrEmpty(isSsiRun) && string.Equals(isSsiRun, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            Logger.Information("Setting environment variables for SSI run");
+
+            // Not setting telemetry forwarder path because we don't have one to point to
+            Environment.SetEnvironmentVariable("DD_INJECT_FORCE", "true");
+            Environment.SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
+        }
+
         base.OnTargetRunning(target);
 
         static string PrettyPrint(long bytes)

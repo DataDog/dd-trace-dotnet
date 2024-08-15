@@ -47,6 +47,10 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1);
 
+    public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1);
+
+    public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1);
+
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1);
 
     public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1);
@@ -78,6 +82,8 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1);
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1);
+
+    public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1);
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1);
 

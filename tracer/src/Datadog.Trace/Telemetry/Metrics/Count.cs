@@ -115,6 +115,16 @@ internal enum Count
     /// The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)
     /// </summary>
     [TelemetryMetric<MetricTags.ApiError>("stats_api.errors")] StatsApiErrors,
+
+    /// <summary>
+    /// The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.hiding", isCommon: true, NS.Tracer)] OpenTelemetryConfigHiddenByDatadogConfig,
+
+    /// <summary>
+    /// The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.invalid", isCommon: true, NS.Tracer)] OpenTelemetryConfigInvalid,
 #endregion
 #region Telemetry Namespace
 
@@ -202,6 +212,11 @@ internal enum Count
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
+
+    /// <summary>
+    /// Counts the number of times a timeout was hit when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<AuthenticationFramework>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
 
 #endregion
 #region Iast Namespace

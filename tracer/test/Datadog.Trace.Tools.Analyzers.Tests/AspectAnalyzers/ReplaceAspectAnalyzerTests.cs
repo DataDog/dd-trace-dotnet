@@ -85,6 +85,29 @@ public class ReplaceAspectAnalyzerTests
     }
 
     [Fact]
+    public async Task ShouldNotFlagVoidMethodWithCorrectFormat()
+    {
+        var method =
+            """
+            [AspectMethodReplace("Microsoft.AspNetCore.Http.HttpResponse::Redirect(System.String)")]
+            void TestMethod(string myParam)
+            {
+                string.Concat(myParam, "/");
+                try
+                {
+                    // does something
+                }
+                catch (Exception ex)
+                {
+                    // the contents don't actually matter here
+                }
+            }
+            """;
+
+        await Verifier.VerifyAnalyzerAsync(GetTestCode(method));
+    }
+
+    [Fact]
     public async Task ShouldNotFlagCtorWithCorrectFormat()
     {
         var method =
@@ -172,7 +195,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -215,7 +238,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -272,7 +295,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -383,7 +406,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -443,7 +466,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -554,7 +577,7 @@ public class ReplaceAspectAnalyzerTests
                         }
                         catch (Exception ex)
                         {
-                            Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
+                            IastModule.Log.Error(ex, $"Error invoking {nameof(TestClass)}.{nameof(TestMethod)}");
                         }
 
                         return result;
@@ -608,6 +631,11 @@ public class ReplaceAspectAnalyzerTests
                   class DatadogLogging : IDatadogLogger
                   {
                       public void Error(Exception? exception, string messageTemplate) { }
+                  }
+              
+                  static class IastModule
+                  {
+                      public static readonly IDatadogLogger Log = new DatadogLogging();
                   }
               }
               """;

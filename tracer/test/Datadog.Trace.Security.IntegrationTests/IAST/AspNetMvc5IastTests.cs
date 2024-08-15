@@ -468,6 +468,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false")]
+    public async Task TestIastEmailHtmlInjectionRequest(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("EmailHtmlInjection");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
     [InlineData(AddressesConstants.RequestQuery, "/Iast/UnvalidatedRedirect?param=value", null)]
     public async Task TestIastUnvalidatedRedirectRequest(string test, string url, string body)
     {

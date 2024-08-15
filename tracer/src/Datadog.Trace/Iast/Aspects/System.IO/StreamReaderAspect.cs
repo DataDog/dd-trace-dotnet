@@ -5,8 +5,8 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -33,7 +33,15 @@ public class StreamReaderAspect
 #endif
     public static string ReviewPath(string path)
     {
-        VulnerabilitiesModule.OnPathTraversal(path);
-        return path;
+        try
+        {
+            VulnerabilitiesModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StreamReaderAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
     }
 }

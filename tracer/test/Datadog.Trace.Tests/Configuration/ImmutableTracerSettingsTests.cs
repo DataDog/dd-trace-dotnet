@@ -7,8 +7,12 @@ using System.Linq;
 using System.Reflection;
 using AgileObjects.NetStandardPolyfills;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -72,7 +76,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void CopiesTelemetryFromTracerSettings()
         {
             var config = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, config);
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, config, new());
 
             var immutable = tracerSettings.Build();
             var immutableTelemetry = immutable.Telemetry;
@@ -125,7 +129,7 @@ namespace Datadog.Trace.Tests.Configuration
             var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
 
             var telemetry = new ConfigurationTelemetry();
-            var tracerSettings = new TracerSettings(source, telemetry);
+            var tracerSettings = new TracerSettings(source, telemetry, new());
             var immutable = tracerSettings.Build();
 
             var config = immutable
@@ -181,7 +185,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void DDTagsTakesPrecdenceOverOTELTags()
+        public void DDTagsTakesPrecedenceOverOTELTags()
         {
             var source = new NameValueConfigurationSource(new()
             {
@@ -189,7 +193,8 @@ namespace Datadog.Trace.Tests.Configuration
                 { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
             });
 
-            var tracerSettings = new TracerSettings(source);
+            var errorLog = new OverrideErrorLog();
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var immutableTracerSettings = tracerSettings.Build();
 
             immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
@@ -197,6 +202,7 @@ namespace Datadog.Trace.Tests.Configuration
             // Since the DD_TAGS config is set, the OTEL_RESOURCE_ATTRIBUTES config is ignored
             immutableTracerSettings.ServiceVersionInternal.Should().NotBe("datadog_version");
             immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
         }
     }
 }
