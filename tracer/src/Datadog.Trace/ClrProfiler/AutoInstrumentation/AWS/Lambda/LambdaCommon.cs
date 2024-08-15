@@ -22,7 +22,6 @@ internal abstract class LambdaCommon
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
-    private static readonly string ApiKey = GetApiKey();
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
     {
@@ -56,12 +55,6 @@ internal abstract class LambdaCommon
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
-        if (string.IsNullOrEmpty(ApiKey))
-        {
-            Log("No API key configured, not calling the Extension at the start of invocation", debug: false);
-            return null;
-        }
-
         var request = requestBuilder.GetStartInvocationRequest();
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
@@ -78,12 +71,6 @@ internal abstract class LambdaCommon
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
     {
-        if (string.IsNullOrEmpty(ApiKey))
-        {
-            Log("No API key configured, not calling the Extension at the end of invocation", debug: false);
-            return;
-        }
-
         var request = requestBuilder.GetEndInvocationRequest(scope, isError);
         WriteRequestPayload(request, data);
         if (!ValidateOkStatus((HttpWebResponse)request.GetResponse()))
@@ -155,12 +142,6 @@ internal abstract class LambdaCommon
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} [DD_TRACE_DOTNET] {message} {ex?.ToString().Replace("\n", "\\n")}");
         }
-    }
-
-    internal static string GetApiKey()
-    {
-        var config = new ConfigurationBuilder(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
-        return config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
     }
 }
 #endif
