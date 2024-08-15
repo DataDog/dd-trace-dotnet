@@ -436,7 +436,7 @@
     "SampleProjectName": "Samples.CosmosDb",
     "NugetPackageSearchName": "Microsoft.Azure.Cosmos",
     "MinVersion": "3.6.0",
-    "MaxVersionExclusive": "3.42.0",
+    "MaxVersionExclusive": "3.42.1",
     "SpecificVersions": [
       "3.6.*",
       "3.*.*"
