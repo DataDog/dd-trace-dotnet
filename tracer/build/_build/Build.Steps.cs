@@ -862,6 +862,37 @@ partial class Build
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
+
+            // debian does not have a specific field for the license, instead you pack the license file in a specific location
+            // (See https://github.com/goreleaser/nfpm/issues/847 for discussion)
+            var debLicesnse =
+                $"""
+                 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+                 Source: https://github.com/DataDog/dd-trace-dotnet
+                 Upstream-Name: {packageName}
+
+                 Files:
+                  *
+                 Copyright: 2017 Datadog, Inc <package@datadoghq.com>
+                 License: Apache-2.0
+                  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+                  use this file except in compliance with the License. You may obtain a copy of
+                  the License at
+                  .
+                     http://www.apache.org/licenses/LICENSE-2.0
+                  .
+                  Unless required by applicable law or agreed to in writing, software
+                  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+                  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+                  License for the specific language governing permissions and limitations under
+                  the License.
+                 Comment:
+                  On Debian-based systems the full text of the Apache version 2.0 license can be
+                  found in `/usr/share/common-licenses/Apache-2.0'.
+                 """;
+            var debLicensePath = TempDirectory / "deb-license";
+            File.WriteAllText(debLicensePath, debLicesnse);
+
             foreach (var packageType in LinuxPackageTypes)
             {
                 Logger.Information("Creating '{PackageType}' package", packageType);
@@ -913,16 +944,30 @@ partial class Build
                          description: "Datadog APM client library for .NET"
                          vendor: "Datadog <package@datadoghq.com>"
                          homepage: "https://github.com/DataDog/dd-trace-dotnet"
-                         license: "Apache License 2.0"
+                         # We were previously using "Apache License 2.0" but that's not technically correct
+                         # As needs to be one of the standard fedora licences here: https://docs.fedoraproject.org/en-US/legal/allowed-licenses/
+                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html 
+                         license: "Apache-2.0"
                          priority: extra
                          section: default
                          scripts:
                            postinstall: {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}
                            postremove: {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}
+                         rpm:
+                             # The package group. This option is deprecated by most distros
+                             # but we added it with fpm, so keeping it here for consistency
+                             group: default  
+                             prefixes: 
+                             - /opt/datadog
                          contents:
                          - src: {assetsDirectory}/
                            dst: /opt/datadog
                            type: tree
+                         - src: {debLicensePath}
+                           dst: /usr/share/doc/{packageName}/copyright
+                           packager: deb
+                           file_info:
+                             mode: 0644
                          """;
 
                     var npfmConfig = TempDirectory / "nfpm.yaml";
