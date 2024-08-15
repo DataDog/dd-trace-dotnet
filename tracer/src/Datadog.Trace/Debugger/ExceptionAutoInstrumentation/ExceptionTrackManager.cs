@@ -191,7 +191,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             var exceptionTypes = new HashSet<Type>();
             var currentFrame = allParticipatingFrames;
-            var iterationLimit = 5;
+            var iterationLimit = 10;
 
             while (iterationLimit-- >= 0 && currentFrame != null)
             {

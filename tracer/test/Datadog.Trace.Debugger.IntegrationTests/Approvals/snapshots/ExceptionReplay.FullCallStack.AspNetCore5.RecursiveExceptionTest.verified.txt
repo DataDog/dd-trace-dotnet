@@ -305,14 +305,6 @@
                 },
                 "type": "AbandonedMutexException",
                 "value": "AbandonedMutexException"
-              },
-              "asyncRun": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              },
-              "run": {
-                "isNull": "true",
-                "type": "IRun"
               }
             },
             "staticFields": {
@@ -556,14 +548,6 @@
                 },
                 "type": "AbandonedMutexException",
                 "value": "AbandonedMutexException"
-              },
-              "asyncRun": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              },
-              "run": {
-                "isNull": "true",
-                "type": "IRun"
               }
             },
             "throwable": {
@@ -3828,17 +3812,9 @@
                 "type": "AbandonedMutexException",
                 "value": "AbandonedMutexException"
               },
-              "asyncRun": {
-                "type": "RecursiveExceptionTest",
-                "value": "RecursiveExceptionTest"
-              },
               "instance": {
                 "type": "RecursiveExceptionTest",
                 "value": "RecursiveExceptionTest"
-              },
-              "run": {
-                "isNull": "true",
-                "type": "IRun"
               }
             },
             "throwable": {

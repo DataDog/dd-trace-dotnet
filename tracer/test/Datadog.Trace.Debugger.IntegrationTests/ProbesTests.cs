@@ -765,7 +765,7 @@ public class ProbesTests : TestHelper
     private string GetTestName(ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
-        return $"{nameof(ProbesTests)}.{testName}";
+        return $"{nameof(ProbeTests)}.{testName}";
     }
 
     private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)

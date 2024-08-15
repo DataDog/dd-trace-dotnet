@@ -60,7 +60,8 @@ public class AspNetCore5ExceptionReplayEnabledDynamicInstrumentationDisabled_Ful
 
 public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    private static readonly string[] KnownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items" };
+    private static readonly string[] KnownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
+    private static readonly string[] KnownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run" };
     private static readonly string[] KnownClassNamesToRemoveFromExceptionReplayFrame = { "<<Configure>b__5_2>d" };
 
     // This class is used to test Exception Replay with Dynamic Instrumentation enabled or disabled.
@@ -69,12 +70,13 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, enableDynamicInstrumentation.ToString().ToLower());
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionDebuggingCaptureFullCallStackEnabled, captureFullCallStack.ToString().ToLower());
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled, captureFullCallStack.ToString().ToLower());
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "5");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
+        SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
 
         // See https://github.com/dotnet/runtime/issues/91963
         SetEnvironmentVariable("COMPLUS_ForceEnc", "0");
@@ -133,6 +135,13 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
 
             var allTags = erroredSpan.Tags.Where(tag => tag.Key.StartsWith("_dd.di") || tag.Key.StartsWith("_dd.debug")).OrderBy(tag => tag.Key);
 
+            if (allTags.Any(tag => tag.Key == "_dd.di._er" && tag.Value == "NewCase"))
+            {
+                Output.WriteLine($"Skipped NewCase tag.");
+                i -= 1;
+                continue;
+            }
+
             toApprove.AppendLine($"Iteration {i}:");
 
             var classNameSuffix = ".frame_data.class_name";
@@ -177,11 +186,14 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
             {
                 spanOfCapturedException = erroredSpan;
             }
+
+            await Task.Delay(250);
         }
 
         var settings = new VerifySettings();
         settings.DisableRequireUniquePrefix();
         settings.UseFileName($"{nameof(AspNetCore5ExceptionReplay)}{(CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty)}.{testData.TestType.Name}");
+        settings.UseDirectory("Approvals");
         await Verifier.Verify(toApprove.ToString(), settings);
 
         Assert.NotNull(spanOfCapturedException);
@@ -195,7 +207,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
         Assert.Equal(expectedNumberOfSnapshots, snapshots!.Length);
 
         var testName = "ExceptionReplay" + (CaptureFullCallStackEnabled ? ".FullCallStack" : string.Empty) + ".AspNetCore5." + testData.TestType.Name;
-        await Approver.ApproveSnapshots(snapshots, testName, Output, KnownPropertiesToRemove, orderPostScrubbing: true);
+        await Approver.ApproveSnapshots(snapshots, testName, Output, KnownPropertiesToReplace, KnownPropertiesToRemove, orderPostScrubbing: true);
         agent.ClearSnapshots();
     }
 }

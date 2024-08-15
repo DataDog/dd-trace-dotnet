@@ -21,22 +21,23 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
     internal static class Approver
     {
         private static readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
-        private static readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
+        private static readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
         private static readonly string[] _knownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth" };
 
-        internal static async Task ApproveSnapshots(string[] snapshots, string testName, ITestOutputHelper output, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        internal static async Task ApproveSnapshots(string[] snapshots, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
         {
-            await ApproveOnDisk(snapshots, testName, "snapshots", output, knownPropertiesToRemove, orderPostScrubbing);
+            await ApproveOnDisk(snapshots, testName, "snapshots", output, knownPropertiesToReplace, knownPropertiesToRemove, orderPostScrubbing);
         }
 
-        internal static async Task ApproveStatuses(string[] statuses, string testName, ITestOutputHelper output, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        internal static async Task ApproveStatuses(string[] statuses, string testName, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
         {
-            await ApproveOnDisk(statuses, testName, "statuses", output, knownPropertiesToRemove, orderPostScrubbing);
+            await ApproveOnDisk(statuses, testName, "statuses", output, knownPropertiesToReplace, knownPropertiesToRemove, orderPostScrubbing);
         }
 
-        private static async Task ApproveOnDisk(string[] dataToApprove, string testName, string path, ITestOutputHelper output, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
+        private static async Task ApproveOnDisk(string[] dataToApprove, string testName, string path, ITestOutputHelper output, string[] knownPropertiesToReplace = null, string[] knownPropertiesToRemove = null, bool orderPostScrubbing = false)
         {
             knownPropertiesToRemove ??= _knownPropertiesToRemove;
+            knownPropertiesToReplace ??= _knownPropertiesToReplace;
 
             if (dataToApprove.Length > 1)
             {
@@ -48,6 +49,9 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
 
             settings.UseFileName(testName);
             settings.DisableRequireUniquePrefix();
+
+            settings.AddScrubber(ScrubSnapshotJson);
+
             settings.ScrubEmptyLines();
 
             foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
@@ -56,8 +60,6 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
             }
 
             AddRuntimeIdScrubber(settings);
-
-            settings.AddScrubber(ScrubSnapshotJson);
 
             VerifierSettings.DerivePathInfo(
                 (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", path)));
@@ -85,7 +87,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests.Helpers
                     {
                         try
                         {
-                            if (_knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
+                            if (knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
                             {
                                 item.Value.Replace(JToken.FromObject("ScrubbedValue"));
                                 continue;

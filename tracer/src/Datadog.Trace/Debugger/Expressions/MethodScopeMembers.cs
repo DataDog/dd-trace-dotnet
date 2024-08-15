@@ -55,7 +55,7 @@ internal class MethodScopeMembers
     {
         if (Members != null)
         {
-            ArrayPool<ScopeMember>.Shared.Return(Members, false);
+            ArrayPool<ScopeMember>.Shared.Return(Members, true);
         }
     }
 }

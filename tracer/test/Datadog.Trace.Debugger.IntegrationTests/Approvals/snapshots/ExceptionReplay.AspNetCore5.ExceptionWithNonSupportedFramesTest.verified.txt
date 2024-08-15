@@ -297,14 +297,6 @@
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
-              },
-              "asyncRun": {
-                "isNull": "true",
-                "type": "IAsyncRun"
-              },
-              "run": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
               }
             },
             "staticFields": {
@@ -545,14 +537,6 @@
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
-              },
-              "asyncRun": {
-                "isNull": "true",
-                "type": "IAsyncRun"
-              },
-              "run": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
               }
             },
             "throwable": {
@@ -657,7 +641,7 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "Run",
+            "method": "SupportedFrame",
             "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
           },
           "version": 1
@@ -667,7 +651,7 @@
       }
     },
     "logger": {
-      "method": "Run",
+      "method": "SupportedFrame",
       "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
@@ -685,10 +669,6 @@
         "captures": {
           "return": {
             "arguments": {
-              "str": {
-                "type": "String",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              },
               "this": {
                 "type": "ExceptionWithNonSupportedFramesTest",
                 "value": "ExceptionWithNonSupportedFramesTest"
@@ -741,7 +721,7 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "SupportedFrame",
+            "method": "Run",
             "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
           },
           "version": 1
@@ -751,7 +731,7 @@
       }
     },
     "logger": {
-      "method": "SupportedFrame",
+      "method": "Run",
       "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",

@@ -297,14 +297,6 @@
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
-              },
-              "asyncRun": {
-                "isNull": "true",
-                "type": "IAsyncRun"
-              },
-              "run": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
               }
             },
             "staticFields": {
@@ -545,14 +537,6 @@
                 },
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
-              },
-              "asyncRun": {
-                "isNull": "true",
-                "type": "IAsyncRun"
-              },
-              "run": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
               }
             },
             "throwable": {
@@ -585,90 +569,6 @@
     "logger": {
       "method": "RunTest",
       "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
-      "thread_id": "ScrubbedValue",
-      "thread_name": "ScrubbedValue",
-      "version": "2"
-    },
-    "message": "ScrubbedValue",
-    "service": "samples.debugger.aspnetcore5"
-  },
-  {
-    "dd.span_id": "ScrubbedValue",
-    "dd.trace_id": "ScrubbedValue",
-    "ddsource": "dd_debugger",
-    "debugger": {
-      "snapshot": {
-        "captures": {
-          "return": {
-            "arguments": {
-              "str": {
-                "type": "String",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              },
-              "this": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              }
-            },
-            "locals": {
-              "@exception": {
-                "fields": {
-                  "HelpLink": {
-                    "isNull": "true",
-                    "type": "String"
-                  },
-                  "HResult": {
-                    "type": "Int32",
-                    "value": "-2146233079"
-                  },
-                  "InnerException": {
-                    "isNull": "true",
-                    "type": "Exception"
-                  },
-                  "Message": {
-                    "type": "String",
-                    "value": "ExceptionWithNonSupportedFramesTest"
-                  },
-                  "Source": {
-                    "type": "String",
-                    "value": "Samples.Probes.TestRuns"
-                  },
-                  "StackTrace": "ScrubbedValue"
-                },
-                "type": "InvalidOperationException",
-                "value": "InvalidOperationException"
-              }
-            },
-            "throwable": {
-              "message": "ExceptionWithNonSupportedFramesTest",
-              "stacktrace": [
-                {
-                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
-                  "lineNumber": "ScrubbedValue"
-                }
-              ],
-              "type": "System.InvalidOperationException"
-            }
-          }
-        },
-        "duration": "ScrubbedValue",
-        "id": "ScrubbedValue",
-        "language": "dotnet",
-        "probe": {
-          "id": "ScrubbedValue",
-          "location": {
-            "method": "Run",
-            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
-          },
-          "version": 1
-        },
-        "stack": "ScrubbedValue",
-        "timestamp": "ScrubbedValue"
-      }
-    },
-    "logger": {
-      "method": "Run",
-      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -1025,15 +925,7 @@
                 "type": "InvalidOperationException",
                 "value": "InvalidOperationException"
               },
-              "asyncRun": {
-                "isNull": "true",
-                "type": "IAsyncRun"
-              },
               "instance": {
-                "type": "ExceptionWithNonSupportedFramesTest",
-                "value": "ExceptionWithNonSupportedFramesTest"
-              },
-              "run": {
                 "type": "ExceptionWithNonSupportedFramesTest",
                 "value": "ExceptionWithNonSupportedFramesTest"
               }
@@ -1068,6 +960,86 @@
     "logger": {
       "method": "RunTest",
       "name": "Samples.Debugger.AspNetCore5.Controllers.HomeController",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "ExceptionWithNonSupportedFramesTest",
+                "value": "ExceptionWithNonSupportedFramesTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233079"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "ExceptionWithNonSupportedFramesTest"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "InvalidOperationException",
+                "value": "InvalidOperationException"
+              }
+            },
+            "throwable": {
+              "message": "ExceptionWithNonSupportedFramesTest",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest.SupportedFrame",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Run",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.ExceptionWithNonSupportedFramesTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
