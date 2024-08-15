@@ -54,7 +54,14 @@ namespace Honeypot
                     fakeRefs += $@"{Environment.NewLine}    <!--    Assembly: {integration.AssemblyName} -->";
                 }
 
-                fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
+                // HACK: Add callout for versions that aren't tested - ideally we find a better way to do this
+                var untestedCallout = "";
+                if (package.LatestTestedVersion is not null && package.LatestVersion > package.LatestTestedVersion)
+                {
+                    untestedCallout = $"\u26A0POTENTIALLY UNSUPPORTED\u26A0 ";
+                }
+
+                fakeRefs += $@"{Environment.NewLine}    <!-- {untestedCallout}Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
                 fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
             }
 
