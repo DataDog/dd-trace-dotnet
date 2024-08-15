@@ -8,6 +8,9 @@ updates:
     labels:
       - "dependencies"
       - "area:dependabot"
+    reviewers:
+      - "DataDog/tracing-dotnet"
+      - "DataDog/apm-idm-dotnet"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "StyleCop.Analyzers" # floating version is being used and it seemed to break dependabot (for some reason)
