@@ -90,6 +90,7 @@ partial class Build
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
     [LazyPathExecutable(name: "tar")] readonly Lazy<Tool> Tar;
+    [LazyPathExecutable(name: "nfpm")] readonly Lazy<Tool> Nfpm;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
@@ -850,12 +851,10 @@ partial class Build
         .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
-        .Executes(async () =>
+        .Executes(() =>
         {
             var tar = Tar.Value;
-
-            // Download nfpm: TODO: Do this in the dockerfile ahead of time
-            var nfpmExe = await DownloadNfpm();
+            var nfpm = Nfpm.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
@@ -973,11 +972,7 @@ partial class Build
                     var npfmConfig = TempDirectory / "nfpm.yaml";
                     // overwrites if it exists
                     File.WriteAllText(npfmConfig, yaml);
-                    var result = ProcessTasks.StartProcess(nfpmExe, $"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
-                    if (!result.WaitForExit() || result.ExitCode != 0)
-                    {
-                        throw new Exception("Error executing nfpm");
-                    }
+                    nfpm($"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
                 }
             }
 
@@ -1074,43 +1069,6 @@ partial class Build
                 // Copy createLogPath.sh script and set the permissions
                 CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
                 chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
-            }
-
-            async Task<string> DownloadNfpm()
-            {
-                var nfpmTempDir = TempDirectory / "nfpm";
-                var nfpmExecutable = nfpmTempDir / "nfpm";
-
-                const string nfpmVersion = "2.38.0";
-                if (File.Exists(nfpmExecutable))
-                {
-                    return nfpmExecutable;
-                }
-
-                var nfpmFilename = IsArm64
-                                       ? $"nfpm_{nfpmVersion}_Linux_arm64.tar.gz"
-                                       : $"nfpm_{nfpmVersion}_Linux_x86_64.tar.gz";
-
-                var tarFile = TempDirectory / nfpmFilename;
-                var uri = $"https://github.com/goreleaser/nfpm/releases/download/v{nfpmVersion}/{nfpmFilename}";
-                using var npmClient = new HttpClient();
-                await using (var fs = File.Create(tarFile))
-                {
-                    Logger.Information("Downloading from '{Uri}' to '{TarFile}'", uri, tarFile);
-                    await using var stream = await npmClient.GetStreamAsync(uri);
-                    await stream.CopyToAsync(fs);
-                }
-
-                UncompressTarGZip(tarFile, nfpmTempDir);
-                if (!File.Exists(nfpmExecutable))
-                {
-                    throw new Exception($"Failed to download nfpm: {nfpmExecutable} does not exist");
-                }
-
-                Logger.Information("Nfpm expanded, adding execute permission");
-
-                Chmod.Value.Invoke($"+x {nfpmExecutable}");
-                return nfpmExecutable;
             }
         });
 
