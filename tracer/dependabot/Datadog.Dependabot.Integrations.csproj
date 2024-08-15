@@ -156,8 +156,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!--    Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- ⚠POTENTIALLY UNSUPPORTED⚠ Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.42.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.41.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.42.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.42.0" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!--    Assembly: Microsoft.Azure.WebJobs.Host -->

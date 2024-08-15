@@ -401,7 +401,7 @@
         "minVersionTestedInclusive": "3.6.0",
         "maxVersionSupportedInclusive": "3.42.0",
         "maxVersionAvailableInclusive": "3.42.0",
-        "maxVersionTestedInclusive": "3.41.0"
+        "maxVersionTestedInclusive": "3.42.0"
       }
     ]
   },
