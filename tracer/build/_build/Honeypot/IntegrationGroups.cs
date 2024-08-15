@@ -187,8 +187,8 @@ namespace Honeypot
 
                 if (latestSupportedPackage is null)
                 {
-                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumSupportedAssemblyVersion}." +
-                                $"Using latest instead");
+                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumSupportedAssemblyVersion}. " +
+                                $"Using {latestVersion} instead");
                 }
 
                 var latestSupportedVersion = latestSupportedPackage is null
@@ -201,8 +201,8 @@ namespace Honeypot
                     .LastOrDefault(x => x.Identity.Version.Version >= MinimumSupportedAssemblyVersion);
                 if (firstSupportedPackage is null)
                 {
-                    Logger.Warning($"No version of {packageName} above minimum package version {MinimumSupportedAssemblyVersion}." +
-                                   $"Using first instead");
+                    Logger.Warning($"No version of {packageName} above minimum package version {MinimumSupportedAssemblyVersion}. " +
+                                   $"Using {firstVersion} instead");
                 }
 
                 var firstSupportedVersion = firstSupportedPackage is null
