@@ -1155,7 +1155,7 @@ partial class Build
                 
                 if(new Version(Version).Major < 3)
                 {
-                    image = $"ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet:{CommitSha}-musl";
+                    image = $"{image}-musl";
                     VerifyDockerImageExists(image);
                 }
 

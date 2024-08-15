@@ -18,7 +18,7 @@ services:
     image: dd-trace-dotnet/ddapm-test-agent-windows
     volumes:
     - ./tracer/build/smoke_test_snapshots:c:/snapshots
-    - ./tracer/build_data/snapshots:c:/debug_snapshots
+    - ./artifacts/build_data/snapshots:c:/debug_snapshots
     ports:
     - "8126:8126"
     environment:
@@ -38,7 +38,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -59,7 +59,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tracer-home-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -79,7 +79,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-dotnet-tool-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -99,7 +99,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tester
     volumes:
       - ./:c:/project
-      - ./tracer/build_data/logs:c:/logs
+      - ./artifacts/build_data/logs:c:/logs
     environment:
       - dockerTag=${dockerTag:-unset}
       - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -119,7 +119,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
@@ -139,7 +139,7 @@ services:
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
     - ./:c:/project
-    - ./tracer/build_data/logs:c:/logs
+    - ./artifacts/build_data/logs:c:/logs
     environment:
     - dockerTag=${dockerTag:-unset}
     - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
