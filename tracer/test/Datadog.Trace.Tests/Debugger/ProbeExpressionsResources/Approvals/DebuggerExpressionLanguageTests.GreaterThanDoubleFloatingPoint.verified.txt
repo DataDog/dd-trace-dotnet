@@ -36,7 +36,7 @@ Expression: (
     var StringArg = (string)scopeMemberArray[14].Value;
     var CollectionArg = (List<string>)scopeMemberArray[15].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[16].Value;
-    var $dd_el_result = this.DoubleNumber > 0.1d;
+    var $dd_el_result = this.DoubleNumber > 0,1d;
 
     return $dd_el_result;
 }
