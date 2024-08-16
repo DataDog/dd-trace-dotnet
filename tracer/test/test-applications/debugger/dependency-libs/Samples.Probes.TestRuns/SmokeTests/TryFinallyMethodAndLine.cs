@@ -38,7 +38,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
     {
         public static void Initialize(TryFinallyMethodAndLine tryFinallyMethodAndLine, out ParseContext parseContext)
         {
-            parseContext = null;
+            parseContext = new ParseContext();
             return;
         }
 
