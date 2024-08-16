@@ -239,7 +239,7 @@
         },
         "Overwrite": {
           "type": "boolean",
-          "description": "Indicates whether to overwrite existing exploration test directory or not"
+          "description": "Indicates whether to overwrite existing exploration test project directory or not"
         },
         "Partition": {
           "type": "string",

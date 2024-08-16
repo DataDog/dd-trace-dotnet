@@ -41,7 +41,7 @@ partial class Build
     [Parameter("Indicates if the process should wait for debugger attach.")]
     readonly bool Attach;
 
-    [Parameter("Indicates whether to overwrite existing exploration test directory or not.")]
+    [Parameter("Indicates whether to overwrite existing exploration test project directory or not.")]
     readonly bool Overwrite;
 
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
