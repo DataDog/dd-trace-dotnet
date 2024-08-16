@@ -181,12 +181,12 @@ static void check_init();
 
 static char* originalMiniDumpName = NULL;
 static const char* datadogCrashMarker = "datadog_crashtracking";
-#define DD_CRASHTRACKING_ENABLED "DD_CRASHTRACKING_ENABLED";
-#define DD_INTERNAL_CRASHTRACKING_PASSTHROUGH "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH";
-#define DOTNET_DbgEnableMiniDump "DOTNET_DbgEnableMiniDump";
-#define COMPlus_DbgEnableMiniDump "COMPlus_DbgEnableMiniDump";
-#define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName";
-#define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName";
+#define DD_CRASHTRACKING_ENABLED "DD_CRASHTRACKING_ENABLED"
+#define DD_INTERNAL_CRASHTRACKING_PASSTHROUGH "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH"
+#define DOTNET_DbgEnableMiniDump "DOTNET_DbgEnableMiniDump"
+#define COMPlus_DbgEnableMiniDump "COMPlus_DbgEnableMiniDump"
+#define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName"
+#define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName"
 
 __attribute__((constructor))
 void initLibrary(void)
