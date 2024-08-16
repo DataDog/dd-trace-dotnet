@@ -1165,22 +1165,30 @@ namespace Datadog.Trace.Tests.Configuration
 
         // profiling takes precedence over SSI
         // "auto" is a special profiling value that enables profiling when deployed via SSI
+        // the profiler will also be enabled when "profiler" will be added to the DD_INJECTION_ENABLED environment variable
         [Theory]
         [InlineData("1", null, true)]
         [InlineData("0", null, false)]
         [InlineData("true", null, true)]
+        [InlineData("false", null, false)]
         [InlineData("auto", null, true)]
         [InlineData("1", "not used", true)]
         [InlineData("0", "not used", false)]
         [InlineData("true", "not used", true)]
+        [InlineData("false", "not used", false)]
         [InlineData("auto", "not used", true)]
-        [InlineData("invalid", "", true)]
-        [InlineData("invalid", "anything", true)]
+        [InlineData("invalid", "foo, profiler, bar", true)]
+        [InlineData("invalid", "anything else", false)]
+        [InlineData("invalid", "", false)]
+        [InlineData("invalid", null, false)]
+        [InlineData("", "foo, profiler, bar", true)]
+        [InlineData("", "anything else", false)]
+        [InlineData("", "", false)]
         [InlineData("", null, false)]
-        [InlineData("", "anything", true)]
+        [InlineData(null, "foo, profiler, bar", true)]
+        [InlineData(null, "anything else", false)]
         [InlineData(null, null, false)]
-        [InlineData(null, "", true)]
-        [InlineData(null, "anything", true)]
+        [InlineData(null, "", false)]
         public void ProfilingEnabled(string profilingValue, string ssiValue, bool expected)
         {
             var values = new List<(string, string)>();

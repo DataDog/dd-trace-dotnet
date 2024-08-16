@@ -119,7 +119,7 @@ namespace Datadog.Trace.Configuration
                             getDefaultValue: () =>
                             {
                                 var profilingSsiDeployed = config.WithKeys(ContinuousProfiler.ConfigurationKeys.SsiDeployed).AsString();
-                                return profilingSsiDeployed is not null;
+                                return profilingSsiDeployed.Contains("profiler");
                             },
                             validator: null);
 
