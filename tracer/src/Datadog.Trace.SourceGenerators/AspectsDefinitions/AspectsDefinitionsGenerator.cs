@@ -304,9 +304,26 @@ namespace Datadog.Trace.ClrProfiler
             return elementType + "[]";
         }
 
-        var ns = type.ContainingSymbol?.ToString() ?? string.Empty;
+        var ns = string.Empty;
+        if (type.ContainingSymbol is INamespaceSymbol nameSpace)
+        {
+            ns = nameSpace.ToString();
+        }
+
         var name = type.Name.ToString();
-        if (ns.Length > 0) { return ns + "." + name; }
+        if (type is INamedTypeSymbol namedType)
+        {
+            if (ns.Length > 0) { name = ns + "." + name; }
+            if (namedType.TypeArguments.Length > 0)
+            {
+                name = $"{name}`{namedType.TypeArguments.Length}<{string.Join(",", namedType.TypeArguments.Select(a => GetFullName(a, false)))}>";
+            }
+        }
+        else if (type is ITypeParameterSymbol typeParameter)
+        {
+            name = $"!!{typeParameter.Ordinal}";
+        }
+
         return name;
     }
 

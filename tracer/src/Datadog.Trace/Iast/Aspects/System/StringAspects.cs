@@ -492,7 +492,27 @@ public class StringAspects
         return result;
     }
 
-    // [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    /// <summary>
+    /// String.Concat aspect
+    /// </summary>
+    /// <typeparam name="T"> Collection element type </typeparam>
+    /// <param name="values"> Parameters </param>
+    /// <returns> String.Concat(values) </returns>
+    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Concat<T>(IEnumerable<T> values)
+    {
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// String.Substring aspect

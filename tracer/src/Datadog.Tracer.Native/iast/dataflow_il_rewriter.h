@@ -8,9 +8,8 @@ namespace iast
     class ILAnalysis;
     class SignatureInfo;
     class ModuleInfo;
-    class Aspect;
+    class DataflowAspectReference;
     class MethodInfo;
-    enum class SpotInfoStatus;
 
     typedef enum
     {
@@ -96,7 +95,6 @@ namespace iast
         HRESULT ImportIL(LPCBYTE pIL);
         HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);
         void ComputeOffsets();
-
         void AdjustState(ILInstr* pNewInstr);
 
     public:
@@ -118,9 +116,6 @@ namespace iast
         void SetLocalsSignatureToken(mdSignature localVarSigToken);
         SignatureInfo* GetLocalsSignature();
 
-        int GetSpotInfoId(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod = nullptr);
-        SpotInfoStatus GetSpotInfoStatus(ILInstr* pInstr, Aspect* aspect);
-
         HRESULT AddProbeBefore(mdToken hookMethod, ILInstr* pInsertProbeBeforeThisInstr, OPCODE opCode = CEE_LDC_I4,
                                ULONG32* hookArg = nullptr);
         HRESULT AddProbeAfter(mdToken hookMethod, ILInstr* pInsertProbeAfterThisInstr, OPCODE opCode = CEE_LDC_I4,
@@ -128,10 +123,5 @@ namespace iast
 
         HRESULT AddEnterProbe(mdToken onEnterHook, OPCODE opCode = CEE_LDC_I4, ULONG32* hookArg = nullptr);
         HRESULT AddExitProbe(mdToken onExitHook, OPCODE opCode = CEE_LDC_I4, ULONG32* hookArg = nullptr);
-
-        HRESULT AddArgProbe(int argPosition, Aspect* aspect);
-        int LoadSpotInfoArgument(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod = nullptr,
-                                 bool insertBefore = true);
-        ILInstr* AddAspectCall(ILInstr* pInstr, Aspect* aspect, bool pop = false);
     };
 }

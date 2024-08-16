@@ -206,6 +206,10 @@ namespace iast
     {
         return _id;
     }
+    SignatureInfo* MethodSpec::GetMethodSpecSignature()
+    {
+        return MemberRefInfo::GetSignature();
+    }
     SignatureInfo* MethodSpec::GetSignature()
     {
         return genericMethod->GetSignature();

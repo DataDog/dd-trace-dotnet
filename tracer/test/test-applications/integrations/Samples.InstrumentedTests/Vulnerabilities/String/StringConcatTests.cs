@@ -68,7 +68,7 @@ public class StringConcatTests : InstrumentationTestsBase
         FormatTainted(String.Concat((object)" dummy ", null, testString2, (object)" dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenStringConcatOperations_WhenPerformedWithGenerics_ResultIsOK()
     {
         var testString1 = AddTaintedString("01");

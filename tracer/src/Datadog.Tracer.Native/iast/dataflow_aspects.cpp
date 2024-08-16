@@ -198,7 +198,7 @@ namespace iast
         _aspectMethodParams = aspectMethod.substr(pos0);
 
         _isVirtual = _targetType.length() > 0 && _targetMethodType != _targetType;
-        _isGeneric = Contains(_targetMethod, WStr("!!"));
+        _isGeneric = Contains(_aspectMethodParams, WStr("!!"));
         _isValid = true;
     }
 
@@ -347,15 +347,6 @@ namespace iast
         }
     }
 
-    void DataflowAspectReference::ResolveAspect()
-    {
-        if (_aspectMemberRef == 0)
-        {
-            //Import aspect
-            _aspectMemberRef = _module->DefineMemberRef(_aspect->_aspectClass->_aspectsAssembly, _aspect->_aspectClass->_aspectTypeName, _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
-        }
-    }
-
     std::string DataflowAspectReference::GetAspectTypeName()
     {
         return shared::ToString(_aspect->_aspectClass->_aspectTypeName);
@@ -373,9 +364,31 @@ namespace iast
         return _aspect->GetVulnerabilityTypes();
     }
 
-    mdMemberRef DataflowAspectReference::GetAspectMemberRef()
+    mdToken DataflowAspectReference::GetAspectMemberRef(MethodSpec* methodSpec)
     {
-        ResolveAspect();
+        if (_aspectMemberRef == 0)
+        {
+            // Import aspect
+            _aspectMemberRef = _module->DefineMemberRef(_aspect->_aspectClass->_aspectsAssembly,
+                                                        _aspect->_aspectClass->_aspectTypeName,
+                                                        _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
+        }
+
+        if (_aspect->IsGeneric() && _aspectMemberRef != 0 && methodSpec != nullptr)
+        {
+            // Retrieve aspect method spec
+            auto it = _aspectMethodSpecs.find(methodSpec->GetMethodSpecId());
+            if (it == _aspectMethodSpecs.end())
+            {
+                // Create the MethodSpec
+                auto aspectMethodSpec = _module->DefineMethodSpec(_aspectMemberRef, methodSpec->GetMethodSpecSignature());
+                _aspectMethodSpecs[methodSpec->GetMethodSpecId()] = aspectMethodSpec;
+                return aspectMethodSpec;
+            }
+
+            return it->second;
+        }
+
         return _aspectMemberRef;
     }
 
@@ -435,9 +448,10 @@ namespace iast
         bool process = false;
         std::vector<InstructionProcessInfo> instructionsToProcess;
 
+        MethodSpec* methodSpec = nullptr; 
         if (TypeFromToken(operand) == mdtMethodSpec && !IsTargetMethod(operand))
         {
-            MethodSpec* methodSpec = module->GetMethodSpec(operand);
+            methodSpec = module->GetMethodSpec(operand);
             if (methodSpec != nullptr && methodSpec->GetGenericMethod() != nullptr)
             {
                 operand = methodSpec->GetGenericMethod()->GetMemberId();
@@ -505,18 +519,16 @@ namespace iast
 
                 //Replace call function with aspect
 
-                mdMemberRef methodRef;
-                int spotInfoId = GetSpotInfoId(method, instructionToProcess.instruction->GetLine(), &methodRef);
-
-                if (methodRef == 0) { continue; } //Disabled Spot
+                mdToken memberRef = GetAspectMemberRef(methodSpec);
+                if (memberRef == 0) { continue; } //Disabled Spot
                 if (instructionToProcess.behavior == AspectBehavior::InsertBefore)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef, true);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, memberRef, true);
                     processor->InsertBefore(instructionToProcess.instruction, aspectInstruction);
                 }
                 else if (instructionToProcess.behavior == AspectBehavior::InsertAfter)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef, true);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, memberRef, true);
                     auto inserted = processor->InsertAfter(instructionToProcess.instruction, aspectInstruction);
 
                     if (_aspect->_boxParam[instructionToProcess.paramIndex])
@@ -571,7 +583,7 @@ namespace iast
 
                     aspectInstruction = instructionToProcess.instruction;
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
-                    instructionToProcess.instruction->m_Arg32 = methodRef;
+                    instructionToProcess.instruction->m_Arg32 = memberRef;
                 }
             }
         }
