@@ -80,5 +80,23 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             var lines = File.ReadAllLines(logFile);
             lines.Should().ContainMatch(expectedErrorMessage);
         }
+
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void GenerateDumpIfDbgRequested(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 7");
+
+            runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
+            runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
+            runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
+
+            using var processHelper = runner.LaunchProcess();
+
+            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
+            processHelper.Drain();
+            processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
+            processHelper.StandardOutput.Should().NotMatchRegex(@"createdump [\w\.\/]+createdump \d+")
+                .And.Contain("Writing minidump");
+        }
     }
 }

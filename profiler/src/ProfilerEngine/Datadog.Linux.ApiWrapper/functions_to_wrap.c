@@ -181,13 +181,19 @@ static void check_init();
 
 static char* originalMiniDumpName = NULL;
 static const char* datadogCrashMarker = "datadog_crashtracking";
+#define DD_CRASHTRACKING_ENABLED "DD_CRASHTRACKING_ENABLED";
+#define DD_INTERNAL_CRASHTRACKING_PASSTHROUGH "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH";
+#define DOTNET_DbgEnableMiniDump "DOTNET_DbgEnableMiniDump";
+#define COMPlus_DbgEnableMiniDump "COMPlus_DbgEnableMiniDump";
+#define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName";
+#define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName";
 
 __attribute__((constructor))
 void initLibrary(void)
 {
     check_init();
 
-    const char* crashHandlerEnabled = getenv("DD_CRASHTRACKING_ENABLED");
+    const char* crashHandlerEnabled = getenv(DD_CRASHTRACKING_ENABLED);
 
     if (crashHandlerEnabled != NULL)
     {
@@ -281,17 +287,17 @@ void initLibrary(void)
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
-        char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
+        char* enableMiniDump = getenv(DOTNET_DbgEnableMiniDump);
 
         if (enableMiniDump == NULL)
         {
-            enableMiniDump = getenv("COMPlus_DbgEnableMiniDump");
+            enableMiniDump = getenv(COMPlus_DbgEnableMiniDump);
         }
 
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
             // If DOTNET_DbgEnableMiniDump is set, the crash handler should call createdump when done
-            char* passthrough = getenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH");
+            char* passthrough = getenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH);
 
             if (passthrough == NULL || passthrough[0] == '\0')
             {
@@ -300,25 +306,25 @@ void initLibrary(void)
                 //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
                 //  - dotnet then launches the target app
                 //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
-                setenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", "1", 1);
+                setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "1", 1);
             }
         }
         else
         {
             // If DOTNET_DbgEnableMiniDump is not set, we set it so that the crash handler is called,
             // but we instruct it to not call createdump afterwards
-            setenv("COMPlus_DbgEnableMiniDump", "1", 1);
-            setenv("DOTNET_DbgEnableMiniDump", "1", 1);
-            setenv("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", "0", 1);
+            setenv(COMPlus_DbgEnableMiniDump, "1", 1);
+            setenv(DOTNET_DbgEnableMiniDump, "1", 1);
+            setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "0", 1);
         }
 
-        originalMiniDumpName = getenv("DOTNET_DbgMiniDumpName");
+        originalMiniDumpName = getenv(DOTNET_DbgMiniDumpName);
         if (originalMiniDumpName == NULL)
         {
-            originalMiniDumpName = getenv("COMPlus_DbgMiniDumpName");
+            originalMiniDumpName = getenv(COMPlus_DbgMiniDumpName);
         }
-        setenv("COMPlus_DbgMiniDumpName", datadogCrashMarker, 1);
-        setenv("DOTNET_DbgMiniDumpName", datadogCrashMarker, 1);
+        setenv(COMPlus_DbgMiniDumpName, datadogCrashMarker, 1);
+        setenv(DOTNET_DbgMiniDumpName, datadogCrashMarker, 1);
     }
 }
 
