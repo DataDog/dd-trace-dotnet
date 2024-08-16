@@ -131,6 +131,7 @@ publish-lib-init-pinned-tags-musl:
   needs: [ generate-lib-init-pinned-tag-values-musl ]
   variables:
     IMG_SOURCES: $GHCR_BASE/$LIB_INJECTION_NAME:${CI_COMMIT_SHA}-musl
+    IMG_DESTINATIONS: $IMG_DESTINATIONS_musl
 
 onboarding_tests_installer:
   parallel:
