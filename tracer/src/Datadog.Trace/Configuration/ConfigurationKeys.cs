@@ -100,6 +100,13 @@ namespace Datadog.Trace.Configuration
         public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
         /// <summary>
+        /// Configuration key for a list of ActivitySource names (supports globbing) that will be disabled.
+        /// Default is empty (all ActivitySources will be subscribed to by default).
+        /// Supports multiple values separated with commas.
+        /// </summary>
+        public const string DisabledActivitySources = "DD_DISABLED_ACTIVITY_SOURCES";
+
+        /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
         /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
