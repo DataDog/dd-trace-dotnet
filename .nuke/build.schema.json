@@ -14,7 +14,7 @@
           "type": "boolean",
           "description": "Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker"
         },
-	"Attach": {
+        "Attach": {
           "type": "boolean",
           "description": "Indicates if the process should wait for debugger attach"
         },

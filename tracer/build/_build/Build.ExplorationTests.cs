@@ -332,14 +332,14 @@ partial class Build
         sw.Start();
         if (ExplorationTestName.HasValue)
         {
-            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}. Creating line probes file for it.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             CreateLineProbesFile(testDescription);
         }
         else
         {
-            Logger.Information($"Exploration test name is not provided. Running all of them.");
+            Logger.Information("Exploration test name is not provided. Creating line probes file for all of them.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -348,7 +348,7 @@ partial class Build
         }
 
         sw.Stop();
-        Logger.Information($"Creating line probes file finished. Took {sw.Elapsed.Seconds} seconds.");
+        Logger.Information($"Creating line probes file finished. Took {sw.Elapsed:g}.");
         return;
 
         void CreateLineProbesFile(ExplorationTestDescription testDescription)
@@ -387,10 +387,10 @@ partial class Build
                         throw new Exception("Could not find GetContainingMethodTokenAndOffset");
                     }
 
-                    var isPdbExist = (bool)metadataReader.GetType().GetProperty("IsPdbExist", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(metadataReader);
-                    if (!isPdbExist)
+                    var isPdbExist = (bool?)metadataReader.GetType().GetProperty("IsPdbExist", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(metadataReader);
+                    if (!isPdbExist.HasValue || !isPdbExist.Value)
                     {
-                        Logger.Information($"Skipping assembly {testAssemblyPath} because there is no PDB info");
+                        Logger.Debug($"Skipping assembly {testAssemblyPath} because there is no PDB info");
                         continue;
                     }
 
@@ -404,12 +404,23 @@ partial class Build
                 {
                     foreach (var metadataReader in metadataReaders)
                     {
-                        var pdbPath = (string)metadataReader.Item1.GetType().GetProperty("PdbFullPath", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(metadataReader.Item1);
+                        var pdbPath = (string)metadataReader?.Item1?.GetType().GetProperty("PdbFullPath", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(metadataReader.Item1);
+                        if (string.IsNullOrEmpty(pdbPath))
+                        {
+                            continue;
+                        }
+
                         var assemblyName = Path.GetFileNameWithoutExtension(pdbPath);
+                        if (string.IsNullOrEmpty(assemblyName))
+                        {
+                            continue;
+                        }
+
                         if (!csFile.Contains(assemblyName!))
                         {
-                            // if the metadata reader isn't the correct one, continue
+                            // if the metadata reader isn't the correct one, continue.
                             // it's not a bulletproof but probably enough for exploration test
+                            Logger.Debug($"Skipping assembly {assemblyName} because there is no matching PDB info");
                             continue;
                         }
 
