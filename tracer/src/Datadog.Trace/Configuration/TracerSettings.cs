@@ -708,6 +708,12 @@ namespace Datadog.Trace.Configuration
         public HashSet<string> DisabledIntegrationNames { get; }
 
         /// <summary>
+        /// Gets the names of disabled ActivitySources.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
+        internal string[] DisabledActivitySources { get; }
+
+        /// <summary>
         /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
         public ExporterSettings Exporter { get; }
