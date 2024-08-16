@@ -156,8 +156,12 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.Capacity()));
-        std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
+        auto cs = _callstackProvider.Get();
+        const auto nbFrames = std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
+        auto end_stack = stack.begin() + nbFrames;
+        std::copy(stack.begin(), end_stack, cs.begin());
+        cs.SetCount(nbFrames);
+        rawSample.Stack = std::move(cs);
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
@@ -189,6 +193,9 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {
             rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
+
+            // TODO: do we need to set to -1?
+            //rawSample.AppDomainId = -1;
         }
     }
 
