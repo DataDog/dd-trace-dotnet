@@ -115,7 +115,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static void Revert(ExceptionCase @case)
         {
-            Log.Information("Reverting {ExceptionCase}", @case);
+            try
+            {
+                Log.Information("Reverting {ExceptionCase}", @case);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to log an exception case while reverting...");
+            }
 
             foreach (var probe in @case.Probes)
             {
