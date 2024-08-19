@@ -6,17 +6,15 @@
     Resource: GET /iast/storedsqli,
     Service: Samples.Security.AspNetCore5,
     Type: web,
-    Error: 1,
     Tags: {
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.IastController.StoredSqli (Samples.Security.AspNetCore5),
       aspnet_core.route: iast/storedsqli,
       component: aspnet_core,
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: iast/storedsqli,
-      http.status_code: 500,
+      http.status_code: 200,
       http.url: http://localhost:00000/Iast/StoredSqli,
       http.useragent: Mistake Not...,
       language: dotnet,
@@ -37,10 +35,10 @@
       "evidence": {
         "valueParts": [
           {
-            "value": "SELECT Surname from Persons where name = '"
+            "value": "SELECT name from Persons where Details = '"
           },
           {
-            "value": "<script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>",
+            "value": "Details",
             "source": 0
           },
           {
@@ -54,7 +52,7 @@
     {
       "origin": "sql.row.value",
       "name": "Details",
-      "value": "<script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>"
+      "value": "Details"
     }
   ]
 }
