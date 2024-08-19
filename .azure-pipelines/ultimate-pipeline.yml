@@ -4800,7 +4800,7 @@ stages:
             versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+      - script: git clone --depth 1 --branch kevin/enable_dotnet https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - task: DownloadPipelineArtifact@2
