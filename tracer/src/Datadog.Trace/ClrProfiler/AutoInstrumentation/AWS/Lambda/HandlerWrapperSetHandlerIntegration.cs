@@ -12,7 +12,9 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
@@ -36,6 +38,7 @@ public class HandlerWrapperSetHandlerIntegration
     private const string IntegrationName = nameof(IntegrationId.AwsLambda);
     private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
     private static readonly Async1Callbacks Callbacks = new();
+    private static readonly Lazy<bool> IsApiKeyMissing = new(() => string.IsNullOrEmpty(GetApiKey()));
 
     /// <summary>
     /// OnMethodBegin callback. The input Delegate handler is the customer's handler.
@@ -49,6 +52,12 @@ public class HandlerWrapperSetHandlerIntegration
     /// <returns>CallTarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref Delegate handler)
     {
+        if (IsApiKeyMissing.Value)
+        {
+            LambdaCommon.Log("No API key configured, not calling the Extension", debug: false);
+            return CallTargetState.GetDefault();
+        }
+
         handler = handler.Instrument(Callbacks);
         return CallTargetState.GetDefault();
     }
@@ -60,6 +69,12 @@ public class HandlerWrapperSetHandlerIntegration
         // Reset the offset so that it can be read by the originally intended consumer, i.e. the user defined handler
         payloadStream.Seek(0, SeekOrigin.Begin);
         return result;
+    }
+
+    private static string GetApiKey()
+    {
+        var config = new ConfigurationBuilder(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+        return config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
     }
 
     private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnAsyncCallback, IReturnCallback
