@@ -293,6 +293,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
 
     [Theory]
     [Trait("RunOnWindows", "True")]
+    [Trait("Category", "ArmUnsupported")]
     [InlineData(true)]
     [InlineData(false)]
     public async Task TestDatabaseSourceInjections(bool injectOnlyDatabase)
