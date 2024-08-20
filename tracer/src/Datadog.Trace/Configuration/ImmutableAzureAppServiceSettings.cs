@@ -200,7 +200,10 @@ namespace Datadog.Trace.Configuration
             var isFunctionApp = functionsExtensionVersion is not null || functionsWorkerRuntime is not null;
 
             var websiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
-            return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSKU  is "Dynamic" or null);
+
+            // Start mini agent on all Linux function apps and only Windows function apps on consumption plans
+            // Windows function apps on non-consumption plans do not use the mini agent and instead use the .NET APM Extension which packages the Datadog agent
+            return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSKU is "Dynamic" or null);
         }
 
         public static bool GetIsAzureAppService(IConfigurationSource source, IConfigurationTelemetry telemetry)
