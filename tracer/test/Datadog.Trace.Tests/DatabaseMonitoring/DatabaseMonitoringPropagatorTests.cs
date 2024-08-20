@@ -124,8 +124,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000beef0000000000000000000000000000cafe")]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000beef0000000000000000000000000000cafe")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000BEEF0000000000000000000000000000CAFE")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000BEEF0000000000000000000000000000CAFE")]
         [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, false, null)]
         // disabled for all db types except mysql for now
         [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, false, null)]
@@ -139,7 +139,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
 
             // capture command and parameter sent
             string sql = null;
-            var context = BigInteger.Zero;
+            byte[] context = null;
             var connectionMock = new Mock<IDbConnection>(MockBehavior.Strict);
             var commandMock = new Mock<IDbCommand>();
             var parameterMock = new Mock<IDbDataParameter>();
@@ -148,8 +148,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
                        .Callback<string>(value => sql = value);
             commandMock.Setup(c => c.CreateParameter()).Returns(parameterMock.Object);
             commandMock.SetupGet(c => c.Parameters).Returns(Mock.Of<IDataParameterCollection>());
-            parameterMock.SetupSet(p => p.Value = It.IsAny<BigInteger>())
-                         .Callback<object>(value => context = (BigInteger)value);
+            parameterMock.SetupSet(p => p.Value = It.IsAny<byte[]>())
+                         .Callback<object>(value => context = (byte[])value);
 
             var span = _v0Tracer.StartSpan("mysql.query", parent: SpanContext.None, serviceName: "pouet", traceId: (TraceId)0xCAFE, spanId: 0xBEEF);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
@@ -159,12 +159,12 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             if (shouldInject)
             {
                 sql.Should().StartWith("set context_info ");
-                context.ToString("x50").Should().Be(expectedContext);
+                BitConverter.ToString(context).Replace("-", string.Empty).Should().Be(expectedContext);
             }
             else
             {
                 sql.Should().BeNull();
-                context.IsZero.Should().BeTrue();
+                context.Should().BeNull();
             }
         }
     }

@@ -5,11 +5,11 @@
 
 using System;
 using System.Data;
-using System.Numerics;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 
 #nullable enable
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         }
 
         /// <summary>
-        /// Writes the given info in a biginteger with the following format:
+        /// Writes the given info in a byte array with the following format:
         /// 4 bits: protocol version, 3 bits: reserved, 1 bit: sampling decision, 64 bits: spanID, 128 bits: traceID
         /// </summary>
         private static byte[] BuildContextValue(byte version, bool isSampled, ulong spanId, TraceId traceId)
@@ -137,11 +137,15 @@ namespace Datadog.Trace.DatabaseMonitoring
             var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
 
             contextBytes[0] = versionAndSampling;
-
-            Buffer.BlockCopy(BitConverter.GetBytes(spanId), srcOffset: 0, contextBytes, dstOffset: 1, sizeof(ulong));
-
-            Buffer.BlockCopy(BitConverter.GetBytes(traceId.Upper), srcOffset: 0, contextBytes, 1 + sizeof(ulong), sizeof(ulong));
-            Buffer.BlockCopy(BitConverter.GetBytes(traceId.Lower), srcOffset: 0, contextBytes, 1 + sizeof(ulong) + sizeof(ulong), sizeof(ulong));
+            BinaryPrimitives.WriteUInt64BigEndian(
+                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, start: 1, sizeof(ulong)),
+                spanId);
+            BinaryPrimitives.WriteUInt64BigEndian(
+                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, 1 + sizeof(ulong), sizeof(ulong)),
+                traceId.Upper);
+            BinaryPrimitives.WriteUInt64BigEndian(
+                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, 1 + sizeof(ulong) + sizeof(ulong), sizeof(ulong)),
+                traceId.Lower);
 
             return contextBytes;
         }
