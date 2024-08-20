@@ -130,23 +130,20 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// Writes the given info in a biginteger with the following format:
         /// 4 bits: protocol version, 3 bits: reserved, 1 bit: sampling decision, 64 bits: spanID, 128 bits: traceID
         /// </summary>
-        private static BigInteger BuildContextValue(byte version, bool isSampled, ulong spanId, TraceId traceId)
+        private static byte[] BuildContextValue(byte version, bool isSampled, ulong spanId, TraceId traceId)
         {
             var sampled = isSampled ? 1 : 0;
             var versionAndSampling = (byte)(((version << 4) & 0b1111_0000) | (sampled & 0b0000_0001));
             var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
-            // one pass to write 3 64 integers at once: span ID, upper, and lower traceID
-            for (var i = 0; i < sizeof(ulong); i++)
-            {
-                var bitshift = i * sizeof(ulong); // we write the LSB first
-                contextBytes[i] = (byte)(traceId.Lower >> bitshift);
-                contextBytes[i + sizeof(ulong)] = (byte)(traceId.Upper >> bitshift);
-                contextBytes[i + sizeof(ulong) + sizeof(ulong)] = (byte)(spanId >> bitshift);
-            }
 
-            contextBytes[contextBytes.Length - 1] = versionAndSampling;
+            contextBytes[0] = versionAndSampling;
 
-            return new BigInteger(contextBytes); // little endian
+            Buffer.BlockCopy(BitConverter.GetBytes(spanId), srcOffset: 0, contextBytes, dstOffset: 1, sizeof(ulong));
+
+            Buffer.BlockCopy(BitConverter.GetBytes(traceId.Upper), srcOffset: 0, contextBytes, 1 + sizeof(ulong), sizeof(ulong));
+            Buffer.BlockCopy(BitConverter.GetBytes(traceId.Lower), srcOffset: 0, contextBytes, 1 + sizeof(ulong) + sizeof(ulong), sizeof(ulong));
+
+            return contextBytes;
         }
     }
 }
