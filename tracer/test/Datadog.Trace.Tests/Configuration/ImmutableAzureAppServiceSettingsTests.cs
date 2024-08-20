@@ -211,10 +211,8 @@ namespace Datadog.Trace.Tests.Configuration
                 (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
 
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            if (Environment.OSVersion.Platform != PlatformID.Unix)
-            {
-                settings.IsRunningMiniAgentInAzureFunctions.Should().BeFalse();
-            }
+            var usesMiniAgent = Environment.OSVersion.Platform == PlatformID.Unix;
+            settings.IsRunningMiniAgentInAzureFunctions.Should().Be(usesMiniAgent);
         }
 
         [Fact]
