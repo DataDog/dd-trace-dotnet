@@ -199,7 +199,8 @@ namespace Datadog.Trace.Configuration
             var functionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
             var isFunctionApp = functionsExtensionVersion is not null || functionsWorkerRuntime is not null;
 
-            return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString() is "Dynamic" or null);
+            var websiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+            return isFunctionApp && (Environment.OSVersion.Platform == PlatformID.Unix || websiteSKU  is "Dynamic" or null);
         }
 
         public static bool GetIsAzureAppService(IConfigurationSource source, IConfigurationTelemetry telemetry)
