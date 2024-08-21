@@ -33,15 +33,19 @@ namespace shared {
         if (nbChars == 0) return std::string();
 
         char tmpStr[tmp_buffer_size] = {0};
-        int size_needed =
+        int charsWritten =
             WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) nbChars, &tmpStr[0], tmp_buffer_size, nullptr, nullptr);
-        if (size_needed < tmp_buffer_size)
+
+        if (charsWritten < tmp_buffer_size && charsWritten != 0)
         {
-            return std::string(tmpStr, size_needed);
+            return std::string(tmpStr, charsWritten);
         }
 
-        std::string strTo(size_needed, 0);
-        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) nbChars, &strTo[0], size_needed, nullptr, nullptr);
+        // Get the actual size needed
+        auto sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)nbChars, nullptr, 0, nullptr, nullptr);
+
+        std::string strTo(sizeNeeded, 0);
+        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) nbChars, &strTo[0], sizeNeeded, nullptr, nullptr);
         return strTo;
 #else
         std::u16string ustr(reinterpret_cast<const char16_t*>(wstr), nbChars);
