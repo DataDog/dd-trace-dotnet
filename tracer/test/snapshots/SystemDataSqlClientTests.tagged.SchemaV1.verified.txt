@@ -16,6 +16,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -36,6 +37,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -56,6 +58,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -76,6 +79,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -96,6 +100,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -116,6 +121,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -136,6 +142,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -156,6 +163,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -176,6 +184,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -196,6 +205,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -216,6 +226,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -236,6 +247,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -256,6 +268,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -276,6 +289,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -296,6 +310,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -316,6 +331,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -336,6 +352,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -356,6 +373,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -376,6 +394,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -396,6 +415,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -416,6 +436,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -436,6 +457,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -456,6 +478,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -476,6 +499,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -496,6 +520,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -516,6 +541,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -536,6 +562,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -556,6 +583,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -576,6 +604,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -596,6 +625,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -616,6 +646,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -636,6 +667,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -656,6 +688,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -676,6 +709,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -696,6 +730,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -716,6 +751,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -736,6 +772,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -756,6 +793,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -776,6 +814,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -796,6 +835,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -816,6 +856,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -836,6 +877,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -856,6 +898,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -876,6 +919,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -896,6 +940,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -916,6 +961,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -936,6 +982,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -956,6 +1003,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -976,6 +1024,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -996,6 +1045,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1016,6 +1066,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1036,6 +1087,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1056,6 +1108,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1076,6 +1129,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1096,6 +1150,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1116,6 +1171,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1136,6 +1192,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1156,6 +1213,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1176,6 +1234,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1196,6 +1255,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1216,6 +1276,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1236,6 +1297,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1256,6 +1318,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1276,6 +1339,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1296,6 +1360,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1316,6 +1381,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1336,6 +1402,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1356,6 +1423,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1376,6 +1444,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1396,6 +1465,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1416,6 +1486,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1436,6 +1507,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1456,6 +1528,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1476,6 +1549,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1496,6 +1570,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1516,6 +1591,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1536,6 +1612,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1556,6 +1633,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1576,6 +1654,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1596,6 +1675,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1616,6 +1696,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1636,6 +1717,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1656,6 +1738,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1676,6 +1759,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1696,6 +1780,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1716,6 +1801,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1736,6 +1822,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1756,6 +1843,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1776,6 +1864,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1796,6 +1885,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1816,6 +1906,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1836,6 +1927,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1856,6 +1948,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1876,6 +1969,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1896,6 +1990,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1916,6 +2011,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1936,6 +2032,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1956,6 +2053,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1976,6 +2074,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -1996,6 +2095,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2016,6 +2116,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2036,6 +2137,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2056,6 +2158,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2076,6 +2179,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2096,6 +2200,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2116,6 +2221,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2136,6 +2242,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2156,6 +2263,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2176,6 +2284,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2196,6 +2305,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2216,6 +2326,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2236,6 +2347,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2256,6 +2368,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2276,6 +2389,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2296,6 +2410,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2316,6 +2431,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2336,6 +2452,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2356,6 +2473,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2376,6 +2494,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2396,6 +2515,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2416,6 +2536,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2436,6 +2557,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2456,6 +2578,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2476,6 +2599,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2496,6 +2620,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2516,6 +2641,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2536,6 +2662,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2556,6 +2683,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2576,6 +2704,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2596,6 +2725,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2616,6 +2746,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2636,6 +2767,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2656,6 +2788,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2676,6 +2809,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2696,6 +2830,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2716,6 +2851,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2736,6 +2872,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2756,6 +2893,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2776,6 +2914,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2796,6 +2935,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2816,6 +2956,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2836,6 +2977,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2856,6 +2998,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2876,6 +3019,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2896,6 +3040,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2916,6 +3061,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2936,6 +3082,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2956,6 +3103,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2976,6 +3124,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -2996,6 +3145,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3016,6 +3166,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3036,6 +3187,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3056,6 +3208,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3076,6 +3229,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3096,6 +3250,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3116,6 +3271,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3136,6 +3292,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3156,6 +3313,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3176,6 +3334,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3196,6 +3355,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3216,6 +3376,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3236,6 +3397,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3256,6 +3418,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3276,6 +3439,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3296,6 +3460,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3316,6 +3481,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3336,6 +3502,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   },
@@ -3356,6 +3523,7 @@
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
     }
   }
