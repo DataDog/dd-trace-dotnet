@@ -1,5 +1,7 @@
 #include "cor_profiler.h"
 
+#include <iostream>
+
 #include "corhlpr.h"
 #include <corprof.h>
 #include <string>
@@ -580,6 +582,28 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
             // These errors must be handled on the caller with a try/catch.
             Logger::Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
         }
+    }
+}
+
+void __stdcall CorProfiler::NativeLog(int32_t level, const WCHAR* message, int32_t length)
+{
+    auto str = shared::ToString(message, length);
+
+    if (level == 0)
+    {
+        Logger::Debug(str);
+    }
+    else if (level == 1)
+    {
+        Logger::Info(str);
+    }
+    else if (level == 2)
+    {
+        Logger::Warn(str);
+    }
+    else
+    {
+        Logger::Error(str);
     }
 }
 
@@ -3202,6 +3226,36 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Char
+    mdTypeRef char_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Char"), &char_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Char failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.String
+    mdTypeRef string_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.String"), &string_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.String failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Get a TypeRef for System.Exception
+    mdTypeRef exception_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Exception"), &exception_type_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Exception failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Get a TypeRef for System.Runtime.InteropServices.Marshal
     mdTypeRef marshal_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
@@ -3274,7 +3328,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                         sizeof(marshal_copy_signature), &marshal_copy_member_ref);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Marshal.Copy");
         return hr;
     }
 
@@ -3305,7 +3359,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                         appdomain_load_signature_length, &appdomain_load_member_ref);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Assembly.Load");
         return hr;
     }
 
@@ -3321,7 +3375,52 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                         &assembly_create_instance_member_ref);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Assembly.CreateInstance");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for Object.ToString()
+    mdMemberRef object_to_string_member_ref;
+    COR_SIGNATURE object_to_string_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                          ELEMENT_TYPE_STRING };
+
+    hr = metadata_emit->DefineMemberRef(object_type_ref, WStr("ToString"),
+        object_to_string_signature, sizeof(object_to_string_signature),
+        &object_to_string_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Object.ToString");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for string.ToCharArray()
+    mdMemberRef string_to_char_array_member_ref;
+    COR_SIGNATURE string_to_char_array_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                          ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_CHAR };
+
+    hr = metadata_emit->DefineMemberRef(string_type_ref, WStr("ToCharArray"),
+        string_to_char_array_signature, sizeof(string_to_char_array_signature),
+        &string_to_char_array_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for String.ToCharArray");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for string.get_Length()
+    mdMemberRef string_get_length_member_ref;
+    COR_SIGNATURE string_get_length_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                          ELEMENT_TYPE_I4 };
+
+    hr = metadata_emit->DefineMemberRef(string_type_ref, WStr("get_Length"),
+        string_get_length_signature, sizeof(string_get_length_signature),
+        &string_get_length_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for String.get_Length");
         return hr;
     }
 
@@ -3520,10 +3619,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
     //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
     //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
+    //   [6] System.String (exception message)
+    //   [7] char*         (pointer to the exception message)
+    //   [8] char[] pinned (pinned char array for the exception message)
     mdSignature locals_signature_token;
     COR_SIGNATURE locals_signature[] = {
         IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        6,                               // Number of variables
+        9,                               // Number of variables
         ELEMENT_TYPE_I,                  // List of variable types
         ELEMENT_TYPE_I4,
         ELEMENT_TYPE_I,
@@ -3532,6 +3634,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         ELEMENT_TYPE_U1,
         ELEMENT_TYPE_SZARRAY,
         ELEMENT_TYPE_U1,
+        ELEMENT_TYPE_STRING,
+        ELEMENT_TYPE_PTR,
+        ELEMENT_TYPE_CHAR,
+        ELEMENT_TYPE_PINNED,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_CHAR,
     };
     hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
     if (FAILED(hr))
@@ -3539,6 +3647,24 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
         return hr;
     }
+
+    // ****************************************************************************************************************
+    // Standalone signature
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Generate the signature used to call the native logging method
+    COR_SIGNATURE log_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_STDCALL, // Calling convention
+        3,                             // Number of parameters
+        ELEMENT_TYPE_VOID,             // Return type
+        ELEMENT_TYPE_I4,               // First parameter type
+        ELEMENT_TYPE_I,                // Second parameter type
+        ELEMENT_TYPE_I4,               // Second parameter type
+    };
+
+    mdSignature log_signature_token;
+    metadata_emit->GetTokenFromSig(log_signature, sizeof(log_signature), &log_signature_token);
 
     // ****************************************************************************************************************
     // IL instructions
@@ -3552,10 +3678,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     ILRewriterWrapper rewriterWrapper_void(&rewriter_void);
     rewriterWrapper_void.SetILPosition(rewriter_void.GetILList()->m_pNext);
 
+    auto returnInstr = rewriter_void.NewILInstr();
+    returnInstr->m_opcode = CEE_RET;
+
     // Step 0) Check if the assembly was already loaded
 
     // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
-    rewriterWrapper_void.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
+    auto first_instruction = rewriterWrapper_void.LoadFieldAddress(isAssemblyLoadedFieldToken, true);
     // ldc.i4.1 : Load the constant 1 (int) to the stack
     rewriterWrapper_void.LoadInt32(1);
     // ldc.i4.0 : Load the constant 0 (int) to the stack
@@ -3569,7 +3698,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // check if the return of the method call is true or false
     ILInstr* pIsNotAlreadyLoadedBranch = rewriterWrapper_void.CreateInstr(CEE_BRFALSE_S);
     // return if IsAlreadyLoaded is true
-    rewriterWrapper_void.Return();
+    rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
     ILInstr* pIsHomogenousBranch = nullptr;
@@ -3589,7 +3718,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // check if the return of the method call is true or false
         pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
         // return if IsHomogenous is false
-        rewriterWrapper_void.Return();
+        rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
 
         // call System.AppDomain.get_CurrentDomain()
         pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
@@ -3599,7 +3728,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // check if the return of the method call is true or false
         pIsFullyTrustedBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
         // return if IsFullyTrusted is false
-        rewriterWrapper_void.Return();
+        rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
     }
 
     // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
@@ -3688,7 +3817,40 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // pop the returned object
     rewriterWrapper_void.Pop();
     // return
-    rewriterWrapper_void.Return();
+    rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
+
+    auto catchBegin = rewriterWrapper_void.CallMember(object_to_string_member_ref, true);
+    rewriterWrapper_void.StLocal(6);
+    rewriterWrapper_void.LoadLocal(6);
+    rewriterWrapper_void.CallMember(string_to_char_array_member_ref, true);
+    rewriterWrapper_void.StLocal(8);
+    rewriterWrapper_void.LoadLocal(8);
+    rewriterWrapper_void.CreateInstr(CEE_LDC_I4_0);
+    rewriterWrapper_void.CreateInstr(CEE_LDELEMA, char_type_ref);
+    rewriterWrapper_void.CreateInstr(CEE_CONV_U);
+    rewriterWrapper_void.StLocal(7);
+    rewriterWrapper_void.CreateInstr(CEE_LDC_I4_3);
+    rewriterWrapper_void.LoadLocal(7);
+    rewriterWrapper_void.LoadLocal(6);
+    rewriterWrapper_void.CallMember(string_get_length_member_ref, true);
+    rewriterWrapper_void.LoadInt64((INT64)&NativeLog);
+    rewriterWrapper_void.CreateInstr(CEE_CONV_I);
+    rewriterWrapper_void.CreateInstr(CEE_CALLI, log_signature_token);
+    rewriterWrapper_void.CreateInstr(CEE_LDNULL);
+    rewriterWrapper_void.StLocal(8);
+    auto catchEnd = rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
+
+    rewriterWrapper_void.GetILRewriter()->InsertAfter(catchEnd, returnInstr);
+
+    auto catchClause = new EHClause();
+    catchClause->m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    catchClause->m_pTryBegin = first_instruction;
+    catchClause->m_pTryEnd = catchBegin;
+    catchClause->m_pHandlerBegin = catchBegin;
+    catchClause->m_pHandlerEnd = catchEnd;
+    catchClause->m_ClassToken = exception_type_ref;
+
+    rewriter_void.SetEHClause(catchClause, 1);
 
     if (IsDumpILRewriteEnabled())
     {
