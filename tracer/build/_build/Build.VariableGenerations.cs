@@ -260,6 +260,7 @@ partial class Build : NukeBuild
                 var baseImages = new []
                 {
                     (baseImage: "debian", artifactSuffix: "linux-arm64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
                 };
 
                 var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
@@ -1277,7 +1278,7 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
-                var baseImages = new[] { "debian" };
+                var baseImages = new[] { "debian", "alpine" };
                 var optimizations = new[] { "true", "false" };
 
                 var matrix = new Dictionary<string, object>();

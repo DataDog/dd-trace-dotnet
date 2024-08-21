@@ -828,7 +828,7 @@ stages:
       displayName: Download universal native binaries
       inputs:
         artifact: linux-universal-home-linux-arm64
-        path: $(monitoringHome)/linux-arm64
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1377,6 +1377,14 @@ stages:
 
     - job: test
       timeoutInMinutes: 60 #default value
+      strategy:
+        matrix:
+          arm64:
+            baseImage: debian
+            artifactSuffix: linux-arm64
+          alpine:
+            baseImage: alpine
+            artifactSuffix: linux-musl-arm64
       pool:
         name: aws-arm64-auto-scaling
       workspace:
@@ -1388,12 +1396,12 @@ stages:
             targetBranch: $(targetBranch)
         - template: steps/restore-working-directory.yml
           parameters:
-            artifact: build-linux-arm64-working-directory
+            artifact: build-$(artifactSuffix)-working-directory
 
         - template: steps/run-in-docker.yml
           parameters:
             build: true
-            baseImage: debian
+            baseImage: $(baseImage)
             command: "BuildAndRunManagedUnitTests"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -2757,6 +2765,7 @@ stages:
 
     - job: Test
       timeoutInMinutes: 60 #default value
+      # TODO: move this to GenerateVariables stage
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
@@ -3714,7 +3723,7 @@ stages:
           artifactSuffix: linux-x64
           poolName: azure-linux-scale-set-2
           targetArch: x64
-        alpine:
+        alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolName: azure-linux-scale-set-2
@@ -3722,6 +3731,11 @@ stages:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+          poolname: aws-arm64-auto-scaling
+          targetArch: arm64
+        alpine_arm64:
+          baseImage: alpine
+          artifactSuffix: linux-musl-arm64
           poolname: aws-arm64-auto-scaling
           targetArch: arm64
 
