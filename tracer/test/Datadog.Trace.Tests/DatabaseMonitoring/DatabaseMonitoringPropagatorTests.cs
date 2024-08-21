@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000BEEF0000000000000000000000000000CAFE")]
         [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000BEEF0000000000000000000000000000CAFE")]
         [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, false, null)]
-        // disabled for all db types except mysql for now
+        // disabled for all db types except sqlclient for now
         [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, false, null)]
