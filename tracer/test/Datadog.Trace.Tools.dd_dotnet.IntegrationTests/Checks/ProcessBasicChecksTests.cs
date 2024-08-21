@@ -33,6 +33,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     private const string CorProfilerPath32Key = "CORECLR_PROFILER_PATH_32";
     private const string CorProfilerPath64Key = "CORECLR_PROFILER_PATH_64";
     private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
+    private const string LogDirectoryKey = "DD_TRACE_LOG_DIRECTORY";
 
     private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
@@ -243,6 +244,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         using var helper = await StartConsole(
                                enableProfiler: true,
                                ("DD_PROFILING_ENABLED", "1"),
+                               (LogDirectoryKey, this.LogDirectory),
                                ("LD_PRELOAD", apiWrapperPath));
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 

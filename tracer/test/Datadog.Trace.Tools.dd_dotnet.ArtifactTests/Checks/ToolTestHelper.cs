@@ -55,6 +55,7 @@ public abstract class ToolTestHelper : TestHelper
         };
 
         var executable = Path.Combine(EnvironmentHelper.MonitoringHome, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.cmd" : "dd-dotnet.sh");
+        Output.WriteLine($"{executable} {arguments}");
 
         var processStart = new ProcessStartInfo(executable, arguments)
         {
