@@ -124,8 +124,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01000000000000BEEF0000000000000000000000000000CAFE")]
-        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00000000000000BEEF0000000000000000000000000000CAFE")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserKeep, true, "01BEEFBEEFBEEFBEEFBABEBABEBABEBABECAFECAFECAFECAFE")]
+        [InlineData("full", "sqlclient", SamplingPriorityValues.UserReject, true, "00BEEFBEEFBEEFBEEFBABEBABEBABEBABECAFECAFECAFECAFE")]
         [InlineData("nope", "sqlclient", SamplingPriorityValues.UserKeep, false, null)]
         // disabled for all db types except sqlclient for now
         [InlineData("full", "npgsql", SamplingPriorityValues.UserKeep, false, null)]
@@ -151,7 +151,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             parameterMock.SetupSet(p => p.Value = It.IsAny<byte[]>())
                          .Callback<object>(value => context = (byte[])value);
 
-            var span = _v0Tracer.StartSpan("mysql.query", parent: SpanContext.None, serviceName: "pouet", traceId: (TraceId)0xCAFE, spanId: 0xBEEF);
+            var span = _v0Tracer.StartSpan("mysql.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
 
             DatabaseMonitoringPropagator.PropagateDataViaContext(_v0Tracer, dbmPropagationLevel, integrationId, connectionMock.Object, "pouet", new Scope(parent: null, span, scopeManager: null, finishOnClose: false), new SqlTags());
