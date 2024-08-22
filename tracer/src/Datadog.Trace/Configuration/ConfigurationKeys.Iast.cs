@@ -97,6 +97,12 @@ namespace Datadog.Trace.Configuration
             /// Default value is 250
             /// </summary>
             public const string TruncationMaxValueLength = "DD_IAST_TRUNCATION_MAX_VALUE_LENGTH";
+
+            /// <summary>
+            /// Configuration key for number of rows to taint on each Db query in IAST.
+            /// Default value is 1
+            /// </summary>
+            public const string DataBaseRowsToTaint = "DD_IAST_DB_ROWS_TO_TAINT";
         }
     }
 }
