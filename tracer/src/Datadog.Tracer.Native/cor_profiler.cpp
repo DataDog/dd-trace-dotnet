@@ -3410,7 +3410,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Create method signature for string.get_Length()
+    // Create method signature for String.get_Length()
     mdMemberRef string_get_length_member_ref;
     COR_SIGNATURE string_get_length_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
                                                           ELEMENT_TYPE_I4 };
@@ -3421,6 +3421,21 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for String.get_Length");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create method signature for String.Concat()
+    mdMemberRef string_concat_member_ref;
+    COR_SIGNATURE string_concat_signature[] = { IMAGE_CEE_CS_CALLCONV_DEFAULT, 2,
+                                                          ELEMENT_TYPE_STRING, ELEMENT_TYPE_STRING, ELEMENT_TYPE_STRING };
+
+    hr = metadata_emit->DefineMemberRef(string_type_ref, WStr("Concat"),
+        string_concat_signature, sizeof(string_concat_signature),
+        &string_concat_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for String.Concat");
         return hr;
     }
 
@@ -3499,6 +3514,25 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineUserString failed");
+        return hr;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Create a string representing "An error occured in the managed loader: "
+
+#ifdef _WIN32
+    LPCWSTR error_str = L"An error occured in the managed loader: ";
+    auto error_str_size = wcslen(error_str);
+#else
+    char16_t error_str[] = u"An error occured in the managed loader: ";
+    auto error_str_size = std::char_traits<char16_t>::length(error_str);
+#endif
+
+    mdString error_token;
+    hr = metadata_emit->DefineUserString(error_str, (ULONG)error_str_size, &error_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineUserString failed for the error message");
         return hr;
     }
 
@@ -3819,7 +3853,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // return
     rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
 
+    // Step 7) Catch block
     auto catchBegin = rewriterWrapper_void.CallMember(object_to_string_member_ref, true);
+    rewriterWrapper_void.StLocal(6);
+    rewriterWrapper_void.LoadStr(error_token);
+    rewriterWrapper_void.LoadLocal(6);
+    rewriterWrapper_void.CallMember(string_concat_member_ref, false);
     rewriterWrapper_void.StLocal(6);
     rewriterWrapper_void.LoadLocal(6);
     rewriterWrapper_void.CallMember(string_to_char_array_member_ref, true);
