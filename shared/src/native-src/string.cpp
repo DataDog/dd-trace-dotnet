@@ -32,16 +32,16 @@ namespace shared {
 #ifdef _WIN32
         if (nbChars == 0) return std::string();
 
-        char tmpStr[tmp_buffer_size] = { 0 };
+        char tmpStr[tmp_buffer_size] = {0};
         int size_needed =
-            WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)nbChars, &tmpStr[0], tmp_buffer_size, nullptr, nullptr);
+            WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) nbChars, &tmpStr[0], tmp_buffer_size, nullptr, nullptr);
         if (size_needed < tmp_buffer_size)
         {
             return std::string(tmpStr, size_needed);
         }
 
         std::string strTo(size_needed, 0);
-        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)nbChars, &strTo[0], size_needed, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) nbChars, &strTo[0], size_needed, nullptr, nullptr);
         return strTo;
 #else
         std::u16string ustr(reinterpret_cast<const char16_t*>(wstr), nbChars);
@@ -68,7 +68,7 @@ namespace shared {
 #ifdef _WIN32
         if (str.empty()) return std::wstring();
 
-        wchar_t tmpStr[tmp_buffer_size] = { 0 };
+        wchar_t tmpStr[tmp_buffer_size] = {0};
         int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &tmpStr[0], tmp_buffer_size);
         if (size_needed < tmp_buffer_size) {
             return std::wstring(tmpStr, size_needed);
@@ -135,12 +135,12 @@ namespace shared {
         return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
     }
 
-    bool StartsWith(const std::string& str, const std::string& prefix)
+    bool StartsWith(const std::string &str, const std::string &prefix)
     {
         return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
     }
 
-    bool StartsWith(const WSTRING& str, const WSTRING& prefix)
+    bool StartsWith(const WSTRING &str, const WSTRING &prefix)
     {
         return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
     }
