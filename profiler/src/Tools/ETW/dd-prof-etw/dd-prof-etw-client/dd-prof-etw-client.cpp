@@ -22,12 +22,12 @@ void ShowHelp()
     printf("\nDatadog CLR Events Client v1.1\n");
     printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
     printf("\n");
-    printf("Usage: -pid <pid of a .NET process emitting events>\n");
-    printf("   Ex: -pid 1234\n");
+    printf("Usage: -pid <pid of a .NET process emitting events> -r <filename containing the recorded events>\n");
+    printf("   Ex: -pid 1234 -r gc.events\n");
     printf("\n");
 }
 
-bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
+bool ParseCommandLine(int argc, char* argv[], int& pid, std::string& eventsFilename, bool& needHelp)
 {
     bool success = false;
 
@@ -50,6 +50,16 @@ bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
             // atoi is fine because we don't expect 0 to be a valid pid
             pid = atoi(argv[i+1]);
             success = (pid != 0);
+        }
+        else
+        if (strcmp(argv[i], "-r") == 0)
+        {
+            if (i == argc - 1)
+            {
+                return false;
+            }
+
+            eventsFilename = argv[i+1];
         }
         else
         if (strcmp(argv[i], "-help") == 0)
@@ -154,7 +164,8 @@ int main(int argc, char* argv[])
     int pid = -1;
     const char* pipe = "DD_ETW_DISPATCHER";
     bool needHelp = false;
-    if (!ParseCommandLine(argc, argv, pid, needHelp))
+    std::string eventsFilename;
+    if (!ParseCommandLine(argc, argv, pid, eventsFilename, needHelp))
     {
         if (pid == -1)
         {
@@ -170,6 +181,18 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    FILE* eventsFile = nullptr;
+    if (!eventsFilename.empty())
+    {
+        eventsFile = fopen(eventsFilename.c_str(), "wb");
+        if (eventsFile == nullptr)
+        {
+            std::cout << "Impossible to create the events file " << eventsFilename << "...\n";
+            return -1;
+        }
+        std::cout << "Events will be saved into the file " << eventsFilename << "\n";
+    }
+
     std::cout << "\n";
 
     // start the server part to receive proxied ETW events
@@ -179,7 +202,7 @@ int main(int argc, char* argv[])
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
-    EtwEventDumper eventDumper;
+    EtwEventDumper eventDumper(eventsFile);
     std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
     auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper);
     auto server = IpcServer::StartAsync(

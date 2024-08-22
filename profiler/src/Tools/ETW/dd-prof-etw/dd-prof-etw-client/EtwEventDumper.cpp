@@ -10,6 +10,18 @@
 #include <iomanip>
 #include <iostream>
 
+EtwEventDumper::EtwEventDumper(FILE* eventsFile)
+{
+    _pEventsFile = eventsFile;
+}
+
+EtwEventDumper::~EtwEventDumper()
+{
+    if (_pEventsFile != nullptr)
+    {
+        fclose(_pEventsFile);
+    }
+}
 
 bool EtwEventDumper::BuildClrEvent(
     std::string& name,
@@ -183,7 +195,7 @@ void EtwEventDumper::DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEv
     {
         std::wcout << L"   large | ";
     }
-    std::wcout << (wchar_t*)&(pPayload->TypeName) << L"\n";
+    std::wcout << (wchar_t*)&(pPayload->FirstCharInName) << L"\n";
 }
 
 void EtwEventDumper::OnEvent(
@@ -196,6 +208,19 @@ void EtwEventDumper::OnEvent(
     uint32_t cbEventData,
     const uint8_t* pEventData)
 {
+    // serialize the event to file if needed
+    if (_pEventsFile != nullptr)
+    {
+        fwrite(&timestamp, sizeof(timestamp), 1, _pEventsFile);
+        fwrite(&tid, sizeof(tid), 1, _pEventsFile);
+        fwrite(&version, sizeof(version), 1, _pEventsFile);
+        fwrite(&keyword, sizeof(keyword), 1, _pEventsFile);
+        fwrite(&level, sizeof(level), 1, _pEventsFile);
+        fwrite(&id, sizeof(id), 1, _pEventsFile);
+        fwrite(&cbEventData, sizeof(cbEventData), 1, _pEventsFile);
+        fwrite(pEventData, cbEventData, 1, _pEventsFile);
+    }
+
     std::string name;
     if (BuildClrEvent(name, tid, version, id, keyword, level, cbEventData, pEventData))
     {
