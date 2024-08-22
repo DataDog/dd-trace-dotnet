@@ -18,6 +18,8 @@ namespace Datadog.Trace.TestHelpers
 
         private static IProgress<string> _output;
 
+        private static bool _isCrashMonitoringAvailable = true;
+
         public static bool IsAvailable => _path != null;
 
         public static async Task InitializeAsync(IProgress<string> progress)
@@ -34,7 +36,7 @@ namespace Datadog.Trace.TestHelpers
             if (!EnvironmentTools.IsTestTarget64BitProcess())
             {
                 // We currently have an issue with procdump on x86
-                return;
+                _isCrashMonitoringAvailable = false;
             }
 
             // We don't know if procdump is available, so download it fresh
@@ -60,7 +62,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Task MonitorCrashes(int pid)
         {
-            if (!EnvironmentTools.IsWindows() || !IsAvailable)
+            if (!EnvironmentTools.IsWindows() || !IsAvailable || !_isCrashMonitoringAvailable)
             {
                 return Task.CompletedTask;
             }
@@ -128,6 +130,7 @@ namespace Datadog.Trace.TestHelpers
         {
             if (!IsAvailable)
             {
+                _output?.Report("Memory dumps not enabled");
                 return false;
             }
 

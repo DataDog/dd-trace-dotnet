@@ -10,7 +10,6 @@ updates:
       - "area:dependabot"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
-      - dependency-name: "StyleCop.Analyzers" # floating version is being used and it seemed to break dependabot (for some reason)
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
   # Src libraries
@@ -39,8 +38,6 @@ updates:
       # Lock Microsoft.Build.Framework for widest compatibility when instrumenting builds
       - dependency-name: "Microsoft.Build.Framework"
 
-      - dependency-name: "StyleCop.Analyzers" # floating version is being used and it seemed to break dependabot (for some reason)
-
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.OpenTracing"
     schedule:
@@ -61,8 +58,6 @@ updates:
       # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
-
-      - dependency-name: "StyleCop.Analyzers" # floating version is being used and it seemed to break dependabot (for some reason)
       ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
     directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
@@ -84,6 +79,4 @@ updates:
       # DuckTyping libraries are kept at the lowest supported version for compatibility on netstandard2.0
       - dependency-name: "System.Reflection.Emit"
       - dependency-name: "System.Reflection.Emit.Lightweight"
-
-      - dependency-name: "StyleCop.Analyzers" # floating version is being used and it seemed to break dependabot (for some reason)
       ### End Datadog.Trace.csproj ignored dependencies

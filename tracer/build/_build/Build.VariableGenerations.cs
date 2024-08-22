@@ -226,6 +226,7 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsLinuxMatrices()
             {
                 GenerateIntegrationTestsLinuxMatrix();
+                GenerateIntegrationTestsLinuxArm64Matrix();
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
@@ -249,8 +250,32 @@ partial class Build : NukeBuild
                     }
                 }
 
+                Logger.Information($"Integration test Linux matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            void GenerateIntegrationTestsLinuxArm64Matrix()
+            {
+                var baseImages = new []
+                {
+                    (baseImage: "debian", artifactSuffix: "linux-arm64"),
+                };
+
+                var targetFrameworks = GetTestingFrameworks(isArm64: true).Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
+
+                var matrix = new Dictionary<string, object>();
+                foreach (var framework in targetFrameworks)
+                {
+                    foreach (var (baseImage, artifactSuffix) in baseImages)
+                    {
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
+                    }
+                }
+
+                Logger.Information($"Integration test Linux Arm64 matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()

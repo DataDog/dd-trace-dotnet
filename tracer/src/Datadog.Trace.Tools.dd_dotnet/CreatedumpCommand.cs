@@ -409,7 +409,7 @@ internal class CreatedumpCommand : Command
 
             // Note: if refactoring, make sure to dispose the ClrMD DataTarget before calling createdump,
             // otherwise the calls to ptrace from createdump will fail
-            if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
+            if (Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH") == "1")
             {
                 if (allArguments.Length > 0)
                 {
@@ -547,7 +547,7 @@ internal class CreatedumpCommand : Command
 
         try
         {
-            var outputFile = Environment.GetEnvironmentVariable("DD_TRACE_CRASH_OUTPUT");
+            var outputFile = Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_OUTPUT");
 
             if (!string.IsNullOrEmpty(outputFile))
             {
