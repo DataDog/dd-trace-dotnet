@@ -58,7 +58,7 @@ namespace Honeypot
                 var untestedCallout = "";
                 if (package.LatestTestedVersion is not null && package.LatestVersion > package.LatestTestedVersion)
                 {
-                    untestedCallout = $"\u26A0POTENTIALLY UNSUPPORTED\u26A0 ";
+                    untestedCallout = $"⚠POTENTIALLY UNSUPPORTED⚠ ";
                 }
 
                 fakeRefs += $@"{Environment.NewLine}    <!-- {untestedCallout}Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
