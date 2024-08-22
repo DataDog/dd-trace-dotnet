@@ -64,14 +64,15 @@ namespace iast
         {
             //Check for version limitation
             pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
             auto version = GetVersionInfo(versionTxt);
             if (Compare(currentVersion, version) < 0)
             {
                 return; // Current version is lower than minimum required
             }
-            return; 
         }
         auto params = line.substr(pos0, pos1 - pos0);
 
@@ -134,14 +135,15 @@ namespace iast
         {
             // Check for version limitation
             pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
             auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
             auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
             auto version = GetVersionInfo(versionTxt);
             if (Compare(currentVersion, version) < 0)
             {
                 return; // Current version is lower than minimum required
             }
-            return;
         }
         auto params = line.substr(pos0, pos1 - pos0);
         auto parts = SplitParams(params);
