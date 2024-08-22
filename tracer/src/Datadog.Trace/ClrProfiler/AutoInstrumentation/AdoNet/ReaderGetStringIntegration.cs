@@ -46,24 +46,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<string> OnMethodEnd<TTarget, TReturn>(TTarget instance, string returnValue, Exception? exception, in CallTargetState state)
-            where TTarget : IDataRecord
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             try
             {
-                if (exception is null && !string.IsNullOrEmpty(returnValue))
+                if (exception is null && returnValue is string value)
                 {
                     string column;
-                    if (state.State is int index)
+                    if (instance is IDataRecord record && state.State is int index)
                     {
-                        column = instance.GetName(index);
+                        column = record.GetName(index);
                     }
                     else
                     {
-                        column = string.Empty;
+                        column = state.State?.ToString() ?? string.Empty;
                     }
 
-                    IastModule.AddDbValue(instance!, column, returnValue);
+                    IastModule.AddDbValue(instance!, column, value);
                 }
             }
             catch (Exception e)
@@ -75,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            return new CallTargetReturn<string>(returnValue);
+            return new CallTargetReturn<TReturn>(returnValue);
         }
     }
 }
