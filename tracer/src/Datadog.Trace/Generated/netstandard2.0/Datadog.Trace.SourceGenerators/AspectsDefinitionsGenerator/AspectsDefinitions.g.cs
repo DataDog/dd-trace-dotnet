@@ -444,6 +444,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.String::ToCharArray()\",\"\",[0],[False],[StringLiteral_0],Default,[])] ToCharArray(System.String)",
 "  [AspectMethodReplace(\"System.String::ToCharArray(System.Int32,System.Int32)\",\"\",[0],[False],[StringLiteral_0],Default,[])] ToCharArray(System.String,System.Int32,System.Int32)",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.String[],System.Int32,System.Int32)\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.String[],System.Int32,System.Int32)",
+"  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.Object[])\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.Object[])",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.String[])\",\"\",[0],[False],[None],Default,[])] Join(System.String,System.String[])",
 "  [AspectMethodReplace(\"System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Default,[])] JoinString(System.String,System.Collections.Generic.IEnumerable`1<System.String>)",
