@@ -16,13 +16,7 @@
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectType.cs" Link="AspectsDefinitions\Sources\AspectType.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectAttribute.cs" Link="AspectsDefinitions\Sources\AspectAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectClassAttribute.cs" Link="AspectsDefinitions\Sources\AspectClassAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectCtorReplaceAttribute.cs" Link="AspectsDefinitions\Sources\AspectCtorReplaceAttribute.cs" />
     <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectFilter.cs" Link="AspectsDefinitions\Sources\AspectFilter.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertAfterAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodInsertAfterAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodInsertBeforeAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodInsertBeforeAttribute.cs" />
-    <EmbeddedResource Include="..\Datadog.Trace\Iast\Dataflow\AspectMethodReplaceAttribute.cs" Link="AspectsDefinitions\Sources\AspectMethodReplaceAttribute.cs" />
     <Compile Include="..\Datadog.Trace\Iast\VulnerabilityType.cs" Link="AspectsDefinitions\Sources\VulnerabilityType.cs" />
     <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\Sources\VulnerabilityTypeName.cs" />    
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
