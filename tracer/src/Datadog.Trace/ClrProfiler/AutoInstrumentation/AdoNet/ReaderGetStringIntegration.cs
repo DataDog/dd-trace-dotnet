@@ -32,6 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="index">Column index.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int index)
+            where TTarget : IDataRecord
         {
             return new CallTargetState(null, index);
         }
@@ -46,23 +47,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<string> OnMethodEnd<TTarget, TReturn>(TTarget instance, string returnValue, Exception? exception, in CallTargetState state)
+            where TTarget : IDataRecord
         {
             try
             {
-                if (exception is null && returnValue is string value)
+                if (exception is null && !string.IsNullOrEmpty(returnValue))
                 {
                     string column;
-                    if (instance is IDataRecord record && state.State is int index)
+                    if (state.State is int index)
                     {
-                        column = record.GetName(index);
+                        column = instance.GetName(index);
                     }
                     else
                     {
-                        column = state.State?.ToString() ?? string.Empty;
+                        column = string.Empty;
                     }
 
-                    IastModule.AddDbValue(instance!, column, value);
+                    IastModule.AddDbValue(instance!, column, returnValue);
                 }
             }
             catch (Exception e)
@@ -74,8 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<string>(returnValue);
         }
     }
 }
