@@ -497,8 +497,8 @@ namespace MyTests;
 [AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
 public class TestAspectClass1
 { 
-    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Concat<T>(System.Collections.Generic.IEnumerable<T> values)
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable)")]
+    public static string Concat(System.Collections.Generic.IEnumerable values)
     {
         return string.Concat(target, param1);
     }
@@ -517,7 +517,7 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] GetAspects() => new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
-"  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[]);V3.2.0] Concat(System.Collections.Generic.IEnumerable`1<!!0>)",
+"  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable)\",\"\",[0],[False],[None],Default,[]);V3.2.0] Concat(System.Collections.Generic.IEnumerable)",
         };
 
         public static string[] GetRaspAspects() => new string[] {
