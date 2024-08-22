@@ -498,7 +498,7 @@ public class StringAspects
     /// <typeparam name="T"> Collection element type </typeparam>
     /// <param name="values"> Parameters </param>
     /// <returns> String.Concat(values) </returns>
-    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Concat<T>(IEnumerable<T> values)
     {
         var result = string.Concat(values);
@@ -703,7 +703,7 @@ public class StringAspects
     /// <param name="separator"> sparator </param>
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Join<T>(char separator, IEnumerable<T> values)
     {
         var result = string.Join(separator, values);
@@ -727,7 +727,7 @@ public class StringAspects
     /// <param name="separator"> sparator </param>
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
-    [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static string Join<T>(string separator, IEnumerable<T> values)
     {
         var result = string.Join(separator, values);

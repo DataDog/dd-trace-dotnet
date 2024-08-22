@@ -1230,7 +1230,7 @@ public class StringBuilderAspects
     /// <param name="separator">The character to use as a separator.</param>
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
-    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    [AspectMethodReplaceFromVersion("3.2.0", "System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static StringBuilder AppendJoin<T>(StringBuilder? target, char separator, IEnumerable<T>? values)
     {
         var result = target!.AppendJoin(separator, values!);
@@ -1252,7 +1252,7 @@ public class StringBuilderAspects
     /// <param name="separator">The character to use as a separator.</param>
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
-    [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    [AspectMethodReplaceFromVersion("3.2.0", "System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
     public static StringBuilder AppendJoin<T>(StringBuilder? target, string separator, IEnumerable<T>? values)
     {
         var result = target!.AppendJoin(separator, values!);
