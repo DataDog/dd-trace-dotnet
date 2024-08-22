@@ -32,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="index">Column index.</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int index)
-            where TTarget : IDataRecord
         {
             return new CallTargetState(null, index);
         }
