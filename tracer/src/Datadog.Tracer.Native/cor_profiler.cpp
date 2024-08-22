@@ -1,7 +1,5 @@
 #include "cor_profiler.h"
 
-#include <iostream>
-
 #include "corhlpr.h"
 #include <corprof.h>
 #include <string>
@@ -3854,6 +3852,17 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
 
     // Step 7) Catch block
+    // catch (Exception ex)
+    // {
+    //      var message = "An error occured in the managed loader: " + ex.ToString();
+    //      var chars = message.ToCharArray();
+    // 
+    //      fixed (char* p = chars)
+    //      {
+    //          var nativeLog = (delegate* unmanaged<int, IntPtr, int, void>)0xFFFFFFFF; // Replaced with the actual address
+    //          nativeLog(3, p, chars.Length);
+    //      }
+    // }
     auto catchBegin = rewriterWrapper_void.CallMember(object_to_string_member_ref, true);
     rewriterWrapper_void.StLocal(6);
     rewriterWrapper_void.LoadStr(error_token);
