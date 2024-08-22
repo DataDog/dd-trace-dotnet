@@ -567,6 +567,8 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Text.StringBuilder::AppendJoin(System.String,System.Object[])\",\"\",[0],[False],[None],Default,[])] AppendJoin(System.Text.StringBuilder,System.String,System.Object[])",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::AppendJoin(System.Char,System.String[])\",\"\",[0],[False],[None],Default,[])] AppendJoin(System.Text.StringBuilder,System.Char,System.String[])",
 "  [AspectMethodReplace(\"System.Text.StringBuilder::AppendJoin(System.Char,System.Object[])\",\"\",[0],[False],[None],Default,[])] AppendJoin(System.Text.StringBuilder,System.Char,System.Object[])",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[])] AppendJoin(System.Text.StringBuilder,System.Char,System.Collections.Generic.IEnumerable`1<!!0>)",
+"  [AspectMethodReplace(\"System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[])] AppendJoin(System.Text.StringBuilder,System.String,System.Collections.Generic.IEnumerable`1<!!0>)",
 "[AspectClass(\"mscorlib,netstandard,System.Runtime\",[None],Sink,[ReflectionInjection])] Datadog.Trace.Iast.Aspects.ActivatorAspect",
 "  [AspectMethodInsertBefore(\"System.Activator::CreateInstance(System.String,System.String)\",\"\",[1,0],[False,False],[None],Default,[])] ReflectionInjectionParam(System.String)",
 "  [AspectMethodInsertBefore(\"System.Activator::CreateInstance(System.String,System.String,System.Object[])\",\"\",[2,1],[False,False],[None],Default,[])] ReflectionInjectionParam(System.String)",

@@ -1224,96 +1224,49 @@ public class StringBuilderAspects
         return result;
     }
 
-    // TODO : Add support for callsites with undefined generic params
-/*
-
     /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
     /// <param name="target">The StringBuilder instance.</param>
     /// <param name="separator">The character to use as a separator.</param>
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder? target, char separator, object? values)
+    public static StringBuilder AppendJoin<T>(StringBuilder? target, char separator, IEnumerable<T>? values)
     {
-        if (values is null || target is null)
+        var result = target!.AppendJoin(separator, values!);
+        try
         {
-#pragma warning disable CS8604 // We want to call the exact method overload even if values is null
-            return target!.AppendJoin(separator, values as IEnumerable<object>);
-#pragma warning restore CS8604 // Enable
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringBuilderAspects)}.{nameof(AppendJoin)}");
         }
 
-        var valuesConverted = values as IEnumerable<object?>;
-
-        if (values is IEnumerable valuesEnumerable)
-        {
-            try
-            {
-                valuesConverted = PropagationModuleImpl.EnumerateAsObjects(valuesEnumerable);
-            }
-            catch (Exception error)
-            {
-                Log.Error(error, $"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} exception");
-                // This should not ever happen
-                return target.AppendJoin(separator, values);
-            }
-        }
-        else
-        {
-            Log.Error($"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} ERROR in IEnumerable parameter");
-            // This should not ever happen
-            return target.AppendJoin(separator, values);
-        }
-
-        var result = target.AppendJoin(separator, valuesConverted!);
-        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, null, valuesConverted);
         return result;
     }
 
     /// <summary>StringBuilder.AppendJoin aspect</summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
     /// <param name="target">The StringBuilder instance.</param>
     /// <param name="separator">The character to use as a separator.</param>
     /// <param name="values">An array that contains the strings to concatenate and append to the current instance of the string builder.</param>
     /// <returns>The modified StringBuilder instance.</returns>
     [AspectMethodReplace("System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static StringBuilder AppendJoin(StringBuilder? target, string? separator, object? values)
+    public static StringBuilder AppendJoin<T>(StringBuilder? target, string separator, IEnumerable<T>? values)
     {
-        if (values is null || target is null)
+        var result = target!.AppendJoin(separator, values!);
+        try
         {
-#pragma warning disable CS8604 // We want to call the exact method overload even if values is null
-            return target!.AppendJoin(separator, values as IEnumerable<object>);
-#pragma warning restore CS8604 // Enable
+            StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringBuilderAspects)}.{nameof(AppendJoin)}");
         }
 
-        var valuesConverted = values as IEnumerable<object?>;
-
-        if (valuesConverted is null)
-        {
-            // We have a IEnumerable of structs or basic types. This is a corner case.
-            if (values is IEnumerable valuesEnumerable)
-            {
-                try
-                {
-                    valuesConverted = PropagationModuleImpl.EnumerateAsObjects(valuesEnumerable);
-                }
-                catch (Exception error)
-                {
-                    Log.Error(error, $"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} exception");
-                    // This should not ever happen
-                    return target.AppendJoin(separator, values);
-                }
-            }
-            else
-            {
-                Log.Error($"{nameof(StringBuilderAspects)}.{nameof(AppendJoin)} ERROR in IEnumerable parameter");
-                // This should not ever happen
-                return target.AppendJoin(separator, values);
-            }
-        }
-
-        var result = target.AppendJoin(separator, valuesConverted!);
-        StringBuilderModuleImpl.FullTaintIfAnyTaintedEnumerable(target, separator, valuesConverted);
         return result;
     }
-*/
+
 #endif
 }
