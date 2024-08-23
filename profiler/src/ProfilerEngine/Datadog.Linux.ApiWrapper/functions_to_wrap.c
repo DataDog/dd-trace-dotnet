@@ -185,8 +185,6 @@ static const char* datadogCrashMarker = "datadog_crashtracking";
 __attribute__((constructor))
 void initLibrary(void)
 {
-    check_init();
-
     const char* crashHandlerEnabled = getenv(DD_CRASHTRACKING_ENABLED);
 
     if (crashHandlerEnabled != NULL)
