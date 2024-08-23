@@ -48,11 +48,11 @@ namespace iast
     }
 
     //------------------------------------
+    VersionInfo currentVersion = GetVersionInfo(GetDatadogVersion());
 
     DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line)
     {
         this->_dataflow = dataflow;
-        //[AspectClassAttribute("mscorlib,netstandard,System.Private.CoreLib",PROPAGATION,"")] Hdiv.AST.Aspects.Aspects.System_StringAspect
         this->_aspectsAssembly = aspectsAssembly;
         this->_line = line;
         size_t offset = 0;
@@ -60,7 +60,20 @@ namespace iast
         if (pos0 == std::string::npos) { return; }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr(")] "), &offset);
-        if (pos1 == std::string::npos) { return; }
+        if (pos1 == std::string::npos) 
+        {
+            //Check for version limitation
+            pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
+            auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
+            auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
+            auto version = GetVersionInfo(versionTxt);
+            if (Compare(currentVersion, version) < 0)
+            {
+                return; // Current version is lower than minimum required
+            }
+        }
         auto params = line.substr(pos0, pos1 - pos0);
 
         auto parts = SplitParams(params);
@@ -104,7 +117,6 @@ namespace iast
 
     DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line)
     {
-        //[AspectMethodReplaceAttribute("System.String::Concat(System.String,System.String)","",[0,1],[False,True],DEFAULT,"")] 100663375|100663444
         this->_aspectClass = aspectClass;
         this->_line = line;
         size_t offset = 0;
@@ -115,10 +127,24 @@ namespace iast
         if (pos1 == std::string::npos) { return; }
         auto aspectAttribute = line.substr(pos0, pos1 - pos0);
         _behavior = ParseAspectApplication(aspectAttribute);
+        if (_behavior == AspectBehavior::Unknown) { return; }
 
         pos0 = offset;
         pos1 = IndexOf(line, WStr(")] "), &offset);
-        if (pos1 == std::string::npos) { return; }
+        if (pos1 == std::string::npos)
+        {
+            // Check for version limitation
+            pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
+            auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
+            auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
+            auto version = GetVersionInfo(versionTxt);
+            if (Compare(currentVersion, version) < 0)
+            {
+                return; // Current version is lower than minimum required
+            }
+        }
         auto params = line.substr(pos0, pos1 - pos0);
         auto parts = SplitParams(params);
 
