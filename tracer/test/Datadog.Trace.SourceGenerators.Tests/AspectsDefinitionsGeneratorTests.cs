@@ -484,6 +484,56 @@ namespace Datadog.Trace.ClrProfiler
             Assert.Empty(diagnostics);
         }
 
+        [Fact]
+        public void CanGenerateAspectsDefinitionWithVersion()
+        {
+            const string input = """
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+
+namespace MyTests;
+
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
+public class TestAspectClass1
+{ 
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable)")]
+    public static string Concat(System.Collections.Generic.IEnumerable values)
+    {
+        return string.Concat(target, param1);
+    }
+}
+""";
+
+            const string expected = Constants.FileHeader + """"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class AspectDefinitions
+    {
+        public static string[] GetAspects() => new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable)\",\"\",[0],[False],[None],Default,[]);V3.2.0] Concat(System.Collections.Generic.IEnumerable)",
+        };
+
+        public static string[] GetRaspAspects() => new string[] {
+        };
+    }
+}
+
+"""";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                SourceHelper.AspectAttributes,
+                input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
         public static class SourceHelper
         {
             public const string AspectAttributes = """
@@ -635,7 +685,7 @@ internal abstract class AspectAttribute : Attribute
     }
 }
 
-internal sealed class AspectClassAttribute : Attribute
+internal class AspectClassAttribute : Attribute
 {
     private readonly List<object> parameters = new List<object>();
 
@@ -688,7 +738,7 @@ internal sealed class AspectClassAttribute : Attribute
     }
 }
 
-internal sealed class AspectCtorReplaceAttribute : AspectAttribute
+internal class AspectCtorReplaceAttribute : AspectAttribute
 {
     public AspectCtorReplaceAttribute(string targetMethod)
         : base(targetMethod)
@@ -727,7 +777,7 @@ internal enum AspectFilter
     StringLiteral_1,
 }
 
-internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
+internal class AspectMethodInsertAfterAttribute : AspectAttribute
 {
     public AspectMethodInsertAfterAttribute(string targetMethod)
         : base(targetMethod)
@@ -740,7 +790,7 @@ internal sealed class AspectMethodInsertAfterAttribute : AspectAttribute
     }
 }
 
-internal sealed class AspectMethodInsertBeforeAttribute : AspectAttribute
+internal class AspectMethodInsertBeforeAttribute : AspectAttribute
 {
     public AspectMethodInsertBeforeAttribute(string targetMethod, int paramShift = 0, bool boxParam = false)
         : base(targetMethod, string.Empty, paramShift, boxParam)
@@ -758,7 +808,7 @@ internal sealed class AspectMethodInsertBeforeAttribute : AspectAttribute
     }
 }
 
-internal sealed class AspectMethodReplaceAttribute : AspectAttribute
+internal class AspectMethodReplaceAttribute : AspectAttribute
 {
     public AspectMethodReplaceAttribute(string targetMethod)
         : base(targetMethod)
@@ -777,6 +827,14 @@ internal sealed class AspectMethodReplaceAttribute : AspectAttribute
 
     public AspectMethodReplaceAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
         : base(targetMethod, aspectType, vulnerabilityTypes)
+    {
+    }
+}
+
+internal class AspectMethodReplaceFromVersionAttribute : AspectMethodReplaceAttribute
+{
+    public AspectMethodReplaceFromVersionAttribute(string version, string targetMethod)
+        : base(targetMethod)
     {
     }
 }
