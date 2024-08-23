@@ -24,6 +24,7 @@ namespace datadog::shared::nativeloader
 
         std::atomic<int> m_refCount;
         IDynamicDispatcher* m_dispatcher;
+        bool m_disabled;
         ICorProfilerCallback10* m_cpProfiler;
         ICorProfilerCallback10* m_tracerProfiler;
         ICorProfilerCallback10* m_customProfiler;

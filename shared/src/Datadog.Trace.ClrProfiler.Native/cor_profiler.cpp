@@ -16,6 +16,11 @@ namespace datadog::shared::nativeloader
 #define STR(x) #x
 #define RunInAllProfilers(EXPR)                                                                                        \
     HRESULT gHR = S_OK;                                                                                                \
+    if (m_disabled)                                                                                                    \
+    {                                                                                                                  \
+        return gHR;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
     if (m_cpProfiler != nullptr)                                                                                       \
     {                                                                                                                  \
         HRESULT hr = m_cpProfiler->EXPR;                                                                               \
@@ -57,6 +62,7 @@ namespace datadog::shared::nativeloader
     CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
         m_refCount(0),
         m_dispatcher(dispatcher),
+        m_disabled(false),
         m_cpProfiler(nullptr),
         m_tracerProfiler(nullptr),
         m_customProfiler(nullptr),
@@ -245,14 +251,16 @@ namespace datadog::shared::nativeloader
             Log::Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
             // we're not recording the exact version here, we just know that at this point it's not enough
             single_step_guard_rails.RecordBootstrapError(SingleStepGuardRails::NetFrameworkRuntime, inferredVersion, "incompatible_runtime");
-            return E_FAIL;
+            m_disabled = true;
+            return S_OK;
         }
         const auto runtimeInformation = GetRuntimeVersion(info4, inferredVersion);
 
         if(single_step_guard_rails.CheckRuntime(runtimeInformation, pICorProfilerInfoUnk) != S_OK)
         {
             info4->Release();
-            return E_FAIL;
+            m_disabled = true;            
+            return S_OK;
         }
 
         //
@@ -261,7 +269,8 @@ namespace datadog::shared::nativeloader
         if (m_dispatcher == nullptr)
         {
             single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
+            m_disabled = true;
+            return S_OK;
         }
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
         if (cpInstance != nullptr)
@@ -325,7 +334,8 @@ namespace datadog::shared::nativeloader
         {
             Log::Warn("CorProfiler::Initialize: Error getting the event mask.");
             single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
+            m_disabled = true;
+            return S_OK;
         }
 
         Log::Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
@@ -491,7 +501,8 @@ namespace datadog::shared::nativeloader
         {
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
             single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
+            m_disabled = true;
+            return S_OK;
         }               
 
         single_step_guard_rails.RecordBootstrapSuccess(runtimeInformation);
