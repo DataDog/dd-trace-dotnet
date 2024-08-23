@@ -150,7 +150,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
 
     // System.Text.StringBuilder::AppendJoin(System.String,System.Collections.Generic.IEnumerable`1<!!0>)
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
@@ -158,7 +158,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => new StringBuilder().AppendJoin(".", new List<object> { _taintedValue, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
@@ -174,7 +174,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => new StringBuilder().AppendJoin(".", new List<object> { _untaintedString, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-testuntainted.untainted-+:",
@@ -182,7 +182,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => GetTaintedStringBuilder("test").AppendJoin(".", new List<object> { _untaintedString, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted4()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-testuntainteduntainted-+:",
@@ -206,7 +206,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => GetTaintedStringBuilder("test").AppendJoin(".", (object[])null));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinStringIEnumerable_ThenResultIsTainted7()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untaintedtainteduntainted-+:",
@@ -314,7 +314,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => GetTaintedStringBuilder("test").AppendJoin('.', (object[])null));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted.untainted-+:",
@@ -322,7 +322,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => new StringBuilder().AppendJoin('.', new List<object> { _taintedValue, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-untainted.tainted-+:",
@@ -338,7 +338,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => new StringBuilder().AppendJoin('.', new List<object> { _untaintedString, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted3()
     {
         var st = new StringBuilder("test").AppendJoin('.', new List<object> { _untaintedString, _untaintedString });
@@ -348,7 +348,7 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => GetTaintedStringBuilder("test").AppendJoin('.', new List<object> { _untaintedString, _untaintedString }));
     }
 
-    [Fact(Skip = "Aspect disabled until undefined generics are supported")]
+    [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted4()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-test3.4-+:",

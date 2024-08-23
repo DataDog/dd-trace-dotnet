@@ -108,6 +108,106 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         [Fact]
+        public void CanGenerateAspectsDefinitionForDefinedGenerics()
+        {
+            const string input = """
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+
+namespace MyTests;
+
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
+public class TestAspectClass1
+{ 
+    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)")]
+    public static string Concat<T>(System.Collections.Generic.IEnumerable<string> values)
+    {
+        return string.Concat(target, param1);
+    }
+}
+""";
+
+            const string expected = Constants.FileHeader + """"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class AspectDefinitions
+    {
+        public static string[] GetAspects() => new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Default,[])] Concat(System.Collections.Generic.IEnumerable`1<System.String>)",
+        };
+
+        public static string[] GetRaspAspects() => new string[] {
+        };
+    }
+}
+
+"""";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                SourceHelper.AspectAttributes,
+                input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateAspectsDefinitionForUndefinedGenerics()
+        {
+            const string input = """
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+
+namespace MyTests;
+
+[AspectClass("mscorlib,netstandard,System.Private.CoreLib")]
+public class TestAspectClass1
+{ 
+    [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Concat<T>(System.Collections.Generic.IEnumerable<T> values)
+    {
+        return string.Concat(target, param1);
+    }
+}
+""";
+
+            const string expected = Constants.FileHeader + """"
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Datadog.Trace.ClrProfiler
+{
+    internal static partial class AspectDefinitions
+    {
+        public static string[] GetAspects() => new string[] {
+"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Propagation,[])] MyTests.TestAspectClass1",
+"  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[])] Concat(System.Collections.Generic.IEnumerable`1<!!0>)",
+        };
+
+        public static string[] GetRaspAspects() => new string[] {
+        };
+    }
+}
+
+"""";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<AspectsDefinitionsGenerator>(
+                SourceHelper.AspectAttributes,
+                input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
         public void CanGenerateAspectsDefinitionWithMultipleAspects()
         {
             const string input = """
