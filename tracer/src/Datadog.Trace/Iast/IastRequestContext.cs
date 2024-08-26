@@ -186,6 +186,11 @@ internal class IastRequestContext
         return _taintedObjects;
     }
 
+    internal void AddDbValue(string? column, string value)
+    {
+        _taintedObjects.TaintInputString(value, new Source(SourceType.SqlRowValue, column, value));
+    }
+
     internal TaintedObject? GetTainted(object objectToFind)
     {
         return _taintedObjects.Get(objectToFind);

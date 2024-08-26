@@ -1,0 +1,88 @@
+﻿Template:
+Segments: 
+
+{
+    "getmember": [
+        {
+            "ref": "this"
+        },
+        "NullableNotNullValue"
+    ]
+}
+Expressions: 
+(
+    scopeMember,
+    scopeMember,
+    scopeMember,
+    exception,
+    scopeMemberArray) =>
+{
+    FieldInfo[] fieldsArray;
+    StringBuilder fieldValues;
+    int index;
+    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
+    var @exception = exception;
+    var IntLocal = (int)scopeMemberArray[0].Value;
+    var DoubleLocal = (double)scopeMemberArray[1].Value;
+    var StringLocal = (string)scopeMemberArray[2].Value;
+    var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
+    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
+    var BooleanValue = (bool)scopeMemberArray[7].Value;
+    var Char = (char)scopeMemberArray[8].Value;
+    var AnotherChar = (char)scopeMemberArray[9].Value;
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[10].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[11].Value;
+    var IntArg = (int)scopeMemberArray[12].Value;
+    var DoubleArg = (double)scopeMemberArray[13].Value;
+    var StringArg = (string)scopeMemberArray[14].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[15].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[16].Value;
+    var $dd_el_result = (this.NullableNotNullValue == null)
+        ? "null"
+        : {
+            fieldsArray = this.NullableNotNullValue
+                .GetType()
+                .GetFields(
+                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+                .OrderBy(fieldInfo => fieldInfo.MetadataToken)
+                .ToArray();
+            fieldValues = new StringBuilder();
+            index = 0;
+            while (true)
+            {
+                if ((index < fieldsArray.Length) && (index < 5))
+                {
+                    fieldValues.Append(
+                        ProbeExpressionParser<string>.DumpObject(
+                            fieldsArray[index].GetValue(this.NullableNotNullValue),
+                            fieldsArray[index].FieldType,
+                            fieldsArray[index].Name,
+                            0));
+                    index++;
+
+                    if ((index < fieldsArray.Length) && (index < 5))
+                    {
+                        return fieldValues.Append(", ");
+                    }
+                }
+                else
+                {
+                    if (index < fieldsArray.Length)
+                    {
+                        return fieldValues.Append(", ...");
+                    }
+
+                    break;
+                }
+            }
+
+            return fieldValues.ToString();
+        };
+
+    return $dd_el_result;
+}
+Result: The result of the expression is: Empty=00000000-0000-0000-0000-000000000000, _a=0, _b=0, _c=0, _d=0, ...

@@ -182,65 +182,75 @@ namespace Datadog.Trace.ClrProfiler
     {
         if (data is null || data.AttributeClass is null) { return string.Empty; }
 
-        var arguments = data.ConstructorArguments.Select(GetArgument).ToArray();
+        var arguments = data.ConstructorArguments.Select(GetArgument).ToList();
+        var name = data.AttributeClass.Name;
+        var version = string.Empty;
 
-        return data.AttributeClass.Name switch
+        if (name.EndsWith("FromVersionAttribute"))
+        {
+            // Aspect with version limitation
+            name = name.Replace("FromVersionAttribute", "Attribute");
+            version = ";V" + arguments[0].Trim('"');
+            arguments.RemoveAt(0);
+        }
+
+        return name switch
         {
             // Coments are to have the original attributes overloads present
             // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, VulnerabilityType[] defaultVulnerabilityTypes)
-            "AspectClassAttribute" => arguments.Length switch
+            "AspectClassAttribute" => arguments.Count switch
             {
                 // AspectClassAttribute(string defaultAssembly)
-                1 => $"[AspectClass({arguments[0]},[None],Propagation,[])]",
+                1 => $"[AspectClass({arguments[0]},[None],Propagation,[]){version}]",
                 // AspectClassAttribute(string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-                3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])})]",
+                3 => $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])}){version}]",
                 // AspectClassAttribute(string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
-                4 => $"[AspectClass({arguments[0]},{arguments[1]},{arguments[2]},{Check(arguments[3])})]",
-                _ => throw new ArgumentException($"Could not find AspectClassAttribute overload with {arguments.Length} parameters")
+                4 => $"[AspectClass({arguments[0]},{arguments[1]},{arguments[2]},{Check(arguments[3])}){version}]",
+                _ => throw new ArgumentException($"Could not find AspectClassAttribute overload with {arguments.Count} parameters")
             },
             // AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, VulnerabilityType[] vulnerabilityTypes)
-            "AspectCtorReplaceAttribute" => arguments.Length switch
+            "AspectCtorReplaceAttribute" => arguments.Count switch
             {
                 // AspectCtorReplaceAttribute(string targetMethod)
-                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],Default,[]){version}]",
                 // AspectCtorReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},Default,[])]",
+                2 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1])},Default,[]){version}]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
-                3 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
+                3 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])}){version}]",
                 // AspectCtorReplaceAttribute(string targetMethod, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
-                4 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[{arguments[1]}],{arguments[2]},{Check(arguments[3])})]",
-                _ => throw new ArgumentException($"Could not find AspectCtorReplaceAttribute overload with {arguments.Length} parameters")
+                4 => $"[AspectCtorReplace({arguments[0]},\"\",[0],[False],[{arguments[1]}],{arguments[2]},{Check(arguments[3])}){version}]",
+                _ => throw new ArgumentException($"Could not find AspectCtorReplaceAttribute overload with {arguments.Count} parameters")
             },
-            "AspectMethodReplaceAttribute" => arguments.Length switch
+            "AspectMethodReplaceAttribute" => arguments.Count switch
             {
                 // AspectMethodReplaceAttribute(string targetMethod)
-                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],[None],Default,[]){version}]",
                 // AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[])]",
+                2 => $"[AspectMethodReplace({arguments[0]},\"\",[0],[False],{Check(arguments[1], "[None]")},Default,[]){version}]",
                 // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
                 3 => arguments[1] switch
                 {
-                    { } when arguments[1].StartsWith("[") => $"[AspectMethodReplace({arguments[0]},\"\",{arguments[1]},{arguments[2]},[None],Default,[])]",
+                    { } when arguments[1].StartsWith("[") => $"[AspectMethodReplace({arguments[0]},\"\",{arguments[1]},{arguments[2]},[None],Default,[]){version}]",
                     // AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-                    _ => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[])]",
+                    _ => $"[AspectMethodReplace({arguments[0]},{arguments[1]},[0],[False],{Check(arguments[2], "[None]")},Default,[]){version}]",
                 },
-                _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Length} parameters")
+                _ => throw new ArgumentException($"Could not find AspectMethodReplaceAttribute overload with {arguments.Count} parameters")
             },
-            "AspectMethodInsertBeforeAttribute" => arguments.Length switch
+            "AspectMethodInsertBeforeAttribute" => arguments.Count switch
             {
                 // AspectMethodInsertBeforeAttribute(string targetMethod, params int[] paramShift)
-                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],Default,[])]",
+                2 => $"[AspectMethodInsertBefore({arguments[0]},\"\",{MakeSameSize(Check(arguments[1]))},[None],Default,[]){version}]",
                 // AspectMethodInsertBeforeAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],Default,[])]",
-                _ => throw new ArgumentException($"Could not find AspectMethodInsertBeforeAttribute overload with {arguments.Length} parameters")
+                3 => $"[AspectMethodInsertBefore({arguments[0]},\"\",[{arguments[1]}],[{arguments[2]}],[None],Default,[]){version}]",
+                _ => throw new ArgumentException($"Could not find AspectMethodInsertBeforeAttribute overload with {arguments.Count} parameters")
             },
-            "AspectMethodInsertAfterAttribute" => arguments.Length switch
+            "AspectMethodInsertAfterAttribute" => arguments.Count switch
             {
                 // AspectMethodInsertAfterAttribute(string targetMethod)
-                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],Default,[])]",
+                1 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],Default,[]){version}]",
                 // AspectMethodInsertAfterAttribute(string targetMethod, AspectType aspectType, params VulnerabilityType[] vulnerabilityTypes)
-                3 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])})]",
-                _ => throw new ArgumentException($"Could not find AspectMethodInsertAfterAttribute overload with {arguments.Length} parameters")
+                3 => $"[AspectMethodInsertAfter({arguments[0]},\"\",[0],[False],[None],{arguments[1]},{Check(arguments[2])}){version}]",
+                _ => throw new ArgumentException($"Could not find AspectMethodInsertAfterAttribute overload with {arguments.Count} parameters")
             },
             _ => throw new Exception()
         };
@@ -294,9 +304,26 @@ namespace Datadog.Trace.ClrProfiler
             return elementType + "[]";
         }
 
-        var ns = type.ContainingSymbol?.ToString() ?? string.Empty;
+        var ns = string.Empty;
+        if (type.ContainingSymbol is INamespaceSymbol nameSpace)
+        {
+            ns = nameSpace.ToString();
+        }
+
         var name = type.Name.ToString();
-        if (ns.Length > 0) { return ns + "." + name; }
+        if (type is INamedTypeSymbol namedType)
+        {
+            if (ns.Length > 0) { name = ns + "." + name; }
+            if (namedType.TypeArguments.Length > 0)
+            {
+                name = $"{name}`{namedType.TypeArguments.Length}<{string.Join(",", namedType.TypeArguments.Select(a => GetFullName(a, false)))}>";
+            }
+        }
+        else if (type is ITypeParameterSymbol typeParameter)
+        {
+            name = $"!!{typeParameter.Ordinal}";
+        }
+
         return name;
     }
 
