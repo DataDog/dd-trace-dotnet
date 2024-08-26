@@ -22,6 +22,7 @@ internal class IastSettings
     public const int MaxRangeCountDefault = 10;
     public const int RequestSamplingDefault = 30;
     public const int TruncationMaxValueLengthDefault = 250;
+    public const int DataBaseRowsToTaintDefault = 1;
 
     /// <summary>
     /// Default keys readaction regex if none specified via env DD_IAST_REDACTION_KEYS_REGEXP
@@ -89,6 +90,11 @@ internal class IastSettings
             .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
             .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
             .Value;
+
+        DataBaseRowsToTaint = config
+            .WithKeys(ConfigurationKeys.Iast.DataBaseRowsToTaint)
+            .AsInt32(DataBaseRowsToTaintDefault, x => x >= 0)
+            .Value;
     }
 
     public bool Enabled { get; set; }
@@ -122,6 +128,8 @@ internal class IastSettings
     public IastMetricsVerbosityLevel TelemetryVerbosity { get; }
 
     public int TruncationMaxValueLength { get; }
+
+    public int DataBaseRowsToTaint { get; }
 
     public static IastSettings FromDefaultSources()
     {

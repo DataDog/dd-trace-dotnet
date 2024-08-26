@@ -217,6 +217,7 @@ bool CorProfilerCallback::InitializeServices()
                     _metricsRegistry);
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    false, // not .NET Framework
                     valueTypeProvider,
                     _pCorProfilerInfo,
                     _pManagedThreadList,
@@ -246,6 +247,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                false, // not .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
@@ -330,6 +332,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                true, // is .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,

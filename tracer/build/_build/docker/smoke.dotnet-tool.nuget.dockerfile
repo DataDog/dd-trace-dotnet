@@ -22,7 +22,7 @@ ARG INSTALL_CMD
 RUN mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
     && mkdir -p /tool \
-    && dotnet tool install dd-trace --tool-path /tool --add-source /app/install/. --prerelease \
+    && dotnet tool install dd-trace --tool-path /tool --add-source /app/install/. \
     && rm -rf /app/install
 
 # Set the optional env vars

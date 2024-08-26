@@ -59,7 +59,7 @@ public:
     void RequestRejitForLoadedModule(ModuleID moduleId);
 
     void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId);
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId);
+    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

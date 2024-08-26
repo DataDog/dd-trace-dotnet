@@ -309,6 +309,7 @@ internal static class MetricTags
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
         [Description("source_type:http.request.uri")] RequestUri = 11,
         [Description("source_type:grpc.request.body")] GrpcRequestBody = 12,
+        [Description("source_type:sql.row.value")] SqlRowValue = 13,
     }
 
     [EnumExtensions]

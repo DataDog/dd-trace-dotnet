@@ -11,6 +11,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -23,6 +25,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using static Datadog.Trace.Configuration.ConfigurationKeys;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
@@ -51,14 +54,32 @@ internal static partial class IastModule
     private const string OperationNameEmailHtmlInjection = "email_html_injection";
     private const string ReferrerHeaderName = "Referrer";
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
-    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
+    private static readonly IastSettings IastSettings = Iast.Instance.Settings;
+    private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
-    private static IastSettings iastSettings = Iast.Instance.Settings;
-    private static ConcurrentDictionary<string, Exception> errors = new ConcurrentDictionary<string, Exception>();
+    private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
 
-    static IastModule()
+    internal static bool NoDbSource(TaintedObject tainted)
     {
-        EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+        // Reject any vuln with all ranges coming from a db source
+        try
+        {
+            foreach (var range in tainted.Ranges)
+            {
+                if (range.Source?.Origin != SourceType.SqlRowValue)
+                {
+                    return true;
+                }
+           }
+
+            return false;
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "Error while checking for non Database tainted origins.");
+        }
+
+        return true;
     }
 
     internal static string? OnUnvalidatedRedirect(string? evidence)
@@ -81,7 +102,7 @@ internal static partial class IastModule
                 {
                     if (range.Source is null) { continue; }
                     var origin = range.Source.Origin;
-                    // TODO: reenable when SourceTypeName.Database gets defined -> if (origin == SourceType.Database) { continue; }
+                    if (origin == SourceType.SqlRowValue) { continue; }
                     if (origin == SourceType.RequestPath) { continue; }
                     if (origin == SourceType.RequestHeaderValue && range.Source.Name == "Host") { continue; }
 
@@ -140,7 +161,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
-            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, Always);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -159,7 +180,7 @@ internal static partial class IastModule
             }
 
             OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
-            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, Always);
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -178,7 +199,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, Always);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -216,7 +237,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
-            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, Always);
+            return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -274,7 +295,7 @@ internal static partial class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, Always);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -288,7 +309,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.ReflectionInjection);
-            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, Always);
+            return GetScope(param, integrationId, VulnerabilityTypeName.ReflectionInjection, OperationNameReflectionInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -521,7 +542,7 @@ internal static partial class IastModule
 
     public static IastRequestContext? GetIastContext()
     {
-        if (!iastSettings.Enabled)
+        if (!IastSettings.Enabled)
         {
             // integration disabled, don't create a scope, skip this span
             return null;
@@ -534,14 +555,14 @@ internal static partial class IastModule
 
     internal static VulnerabilityBatch GetVulnerabilityBatch()
     {
-        return new VulnerabilityBatch(iastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
+        return new VulnerabilityBatch(IastSettings.TruncationMaxValueLength, EvidenceRedactorLazy.Value);
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
     private static IastModuleResponse AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;
@@ -563,7 +584,7 @@ internal static partial class IastModule
             string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, null),
             integrationId);
 
-        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
@@ -586,7 +607,7 @@ internal static partial class IastModule
     private static IastModuleResponse GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Func<TaintedObject, bool>? taintValidator = null, bool addLocation = true, int? hash = null, StackTrace? externalStack = null, SecureMarks exclusionSecureMarks = SecureMarks.None)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
+        if (!IastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
             return IastModuleResponse.Empty;
@@ -637,7 +658,7 @@ internal static partial class IastModule
             new Vulnerability(vulnerabilityType, location, new Evidence(evidenceValue, unsafeRanges), integrationId) :
             new Vulnerability(vulnerabilityType, (int)hash, location, new Evidence(evidenceValue, unsafeRanges), integrationId);
 
-        if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
+        if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             if (isRequest)
             {
@@ -705,7 +726,7 @@ internal static partial class IastModule
 
     private static bool InvalidHashAlgorithm(string algorithm)
     {
-        foreach (var weakHashAlgorithm in iastSettings.WeakHashAlgorithmsArray)
+        foreach (var weakHashAlgorithm in IastSettings.WeakHashAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
@@ -724,7 +745,7 @@ internal static partial class IastModule
             return false;
         }
 #endif
-        foreach (var weakCipherAlgorithm in iastSettings.WeakCipherAlgorithmsArray)
+        foreach (var weakCipherAlgorithm in IastSettings.WeakCipherAlgorithmsArray)
         {
             if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))
             {
@@ -766,7 +787,7 @@ internal static partial class IastModule
 
         var evidence = StringAspects.Concat(headerName, HeaderInjectionEvidenceSeparator, headerValue);
         var hash = ("HEADER_INJECTION:" + headerName).GetStaticHashCode();
-        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, Always, false, hash);
+        GetScope(evidence, integrationId, VulnerabilityTypeName.HeaderInjection, OperationNameHeaderInjection, NoDbSource, false, hash);
     }
 
     internal static IastModuleResponse OnXpathInjection(string xpath)
@@ -779,7 +800,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.XPathInjection);
-            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, Always);
+            return GetScope(xpath, IntegrationId.XpathInjection, VulnerabilityTypeName.XPathInjection, OperationNameXPathInjection, NoDbSource);
         }
         catch (Exception ex)
         {
@@ -810,6 +831,86 @@ internal static partial class IastModule
         }
 
         // We use the same secure marks as XSS
-        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, exclusionSecureMarks: SecureMarks.Xss);
+        GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: NoDbSource, exclusionSecureMarks: SecureMarks.Xss);
+    }
+
+    internal static void RegisterDbRecord(object instance)
+    {
+        DbRecords.RegisterDbRecord(instance);
+    }
+
+    internal static void UnregisterDbRecord(object instance)
+    {
+        DbRecords.UnregisterDbRecord(instance);
+    }
+
+    internal static bool AddDbValue(object instance, string? column, string value)
+    {
+        return DbRecords.AddDbValue(instance, column, value);
+    }
+
+    internal class DbRecordManager
+    {
+        private ConditionalWeakTable<object, DbRecordData> dataBaseRows = new ConditionalWeakTable<object, DbRecordData>();
+        private IastSettings iastSettings;
+
+        public DbRecordManager(IastSettings settings)
+        {
+            iastSettings = settings;
+        }
+
+        public void RegisterDbRecord(object instance)
+        {
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
+            {
+                return;
+            }
+
+            var recordData = dataBaseRows.GetOrCreateValue(instance);
+            recordData.Count++;
+        }
+
+        public void UnregisterDbRecord(object instance)
+        {
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
+            {
+                return;
+            }
+
+            dataBaseRows.Remove(instance);
+        }
+
+        public bool AddDbValue(object instance, string? column, string value)
+        {
+            if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
+            {
+                return false;
+            }
+
+            if (iastSettings.DataBaseRowsToTaint > 0)
+            {
+                if (!dataBaseRows.TryGetValue(instance, out var recordData))
+                {
+                    return false;
+                }
+
+                if (recordData.Count > iastSettings.DataBaseRowsToTaint)
+                {
+                    return false;
+                }
+            }
+
+            var tracer = Tracer.Instance;
+            var scope = tracer.ActiveScope as Scope;
+            var currentSpan = scope?.Span;
+            var traceContext = currentSpan?.Context?.TraceContext;
+            traceContext?.IastRequestContext?.AddDbValue(column, value);
+            return true;
+        }
+
+        private class DbRecordData
+        {
+            public int Count { get; set; } = 0;
+        }
     }
 }

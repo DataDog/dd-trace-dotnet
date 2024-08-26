@@ -16,5 +16,16 @@ public:
                               uint64_t objectSize,
                               uint64_t allocationAmount) = 0;
 
+    // for .NET Framework, events are received asynchronously
+    // and the callstack is received as a sibling event
+    // --> we cannot walk the stack of the current thread
+    virtual void OnAllocation(uint64_t timestamp,
+                              uint32_t threadId,
+                              uint32_t allocationKind,
+                              ClassID classId,
+                              const std::string& typeName,
+                              uint64_t allocationAmount,
+                              const std::vector<uintptr_t>& stack) = 0;
+
     virtual ~IAllocationsListener() = default;
 };

@@ -64,14 +64,14 @@ public class CreatedumpTests : ConsoleTestHelper
         // If it wasn't set, then we set it so that dd-dotnet will be invoked in case of crash.
         // If a child dotnet process is spawned, we may then mistakenly think that COMPlus_DbgEnableMiniDump
         // was set from the environment, even though it was set by us. To prevent that, we set the
-        // DD_TRACE_CRASH_HANDLER_PASSTHROUGH environment variable, which codifies the result of the
+        // DD_INTERNAL_CRASHTRACKING_PASSTHROUGH environment variable, which codifies the result of the
         // "was COMPlus_DbgEnableMiniDump set?" check.
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
@@ -103,7 +103,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ("DD_TRACE_CRASH_HANDLER_ENABLED", "0")];
+        (string, string)[] args = [LdPreloadConfig, ("DD_CRASHTRACKING_ENABLED", "0")];
 
         if (enableCrashDumps)
         {
@@ -444,7 +444,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
-        return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
+        return ("DD_INTERNAL_CRASHTRACKING_OUTPUT", reportFile.Url);
     }
 
     private static void CopyDirectory(string source, string destination)

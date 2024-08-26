@@ -1,0 +1,8 @@
+{
+  "dsl": "isEmpty(ref Collection)",
+  "isEmpty": [
+    {
+      "ref": "Collection"
+    }
+  ]
+}

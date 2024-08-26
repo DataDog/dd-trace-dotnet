@@ -76,9 +76,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Ok\n");
         }
 
-        private SQLiteConnection DbConnection 
+        private SQLiteConnection DbConnection
         {
-            get 
+            get
             {
                 if (dbConnection is null)
                 {
@@ -97,8 +97,8 @@ namespace Samples.Security.AspNetCore5.Controllers
                 "glpat--A7DO-8ZdceglrnsrMJ5",
                 "glsa_6NVhs0hQUXFVHroLsch9IslQFSgd4Lum_324AC0da",
                 "xapp-1-MGVEG-1-xswt",
-            }; 
-            
+            };
+
             return Content($"Loaded {hardcodedSecrets.Length} strings with potential hardcoded secrets.\n");
         }
 
@@ -158,7 +158,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No query or username was provided");
         }
-        
+
         [HttpGet("NoSqlQueryMongoDb")]
         [Route("NoSqlQueryMongoDb")]
         public IActionResult NoSqlQueryMongoDb(string price, string query)
@@ -194,7 +194,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No price or query was provided");
         }
-        
+
         [HttpGet("NHibernateQuery")]
         [Route("NHibernateQuery")]
         public IActionResult NHibernateQuery(string username)
@@ -238,7 +238,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No json was provided");
         }
-        
+
 #if NETCOREAPP3_0_OR_GREATER
         [HttpGet("SystemTextJsonParseTainting")]
         [Route("SystemTextJsonParseTainting")]
@@ -250,7 +250,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     var doc = JsonDocument.Parse(json);
                     var str = doc.RootElement.GetProperty("key").GetString();
-                    
+
                     // Trigger a vulnerability with the tainted string
                     return ExecuteCommandInternal(str, "");
                 }
@@ -569,7 +569,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
         }
-        
+
         [HttpGet("InsecureAuthProtocol")]
         [Route("InsecureAuthProtocol")]
         public IActionResult InsecureAuthProtocol(bool forbidden = false)
@@ -578,7 +578,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return StatusCode(403);
             }
-            
+
             return Content("InsecureAuthProtocol page");
         }
 
@@ -700,7 +700,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
-            if (returnCode != (int) HttpStatusCode.OK)
+            if (returnCode != (int)HttpStatusCode.OK)
             {
                 return StatusCode(returnCode);
             }
@@ -768,7 +768,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StrictTransportSecurity")]
         [Route("StrictTransportSecurity")]
-        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto = "")
         {
             // We don't want a header injection vulnerability here, so we untaint the header values by
             // using reflection to access the private field "m_string" from the String class.
@@ -836,8 +836,8 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     return defaultValue;
                 }
-                if (!null1 && !null2) 
-                { 
+                if (!null1 && !null2)
+                {
                     return name1 + name2;
                 }
                 else
@@ -872,7 +872,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             return Content($"returned header {returnedName},{returnedValue}");
         }
-        
+
         private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
                 <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
                 <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
@@ -908,10 +908,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
-            
+
             return BadRequest($"No type was provided");
         }
-        
+
         [HttpGet("MaxRanges")]
         [Route("MaxRanges")]
         public ActionResult MaxRanges(int count, string tainted)
@@ -921,7 +921,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 str += tainted;
             }
-            
+
             try
             {
                 Type.GetType(str);
@@ -981,7 +981,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         public IActionResult ReflectedXss(string param)
         {
             ViewData["XSS"] = param + "<b>More Text</b>";
-            return View("ReflectedXss");
+            return View("Xss");
         }
 
         [HttpGet("ReflectedXssEscaped")]
@@ -991,9 +991,56 @@ namespace Samples.Security.AspNetCore5.Controllers
             var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
                             + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
             ViewData["XSS"] = escapedText;
-            return View("ReflectedXss");
+            return View("Xss");
         }
-        
+
+        [HttpGet("StoredXss")]
+        [Route("StoredXss")]
+        public IActionResult StoredXss()
+        {
+            var param = GetDbValue();
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("Xss");
+        }
+
+        [HttpGet("StoredXssEscaped")]
+        [Route("StoredXssEscaped")]
+        public IActionResult StoredXssEscaped()
+        {
+            var param = GetDbValue();
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("Xss");
+        }
+
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli()
+        {
+            try
+            {
+                var details = GetDbValue("Michael");
+                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
+                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
+                return Content($"Result: " + rname);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500);
+            }
+        }
+
+        private string GetDbValue(string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
+            var reader = new SQLiteCommand(taintedQuery, DbConnection).ExecuteReader();
+            reader.Read();
+            var res = reader.GetString(0);
+            return res;
+        }
+
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
         public IActionResult TestJsonTagSizeExceeded(string tainted)
@@ -1079,6 +1126,25 @@ namespace Samples.Security.AspNetCore5.Controllers
         static string CopyStringAvoidTainting(string original)
         {
             return new string(original.AsEnumerable().ToArray());
+        }
+
+        [HttpGet("DatabaseSourceInjection")]
+        [Route("DatabaseSourceInjection")]
+        public ActionResult DatabaseSourceInjection(string host, bool injectOnlyDatabase)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (injectOnlyDatabase) { host = GetDbValue(); }
+                else { host += GetDbValue(); }
+                result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
         }
     }
 }

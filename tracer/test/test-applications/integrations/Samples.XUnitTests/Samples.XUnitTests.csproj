@@ -49,7 +49,7 @@
     <ItemGroup>
       <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
     </ItemGroup>
-    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(PublishDir)..\%(RecursiveDir)" />
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />
   </Target>
   
 </Project>
