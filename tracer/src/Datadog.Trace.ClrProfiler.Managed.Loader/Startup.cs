@@ -18,11 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
-        private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
-        private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
-        private const string TraceEnabledKey = "DD_TRACE_ENABLED";
-        private const string ProfilingManuallyEnabledKey = "DD_PROFILING_ENABLED";
-        private const string ProfilingSsiEnabledKey = "DD_INJECTION_ENABLED";
 
         private static int _startupCtorInitialized;
 
