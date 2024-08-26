@@ -24,17 +24,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static bool errorLogged = false;
 
         /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        {
-            return new CallTargetState(null);
-        }
-
-        /// <summary>
         /// OnMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
@@ -43,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(TTarget instance, bool returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(TTarget instance, bool returnValue, Exception? exception, in CallTargetState state)
         {
             try
             {
@@ -61,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<bool>(returnValue);
         }
     }

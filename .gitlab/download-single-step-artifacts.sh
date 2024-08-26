@@ -23,17 +23,17 @@ fi
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 artifactName="ssi-artifacts"
 
-echo "Waiting for the azure devops build for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
-allBuildsForBranchUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName&reasonFilter=manual,individualCI"
+echo "Looking for azure devops PR builds for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
 
 # We should _definitely_ have the build by now, so if not, there probably won't be one
-buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
+# Check for PR builds first (as more likely to be "full" builds)
+allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
+buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
 
 if [ -z "${buildId}" ]; then
-  echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for PR builds..."
-  allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
-
-  buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
+  echo "No PR builds found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for standalone builds..."  
+  allBuildsForBranchUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName&reasonFilter=manual,individualCI"
+  buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
 fi
 
 if [ -z "${buildId}" ]; then

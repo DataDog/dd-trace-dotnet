@@ -74,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
             }
 
-            state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

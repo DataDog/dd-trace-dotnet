@@ -115,6 +115,7 @@ private:
     static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
                                      const shared::WSTRING& nativemethods_type_name,
                                      const shared::WSTRING& library_path = shared::WSTRING());
+    static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);

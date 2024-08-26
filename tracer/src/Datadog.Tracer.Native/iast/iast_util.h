@@ -60,10 +60,12 @@ namespace iast
 
     VersionInfo GetVersionInfo(const shared::WSTRING& versionW);
     VersionInfo GetVersionInfo(const std::string& version);
+    int Compare(const VersionInfo& v1, const VersionInfo& v2);
     
     std::string GetDatadogVersion();
     shared::WSTRING GetDatadogVersionW();
     ASSEMBLYMETADATA* GetDatadogAssemblyMetadata();
+
 
     ////////////////////// Container Utils ///////////////////
     template <class Container>
