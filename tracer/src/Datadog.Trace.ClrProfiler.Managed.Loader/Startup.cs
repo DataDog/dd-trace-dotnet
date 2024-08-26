@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=3.2.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
 
         private static int _startupCtorInitialized;
@@ -74,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
             catch (Exception ex)
             {
-                // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
                 try
                 {
                     StartupLogger.Log(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
@@ -82,30 +81,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 }
                 catch
                 {
-                    // Swallowing any errors here, as something went _very_ wrong, even with logging
-                    // and we 100% don't want to crash in SSI. Outside of SSI we do want to see the crash
-                    // so that it's visible to the user.
-                    if (IsInSsi())
-                    {
-                        return;
-                    }
+                    // Nothing to do here.
                 }
 
+                // If the logger fails, throw the original exception. The profiler emits code to log it.
                 throw;
-            }
-
-            static bool IsInSsi()
-            {
-                try
-                {
-                    // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
-                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
-                }
-                catch
-                {
-                    // sigh, nothing works, _pretend_ we're in SSI so that we don't crash the app
-                    return true;
-                }
             }
         }
 

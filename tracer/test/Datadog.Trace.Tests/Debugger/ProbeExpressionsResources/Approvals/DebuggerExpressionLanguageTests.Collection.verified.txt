@@ -14,6 +14,8 @@ Expressions:
 {
     string loopItem;
     IEnumerator<string> enumerator;
+    int index;
+    StringBuilder itemValues;
     var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
     var @return = (string)scopeMember.Value;
     var @duration = (TimeSpan)scopeMember.Value;
@@ -28,53 +30,56 @@ Expressions:
     var BooleanValue = (bool)scopeMemberArray[7].Value;
     var Char = (char)scopeMemberArray[8].Value;
     var AnotherChar = (char)scopeMemberArray[9].Value;
-    var IntArg = (int)scopeMemberArray[10].Value;
-    var DoubleArg = (double)scopeMemberArray[11].Value;
-    var StringArg = (string)scopeMemberArray[12].Value;
-    var CollectionArg = (List<string>)scopeMemberArray[13].Value;
-    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[14].Value;
-    var $dd_el_result =
-    {
-        enumerator = this.Collection.GetEnumerator();
-        var index = 0;
-        var itemValues = new StringBuilder();
-        itemValues.Append("[");
-        while (true)
-        {
-            if (enumerator.MoveNext())
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[10].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[11].Value;
+    var IntArg = (int)scopeMemberArray[12].Value;
+    var DoubleArg = (double)scopeMemberArray[13].Value;
+    var StringArg = (string)scopeMemberArray[14].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[15].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[16].Value;
+    var $dd_el_result = (this.Collection == null)
+        ? "null"
+        : {
+            enumerator = this.Collection.GetEnumerator();
+            index = 0;
+            itemValues = new StringBuilder();
+            itemValues.Append("[");
+            while (true)
             {
-                string loopItem;
-
-                if (index < 3)
+                if (enumerator.MoveNext())
                 {
-                    if (index > 0)
-                    {
-                        return itemValues.Append(", ");
-                    }
+                    string loopItem;
 
-                    loopItem = enumerator.Current;
-                    itemValues.Append(ProbeExpressionParser<string>.DumpObject(
-                        loopItem,
-                        typeof(string),
-                        "",
-                        1));
-                    index++;
+                    if (index < 3)
+                    {
+                        if (index > 0)
+                        {
+                            return itemValues.Append(", ");
+                        }
+
+                        loopItem = enumerator.Current;
+                        itemValues.Append(ProbeExpressionParser<string>.DumpObject(
+                            loopItem,
+                            typeof(string),
+                            "",
+                            1));
+                        index++;
+                    }
+                    else
+                    {
+                        itemValues.Append(", ...");
+                        break;
+                    }
                 }
                 else
                 {
-                    itemValues.Append(", ...");
                     break;
                 }
             }
-            else
-            {
-                break;
-            }
-        }
-        itemValues.Append("]");
+            itemValues.Append("]");
 
-        return itemValues.ToString();
-    };
+            return itemValues.ToString();
+        };
 
     return $dd_el_result;
 }

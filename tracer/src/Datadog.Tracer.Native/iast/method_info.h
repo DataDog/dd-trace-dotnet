@@ -74,9 +74,11 @@ namespace iast
     public:
         MethodSpec(ModuleInfo* pModuleInfo, mdMethodSpec methodSpec);
 
-        mdMethodSpec GetMethodSpecId();
         SignatureInfo* GetSignature() override;
         MemberRefInfo* GetGenericMethod();
+
+        mdMethodSpec GetMethodSpecId();
+        SignatureInfo* GetMethodSpecSignature();
     };
 
     class FieldInfo : public MemberRefInfo

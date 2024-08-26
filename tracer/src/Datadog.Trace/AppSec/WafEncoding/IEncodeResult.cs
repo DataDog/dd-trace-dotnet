@@ -10,5 +10,5 @@ namespace Datadog.Trace.AppSec.WafEncoding;
 
 internal interface IEncodeResult : IDisposable
 {
-    public ref DdwafObjectStruct ResultDdwafObject { get; }
+    public DdwafObjectStruct ResultDdwafObject { get; }
 }

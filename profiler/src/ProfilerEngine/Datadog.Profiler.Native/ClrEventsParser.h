@@ -79,6 +79,7 @@ struct AllocationTickV2Payload  // for .NET Framework ???
     uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
 };
 
+// This will not be filled up but represents what is received from the .NET Framework
 struct AllocationTickV3Payload  // for .NET Framework 4.8
 {
     uint32_t AllocationAmount;     // The allocation size, in bytes.
@@ -91,10 +92,10 @@ struct AllocationTickV3Payload  // for .NET Framework 4.8
     uint64_t AllocationAmount64;   // The allocation size, in bytes.This value is accurate for very large allocations.
     uintptr_t TypeId;              // The address of the MethodTable. When there are several types of objects that were allocated during this event,
                                    // this is the address of the MethodTable that corresponds to the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    const WCHAR* TypeName;         // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
+    WCHAR FirstCharInName;         // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
                                    // this is the type of the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
-    uintptr_t Address;             // The address of the last allocated object.
+
+    // uint32_t HeapIndex and uintptr_t Address appear AFTER the TypeName
 };
 
 struct AllocationTickV4Payload

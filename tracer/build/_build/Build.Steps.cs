@@ -38,6 +38,7 @@ partial class Build
     AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath ProfilerDirectory => RootDirectory / "profiler";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
+    AbsolutePath BuildArtifactsDirectory => RootDirectory / "artifacts";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
@@ -45,7 +46,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+    AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
@@ -174,10 +175,16 @@ partial class Build
                ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
                : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
-    TargetFramework[] TestingFrameworks =>
-    IncludeAllTestFrameworks || RequiresThoroughTesting()
-        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, }
-        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, };
+    TargetFramework[] TestingFrameworks => GetTestingFrameworks(IsArm64);
+
+    TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    {
+        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
+        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, },
+        // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
+        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
+        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, },
+    };
 
     bool RequiresThoroughTesting()
     {
@@ -2249,12 +2256,16 @@ partial class Build
        .After(CompileSamplesLinuxOrOsx, CompileMultiApiPackageVersionSamples)
        .Executes(() =>
         {
-
-            var serverlessProjects = new List<string> { "Samples.AWS.Lambda.csproj", "Samples.Amazon.Lambda.RuntimeSupport.csproj" };
-            foreach (var target in serverlessProjects.Select(projectName => TracerDirectory.GlobFiles($"test/test-applications/integrations/*/{projectName}").FirstOrDefault())
-                                                     .Select(projectFile => projectFile / ".." / "bin" / "artifacts" / "monitoring-home"))
+            // This is a bit hacky, we can probably improve it once/if we output monitoring home into the BuildArtifactsDirectory too
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda", "Samples.Amazon.Lambda.RuntimeSupport" };
+            foreach (var project in serverlessProjects)
             {
-                CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                var rootSampleFolder = BuildArtifactsDirectory / "bin" / project;
+                CopyDirectoryRecursively(MonitoringHomeDirectory, rootSampleFolder / "monitoring-home", DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(
+                    source: TracerDirectory / "build" / "_build" / "docker" / "serverless.lambda.dockerfile",
+                    targetDirectory: rootSampleFolder,
+                    FileExistsPolicy.Skip);
             }
         });
 
