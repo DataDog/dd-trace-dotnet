@@ -5,7 +5,6 @@
 #include "EnvironmentVariables.h"
 #include "single_step_guard_rails.h"
 #include "process_helper.h"
-#include "exported_functions.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -298,7 +297,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 
     // GetModuleHandleEx increments the reference count if called without GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT
     if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
-        (LPCWSTR)&GetRuntimeId, &handle))
+        (LPCWSTR)&datadog::shared::nativeloader::CorProfiler::GetRuntimeId, &handle))
     {
         handle = 0;
     }
@@ -307,7 +306,7 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
     // Use dlopen to increment the reference count of the module
     void* handle = 0;
     Dl_info info;
-    if (dladdr((void*)&GetRuntimeId, &info))
+    if (dladdr((void*)&datadog::shared::nativeloader::CorProfiler::GetRuntimeId, &info))
     {
         handle = dlopen(info.dli_fname, RTLD_LAZY);
     }
