@@ -2694,7 +2694,6 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -2704,13 +2703,7 @@ stages:
     - job: Test
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix:
-          net5_0:
-            publishTargetFramework: net5.0
-          net6_0:
-            publishTargetFramework: net6.0
-          net8_0:
-            publishTargetFramework: net8.0
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
         clean: all
       pool:
@@ -2724,7 +2717,7 @@ stages:
 
         - template: steps/restore-working-directory.yml
           parameters:
-            artifact: build-linux-arm64-working-directory
+            artifact: build-$(artifactSuffix)-working-directory
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -2734,9 +2727,9 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download arm64 monitoring home
+          displayName: Download $(artifactSuffix) monitoring home
           inputs:
-            artifact: linux-monitoring-home-linux-arm64
+            artifact: linux-monitoring-home-$(artifactSuffix)
             path: $(monitoringHome)
 
         - script: |
@@ -2781,13 +2774,7 @@ stages:
     - job: DockerTest
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix:
-          net5_0:
-            publishTargetFramework: net5.0
-          net6_0:
-            publishTargetFramework: net6.0
-          net7_0:
-            publishTargetFramework: net7.0
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
         clean: all
       pool:
@@ -2801,7 +2788,7 @@ stages:
 
         - template: steps/restore-working-directory.yml
           parameters:
-            artifact: build-linux-arm64-working-directory
+            artifact: build-$(artifactSuffix)-working-directory
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -2811,9 +2798,9 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download arm64 monitoring home
+          displayName: Download $(artifactSuffix) monitoring home
           inputs:
-            artifact: linux-monitoring-home-linux-arm64
+            artifact: linux-monitoring-home-$(artifactSuffix)
             path: $(monitoringHome)
 
         - script: |

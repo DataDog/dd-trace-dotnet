@@ -876,6 +876,19 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
     }
 }
 
+mdMethodSpec ModuleInfo::DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig)
+{
+    mdMethodSpec methodSpec = 0; 
+    HRESULT hr = _metadataEmit->DefineMethodSpec(targetMethod, sig->_pSig, sig->_nSig, &methodSpec);
+    if (FAILED(hr))
+    {
+        trace::Logger::Warn("DefineMethodSpec failed with code ", hr);
+        methodSpec = 0;
+    }
+
+    return methodSpec;
+}
+
 std::vector<WSTRING> ModuleInfo::GetCustomAttributes(mdToken token)
 {
     std::vector<WSTRING> res;

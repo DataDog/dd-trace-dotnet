@@ -492,7 +492,27 @@ public class StringAspects
         return result;
     }
 
-    // [AspectMethodReplace("System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    /// <summary>
+    /// String.Concat aspect
+    /// </summary>
+    /// <typeparam name="T"> Collection element type </typeparam>
+    /// <param name="values"> Parameters </param>
+    /// <returns> String.Concat(values) </returns>
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Concat<T>(IEnumerable<T> values)
+    {
+        var result = string.Concat(values);
+        try
+        {
+            return StringModuleImpl.OnStringConcat(values, result);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Concat)}");
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// String.Substring aspect
@@ -676,11 +696,52 @@ public class StringAspects
         return result;
     }
 
-    // TODO : Add support for callsites with undefined generic params
-    // [AspectMethodReplace("System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join<T>(char separator, IEnumerable<T> values)
+    {
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Join)}");
+        }
+
+        return result;
+    }
 #endif
-    // TODO : Add support for callsites with undefined generic params
-    // [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+
+    /// <summary>
+    /// String.Join aspect
+    /// </summary>
+    /// <typeparam name="T"> Joined element type </typeparam>
+    /// <param name="separator"> sparator </param>
+    /// <param name="values"> values to join </param>
+    /// <returns> Join result </returns>
+    [AspectMethodReplaceFromVersion("3.2.0", "System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
+    public static string Join<T>(string separator, IEnumerable<T> values)
+    {
+        var result = string.Join(separator, values);
+        try
+        {
+            return OnStringJoin(result, separator, values);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(StringAspects)}.{nameof(Join)}");
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// String.Join aspect
