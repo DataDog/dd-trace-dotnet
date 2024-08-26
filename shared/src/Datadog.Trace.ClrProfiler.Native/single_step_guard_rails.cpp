@@ -5,6 +5,7 @@
 #include "EnvironmentVariables.h"
 #include "single_step_guard_rails.h"
 #include "process_helper.h"
+#include "exported_functions.h"
 
 using namespace shared;
 
@@ -286,18 +287,38 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
 
-    std::thread([processPath, args, metadata]()
-    {
-        const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+    void* handle = 0;
 
-        if (success)
+#ifdef _WIN32
+    handle = 1; // TODO
+#else
+    // Make an extra dlopen call to prevent the module from being unloaded
+    Dl_info info;
+    if (dladdr((void*)&GetRuntimeId, &info))
+    {
+        handle = dlopen(info.dli_fname, RTLD_LAZY);
+    }
+#endif
+
+    if (handle != 0)
+    {
+        std::thread([processPath, args, metadata, handle]()
         {
-            Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
-        }
-        else
-        {
-            Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
-        }
-    }).detach();
+            const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+
+            if (success)
+            {
+                Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
+            }
+            else
+            {
+                Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
+            }
+        }).detach();
+    }
+    else
+    {
+        Log::Warn("SingleStepGuardRails::SendTelemetry: Skipping the telemetry forwarder because it can't be safely invoked");
+    }
 }
 } // namespace datadog::shared::nativeloader
