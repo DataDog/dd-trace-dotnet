@@ -79,6 +79,7 @@ download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
+  needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
