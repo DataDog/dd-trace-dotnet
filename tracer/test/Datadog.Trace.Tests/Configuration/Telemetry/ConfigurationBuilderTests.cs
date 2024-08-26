@@ -176,7 +176,7 @@ public class ConfigurationBuilderTests
                     },
                     { } i => new List<Entry>
                     {
-                        Entry.String(Key, i.ToString(), ConfigurationOrigins.Code, error: null),
+                        Entry.String(Key, Convert.ToString(i, CultureInfo.InvariantCulture), ConfigurationOrigins.Code, error: null),
                     },
                 };
 
