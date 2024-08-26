@@ -7,6 +7,10 @@
 #include "process_helper.h"
 #include "exported_functions.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace shared;
 
 namespace datadog::shared::nativeloader
@@ -287,12 +291,21 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
 
-    void* handle = 0;
+    // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
 #ifdef _WIN32
-    handle = 1; // TODO
+    HMODULE handle;
+
+    // GetModuleHandleEx increments the reference count if called without GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT
+    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+        (LPCWSTR)&GetRuntimeId, &handle))
+    {
+        handle = 0;
+    }
+
 #else
-    // Make an extra dlopen call to prevent the module from being unloaded
+    // Use dlopen to increment the reference count of the module
+    void* handle = 0;
     Dl_info info;
     if (dladdr((void*)&GetRuntimeId, &info))
     {
@@ -314,6 +327,11 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
             {
                 Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
             }
+
+#ifdef _WIN32
+            // On Windows, we can safely unload the module
+            FreeLibraryAndExitThread(handle, 0);
+#endif
         }).detach();
     }
     else
