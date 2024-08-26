@@ -4,14 +4,11 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -46,10 +43,28 @@ public class RequestDataHelperTests
     [Fact]
     public void GivenADangerousQueryString_WhenGetQueryString_HelperAvoidsException2()
     {
-        var dangerous = "script>alert(1)</script>";
-        var request = new HttpRequest("file", "http://localhost/benchmarks", "data=" + dangerous);
-        request.Cookies.Add(new HttpCookie("data", dangerous));
+        var request = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
+        CheckRequest(request);
+    }
 
+    [Fact]
+    public void GivenADangerousCookie_WhenGetCookieValue_NoExceptionIsThrown()
+    {
+        var dangerous = "script>alert(1)</script>";
+        var request = new HttpRequest("file", "http://localhost/benchmarks", null);
+        request.Cookies.Add(new HttpCookie("data", dangerous));
+        CheckRequest(request);
+    }
+
+    [Fact]
+    public void GivenADangerousCookie_WhenGetCookieValue_NoExceptionIsThrown3()
+    {
+        var request = new HttpRequest("<script>alert(1)</script>", "http://localhost/<script>alert(1)</script>", null);
+        CheckRequest(request);
+    }
+
+    private static void CheckRequest(HttpRequest request)
+    {
         var settings = TracerSettings.Create(new()
         {
             { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
@@ -66,7 +81,11 @@ public class RequestDataHelperTests
         request.ValidateInput();
         HttpTransport transport = new HttpTransport(context);
         var securityCoordinator = new SecurityCoordinator(security, scope.Span, transport);
-        securityCoordinator.GetBasicRequestArgsForWaf();
+        // We should not launch any exception here
+        var result = securityCoordinator.GetBasicRequestArgsForWaf();
+        var iastContext = new IastRequestContext();
+        iastContext.AddRequestData(request);
+        result.Should().NotBeNull();
     }
 }
 #endif

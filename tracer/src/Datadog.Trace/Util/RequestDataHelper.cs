@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 #if NETFRAMEWORK
 using System.Collections.Specialized;
 using System.Web;
@@ -79,6 +80,43 @@ internal static class RequestDataHelper
     internal static IHeaderDictionary GetHeaders(HttpRequest request)
     {
         return request.Headers;
+    }
+#endif
+
+#if NETFRAMEWORK
+    // Get the cookies from a HttpRequest
+    internal static string? GetPath(HttpRequest request)
+    {
+        try
+        {
+            return request.Path;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading path from the request.");
+            return null;
+        }
+    }
+#else
+    internal static string? GetPath(HttpRequest request)
+    {
+        return request.Path;
+    }
+#endif
+
+#if NETFRAMEWORK
+    // Get the cookies from a HttpRequest
+    internal static Uri? GetUrl(HttpRequest request)
+    {
+        try
+        {
+            return request.Url;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading request.Url from the request.");
+            return null;
+        }
     }
 #endif
 }

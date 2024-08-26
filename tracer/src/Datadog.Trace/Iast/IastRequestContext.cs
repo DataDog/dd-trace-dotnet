@@ -222,10 +222,21 @@ internal class IastRequestContext
                 AddQueryStringRaw(queryString.ToString());
             }
 
-            AddRequestHeaders(request.Headers);
-            AddQueryPath(request.Path);
-            AddQueryUrl(request.Url.ToString());
-            AddRequestCookies(request.Cookies);
+            AddRequestHeaders(RequestDataHelper.GetHeaders(request));
+
+            var path = RequestDataHelper.GetPath(request);
+            if (path is not null)
+            {
+                AddQueryPath(path);
+            }
+
+            var url = RequestDataHelper.GetUrl(request)?.ToString();
+            if (url is not null)
+            {
+                AddQueryUrl(url);
+            }
+
+            AddRequestCookies(RequestDataHelper.GetCookies(request));
             _querySourcesAdded = true;
         }
     }

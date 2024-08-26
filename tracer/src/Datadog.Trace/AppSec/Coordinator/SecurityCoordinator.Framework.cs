@@ -380,8 +380,8 @@ internal readonly partial struct SecurityCoordinator
 
         if (headers is not null)
         {
-            headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
             var headerKeys = headers.Keys;
+            headersDic = new Dictionary<string, string[]>(headerKeys.Count);
             foreach (string originalKey in headerKeys)
             {
                 var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
@@ -389,7 +389,7 @@ internal readonly partial struct SecurityCoordinator
                 {
                     if (!headersDic.ContainsKey(keyForDictionary))
                     {
-                        headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
+                        headersDic.Add(keyForDictionary, headers.GetValues(originalKey));
                     }
                     else
                     {
@@ -454,10 +454,15 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+
+        var url = RequestDataHelper.GetUrl(request);
+        if (url is not null)
+        {
+            dict[AddressesConstants.RequestUriRaw] = url.PathAndQuery;
+        }
 
         if (headersDic is not null)
         {
