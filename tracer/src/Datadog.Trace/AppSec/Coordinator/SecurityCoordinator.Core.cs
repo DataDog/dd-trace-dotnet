@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -88,25 +87,19 @@ internal readonly partial struct SecurityCoordinator
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
 
-        var cookies = RequestDataHelper.GetCookies(request);
-        Dictionary<string, List<string>>? cookiesDic = null;
-
-        if (cookies is not null)
+        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
+        for (var i = 0; i < request.Cookies.Count; i++)
         {
-            cookiesDic = new(cookies.Keys.Count);
-            for (var i = 0; i < cookies.Count; i++)
+            var cookie = request.Cookies.ElementAt(i);
+            var currentKey = cookie.Key ?? string.Empty;
+            var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
+            if (!keyExists)
             {
-                var cookie = cookies.ElementAt(i);
-                var currentKey = cookie.Key ?? string.Empty;
-                var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
-                if (!keyExists)
-                {
-                    cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
-                }
-                else
-                {
-                    value?.Add(cookie.Value);
-                }
+                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
+            }
+            else
+            {
+                value?.Add(cookie.Value);
             }
         }
 
@@ -137,11 +130,7 @@ internal readonly partial struct SecurityCoordinator
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
-
-        if (cookiesDic is not null)
-        {
-            AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
-        }
+        AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
 
         return addressesDictionary;
 
