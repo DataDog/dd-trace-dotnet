@@ -37,7 +37,7 @@ internal class IastSettings
     /// <summary>
     /// Default values readaction regex if none specified via env DD_IAST_REDACTION_VALUES_REGEXP
     /// </summary>
-    internal const string DefaultCookieFilterRegex = @".{20,}";
+    internal const string DefaultCookieFilterRegex = @".{32,}";
 
     public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
