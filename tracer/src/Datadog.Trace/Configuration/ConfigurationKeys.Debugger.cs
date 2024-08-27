@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
@@ -105,10 +106,11 @@ namespace Datadog.Trace.Configuration
             public const string RedactedTypes = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES";
 
             /// <summary>
-            /// [Deprecated] The old configuration key for enabling or disabling Exception Replay.
+            /// The old configuration key for enabling or disabling Exception Replay.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="ExceptionReplaySettings.Enabled"/>
+            [Obsolete]
             public const string ExceptionDebuggingEnabled = "DD_EXCEPTION_DEBUGGING_ENABLED";
 
             /// <summary>

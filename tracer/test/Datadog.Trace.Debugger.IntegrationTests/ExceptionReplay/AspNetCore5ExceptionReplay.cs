@@ -61,17 +61,17 @@ public class AspNetCore5ExceptionReplayEnabledDynamicInstrumentationDisabled_Ful
 public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     private static readonly string[] KnownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "Id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
-    private static readonly string[] KnownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run" };
+    private static readonly string[] KnownPropertiesToRemove = { "CachedReusableFilters", "MaxStateDepth", "MaxValidationDepth", "Empty", "Revision", "_active", "Items", "asyncRun", "run", "tasks" };
     private static readonly string[] KnownClassNamesToRemoveFromExceptionReplayFrame = { "<<Configure>b__5_2>d" };
 
     // This class is used to test Exception Replay with Dynamic Instrumentation enabled or disabled.
     public AspNetCore5ExceptionReplay(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableDynamicInstrumentation, bool captureFullCallStack)
-        : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.ExceptionReplayEnabled")
+        : base("AspNetCore5", outputHelper, "/shutdown")
     {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, enableDynamicInstrumentation.ToString().ToLower());
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled, captureFullCallStack.ToString().ToLower());
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "5");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");

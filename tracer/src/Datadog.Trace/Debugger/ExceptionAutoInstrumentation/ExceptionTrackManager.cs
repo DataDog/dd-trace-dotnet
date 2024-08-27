@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.Serilog.Events;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
@@ -524,25 +525,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             _exceptionProcessorTask = Task.Factory.StartNew(
                                                async () => await StartExceptionProcessingAsync(Cts.Token).ConfigureAwait(false), TaskCreationOptions.LongRunning)
                                           .Unwrap();
-            IsEditAndContinueFeatureEnabled = IsEnCFeatureEanbled();
+            IsEditAndContinueFeatureEnabled = IsEnCFeatureEnabled();
             _isInitialized = true;
         }
 
         /// <summary>
         /// In .NET 6+ there's a bug that prevents Rejit-related APIs to work properly when Edit and Continue feature is turned on.
-        /// See https://github.com/dotnet/runtime/issues/91963 for addiitonal details.
+        /// See https://github.com/dotnet/runtime/issues/91963 for additional details.
         /// </summary>
-        private static bool IsEnCFeatureEanbled()
+        private static bool IsEnCFeatureEnabled()
         {
-            try
-            {
-                var encEnabled = Environment.GetEnvironmentVariable("COMPLUS_ForceEnc");
-                return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
-            }
-            catch
-            {
-                return false;
-            }
+            var encEnabled = EnvironmentHelpers.GetEnvironmentVariable("COMPLUS_ForceEnc");
+            return !string.IsNullOrEmpty(encEnabled) && (encEnabled == "1" || encEnabled == "true");
         }
 
         public static bool IsSupportedExceptionType(Type ex) =>

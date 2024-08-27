@@ -31,28 +31,15 @@ namespace Datadog.Trace.Debugger.IntegrationTests
     [UsesVerify]
     public class AspNetBase : TestHelper
     {
-        protected const string MainIp = "86.242.244.246";
         protected const string Prefix = "Debugger.";
-        private const string XffHeader = "X-FORWARDED-FOR";
-        private readonly string _testName;
         private readonly HttpClient _httpClient;
-        private readonly CookieContainer _cookieContainer;
-        private readonly string _shutdownPath;
         private int _httpPort;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/debugger", outputHelper)
         {
-            _testName = Prefix + (testName ?? sampleName);
-            _cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler();
-            handler.CookieContainer = _cookieContainer;
             _httpClient = new HttpClient(handler);
-            _shutdownPath = shutdownPath;
-
-            // adding these header so we can later assert it was collected properly
-            _httpClient.DefaultRequestHeaders.Add(XffHeader, MainIp);
-            _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
 
 #if NETCOREAPP2_1
             // Keep-alive is causing some weird failures on aspnetcore 2.1
@@ -66,122 +53,6 @@ namespace Datadog.Trace.Debugger.IntegrationTests
         {
             base.Dispose();
             _httpClient?.Dispose();
-        }
-
-        public void AddHeaders(Dictionary<string, string> headersValues)
-        {
-            foreach (var header in headersValues)
-            {
-                _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
-            }
-        }
-
-        public void AddCookies(Dictionary<string, string> cookiesValues)
-        {
-            foreach (var cookie in cookiesValues)
-            {
-                _cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, string.Empty, "localhost"));
-            }
-        }
-
-        protected void SetClientIp(string ip)
-        {
-            _httpClient.DefaultRequestHeaders.Remove(XffHeader);
-            _httpClient.DefaultRequestHeaders.Add(XffHeader, ip);
-        }
-
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
-        {
-            var errorMargin = 0.15;
-            int warmupRequests = 29;
-            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
-
-            var iterations = 20;
-
-            var testStart = DateTime.UtcNow;
-            for (int i = 0; i < iterations; i++)
-            {
-                var start = DateTime.Now;
-                var nextBatch = start.AddSeconds(1);
-
-                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
-
-                var now = DateTime.Now;
-
-                if (now > nextBatch)
-                {
-                    // attempt to compensate for slow servers by increasing the error margin
-                    errorMargin *= 1.2;
-                    Console.WriteLine($"Failed to send all requests within a second now: {now:hh:mm:ss.fff}, nextBatch:{nextBatch:hh:mm:ss.fff}, error margin now: {errorMargin}");
-                }
-                else
-                {
-                    await Task.Delay(nextBatch - now);
-                }
-            }
-
-            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
-
-            var groupedSpans = allSpansReceived.GroupBy(
-                s =>
-                {
-                    var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
-                    return time.Second;
-                });
-
-            var spansWithUserKeep = allSpansReceived.Where(
-                s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
-                });
-
-            var spansWithoutUserKeep = allSpansReceived.Where(
-                s =>
-                {
-                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
-                });
-            var itemsCount = allSpansReceived.Count();
-            var appsecItemsCount = allSpansReceived.Where(
-                                                        s =>
-                                                        {
-                                                            s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                                                            return appsecevent == "true";
-                                                        })
-                                                   .Count();
-            if (enableSecurity)
-            {
-                var message = "approximate because of parallel requests";
-                var rateLimitOverPeriod = appsecTraceRateLimit * iterations;
-                if (appsecItemsCount >= rateLimitOverPeriod)
-                {
-                    var excess = appsecItemsCount - rateLimitOverPeriod;
-                    var spansWithUserKeepCount = spansWithUserKeep.Count();
-                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
-
-                    Console.WriteLine($"spansWithUserKeepCount: {rateLimitOverPeriod}, appsecTraceRateLimit: {rateLimitOverPeriod}");
-                    Console.WriteLine($"spansWithoutUserKeepCount: {spansWithoutUserKeepCount}, excess: {excess}");
-
-                    spansWithUserKeepCount.Should().BeCloseTo(rateLimitOverPeriod, (uint)(rateLimitOverPeriod * errorMargin), message);
-                    spansWithoutUserKeepCount.Should().BeCloseTo(excess, (uint)(rateLimitOverPeriod * errorMargin), message);
-                }
-                else
-                {
-                    var spansWithUserKeepCount = spansWithUserKeep.Count();
-                    var spansWithoutUserKeepCount = spansWithoutUserKeep.Count();
-                    Console.WriteLine($"spansWithUserKeep: {spansWithUserKeepCount}, rateLimitOverPeriod: {rateLimitOverPeriod}");
-                    Console.WriteLine($"spansWithoutUserKeep: {spansWithoutUserKeepCount}, excess: 0");
-
-                    spansWithUserKeepCount.Should().BeLessThan(rateLimitOverPeriod + (int)(rateLimitOverPeriod * errorMargin));
-                    spansWithoutUserKeepCount.Should().BeCloseTo(0, (uint)(rateLimitOverPeriod * errorMargin), message);
-                }
-            }
-            else
-            {
-                spansWithoutUserKeep.Count().Should().Be(itemsCount);
-            }
         }
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
@@ -221,8 +92,6 @@ namespace Datadog.Trace.Debugger.IntegrationTests
                 return (HttpStatusCode.BadRequest, ex.ToString());
             }
         }
-
-        protected virtual string GetTestName() => _testName;
 
         protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
         {
@@ -272,62 +141,6 @@ namespace Datadog.Trace.Debugger.IntegrationTests
             {
                 await SubmitRequest(url, body, contentType, userAgent);
             }
-        }
-
-        private void SortJToken(JToken result)
-        {
-            IEnumerable<JToken> res;
-            switch (result)
-            {
-                case JArray jarray:
-                    var children = jarray.Children().ToList();
-                    res = children.OrderBy(r => r.Path).ToList();
-                    if (children.Count > 1)
-                    {
-                        for (var i = 0; i < children.Count; i++)
-                        {
-                            children[i].Remove();
-                        }
-
-                        foreach (var item in res)
-                        {
-                            SortJToken(item);
-                            jarray.Add(item);
-                        }
-                    }
-                    else
-                    {
-                        var firstChild = children.First();
-                        if (firstChild is not null)
-                        {
-                            firstChild.Remove();
-                            SortJToken(firstChild);
-                            jarray.Add(firstChild);
-                        }
-                    }
-
-                    break;
-                case JObject o:
-                    res = o.Properties().OrderBy(p => p.Path).ToList();
-                    o.RemoveAll();
-                    foreach (var item in res)
-                    {
-                        if (item.First is not null)
-                        {
-                            SortJToken(item.First);
-                        }
-
-                        o.Add(item);
-                    }
-
-                    break;
-            }
-        }
-
-        internal class AppSecJson
-        {
-            [JsonProperty("triggers")]
-            public WafMatch[] Triggers { get; set; }
         }
     }
 }
