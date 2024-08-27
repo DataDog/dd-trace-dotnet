@@ -1066,7 +1066,7 @@ partial class Build
         .After(CompileManagedUnitTests)
         .Executes(() =>
         {
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
 
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
@@ -1450,7 +1450,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -1545,7 +1545,7 @@ partial class Build
         {
             var isDebugRun = IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
 
             try
@@ -1586,7 +1586,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             try
@@ -1940,7 +1940,7 @@ partial class Build
         {
             var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
 
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
 
             try
@@ -1973,7 +1973,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
@@ -2054,7 +2054,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
