@@ -138,7 +138,7 @@ partial class Build
                .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
                .Executes(() =>
                 {
-                    FileSystemTasks.EnsureExistingDirectory(TestLogsDirectory);
+                    FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
                     try
                     {
                         var envVariables = GetEnvironmentVariables();
