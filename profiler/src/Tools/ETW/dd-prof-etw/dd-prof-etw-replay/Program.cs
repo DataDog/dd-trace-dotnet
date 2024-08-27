@@ -5,7 +5,6 @@
 
 using System;
 using System.IO;
-using System.Reflection.PortableExecutable;
 
 namespace dd_prof_etw_replay
 {
