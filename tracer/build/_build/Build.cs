@@ -105,6 +105,12 @@ partial class Build : NukeBuild
                        .Before(Clean, Restore, BuildTracerHome)
                        .Executes(() =>
                         {
+
+                            foreach (var log in DotNet("--info"))
+                            {
+                                Logger.Information(log.Text);
+                            }
+
                             Logger.Information($"Configuration: {BuildConfiguration}");
                             Logger.Information($"TargetPlatform: {TargetPlatform}");
                             Logger.Information($"Framework: {Framework}");

@@ -192,6 +192,33 @@ stages:
 # where the first stages of the build execute against one merge commit, and later stages
 # run against another
 
+
+- stage: info
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - job: Test
+      timeoutInMinutes: 60 #default value
+
+      pool:
+        name: azure-linux-scale-set-2
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: debian
+            command: "Info"
+
+
 - stage: merge_commit_id
   dependsOn: []
   jobs:
