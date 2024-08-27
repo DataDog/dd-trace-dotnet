@@ -225,7 +225,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var logDir = SetLogDirectory();
             var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
 
-            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
             Output.WriteLine("Logging telemetry to " + logFileName);
 
@@ -256,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var logDir = SetLogDirectory();
             var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
-            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
             Output.WriteLine("Logging telemetry to " + logFileName);
 
@@ -291,7 +291,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var logDir = SetLogDirectory();
             var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
-            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
+            var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
             Output.WriteLine("Logging telemetry to " + logFileName);
 
@@ -447,7 +447,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             private readonly string _workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             private string _appPath;
 
-            public string GetAppPath(ITestOutputHelper output, EnvironmentHelper environment, string logFileName)
+            public string GetAppPath(ITestOutputHelper output, EnvironmentHelper environment)
             {
                 if (!string.IsNullOrEmpty(_appPath))
                 {
