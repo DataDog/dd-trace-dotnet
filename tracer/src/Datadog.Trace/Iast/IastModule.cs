@@ -58,6 +58,20 @@ internal static partial class IastModule
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
+    private static bool _showTimeoutExceptionError = true;
+
+    internal static void LogTimeoutError(RegexMatchTimeoutException err)
+    {
+        if (_showTimeoutExceptionError)
+        {
+            Log.Warning(err, "IAST Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
+            _showTimeoutExceptionError = false;
+        }
+        else
+        {
+            Log.Debug(err, "IAST Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
+        }
+    }
 
     internal static bool NoDbSource(TaintedObject tainted)
     {

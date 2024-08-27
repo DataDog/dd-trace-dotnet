@@ -182,6 +182,14 @@ internal class CookieAnalyzer
 
     internal bool IsFiltered(string cookieName)
     {
-        return _cookieFilterRegex?.IsMatch(cookieName) ?? false;
+        try
+        {
+            return _cookieFilterRegex?.IsMatch(cookieName) ?? false;
+        }
+        catch (RegexMatchTimeoutException err)
+        {
+            IastModule.LogTimeoutError(err);
+            return true;
+        }
     }
 }
