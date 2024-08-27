@@ -98,7 +98,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
             try
