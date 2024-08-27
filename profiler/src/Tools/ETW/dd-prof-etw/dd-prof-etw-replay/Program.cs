@@ -26,11 +26,15 @@ namespace dd_prof_etw_replay
                 using (BinaryReader reader = new BinaryReader(fs))
                 {
                     var dumper = new EventDumper();
-                    var RecordReader = new RecordReader(reader, dumper);
+                    var recordReader = new RecordReader(reader, dumper);
+                    int count = 0;
                     while (fs.Position < fs.Length)
                     {
-                        ReadRecord(reader);
+                        Console.Write($"#{++count,6} ");
+                        recordReader.ReadRecord();
                     }
+
+                    Console.WriteLine($"Total = {count} records");
                 }
             }
             catch (Exception x)
@@ -41,12 +45,6 @@ namespace dd_prof_etw_replay
                 Console.WriteLine($"Error: {x.Message}");
             }
         }
-
-        private static void ReadRecord(BinaryReader reader)
-        {
-            
-        }
-
 
         private static void ParseCommandLine(string[] args, out string eventsFilename)
         {
