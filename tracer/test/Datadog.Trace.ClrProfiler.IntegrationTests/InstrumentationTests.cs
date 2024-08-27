@@ -476,7 +476,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                var data = sb.ToString();
 
                                Console.WriteLine(data);
-                               File.WriteAllText(@"{logFileName}", data);
+
+                               var logFileName = Environment.GetEnvironmentVariable("{WatchFileEnvironmentVariable}");
+                               File.WriteAllText(logFileName, data);
                                """;
                 File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);
 
