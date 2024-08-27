@@ -41,14 +41,14 @@ public class RequestDataHelperTests
     }
 
     [Fact]
-    public void GivenADangerousQueryString_WhenGetQueryString_HelperAvoidsException2()
+    public void GivenADangerousQueryString_WhenCallingASMAndIAST_NoExceptionIsThrown()
     {
         var request = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
         CheckRequest(request);
     }
 
     [Fact]
-    public void GivenADangerousCookie_WhenGetCookieValue_NoExceptionIsThrown()
+    public void GivenADangerousCookie_WhenCallingASMAndIAST__NoExceptionIsThrown()
     {
         var dangerous = "script>alert(1)</script>";
         var request = new HttpRequest("file", "http://localhost/benchmarks", null);
@@ -57,7 +57,7 @@ public class RequestDataHelperTests
     }
 
     [Fact]
-    public void GivenADangerousCookie_WhenGetCookieValue_NoExceptionIsThrown3()
+    public void GivenADangerousCookie_WhenCallingASMAndIAST_NoExceptionIsThrown()
     {
         var request = new HttpRequest("<script>alert(1)</script>", "http://localhost/<script>alert(1)</script>", null);
         CheckRequest(request);
