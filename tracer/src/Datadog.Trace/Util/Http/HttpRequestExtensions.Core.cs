@@ -13,7 +13,7 @@ namespace Datadog.Trace.Util.Http
     {
         internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
         {
-            var queryString = RequestDataHelper.GetQueryString(request).Value;
+            var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(
                 request.Scheme,
                 request.Host.Value,
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Util.Http
         {
             var pathBase = request.PathBase.ToUriComponent();
             var path = request.Path.ToUriComponent();
-            var queryString = RequestDataHelper.GetQueryString(request).Value;
+            var queryString = request.QueryString.Value;
 
             return $"{pathBase}{path}{queryString}";
         }
