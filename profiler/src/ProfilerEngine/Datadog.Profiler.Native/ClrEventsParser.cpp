@@ -14,7 +14,7 @@
 
 
 // set to true for debugging purpose
-const bool LogGcEvents = true;
+const bool LogGcEvents = false;
 
 #define LOG_GC_EVENT(x)                         \
 {                                               \
