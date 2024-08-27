@@ -227,6 +227,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
@@ -257,6 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
@@ -291,6 +293,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper, logFileName);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
