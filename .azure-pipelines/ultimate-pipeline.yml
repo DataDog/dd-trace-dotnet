@@ -3912,11 +3912,13 @@ stages:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download benchmark nuget package
-          inputs:
-            artifact: benchmark-nuget-package
-            path: $(Build.ArtifactStagingDirectory)
+#        Don't include the Datadog.Trace.BenchmarkDotNet package in the release artifacts
+#        as it currently doesn't work with v3.
+#        - task: DownloadPipelineArtifact@2
+#          displayName: Download benchmark nuget package
+#          inputs:
+#            artifact: benchmark-nuget-package
+#            path: $(Build.ArtifactStagingDirectory)
 
         # runner tool
         - task: DownloadPipelineArtifact@2
