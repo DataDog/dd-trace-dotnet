@@ -22,6 +22,7 @@ ENV \
 RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
     && sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo \
     && sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo \
+    && printf '[goreleaser]\nname=GoReleaser\nbaseurl=https://repo.goreleaser.com/yum/\nenabled=1\ngpgcheck=0' | tee /etc/yum.repos.d/goreleaser.repo \
     && yum update -y \
     && yum install -y centos-release-scl \
     && yum install -y\
@@ -32,9 +33,6 @@ RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-devel \
-        rubygems \
         uuid-dev \
         autoconf \
         libtool \
@@ -52,17 +50,8 @@ RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
         sudo \
         gawk \
         libasan6 \
-        libubsan1
-
-# Install newer version of fpm and specific version of dotenv 
-RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
-    gem install --version 1.12.2 --user-install ffi && \
-    gem install --version 1.6.0 --user-install git && \
-    gem install --version 0.9.10 --user-install rb-inotify && \
-    gem install --version 3.2.3  --user-install rexml && \
-    gem install backports -v 3.21.0 && \
-    gem install --version 2.7.6 dotenv && \
-    gem install --version 1.14.2 --minimal-deps fpm
+        libubsan1 \
+        nfpm
 
 RUN curl -Ol https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/master/clang-tidy/tool/run-clang-tidy.py \
     && mv run-clang-tidy.py /usr/bin/ \

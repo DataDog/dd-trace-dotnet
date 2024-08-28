@@ -18,7 +18,9 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN apt-get update \
+    # Add nfpm source
+RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+    && apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
         git \
@@ -30,9 +32,6 @@ RUN apt-get update \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-dev \
-        rubygems \
         uuid-dev \
         autoconf \
         libtool \
@@ -45,10 +44,7 @@ RUN apt-get update \
         lsb-release \
         software-properties-common \
         gnupg \
-        \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm \
+        nfpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang

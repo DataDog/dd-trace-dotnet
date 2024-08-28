@@ -42,9 +42,6 @@ RUN apk update \
         bash \
         make \
         alpine-sdk \
-        ruby \
-        ruby-dev \
-        ruby-etc \
         util-linux-dev \
         autoconf \
         libtool \
@@ -55,9 +52,11 @@ RUN apk update \
         cppcheck \
         build-base \
         libldap \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm
+        # Download and install nfpm
+    && apkArch="$(apk --print-arch)" \
+    && wget https://github.com/goreleaser/nfpm/releases/download/v2.39.0/nfpm_2.39.0_${apkArch}.apk \
+    && apk add --allow-untrusted nfpm_2.39.0_${apkArch}.apk \
+    && rm nfpm_2.39.0_${apkArch}.apk
 
 ENV IsAlpine=true \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
