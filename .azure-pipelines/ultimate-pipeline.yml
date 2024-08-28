@@ -192,6 +192,42 @@ stages:
 # where the first stages of the build execute against one merge commit, and later stages
 # run against another
 
+- stage: save_docker
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: save
+    timeoutInMinutes: 60
+
+    pool:
+      name: azure-linux-scale-set-2
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "Info"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - script: |
+        # Include the serverless dockerfile
+        mkdir -p artifacts/build_data
+        docker save -o artifacts/build_data/debian.tar dd-trace-dotnet/debian-tester:$(dotnetCoreSdkLatestVersion)
+      displayName: save
+
+    - publish: artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: merge_commit_id
   dependsOn: []
   jobs:
