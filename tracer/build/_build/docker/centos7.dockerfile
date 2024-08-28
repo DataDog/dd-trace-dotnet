@@ -18,7 +18,11 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN yum update -y \
+# replace the centos repository with vault.centos.org because they shut down the original
+RUN sed -i s/mirror.centos.org/vault.centos.org/g /etc/yum.repos.d/*.repo \
+    && sed -i s/^#.*baseurl=http/baseurl=http/g /etc/yum.repos.d/*.repo \
+    && sed -i s/^mirrorlist=http/#mirrorlist=http/g /etc/yum.repos.d/*.repo \
+    && yum update -y \
     && yum install -y centos-release-scl \
     && yum install -y\
         git \
@@ -71,9 +75,8 @@ RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependen
     && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
+COPY ./bootstrap/dotnet-install.sh .
+RUN ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
 # Trigger first run experience by running arbitrary cmd
@@ -98,12 +101,11 @@ FROM base as tester
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
 
+COPY ./bootstrap/dotnet-install.sh .
 RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
     else export NETCORERUNTIME2_1=dotnet; \
     fi \
-    && curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
