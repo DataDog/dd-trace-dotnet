@@ -38,6 +38,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
+            if (!GrpcDotNetServerCommon.IsASupportedVersion<TTarget>())
+            {
+                return CallTargetState.GetDefault();
+            }
+
             if (GrpcCoreApiVersionHelper.IsSupported)
             {
                 var scope = GrpcDotNetServerCommon.CreateServerSpan(Tracer.Instance, instance, httpContext.Request);

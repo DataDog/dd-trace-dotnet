@@ -38,6 +38,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
+            if (!GrpcDotNetServerCommon.IsASupportedVersion<TTarget>())
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var tracer = Tracer.Instance;
             if (GrpcCoreApiVersionHelper.IsSupported
              && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)

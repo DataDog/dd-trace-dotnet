@@ -21,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetServerCommon));
 
+        public static bool IsASupportedVersion<TTarget>()
+        {
+            return SupportedVersionByTypeCache<TTarget>.IsSupported;
+        }
+
         public static Scope? CreateServerSpan<T>(Tracer tracer, T instance, HttpRequest requestMessage)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
@@ -34,11 +39,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             {
                 // The current handler has the MethodInvoker property (this is the case for >= 2.27.0 versions)
                 method = handlerWithMethodInvoker.MethodInvoker.Method;
-            }
-            else if (instance.TryDuckCast<ServerMethodInvokerBaseStruct>(out var methodInvoker))
-            {
-                // The current handler has the Method property (this is the case for < 2.27.0 versions)
-                method = methodInvoker.Method;
             }
             else
             {
@@ -89,6 +89,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             }
 
             return default;
+        }
+
+        private static class SupportedVersionByTypeCache<TTarget>
+        {
+            static SupportedVersionByTypeCache()
+            {
+                // The assembly version of Grpc.AspNetCore.Server is fixed to 2.0.0, so we need to check the FileVersion
+                // to know if we should instrument this library.
+                if (AutoInstrumentationExtensions.TryGetAssemblyFileVersionFromType(typeof(TTarget), out var version))
+                {
+                    // Grpc.AspNetCore.Server 2.30.0 is the minimum version supported by this implementation.
+                    IsSupported = version >= new Version(2, 30, 0);
+                }
+                else
+                {
+                    IsSupported = false;
+                }
+            }
+
+            public static bool IsSupported { get; }
         }
     }
 }

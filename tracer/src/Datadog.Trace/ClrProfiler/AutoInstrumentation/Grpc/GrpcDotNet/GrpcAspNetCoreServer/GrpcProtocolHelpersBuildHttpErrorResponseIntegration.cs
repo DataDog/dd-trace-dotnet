@@ -35,13 +35,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
+        /// <param name="instance">The instance is always null because is an static class</param>
         /// <param name="response">The HttpResponse value</param>
         /// <param name="httpStatusCode">The HTTP status code value to set</param>
         /// <param name="grpcStatusCode">The GRPC status code</param>
         /// <param name="message">The error message to set</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin(HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
         {
+            if (!GrpcDotNetServerCommon.IsASupportedVersion<TTarget>())
+            {
+                return CallTargetState.GetDefault();
+            }
+
             var tracer = Tracer.Instance;
             if (GrpcCoreApiVersionHelper.IsSupported
              && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
