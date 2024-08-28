@@ -110,7 +110,7 @@ namespace Datadog.Trace.Util
             }
             catch (Exception)
             {
-                // DbConnectionStringBuilder can throw exceptions if the connection string is invalid (as seen in Error Tracking)
+                // DbConnectionStringBuilder can throw exceptions if the connection string is invalid
                 // in this case we should not use the connection string and just return default
                 return default;
             }
