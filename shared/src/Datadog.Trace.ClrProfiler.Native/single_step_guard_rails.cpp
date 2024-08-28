@@ -6,6 +6,10 @@
 #include "single_step_guard_rails.h"
 #include "process_helper.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace shared;
 
 namespace datadog::shared::nativeloader
@@ -286,18 +290,52 @@ void SingleStepGuardRails::SendTelemetry(const std::string& runtimeName, const s
 
     Log::Debug("SingleStepGuardRails::SendTelemetry: Invoking: ", processPath, " with ", initialArg, "and metadata " , metadata);
 
-    std::thread([processPath, args, metadata]()
-    {
-        const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+    // Increment the reference count to prevent the loader from being unloaded while sending telemetry
 
-        if (success)
+#ifdef _WIN32
+    HMODULE handle;
+
+    // GetModuleHandleEx increments the reference count if called without GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT
+    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+        (LPCWSTR)&datadog::shared::nativeloader::CorProfiler::GetRuntimeId, &handle))
+    {
+        handle = 0;
+    }
+
+#else
+    // Use dlopen to increment the reference count of the module
+    void* handle = 0;
+    Dl_info info;
+    if (dladdr((void*)&datadog::shared::nativeloader::CorProfiler::GetRuntimeId, &info))
+    {
+        handle = dlopen(info.dli_fname, RTLD_LAZY);
+    }
+#endif
+
+    if (handle != 0)
+    {
+        std::thread([processPath, args, metadata, handle]()
         {
-            Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
-        }
-        else
-        {
-            Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
-        }
-    }).detach();
+            const auto success = ProcessHelper::RunProcess(processPath, args, metadata);
+
+            if (success)
+            {
+                Log::Debug("SingleStepGuardRails::SendTelemetry: Telemetry sent to forwarder");
+            }
+            else
+            {
+                Log::Warn("SingleStepGuardRails::SendTelemetry: Error calling telemetry forwarder");
+            }
+
+#ifdef _WIN32
+            // On Windows, we can safely unload the module
+            FreeLibraryAndExitThread(handle, 0);
+#endif
+        }).detach();
+    }
+    else
+    {
+        Log::Warn("SingleStepGuardRails::SendTelemetry: Skipping the telemetry forwarder because it can't be safely invoked");
+    }
 }
 } // namespace datadog::shared::nativeloader
