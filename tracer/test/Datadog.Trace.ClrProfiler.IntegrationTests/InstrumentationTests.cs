@@ -222,15 +222,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task OnEolFrameworkInSsi_WhenForwarderPathExists_CallsForwarderWithExpectedTelemetry()
         {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
+
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
 
-            var logDir = SetLogDirectory();
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -244,23 +247,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "name": "library_entrypoint.abort.runtime"
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
         }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task OnEolFrameworkInSsi_WhenOverriden_CallsForwarderWithExpectedTelemetry()
         {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
             SetEnvironmentVariable("DD_TELEMETRY_FORWARDER_PATH", echoApp);
             SetEnvironmentVariable("DD_INJECT_FORCE", "true");
 
-            var logDir = SetLogDirectory();
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -273,7 +278,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "tags": ["injection_forced:true"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
         }
 
 #endif
@@ -284,8 +289,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData("0")]
         public async Task OnSupportedFrameworkInSsi_CallsForwarderWithExpectedTelemetry(string isOverriden)
         {
+            var logDir = SetLogDirectory();
+            var logFileName = Path.Combine(logDir, $"{Guid.NewGuid()}.txt");
             var echoApp = _fixture.GetAppPath(Output, EnvironmentHelper);
             Output.WriteLine("Setting forwarder to " + echoApp);
+            Output.WriteLine("Logging telemetry to " + logFileName);
 
             // indicate we're running in auto-instrumentation, this just needs to be non-null
             SetEnvironmentVariable("DD_INJECTION_ENABLED", "tracer");
@@ -293,8 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // this value doesn't matter, should have same result, and _shouldn't_ change the metrics
             SetEnvironmentVariable("DD_INJECT_FORCE", isOverriden);
 
-            var logDir = SetLogDirectory($"_{isOverriden}");
-            SetEnvironmentVariable(WatchFileEnvironmentVariable, Path.Combine(logDir, TelemetryReporterFixture.LogFileName));
+            SetEnvironmentVariable(WatchFileEnvironmentVariable, logFileName);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1");
@@ -307,7 +314,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                "tags": ["injection_forced:false"]
                              }]
                              """;
-            AssertHasExpectedTelemetry(logDir, processResult, pointsJson);
+            AssertHasExpectedTelemetry(logFileName, processResult, pointsJson);
         }
 #endif
 
@@ -373,9 +380,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             nativeLoaderLogFiles.Should().Contain(log => log.Contains(requiredLog));
         }
 
-        private void AssertHasExpectedTelemetry(string logDir, ProcessResult processResult, string pointsJson)
+        private void AssertHasExpectedTelemetry(string echoLogFileName, ProcessResult processResult, string pointsJson)
         {
-            var echoLogFileName = Path.Combine(logDir, TelemetryReporterFixture.LogFileName);
             using var s = new AssertionScope();
             File.Exists(echoLogFileName).Should().BeTrue();
             var echoLogContent = File.ReadAllText(echoLogFileName);
@@ -438,7 +444,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public class TelemetryReporterFixture : IDisposable
         {
-            public const string LogFileName = "received_logs.txt";
             private readonly string _workingDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
             private string _appPath;
 
@@ -460,8 +465,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                using System.Text;
                                using System.Reflection;
 
-                               var logsFolder = Environment.GetEnvironmentVariable("{ConfigurationKeys.LogDirectory}");
-
                                var sb = new StringBuilder();
                                sb.Append(string.Join(" ", args));
                                sb.Append(" ");
@@ -472,10 +475,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                                var data = sb.ToString();
 
-                               var path = Path.Combine(logsFolder, "{LogFileName}");
-
                                Console.WriteLine(data);
-                               File.WriteAllText(path, data);
+
+                               var logFileName = Environment.GetEnvironmentVariable("{WatchFileEnvironmentVariable}");
+                               File.WriteAllText(logFileName, data);
                                """;
                 File.WriteAllText(Path.Combine(_workingDir, "Program.cs"), program);
 
