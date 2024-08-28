@@ -93,6 +93,7 @@ Configuration::Configuration()
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
+    _etwEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
@@ -559,6 +560,15 @@ bool Configuration::IsEtwLoggingEnabled() const
     return false;
 #else
     return _isEtwLoggingEnabled;
+#endif
+}
+
+std::string const& Configuration::GetEtwEndpoint() const
+{
+#ifdef LINUX
+    return "";
+#else
+    return _etwEndpoint;
 #endif
 }
 

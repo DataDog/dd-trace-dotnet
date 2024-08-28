@@ -73,6 +73,7 @@ public:
     std::uint64_t GetCIVisibilitySpanId() const override;
     bool IsEtwEnabled() const override;
     bool IsEtwLoggingEnabled() const override;
+    std::string const& GetEtwEndpoint() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
     CpuProfilerType GetCpuProfilerType() const override;
@@ -166,6 +167,7 @@ private:
     bool _isEtwEnabled;
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
+    std::string _etwEndpoint;
     EnablementStatus _enablementStatus;
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;

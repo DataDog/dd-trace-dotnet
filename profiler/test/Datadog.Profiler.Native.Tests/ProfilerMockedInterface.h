@@ -74,6 +74,7 @@ public:
     MOCK_METHOD(EnablementStatus, GetEnablementStatus, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
     MOCK_METHOD(bool, IsEtwLoggingEnabled, (), (const override));
+    MOCK_METHOD(std::string const&, GetEtwEndpoint, (), (const override));
     MOCK_METHOD(CpuProfilerType, GetCpuProfilerType, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetCpuProfilingInterval, (), (const override));
 };

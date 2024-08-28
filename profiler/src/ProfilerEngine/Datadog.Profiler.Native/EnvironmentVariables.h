@@ -63,6 +63,7 @@ public:
     inline static const shared::WSTRING EtwEnabled                  = WStr("DD_INTERNAL_PROFILING_ETW_ENABLED");
     inline static const shared::WSTRING SsiDeployed                 = WStr("DD_INJECTION_ENABLED");
     inline static const shared::WSTRING EtwLoggingEnabled           = WStr("DD_INTERNAL_ETW_LOGGING_ENABLED");
+    inline static const shared::WSTRING EtwEndpoint                 = WStr("DD_INTERNAL_ETW_ENDPOINT");
     inline static const shared::WSTRING CpuProfilerType             = WStr("DD_INTERNAL_CPU_PROFILER_TYPE");
     inline static const shared::WSTRING CpuProfilingInterval        = WStr("DD_INTERNAL_CPU_PROFILING_INTERVAL");
 

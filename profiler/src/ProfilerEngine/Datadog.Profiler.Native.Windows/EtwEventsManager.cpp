@@ -31,7 +31,7 @@ EtwEventsManager::EtwEventsManager(
     _pContentionListener(pContentionListener)
 {
     _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
-
+    _agentEndpoint = pConfiguration->GetEtwEndpoint();
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
@@ -323,6 +323,7 @@ bool EtwEventsManager::Start()
     buffer << NamedPipePrefix;
     buffer << pid;
     std::string pipeName = buffer.str();
+
     Log::Info("Exposing ", pipeName);
 
     _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
@@ -341,7 +342,7 @@ bool EtwEventsManager::Start()
     }
 
     // create the client part to send the registration command
-    pipeName = NamedPipeAgent;
+    pipeName = (_agentEndpoint.empty()) ? NamedPipeAgent : _agentEndpoint;
     Log::Info("Contacting ", pipeName, "...");
 
     _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);
