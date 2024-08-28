@@ -28,8 +28,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 return null;
             }
 
+            // Check if the current handler has the MethodInvoker property
+            MethodStruct method;
+            if (instance.TryDuckCast<ServerCallHandlerBaseStruct>(out var handlerWithMethodInvoker))
+            {
+                // The current handler has the MethodInvoker property (this is the case for >= 2.27.0 versions)
+                method = handlerWithMethodInvoker.MethodInvoker.Method;
+            }
+            else if (instance.TryDuckCast<ServerMethodInvokerBaseStruct>(out var methodInvoker))
+            {
+                // The current handler has the Method property (this is the case for < 2.27.0 versions)
+                method = methodInvoker.Method;
+            }
+            else
+            {
+                return null;
+            }
+
             Scope? scope = null;
-            var method = instance.DuckCast<ServerCallHandlerBaseStruct>().MethodInvoker.Method;
             try
             {
                 var tags = new GrpcServerTags();
