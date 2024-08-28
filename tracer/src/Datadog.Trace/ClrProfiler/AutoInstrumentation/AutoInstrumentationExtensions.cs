@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation
             }
         }
 
-        public static bool TryGetAssemblyFileVersionFromType(Type type, out Version? version)
+        public static bool TryGetAssemblyFileVersionFromType(this Type? type, out Version? version)
         {
             if (type is null)
             {

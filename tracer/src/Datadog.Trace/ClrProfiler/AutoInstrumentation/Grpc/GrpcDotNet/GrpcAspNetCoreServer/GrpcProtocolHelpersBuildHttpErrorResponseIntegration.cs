@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <param name="grpcStatusCode">The GRPC status code</param>
         /// <param name="message">The error message to set</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget? instance, HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
         {
             if (!GrpcDotNetServerCommon.IsASupportedVersion<TTarget>())
             {

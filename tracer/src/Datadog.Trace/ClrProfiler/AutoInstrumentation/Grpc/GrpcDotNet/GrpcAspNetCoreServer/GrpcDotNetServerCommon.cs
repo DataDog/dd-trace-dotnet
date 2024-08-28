@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             {
                 // The assembly version of Grpc.AspNetCore.Server is fixed to 2.0.0, so we need to check the FileVersion
                 // to know if we should instrument this library.
-                if (AutoInstrumentationExtensions.TryGetAssemblyFileVersionFromType(typeof(TTarget), out var version))
+                if (typeof(TTarget).TryGetAssemblyFileVersionFromType(out var version))
                 {
                     // Grpc.AspNetCore.Server 2.30.0 is the minimum version supported by this implementation.
                     IsSupported = version >= new Version(2, 30, 0);
