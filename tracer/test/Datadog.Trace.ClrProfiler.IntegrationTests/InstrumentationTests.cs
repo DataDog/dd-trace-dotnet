@@ -496,7 +496,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
                 {
                     ("win", _, _) => "win-x64",
-                    ("linux", "Arm64", _) => "linux-arm64",
+                    ("linux", "Arm64", false) => "linux-arm64",
+                    ("linux", "Arm64", true) => "linux-musl-arm64",
                     ("linux", "X64", false) => "linux-x64",
                     ("linux", "X64", true) => "linux-musl-x64",
                     ("osx", "X64", _) => "osx-x64",

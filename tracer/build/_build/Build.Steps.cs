@@ -901,7 +901,7 @@ partial class Build
 
                 if (isTar)
                 {
-                    var includeMuslArtifacts = !IsAlpine && !IsArm64;
+                    var includeMuslArtifacts = !IsAlpine;
 
                     // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
                     PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);

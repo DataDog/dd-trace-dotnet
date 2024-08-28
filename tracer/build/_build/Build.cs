@@ -471,6 +471,7 @@ partial class Build : NukeBuild
                 (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),
                 (rid: "osx-x64", archiveFormat: ".tar.gz"),
                 (rid: "linux-arm64", archiveFormat: ".tar.gz"),
+                (rid: "linux-musl-arm64", archiveFormat: ".tar.gz"),
             }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
 
