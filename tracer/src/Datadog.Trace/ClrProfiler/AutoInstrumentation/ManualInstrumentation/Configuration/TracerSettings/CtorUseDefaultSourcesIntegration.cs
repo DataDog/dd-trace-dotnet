@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Co
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class CtorUseDefaultSourcesIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, bool useDefaultSources)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_UseDefaultSources);
         return CallTargetState.GetDefault();
