@@ -883,6 +883,7 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
+        # - ADDITIONAL_INSTALL=
     image: dd-trace-dotnet/${dockerTag:-not-set}-tester
     volumes:
     - ./:/project
