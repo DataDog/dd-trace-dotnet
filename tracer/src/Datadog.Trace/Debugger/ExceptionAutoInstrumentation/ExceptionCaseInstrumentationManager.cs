@@ -115,6 +115,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         internal static void Revert(ExceptionCase @case)
         {
+            if (@case.Probes == null || @case.Processors == null)
+            {
+                Log.Information("Received empty @case, nothing to revert.");
+                return;
+            }
+
             try
             {
                 Log.Information("Reverting {ExceptionCase}", @case);
