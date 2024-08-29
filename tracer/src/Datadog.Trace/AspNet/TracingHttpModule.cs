@@ -348,6 +348,10 @@ namespace Datadog.Trace.AspNet
                                 string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
                                 scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                             }
+                            else
+                            {
+                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
+                            }
                         }
                     }
                     finally
