@@ -489,7 +489,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected bool IsSupportedVersion(string packageVersion)
         {
-            return string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("2.30.0");
+            return string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("2.27.0");
         }
     }
 }
