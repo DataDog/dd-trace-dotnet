@@ -6,10 +6,12 @@
 using System;
 using System.Data;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -24,6 +26,8 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
         internal static string PropagateDataViaComment(DbmPropagationLevel propagationStyle, string configuredServiceName, string? dbName, string? outhost, Span span, IntegrationId integrationId, out bool traceParentInjected)
         {
@@ -82,47 +86,37 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// Currently only working for MSSQL (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
-        internal static bool PropagateDataViaContext(Tracer tracer, DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbConnection? connection, string serviceName, Scope scope, SqlTags tags)
+        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbConnection? connection, Span span)
         {
             if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || connection == null)
             {
                 return false;
             }
 
-            // we want the instrumentation span to be a sibling of the actual query span
-            var instrumentationParent = scope.Parent?.Span?.Context;
-            // copy the tags so that modifications on one span don't impact the other
-            var copyProcessor = new ITags.CopyProcessor<SqlTags>();
-            tags.EnumerateTags(ref copyProcessor);
-            using (var instrumentationScope = tracer.StartActiveInternal("set context_info", instrumentationParent, tags: copyProcessor.TagsCopy, serviceName: serviceName))
+            byte version = 0; // version can have a maximum value of 15 in the current format
+            var sampled = SamplingPriorityValues.IsKeep(span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
+            var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
+            var injectionSql = "set context_info @context";
+
+            using (var injectionCommand = connection.CreateCommand())
             {
-                instrumentationScope.Span.Type = SpanTypes.Sql;
-                // this tag serves as "documentation" for users to realize this is something done by the instrumentation
-                instrumentationScope.Span.Tags.SetTag("dd.instrumentation", "true");
+                injectionCommand.CommandText = injectionSql;
 
-                byte version = 0; // version can have a maximum value of 15 in the current format
-                var sampled = SamplingPriorityValues.IsKeep(scope.Span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
-                var contextValue = BuildContextValue(version, sampled, scope.Span.SpanId, scope.Span.TraceId128);
-                var injectionSql = "set context_info @context";
-                // important to set the resource name before running the command so that we don't re-instrument
-                instrumentationScope.Span.ResourceName = injectionSql;
+                var parameter = injectionCommand.CreateParameter();
+                parameter.ParameterName = "@context";
+                parameter.Value = contextValue;
+                parameter.DbType = DbType.Binary;
+                injectionCommand.Parameters.Add(parameter);
 
-                using (var injectionCommand = connection.CreateCommand())
+                injectionCommand.ExecuteNonQuery();
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    injectionCommand.CommandText = injectionSql;
-
-                    var parameter = injectionCommand.CreateParameter();
-                    parameter.ParameterName = "@context";
-                    parameter.Value = contextValue;
-                    parameter.DbType = DbType.Binary;
-                    injectionCommand.Parameters.Add(parameter);
-
-                    injectionCommand.ExecuteNonQuery();
+                    // avoid building the string representation in the general case where debug is disabled
+                    Log.Debug("Span data for DBM propagated for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
                 }
-            } // closing instrumentation span
+            }
 
-            // we don't want to measure the time spent in "set_context" in the actual query span
-            scope.Span.ResetStartTime();
             return true;
         }
 

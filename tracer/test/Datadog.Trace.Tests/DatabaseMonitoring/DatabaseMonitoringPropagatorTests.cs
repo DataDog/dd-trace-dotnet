@@ -154,7 +154,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v0Tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
 
-            DatabaseMonitoringPropagator.PropagateDataViaContext(_v0Tracer, dbmPropagationLevel, integrationId, connectionMock.Object, "pouet", new Scope(parent: null, span, scopeManager: null, finishOnClose: false), new SqlTags());
+            DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
 
             if (shouldInject)
             {

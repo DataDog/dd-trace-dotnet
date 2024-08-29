@@ -67,8 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
 
             var expectedSpanCount = isVersion4 ? 91 : 147;
-            // there are as many spans for the instrumentation as regular spans, since we create one extra for each query.
-            var expectedInstrumentationSpanCount = propagation == "full" ? expectedSpanCount : 0;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
@@ -84,10 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             var actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
-            var instrumentationSpans = agent.WaitForSpans(expectedInstrumentationSpanCount, operationName: "set context_info");
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-            Assert.Equal(expectedInstrumentationSpanCount, instrumentationSpans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
