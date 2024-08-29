@@ -988,6 +988,9 @@ partial class Build
                 EnsureCleanDirectory(assetsDirectory);
                 CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
 
+                // remove the XML files and pdb files from the package - they take up space and aren't needed
+                assetsDirectory.GlobFiles("**/*.xml", "**/*.pdb").ForEach(DeleteFile);
+
                 if (!includeMuslArtifacts && !IsAlpine)
                 {
                     // Remove the linux-musl-x64 folder entirely if we don't need it
