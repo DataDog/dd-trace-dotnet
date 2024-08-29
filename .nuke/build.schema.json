@@ -257,7 +257,7 @@
         },
         "PublishReadyToRun": {
           "type": "boolean",
-          "description": "Publish ReadyToRun assemblies in 'PublishManagedTracerR2R'. Default is 'true'. Requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run"
+          "description": "Publish ReadyToRun assemblies in 'PublishManagedTracerR2R'. Default is 'true'.Requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run"
         },
         "PullRequestNumber": {
           "type": "integer",
