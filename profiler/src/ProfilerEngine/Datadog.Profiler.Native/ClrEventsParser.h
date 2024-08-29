@@ -130,6 +130,16 @@ struct ContentionStopV1Payload // for .NET Core/ 5+
     double_t DurationNs;       // Duration of the contention (without spinning)
 };
 
+struct ContentionStartV2Payload // for .NET Core/ 5+
+{
+    uint8_t ContentionFlags; // 0 for managed; 1 for native.
+    uint16_t ClrInstanceId;  // Unique ID for the instance of CLR.
+    uintptr_t LockId;
+    uintptr_t AssociatedObjectID;
+    // This is a copy/paste from the CLR, but the LockOwnerThreadID is not a ThreadID but an OS Thread Id
+    uint64_t LockOwnerThreadID;
+};
+
 struct GCStartPayload
 {
     uint32_t Count;
@@ -332,6 +342,7 @@ private:
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
     const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
+    const int EVENT_CONTENTION_START = 81; // version 2 contains thread id of the threads that owns the lock
 
     // Events emitted during garbage collection lifetime
     // read https://medium.com/criteo-engineering/spying-on-net-garbage-collector-with-net-core-eventpipes-9f2a986d5705?source=friends_link&sk=baf9a7766fb5c7899b781f016803597f
