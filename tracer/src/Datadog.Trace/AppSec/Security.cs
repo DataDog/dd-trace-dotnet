@@ -252,12 +252,13 @@ namespace Datadog.Trace.AppSec
                 productsCount += config.Value.Count;
             }
 
+            bool onlyUnknownMatcherErrors = OnlyUnknownMatcherErrors(updateResult?.Errors);
             var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
             int index = 0;
 
-            if (string.IsNullOrEmpty(finalError))
+            if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
             {
                 foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
@@ -273,6 +274,24 @@ namespace Datadog.Trace.AppSec
             }
 
             return applyDetails;
+        }
+
+        internal static bool OnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object>? errors)
+        {
+            if (errors is not null)
+            {
+                // if all the errors start with "unknown matcher:", we should not report the error
+                // It will happen if the WAF version used does not support new operators defined in the rules
+                foreach (var error in errors)
+                {
+                    if (!error.Key.ToLower().StartsWith("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
 
         internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)

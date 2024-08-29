@@ -87,28 +87,13 @@ internal readonly partial struct SecurityCoordinator
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
-            if (security.WafInitResult.HasErrors && !OnlyUnknownMatcherErrors(security.WafInitResult.Errors))
+            if (security.WafInitResult.HasErrors && !Security.OnlyUnknownMatcherErrors(security.WafInitResult.Errors))
             {
                 span.SetTag(Tags.AppSecWafInitRuleErrors, security.WafInitResult.ErrorMessage);
             }
 
             span.SetTag(Tags.AppSecWafVersion, security.DdlibWafVersion);
         }
-    }
-
-    private static bool OnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object> errors)
-    {
-        // if all the errors start with "unknown matcher:", we should not report the error
-        // It will happen if the WAF version used does not support new operators defined in the rules
-        foreach (var error in errors)
-        {
-            if (!error.Key.ToLower().StartsWith("unknown matcher:", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /// <summary>
