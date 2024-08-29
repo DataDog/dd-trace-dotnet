@@ -124,9 +124,16 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 
         foreach (var rule in _secretRules)
         {
-            if (rule.Regex.IsMatch(secret))
+            try
             {
-                return rule.Rule;
+                if (rule.Regex.IsMatch(secret))
+                {
+                    return rule.Rule;
+                }
+            }
+            catch (RegexMatchTimeoutException err)
+            {
+                IastModule.LogTimeoutError(err);
             }
         }
 
