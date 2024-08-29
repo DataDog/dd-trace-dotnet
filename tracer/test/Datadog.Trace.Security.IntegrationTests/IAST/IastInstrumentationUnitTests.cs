@@ -307,14 +307,12 @@ public class IastInstrumentationUnitTests : TestHelper
 #else
             if (!EnvironmentTools.IsWindows())
             {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                arguments += (RuntimeInformation.ProcessArchitecture == Architecture.Arm64, EnvironmentHelper.IsAlpine()) switch
                 {
-                    arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
-                }
-                else
-                {
-                    arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
-                }
+                    (true, false) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    (true, true) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=AlpineArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    _ => @" --TestCaseFilter:""Category!=LinuxUnsupported""",
+                };
             }
 #endif
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want

@@ -205,6 +205,7 @@
       <type fullname="System.Data.DbType" />
       <type fullname="System.Data.IDataParameter" />
       <type fullname="System.Data.IDataParameterCollection" />
+      <type fullname="System.Data.IDataRecord" />
       <type fullname="System.Data.IDbCommand" />
       <type fullname="System.Data.IDbConnection" />
       <type fullname="System.Data.IDbDataParameter" />

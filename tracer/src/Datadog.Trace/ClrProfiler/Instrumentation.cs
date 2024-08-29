@@ -131,6 +131,8 @@ namespace Datadog.Trace.ClrProfiler
                             {
                                 Log.Debug("Enabling Iast call target category");
                                 category |= InstrumentationCategory.Iast;
+
+                                Iast.Iast.Instance.InitAnalyzers();
                             }
 
                             if (raspEnabled)
@@ -500,6 +502,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+                Iast.Iast.Instance.InitAnalyzers();
                 InitializeInstrumentationsLegacy(InstrumentationCategory.Iast, sw);
             }
         }

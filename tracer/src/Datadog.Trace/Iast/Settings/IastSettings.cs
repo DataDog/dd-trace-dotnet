@@ -22,6 +22,7 @@ internal class IastSettings
     public const int MaxRangeCountDefault = 10;
     public const int RequestSamplingDefault = 30;
     public const int TruncationMaxValueLengthDefault = 250;
+    public const int DataBaseRowsToTaintDefault = 1;
 
     /// <summary>
     /// Default keys readaction regex if none specified via env DD_IAST_REDACTION_KEYS_REGEXP
@@ -32,6 +33,11 @@ internal class IastSettings
     /// Default values readaction regex if none specified via env DD_IAST_REDACTION_VALUES_REGEXP
     /// </summary>
     internal const string DefaultRedactionValuesRegex = @"(?i)(?:bearer\s+[a-z0-9\._\-]+|glpat-[\w\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=\-]+\.ey[I-L][\w=\-]+(?:\.[\w.+/=\-]+)?|(?:[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY[\-]{5}|ssh-rsa\s*[a-z0-9/\.+]{100,})|[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,})";
+
+    /// <summary>
+    /// Default values readaction regex if none specified via env DD_IAST_REDACTION_VALUES_REGEXP
+    /// </summary>
+    internal const string DefaultCookieFilterRegex = @".{32,}";
 
     public IastSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
     {
@@ -89,6 +95,15 @@ internal class IastSettings
             .WithKeys(ConfigurationKeys.Iast.TruncationMaxValueLength)
             .AsInt32(TruncationMaxValueLengthDefault, x => x > 0)
             .Value;
+
+        DataBaseRowsToTaint = config
+            .WithKeys(ConfigurationKeys.Iast.DataBaseRowsToTaint)
+            .AsInt32(DataBaseRowsToTaintDefault, x => x >= 0)
+            .Value;
+
+        CookieFilterRegex = config
+            .WithKeys(ConfigurationKeys.Iast.CookieFilterRegex)
+            .AsString(DefaultCookieFilterRegex);
     }
 
     public bool Enabled { get; set; }
@@ -122,6 +137,10 @@ internal class IastSettings
     public IastMetricsVerbosityLevel TelemetryVerbosity { get; }
 
     public int TruncationMaxValueLength { get; }
+
+    public int DataBaseRowsToTaint { get; }
+
+    public string CookieFilterRegex { get; }
 
     public static IastSettings FromDefaultSources()
     {

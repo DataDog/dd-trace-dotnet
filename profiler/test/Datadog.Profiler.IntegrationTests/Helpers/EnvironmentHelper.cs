@@ -326,7 +326,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("win", "x86", _) => "win-x86",
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", _) => "linux-arm64",
+                ("linux", "Arm64", false) => "linux-arm64",
+                ("linux", "Arm64", true) => "linux-musl-arm64",
                 ("osx", _, _) => "osx-x64",
                 _ => throw new PlatformNotSupportedException()
             };

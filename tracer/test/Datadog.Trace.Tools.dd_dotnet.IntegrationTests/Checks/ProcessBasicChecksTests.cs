@@ -33,6 +33,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     private const string CorProfilerPath32Key = "CORECLR_PROFILER_PATH_32";
     private const string CorProfilerPath64Key = "CORECLR_PROFILER_PATH_64";
     private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
+    private const string LogDirectoryKey = "DD_TRACE_LOG_DIRECTORY";
 
     private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
@@ -231,7 +232,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
         {
-            archFolder = "linux-arm64";
+            archFolder = Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
         }
         else
         {
@@ -243,6 +244,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         using var helper = await StartConsole(
                                enableProfiler: true,
                                ("DD_PROFILING_ENABLED", "1"),
+                               (LogDirectoryKey, this.LogDirectory),
                                ("LD_PRELOAD", apiWrapperPath));
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -469,7 +471,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             {
                 ("win", _, "X64", _) => ("dll", "win-x64"),
                 ("win", _, "X86", _) => ("dll", "win-x86"),
-                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, false) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, true) => ("so", "linux-musl-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),

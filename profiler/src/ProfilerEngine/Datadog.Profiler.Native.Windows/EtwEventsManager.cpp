@@ -63,6 +63,7 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
     t.tm_hour = st.wHour;
     t.tm_min = st.wMinute;
     t.tm_sec = st.wSecond;
+    t.tm_isdst = -1; // don't mess with daylight saving time (already done by SystemTimeToTzSpecificLocalTime)
     time_t timeSinceEpoch = mktime(&t);
 
     return timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
@@ -82,17 +83,45 @@ void EtwEventsManager::OnEvent(
     {
         if (_isDebugLogEnabled)
         {
-            std::cout << "StackWalk for thread #" << tid << std::endl;
+            std::cout << "StackWalk for thread #" << tid;
         }
 
         auto pThreadInfo = GetOrCreate(tid);
         if (pThreadInfo->LastEventWasContentionStart())
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << " (contention start)" << std::endl;
+            }
+
             AttachContentionCallstack(pThreadInfo, cbEventData, pEventData);
         }
         else if (pThreadInfo->LastEventWasAllocationTick())
         {
-            AttachAllocationCallstack(pThreadInfo, cbEventData, pEventData);
+            if (_isDebugLogEnabled)
+            {
+                std::cout << " (allocation tick)" << std::endl;
+            }
+
+            if (_pAllocationListener != nullptr)
+            {
+                AttachAllocationCallstack(pThreadInfo, cbEventData, pEventData);
+                _pAllocationListener->OnAllocation(
+                    pThreadInfo->AllocationTickTimestamp,
+                    tid,
+                    pThreadInfo->AllocationKind,
+                    pThreadInfo->AllocationClassId,
+                    pThreadInfo->AllocatedType,
+                    pThreadInfo->AllocationAmount,
+                    pThreadInfo->AllocationCallStack);
+            }
+        }
+        else
+        {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << std::endl;
+            }
         }
 
         pThreadInfo->ClearLastEventId();
@@ -153,7 +182,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                std::cout << "AllocationTick" << std::endl;
+                std::cout << "AllocationTick" << " v" << version << std::endl;
             }
 
             if (_pAllocationListener == nullptr)
@@ -165,8 +194,33 @@ void EtwEventsManager::OnEvent(
             pThreadInfo->LastEventId = EventId::AllocationTick;
 
             auto timestamp = TimestampToEpochNS(systemTimestamp);
-            // TODO: get the type name and ClassID from the payload
-            // TODO: update IAllocationListener to take the type name, ClassID and stack
+            // Get the type name and ClassID from the payload
+            //template tid = "GCAllocationTick_V3" >
+            //    <data name = "AllocationAmount" inType = "win:UInt32" />
+            //    <data name = "AllocationKind" inType = "win:UInt32" />
+            //    <data name = "ClrInstanceID" inType = "win:UInt16" />
+            //    <data name = "AllocationAmount64" inType = "win:UInt64"/>
+            //    <data name = "TypeID" inType = "win:Pointer" />
+            //    <data name = "TypeName" inType = "win:UnicodeString" />
+            //    
+            // !! the following 2 fields cannot be directly accessed because
+            // !! they will be stored after the string TypeName
+            //    <data name = "HeapIndex" inType = "win:UInt32" />
+            //    <data name = "Address" inType = "win:Pointer" />
+            // but no object size...
+            // Since the events are received asynchronously, it is not even possible
+            // to assume that the object that was stored at the received Adress field 
+            // is still there: it could have been moved by a garbage collection
+            AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
+            pThreadInfo->AllocationTickTimestamp = timestamp;
+            pThreadInfo->AllocationKind = pPayload->AllocationKind;
+            pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+            pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
+            
+            // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?
+            pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(&(pPayload->FirstCharInName)));
+
+            // wait for the sibling StackWalk event to create the sample
         }
         else
         {

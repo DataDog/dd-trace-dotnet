@@ -14,11 +14,6 @@ variables:
     description: "Used by the package stage when triggered manually"
 
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
@@ -27,17 +22,17 @@ build:
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
-    - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
+    - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - docker run --rm -m 8192M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:latest
-    - mkdir artifacts
-    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
+    - mkdir artifacts-out
+    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
     - get-childitem build-out
-    - get-childitem artifacts
+    - get-childitem artifacts-out
   artifacts:
     expire_in: 2 weeks
     paths:
-    - artifacts
+    - artifacts-out
 
 publish:
   only:
@@ -65,7 +60,7 @@ publish:
       do {
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
-              aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               If ($LASTEXITCODE -eq 0) { 
                 return
               }
@@ -84,6 +79,7 @@ download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
+  needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success

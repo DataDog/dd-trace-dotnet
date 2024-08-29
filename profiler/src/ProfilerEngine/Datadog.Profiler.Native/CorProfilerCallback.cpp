@@ -217,6 +217,7 @@ bool CorProfilerCallback::InitializeServices()
                     _metricsRegistry);
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    false, // not .NET Framework
                     valueTypeProvider,
                     _pCorProfilerInfo,
                     _pManagedThreadList,
@@ -246,6 +247,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                false, // not .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
@@ -330,6 +332,7 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                true, // is .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
@@ -1538,11 +1541,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
-#ifdef LINUX
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
+#ifdef LINUX
 
     if (_pCpuProfiler != nullptr)
     {
