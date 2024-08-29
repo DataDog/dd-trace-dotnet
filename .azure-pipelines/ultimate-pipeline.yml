@@ -453,6 +453,69 @@ stages:
       displayName: Upload linux universal symbols
       artifact: linux-universal-symbols-linux-x64
 
+- stage: build_linux_tracer_r2r
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [build]
+
+    - job: build
+      timeoutInMinutes: 60 #default value
+      dependsOn: []
+      pool:
+        name: azure-linux-scale-set-2
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: debian
+            command: "Clean CompileManagedLoader"
+            retryCountForRunCommand: 1
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: centos7
+            useNativeSdkVersion: true
+            command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
+            retryCountForRunCommand: 1
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            target: builder
+            baseImage: centos7
+            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
+            retryCountForRunCommand: 1
+
+        - publish: $(monitoringHome)
+          displayName: Uploading linux tracer home artifact
+          artifact: linux-tracer-home-linux-x64-r2r
+
+        - publish: $(System.DefaultWorkingDirectory)
+          displayName: Upload working directory after the build
+          artifact: build-linux-x64-r2r-working-directory
+
+        - publish: $(symbols)
+          displayName: Upload linux tracer symbols
+          artifact: linux-tracer-symbols-linux-x64-r2r
+
+        - publish: artifacts/build_data/tests
+          displayName: publish tracer and native loader test results
+          artifact: build_linux_tracer_unit_tests_results_linux-x64-r2r_$(System.JobAttempt)
+
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
   variables:
@@ -509,7 +572,7 @@ stages:
       artifact: build_linux_profiler_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: package_linux
-  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux, build_linux_universal]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux, build_linux_universal, build_linux_tracer_r2r]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -529,6 +592,9 @@ stages:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+        x64-r2r:
+          baseImage: debian
+          artifactSuffix: linux-x64-r2r
     pool:
       name: azure-linux-scale-set-2
 
@@ -545,6 +611,13 @@ stages:
       condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
         artifact: linux-tracer-home-linux-x64
+        path: $(monitoringHome)
+        
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer linux native binary (linux-x64) with ReadyToRun
+      condition: eq(variables['artifactSuffix'], 'linux-x64-r2r')
+      inputs:
+        artifact: linux-tracer-home-linux-x64-r2r
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
