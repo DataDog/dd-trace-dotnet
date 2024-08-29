@@ -638,18 +638,22 @@ partial class Build
         {
             var targetFramework = TargetFramework.NET6_0;
 
+            // Needed as we need to restore with the RuntimeIdentifier
+            DotNetRestore(s => s
+                  .SetProjectFile(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                  .SetPublishReadyToRun(PublishReadyToRun)
+                  .SetRuntime(RuntimeIdentifier)
+            );
+            
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
-                .EnableNoBuild()
-                .EnableNoRestore()
                 .SetPublishReadyToRun(PublishReadyToRun)
+                .SetRuntime(RuntimeIdentifier)
+                .SetSelfContained(false)
                 .SetFramework(targetFramework)
                 .SetOutput(MonitoringHomeDirectory / targetFramework)
-                .When(PublishReadyToRun, s => s
-                    .SetRuntime(RuntimeIdentifier)
-                    .SetSelfContained(false))
             );
         });
 
