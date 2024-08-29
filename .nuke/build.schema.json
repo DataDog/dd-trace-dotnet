@@ -257,7 +257,7 @@
         },
         "PublishReadyToRun": {
           "type": "boolean",
-          "description": "Publish ReadyToRun compiled assemblies in 'PublishManagedTracerR2R'. If enabled, RuntimeIdentifier needs to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run"
+          "description": "Publish ReadyToRun assemblies in 'PublishManagedTracerR2R'. Default is 'true'. Requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run"
         },
         "PullRequestNumber": {
           "type": "integer",
@@ -269,7 +269,7 @@
         },
         "RuntimeIdentifier": {
           "type": "string",
-          "description": "Identifies the target platform for assemblies to be compiled with ReadyToRun in `PublishManagedTracerR2R`. Required if `PublishReadyToRun` is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
+          "description": "RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'.Required if 'PublishReadyToRun' is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
         },
         "SampleName": {
           "type": "string",

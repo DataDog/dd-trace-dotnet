@@ -634,11 +634,9 @@ partial class Build
         .Unlisted()
         .Requires(() => RuntimeIdentifier != null)
         .After(CompileManagedSrc)
-        .Executes(() => 
+        .Executes(() =>
         {
-            var targetFrameworks = IsWin
-               ? TargetFrameworks
-               : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
+            var targetFramework = TargetFramework.NET6_0;
 
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
@@ -647,12 +645,11 @@ partial class Build
                 .EnableNoBuild()
                 .EnableNoRestore()
                 .SetPublishReadyToRun(PublishReadyToRun)
+                .SetFramework(targetFramework)
+                .SetOutput(MonitoringHomeDirectory / targetFramework)
                 .When(PublishReadyToRun, s => s
                     .SetRuntime(RuntimeIdentifier)
                     .SetSelfContained(false))
-                .CombineWith(targetFrameworks, (p, framework) => p
-                    .SetFramework(framework)
-                    .SetOutput(MonitoringHomeDirectory / framework))
             );
         });
 
