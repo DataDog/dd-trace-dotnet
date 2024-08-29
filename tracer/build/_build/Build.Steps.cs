@@ -630,6 +630,32 @@ partial class Build
                     .SetOutput(MonitoringHomeDirectory / framework)));
         });
 
+    Target PublishManagedTracerR2R => _ => _
+        .Unlisted()
+        .Requires(() => RuntimeIdentifier != null)
+        .After(CompileManagedSrc)
+        .Executes(() => 
+        {
+            var targetFrameworks = IsWin
+               ? TargetFrameworks
+               : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
+
+            DotNetPublish(s => s
+                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetPublishReadyToRun(PublishReadyToRun)
+                .When(PublishReadyToRun, s => s
+                    .SetRuntime(RuntimeIdentifier)
+                    .SetSelfContained(false))
+                .CombineWith(targetFrameworks, (p, framework) => p
+                    .SetFramework(framework)
+                    .SetOutput(MonitoringHomeDirectory / framework))
+            );
+        });
+
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
