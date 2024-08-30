@@ -602,6 +602,26 @@ namespace Datadog.Trace
         internal const string AppSecWafInitRuleErrors = "_dd.appsec.event_rules.errors";
 
         /// <summary>
+        /// Indicates the http endpoint fingerprint
+        /// </summary>
+        internal const string AppSecFpEndpoint = "_dd.appsec.fp.http.endpoint";
+
+        /// <summary>
+        /// Indicates the http header fingerprint
+        /// </summary>
+        internal const string AppSecFpHeader = "_dd.appsec.fp.http.header";
+
+        /// <summary>
+        /// Indicates the http network fingerprint
+        /// </summary>
+        internal const string AppSecHttpNetwork = "_dd.appsec.fp.http.network";
+
+        /// <summary>
+        /// Indicates the session fingerprint
+        /// </summary>
+        internal const string AppSecFpSession = "_dd.appsec.fp.session";
+
+        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";
