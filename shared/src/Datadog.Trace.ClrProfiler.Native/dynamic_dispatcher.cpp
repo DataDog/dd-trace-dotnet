@@ -22,8 +22,41 @@ namespace datadog::shared::nativeloader
     DynamicDispatcherImpl::DynamicDispatcherImpl() :
         m_continuousProfilerInstance(nullptr),
         m_tracerInstance(nullptr),
-        m_customInstance(nullptr)
+        m_customInstance(nullptr),
+        m_initialized(false),
+        m_initializationResult(E_NOT_SET)
     {
+    }
+
+    HRESULT DynamicDispatcherImpl::Initialize()
+    {
+        if (m_initialized)
+        {
+            return m_initializationResult;
+        }
+
+        m_initialized = true;
+
+        LoadConfiguration(GetConfigurationFilePath());
+
+        m_initializationResult = LoadClassFactory(IID_IClassFactory);
+
+        if (FAILED(m_initializationResult))
+        {
+            Log::Error("Error loading all cor profiler class factories.");
+            return m_initializationResult;
+        }
+
+        m_initializationResult = LoadInstance();
+
+        if (FAILED(m_initializationResult))
+        {
+            Log::Error("Error loading all cor profiler instances.");
+            return m_initializationResult;
+        }
+
+        m_initializationResult = S_OK;
+        return m_initializationResult;
     }
 
     void DynamicDispatcherImpl::LoadConfiguration(fs::path&& configFilePath)
@@ -201,13 +234,13 @@ namespace datadog::shared::nativeloader
         return GHR;
     }
 
-    HRESULT DynamicDispatcherImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
+    HRESULT DynamicDispatcherImpl::LoadInstance()
     {
         HRESULT GHR = S_OK;
 
         if (m_continuousProfilerInstance != nullptr)
         {
-            HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
+            HRESULT result = m_continuousProfilerInstance->LoadInstance();
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
@@ -221,7 +254,7 @@ namespace datadog::shared::nativeloader
 
         if (m_tracerInstance != nullptr)
         {
-            HRESULT result = m_tracerInstance->LoadInstance(pUnkOuter, riid);
+            HRESULT result = m_tracerInstance->LoadInstance();
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
@@ -234,7 +267,7 @@ namespace datadog::shared::nativeloader
 
         if (m_customInstance != nullptr)
         {
-            HRESULT result = m_customInstance->LoadInstance(pUnkOuter, riid);
+            HRESULT result = m_customInstance->LoadInstance();
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
