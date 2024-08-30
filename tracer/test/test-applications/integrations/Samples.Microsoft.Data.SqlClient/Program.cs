@@ -40,7 +40,7 @@ namespace Samples.Microsoft.Data.SqlClient
         {
             int numAttempts = 3;
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+                                   @"Server=sqlserver;User=sa;Password=Strong!Passw0rd";
 
             for (int i = 0; i < numAttempts; i++)
             {

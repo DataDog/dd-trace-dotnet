@@ -12,6 +12,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.StatsdClient;
 
 #nullable enable
 
@@ -26,6 +27,8 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
+        private const string ContextInfoParameterName = "@dd_trace_context";
+        internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
@@ -93,17 +96,18 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+
             byte version = 0; // version can have a maximum value of 15 in the current format
             var sampled = SamplingPriorityValues.IsKeep(span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
-            var injectionSql = "set context_info @context";
 
             using (var injectionCommand = connection.CreateCommand())
             {
-                injectionCommand.CommandText = injectionSql;
+                injectionCommand.CommandText = SetContextCommand;
 
                 var parameter = injectionCommand.CreateParameter();
-                parameter.ParameterName = "@context";
+                parameter.ParameterName = ContextInfoParameterName;
                 parameter.Value = contextValue;
                 parameter.DbType = DbType.Binary;
                 injectionCommand.Parameters.Add(parameter);
@@ -116,6 +120,10 @@ namespace Datadog.Trace.DatabaseMonitoring
                     Log.Debug("Span data for DBM propagated for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
                 }
             }
+
+            // Since sending the query to the DB can be a bit long, we register the time it took for transparency.
+            // Not using _dd because we want the customers to be able to see that tag.
+            span.SetMetric("dd.instrumentation.time_ms", sw.Elapsed.TotalMilliseconds);
 
             return true;
         }
