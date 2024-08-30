@@ -6,7 +6,7 @@
 using System;
 using System.IO;
 
-namespace dd_prof_etw_replay
+namespace Datadog.Profiler.IntegrationTests
 {
     internal class Program
     {
@@ -19,13 +19,15 @@ namespace dd_prof_etw_replay
                 {
                     throw new ArgumentException("Missing required argument: -f <.bevents file name>");
                 }
+
                 Console.WriteLine($"Processing events in {eventsFilename}");
 
                 using (FileStream fs = new FileStream(eventsFilename, FileMode.Open, FileAccess.Read))
                 using (BinaryReader reader = new BinaryReader(fs))
                 {
-                    var dumper = new EventDumper();
-                    var recordReader = new RecordReader(reader, dumper);
+                    var recordDumper = new RecordDumper();
+                    var eventDumper = new EventDumper();
+                    var recordReader = new RecordReader(reader, recordDumper, eventDumper);
                     int count = 0;
                     while (fs.Position < fs.Length)
                     {

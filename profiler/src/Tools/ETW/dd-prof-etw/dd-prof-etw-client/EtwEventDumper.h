@@ -10,7 +10,7 @@
 class EtwEventDumper : public IEtwEventsReceiver
 {
 public:
-    EtwEventDumper(FILE* eventsFile);
+    EtwEventDumper();
     ~EtwEventDumper();
 
     // Inherited via IEtwEventsReceiver
@@ -32,7 +32,4 @@ private:
         uint32_t cbEventData, const uint8_t* pEventData);
     void DumpCallstack(uint32_t cbEventData, const uint8_t* pEventData);
     void DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEventData);
-
-private:
-    FILE* _pEventsFile;
 };

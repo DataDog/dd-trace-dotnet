@@ -13,14 +13,17 @@
 EtwEventsHandler::EtwEventsHandler()
     :
     _showMessages {false},
-    _pReceiver {nullptr}
+    _pReceiver {nullptr},
+    _pEventsFile {nullptr}
 {
 }
 
-EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver)
+EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile)
     :
     _logger {logger},
-    _pReceiver {pClrEventsReceiver}
+    _showMessages {false},
+    _pReceiver {pClrEventsReceiver},
+    _pEventsFile {pEventsFile}
 {
 }
 
@@ -31,6 +34,12 @@ EtwEventsHandler::~EtwEventsHandler()
 
 void EtwEventsHandler::Stop()
 {
+    if (_pEventsFile != nullptr)
+    {
+        fclose(_pEventsFile);
+        _pEventsFile = nullptr;
+    }
+
     _stopRequested.store(true);
 }
 
@@ -67,6 +76,15 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         {
             _logger->Info("Stop reading events");
             break;
+        }
+
+        // serialize the event to file if needed
+        if (_pEventsFile != nullptr)
+        {
+            fwrite(buffer.get(), sizeof(uint8_t), readSize, _pEventsFile);
+            std::stringstream builder;
+            builder << "Read size = " << readSize << " bytes -- Message size = " << message->Size << " | Event payload size = " << message->Payload.EtwUserDataLength;
+            _logger->Info(builder.str());
         }
 
         // check the message based on the expected command

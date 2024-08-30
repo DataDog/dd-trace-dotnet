@@ -326,7 +326,7 @@ bool EtwEventsManager::Start()
 
     Log::Info("Exposing ", pipeName);
 
-    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
+    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this, (FILE*)nullptr);
     _IpcServer = IpcServer::StartAsync(
         _logger.get(),
         pipeName,

@@ -3,12 +3,13 @@
 
 // Inspired by https://github.com/zodiacon/Win10SysProgBookSamples/blob/master/Chapter18/CalculatorSvr/CalculatorSvr.cpp
 // Another implementation without using ThreadPool API - https://learn.microsoft.com/en-us/windows/win32/ipc/multithreaded-pipe-server
-#include <windows.h>
 
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include "stdio.h"
 #include <string>
+#include <windows.h>
 
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
@@ -181,11 +182,11 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    FILE* eventsFile = nullptr;
+    FILE* pEventsFile = nullptr;
     if (!eventsFilename.empty())
     {
-        eventsFile = fopen(eventsFilename.c_str(), "wb");
-        if (eventsFile == nullptr)
+        pEventsFile = fopen(eventsFilename.c_str(), "wb");
+        if (pEventsFile == nullptr)
         {
             std::cout << "Impossible to create the events file " << eventsFilename << "...\n";
             return -1;
@@ -202,9 +203,9 @@ int main(int argc, char* argv[])
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
-    EtwEventDumper eventDumper(eventsFile);
+    EtwEventDumper eventDumper;
     std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
-    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper);
+    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper, pEventsFile);
     auto server = IpcServer::StartAsync(
         logger.get(),
         pipeName,

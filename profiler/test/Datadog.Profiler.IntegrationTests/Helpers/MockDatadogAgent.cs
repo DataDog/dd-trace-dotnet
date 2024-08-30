@@ -34,6 +34,17 @@ namespace Datadog.Profiler.IntegrationTests
 
         public static NamedPipeAgent CreateNamedPipeAgent(ITestOutputHelper output) => new NamedPipeAgent(output);
 
+        public void StartEtwProxy(string namedPipeEndpoint, string eventsFilename = null)
+        {
+            // simulate the Agent as an ETW proxy to replay events (if any)
+            // 1. create a named pipe server with the given endpoint to receive registration/unregistration commands from the profiler
+            //    --> keep track of the register/unregister to be able to validate the protocol in a test
+            // 2. read the events from the given file and send them to the profiler
+            //    --> keep track of any error
+            //    --> if no file is provided, don't send any event but accept registration/unregistration commands
+            // NOTE: this method must be called before calling Run() on the TestApplicationRunner
+        }
+
         public virtual void Dispose()
         {
             _cancellationTokenSource.Cancel();
