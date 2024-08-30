@@ -613,50 +613,49 @@ partial class Build
         .Unlisted()
         .After(CompileManagedSrc)
         .Executes(() =>
-        {
-            var targetFrameworks = IsWin
-                ? TargetFrameworks
-                : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
+                                        {
+                                            if (PublishReadyToRun)
+                                            {
+                                                var targetFramework = TargetFramework.NET6_0;
+                                                Logger.Information($"ReadyToRun is {PublishReadyToRun}");
 
-            // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .CombineWith(targetFrameworks, (p, framework) => p
-                    .SetFramework(framework)
-                    .SetOutput(MonitoringHomeDirectory / framework)));
-        });
+                                                // Needed as we need to restore with the RuntimeIdentifier
+                                                DotNetRestore(s => s
+                                                                  .SetProjectFile(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                                                                  .SetPublishReadyToRun(PublishReadyToRun)
+                                                                  .SetRuntime(RuntimeIdentifier)
+                                                );
 
-    Target PublishManagedTracerR2R => _ => _
-        .Unlisted()
-        .Requires(() => RuntimeIdentifier != null)
-        .After(CompileManagedSrc)
-        .Executes(() =>
-        {
-            var targetFramework = TargetFramework.NET6_0;
+                                                DotNetPublish(s => s
+                                                                  .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                                                                  .SetConfiguration(BuildConfiguration)
+                                                                  .SetTargetPlatformAnyCPU()
+                                                                  .SetPublishReadyToRun(PublishReadyToRun)
+                                                                  .SetRuntime(RuntimeIdentifier)
+                                                                  .SetSelfContained(false)
+                                                                  .SetFramework(targetFramework)
+                                                                  .SetOutput(MonitoringHomeDirectory / targetFramework)
+                                                );
+                                            }
+                                            else
+                                            {
+                                                var targetFrameworks = IsWin
+                                                                           ? TargetFrameworks
+                                                                           : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
-            // Needed as we need to restore with the RuntimeIdentifier
-            DotNetRestore(s => s
-                  .SetProjectFile(Solution.GetProject(Projects.DatadogTraceMsBuild))
-                  .SetPublishReadyToRun(PublishReadyToRun)
-                  .SetRuntime(RuntimeIdentifier)
-            );
-            
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .SetPublishReadyToRun(PublishReadyToRun)
-                .SetRuntime(RuntimeIdentifier)
-                .SetSelfContained(false)
-                .SetFramework(targetFramework)
-                .SetOutput(MonitoringHomeDirectory / targetFramework)
-            );
-        });
-
+                                                // Publish Datadog.Trace.MSBuild which includes Datadog.Trace
+                                                DotNetPublish(s => s
+                                                                  .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                                                                  .SetConfiguration(BuildConfiguration)
+                                                                  .SetTargetPlatformAnyCPU()
+                                                                  .EnableNoBuild()
+                                                                  .EnableNoRestore()
+                                                                  .CombineWith(targetFrameworks, (p, framework) => p
+                                                                                                                  .SetFramework(framework)
+                                                                                                                  .SetOutput(MonitoringHomeDirectory / framework)));
+                                            }
+                                        });
+    
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
