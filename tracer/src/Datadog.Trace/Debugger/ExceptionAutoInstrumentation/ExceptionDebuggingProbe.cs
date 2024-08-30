@@ -65,9 +65,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return false;
         }
 
+        /// <summary>
+        /// In .NET 6+ there's a bug that prevents Rejit-related APIs to work properly when Edit and Continue feature is turned on.
+        /// See https://github.com/dotnet/runtime/issues/91963 for addiitonal details.
+        /// </summary>
         private bool CheckIfMethodMayBeOmittedFromCallStack()
         {
-            return FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
+            return ExceptionTrackManager.IsEditAndContinueFeatureEnabled &&
+                   FrameworkDescription.Instance.IsCoreClr() && RuntimeHelper.IsNetOnward(6) && Method.Method.DeclaringType?.Assembly != null && RuntimeHelper.IsModuleDebugCompiled(Method.Method.DeclaringType.Assembly);
         }
 
         private void ProcessCase(ExceptionCase @case)

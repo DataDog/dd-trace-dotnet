@@ -449,7 +449,7 @@ namespace Datadog.Trace.ClrProfiler
                     }
                     else
                     {
-                        Log.Information("Exception Debugging is disabled. To enable it, please set DD_EXCEPTION_DEBUGGING_ENABLED environment variable to 'true'.");
+                        Log.Information("Exception Replay is disabled. To enable it, please set DD_EXCEPTION_REPLAY_ENABLED environment variable to '1'/'true'.");
                     }
                 }
                 catch (Exception ex)
