@@ -654,7 +654,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download universal native binaries
       inputs:
-        artifact: linux-universal-home-$(artifactSuffix)
+        artifact: linux-universal-home-linux-64
         path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
