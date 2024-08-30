@@ -58,6 +58,20 @@ internal static partial class IastModule
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
+    private static bool _showTimeoutExceptionError = true;
+
+    internal static void LogTimeoutError(RegexMatchTimeoutException err)
+    {
+        if (_showTimeoutExceptionError)
+        {
+            Log.Warning(err, "IAST Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
+            _showTimeoutExceptionError = false;
+        }
+        else
+        {
+            Log.Debug(err, "IAST Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
+        }
+    }
 
     internal static bool NoDbSource(TaintedObject tainted)
     {
@@ -284,7 +298,7 @@ internal static partial class IastModule
         }
     }
 
-    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string> argumentList, IntegrationId integrationId)
+    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string>? argumentList, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -357,7 +371,13 @@ internal static partial class IastModule
         }
     }
 
-    public static IastModuleResponse OnInsecureCookie(IntegrationId integrationId, string cookieName)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int GetCookieHash(string vulnerability, string cookieName, bool isFiltered)
+    {
+        return (vulnerability.ToString() + ":" + (isFiltered ? "Filtered" : cookieName)).GetStaticHashCode();
+    }
+
+    public static IastModuleResponse OnInsecureCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -366,10 +386,10 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, GetCookieHash(VulnerabilityTypeName.InsecureCookie, cookieName, isFiltered));
     }
 
-    public static IastModuleResponse OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
+    public static IastModuleResponse OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -378,10 +398,10 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoHttpOnlyCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, GetCookieHash(VulnerabilityTypeName.NoHttpOnlyCookie, cookieName, isFiltered));
     }
 
-    public static IastModuleResponse OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
+    public static IastModuleResponse OnNoSamesiteCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -390,7 +410,7 @@ internal static partial class IastModule
 
         OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSameSiteCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+        return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, GetCookieHash(VulnerabilityTypeName.NoSameSiteCookie, cookieName, isFiltered));
     }
 
     public static void OnHardcodedSecret(Vulnerability vulnerability)
