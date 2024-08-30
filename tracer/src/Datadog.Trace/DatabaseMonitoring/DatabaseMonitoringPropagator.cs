@@ -96,7 +96,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             byte version = 0; // version can have a maximum value of 15 in the current format
             var sampled = SamplingPriorityValues.IsKeep(span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
@@ -123,7 +123,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             // Since sending the query to the DB can be a bit long, we register the time it took for transparency.
             // Not using _dd because we want the customers to be able to see that tag.
-            span.SetMetric("dd.instrumentation.time_ms", sw.Elapsed.TotalMilliseconds);
+            span.SetMetric("dd.instrumentation.time_ms", stopwatch.Elapsed.TotalMilliseconds);
 
             return true;
         }
