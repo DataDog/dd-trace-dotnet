@@ -46,9 +46,12 @@ public class FrameworkDescriptionTests
         SkipOn.Platform(Windows);
         SkipOn.Platform(MacOs);
 
-        var expectedOs = EnvironmentHelper.IsAlpine()
-                             ? "Alpine Linux v3.14"
-                             : "Debian GNU/Linux 10 (buster)";
+        var expectedOs = (EnvironmentHelper.IsAlpine(), RuntimeInformation.OSArchitecture) switch
+        {
+            (true, Architecture.Arm64) => "Alpine Linux v3.18",
+            (true, Architecture.X64) => "Alpine Linux v3.14",
+            _ => "Debian GNU/Linux 10 (buster)",
+        };
 
         var description = FrameworkDescription.Create();
         var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x64";

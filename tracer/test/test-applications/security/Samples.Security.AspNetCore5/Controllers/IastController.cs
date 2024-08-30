@@ -266,18 +266,31 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
-        public IActionResult ExecuteCommand(string file, string argumentLine)
+        public IActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
-            return ExecuteCommandInternal(file, argumentLine);
+            return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
-        private IActionResult ExecuteCommandInternal(string file, string argumentLine)
+        private IActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
             try
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    var result = Process.Start(file, argumentLine);
+                    Process result;
+                    if (fromShell)
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                        startInfo.FileName = file;
+                        startInfo.Arguments = argumentLine;
+                        startInfo.UseShellExecute = true;
+                        result = Process.Start(startInfo);
+                    }
+                    else
+                    {
+                        result = Process.Start(file, argumentLine);
+                    }
+                    
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -288,10 +301,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             catch (Win32Exception ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
         }
 
@@ -556,8 +565,14 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.SameSite = SameSiteMode.None;
             cookieOptions.HttpOnly = false;
             cookieOptions.Secure = false;
-            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
-            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions); //Normal cookie
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions); //Excluded cookie
+            string longval = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (int x = 0; x < 3; x++)
+            {
+                Response.Cookies.Append($"LongCookie.{longval}.{x}", $"FilteredCookie{x}", cookieOptions);  //Filtered (grouped) cookies (same hash)
+            }
+
             return Content("Sending AllVulnerabilitiesCookie");
         }
 

@@ -89,8 +89,8 @@ partial class Build
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
-    [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
-    [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
+    [LazyPathExecutable(name: "tar")] readonly Lazy<Tool> Tar;
+    [LazyPathExecutable(name: "nfpm")] readonly Lazy<Tool> Nfpm;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
@@ -853,75 +853,128 @@ partial class Build
         .Requires(() => Version)
         .Executes(() =>
         {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
+            var tar = Tar.Value;
+            var nfpm = Nfpm.Value;
 
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
+
+            // debian does not have a specific field for the license, instead you pack the license file in a specific location
+            // (See https://github.com/goreleaser/nfpm/issues/847 for discussion)
+            var debLicesnse =
+                $"""
+                 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+                 Source: https://github.com/DataDog/dd-trace-dotnet
+                 Upstream-Name: {packageName}
+
+                 Files:
+                  *
+                 Copyright: 2017 Datadog, Inc <package@datadoghq.com>
+                 License: Apache-2.0
+                  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+                  use this file except in compliance with the License. You may obtain a copy of
+                  the License at
+                  .
+                     http://www.apache.org/licenses/LICENSE-2.0
+                  .
+                  Unless required by applicable law or agreed to in writing, software
+                  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+                  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+                  License for the specific language governing permissions and limitations under
+                  the License.
+                 Comment:
+                  On Debian-based systems the full text of the Apache version 2.0 license can be
+                  found in `/usr/share/common-licenses/Apache-2.0'.
+                 """;
+            var debLicensePath = TempDirectory / "deb-license";
+            File.WriteAllText(debLicensePath, debLicesnse);
+
             foreach (var packageType in LinuxPackageTypes)
             {
                 Logger.Information("Creating '{PackageType}' package", packageType);
                 var assetsDirectory = TemporaryDirectory / arch / packageType;
-                var includeMuslArtifacts = packageType == "tar" && !IsAlpine && !IsArm64;
+                var isTar = packageType == "tar";
                 var muslArch = GetUnixArchitectureAndExtension(isOsx: false, isAlpine: true).Arch;
 
-                // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
-                PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
-
-                var args = new List<string>()
+                if (isTar)
                 {
-                    "-f",
-                    "-s dir",
-                    $"-t {packageType}",
-                    $"-n {packageName}",
-                    $"-v {Version}",
-                    packageType == "tar" ? "" : "--prefix /opt/datadog",
-                    $"--chdir {assetsDirectory}",
-                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
-                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
-                    "--license \"Apache License 2.0\"",
-                    "--description \"Datadog APM client library for .NET\"",
-                    "--url \"https://github.com/DataDog/dd-trace-dotnet\"",
-                    "--vendor \"Datadog <package@datadoghq.com>\"",
-                    "--maintainer \"Datadog Packages <package@datadoghq.com>\"",
-                    "createLogPath.sh",
-                    "dd-dotnet.sh",
-                    "netstandard2.0/",
-                    "netcoreapp3.1/",
-                    "net6.0/",
-                    "Datadog.Trace.ClrProfiler.Native.so",
-                    "libddwaf.so",
-                    "continuousprofiler/",
-                    "loader.conf",
-                    $"{arch}/",
-                };
+                    var includeMuslArtifacts = !IsAlpine;
 
-                // on x64, we also include the musl assets in the glibc package  
-                if (includeMuslArtifacts)
-                {
-                    args.Add("linux-musl-x64/");
+                    // On x64, for tar only, we package the linux-musl-x64 target as well, to simplify onboarding
+                    PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts);
+
+                    // technically we don't need these scripts, but we've been including them in the tar, so keep doing that
+                    var scriptsDir = assetsDirectory / ".scripts";
+                    EnsureExistingDirectory(scriptsDir);
+                    CopyFile(BuildDirectory / "artifacts" / FileNames.AfterInstallScript, scriptsDir / "after_install");
+                    CopyFile(BuildDirectory / "artifacts" / FileNames.AfterRemoveScript, scriptsDir / "after_remove");
+
+                    var tarOutputPath = (IsAlpine, RuntimeInformation.ProcessArchitecture) switch
+                    {
+                        (true, Architecture.X64) => workingDirectory / $"{packageName}-{Version}-musl.tar.gz",
+                        (true, var a) => workingDirectory / $"{packageName}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
+                        (false, Architecture.X64) => workingDirectory / $"{packageName}-{Version}.tar.gz",
+                        (false, var a) => workingDirectory / $"{packageName}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                    };
+
+                    tar($"-czvf {tarOutputPath} .", workingDirectory: assetsDirectory);
                 }
+                else
+                {
+                    PrepareMonitoringHomeLinuxForPackaging(assetsDirectory, arch, ext, muslArch, includeMuslArtifacts: false);
+                    var nFpmArch = RuntimeInformation.ProcessArchitecture switch
+                    {
+                        Architecture.X64 => "amd64",
+                        Architecture.Arm64 => "arm64",
+                        _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}")
+                    };
 
-                var arguments = string.Join(" ", args);
-                fpm(arguments, workingDirectory: workingDirectory);
+                    // language=yaml
+                    var yaml =
+                        $"""
+                         name: "{packageName}"
+                         arch: "{nFpmArch}"
+                         platform: "linux"
+                         version: "{Version}"
+                         maintainer: "Datadog Packages <package@datadoghq.com>"
+                         description: "Datadog APM client library for .NET"
+                         vendor: "Datadog <package@datadoghq.com>"
+                         homepage: "https://github.com/DataDog/dd-trace-dotnet"
+                         # We were previously using "Apache License 2.0" but that's not technically correct
+                         # As needs to be one of the standard fedora licences here: https://docs.fedoraproject.org/en-US/legal/allowed-licenses/
+                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html 
+                         license: "Apache-2.0"
+                         priority: extra
+                         section: default
+                         scripts:
+                           postinstall: {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}
+                           postremove: {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}
+                         rpm:
+                             # The package group. This option is deprecated by most distros
+                             # but we added it with fpm, so keeping it here for consistency
+                             group: default  
+                             prefixes: 
+                             - /opt/datadog
+                         contents:
+                         - src: {assetsDirectory}/
+                           dst: /opt/datadog
+                           type: tree
+                         - src: {debLicensePath}
+                           dst: /usr/share/doc/{packageName}/copyright
+                           packager: deb
+                           file_info:
+                             mode: 0644
+                         """;
+
+                    var npfmConfig = TempDirectory / "nfpm.yaml";
+                    // overwrites if it exists
+                    File.WriteAllText(npfmConfig, yaml);
+                    nfpm($"package -f {npfmConfig} -p {packageType}", workingDirectory: workingDirectory);
+                }
             }
-
-            gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
-            var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                ? string.Empty
-                : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
-
-            var versionedName = IsAlpine
-                ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
-                : $"{packageName}-{Version}{suffix}.tar.gz";
-
-            RenameFile(
-                workingDirectory / $"{packageName}.tar.gz",
-                workingDirectory / versionedName);
 
             return;
 
@@ -934,6 +987,9 @@ partial class Build
                 // (as those aren't installable on alpine)
                 EnsureCleanDirectory(assetsDirectory);
                 CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+
+                // remove the XML files and pdb files from the package - they take up space and aren't needed
+                assetsDirectory.GlobFiles("**/*.xml", "**/*.pdb").ForEach(DeleteFile);
 
                 if (!includeMuslArtifacts && !IsAlpine)
                 {
@@ -988,7 +1044,7 @@ partial class Build
                 }
 
                 // Need to copy in the loader.conf file into the musl arch folder
-                if(includeMuslArtifacts)
+                if (includeMuslArtifacts)
                 {
                     // The files are identical in the glibc and musl folders, as they point to
                     // relative files, so we can just hardlink them

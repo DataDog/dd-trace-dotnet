@@ -1,4 +1,4 @@
-﻿FROM gleocadie/alpine-clang16 as base
+﻿FROM andrewlockdd/alpine-clang:1.0 as base
 ARG DOTNETSDK_VERSION
 
 ENV \
@@ -42,9 +42,6 @@ RUN apk update \
         bash \
         make \
         alpine-sdk \
-        ruby \
-        ruby-dev \
-        ruby-etc \
         util-linux-dev \
         autoconf \
         libtool \
@@ -55,17 +52,18 @@ RUN apk update \
         cppcheck \
         build-base \
         libldap \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm
+        # Download and install nfpm
+    && apkArch="$(apk --print-arch)" \
+    && wget https://github.com/goreleaser/nfpm/releases/download/v2.39.0/nfpm_2.39.0_${apkArch}.apk \
+    && apk add --allow-untrusted nfpm_2.39.0_${apkArch}.apk \
+    && rm nfpm_2.39.0_${apkArch}.apk
 
 ENV IsAlpine=true \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
+COPY ./bootstrap/dotnet-install.sh .
+RUN ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
     && dotnet help
@@ -81,16 +79,18 @@ WORKDIR /project
 
 FROM base as tester
 
-# Install .NET Core runtimes using install script
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path \
+# Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
+COPY ./bootstrap/dotnet-install.sh .
+RUN if [ "$(uname -m)" != "aarch64" ]; then \
+        ./dotnet-install.sh --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path; \
+    fi \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
+
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
