@@ -484,6 +484,10 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
+        x64-r2r:
+          baseImage: centos7
+          artifactSuffix: linux-x64-r2r
+          useNativeSdkVersion: true
     pool:
       name: azure-linux-scale-set-2
 
