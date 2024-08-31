@@ -187,8 +187,8 @@ namespace Honeypot
 
                 if (latestSupportedPackage is null)
                 {
-                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumSupportedAssemblyVersion}." +
-                                $"Using latest instead");
+                    Logger.Warning($"No version of {packageName} below maximum package version {MaximumSupportedAssemblyVersion}. " +
+                                $"Using {latestVersion} instead");
                 }
 
                 var latestSupportedVersion = latestSupportedPackage is null
@@ -201,8 +201,8 @@ namespace Honeypot
                     .LastOrDefault(x => x.Identity.Version.Version >= MinimumSupportedAssemblyVersion);
                 if (firstSupportedPackage is null)
                 {
-                    Logger.Warning($"No version of {packageName} above minimum package version {MinimumSupportedAssemblyVersion}." +
-                                   $"Using first instead");
+                    Logger.Warning($"No version of {packageName} above minimum package version {MinimumSupportedAssemblyVersion}. " +
+                                   $"Using {firstVersion} instead");
                 }
 
                 var firstSupportedVersion = firstSupportedPackage is null
@@ -216,14 +216,25 @@ namespace Honeypot
                 var firstTestedVersion = allTestedVersions.MinBy(x => x.MinVersion)?.MinVersion;
                 var latestTestedVersion = allTestedVersions.MaxBy(x => x.MaxVersion)?.MaxVersion;
 
-                Packages.Add(new IntegrationPackage(
+                var integrationPackage = new IntegrationPackage(
                                  NugetName: latestPackage.Identity.Id,
                                  LatestVersion: latestVersion,
                                  LatestSupportedVersion: latestSupportedVersion,
                                  LatestTestedVersion: latestTestedVersion,
                                  FirstVersion: firstVersion,
                                  FirstSupportedVersion: firstSupportedVersion,
-                                 FirstTestedVersion: firstTestedVersion));
+                                 FirstTestedVersion: firstTestedVersion);
+
+                if (latestTestedVersion is not null && latestVersion > latestTestedVersion)
+                {
+                    // Happens in instances where `PackageVersionsGeneratorDefinitions.json` has a MaxVersionExclusive set
+                    // that is not the _next_ major version of the package
+                    // This will be mainly integrations that we don't test in CI
+                    Logger.Warning($"{latestPackage.Identity.Id} integration may be out of support. " +
+                        $"The latest version ({integrationPackage.LatestVersion}) is greater than last version tested ({integrationPackage.LatestTestedVersion})");
+                }
+
+                Packages.Add(integrationPackage);
             }
         }
     }
