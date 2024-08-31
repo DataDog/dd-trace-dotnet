@@ -917,11 +917,7 @@ partial class Build
                  """;
             var debLicensePath = TempDirectory / "deb-license";
             File.WriteAllText(debLicensePath, debLicesnse);
-
-            if (PublishReadyToRun)
-            {
-                arch = $"{arch}-r2r";
-            }
+            
             foreach (var packageType in LinuxPackageTypes)
             {
                 Logger.Information("Creating '{PackageType}' package", packageType);
