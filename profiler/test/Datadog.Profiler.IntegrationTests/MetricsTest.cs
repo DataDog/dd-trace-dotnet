@@ -49,21 +49,6 @@ namespace Datadog.Profiler.IntegrationTests
             ValidateMetrics(runner.Environment.PprofDir);
         }
 
-        private static List<Tuple<string, double>> GetMetrics(string metricsFile)
-        {
-            var metrics = new List<Tuple<string, double>>();
-            var jsonContent = System.IO.File.ReadAllText(metricsFile);
-
-            var doc = JsonDocument.Parse(jsonContent);
-            _ = doc.RootElement.EnumerateArray().All(element =>
-            {
-                var kvp = element.EnumerateArray().ToArray();
-                metrics.Add(new Tuple<string, double>(kvp[0].ToString(), kvp[1].GetDouble()));
-                return true;
-            });
-            return metrics;
-        }
-
         private static void ValidateMetrics(string directory)
         {
             var metricsFiles = Directory.GetFiles(directory, "metrics_*.json");
@@ -99,6 +84,21 @@ namespace Datadog.Profiler.IntegrationTests
                 Assert.True(threadCountLow <= threadCount);
                 Assert.True(threadCount <= threadCountHigh);
             }
+        }
+
+        private static List<Tuple<string, double>> GetMetrics(string metricsFile)
+        {
+            List<Tuple<string, double>> metrics = new List<Tuple<string, double>>();
+            var jsonContent = System.IO.File.ReadAllText(metricsFile);
+
+            JsonDocument doc = JsonDocument.Parse(jsonContent);
+            doc.RootElement.EnumerateArray().All(element =>
+            {
+                var kvp = element.EnumerateArray().ToArray();
+                metrics.Add(new Tuple<string, double>(kvp[0].ToString(), kvp[1].GetDouble()));
+                return true;
+            });
+            return metrics;
         }
 
         private static bool GetMetrics(HttpListenerRequest request)
