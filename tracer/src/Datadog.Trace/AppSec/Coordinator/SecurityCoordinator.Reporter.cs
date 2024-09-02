@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
+using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -130,6 +131,8 @@ internal readonly partial struct SecurityCoordinator
             {
                 traceContext.AddWafSecurityEvents(result.Data);
             }
+
+            AttackerFingerprintHelper.AddSpanTags(_localRootSpan);
 
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
