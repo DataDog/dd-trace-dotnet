@@ -1,4 +1,4 @@
-// <copyright file="ExceptionDebuggingSettings.cs" company="Datadog">
+// <copyright file="ExceptionReplaySettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,23 +15,25 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
-    internal class ExceptionDebuggingSettings
+    internal class ExceptionReplaySettings
     {
         public const int DefaultMaxFramesToCapture = 4;
         public const int DefaultRateLimitSeconds = 60 * 60; // 1 hour
         public const int DefaultMaxExceptionAnalysisLimit = 100;
 
-        public ExceptionDebuggingSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        public ExceptionReplaySettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
 
-            Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled).AsBool(false);
+#pragma warning disable CS0612 // Type or member is obsolete
+            Enabled = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingEnabled, ConfigurationKeys.Debugger.ExceptionReplayEnabled).AsBool(false);
+#pragma warning restore CS0612 // Type or member is obsolete
 
-            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingCaptureFullCallStackEnabled).AsBool(false);
+            CaptureFullCallStack = config.WithKeys(ConfigurationKeys.Debugger.ExceptionReplayCaptureFullCallStackEnabled).AsBool(false);
 
             var maximumFramesToCapture = config
-                                        .WithKeys(ConfigurationKeys.Debugger.ExceptionDebuggingMaxFramesToCapture)
+                                        .WithKeys(ConfigurationKeys.Debugger.ExceptionReplayMaxFramesToCapture)
                                         .AsInt32(DefaultMaxFramesToCapture, maxDepth => maxDepth > 0)
                                         .Value;
 
@@ -60,12 +62,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public int MaxExceptionAnalysisLimit { get; }
 
-        public static ExceptionDebuggingSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        public static ExceptionReplaySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
-            return new ExceptionDebuggingSettings(source, telemetry);
+            return new ExceptionReplaySettings(source, telemetry);
         }
 
-        public static ExceptionDebuggingSettings FromDefaultSource()
+        public static ExceptionReplaySettings FromDefaultSource()
         {
             return FromSource(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
         }
