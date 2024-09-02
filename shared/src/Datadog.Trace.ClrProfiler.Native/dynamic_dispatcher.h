@@ -18,6 +18,9 @@ namespace datadog::shared::nativeloader
     //
     class IDynamicDispatcher
     {
+    protected:
+        virtual void LoadConfiguration(fs::path&& configFilePath) = 0;
+
     public:
         virtual ~IDynamicDispatcher() = default;
         virtual HRESULT Initialize() = 0;
@@ -36,6 +39,7 @@ namespace datadog::shared::nativeloader
         std::unique_ptr<IDynamicInstance> m_continuousProfilerInstance;
         std::unique_ptr<IDynamicInstance> m_tracerInstance;
         std::unique_ptr<IDynamicInstance> m_customInstance;
+        void LoadConfiguration(fs::path&& configFilePath) override;
 
     public:
         DynamicDispatcherImpl();
@@ -46,7 +50,6 @@ namespace datadog::shared::nativeloader
         IDynamicInstance* GetCustomInstance() override;
 
     private:
-        void LoadConfiguration(fs::path&& configFilePath);
         HRESULT LoadClassFactory(REFIID riid);
         HRESULT LoadInstance();
 
