@@ -81,6 +81,7 @@ public:
     inline bool IsThreadDestroyed();
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
+    inline uint64_t SetBlockingThread(uint64_t osThreadId);
 
     inline TraceContextTrackingInfo* GetTraceContextPointer();
     inline std::uint64_t GetLocalRootSpanId() const;
@@ -151,6 +152,7 @@ private:
 #ifdef LINUX
     std::int32_t _timerId;
 #endif
+    uint64_t _blockingThreadId;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -402,6 +404,11 @@ inline void ManagedThreadInfo::SetThreadDestroyed()
 {
     SemaphoreScope guardedLock(_stackWalkLock);
     _isThreadDestroyed = true;
+}
+
+inline uint64_t ManagedThreadInfo::SetBlockingThread(uint64_t osThreadId)
+{
+    return std::exchange(_blockingThreadId, osThreadId);
 }
 
 inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()

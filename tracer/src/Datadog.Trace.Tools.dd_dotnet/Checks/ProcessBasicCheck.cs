@@ -448,7 +448,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
             else if (osArchitecture == Architecture.Arm64)
             {
-                archFolder = "linux-arm64";
+                archFolder = Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
             }
             else
             {
@@ -636,6 +636,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
                 "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
                 "\\datadog\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"

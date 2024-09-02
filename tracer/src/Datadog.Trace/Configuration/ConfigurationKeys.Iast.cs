@@ -103,6 +103,12 @@ namespace Datadog.Trace.Configuration
             /// Default value is 1
             /// </summary>
             public const string DataBaseRowsToTaint = "DD_IAST_DB_ROWS_TO_TAINT";
+
+            /// <summary>
+            /// Configuration key for number of rows to taint on each Db query in IAST.
+            /// Default value is 1
+            /// </summary>
+            public const string CookieFilterRegex = "DD_IAST_COOKIE_FILTER_PATTERN";
         }
     }
 }
