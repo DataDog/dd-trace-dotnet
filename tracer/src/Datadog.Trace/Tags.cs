@@ -614,7 +614,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Indicates the http network fingerprint
         /// </summary>
-        internal const string AppSecHttpNetwork = "_dd.appsec.fp.http.network";
+        internal const string AppSecFpHttpNetwork = "_dd.appsec.fp.http.network";
 
         /// <summary>
         /// Indicates the session fingerprint

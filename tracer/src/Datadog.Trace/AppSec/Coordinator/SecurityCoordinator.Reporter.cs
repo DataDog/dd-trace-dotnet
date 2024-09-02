@@ -157,9 +157,9 @@ internal readonly partial struct SecurityCoordinator
 
         AddRaspSpanMetrics(result, _localRootSpan);
 
-        if (result.ShouldReportSchema)
+        if (result.ExtractSchemaDerivatives?.Count > 0)
         {
-            foreach (var derivative in result.Derivatives)
+            foreach (var derivative in result.ExtractSchemaDerivatives)
             {
                 var serializeObject = JsonConvert.SerializeObject(derivative.Value);
                 var bytes = System.Text.Encoding.UTF8.GetBytes(serializeObject);
