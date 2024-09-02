@@ -11,6 +11,14 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Profiler.IntegrationTests
 {
+    // used for both register and unregister commands
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct RegistrationCommand
+    {
+        public IpcHeader Header;
+        public UInt64 Pid;
+    }
+
     // Common part of each record | size = 17 + 80 + 2 = 99
     // The size of the CLR event payload byte[] is given by EtwUserDataLength
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -26,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests
         }
     }
 
+    // TODO: check that it is possible to use .NET 8 InlineArray in integration tests
     [System.Runtime.CompilerServices.InlineArray(14)]
     public struct MagicVersion
     {
@@ -35,6 +44,9 @@ namespace Datadog.Profiler.IntegrationTests
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct IpcHeader
     {
+        public static UInt16 HeaderSize = 17;
+        public static string MagicValue = "DD_ETW_IPC_V1";
+
         public MagicVersion Magic;  // should be "DD_ETW_IPC_V1" in ASCII
         public UInt16 Size;
         public byte CommandIdOrResponseCode;
@@ -98,6 +110,26 @@ namespace Datadog.Profiler.IntegrationTests
         public UInt16 Task;
         public UInt64 Keyword;
     }
+
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable CA2211 // Non-constant fields should not be visible
+#pragma warning disable SA1402 // File may only contain a single type
+    public static class AgentCommands
+    {
+        public static byte Register = 1;
+        public static byte Unregister = 2;
+        public static byte ClrEvent = 16;
+        public static byte KeepAlive = 17;
+    }
+
+    public static class ResponseCodes
+    {
+        public static byte Success = 0;
+        public static byte Failure = 0xFF;
+    }
+#pragma warning restore SA1402 // File may only contain a single type
+#pragma warning restore CA2211 // Non-constant fields should not be visible
+#pragma warning restore SA1401 // Fields should be private
 
     public class RecordReader
     {

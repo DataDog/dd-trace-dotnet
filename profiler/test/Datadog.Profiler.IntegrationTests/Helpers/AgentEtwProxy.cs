@@ -4,13 +4,16 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Profiler.IntegrationTests
 {
-    public class AgentEtwProxy
+    public class AgentEtwProxy : IRecordDumper
     {
         // endpoint serviced by the profiler based on its PID
         private const string ProfilerNamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
@@ -19,7 +22,9 @@ namespace Datadog.Profiler.IntegrationTests
         private string _eventsFilename;
         private bool _profilerHasRegistered;
         private bool _profilerHasUnregistered;
+        private bool _eventHaveBeenSent;
         private int _pid;
+        private NamedPipeClientStream _pipeClient;
 
         public AgentEtwProxy(string agentEndPoint, string eventsFilename)
         {
@@ -27,18 +32,40 @@ namespace Datadog.Profiler.IntegrationTests
             _eventsFilename = eventsFilename;
             _profilerHasRegistered = false;
             _profilerHasUnregistered = false;
+            _eventHaveBeenSent = false;
+            _pipeClient = null;
 
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
             StartServerAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         public bool ProfilerHasRegistered { get => _profilerHasRegistered; }
 
         public bool ProfilerHasUnregistered { get => _profilerHasUnregistered; }
 
+        public bool EventHaveBeenSent { get => _eventHaveBeenSent; }
+
+        public void DumpRecord(byte[] record, int recordSize)
+        {
+            if (_pipeClient == null)
+            {
+                throw new ArgumentNullException("_pipeClient");
+            }
+
+            // Send the byte[] buffer to the server
+            _pipeClient.Write(record, 0, recordSize);
+            _pipeClient.Flush();
+
+            // NOTE: this is a fire and forget call: no answer is expected from the profiler
+            Thread.Sleep(100);
+        }
+
         private async Task StartServerAsync()
         {
             try
             {
+                // simulate the Agent that accepts register/unregister commands from the profiler
                 using (var server = new NamedPipeServerStream(_agentEndPoint, PipeDirection.InOut))
                 {
                     Console.WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
@@ -48,23 +75,24 @@ namespace Datadog.Profiler.IntegrationTests
                     byte[] inBuffer = new byte[256];
                     int bytesRead;
                     byte[] outBuffer = new byte[256];
-                    int bytesWritten;
 
                     while ((bytesRead = await server.ReadAsync(inBuffer, 0, inBuffer.Length)) > 0)
                     {
                         bool success = await ProcessCommand(inBuffer);
 
-                        // TODO: build the response based on success/failure
-                        if (success)
+                        // build the response based on success/failure
+                        IpcHeader header = new IpcHeader
                         {
-                            outBuffer = Encoding.UTF8.GetBytes("Success");
-                        }
-                        else
-                        {
-                            outBuffer = Encoding.UTF8.GetBytes("Failure");
-                        }
+                            Size = IpcHeader.HeaderSize,
+                            CommandIdOrResponseCode = success ? ResponseCodes.Success : ResponseCodes.Failure,
+                        };
+                        Encoding.ASCII.GetBytes(
+                            IpcHeader.MagicValue,
+                            MemoryMarshal.CreateSpan<byte>(ref header.Magic._element, 14));
+                        MemoryMarshal.Write<IpcHeader>(outBuffer, in header);
 
-                        await server.WriteAsync(outBuffer, 0, outBuffer.Length);
+                        await server.WriteAsync(outBuffer, 0, IpcHeader.HeaderSize);
+                        await server.FlushAsync();
                     }
                 }
             }
@@ -76,14 +104,31 @@ namespace Datadog.Profiler.IntegrationTests
 
         private async Task<bool> ProcessCommand(byte[] receivedData)
         {
+            RegistrationCommand command = MemoryMarshal.Read<RegistrationCommand>(receivedData);
+
+            // TODO: check header with magic number
+
             // handle register and unregister commands
-            if (!_profilerHasRegistered)
+            if (command.Header.CommandIdOrResponseCode == AgentCommands.Register)
             {
-                _profilerHasRegistered = true;
-                await StartClientAsync();
+                _pid = (int)command.Pid;
+                _profilerHasRegistered = (_pid != 0);
+
+                if (_profilerHasRegistered)
+                {
+                    await StartClientAsync();
+                }
+
+                return _profilerHasRegistered;
+            }
+            else if (command.Header.CommandIdOrResponseCode == AgentCommands.Unregister)
+            {
+                _profilerHasUnregistered = (_pid != (int)command.Pid);
+
+                return _profilerHasUnregistered;
             }
 
-            return true;
+            return (command.Header.CommandIdOrResponseCode == AgentCommands.KeepAlive);
         }
 
         private async Task StartClientAsync()
@@ -97,10 +142,22 @@ namespace Datadog.Profiler.IntegrationTests
                     await pipeClient.ConnectAsync();
 
                     // read the events file and send each event to the profiler
+                    if (_eventsFilename != null)
+                    {
+                        using (FileStream fs = new FileStream(_eventsFilename, FileMode.Open, FileAccess.Read))
+                        using (BinaryReader reader = new BinaryReader(fs))
+                        {
+                            var recordReader = new RecordReader(reader, this, null);
+                            int count = 0;
 
-                    // Send the byte[] buffer to the server
-                    // await pipeClient.WriteAsync(buffer, 0, buffer.Length);
-                    // await pipeClient.FlushAsync();
+                            // each records will be processed by the DumpRecord method
+                            while (fs.Position < fs.Length)
+                            {
+                                count++;
+                                recordReader.ReadRecord();
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
