@@ -123,6 +123,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 Log.Error(ex, "Error propagating span data for DBM");
             }
 
+            // we have to start the span before doing the DBM propagation work (to have the span ID)
+            // but ultimately, we don't want to measure the time spent instrumenting.
+            scope.Span.ResetStartTime();
+
             return scope;
 
             static bool HasDbType(Span span, string dbType)
