@@ -45,8 +45,8 @@ For the full list of changes, including exactly what changed and how you should 
 In addition to the changes described above, this release includes the following features:
 
 * [Tracer] Skip inserting the startup hook into methods in the type `Costura.AssemblyLoader` (#5910)
-* [Tracer] Fix bug in ADO.NET connection string extraction #5949
-* [Exception Replay] Update configuration values #5959
+* [Tracer] Fix bug in ADO.NET connection string extraction (#5949)
+* [Exception Replay] Update configuration values (#5821)
 * [IAST] Taint values coming from database (#5804)
 * [IAST] Allow customized cookie filtering (#5804)
 * [ASM] RASP shell injection vulnerability (#5871)
@@ -114,7 +114,8 @@ In addition to the changes described above, this release includes the following 
 * Prevent the native loader from being unloaded while sending telemetry (#5944)
 * [Crashtracking] Keep mangled name in case of error (#5952)
 
-[Changes since 2.58.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.58.0...v3.2.0)
+[Changes since 2.58.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.58.0...v3.2.0)
+
 
 ## [Release 3.1.0-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.1.0-prerelease)
 
@@ -219,7 +220,8 @@ For the full list of changes, including exactly what changed and how you should 
 * Exclude an SSIS service from auto-tracing (#5813)
 * [CrashTracking] Ensure crashtracking does not prevent coredump collection (#5852)
 
-[Changes since 2.56.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.56.0...v3.1.0-prerelease)
+[Changes since 2.56.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.56.0...v3.1.0-prerelease)
+
 
 ## [Release 2.56.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.56.0)
 
@@ -251,7 +253,8 @@ For the full list of changes, including exactly what changed and how you should 
 * Package musl assets in linux glibc tar folder (#5801)
 
 
-[Changes since 2.55.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.55.0...v2.56.0)
+[Changes since 2.55.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.55.0...v2.56.0)
+
 
 ## [Release 2.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.55.0)
 
