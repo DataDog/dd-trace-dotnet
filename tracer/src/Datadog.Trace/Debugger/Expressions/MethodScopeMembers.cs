@@ -23,6 +23,7 @@ internal class MethodScopeMembers
         }
 
         Members = ArrayPool<ScopeMember>.Shared.Rent(_initialSize);
+        Array.Clear(Members, 0, Members.Length);
         Exception = null;
         Return = default;
         InvocationTarget = default;
@@ -55,7 +56,7 @@ internal class MethodScopeMembers
     {
         if (Members != null)
         {
-            ArrayPool<ScopeMember>.Shared.Return(Members, false);
+            ArrayPool<ScopeMember>.Shared.Return(Members);
         }
     }
 }

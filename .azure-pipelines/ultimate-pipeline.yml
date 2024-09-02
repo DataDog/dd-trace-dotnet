@@ -2960,7 +2960,7 @@ stages:
 
         - template: steps/restore-working-directory.yml
           parameters:
-            artifact: build-linux-arm64-working-directory
+            artifact: build-$(artifactSuffix)-working-directory
 
         - template: steps/run-in-docker.yml
           parameters:
@@ -2970,9 +2970,9 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download arm64 monitoring home
+          displayName: Download $(artifactSuffix) monitoring home
           inputs:
-            artifact: linux-monitoring-home-linux-arm64
+            artifact: linux-monitoring-home-$(artifactSuffix)
             path: $(monitoringHome)
 
         - script: |

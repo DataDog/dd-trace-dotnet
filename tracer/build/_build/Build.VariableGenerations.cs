@@ -1277,13 +1277,17 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsDebuggerArm64Matrices()
             {
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1,  });
-                var baseImages = new[] { "debian", "alpine" };
+                var baseImages = new []
+                {
+                    (baseImage: "debian", artifactSuffix: "linux-arm64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-arm64"),
+                };
                 var optimizations = new[] { "true", "false" };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
-                    foreach (var baseImage in baseImages)
+                    foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
                         foreach (var optimize in optimizations)
                         {
@@ -1293,6 +1297,7 @@ partial class Build : NukeBuild
                                            publishTargetFramework = framework,
                                            baseImage = baseImage,
                                            optimize = optimize,
+                                           artifactSuffix = artifactSuffix,
                                        });
                         }
                     }
