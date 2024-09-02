@@ -1,5 +1,44 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+
+## [Release 2.58.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.58.0)
+
+## Summary
+
+- [Tracer] Skip inserting the startup hook into methods in the type `Costura.AssemblyLoader` (#5934)
+- [Tracer] Fix bug in ADO.NET connection string extraction (#5960)
+- [Exception Replay] Update configuration values (#5970)
+
+## Changes
+
+### Tracer
+* [Tracer] Skip inserting the startup hook into methods in the type `Costura.AssemblyLoader` (#5910 -> v2) (#5934)
+* Protect the connection string tags extractor from an invalid connection string (#5956 -> v2) (#5960)
+
+### Debugger
+* [Exception Replay] Update configuration and add test suite for ASP.NET Core (#5821 -> v2) (#5970)
+
+### Fixes
+* Fix musl tags for dd-lib-dotnet-init image (#5899)
+
+### Build / Test
+* Fix branch selection in version bump PR (#5895)
+* Fix bug in verification stage of release (#5894 -> v2) (#5901)
+* Skip the mass transit test to see if it solves flake issues (#5861 -> v2) (#5911)
+* Fix v2 branch building (#5969)
+
+### Miscellaneous
+* [IAST] Support for specifying aspect min version (#5931) [-> V2] (#5932)
+* Normalize the environment variable names used by crashtracking (#5898 -> v2) (#5936)
+* [IAST] Move analyzers init to an explicit call (#5920 -> v2) (#5937)
+* Fix signature size check in ModifyLocalSig (#5921 -> v2) (#5938)
+* Use a native logger for critical failures in the loader (#5929 -> v2) (#5939)
+* Fix ToString and ToWString on large strings (#5930 -> v2) (#5940)
+* Prevent the native loader from being unloaded while sending telemetry (#5944 => V2) (#5957)
+
+
+[Changes since 2.57.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.57.0...v2.58.0)
+
 ## [Release 2.57.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.57.0)
 
 ## Summary
