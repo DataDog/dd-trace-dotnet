@@ -288,6 +288,56 @@
         "stack_trace",
         "block"
       ]
+    },
+    {
+      "id": "rasp-932-400",
+      "name": "New exploit",
+      "enabled": true,
+      "tags": {
+        "type": "new_injection",
+        "category": "vulnerability_trigger",
+        "cwe": "77",
+        "capec": "1000/152/248/88",
+        "confidence": "0",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.sys.shell.cmd"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
+          },
+          "operator": "new_detector"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "stack_trace"
+      ]
     }
   ]
 }
