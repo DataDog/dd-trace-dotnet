@@ -9,6 +9,10 @@ on:
 jobs:
   deploy_aas_test_apps:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read secrets
+      issues: read # Read milestones milestones
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
