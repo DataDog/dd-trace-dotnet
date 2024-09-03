@@ -33,13 +33,17 @@ internal static class ReturnedHeadersAnalyzer
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
     // int account that can be case insensitive. Exclude vulnerability when return code is one of the ignorable.
 #if NETFRAMEWORK
-    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string? protocol)
 #else
-    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string protocol)
+    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode, string? protocol)
 #endif
     {
         AnalyzeXContentTypeOptionsVulnerability(responseHeaders, integrationId, serviceName, responseCode);
-        AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
+        if (protocol is not null)
+        {
+            AnalyzeStrictTransportSecurity(responseHeaders, integrationId, serviceName, responseCode, protocol);
+        }
+
         AnalyzeUnvalidatedRedirect(responseHeaders, integrationId);
         AnalyzeHeaderInjectionVulnerability(responseHeaders, integrationId);
     }
