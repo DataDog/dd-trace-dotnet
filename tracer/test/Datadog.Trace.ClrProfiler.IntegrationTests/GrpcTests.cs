@@ -185,6 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public abstract class GrpcTestsBase : TracingIntegrationTest
     {
         private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
+        private static readonly Version MinimumSupportedVersion = new("2.27.0");
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
             "clientmeta",
@@ -227,6 +228,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetData()
             => from packageVersionArray in PackageVersions.Grpc
+               where IsSupportedVersion((string)packageVersionArray[0])
                from httpClientType in Enum.GetValues(typeof(HttpClientIntegrationType)).Cast<HttpClientIntegrationType>()
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], httpClientType, metadataSchemaVersion };
@@ -238,6 +240,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SpanKinds.Server => span.IsGrpcServer(metadataSchemaVersion, ExcludeTags),
                 _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the gRPC integration: {span.Tags["span.kind"]}", nameof(span)),
             };
+
+        protected static bool IsSupportedVersion(string packageVersion)
+        {
+            return string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= MinimumSupportedVersion;
+        }
 
         protected async Task RunSubmitTraces(
             string packageVersion,
@@ -485,11 +492,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 throw new SkipException($"GRPC.Tools does not support ARM64 on version < 2.38.1, (corresponds to Grpc v2.38.1 and Grpc.AspNetCore v2.39.0)");
             }
-        }
-
-        protected bool IsSupportedVersion(string packageVersion)
-        {
-            return string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("2.27.0");
         }
     }
 }
