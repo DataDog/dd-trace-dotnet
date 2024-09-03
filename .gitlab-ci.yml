@@ -144,6 +144,7 @@ aws-lambda-layer:
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_REF: $CI_MERGE_REQUEST_REF_PATH
   allow_failure: true
 
 benchmark-serverless:
