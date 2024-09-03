@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -40,6 +41,15 @@ namespace Datadog.Profiler.IntegrationTests
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
+        // ---------------------------------PID
+        public event EventHandler<EventArgs<int>> ProfilerRegistered;
+
+        // ---------------------------------number of events sent
+        public event EventHandler<EventArgs<int>> EventsSent;
+
+        // ---------------------------------PID
+        public event EventHandler<EventArgs<int>> ProfilerUnregistered;
+
         public bool ProfilerHasRegistered { get => _profilerHasRegistered; }
 
         public bool ProfilerHasUnregistered { get => _profilerHasUnregistered; }
@@ -61,12 +71,27 @@ namespace Datadog.Profiler.IntegrationTests
             Thread.Sleep(100);
         }
 
+        private void OnProfilerRegistered(int pid)
+        {
+            ProfilerRegistered?.Invoke(this, new EventArgs<int>(pid));
+        }
+
+        private void OnEventsSent(int count)
+        {
+            EventsSent?.Invoke(this, new EventArgs<int>(count));
+        }
+
+        private void OnProfilerUnregistered(int pid)
+        {
+            ProfilerUnregistered?.Invoke(this, new EventArgs<int>(pid));
+        }
+
         private async Task StartServerAsync()
         {
             try
             {
                 // simulate the Agent that accepts register/unregister commands from the profiler
-                using (var server = new NamedPipeServerStream(_agentEndPoint, PipeDirection.InOut))
+                using (var server = new NamedPipeServerStream(_agentEndPoint, PipeDirection.InOut, 2, PipeTransmissionMode.Byte))
                 {
                     Console.WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
                     await server.WaitForConnectionAsync();
@@ -112,6 +137,7 @@ namespace Datadog.Profiler.IntegrationTests
             if (command.Header.CommandIdOrResponseCode == AgentCommands.Register)
             {
                 _pid = (int)command.Pid;
+                OnProfilerRegistered(_pid);
                 _profilerHasRegistered = (_pid != 0);
 
                 if (_profilerHasRegistered)
@@ -123,6 +149,7 @@ namespace Datadog.Profiler.IntegrationTests
             }
             else if (command.Header.CommandIdOrResponseCode == AgentCommands.Unregister)
             {
+                OnProfilerRegistered((int)command.Pid);
                 _profilerHasUnregistered = (_pid != (int)command.Pid);
 
                 return _profilerHasUnregistered;
@@ -156,6 +183,9 @@ namespace Datadog.Profiler.IntegrationTests
                                 count++;
                                 recordReader.ReadRecord();
                             }
+
+                            _eventHaveBeenSent = true;
+                            OnEventsSent(count);
                         }
                     }
                 }
