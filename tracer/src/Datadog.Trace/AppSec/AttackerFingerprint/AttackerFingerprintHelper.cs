@@ -27,7 +27,7 @@ internal static class AttackerFingerprintHelper
             return;
         }
 
-        var result = securityCoordinator.RunWaf(_fingerprintRequest, runWithEphemeral: true);
+        var result = securityCoordinator.RunWaf(_fingerprintRequest);
         AddSpanTags(result?.FingerprintDerivatives, span);
     }
 

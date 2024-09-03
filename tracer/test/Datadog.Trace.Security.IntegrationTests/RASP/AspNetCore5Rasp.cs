@@ -12,12 +12,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
-using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -98,6 +96,14 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     {
         await Fixture.TryStartApp(this, true);
         SetHttpPort(Fixture.HttpPort);
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Forwarded-For", "1.2.3.4" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+            { "user-agent", "arachnic/v1" }
+        });
     }
 
     [SkippableTheory]
