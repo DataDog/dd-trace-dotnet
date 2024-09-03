@@ -87,7 +87,7 @@ internal readonly partial struct SecurityCoordinator
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
-            if (security.WafInitResult.HasErrors)
+            if (security.WafInitResult.HasErrors && !Security.HasOnlyUnknownMatcherErrors(security.WafInitResult.Errors))
             {
                 span.SetTag(Tags.AppSecWafInitRuleErrors, security.WafInitResult.ErrorMessage);
             }
