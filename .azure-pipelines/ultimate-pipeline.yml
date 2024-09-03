@@ -359,19 +359,11 @@ stages:
           managedBaseImage: debian
           useNativeSdkVersion: true
           artifactSuffix: linux-x64
-          readyToRun: false
         alpine:
           nativeBaseImage: alpine
           managedBaseImage: alpine
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
-          readyToRun: false
-        x64-r2r:
-          nativeBaseImage: centos7
-          managedBaseImage: debian
-          useNativeSdkVersion: true
-          artifactSuffix: linux-x64-r2r
-          readyToRun: true
     pool:
       name: azure-linux-scale-set-2
 
@@ -403,7 +395,7 @@ stages:
       parameters:
         target: builder
         baseImage: $(managedBaseImage)
-        command: "BuildManagedTracerHome ExtractDebugInfoLinux --publish-ready-to-run $(readyToRun)"
+        command: "BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -421,6 +413,69 @@ stages:
     - publish: artifacts/build_data/tests
       displayName: publish tracer and native loader test results
       artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
+
+- stage: build_linux_tracer_r2r
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [build]
+
+    - job: build
+      timeoutInMinutes: 60 #default value
+      dependsOn: []
+      pool:
+        name: azure-linux-scale-set-2
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: debian
+            command: "Clean CompileManagedLoader"
+            retryCountForRunCommand: 1
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: centos7
+            useNativeSdkVersion: true
+            command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
+            retryCountForRunCommand: 1
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            target: builder
+            baseImage: debian
+            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
+            retryCountForRunCommand: 1
+
+        - publish: $(monitoringHome)
+          displayName: Uploading linux tracer home artifact
+          artifact: linux-tracer-home-linux-x64-r2r
+
+        - publish: $(System.DefaultWorkingDirectory)
+          displayName: Upload working directory after the build
+          artifact: build-linux-x64-r2r-working-directory
+
+        - publish: $(symbols)
+          displayName: Upload linux tracer symbols
+          artifact: linux-tracer-symbols-linux-x64-r2r
+
+        - publish: artifacts/build_data/tests
+          displayName: publish tracer and native loader test results
+          artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
 - stage: build_linux_universal
   dependsOn: [merge_commit_id]
@@ -484,10 +539,6 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
-        x64-r2r:
-          baseImage: centos7
-          artifactSuffix: linux-x64-r2r
-          useNativeSdkVersion: true
     pool:
       name: azure-linux-scale-set-2
 
@@ -538,15 +589,9 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          readyToRun: false
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          readyToRun: false
-        x64-r2r:
-          baseImage: debian
-          artifactSuffix: linux-x64-r2r
-          readyToRun: true
     pool:
       name: azure-linux-scale-set-2
 
@@ -560,21 +605,21 @@ stages:
     # but only the musl package if we're building alpine package
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary (linux-x64)
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
         artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary (linux-x64)
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-profiler-home-linux-x64
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download dd-dotnet (linux-x64)
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
         artifact: dd-dotnet-linux-x64
         path: $(monitoringHome)/linux-x64
@@ -605,24 +650,16 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download universal native binaries
-      condition: or(eq(variables['artifactSuffix'], 'linux-x64'), eq(variables['artifactSuffix'], 'linux-x64-r2r'))
       inputs:
         artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/linux-x64
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download universal native binaries
-      condition: eq(variables['artifactSuffix'], 'linux-musl-x64')
-      inputs:
-        artifact: linux-universal-home-linux-x64
-        path: $(monitoringHome)/linux-musl-x64
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome --publish-ready-to-run $(readyToRun)"
+        command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
@@ -861,7 +898,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome "
+        command: "ZipMonitoringHome"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-arm64

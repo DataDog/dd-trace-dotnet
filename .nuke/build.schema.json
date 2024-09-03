@@ -255,10 +255,6 @@
           "type": "string",
           "description": "Path to a solution file that is automatically loaded. Default is Datadog.Profiler.sln"
         },
-        "PublishReadyToRun": {
-          "type": "boolean",
-          "description": "Publish ReadyToRun assemblies in 'PublishManagedTracerR2R'. Default is 'true'.Requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run"
-        },
         "PullRequestNumber": {
           "type": "integer",
           "description": "The Pull Request number for GitHub Actions"
@@ -269,7 +265,7 @@
         },
         "RuntimeIdentifier": {
           "type": "string",
-          "description": "RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'.Required if 'PublishReadyToRun' is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
+          "description": "RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'.See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
         },
         "SampleName": {
           "type": "string",
@@ -304,6 +300,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -413,6 +410,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",
@@ -523,6 +521,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -632,6 +631,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",

@@ -100,13 +100,9 @@ partial class Build : NukeBuild
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
     
-    [Parameter("Publish ReadyToRun assemblies in 'PublishManagedTracerR2R'. Default is 'true'." +
-               "Requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run")]
-    readonly bool PublishReadyToRun = false;
-
     // using string instead of DotNetRuntimeIdentifier type because parameter values must match field names, e.g. "win-x64" vs "win_x64"
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
-               "Required if 'PublishReadyToRun' is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
+               "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     readonly string RuntimeIdentifier = GetDefaultRuntimeIdentifier();
 
     Target Info => _ => _
@@ -124,7 +120,6 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
-                            Logger.Information($"PublishReadyToRun: {PublishReadyToRun}");
                         });
 
     Target Clean => _ => _
@@ -188,6 +183,19 @@ partial class Build : NukeBuild
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
+        .DependsOn(DownloadLibDdwaf)
+        .DependsOn(CopyLibDdwaf)
+        .DependsOn(CreateMissingNullabilityFile)
+        .DependsOn(CreateRootDescriptorsFile);
+    
+    Target BuildManagedTracerHomeR2R => _ => _
+        .Unlisted()
+        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .After(Clean, BuildNativeTracerHome)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(Restore)
+        .DependsOn(CompileManagedSrc)
+        .DependsOn(PublishManagedTracerR2R)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
