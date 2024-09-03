@@ -102,6 +102,12 @@ generate-lib-init-pinned-tag-values:
   variables:
     ADDITIONAL_TAG_SUFFIXES: musl #add -musl to all generated image tags
 
+publish-lib-init-pinned-tags-musl:
+  extends: publish-lib-init-pinned-tags
+  variables:
+    IMG_SOURCES: $GHCR_BASE/$LIB_INJECTION_NAME:${CI_COMMIT_SHA}
+    IMG_DESTINATIONS: $IMG_DESTINATIONS_musl
+
 onboarding_tests_installer:
   parallel:
     matrix:
