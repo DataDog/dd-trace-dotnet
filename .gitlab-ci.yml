@@ -137,6 +137,7 @@ download-serverless-artifacts:
 
 aws-lambda-layer:
   stage: package
+  needs: [download-serverless-artifacts]
   trigger:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
     branch: jordan.gonzalez/add-gitlab-ci
