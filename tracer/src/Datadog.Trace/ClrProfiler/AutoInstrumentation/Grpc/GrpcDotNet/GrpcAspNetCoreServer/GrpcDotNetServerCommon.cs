@@ -108,6 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 }
             }
 
+            // ReSharper disable once StaticMemberInGenericType
             public static bool IsSupported { get; }
         }
     }
