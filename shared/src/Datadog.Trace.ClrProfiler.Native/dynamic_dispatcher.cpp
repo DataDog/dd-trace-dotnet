@@ -24,7 +24,7 @@ namespace datadog::shared::nativeloader
         m_tracerInstance(nullptr),
         m_customInstance(nullptr),
         m_initialized(false),
-        m_initializationResult(E_NOT_SET)
+        m_initializationResult(E_UNEXPECTED)
     {
     }
 
