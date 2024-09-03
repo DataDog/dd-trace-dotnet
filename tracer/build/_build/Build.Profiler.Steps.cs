@@ -626,7 +626,6 @@ partial class Build
                 .SetMaxCpuCount(null)
                 .SetTargets("Build")
                 .AddProperty("EnableASAN", "true")
-                .SetVerbosity(MSBuildVerbosity.Diagnostic)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
