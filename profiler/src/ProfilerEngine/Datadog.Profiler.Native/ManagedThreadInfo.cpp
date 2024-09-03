@@ -45,6 +45,7 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _isThreadDestroyed{false},
     _traceContextTrackingInfo{},
     _sharedMemoryArea{nullptr},
-    _info{pCorProfilerInfo}
+    _info{pCorProfilerInfo},
+    _blockingThreadId{0}
 {
 }

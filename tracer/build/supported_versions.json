@@ -201,8 +201,8 @@
         "minVersionAvailableInclusive": "2.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "8.0.7",
-        "maxVersionAvailableInclusive": "8.0.7",
+        "maxVersionSupportedInclusive": "8.0.8",
+        "maxVersionAvailableInclusive": "8.0.8",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -242,9 +242,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.400.2",
-        "maxVersionAvailableInclusive": "3.7.400.2",
-        "maxVersionTestedInclusive": "3.7.400.2"
+        "maxVersionSupportedInclusive": "3.7.400.13",
+        "maxVersionAvailableInclusive": "3.7.400.13",
+        "maxVersionTestedInclusive": "3.7.400.13"
       }
     ]
   },
@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.401",
-        "maxVersionAvailableInclusive": "3.7.401",
-        "maxVersionTestedInclusive": "3.7.401"
+        "maxVersionSupportedInclusive": "3.7.401.11",
+        "maxVersionAvailableInclusive": "3.7.401.11",
+        "maxVersionTestedInclusive": "3.7.401.11"
       }
     ]
   },
@@ -293,8 +293,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.400.2",
-        "maxVersionAvailableInclusive": "3.7.400.2",
+        "maxVersionSupportedInclusive": "3.7.400.13",
+        "maxVersionAvailableInclusive": "3.7.400.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -310,9 +310,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.400.2",
-        "maxVersionAvailableInclusive": "3.7.400.2",
-        "maxVersionTestedInclusive": "3.7.400.2"
+        "maxVersionSupportedInclusive": "3.7.400.13",
+        "maxVersionAvailableInclusive": "3.7.400.13",
+        "maxVersionTestedInclusive": "3.7.400.13"
       }
     ]
   },
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.400.2",
-        "maxVersionAvailableInclusive": "3.7.400.2",
-        "maxVersionTestedInclusive": "3.7.400.2"
+        "maxVersionSupportedInclusive": "3.7.400.13",
+        "maxVersionAvailableInclusive": "3.7.400.13",
+        "maxVersionTestedInclusive": "3.7.400.13"
       }
     ]
   },
@@ -499,9 +499,9 @@
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "2.3.0",
         "minVersionTestedInclusive": "4.1.0",
-        "maxVersionSupportedInclusive": "7.8.0",
-        "maxVersionAvailableInclusive": "7.8.0",
-        "maxVersionTestedInclusive": "7.8.0"
+        "maxVersionSupportedInclusive": "7.9.0",
+        "maxVersionAvailableInclusive": "8.0.2",
+        "maxVersionTestedInclusive": "7.9.0"
       }
     ]
   },
@@ -533,8 +533,8 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.27.3",
-        "maxVersionAvailableInclusive": "3.27.3",
+        "maxVersionSupportedInclusive": "3.28.0",
+        "maxVersionAvailableInclusive": "3.28.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -615,9 +615,9 @@
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "11.0.0",
         "minVersionTestedInclusive": "11.3.8",
-        "maxVersionSupportedInclusive": "13.9.9",
-        "maxVersionAvailableInclusive": "13.9.9",
-        "maxVersionTestedInclusive": "13.9.9"
+        "maxVersionSupportedInclusive": "13.9.11",
+        "maxVersionAvailableInclusive": "13.9.11",
+        "maxVersionTestedInclusive": "13.9.11"
       }
     ]
   },
@@ -649,8 +649,8 @@
         "minVersionAvailableInclusive": "4.0.0",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "8.0.1",
-        "maxVersionAvailableInclusive": "8.0.1",
+        "maxVersionSupportedInclusive": "8.0.2",
+        "maxVersionAvailableInclusive": "8.0.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -733,10 +733,10 @@
         "name": "Microsoft.Extensions.Telemetry",
         "minVersionAvailableInclusive": "8.0.0",
         "minVersionSupportedInclusive": "8.0.0",
-        "minVersionTestedInclusive": "8.7.0",
-        "maxVersionSupportedInclusive": "8.7.0",
-        "maxVersionAvailableInclusive": "8.7.0",
-        "maxVersionTestedInclusive": "8.7.0"
+        "minVersionTestedInclusive": "8.8.0",
+        "maxVersionSupportedInclusive": "8.8.0",
+        "maxVersionAvailableInclusive": "8.8.0",
+        "maxVersionTestedInclusive": "8.8.0"
       }
     ]
   },
@@ -751,9 +751,9 @@
         "minVersionAvailableInclusive": "0.0.1",
         "minVersionSupportedInclusive": "1.4.0",
         "minVersionTestedInclusive": "1.4.4",
-        "maxVersionSupportedInclusive": "2.5.1",
-        "maxVersionAvailableInclusive": "2.5.1",
-        "maxVersionTestedInclusive": "2.5.1"
+        "maxVersionSupportedInclusive": "2.5.2",
+        "maxVersionAvailableInclusive": "2.5.2",
+        "maxVersionTestedInclusive": "2.5.2"
       }
     ]
   },
@@ -818,8 +818,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.5.0",
-        "maxVersionAvailableInclusive": "3.5.0",
+        "maxVersionSupportedInclusive": "3.5.2",
+        "maxVersionAvailableInclusive": "3.5.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -886,9 +886,9 @@
         "minVersionAvailableInclusive": "1.0.0.505",
         "minVersionSupportedInclusive": "1.0.0.505",
         "minVersionTestedInclusive": "1.0.0.505",
-        "maxVersionSupportedInclusive": "5.3.2",
-        "maxVersionAvailableInclusive": "5.3.2",
-        "maxVersionTestedInclusive": "5.3.2"
+        "maxVersionSupportedInclusive": "5.3.3",
+        "maxVersionAvailableInclusive": "5.3.3",
+        "maxVersionTestedInclusive": "5.3.3"
       }
     ]
   },
@@ -920,9 +920,9 @@
         "minVersionAvailableInclusive": "2.5.7.10213",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "3.6.1",
-        "maxVersionSupportedInclusive": "4.1.0",
-        "maxVersionAvailableInclusive": "4.1.0",
-        "maxVersionTestedInclusive": "4.1.0"
+        "maxVersionSupportedInclusive": "4.2.2",
+        "maxVersionAvailableInclusive": "4.2.2",
+        "maxVersionTestedInclusive": "4.2.2"
       }
     ]
   },
@@ -978,8 +978,8 @@
         "minVersionAvailableInclusive": "12.1.21",
         "minVersionSupportedInclusive": "12.1.21",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "23.5.0",
-        "maxVersionAvailableInclusive": "23.5.0",
+        "maxVersionSupportedInclusive": "23.5.1",
+        "maxVersionAvailableInclusive": "23.5.1",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1033,9 +1033,9 @@
         "minVersionAvailableInclusive": "2.2.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "4.0.1",
-        "maxVersionSupportedInclusive": "4.23.0",
-        "maxVersionAvailableInclusive": "4.23.0",
-        "maxVersionTestedInclusive": "4.23.0"
+        "maxVersionSupportedInclusive": "4.24.0",
+        "maxVersionAvailableInclusive": "4.24.0",
+        "maxVersionTestedInclusive": "4.24.0"
       }
     ]
   },
@@ -1084,9 +1084,26 @@
         "minVersionAvailableInclusive": "1.0.19239.1",
         "minVersionSupportedInclusive": "1.0.19239.1",
         "minVersionTestedInclusive": "1.1.4",
-        "maxVersionSupportedInclusive": "5.2.1",
-        "maxVersionAvailableInclusive": "5.2.1",
-        "maxVersionTestedInclusive": "5.2.1"
+        "maxVersionSupportedInclusive": "5.2.2",
+        "maxVersionAvailableInclusive": "5.2.2",
+        "maxVersionTestedInclusive": "5.2.2"
+      }
+    ]
+  },
+  {
+    "integrationName": "SqlClient",
+    "assemblyName": "Microsoft.Data.Sqlite",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Data.Sqlite",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": "2.2.6",
+        "maxVersionSupportedInclusive": "8.0.8",
+        "maxVersionAvailableInclusive": "8.0.8",
+        "maxVersionTestedInclusive": "8.0.8"
       }
     ]
   },
@@ -1108,24 +1125,7 @@
     ]
   },
   {
-    "integrationName": "Sqlite",
-    "assemblyName": "Microsoft.Data.Sqlite",
-    "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "8.65535.65535",
-    "packages": [
-      {
-        "name": "Microsoft.Data.Sqlite",
-        "minVersionAvailableInclusive": "1.0.0",
-        "minVersionSupportedInclusive": "2.0.0",
-        "minVersionTestedInclusive": "2.2.6",
-        "maxVersionSupportedInclusive": "8.0.7",
-        "maxVersionAvailableInclusive": "8.0.7",
-        "maxVersionTestedInclusive": "8.0.7"
-      }
-    ]
-  },
-  {
-    "integrationName": "Sqlite",
+    "integrationName": "SqlClient",
     "assemblyName": "System.Data.SQLite",
     "minAssemblyVersionInclusive": "1.0.0",
     "maxAssemblyVersionInclusive": "2.65535.65535",
