@@ -96,14 +96,6 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     {
         await Fixture.TryStartApp(this, true);
         SetHttpPort(Fixture.HttpPort);
-        AddHeaders(new()
-        {
-            { "Accept-Language", "en_UK" },
-            { "X-Forwarded-For", "1.2.3.4" },
-            { "X-Custom-Header", "42" },
-            { "AnotherHeader", "Value" },
-            { "user-agent", "arachnic/v1" }
-        });
     }
 
     [SkippableTheory]
@@ -114,6 +106,12 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
         var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
         IncludeAllHttpSpans = true;
         await TryStartApp();
