@@ -126,14 +126,24 @@ download-serverless-artifacts:
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
       when: manual
       allow_failure: false
-    # - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
-    #   start_in: 15 minutes
+    - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
+      start_in: 15 minutes
   script:
     - .gitlab/download-serverless-artifacts.sh
   artifacts:
     expire_in: 2 weeks
     paths:
       - artifacts
+
+aws-lambda-layer:
+  stage: package
+  trigger:
+    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    branch: jordan.gonzalez/add-gitlab-ci
+    strategy: depend
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+  allow_failure: true
 
 benchmark-serverless:
   stage: benchmarks
