@@ -13,6 +13,10 @@ jobs:
     
     if: endsWith(github.event.release.tag_name, '.0') || endsWith(github.event.release.tag_name, '.0-prerelease')
     runs-on: windows-latest
+    permissions:
+      contents: write # Creates a branch
+      pull-requests: write # Creates a PR
+      issues: write # Closes milestones
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 

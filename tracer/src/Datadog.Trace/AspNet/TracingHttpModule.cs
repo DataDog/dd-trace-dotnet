@@ -130,6 +130,7 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
+                var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? new System.Collections.Specialized.NameValueCollection();
                 NameValueHeadersCollection? headers = null;
                 SpanContext propagatedContext = null;
                 if (tracer.InternalActiveScope == null)
@@ -137,7 +138,7 @@ namespace Datadog.Trace.AspNet
                     try
                     {
                         // extract propagated http headers
-                        headers = httpRequest.Headers.Wrap();
+                        headers = requestHeaders.Wrap();
                         propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                     }
                     catch (Exception ex)
@@ -146,8 +147,8 @@ namespace Datadog.Trace.AspNet
                     }
                 }
 
-                string host = httpRequest.Headers.Get("Host");
-                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
+                string host = requestHeaders.Get("Host");
+                var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
@@ -161,7 +162,7 @@ namespace Datadog.Trace.AspNet
 
                 if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
                 {
-                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
+                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -171,7 +172,7 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                    SpanContextPropagator.Instance.Inject(scope.Span.Context, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -279,8 +280,13 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
-                                    InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
+                                    var requestUrl = RequestDataHelper.GetUrl(app.Context.Request);
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
+                                    var headers = RequestDataHelper.GetHeaders(app.Context.Request);
+                                    if (headers is not null)
+                                    {
+                                        InsecureAuthAnalyzer.AnalyzeInsecureAuth(headers, IntegrationId, app.Context.Response.StatusCode);
+                                    }
                                 }
                                 catch (PlatformNotSupportedException ex)
                                 {
@@ -336,8 +342,16 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
-                            scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            var url = RequestDataHelper.GetUrl(app.Request);
+                            if (url is not null)
+                            {
+                                string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
+                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            }
+                            else
+                            {
+                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
+                            }
                         }
                     }
                     finally

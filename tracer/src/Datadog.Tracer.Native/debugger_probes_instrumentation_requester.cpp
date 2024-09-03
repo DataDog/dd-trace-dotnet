@@ -197,7 +197,7 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
-    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionDebuggingEnabled();
+    is_debugger_or_exception_debugging_enabled = IsDebuggerEnabled() || IsExceptionReplayEnabled();
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,

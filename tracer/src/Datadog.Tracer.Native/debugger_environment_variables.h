@@ -17,8 +17,9 @@ namespace environment
     // Determines if the Dynamic Instrumentation (aka live debugger) is enabled.
     const WSTRING debugger_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_ENABLED");
 
-    // Determines if the Exception Debugging product is enabled.
-    const WSTRING exception_debugging_enabled = WStr("DD_EXCEPTION_DEBUGGING_ENABLED");
+    // Determines if the Exception Replay product is enabled.
+    const WSTRING exception_debugging_enabled = WStr("DD_EXCEPTION_DEBUGGING_ENABLED"); // Old name
+    const WSTRING exception_replay_enabled = WStr("DD_EXCEPTION_REPLAY_ENABLED");
 
 } // namespace environment
 } // namespace debugger

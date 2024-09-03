@@ -292,6 +292,18 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
 
         _pContentionListener->OnContention(payload.DurationNs);
     }
+
+    if ((id == EVENT_CONTENTION_START) && (version >= 2))
+    {
+        ContentionStartV2Payload payload{0};
+        ULONG offset = 0;
+        if (!Read<ContentionStartV2Payload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        _pContentionListener->SetBlockingThread(payload.LockOwnerThreadID);
+    }
 }
 
 void ClrEventsParser::NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration)

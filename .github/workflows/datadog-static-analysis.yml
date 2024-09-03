@@ -5,6 +5,10 @@ jobs:
   check-quality:
     runs-on: ubuntu-latest
     name: Datadog Static Analyzer
+    permissions:
+      actions: read # read secrets
+      contents: read
+      statuses: write # add status checks (?) 
     steps:
       - name: Checkout
         uses: actions/checkout@v3

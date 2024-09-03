@@ -565,8 +565,14 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.SameSite = SameSiteMode.None;
             cookieOptions.HttpOnly = false;
             cookieOptions.Secure = false;
-            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
-            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions); //Normal cookie
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions); //Excluded cookie
+            string longval = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (int x = 0; x < 3; x++)
+            {
+                Response.Cookies.Append($"LongCookie.{longval}.{x}", $"FilteredCookie{x}", cookieOptions);  //Filtered (grouped) cookies (same hash)
+            }
+
             return Content("Sending AllVulnerabilitiesCookie");
         }
 

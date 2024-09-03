@@ -192,6 +192,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        internal ApplyDetails[] UpdateFromRcmForTest(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
+        {
+            return UpdateFromRcm(configsByProduct, null);
+        }
+
         private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
@@ -252,12 +257,13 @@ namespace Datadog.Trace.AppSec
                 productsCount += config.Value.Count;
             }
 
+            bool onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
             var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
             int index = 0;
 
-            if (string.IsNullOrEmpty(finalError))
+            if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
             {
                 foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
@@ -273,6 +279,26 @@ namespace Datadog.Trace.AppSec
             }
 
             return applyDetails;
+        }
+
+        internal static bool HasOnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object>? errors)
+        {
+            if (errors is not null && errors.Count > 0)
+            {
+                // if all the errors start with "unknown matcher:", we should not report the error
+                // It will happen if the WAF version used does not support new operators defined in the rules
+                foreach (var error in errors)
+                {
+                    if (!error.Key.ToLower().StartsWith("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
