@@ -57,6 +57,7 @@ for architecture in "${architectures[@]}"; do
     artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$buildId/artifacts?api-version=7.1&artifactName=$artifactName"
 
     # Keep trying to get the artifact for 30 minutes
+    downloadUrl=""
     TIMEOUT=1800
     STARTED=0
     until (( STARTED == TIMEOUT )) || [ ! -z "${downloadUrl}" ] ; do
