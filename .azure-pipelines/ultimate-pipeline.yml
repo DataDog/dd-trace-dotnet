@@ -607,14 +607,14 @@ stages:
       displayName: Download tracer linux native binary (linux-x64)
       condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-tracer-home-$(artifactSuffix)
+        artifact: linux-tracer-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary (linux-x64)
       condition: eq(variables['artifactSuffix'], 'linux-x64')
       inputs:
-        artifact: linux-profiler-home-$(artifactSuffix)
+        artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2

@@ -614,7 +614,6 @@ partial class Build
         .After(CompileManagedSrc)
         .Executes(() =>
         {
-
             var targetFrameworks = IsWin
                 ? TargetFrameworks
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
@@ -627,8 +626,8 @@ partial class Build
                 .EnableNoBuild()
                 .EnableNoRestore()
                 .CombineWith(targetFrameworks, (p, framework) => p
-                .SetFramework(framework)
-                .SetOutput(MonitoringHomeDirectory / framework))
+                    .SetFramework(framework)
+                    .SetOutput(MonitoringHomeDirectory / framework))
             );
         });
 
@@ -919,7 +918,7 @@ partial class Build
                  """;
             var debLicensePath = TempDirectory / "deb-license";
             File.WriteAllText(debLicensePath, debLicesnse);
-            
+
             foreach (var packageType in LinuxPackageTypes)
             {
                 Logger.Information("Creating '{PackageType}' package", packageType);
