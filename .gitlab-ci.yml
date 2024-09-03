@@ -84,6 +84,7 @@ download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
   tags: [ "arch:amd64" ]
+  needs: []
   rules:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
@@ -108,18 +109,33 @@ package-oci-musl:
     matrix:
       - ARCH: amd64
         LIBC: musl
+      - ARCH: arm64
+        LIBC: musl
 
 create-arch-specific-lib-injection-image-musl:
   extends: create-arch-specific-lib-injection-image
   needs: [ package-oci-musl ]
   parallel:
     matrix:
-      - ARCH: musl # technically not true but that's how the package is named
+      - ARCH: amd64-musl # technically not true but that's how the package and image is named
         DOCKER_PLATFORM: linux/amd64
+      - ARCH: arm64-musl
+        DOCKER_PLATFORM: linux/arm64/v8
   script:
     - export VERSION="$(<packaging/sources/version)"
-    - mv packaging/datadog-apm-library-dotnet-${VERSION}-linux-amd64.tar packaging/datadog-apm-library-dotnet-${VERSION}-linux-musl.tar
+    - export FILE_ARCH=${ARCH%-*} # everything before the -
+    - mv packaging/datadog-apm-library-dotnet-${VERSION}-linux-${FILE_ARCH}.tar packaging/datadog-apm-library-dotnet-${VERSION}-linux-${ARCH}.tar
     - !reference [create-arch-specific-lib-injection-image , script]
+
+create-multiarch-lib-injection-image-musl:
+  extends: create-multiarch-lib-injection-image
+  needs: [ create-arch-specific-lib-injection-image-musl ]
+  script:
+    - >
+      docker buildx imagetools create
+      --tag ${GHCR_BASE}/${LIB_INJECTION_NAME}:${CI_COMMIT_SHA}-musl
+      ${GHCR_BASE}/${LIB_INJECTION_NAME}:${CI_COMMIT_SHA}-amd64-musl
+      ${GHCR_BASE}/${LIB_INJECTION_NAME}:${CI_COMMIT_SHA}-arm64-musl
 
 generate-lib-init-pinned-tag-values-musl:
   extends: generate-lib-init-pinned-tag-values
@@ -128,10 +144,17 @@ generate-lib-init-pinned-tag-values-musl:
 
 publish-lib-init-pinned-tags-musl:
   extends: publish-lib-init-pinned-tags
-  needs: [ generate-lib-init-pinned-tag-values-musl ]
+  needs: [ generate-lib-init-pinned-tag-values-musl, create-multiarch-lib-injection-image-musl, onboarding_tests_installer ]
   variables:
     IMG_SOURCES: $GHCR_BASE/$LIB_INJECTION_NAME:${CI_COMMIT_SHA}-musl
     IMG_DESTINATIONS: $IMG_DESTINATIONS_musl
+
+publish-lib-init-ghcr-tags-musl:
+  extends: publish-lib-init-ghcr-tags
+  needs: [ create-multiarch-lib-injection-image-musl, onboarding_tests_installer ]
+  script:
+    - crane tag $GHCR_BASE/$LIB_INJECTION_NAME:$CI_COMMIT_SHA-musl ${CI_COMMIT_TAG}-musl
+    - crane tag $GHCR_BASE/$LIB_INJECTION_NAME:$CI_COMMIT_SHA-musl ${CI_COMMIT_TAG-musl##v} # without v
 
 onboarding_tests_installer:
   parallel:
