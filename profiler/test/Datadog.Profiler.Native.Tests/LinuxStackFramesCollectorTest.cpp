@@ -804,6 +804,9 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     }
 }
 
+// Did not add (removed) the test with the CPU consuming thread because
+// it's flaky (depending on the scheduler, number of cpus...), the thread might
+// not have run
 TEST_F(LinuxStackFramesCollectorFixture, CheckCallstackAreCachedAndReused)
 {
     auto* signalManager = GetSignalManager();
@@ -847,44 +850,4 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckCallstackAreCachedAndReused)
     ValidateCallstack(callstack);
 }
 
-TEST_F(LinuxStackFramesCollectorFixture, CheckCallstackAreNotReusedWithThreadConsumingCPU)
-{
-    auto* signalManager = GetSignalManager();
-
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    EXPECT_CALL(mockConfiguration, UseBacktrace2()).WillOnce(Return(true));
-    EXPECT_CALL(mockConfiguration, IsCallstackCachingEnabled()).WillRepeatedly(Return(true));
-
-    CallstackProvider p(MemoryResourceManager::GetDefault());
-    auto collector = CreateStackFramesCollector(signalManager, configuration.get(), &p);
-
-    // Validate the profiler is working correctly
-    auto threadId = (DWORD)GetWorkerThreadId();
-    auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
-    threadInfo.SetOsInfo(threadId, (HANDLE)0);
-
-    ASSERT_EQ(threadInfo.PreviousCallstack.Capacity(), 0);
-
-    collector.PrepareForNextCollection();
-
-    std::uint32_t hr;
-    StackSnapshotResultBuffer* buffer;
-    const bool enableCaching = true;
-    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
-    ASSERT_NE(threadInfo.PreviousCallstack.Capacity(), 0);
-    EXPECT_EQ(hr, S_OK);
-    EXPECT_FALSE(collector.WasCallstackReused());
-
-    auto callstack = buffer->ReleaseCallstack();
-
-    ValidateCallstack(callstack);
-
-    collector.PrepareForNextCollection();
-
-    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr, enableCaching));
-    EXPECT_EQ(hr, S_OK);
-    EXPECT_FALSE(collector.WasCallstackReused());
-
-    ValidateCallstack(callstack);
-}
 #endif

@@ -127,7 +127,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     {
         if (_signalManager == nullptr || !_signalManager->IsHandlerInPlace())
         {
-            *pHR = DD_FAILED;
+            *pHR = E_FAIL;
             return GetStackSnapshotResult();
         }
 
