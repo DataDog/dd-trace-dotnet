@@ -17,7 +17,18 @@ IDynamicDispatcher* dispatcher;
 
 std::wstring crashHandler;
 
-std::wstring GetCurrentDllPath() {
+struct CrashMetadata
+{
+    char CrashReportPath[255];
+    char ServiceName[255];
+    char Env[255];
+    char Version[255];
+};
+
+CrashMetadata crashMetadata;
+
+std::wstring GetCurrentDllPath()
+{
     wchar_t path[MAX_PATH];
     HMODULE hm = NULL;
 
@@ -34,7 +45,8 @@ std::wstring GetCurrentDllPath() {
     return std::wstring(path);
 }
 
-void RegisterCrashHandler(const std::wstring& moduleName) {
+void RegisterCrashHandler(const std::wstring& moduleName)
+{
     HKEY hKey;
     LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules";
     DWORD value = 1;
@@ -113,6 +125,10 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
 
         if (!crashHandler.empty())
         {
+            // Store C:\\temp\\crash-report.txt in crashMetadata.CrashReportPath
+            const char crashReportPath[] = "C:\\temp\\crash-report.txt";
+            strncpy_s(crashMetadata.CrashReportPath, crashReportPath, sizeof(crashReportPath));
+
             RegisterCrashHandler(crashHandler);
 
             HMODULE hModule = GetModuleHandle(L"clr.dll");
@@ -121,7 +137,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             auto unregisterDacHr = WerUnregisterRuntimeExceptionModule(L"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscordacwks.dll", (PVOID)hModule);
             Log::Debug("Unregistering DAC handler : ", unregisterDacHr);
 
-            auto registrationHr = WerRegisterRuntimeExceptionModule(crashHandler.c_str(), (PVOID)-1);
+            auto registrationHr = WerRegisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
             Log::Debug("Registering Datadog crash handler: ", registrationHr);
 
             if (SUCCEEDED(unregisterDacHr))
@@ -151,7 +167,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
 
         if (!crashHandler.empty())
         {
-            auto hr = WerUnregisterRuntimeExceptionModule(crashHandler.c_str(), (PVOID)-1);
+            auto hr = WerUnregisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
             Log::Debug("Unregistering Datadog crash handler: ", hr);
             crashHandler.clear();
         }
@@ -211,6 +227,19 @@ extern "C"
 
         crashHandler = GetCurrentDllPath();
 
+        CrashMetadata crashMetadata;
+
+        BOOL hasMetadata = ReadProcessMemory(pExceptionInformation->hProcess, pContext, &crashMetadata, sizeof(CrashMetadata), nullptr);
+
+        if (hasMetadata)
+        {
+            OutputDebugString(L"hasMetadata");
+        }
+        else
+        {
+            OutputDebugString(L"Metadata not found");
+        }        
+
         // Extract the directory using filesystem, then append dd-dotnet.exe
         std::filesystem::path p(crashHandler);
         auto directory = p.parent_path();
@@ -230,14 +259,61 @@ extern "C"
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
 
+        std::wstring envBlock;
+
+        if (hasMetadata)
+        {
+            // Get the current environment block
+            LPWCH envStrings = GetEnvironmentStrings();
+
+            if (envStrings != NULL)
+            {
+                // Copy the current environment block to a vector
+                
+                for (LPWCH env = envStrings; *env != L'\0'; env += wcslen(env) + 1) {
+                    envBlock.append(env);
+                    envBlock.push_back(L'\0'); // Null terminator for the current variable
+                }
+
+                // Add the new environment variable
+                std::wstring crashReportPath = shared::ToWSTRING(crashMetadata.CrashReportPath);
+                std::wstring newEnvVar = L"DD_TRACE_CRASH_OUTPUT=" + crashReportPath;
+                envBlock.append(newEnvVar);
+                envBlock.push_back(L'\0'); // Null terminator for the new variable
+                envBlock.push_back(L'\0'); // Double null terminator for the block
+
+                // Free the original environment strings
+                FreeEnvironmentStrings(envStrings);
+
+                OutputDebugString(L"Created environ block");
+
+                // Print the environment block for debugging
+                for (size_t i = 0; i < envBlock.size();) {
+                    std::wstring envVar = &envBlock[i];
+                    OutputDebugString((envVar + L"\n").c_str());
+                    i += envVar.size() + 1;
+                }
+            }
+        }
+
+        OutputDebugString(L"Spawning dd-dotnet");
 
         // Create the process
-        if (!CreateProcess(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, &envBlock[0], NULL, &si, &pi))
+        {
+            OutputDebugString(L"Failed");
+            DWORD error = GetLastError();
+            std::wstring errorMessage = L"Failed with error code: " + std::to_wstring(error);
+            OutputDebugString(errorMessage.c_str());
             return S_OK;
         }
 
+        OutputDebugString(L"Waiting for exit");
+
         // Wait for the process to exit
         WaitForSingleObject(pi.hProcess, INFINITE);
+
+        OutputDebugString(L"Done");
 
         return S_OK;
     }

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
@@ -42,7 +43,7 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             var path = Utils.GetApiWrapperPath();
 
-            if (!File.Exists(path))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && !File.Exists(path))
             {
                 throw new FileNotFoundException($"LD wrapper not found at path {path}. Ensure you have built the profiler home directory using BuildProfilerHome");
             }
@@ -81,7 +82,11 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
+
         File.Exists(reportFile.Path).Should().BeTrue();
 
         if (shouldCallCreatedump)
@@ -153,7 +158,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+        }
 
         if (enableCrashDumps)
         {
@@ -205,12 +213,20 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (telemetryEnabled)
         {
-            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            }
+
             File.Exists(reportFile.Path).Should().BeTrue();
         }
         else
         {
-            helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
+            }
+
             File.Exists(reportFile.Path).Should().BeFalse();
         }
     }
@@ -233,7 +249,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
 
@@ -286,7 +305,10 @@ public class CreatedumpTests : ConsoleTestHelper
             assertionScope.AddReportable("stdout", helper.StandardOutput);
             assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+            }
 
             File.Exists(reportFile.Path).Should().BeTrue();
         }
@@ -320,7 +342,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
     }
@@ -345,7 +370,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         File.Exists(reportFile.Path).Should().BeTrue();
     }
@@ -368,7 +396,10 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        }
 
         var data = agent.WaitForLatestTelemetry(d => d.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs));
         data.Should().NotBeNull();
@@ -394,9 +425,12 @@ public class CreatedumpTests : ConsoleTestHelper
 
         await helper.Task;
 
-        helper.StandardOutput.Should()
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            helper.StandardOutput.Should()
               .NotContain(CrashReportExpectedOutput)
               .And.EndWith("Crashing...\n"); // Making sure there is no additional output
+        }
 
         File.Exists(reportFile.Path).Should().BeFalse();
     }

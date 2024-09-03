@@ -21,6 +21,7 @@ CrashReporting* CrashReporting::Create(int32_t pid)
 
 CrashReportingWindows::CrashReportingWindows(int32_t pid)
     : CrashReporting(pid)
+    , _process(NULL)
 {
 }
 
@@ -131,6 +132,11 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
     context.ContextFlags = CONTEXT_FULL;
 
     auto thread = OpenThread(THREAD_GET_CONTEXT, FALSE, tid);
+
+    if (thread == NULL)
+    {
+        return managedFrames;
+    }
 
     if (GetThreadContext(thread, &context))
     {
