@@ -99,7 +99,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
             const byte version = 0; // version can have a maximum value of 15 in the current format
-            var sampled = SamplingPriorityValues.IsKeep(span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
+            var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
             using (var injectionCommand = connection.CreateCommand())
