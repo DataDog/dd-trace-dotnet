@@ -15,6 +15,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
 using System.Net.Mail;
+using System.Text;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -62,6 +63,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("WeakHashing/{delay1}")]
         public ActionResult WeakHashing(int delay1 = 0, int delay2 = 0)
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
             System.Threading.Thread.Sleep(delay1 + delay2);
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             var byteArg = new byte[] { 3, 5, 6 };
