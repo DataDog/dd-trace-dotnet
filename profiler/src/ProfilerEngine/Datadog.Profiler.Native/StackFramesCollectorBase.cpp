@@ -179,6 +179,7 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedT
     
     _pStackSnapshotResult->SetCallstack(_callstackProvider->Get());
 
+#ifdef LINUX
     if (shouldCacheCallstacks)
     {
         // We need to initialize the PreviousCallstack field the first time
@@ -188,6 +189,7 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedT
         }
         _pStackSnapshotResult->EnableCallstacksCaching();
     }
+#endif
 
     const auto currentThreadId = OpSysTools::GetThreadId();
 
