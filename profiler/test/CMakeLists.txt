@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 
-if (IS_ALPINE)
-    add_compile_definitions(-DDD_ALPINE)
+if (DEFINED IS_ALPINE)
+    add_compile_options(-DDD_ALPINE)
 endif()
 
 add_subdirectory(Datadog.Profiler.Native.Tests)

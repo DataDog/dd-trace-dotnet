@@ -19,7 +19,7 @@ add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
-if (IS_ALPINE)
+if (DEFINED IS_ALPINE)
     add_compile_options(-DDD_ALPINE)
 endif()
 

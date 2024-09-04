@@ -13,10 +13,6 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extension
 
 target_compile_options(Datadog.Profiler.Native.static PUBLIC -DDD_TEST)
 
-if (IS_ALPINE)
-    add_compile_options(-DDD_ALPINE)
-endif()
-
 if (RUN_ASAN)
     add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
 endif()
