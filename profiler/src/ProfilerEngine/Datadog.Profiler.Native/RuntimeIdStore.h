@@ -9,7 +9,10 @@
 #include "IRuntimeIdStore.h"
 #include "ServiceBase.h"
 
-class RuntimeIdStore : public ServiceBase, public IRuntimeIdStore
+class RuntimeIdStore
+    :
+    public IRuntimeIdStore,
+    public ServiceBase
 {
 public:
     RuntimeIdStore() = default;

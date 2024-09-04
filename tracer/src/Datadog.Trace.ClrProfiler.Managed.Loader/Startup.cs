@@ -167,6 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
         {
             var value = ReadEnvironmentVariable(key);
+
             return value switch
             {
                 "1" or "true" or "True" or "TRUE" or "t" or "T" => true,

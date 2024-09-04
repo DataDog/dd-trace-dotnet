@@ -74,4 +74,6 @@ public:
     virtual DeploymentMode GetDeploymentMode() const = 0;
     virtual CpuProfilerType GetCpuProfilerType() const = 0;
     virtual std::chrono::milliseconds GetCpuProfilingInterval() const = 0;
+    virtual std::chrono::milliseconds GetSsiLongLivedThreshold() const = 0;
+    virtual bool IsTelemetryToDiskEnabled() const = 0;
 };

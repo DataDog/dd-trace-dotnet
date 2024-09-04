@@ -82,6 +82,7 @@
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SampleValueTypeProviderTest.cpp" />
     <ClCompile Include="ServiceBaseTest.cpp" />
+    <ClCompile Include="SsiManagerTest.cpp" />
     <ClCompile Include="StackSnapshotResultBufferTest.cpp" />
     <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />

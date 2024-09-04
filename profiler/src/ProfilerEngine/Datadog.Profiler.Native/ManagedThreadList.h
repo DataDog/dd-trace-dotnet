@@ -15,13 +15,16 @@
 #include "ManagedThreadInfo.h"
 #include "shared/src/native-src/string.h"
 #include "IManagedThreadList.h"
+#include "ServiceBase.h"
 
-
-class ManagedThreadList : public IManagedThreadList
+class ManagedThreadList
+    :
+    public IManagedThreadList,
+    public ServiceBase
 {
 public:
     ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo);
-    ~ManagedThreadList() override;
+    ~ManagedThreadList();
 
 private:
     ManagedThreadList() = delete;

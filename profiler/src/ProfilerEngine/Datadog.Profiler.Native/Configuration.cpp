@@ -95,6 +95,8 @@ Configuration::Configuration()
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
     _etwEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
+    _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
+    _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
@@ -582,6 +584,11 @@ DeploymentMode Configuration::GetDeploymentMode() const
     return _deploymentMode;
 }
 
+std::chrono::milliseconds Configuration::GetSsiLongLivedThreshold() const
+{
+    return _ssiLongLivedThreshold;
+}
+
 CpuProfilerType Configuration::GetCpuProfilerType() const
 {
     return _cpuProfilerType;
@@ -655,6 +662,7 @@ static bool convert_to(shared::WSTRING const& s, DeploymentMode& result)
     return true;
 }
 
+
 template <typename T>
 T Configuration::GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue)
 {
@@ -700,7 +708,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
         // later that will take into account heuristics
         return !enabled.empty() && enabled == WStr("auto")
-            ? EnablementStatus::ManuallyEnabled
+            ? EnablementStatus::SsiEnabled
             : EnablementStatus::ManuallyDisabled;
     }
 
@@ -716,4 +724,19 @@ EnablementStatus Configuration::ExtractEnablementStatus()
     {
         return EnablementStatus::NotSet;
     }
+}
+
+std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
+{
+    auto const defaultValue = 30'000ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::SsiLongLivedThreshold, defaultValue);
+
+    if (value < 0ms)
+        return defaultValue;
+    return std::chrono::milliseconds(value);
+}
+
+bool Configuration::IsTelemetryToDiskEnabled() const
+{
+    return _isTelemetryToDiskEnabled;
 }

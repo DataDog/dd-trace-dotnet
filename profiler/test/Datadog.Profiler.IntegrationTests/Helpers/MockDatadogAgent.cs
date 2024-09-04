@@ -23,6 +23,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         public event EventHandler<EventArgs<HttpListenerContext>> ProfilerRequestReceived;
         public event EventHandler<EventArgs<HttpListenerContext>> TracerRequestReceived;
+        public event EventHandler<EventArgs<HttpListenerContext>> TelemetryMetricsRequestReceived;
 
         public int NbCallsOnProfilingEndpoint { get; private set; }
 
@@ -61,10 +62,16 @@ namespace Datadog.Profiler.IntegrationTests
             TracerRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
         }
 
+        private void OnTelemetryMetricsReceived(HttpListenerContext ctx)
+        {
+            TelemetryMetricsRequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
+        }
+
         public class HttpAgent : MockDatadogAgent
         {
             private const string ProfilesEndpoint = "/profiling/v1/input";
             private const string TracesEndpoint = "/v0.4/traces";
+            private const string TelemetryMetricsEndpoint = "/telemetry/proxy/api/v2/apmtelemetry";
 
             private readonly Thread _listenerThread;
             private HttpListener _listener;
@@ -137,6 +144,11 @@ namespace Datadog.Profiler.IntegrationTests
                         if (ctx.Request.RawUrl == TracesEndpoint)
                         {
                             OnTracesRequestReceived(ctx);
+                        }
+
+                        if (ctx.Request.RawUrl == TelemetryMetricsEndpoint)
+                        {
+                            OnTelemetryMetricsReceived(ctx);
                         }
 
                         // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
