@@ -606,6 +606,7 @@ internal static partial class IastModule
 
         if (!IastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
+            AddVulnerabilityStack(currentSpan!, vulnerability);
             traceContext.IastRequestContext?.AddVulnerability(vulnerability);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             traceContext.Tags.SetTag(Tags.Propagated.AppSec, "1");
@@ -685,6 +686,7 @@ internal static partial class IastModule
                 traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
                 traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
 
+                AddVulnerabilityStack(currentSpan!, vulnerability);
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
                 return IastModuleResponse.Vulnerable;
             }
@@ -717,7 +719,7 @@ internal static partial class IastModule
             batch.Add(vulnerability);
         }
 
-        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
+        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
@@ -725,23 +727,45 @@ internal static partial class IastModule
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
         batch.Add(vulnerability);
-        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
+        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch);
     }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
+    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, VulnerabilityBatch vulnerabilityBatch)
     {
-        var tags = new IastTags()
-        {
-            IastJson = vulnsJson,
-            IastEnabled = "1"
-        };
-
+        var tags = new IastTags { IastEnabled = "1" };
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
+
+        if (vulnerabilityBatch.Vulnerabilities.Count > 0)
+        {
+            AddVulnerabilityStack(scope.Span, vulnerabilityBatch.Vulnerabilities[0]);
+        }
+        else
+        {
+            tags.IastJson = vulnerabilityBatch?.ToJson();
+            if (vulnerabilityBatch?.IsTruncated() == true)
+            {
+                scope.Span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+            }
+        }
+
         scope.Span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         scope.Span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
         return new IastModuleResponse(scope);
+    }
+
+    private static void AddVulnerabilityStack(Span span, Vulnerability vulnerability)
+    {
+        if (Security.Instance.IsMetaStructSupported() && Security.Instance.Settings.StackTraceEnabled)
+        {
+            var stack = AppSec.Rasp.StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, vulnerability.Hash.ToString());
+
+            if (stack is not null)
+            {
+                span.Context.TraceContext.AddVulnerabilityStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            }
+        }
     }
 
     private static bool InvalidHashAlgorithm(string algorithm)

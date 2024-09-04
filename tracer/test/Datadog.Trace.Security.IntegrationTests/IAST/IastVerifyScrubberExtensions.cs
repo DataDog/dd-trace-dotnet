@@ -3,9 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using VerifyTests;
 
 namespace Datadog.Trace.Security.IntegrationTests.IAST

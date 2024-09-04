@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -18,6 +19,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,7 +31,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
     {
-        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
@@ -310,6 +311,56 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+}
+
+// Class to test particular features (not running all the default tests)
+public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
+{
+    public AspNetCore5IastTestsStackTraces(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsStackTraces", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200, redactionEnabled: true)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "1");
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie")]
+    [InlineData("Vulnerability.LocatedInFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
+    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing")]
+    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
+    public async Task TestVulnerabilityStack(string name, string url)
+    {
+        var fileName = "Iast.Stacks." + name;
+
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        foreach (var span in spans)
+        {
+            if (span.MetaStruct is not null)
+            {
+                if (span.MetaStruct.TryGetValue("_dd.stack", out var data))
+                {
+                    var json = MetaStructToJson(data);
+                    span.Tags["_dd.stack"] = json;
+                }
+
+                foreach (var key in span.MetaStruct.Keys)
+                {
+                    span.MetaStruct[key] = [];
+                }
+            }
+        }
+
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
     }
 }
@@ -1230,6 +1281,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
         IastTelemetryLevel = iastTelemetryLevel;
+
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
     }
 
     protected AspNetCoreTestFixture Fixture { get; }

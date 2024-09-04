@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
@@ -106,34 +107,35 @@ namespace Datadog.Trace
                 spans.Array![spans.Offset].Context.TraceContext :
                 null;
 
-        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal AppSecRequestContext GetAppSecRequestContext()
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
             {
                 Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
             }
 
-            _appSecRequestContext!.AddWafSecurityEvents(events);
+            return _appSecRequestContext!;
         }
 
-        internal void AddStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
+        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
         {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
+            GetAppSecRequestContext().AddWafSecurityEvents(events);
+        }
 
-            _appSecRequestContext!.AddRaspStackTrace(stack, maxStackTraces);
+        internal void AddRaspStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
+        {
+            GetAppSecRequestContext().AddRaspStackTrace(stack, maxStackTraces);
+        }
+
+        internal void AddVulnerabilityStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
+        {
+            GetAppSecRequestContext().AddVulnerabilityStackTrace(stack, maxStackTraces);
         }
 
         internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
         {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            _appSecRequestContext!.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
+            GetAppSecRequestContext().AddRaspSpanMetrics(duration, durationWithBindings, timeout);
         }
 
         internal void EnableIastInRequest()

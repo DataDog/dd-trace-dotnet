@@ -61,12 +61,12 @@ namespace Datadog.Trace.Configuration
             internal const string StackTraceEnabled = "DD_APPSEC_STACK_TRACE_ENABLED";
 
             /// <summary>
-            /// with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
+            /// with a default value of 2, defines the maximum number of stack traces to be reported. 0 for unlimited.
             /// </summary>
             internal const string MaxStackTraces = "DD_APPSEC_MAX_STACK_TRACES";
 
             /// <summary>
-            /// with a default value of 32, defines the maximum depth of a stack trace to be reported due to RASP events. O for unlimited.
+            /// with a default value of 32, defines the maximum depth of a stack trace to be reported. O for unlimited.
             /// </summary>
             internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
 

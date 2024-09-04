@@ -18,6 +18,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -154,8 +156,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
                                     target.Tags[Tags.AppSecJson] = orderedJson;
 
-                                    target.MetaStruct.Remove("appsec");
-
                                     // Let the snapshot know that the data comes from the meta struct
                                     if (forceMetaStruct)
                                     {
@@ -200,10 +200,28 @@ namespace Datadog.Trace.Security.IntegrationTests
                           .UseTypeName(testName ?? GetTestName());
         }
 
+        public void StacksMetaStructScrubbing(MockSpan target)
+        {
+            var key = "_dd.stack";
+            if (target.MetaStruct is not null && target.MetaStruct.TryGetValue(key, out var appsec))
+            {
+                var metaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
+                target.Tags[key] = json;
+            }
+        }
+
         protected void SetClientIp(string ip)
         {
             _httpClient.DefaultRequestHeaders.Remove(XffHeader);
             _httpClient.DefaultRequestHeaders.Add(XffHeader, ip);
+        }
+
+        protected string MetaStructToJson(byte[] data)
+        {
+            var metaStruct = MetaStructByteArrayToObject.Invoke(null, [data]);
+            var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
+            return json;
         }
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
