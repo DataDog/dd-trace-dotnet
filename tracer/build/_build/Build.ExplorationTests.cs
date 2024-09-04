@@ -328,27 +328,30 @@ partial class Build
 
     private void CreateLineProbes()
     {
-        var sw = new Stopwatch();
-        sw.Start();
+        if (ExplorationTestName.HasValue && ExplorationTestName.Value != global::ExplorationTestName.protobuf)
+        {
+            throw new InvalidOperationException($"The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
+        }
+
         if (ExplorationTestName.HasValue)
         {
             Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
-
-            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
-            CreateLineProbesFile(testDescription);
         }
         else
         {
-            Logger.Information("Exploration test name is not provided.");
-
-            foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
-            {
-                CreateLineProbesFile(testDescription);
-            }
+            Logger.Information("Exploration test name is not provided. Running protobuf test case");
         }
 
+        var sw = new Stopwatch();
+        sw.Start();
+
+        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
+        CreateLineProbesFile(testDescription);
+
         sw.Stop();
-        Logger.Information($"Creating line probes file finished. Took {sw.Elapsed.Minutes:D2}:{sw.Elapsed.Seconds:D2}.");
+        Logger.Information("Creating line probes file finished. Took ");
+        Logger.Information(sw.Elapsed.Minutes > 0 ? $"{sw.Elapsed.Minutes:D2} minutes and {sw.Elapsed.Seconds:D2} seconds." : $"{sw.Elapsed.Seconds:D2} seconds.");
+
         return;
 
         static void UpdateProgressBar(double processedWeight, double totalWeight, int totalFiles)
@@ -490,6 +493,8 @@ partial class Build
                                       string.Join(Environment.NewLine, lineProbes));
                     lineProbes.Clear();
                 }
+
+                Console.WriteLine();
             }
         }
     }
