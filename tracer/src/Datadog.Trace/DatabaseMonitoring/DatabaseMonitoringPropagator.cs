@@ -137,16 +137,10 @@ namespace Datadog.Trace.DatabaseMonitoring
             var versionAndSampling = (byte)(((version << 4) & 0b1111_0000) | (sampled & 0b0000_0001));
             var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
 
-            contextBytes[0] = versionAndSampling;
-            BinaryPrimitives.WriteUInt64BigEndian(
-                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, start: 1, sizeof(ulong)),
-                spanId);
-            BinaryPrimitives.WriteUInt64BigEndian(
-                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, 1 + sizeof(ulong), sizeof(ulong)),
-                traceId.Upper);
-            BinaryPrimitives.WriteUInt64BigEndian(
-                new VendoredMicrosoftCode.System.Span<byte>(contextBytes, 1 + sizeof(ulong) + sizeof(ulong), sizeof(ulong)),
-                traceId.Lower);
+            var span = new VendoredMicrosoftCode.System.Span<byte>(contextBytes) { [0] = versionAndSampling };
+            BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1), spanId);
+            BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong)), traceId.Upper);
+            BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong) + sizeof(ulong)), traceId.Lower);
 
             return contextBytes;
         }
