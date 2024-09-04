@@ -44,7 +44,9 @@ namespace Samples.Computer01
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
         private SigSegvHandlerExecution _sigsegvHandler;
+#if NETCOREAPP3_0_OR_GREATER
         private LinuxDlIteratePhdrDeadlock _linuxDlIteratePhdrDeadlock;
+#endif
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
@@ -182,9 +184,11 @@ namespace Samples.Computer01
                     StartStringConcat(parameter);
                     break;
 
+#if NETCOREAPP3_0_OR_GREATER
                 case Scenario.LinuxDlIteratePhdrDeadlock:
                     StartLinuxDlIteratePhdrDeadlock();
                     break;
+#endif
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -317,9 +321,11 @@ namespace Samples.Computer01
                     StopStringConcat();
                     break;
 
+#if NETCOREAPP3_0_OR_GREATER
                 case Scenario.LinuxDlIteratePhdrDeadlock:
                     StopLinuxDlIteratePhdrDeadlock();
                     break;
+#endif
             }
         }
 
@@ -584,11 +590,13 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Start();
         }
 
+#if NETCOREAPP3_0_OR_GREATER
         private void StartLinuxDlIteratePhdrDeadlock()
         {
             _linuxDlIteratePhdrDeadlock = new LinuxDlIteratePhdrDeadlock();
             _linuxDlIteratePhdrDeadlock.Start();
         }
+#endif
 
         private void StartMeasureAllocations()
         {
@@ -764,10 +772,12 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Stop();
         }
 
+#if NETCOREAPP3_0_OR_GREATER
         private void StopLinuxDlIteratePhdrDeadlock()
         {
             _linuxDlIteratePhdrDeadlock.Stop();
         }
+#endif
 
         private void StopMeasureAllocations()
         {

@@ -18,7 +18,7 @@
   "processName": "dotnet",
   "processArguments": ".\\Samples.HttpMessageHandler.dll",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\netcoreapp3.1",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_netcoreapp3.1",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
     "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",

@@ -275,6 +275,11 @@ internal partial class ProbeExpressionParser<T>
                                         return IsInstanceOf(reader, parameters, itParameter);
                                     }
 
+                                case "typeof":
+                                    {
+                                        return GetTypeName(reader, parameters, itParameter);
+                                    }
+
                                 case "isUndefined":
                                     {
                                         return IsUndefined(reader, parameters, itParameter);
