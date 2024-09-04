@@ -1178,17 +1178,17 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "not used", false)]
         [InlineData("auto", "not used", true)]
         [InlineData("invalid", "foo, profiler, bar", true)]
-        [InlineData("invalid", "anything else", false)]
-        [InlineData("invalid", "", false)]
+        [InlineData("invalid", "anything else", true)]
+        [InlineData("invalid", "", true)]
         [InlineData("invalid", null, false)]
         [InlineData("", "foo, profiler, bar", true)]
-        [InlineData("", "anything else", false)]
-        [InlineData("", "", false)]
+        [InlineData("", "anything else", true)]
+        [InlineData("", "", true)]
         [InlineData("", null, false)]
         [InlineData(null, "foo, profiler, bar", true)]
-        [InlineData(null, "anything else", false)]
+        [InlineData(null, "anything else", true)]
         [InlineData(null, null, false)]
-        [InlineData(null, "", false)]
+        [InlineData(null, "", true)]
         public void ProfilingEnabled(string profilingValue, string ssiValue, bool expected)
         {
             var values = new List<(string, string)>();
