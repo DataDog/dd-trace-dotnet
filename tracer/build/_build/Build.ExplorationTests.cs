@@ -332,14 +332,14 @@ partial class Build
         sw.Start();
         if (ExplorationTestName.HasValue)
         {
-            Logger.Information($"Provided exploration test name is {ExplorationTestName}. Creating line probes file for it.");
+            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
             CreateLineProbesFile(testDescription);
         }
         else
         {
-            Logger.Information("Exploration test name is not provided. Creating line probes file for all of them.");
+            Logger.Information("Exploration test name is not provided.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -348,11 +348,27 @@ partial class Build
         }
 
         sw.Stop();
-        Logger.Information($"Creating line probes file finished. Took {sw.Elapsed:g}.");
+        Logger.Information($"Creating line probes file finished. Took {sw.Elapsed.Minutes:D2}:{sw.Elapsed.Seconds:D2}.");
         return;
+
+        static void UpdateProgressBar(double processedWeight, double totalWeight, int totalFiles)
+        {
+            double progress = processedWeight / totalWeight;
+            int progressBarWidth = 50;
+            int filledWidth = (int)(progress * progressBarWidth);
+
+            int processedFiles = (int)(progress * totalFiles); //estimated
+
+            Console.Write("\r[");
+            Console.Write(new string('#', filledWidth));
+            Console.Write(new string('-', progressBarWidth - filledWidth));
+            Console.Write($"] {progress:P1} | Est. Files: {processedFiles}/{totalFiles}");
+        }
 
         void CreateLineProbesFile(ExplorationTestDescription testDescription)
         {
+            Logger.Information($"Creating line probes file for {testDescription.Name}.");
+
             var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
             var allCsFiles = Directory.EnumerateFiles($"{ExplorationTestsDirectory}/{testDescription.Name}", "*.cs", SearchOption.AllDirectories).
                                        Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")).ToArray();
@@ -399,9 +415,18 @@ partial class Build
 
                 var lineProbes = new List<string>();
                 var locker = new object();
+                HashSet<string> noMatchingPdbAssembly = new HashSet<string>();
+
+                var fileWeights = allCsFiles.ToDictionary(
+                    file => file,
+                    file => (double)File.ReadLines(file).Count()
+                );
+                double totalWeight = fileWeights.Values.Sum();
+                double processedWeight = 0;
 
                 foreach (var csFile in allCsFiles)
                 {
+                    bool fileProcessed = false;
                     foreach (var metadataReader in metadataReaders)
                     {
                         var pdbPath = (string)metadataReader?.Item1?.GetType().GetProperty("PdbFullPath", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(metadataReader.Item1);
@@ -420,11 +445,15 @@ partial class Build
                         {
                             // if the metadata reader isn't the correct one, continue.
                             // it's not a bulletproof but probably enough for exploration test
-                            Logger.Debug($"Skipping assembly {assemblyName} because there is no matching PDB info");
+                            if (noMatchingPdbAssembly.Add(assemblyName))
+                            {
+                                Logger.Debug($"Skipping assembly {assemblyName} because there is no matching PDB info");
+                            }
                             continue;
                         }
 
-                        int numberOfLines = File.ReadAllLines(csFile).Length;
+                        fileProcessed = true;
+                        int numberOfLines = (int)fileWeights[csFile];
                         Parallel.For(0, numberOfLines, () => new List<string>(), (i, state, localList) =>
                         {
                             int? byteCodeOffset = null;
@@ -435,7 +464,6 @@ partial class Build
                             // i.e. we got a method and bytecode offset
                             if (args[3] != null && method != null)
                             {
-                                // lineProbes.Add($"{csFile.Replace("/", "\\")},{i}");
                                 localList.Add($"{metadataReader.Item3},{(int)method},{(int)args[3]}");
                             }
 
@@ -447,6 +475,12 @@ partial class Build
                                 lineProbes.AddRange(localList);
                             }
                         });
+                    }
+
+                    if (fileProcessed)
+                    {
+                        processedWeight += fileWeights[csFile];
+                        UpdateProgressBar(processedWeight, totalWeight, allCsFiles.Count());
                     }
                 }
 
