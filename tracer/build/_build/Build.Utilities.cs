@@ -320,7 +320,7 @@ partial class Build
         .Executes(ReplaceReceivedFilesInSnapshots);
 
     Target PrintSnapshotsDiff  => _ => _
-      .Description("Prints snapshots differences from the current tests")
+      .Description("Prints snapshots differences --compatible-runtimes $compatible_runtimesxfrom the current tests")
       .AssuredAfterFailure()
       .OnlyWhenStatic(() => IsServerBuild)
       .Executes(() =>
@@ -493,7 +493,7 @@ partial class Build
         return MSBuildTargetPlatform.x64;
     }
     
-    private static string GetDefaultRuntimeIdentifier()
+    private static string GetDefaultRuntimeIdentifier(bool isAlpine)
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
         return (Platform, (string)GetDefaultTargetPlatform()) switch
@@ -501,9 +501,9 @@ partial class Build
             (PlatformFamily.Windows, "x86") => "win-x86",
             (PlatformFamily.Windows, "x64") => "win-x64",
 
-            (PlatformFamily.Linux, "x64") => "linux-x64",
-            (PlatformFamily.Linux, "ARM64" or "ARM64EC") => "linux-arm64",
-
+            (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
+            (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
+            
             (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
             _ => null
         };

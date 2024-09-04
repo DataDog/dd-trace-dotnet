@@ -103,7 +103,7 @@ partial class Build : NukeBuild
     // using string instead of DotNetRuntimeIdentifier type because parameter values must match field names, e.g. "win-x64" vs "win_x64"
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
-    readonly string RuntimeIdentifier = GetDefaultRuntimeIdentifier();
+    readonly string RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
 
     Target Info => _ => _
                        .Description("Describes the current configuration")
@@ -120,6 +120,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                         });
 
     Target Clean => _ => _
