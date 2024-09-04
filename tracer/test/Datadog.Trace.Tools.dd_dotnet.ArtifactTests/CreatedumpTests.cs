@@ -111,11 +111,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var (executable, args) = PrepareSampleApp(EnvironmentHelper);
 
-        var bashScript = $"""
-                         #!/bin/bash
-                         {executable} {args} crash-datadog
-                         """;
-
+        var bashScript = $"#!/bin/bash\n{executable} {args} crash-datadog\n"
         using var bashFile = new TemporaryFile();
         bashFile.SetContent(bashScript);
 
