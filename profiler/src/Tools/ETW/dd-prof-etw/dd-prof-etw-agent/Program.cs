@@ -22,7 +22,7 @@ namespace Datadog.Profiler.IntegrationTests
 
             if (endpoint == null)
             {
-                Console.WriteLine("Missing required argument: -e <namedpipe endpoint such as \\\\.\\pipe\\DD_ETW_TEST_AGENT>");
+                Console.WriteLine("Missing required argument: -e <namedpipe endpoint such as DD_ETW_TEST_AGENT (no \\\\.\\pipe\\ prefix!)>");
                 return;
             }
 

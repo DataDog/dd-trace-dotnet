@@ -104,9 +104,13 @@ HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, 
     {
         if (pLogger != nullptr)
         {
+            auto error = ::GetLastError();
             std::ostringstream builder;
-            builder << "Timeout when trying to connect to" << portName << "...";
+            builder << "WaitNamedPipe(" << portName << ") failed with error " << error;
+            pLogger->Error(builder.str());
         }
+
+        return INVALID_HANDLE_VALUE;
     }
 
     HANDLE hPipe = ::CreateFileA(

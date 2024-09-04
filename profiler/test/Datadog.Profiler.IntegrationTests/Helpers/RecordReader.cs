@@ -142,11 +142,6 @@ namespace Datadog.Profiler.IntegrationTests
 
         public RecordReader(BinaryReader reader, IRecordDumper recordDumper, IEventDumper eventDumper)
         {
-            if (eventDumper == null)
-            {
-                throw new ArgumentNullException(nameof(eventDumper));
-            }
-
             _reader = reader;
             _recordDumper = recordDumper;
             _eventDumper = eventDumper;

@@ -17,7 +17,7 @@ namespace Datadog.Profiler.IntegrationTests
     public class AgentEtwProxy : IRecordDumper
     {
         // endpoint serviced by the profiler based on its PID
-        private const string ProfilerNamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
+        private const string ProfilerNamedPipePrefix = "DD_ETW_CLIENT_";
 
         private string _agentEndPoint;
         private string _eventsFilename;
@@ -91,7 +91,12 @@ namespace Datadog.Profiler.IntegrationTests
             try
             {
                 // simulate the Agent that accepts register/unregister commands from the profiler
-                using (var server = new NamedPipeServerStream(_agentEndPoint, PipeDirection.InOut, 2, PipeTransmissionMode.Byte))
+                using (var server = new NamedPipeServerStream(
+                                            _agentEndPoint,
+                                            PipeDirection.InOut,
+                                            2,
+                                            PipeTransmissionMode.Byte,
+                                            PipeOptions.None))
                 {
                     Console.WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
                     await server.WaitForConnectionAsync();
@@ -118,6 +123,7 @@ namespace Datadog.Profiler.IntegrationTests
 
                         await server.WriteAsync(outBuffer, 0, IpcHeader.HeaderSize);
                         await server.FlushAsync();
+                        server.WaitForPipeDrain();
                     }
                 }
             }
@@ -149,7 +155,7 @@ namespace Datadog.Profiler.IntegrationTests
             }
             else if (command.Header.CommandIdOrResponseCode == AgentCommands.Unregister)
             {
-                OnProfilerRegistered((int)command.Pid);
+                OnProfilerUnregistered((int)command.Pid);
                 _profilerHasUnregistered = (_pid != (int)command.Pid);
 
                 return _profilerHasUnregistered;
@@ -163,6 +169,8 @@ namespace Datadog.Profiler.IntegrationTests
             string endPoint = ProfilerNamedPipePrefix + _pid.ToString();
             using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", endPoint, PipeDirection.Out))
             {
+                _pipeClient = pipeClient;
+
                 try
                 {
                     // Connect to the NamedPipe server
