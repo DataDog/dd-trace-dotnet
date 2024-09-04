@@ -12,7 +12,6 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.StatsdClient;
 
 #nullable enable
 
