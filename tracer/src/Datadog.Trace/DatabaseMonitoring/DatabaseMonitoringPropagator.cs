@@ -98,7 +98,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            byte version = 0; // version can have a maximum value of 15 in the current format
+            const byte version = 0; // version can have a maximum value of 15 in the current format
             var sampled = SamplingPriorityValues.IsKeep(span.Context.GetOrMakeSamplingDecision() ?? SamplingPriorityValues.Default);
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
