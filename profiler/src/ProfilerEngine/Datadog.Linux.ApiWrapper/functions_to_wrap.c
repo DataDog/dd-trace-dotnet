@@ -220,7 +220,7 @@ void initLibrary(void)
     char* passthrough = getenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH);
 
     originalMiniDumpName = getenv(DOTNET_DbgMiniDumpName);
-    if (originalMiniDumpName == NULL)
+    if (originalMiniDumpName == NULL || strncmp(originalMiniDumpName, datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
     {
         originalMiniDumpName = getenv(COMPlus_DbgMiniDumpName);
     }
