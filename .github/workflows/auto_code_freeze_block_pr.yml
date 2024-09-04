@@ -6,6 +6,10 @@ on:
 jobs:
   check_for_code_freeze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read # need to read milestones
+      statuses: write # add a commit status check
 
     steps:
     - uses: octokit/request-action@v2.x

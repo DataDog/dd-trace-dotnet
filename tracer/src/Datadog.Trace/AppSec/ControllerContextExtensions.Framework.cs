@@ -63,7 +63,7 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     // We exclude the query string params
-                    if (!QueryStringHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
+                    if (!RequestDataHelper.GetQueryString(context.Request)?.AllKeys.Contains(item.Key) ?? false)
                     {
                         bodyDic[item.Key] = item.Value;
                     }

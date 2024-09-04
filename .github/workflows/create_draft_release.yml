@@ -13,6 +13,10 @@ on:
 jobs:
   create_draft_release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create release
+      actions: read # read secrets
+      issues: write # change milestones 
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"

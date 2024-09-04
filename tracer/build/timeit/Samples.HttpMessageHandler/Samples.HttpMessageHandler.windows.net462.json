@@ -15,9 +15,9 @@
       "name": "CallTarget\u002BInlining\u002BNGEN"
     }
   ],
-  "processName": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net462\\Samples.HttpMessageHandler.exe",
+  "processName": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net462\\Samples.HttpMessageHandler.exe",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net462",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net462",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
     "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",

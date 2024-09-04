@@ -315,7 +315,8 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction([_httpTransport.Context.Request.Headers["Accept"]], blockInfo, redirectInfo);
+        var headers = RequestDataHelper.GetHeaders(_httpTransport.Context.Request) ?? new NameValueCollection();
+        var blockingAction = _security.GetBlockingAction([headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _httpTransport.Context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -375,41 +376,53 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
-        var headerKeys = request.Headers.Keys;
-        foreach (string originalKey in headerKeys)
+        var headers = RequestDataHelper.GetHeaders(request);
+        Dictionary<string, string[]>? headersDic = null;
+
+        if (headers is not null)
         {
-            var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
-            if (keyForDictionary != "cookie")
+            var headerKeys = headers.Keys;
+            headersDic = new Dictionary<string, string[]>(headerKeys.Count);
+            foreach (string originalKey in headerKeys)
             {
-                if (!headersDic.ContainsKey(keyForDictionary))
+                var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
+                if (keyForDictionary != "cookie")
                 {
-                    headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
+                    if (!headersDic.ContainsKey(keyForDictionary))
+                    {
+                        headersDic.Add(keyForDictionary, headers.GetValues(originalKey));
+                    }
+                    else
+                    {
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                    }
+                }
+            }
+        }
+
+        var cookies = RequestDataHelper.GetCookies(request);
+        Dictionary<string, List<string>>? cookiesDic = null;
+
+        if (cookies != null)
+        {
+            cookiesDic = new(cookies.AllKeys.Length);
+            for (var i = 0; i < cookies.Count; i++)
+            {
+                var cookie = cookies[i];
+                var keyForDictionary = cookie.Name ?? string.Empty;
+                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
                 }
                 else
                 {
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
+                    value.Add(cookie.Value);
                 }
             }
         }
 
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.AllKeys.Length);
-        for (var i = 0; i < request.Cookies.Count; i++)
-        {
-            var cookie = request.Cookies[i];
-            var keyForDictionary = cookie.Name ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-            if (!keyExists)
-            {
-                cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
-            }
-            else
-            {
-                value.Add(cookie.Value);
-            }
-        }
-
-        var queryString = QueryStringHelper.GetQueryString(request);
+        var queryString = RequestDataHelper.GetQueryString(request);
         Dictionary<string, string[]>? queryDic = null;
 
         if (queryString is not null)
@@ -442,12 +455,25 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestHeaderNoCookies, headersDic },
-            { AddressesConstants.RequestCookies, cookiesDic },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+
+        var url = RequestDataHelper.GetUrl(request);
+        if (url is not null)
+        {
+            dict[AddressesConstants.RequestUriRaw] = url.PathAndQuery;
+        }
+
+        if (headersDic is not null)
+        {
+            dict[AddressesConstants.RequestHeaderNoCookies] = headersDic;
+        }
+
+        if (cookiesDic is not null)
+        {
+            dict[AddressesConstants.RequestCookies] = cookiesDic;
+        }
 
         if (queryDic is not null)
         {

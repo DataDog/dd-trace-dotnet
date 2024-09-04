@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -242,7 +243,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Condition:");
                 builder.AppendLine($"Json:{evaluator.Condition.Value.Json}");
-                builder.AppendLine($"Expression: {evaluator.CompiledCondition.Value.ParsedExpression.ToReadableString()}");
+                builder.AppendLine($"Expression: {SanitizeExpression(evaluator.CompiledCondition.Value.ParsedExpression.ToReadableString())}");
                 builder.AppendLine($"Result: {evaluationResult.Condition}");
             }
 
@@ -269,6 +270,12 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             return builder.ToString();
+        }
+
+        private string SanitizeExpression(string expression)
+        {
+            string pattern = @",(?=\d*d\b)";
+            return Regex.Replace(expression, pattern, ".");
         }
 
         private string SanitizeEvaluationResult(string template)
