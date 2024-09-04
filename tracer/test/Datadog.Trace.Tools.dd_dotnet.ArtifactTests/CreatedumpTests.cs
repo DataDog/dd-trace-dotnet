@@ -112,14 +112,14 @@ public class CreatedumpTests : ConsoleTestHelper
         var (executable, args) = PrepareSampleApp(EnvironmentHelper);
 
         var bashScript = $"""
-                         #!/usr/bin/bash
+                         #!/bin/bash
                          {executable} {args} crash-datadog
                          """;
 
         using var bashFile = new TemporaryFile();
         bashFile.SetContent(bashScript);
 
-        using var helper = await StartConsole("/usr/bin/bash", bashFile.Path, EnvironmentHelper, false, environment);
+        using var helper = await StartConsole("/bin/bash", bashFile.Path, EnvironmentHelper, false, environment);
 
         await helper.Task;
 
