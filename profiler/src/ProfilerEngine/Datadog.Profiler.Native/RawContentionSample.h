@@ -12,7 +12,8 @@ public:
     inline static const std::string BucketLabelName = "Duration bucket";
     inline static const std::string RawCountLabelName = "raw count";
     inline static const std::string RawDurationLabelName = "raw duration";
-    inline static const std::string BlockingThreadInfo = "blocking thread";
+    inline static const std::string BlockingThreadIdLabelName = "blocking thread id";
+    inline static const std::string BlockingThreadNameLabelName = "blocking thread name";
 
 public:
     RawContentionSample() = default;
@@ -22,7 +23,8 @@ public:
         RawSample(std::move(other)),
         ContentionDuration(other.ContentionDuration),
         Bucket(std::move(other.Bucket)),
-        BlockingThread(other.BlockingThread)
+        BlockingThreadId(other.BlockingThreadId),
+        BlockingThreadName(std::move(other.BlockingThreadName))
     {
     }
 
@@ -33,7 +35,8 @@ public:
             RawSample::operator=(std::move(other));
             ContentionDuration = other.ContentionDuration;
             Bucket = std::move(other.Bucket);
-            BlockingThread = other.BlockingThread;
+            BlockingThreadId = other.BlockingThreadId;
+            BlockingThreadName = std::move(other.BlockingThreadName);
         }
         return *this;
     }
@@ -49,13 +52,15 @@ public:
         sample->AddNumericLabel(NumericLabel{RawCountLabelName, 1});
         sample->AddNumericLabel(NumericLabel{RawDurationLabelName, static_cast<uint64_t>(ContentionDuration)});
         sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
-        if (BlockingThread != 0)
+        if (BlockingThreadId != 0)
         {
-            sample->AddNumericLabel(NumericLabel{BlockingThreadInfo, BlockingThread});
+            sample->AddNumericLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
+            sample->AddLabel(Label{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
         }
     }
 
     double ContentionDuration;
     std::string Bucket;
-    uint64_t BlockingThread;
+    uint64_t BlockingThreadId;
+    shared::WSTRING BlockingThreadName;
 };
