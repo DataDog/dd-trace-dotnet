@@ -41,6 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = Fixture.Agent;
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            ScrubFingerprintHeaders(settings);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
@@ -114,6 +115,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             RuleFile = ruleFile;
             SetEnvironmentVariable(ConfigurationKeys.AppSec.HtmlBlockedTemplate, blockingHtmlTemplate);
             SetEnvironmentVariable(ConfigurationKeys.AppSec.JsonBlockedTemplate, blockingJsonTemplate);
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         protected AspNetCoreTestFixture Fixture { get; }

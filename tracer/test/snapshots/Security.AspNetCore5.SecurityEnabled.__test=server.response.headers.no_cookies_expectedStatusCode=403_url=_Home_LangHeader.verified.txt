@@ -29,6 +29,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.header: hdr-0000000000--1-4740ae63,
+      _dd.appsec.fp.http.network: net-0-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -73,6 +75,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.header: hdr-0000000000--1-4740ae63,
+      _dd.appsec.fp.http.network: net-0-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -117,6 +121,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.header: hdr-0000000000--1-4740ae63,
+      _dd.appsec.fp.http.network: net-0-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -161,6 +167,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.header: hdr-0000000000--1-4740ae63,
+      _dd.appsec.fp.http.network: net-0-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -205,6 +213,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.fp.http.header: hdr-0000000000--1-4740ae63,
+      _dd.appsec.fp.http.network: net-0-1000000000,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
