@@ -132,7 +132,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "mysql", SamplingPriorityValues.UserKeep, false, null)]
-        public void ExpectedContextSet(string propagationMode, string integration, int? samplingPriority, bool shouldInject, string expectedContext)
+        public void ExpectedContextSet(string propagationMode, string integration, int samplingPriority, bool shouldInject, string expectedContext)
         {
             Enum.TryParse(propagationMode, ignoreCase: true, out DbmPropagationLevel dbmPropagationLevel);
             Enum.TryParse(integration, ignoreCase: true, out IntegrationId integrationId);
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
                          .Callback<object>(value => context = (byte[])value);
 
             var span = _v0Tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
-            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+            span.Context.TraceContext.SetSamplingPriority(samplingPriority);
 
             DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
 
