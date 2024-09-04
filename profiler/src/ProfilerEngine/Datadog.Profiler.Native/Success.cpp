@@ -33,10 +33,12 @@ Success::Success(std::unique_ptr<SuccessImpl> details) :
 
 Success::~Success() = default;
 
-std::string Success::message() const noexcept
+std::string const & Success::message() const noexcept
 {
+    static std::string empty;
+
     if (_details == nullptr)
-        return std::string();
+        return empty;
     return _details->message();
 }
 
