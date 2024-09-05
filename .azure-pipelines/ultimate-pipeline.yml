@@ -2616,6 +2616,7 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Linux,Windows]
+      allowSkipped: true
 
   - job: Linux
     timeoutInMinutes: 60 #default value
