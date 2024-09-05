@@ -52,7 +52,7 @@ namespace Datadog.Trace.Activity
                     {
                         if (handler is DisableActivityHandler)
                         {
-                            Log.Information("ActivityListenerHandler: {SourceName} will not be listened to by the .NET Tracer.", sName);
+                            Log.Information("ActivityListenerHandler: The .NET Tracer will not listen to {SourceName}.", sName);
                             return false;
                         }
 
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Activity
                 {
                     if (handler is DisableActivityHandler)
                     {
-                        Log.Information("ActivityListenerHandler: {SourceName} will not be listened to by the .NET Tracer.", sName);
+                        Log.Information("ActivityListenerHandler: The .NET Tracer will not listen to {SourceName}.", sName);
                         return false;
                     }
 
