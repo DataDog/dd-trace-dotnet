@@ -84,23 +84,27 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
 // .NET Framework implementation
 void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
 {
-    AddContentionSample(timestamp, threadId, contentionDurationNs, 0, stack);
+    AddContentionSample(timestamp, threadId, contentionDurationNs, 0, WStr(""), stack);
 }
 
 void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 {
-    ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(osThreadId);
+    std::shared_ptr<ManagedThreadInfo> info;
+    if (osThreadId != 0 && _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
+    {
+        ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
+    }
 }
 
 // .NET synchronous implementation: we are expecting to be called from the same thread that is contending.
 // It means that the current thread will be stack walking itself.
 void ContentionProvider::OnContention(double contentionDurationNs)
 {
-    auto blockingThreadId = ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(0);
-    AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, _emptyStack);
+    auto [blockingThreadId, blockingThreadName] = ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(0, WStr(""));
+    AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
-void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, uint64_t blockingThreadId, const std::vector<uintptr_t>& stack)
+void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
     _lockContentionsDurationMetric->Add(contentionDurationNs);
@@ -208,7 +212,8 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
 
     rawSample.ContentionDuration = contentionDurationNs;
     rawSample.Bucket = std::move(bucket);
-    rawSample.BlockingThread = blockingThreadId;
+    rawSample.BlockingThreadId = blockingThreadId;
+    rawSample.BlockingThreadName = std::move(blockingThreadName);
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
