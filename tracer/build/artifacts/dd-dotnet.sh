@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TRACER_VERSION="2.59.0"
+TRACER_VERSION="2.58.1"
 
 # Get the directory of the script
 DIR=$(dirname "$(readlink -f "$0")")
