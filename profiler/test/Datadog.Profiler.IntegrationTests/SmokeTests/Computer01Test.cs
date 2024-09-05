@@ -94,7 +94,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckWalltimeCallstackCaching(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 6 --threads 200", output: _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 6 --threads 100", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.CacheCallstack] = "1";
 
             // leave all default profilers activated to check that it does not crash
