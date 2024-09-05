@@ -270,7 +270,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     try
     {
         auto result = _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
-        if (GetStackSnapshotResult()->IsCallstackCachingEnabled())
+        if (result >= 0 && GetStackSnapshotResult()->IsCallstackCachingEnabled())
         {
             // copy only the ucontext_t, the callstack will be copied by the sampling thread
             memcpy(&_pCurrentCollectionThreadInfo->PreviousCtx, ctx, sizeof(ucontext_t));
