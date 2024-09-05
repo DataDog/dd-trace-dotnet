@@ -2663,6 +2663,8 @@ stages:
       continueOnError: false
 
   - job: Windows
+    # disable the job for now, we would need a VS update on the runner
+    condition: false
     timeoutInMinutes: 60 #default value
     pool:
       name: azure-windows-scale-set-2
