@@ -9,8 +9,12 @@
 
 #include "ThreadCpuInfo.h"
 #include "IThreadsCpuManager.h"
+#include "ServiceBase.h"
 
-class ThreadsCpuManager : public IThreadsCpuManager
+class ThreadsCpuManager
+    :
+    public IThreadsCpuManager,
+    public ServiceBase
 {
 public:
     ThreadsCpuManager();

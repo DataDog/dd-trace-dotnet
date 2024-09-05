@@ -56,7 +56,7 @@ bool SamplesCollector::StopImpl()
 
     // Export the leftover samples
     CollectSamples(_samplesProviders);
-    Export();
+    Export(true);
 
     return true;
 }
@@ -90,7 +90,7 @@ void SamplesCollector::ExportWork()
     }
 }
 
-void SamplesCollector::Export()
+void SamplesCollector::Export(bool lastCall)
 {
     bool success = false;
 
@@ -115,7 +115,7 @@ void SamplesCollector::Export()
             batchedSamplesProvider.second = 0;
         }
 
-        success = _exporter->Export();
+        success = _exporter->Export(lastCall);
     }
     catch (std::exception const& ex)
     {

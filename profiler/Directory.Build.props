@@ -194,6 +194,8 @@
     <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
       <ClCompile>
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1</PreprocessorDefinitions>
+	<BuildStlModules>false</BuildStlModules>
+	<EnableModules>false</EnableModules>
       </ClCompile>
     </ItemDefinitionGroup>
 
