@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -18,6 +19,7 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -27,9 +29,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsFullSampling
 {
     public AspNetCore5IastTestsFullSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled")
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsFullSamplingIastEnabled")
     {
-        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
     }
 
     // When the request is finished without this X-Content-Type-Options: nosniff header and the content-type of the request looks
@@ -312,12 +313,99 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(-1, 10)]
+    [InlineData(-1, 15)]
+    [InlineData(15, 15)]
+    [InlineData(5, 15)]
+    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
+    {
+        // Set the configuration (use default configuration if -1 is passed)
+        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
+        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
+
+        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
+        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
+
+        IncludeAllHttpSpans = true;
+
+        // Using a new fixture here to use a new process that applies
+        // correctly the new environment variable value that is changing between tests
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+        await TryStartApp(newFixture);
+
+        var agent = newFixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
+}
+
+// Class to test particular features (not running all the default tests)
+public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
+{
+    public AspNetCore5IastTestsStackTraces(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsStackTraces", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200, redactionEnabled: true)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "1");
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie")]
+    [InlineData("Vulnerability.LocatedInFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
+    [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing")]
+    [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
+    public async Task TestVulnerabilityStack(string name, string url)
+    {
+        var fileName = "Iast.Stacks." + name;
+
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        foreach (var span in spans)
+        {
+            if (span.MetaStruct is not null)
+            {
+                if (span.MetaStruct.TryGetValue("_dd.stack", out var data))
+                {
+                    var json = MetaStructToJson(data);
+                    span.Tags["_dd.stack"] = json;
+                }
+
+                foreach (var key in span.MetaStruct.Keys)
+                {
+                    span.MetaStruct[key] = [];
+                }
+            }
+        }
+
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(fileName)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTests50PctSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTests50PctSamplingIastEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
     {
     }
 
@@ -469,7 +557,7 @@ public class AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetC
 public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, int vulnerabilitiesPerRequest)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsEnabled", isIastDeduplicationEnabled: false, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
+        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEnabled", isIastDeduplicationEnabled: false, samplingRate: 100, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest)
     {
     }
 
@@ -487,45 +575,8 @@ public abstract class AspNetCore5IastTestsVariableVulnerabilityPerRequestIastEna
 public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsRestartedSampleIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled", redactionEnabled: true, samplingRate: 100)
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsRestartedSampleIastEnabled", redactionEnabled: true, samplingRate: 100)
     {
-    }
-
-    [SkippableTheory]
-    [Trait("RunOnWindows", "True")]
-    [InlineData(-1, 10)]
-    [InlineData(-1, 15)]
-    [InlineData(15, 15)]
-    [InlineData(5, 15)]
-    public async Task TestMaxRanges(int maxRanges, int nbrRangesCreated)
-    {
-        // Set the configuration (use default configuration if -1 is passed)
-        var maxRangesConfiguration = maxRanges == -1 ? IastSettings.MaxRangeCountDefault : maxRanges;
-        SetEnvironmentVariable(ConfigurationKeys.Iast.MaxRangeCount, maxRangesConfiguration.ToString());
-
-        var filename = "Iast.MaxRanges.AspNetCore5.IastEnabled." + maxRangesConfiguration + "." + nbrRangesCreated;
-        var url = "/Iast/MaxRanges?count=" + nbrRangesCreated + "&tainted=taintedString|";
-
-        IncludeAllHttpSpans = true;
-
-        // Using a new fixture here to use a new process that applies
-        // correctly the new environment variable value that is changing between tests
-        var newFixture = new AspNetCoreTestFixture();
-        newFixture.SetOutput(Output);
-        await TryStartApp(newFixture);
-
-        var agent = newFixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
-
-        newFixture.Dispose();
-        newFixture.SetOutput(null);
     }
 
     [SkippableTheory]
@@ -602,7 +653,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
 public class AspNetCore5IastTestsStandaloneBillingIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsStandaloneBillingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsEnabled", redactionEnabled: true, samplingRate: 100)
+        : base(fixture, outputHelper, enableIast: true, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, testName: "AspNetCore5IastTestsStandaloneBillingIastEnabled", redactionEnabled: true, samplingRate: 100)
     {
         // Set environment variable to enable the Standalone ASM Billing feature
         SetEnvironmentVariable("DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED", "true");
@@ -1230,6 +1281,9 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SamplingRate = samplingRate;
         RedactionEnabled = redactionEnabled;
         IastTelemetryLevel = iastTelemetryLevel;
+
+        SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
