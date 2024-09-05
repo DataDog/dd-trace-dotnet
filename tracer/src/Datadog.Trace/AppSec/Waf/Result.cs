@@ -60,10 +60,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         public WafReturnCode ReturnCode { get; }
 
-        public bool ShouldReportSchema => ExtractSchemaDerivatives?.Count > 0;
-
-        public bool ShouldReportFingerprint { get; }
-
         public IReadOnlyCollection<object>? Data { get; }
 
         public Dictionary<string, object?>? Actions { get; }
