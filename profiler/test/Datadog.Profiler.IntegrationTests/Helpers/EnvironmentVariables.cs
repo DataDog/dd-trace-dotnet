@@ -32,5 +32,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string CpuProfilingInterval = "DD_INTERNAL_CPU_PROFILING_INTERVAL";
         public const string SsiShortLivedThreshold = "DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD";
         public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
+        public const string CacheCallstack = "DD_INTERNAL_CACHE_CALLSTACKS";
     }
 }

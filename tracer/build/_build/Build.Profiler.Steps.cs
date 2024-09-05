@@ -807,6 +807,7 @@ partial class Build
                 { "DD_PROFILING_HEAP_ENABLED", "1"},
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
+                { "DD_INTERNAL_CACHE_CALLSTACKS", "1"}
             };
 
         if (IsLinux)
