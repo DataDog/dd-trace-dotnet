@@ -503,6 +503,10 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules);
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);

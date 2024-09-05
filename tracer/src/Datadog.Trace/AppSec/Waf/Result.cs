@@ -111,7 +111,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 if ((derivative.Key == Tags.AppSecFpEndpoint) || (derivative.Key == Tags.AppSecFpHeader) || (derivative.Key == Tags.AppSecFpHttpNetwork) || (derivative.Key == Tags.AppSecFpSession))
                 {
-                    if (FingerprintDerivatives == null)
+                    if (FingerprintDerivatives is null)
                     {
                         FingerprintDerivatives = new Dictionary<string, object?>();
                     }
@@ -120,7 +120,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    if (ExtractSchemaDerivatives == null)
+                    if (ExtractSchemaDerivatives is null)
                     {
                         ExtractSchemaDerivatives = new Dictionary<string, object?>();
                     }
