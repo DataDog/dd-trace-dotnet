@@ -151,20 +151,23 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             parameterMock.SetupSet(p => p.Value = It.IsAny<byte[]>())
                          .Callback<object>(value => context = (byte[])value);
 
-            var span = _v0Tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
-            span.Context.TraceContext.SetSamplingPriority(samplingPriority);
-
-            DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
-
-            if (shouldInject)
+            foreach (var tracer in new[] { _v0Tracer, _v1Tracer })
             {
-                sql.Should().StartWith("set context_info ");
-                BitConverter.ToString(context).Replace("-", string.Empty).Should().Be(expectedContext);
-            }
-            else
-            {
-                sql.Should().BeNull();
-                context.Should().BeNull();
+                var span = tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
+                span.Context.TraceContext.SetSamplingPriority(samplingPriority);
+
+                DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
+
+                if (shouldInject)
+                {
+                    sql.Should().StartWith("set context_info ");
+                    BitConverter.ToString(context).Replace("-", string.Empty).Should().Be(expectedContext);
+                }
+                else
+                {
+                    sql.Should().BeNull();
+                    context.Should().BeNull();
+                }
             }
         }
     }
