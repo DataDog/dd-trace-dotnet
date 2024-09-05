@@ -5916,7 +5916,13 @@ stages:
           failOnStderr: true
 
         - script: |
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/.
+            # to force it to use our local package only, we have to create a custom config, and tell the tool to use that
+            echo '<?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear /><add key="local" value="'"$(smokeTestAppDir)/artifacts/."'" /></packageSources></configuration>' > nuget.config
+
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --configfile ./nuget.config
+
+            # remove the config afterwards to avoid interfering with anything else
+            rm nuget.config
           displayName: Install tracer
 
         - script: |
