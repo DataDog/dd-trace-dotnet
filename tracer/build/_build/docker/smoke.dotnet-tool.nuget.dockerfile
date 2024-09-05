@@ -22,7 +22,9 @@ ARG INSTALL_CMD
 RUN mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
     && mkdir -p /tool \
-    && dotnet tool install dd-trace --tool-path /tool --add-source /app/install/. \
+    && echo '<?xml version="1.0" encoding="utf-8"?><configuration><packageSources><clear /><add key="local" value="/app/install/." /></packageSources></configuration>' > nuget.config \
+    && dotnet tool install dd-trace --tool-path /tool --configfile ./nuget.config \
+    && rm ./nuget.config \
     && rm -rf /app/install
 
 # Set the optional env vars
