@@ -4939,8 +4939,8 @@ stages:
         command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
-#  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [generate_variables, merge_commit_id]
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -4969,11 +4969,6 @@ stages:
       inputs:
         artifact: runner-dotnet-tool
         path: $(smokeTestAppDir)/artifacts
-        buildType: 'specific'
-        project: 'dd-trace-dotnet'
-        definition: 54
-        buildVersionToDownload: 'specific'
-        pipelineId: 163463
 
     - script: |
         mkdir -p tracer/build_data/snapshots
@@ -5866,8 +5861,8 @@ stages:
       displayName: CheckSmokeTestsForErrors
 
 - stage: dotnet_tool_nuget_smoke_tests_macos
-#  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
-  dependsOn: [generate_variables, merge_commit_id]
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -5902,11 +5897,6 @@ stages:
           inputs:
             artifact: runner-dotnet-tool
             path: $(smokeTestAppDir)/artifacts
-            buildType: 'specific'
-            project: 'dd-trace-dotnet'
-            definition: 54
-            buildVersionToDownload: 'specific'
-            pipelineId: 163463
 
         - script: |
             mkdir -p tracer/build_data/snapshots
