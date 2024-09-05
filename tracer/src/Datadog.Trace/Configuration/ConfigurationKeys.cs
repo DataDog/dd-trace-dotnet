@@ -104,7 +104,7 @@ namespace Datadog.Trace.Configuration
         /// Default is empty (all ActivitySources will be subscribed to by default).
         /// Supports multiple values separated with commas.
         /// </summary>
-        public const string DisabledActivitySources = "DD_DISABLED_ACTIVITY_SOURCES";
+        public const string DisabledActivitySources = "DD_TRACE_DISABLED_ACTIVITY_SOURCES";
 
         /// <summary>
         /// Configuration key for enabling or disabling default Analytics.
