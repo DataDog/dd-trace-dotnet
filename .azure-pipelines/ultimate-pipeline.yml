@@ -163,6 +163,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
+  ToolVersion: 2.58.1
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -4885,6 +4886,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
@@ -4902,6 +4904,7 @@ stages:
         docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
@@ -4969,6 +4972,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5037,6 +5041,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5114,6 +5119,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg INSTALL_CMD="$(installCmd)" \
           dotnet-tool-self-instrument-smoke-tests
       env:
@@ -5343,6 +5349,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
@@ -5361,6 +5368,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-dddotnet-smoke-tests
@@ -5426,6 +5434,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5501,6 +5510,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           nuget-smoke-tests.windows
@@ -5521,6 +5531,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           nuget-dddotnet-smoke-tests.windows
@@ -5595,6 +5606,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           dotnet-tool-smoke-tests.windows
       env:
@@ -5906,7 +5918,7 @@ stages:
           failOnStderr: true
 
         - script: |
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/.
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version $(ToolVersion)
           displayName: Install tracer
 
         - script: |
