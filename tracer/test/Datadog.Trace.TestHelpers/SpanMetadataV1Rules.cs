@@ -888,6 +888,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service.remapped_from")
                 .IsOptional("_dd.base_service")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
+                .IsOptional("_dd.dbm_trace_injected")
+                .IsOptional("dd.instrumentation.time_ms")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
 

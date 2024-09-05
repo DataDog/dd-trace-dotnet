@@ -1927,7 +1927,7 @@ stages:
     # Not using chocolatey as we're getting 429 Too Many Requests
     - template: steps/install-msi.yml
       parameters:
-        url: "https://github.com/danmar/cppcheck/releases/download/2.12.0/cppcheck-2.12.0-x64-Setup.msi"
+        url: "https://github.com/danmar/cppcheck/releases/download/2.14.2/cppcheck-2.14.2-x64-Setup.msi"
         filename: "cppcheck.msi"
         addToPath: "C:\\Program Files\\Cppcheck"
         msiParams: "ADDLOCAL=CppcheckCore,CLI,GUI,Translations,ConfigFiles,PlatformFiles,PythonAddons,CRT"
@@ -2722,6 +2722,7 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Linux,Windows]
+      allowSkipped: true
 
   - job: Linux
     timeoutInMinutes: 60 #default value
@@ -2769,6 +2770,8 @@ stages:
       continueOnError: false
 
   - job: Windows
+    # disable the job for now, we would need a VS update on the runner
+    condition: false
     timeoutInMinutes: 60 #default value
     pool:
       name: azure-windows-scale-set-2

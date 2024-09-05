@@ -186,9 +186,21 @@ partial class Build
         (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, },
     };
 
+    string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
+    {
+        LatestMajorVersion => "origin/master",
+        var major => $"origin/release/{major}.x",
+    };
+
     bool RequiresThoroughTesting()
     {
-        var baseBranch = string.IsNullOrEmpty(TargetBranch) ? "origin/master" : $"origin/{TargetBranch}";
+        var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+        if (IsGitBaseBranch(baseBranch))
+        {
+            // do a full run on the main branch
+            return true;
+        }
+
         var gitChangedFiles = GetGitChangedFiles(baseBranch);
         var integrationChangedFiles = TargetFrameworks
             .SelectMany(tfm => new[]
