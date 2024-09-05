@@ -646,6 +646,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("out.host")
                 .IsOptional("_dd.base_service")
+                .IsOptional("_dd.dbm_trace_injected")
+                .IsOptional("dd.instrumentation.time_ms")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
