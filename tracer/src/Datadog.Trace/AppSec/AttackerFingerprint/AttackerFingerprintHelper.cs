@@ -14,6 +14,7 @@ namespace Datadog.Trace.AppSec.AttackerFingerprint;
 
 internal static class AttackerFingerprintHelper
 {
+    public const string MinimumWAFVersion = "1.19.0";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AttackerFingerprintHelper));
     private static readonly Dictionary<string, object> _fingerprintRequest = new() { { AddressesConstants.WafContextProcessor, new Dictionary<string, object> { { "fingerprint", true } } } };
 

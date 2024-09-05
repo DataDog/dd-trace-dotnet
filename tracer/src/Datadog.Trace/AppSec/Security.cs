@@ -11,6 +11,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
@@ -503,10 +504,11 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules);
+            var fingerPrintSupported = WafVersionEqualOrAbove(AttackerFingerprintHelper.MinimumWAFVersion);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && fingerPrintSupported);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && fingerPrintSupported);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules && fingerPrintSupported);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules && fingerPrintSupported);
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
@@ -515,6 +517,23 @@ namespace Datadog.Trace.AppSec
         private bool WafSupportsCapability(BigInteger capability)
         {
             return RCMCapabilitiesHelper.WafSupportsCapability(capability, _waf?.Version);
+        }
+
+        private bool WafVersionEqualOrAbove(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                return false;
+            }
+
+            var currentVersion = _waf?.Version;
+
+            if (string.IsNullOrWhiteSpace(currentVersion))
+            {
+                return false;
+            }
+
+            return Version.Parse(currentVersion) >= Version.Parse(version);
         }
 
         private void InitWafAndInstrumentations(bool configurationFromRcm = false)
