@@ -15,7 +15,9 @@ using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
 using System.Net.Mail;
+using System.Reflection;
 using System.Text;
+using System.Web.Configuration;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -57,6 +59,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         public ActionResult Index()
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
             return Content("Ok\n");
         }
 
@@ -122,6 +125,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("QueryOwnUrl")]
         public ActionResult QueryOwnUrl()
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
             string result = string.Empty;
             try
             {
@@ -137,6 +141,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("JavaScriptSerializerDeserializeObject")]
         public ActionResult JavaScriptSerializerDeserializeObject(string input)
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
             try
             {
                 if (!string.IsNullOrEmpty(input))
@@ -162,11 +167,30 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommand")]
         public ActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Samples.Security.AspNetMvc5.test.txt"))
+            {
+                if (stream != null)
+                {
+                    var buffer = new byte[100];
+                    var read = stream.Read(buffer, 0, buffer.Length - 1);
+                }
+            }
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("none existent.txt"))
+            {
+                if (stream != null)
+                {
+                    var buffer = new byte[100];
+                    var read = stream.Read(buffer, 0, buffer.Length - 1);
+                }
+            }
+
             return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
         private ActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
+            "testy-string".Normalize(NormalizationForm.FormKC);
             try
             {
                 if (!string.IsNullOrEmpty(file))
