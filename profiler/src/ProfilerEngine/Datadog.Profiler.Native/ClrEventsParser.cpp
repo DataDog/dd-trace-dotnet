@@ -318,6 +318,10 @@ void ClrEventsParser::NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionStart: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
 }
@@ -338,6 +342,10 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionEnd: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
             generation,

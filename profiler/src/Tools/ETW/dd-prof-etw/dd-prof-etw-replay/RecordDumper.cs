@@ -11,7 +11,7 @@ namespace Datadog.Profiler.IntegrationTests
     {
         public void DumpRecord(byte[] record, int recordSize)
         {
-            Console.WriteLine($"> record size = {recordSize}");
+            //Console.WriteLine($"> record size = {recordSize}");
         }
     }
 }

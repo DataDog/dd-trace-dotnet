@@ -31,7 +31,8 @@ namespace Datadog.Profiler.IntegrationTests
                     int count = 0;
                     while (fs.Position < fs.Length)
                     {
-                        Console.Write($"#{++count,6} ");
+                        var current = ++count;
+                        //Console.Write($"#{current,6} ");
                         recordReader.ReadRecord();
                     }
 

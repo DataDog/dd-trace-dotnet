@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading;
 
 namespace Datadog.Profiler.IntegrationTests
 {
@@ -26,6 +27,8 @@ namespace Datadog.Profiler.IntegrationTests
                 return;
             }
 
+            ManualResetEventSlim mre = new ManualResetEventSlim(false);
+
             Console.WriteLine($"Waiting for profiler registration from {endpoint}");
             AgentEtwProxy agentEtwProxy = new AgentEtwProxy(endpoint, eventsFilename);
             agentEtwProxy.ProfilerRegistered += (sender, e) =>
@@ -41,12 +44,10 @@ namespace Datadog.Profiler.IntegrationTests
             agentEtwProxy.ProfilerUnregistered += (sender, e) =>
             {
                 Console.WriteLine($"Profiler unregistered with PID {e.Value}");
+                mre.Set();
             };
 
-            while (!agentEtwProxy.ProfilerHasUnregistered)
-            {
-                System.Threading.Thread.Sleep(1000);
-            }
+            mre.Wait();
         }
 
         private static void ParseCommandLine(string[] args, out string eventsFilename, out string endpoint)

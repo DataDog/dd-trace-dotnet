@@ -69,6 +69,7 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
     auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
 
     DWORD readSize;
+    DWORD eventsCount = 0;
     while (!_stopRequested.load())
     {
         readSize = 0;
@@ -105,6 +106,8 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
                 continue;
             }
 
+            eventsCount++;
+
             const EVENT_HEADER* pHeader = &(message->EtwHeader);
             uint32_t tid = pHeader->ThreadId;
             uint8_t version = pHeader->EventDescriptor.Version;
@@ -125,6 +128,10 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             if (_pReceiver != nullptr)
             {
                 _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
+
+                std::stringstream builder;
+                builder << "ETW event #" << eventsCount << " | " << keyword << " - " << id;
+                _logger->Info(builder.str());
             }
 
             // fire and forget so no need to answer
