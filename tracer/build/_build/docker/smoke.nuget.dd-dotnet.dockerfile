@@ -8,14 +8,14 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
 WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
-# do an initial restore
-RUN dotnet restore "AspNetCoreSmokeTest.csproj"
-
-# install the package
-RUN dotnet add package "Datadog.Trace.Bundle" --source /src/artifacts
-
 ARG PUBLISH_FRAMEWORK
-RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
+RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
+    && dotnet new nuget.config \
+    && dotnet nuget disable source nuget \
+    && dotnet nuget add source "/src/artifacts" \
+    && dotnet add package "Datadog.Trace.Bundle" \
+    && rm nuget.config \
+    && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
 FROM $RUNTIME_IMAGE AS publish
 

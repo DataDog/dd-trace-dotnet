@@ -13,8 +13,11 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
 ARG PUBLISH_FRAMEWORK
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
+    && dotnet new nuget.config \
+    && dotnet nuget disable source nuget \
     && dotnet nuget add source "c:\src\artifacts" \
     && dotnet add package "Datadog.Trace.Bundle" \
+    && rm nuget.config \
     && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o "c:\src\publish"
 
 FROM $RUNTIME_IMAGE AS publish-msi
