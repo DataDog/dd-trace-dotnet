@@ -58,6 +58,9 @@ partial class Build : NukeBuild
     [Parameter("Is the build running on Alpine linux? Default is 'false'")]
     readonly bool IsAlpine = false;
 
+    [Parameter("The current latest tracer version")]
+    const int LatestMajorVersion = 3;
+
     [Parameter("The current version of the source and build")]
     readonly string Version = "3.3.0";
 
