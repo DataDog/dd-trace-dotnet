@@ -97,10 +97,18 @@ download-single-step-artifacts:
       start_in: 15 minutes
   script:
     - .gitlab/download-single-step-artifacts.sh
+    - cp tracer/build/artifacts/requirements.json artifacts/requirements.json
   artifacts:
     expire_in: 2 weeks
     paths:
       - artifacts
+
+requirements_json_test:
+  rules:
+    - when: on_success
+  variables:
+    REQUIREMENTS_BLOCK_JSON_PATH: "tracer/build/artifacts/requirements_block.json"
+    REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
 
 package-oci:
   needs: [ download-single-step-artifacts ]
