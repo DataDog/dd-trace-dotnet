@@ -620,23 +620,50 @@ partial class Build
                 .EnableNoRestore()
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
-                    .SetOutput(MonitoringHomeDirectory / framework)));
+                    .SetOutput(MonitoringHomeDirectory / framework))
+            );
         });
 
+    Target PublishManagedTracerR2R => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .Executes(() =>
+        {
+            var targetFramework = TargetFramework.NET6_0;
+
+            // Needed as we need to restore with the RuntimeIdentifier
+            DotNetRestore(s => s
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetPublishReadyToRun(true)
+                .SetRuntime(RuntimeIdentifier)
+            );
+
+            DotNetPublish(s => s
+                .SetProject(Solution.GetProject(Projects.DatadogTraceMsBuild))
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetPublishReadyToRun(true)
+                .SetRuntime(RuntimeIdentifier)
+                .SetSelfContained(false)
+                .SetFramework(targetFramework)
+                .SetOutput(MonitoringHomeDirectory / targetFramework)
+            );
+        });
+    
     Target PublishNativeSymbolsWindows => _ => _
-      .Unlisted()
-      .OnlyWhenStatic(() => IsWin)
-      .After(CompileTracerNativeSrc, PublishManagedTracer)
-      .Executes(() =>
-       {
-           foreach (var architecture in ArchitecturesForPlatformForTracer)
-           {
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .After(CompileTracerNativeSrc, PublishManagedTracer)
+        .Executes(() => 
+        {
+            foreach (var architecture in ArchitecturesForPlatformForTracer)
+            {
                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                             $"{NativeTracerProject.Name}.pdb";
                var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                CopyFile(source, dest, FileExistsPolicy.Overwrite);
-           }
-       });
+            }
+        });
 
     Target PublishDdDotnetSymbolsWindows => _ => _
       .Unlisted()
