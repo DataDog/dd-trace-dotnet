@@ -13,6 +13,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectionsProfilerTest
     {
         private const string ScenarioGenerics = "--scenario 12";
+        private const string ScenarioWithoutGC = "--scenario 25 --threads 2 --param 1000";
         private const string GcRootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
 
         private readonly ITestOutputHelper _output;
@@ -54,6 +55,32 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        public void ShouldGetGarbageCollectionSamplesViaEtw(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+
+            // disable default profilers except GC
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT");
+
+            // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            agent.StartEtwProxy("DD_ETW_TEST_AGENT", "GarbageCollections\\3x3GCs.bevents");
+            int eventsCount = 0;
+            agent.EventsSent += (sender, e) => eventsCount = e.Value;
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            Assert.True(eventsCount > 0);
+            Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
+            // TODO: it should be possible to ensure that 3 GCs per generations are seen in the .pprof files
         }
 
         private bool CheckSamplesAreGC(string directory)

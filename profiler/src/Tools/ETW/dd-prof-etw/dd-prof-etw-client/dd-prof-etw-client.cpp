@@ -18,13 +18,17 @@
 #include "EtwEventDumper.h"
 #include "..\ConsoleLogger.h"
 
+
+// This application should be used in conjunction with a profiled .NET application that is emitting ETW events
+// for a certain scenario and serializes them into a .bevents file that can be replayed by dd-prof-etw-replay but
+// also during integration tests via the AgentEtwProxy integrated in the MockDatadogAgent.
 void ShowHelp()
 {
     printf("\nDatadog CLR Events Client v1.1\n");
     printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
     printf("\n");
     printf("Usage: -pid <pid of a .NET process emitting events> -r <filename containing the recorded events>\n");
-    printf("   Ex: -pid 1234 -r gc.events\n");
+    printf("   Ex: -pid 1234 -r gc.bevents\n");
     printf("\n");
 }
 

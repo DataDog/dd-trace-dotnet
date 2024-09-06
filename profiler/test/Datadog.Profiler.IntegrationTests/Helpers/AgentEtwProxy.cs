@@ -23,7 +23,7 @@ namespace Datadog.Profiler.IntegrationTests
         private string _eventsFilename;
         private bool _profilerHasRegistered;
         private bool _profilerHasUnregistered;
-        private bool _eventHaveBeenSent;
+        private bool _eventsHaveBeenSent;
         private int _pid;
         private NamedPipeClientStream _pipeClient;
 
@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests
             _eventsFilename = eventsFilename;
             _profilerHasRegistered = false;
             _profilerHasUnregistered = false;
-            _eventHaveBeenSent = false;
+            _eventsHaveBeenSent = false;
             _pipeClient = null;
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -54,7 +54,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         public bool ProfilerHasUnregistered { get => _profilerHasUnregistered; }
 
-        public bool EventHaveBeenSent { get => _eventHaveBeenSent; }
+        public bool EventsHaveBeenSent { get => _eventsHaveBeenSent; }
 
         public void DumpRecord(byte[] record, int recordSize)
         {
@@ -68,7 +68,7 @@ namespace Datadog.Profiler.IntegrationTests
             _pipeClient.Flush();
 
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
-            Thread.Sleep(100);
+            Thread.Sleep(10);
         }
 
         private void OnProfilerRegistered(int pid)
@@ -148,6 +148,8 @@ namespace Datadog.Profiler.IntegrationTests
 
                 if (_profilerHasRegistered)
                 {
+                    // NOTE: we are waiting for the events to be sent by the profiler even though we did not
+                    //       respond to the registration command yet
                     await StartClientAsync();
                 }
 
@@ -192,7 +194,7 @@ namespace Datadog.Profiler.IntegrationTests
                                 recordReader.ReadRecord();
                             }
 
-                            _eventHaveBeenSent = true;
+                            _eventsHaveBeenSent = true;
                             OnEventsSent(count);
                         }
                     }
