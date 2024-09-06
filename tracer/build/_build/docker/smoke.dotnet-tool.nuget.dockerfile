@@ -19,10 +19,11 @@ WORKDIR /app
 COPY --from=builder /src/artifacts /app/install
 
 ARG INSTALL_CMD
+ARG TOOL_VERSION
 RUN mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
     && mkdir -p /tool \
-    && dotnet tool install dd-trace --tool-path /tool --add-source /app/install/. \
+    && dotnet tool install dd-trace --tool-path /tool --add-source /app/install/. --version $TOOL_VERSION \
     && rm -rf /app/install
 
 # Set the optional env vars

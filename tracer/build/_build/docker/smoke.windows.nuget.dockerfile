@@ -11,10 +11,11 @@ USER ContainerAdministrator
 WORKDIR /src
 COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 
+ARG TOOL_VERSION
 ARG PUBLISH_FRAMEWORK
 RUN dotnet restore "AspNetCoreSmokeTest.csproj" \
     && dotnet nuget add source "c:\src\artifacts" \
-    && dotnet add package "Datadog.Trace.Bundle" --prerelease \
+    && dotnet add package "Datadog.Trace.Bundle" --version %TOOL_VERSION% --prerelease \
     && dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework %PUBLISH_FRAMEWORK% -o "c:\src\publish"
 
 FROM $RUNTIME_IMAGE AS publish-msi
