@@ -4062,6 +4062,13 @@ stages:
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-musl-arm64
+          inputs:
+            artifact: runner-standalone-linux-musl-arm64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
         # release artifacts
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
