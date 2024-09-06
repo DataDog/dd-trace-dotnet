@@ -101,7 +101,7 @@ steps:
 - ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
       echo "Verifying snapshot session (fail on mis-match)"
-      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --w '\nGetting a 400 means there is a diff in snapshots. You can diff the files with the artifacts generated. You can also run the tests locally. Follow the doc in /docs/development/CI/RunSmokeTestsLocally\n' --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+      ${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail-with-body "http://localhost:8126$(VERIFY_ENDPOINT)"
     displayName: check snapshots
     env:
       DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
@@ -146,8 +146,12 @@ steps:
 # Run crash tests
 - ${{ if and(eq(parameters.isLinux, true), eq(parameters.isNoop, false)) }}:
   - bash: |
-      LOGS=$(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
-      echo $LOGS
+      LOGS=""
+      while IFS= read -r line
+      do
+        echo "$line"  # Output the log line to stdout in real-time
+        LOGS+="$line"$'\n'  # Capture each line into LOGS variable
+      done < <(${{ parameters.dockerComposePath }} -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e CRASH_APP_ON_STARTUP=1 -e COMPlus_DbgEnableMiniDump=0 ${{ parameters.target }})
 
       # check logs for evidence of crash detection in the output
       expected="The crash may have been caused by automatic instrumentation"

@@ -124,15 +124,19 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             var threadIds = SamplesHelper.GetThreadIds(pprofDir);
             // get samples with lock-count value set and blocking thread info
             var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
-                .Where(e => e.Labels.Any(x => x.Name == "blocking thread"));
+                .Where(e => e.Labels.Any(x => x.Name == "blocking thread id"));
 
             contentionSamples.Should().NotBeEmpty();
 
             foreach (var (_, labels, _) in contentionSamples)
             {
-                var label = labels.FirstOrDefault(l => l.Name == "blocking thread");
-                label.Name.Should().NotBeNullOrWhiteSpace();
-                threadIds.Should().Contain(int.Parse(label.Value), $"Unknown blocking thread id {label.Value}");
+                var blockingThreadIdLabel = labels.FirstOrDefault(l => l.Name == "blocking thread id");
+                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
+                threadIds.Should().Contain(int.Parse(blockingThreadIdLabel.Value), $"Unknown blocking thread id {blockingThreadIdLabel.Value}");
+
+                var blockingThreadNameLabel = labels.FirstOrDefault(l => l.Name == "blocking thread name");
+                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
+                blockingThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
             }
         }
     }

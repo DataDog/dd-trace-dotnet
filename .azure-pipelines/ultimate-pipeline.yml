@@ -2616,6 +2616,7 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Linux,Windows]
+      allowSkipped: true
 
   - job: Linux
     timeoutInMinutes: 60 #default value
@@ -2663,6 +2664,8 @@ stages:
       continueOnError: false
 
   - job: Windows
+    # disable the job for now, we would need a VS update on the runner
+    condition: false
     timeoutInMinutes: 60 #default value
     pool:
       name: azure-windows-scale-set-2
@@ -4056,6 +4059,13 @@ stages:
           displayName: Download standalone dotnet tool linux-arm64
           inputs:
             artifact: runner-standalone-linux-arm64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-musl-arm64
+          inputs:
+            artifact: runner-standalone-linux-musl-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 

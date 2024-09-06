@@ -8,14 +8,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlTypes;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -45,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix)))
+                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -103,11 +100,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjected);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
+                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
                         if (!string.IsNullOrEmpty(propagatedCommand))
                         {
                             command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjected)
+                            if (traceParentInjectedInComment || traceParentInjectedInContext)
                             {
                                 tags.DbmTraceInjected = "true";
                             }
@@ -119,6 +117,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 Log.Error(ex, "Error propagating span data for DBM");
             }
+
+            // we have to start the span before doing the DBM propagation work (to have the span ID)
+            // but ultimately, we don't want to measure the time spent instrumenting.
+            scope.Span.ResetStartTime();
 
             return scope;
 
