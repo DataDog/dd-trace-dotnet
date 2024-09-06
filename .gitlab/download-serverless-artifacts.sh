@@ -36,7 +36,7 @@ architectures=("x64" "arm64")
 for architecture in "${architectures[@]}"; do
   echo "Looking for artifacts for architecture '$architecture'"
 
-  artifacts=("linux-tracer-home-linux-$architecture-r2r" "linux-universal-home-linux-$architecture")
+  artifacts=("linux-tracer-home-linux-$architecture-r2r")
 
   # Now try to download the artifacts from the build
   for artifactName in "${artifacts[@]}"; do

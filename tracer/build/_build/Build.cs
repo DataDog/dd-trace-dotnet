@@ -96,9 +96,6 @@ partial class Build : NukeBuild
 
     [Parameter("Should we build and run tests against _all_ target frameworks, or just the reduced set. Defaults to true locally, false in PRs, and true in CI on main branch only", List = false)]
     readonly bool IncludeAllTestFrameworks = true;
-
-    [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
-    readonly bool AsUniversal = false;
     
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
