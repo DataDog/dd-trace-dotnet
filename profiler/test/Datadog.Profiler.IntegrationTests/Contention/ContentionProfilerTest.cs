@@ -108,8 +108,8 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             //       Use IPs with specific format (0xFFFFFFxx) to identify them where xx
             //       would be the index of the fake frame string to use.
             //       --> EtwEventsHandler.cpp and FrameStore.cpp/.h should be impacted
-            //Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-            //AssertContainLockContentionSamples(runner.Environment.PprofDir);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            AssertContainLockContentionSamples(runner.Environment.PprofDir);
             Assert.True(eventsCount > 0);
         }
 

@@ -3,6 +3,7 @@
 
 
 #include "EtwEventsManager.h"
+#include "FrameStore.h"
 #include "IContentionListener.h"
 #include "IAllocationsListener.h"
 #include "IGCSuspensionsListener.h"
@@ -294,14 +295,32 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
     }
 }
 
+// In case of tests, a custom endpoint can be used to avoid the need of the Datadog Agent
+// and the received IPs are not valid --> we need to use a fake one
 void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    if (_agentEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->ContentionCallStack.clear();
+        pThreadInfo->ContentionCallStack.push_back(FrameStore::FakeLockContentionIP);
+    }
 }
 
 void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    if (_agentEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->AllocationCallStack.clear();
+        pThreadInfo->AllocationCallStack.push_back(FrameStore::FakeAllocationIP);
+    }
 }
 
 void EtwEventsManager::OnStop()

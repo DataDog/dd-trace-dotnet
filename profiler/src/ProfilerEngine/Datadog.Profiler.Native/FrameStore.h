@@ -32,14 +32,23 @@ private:
         std::string Parameters;
     };
 
+
+// For tests, some IPs are not valid, so we need to fake them
+// Since addresses less than 4K are not valid, we use them as fake IPs
+public:
+    static const uintptr_t FakeUnknownIP = 0;
+    static const uintptr_t FakeLockContentionIP = 1;
+    static const uintptr_t FakeAllocationIP = 2;
+    // !!  If you add more fake IPs, update this and add new strings in FrameStore.cpp  !!
+    static const uintptr_t MaxFakeIP = 2;
+
 public:
     FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration, IDebugInfoStore* pDebugInfoStore);
 
-public :
+public:
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
     bool GetTypeName(ClassID classId, std::string_view& name) override;
-
 
 private:
     std::optional<std::pair<HRESULT, FunctionID>> GetFunctionFromIP(uintptr_t instructionPointer);
