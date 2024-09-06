@@ -6,23 +6,9 @@
 
 set -eo pipefail
 
-#Create a directory to store the files
+# Create a directory to store the files
 target_dir=artifacts
 mkdir -p $target_dir
-
-# if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
-#   echo "Downloading artifacts from Github"
-#   VERSION=${DOTNET_PACKAGE_VERSION:-${CI_COMMIT_TAG##v}} # Use DOTNET_PACKAGE_VERSION if it exists, otherwise use CI_COMMIT_TAG without the v
-
-#   for SUFFIX in "" ".arm64"; do
-#     curl --location --fail \
-#       --output $target_dir/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz \
-#       "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz"
-#   done
-
-#   echo -n $VERSION > $target_dir/version.txt
-#   exit 0
-# fi
 
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 
