@@ -2,6 +2,12 @@ name: Auto Block PR on Code Freeze
 
 on:
   pull_request:
+    branches:
+      - 'main'
+      - 'master'
+      - 'release/**'
+      - 'hotfix/**'
+
 
 jobs:
   check_for_code_freeze:
