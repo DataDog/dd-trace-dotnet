@@ -320,7 +320,7 @@ partial class Build
         .Executes(ReplaceReceivedFilesInSnapshots);
 
     Target PrintSnapshotsDiff  => _ => _
-      .Description("Prints snapshots differences --compatible-runtimes $compatible_runtimesxfrom the current tests")
+      .Description("Prints snapshots differences from the current tests")
       .AssuredAfterFailure()
       .OnlyWhenStatic(() => IsServerBuild)
       .Executes(() =>
