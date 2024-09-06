@@ -1,0 +1,16 @@
+[
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "amd64", "libc":  "glibc:2.17"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "amd64", "libc":  "glibc:2.23"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "amd64", "libc":  "glibc:3.0"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "amd64", "libc":  "musl:1.2.2"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "amd64", "libc":  "musl:1.2.7"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "arm64", "libc":  "glibc:2.23"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "arm64", "libc":  "glibc:2.27"}},
+  {"filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "run", "myproj.csproj"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "test", "myproj.csproj"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "exec", "/some/path"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "exec", "-flag", "/some/path"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/not-dotnet", "args": ["/pathto/not-dotnet", "build"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}},
+  {"filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "buildme"], "envars":  [], "host": {"os": "windows", "arch": "amd64"}}
+]
