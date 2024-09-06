@@ -895,6 +895,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
@@ -917,6 +918,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
@@ -939,6 +941,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
     volumes:
     - ./:/project
@@ -980,6 +983,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
     volumes:
     - ./:/project
