@@ -442,7 +442,7 @@ stages:
             target: builder
             baseImage: centos7
             useNativeSdkVersion: true
-            command: "BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests"
+            command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
             retryCountForRunCommand: 1
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -464,49 +464,6 @@ stages:
         - publish: $(symbols)
           displayName: Upload linux tracer symbols
           artifact: linux-tracer-symbols-linux-x64-r2r
-
-        - publish: artifacts/build_data/tests
-          displayName: publish tracer and native loader test results
-          artifact: build_linux_tracer_unit_tests_results_linux-x64-r2r_$(System.JobAttempt)
-
-- stage: build_linux_universal
-  dependsOn: [merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build]
-
-  - job: build
-    timeoutInMinutes: 60 #default value
-    dependsOn: []
-    pool:
-      name: azure-linux-scale-set-2
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: "universal"
-        useNativeSdkVersion: true
-        command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
-        retryCountForRunCommand: 1
-
-    - publish: $(monitoringHome)/linux-musl-x64
-      displayName: Uploading linux universal artifacts
-      artifact: linux-universal-home-linux-x64
-
-    - publish: $(symbols)/linux-musl-x64
-      displayName: Upload linux universal symbols
-      artifact: linux-universal-symbols-linux-x64
 
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
