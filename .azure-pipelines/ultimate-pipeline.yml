@@ -4641,12 +4641,8 @@ stages:
             versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: |
-          # force using a commit just before https://github.com/DataDog/system-tests/pull/2962, which was adapted for v3 
-          git clone https://github.com/DataDog/system-tests.git
-          cd system-tests
-          git reset 3415a681860ef3c2e9376aae4befc791431e94d2 --hard
-          cd ..
+      # force using a branch just before https://github.com/DataDog/system-tests/pull/2962, which adapted the system tests for v3 
+      - script: git clone --branch andrew/release/2.x --depth 1 https://github.com/DataDog/system-tests.git
         displayName: Get system tests repo
 
       - task: DownloadPipelineArtifact@2
