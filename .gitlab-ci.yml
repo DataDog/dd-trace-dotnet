@@ -138,12 +138,13 @@ download-serverless-artifacts:
 aws-lambda-layer:
   stage: package
   needs: [download-serverless-artifacts]
+  when: manual
   trigger:
     project: DataDog/dd-trace-dotnet-aws-lambda-layer
-    branch: jordan.gonzalez/add-gitlab-ci
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PIPELINE_REF: $CI_COMMIT_REF_NAME
   allow_failure: true
 
 benchmark-serverless:
