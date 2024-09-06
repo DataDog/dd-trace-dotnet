@@ -78,6 +78,7 @@ publish:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  timeout: 45m
   tags: [ "arch:amd64" ]
   needs: []
   rules:
