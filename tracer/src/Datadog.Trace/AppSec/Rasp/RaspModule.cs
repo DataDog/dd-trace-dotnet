@@ -173,7 +173,7 @@ internal static class RaspModule
 
     private static void SendStack(Span rootSpan, string id)
     {
-        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, id);
 
         if (stack is not null)
         {

@@ -71,6 +71,11 @@ namespace Datadog.Trace.Configuration
             internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
 
             /// <summary>
+            /// with a default value of 75, defines the percentage of frames taken from the top of the stack when trimming. Min 0, Max 100
+            /// </summary>
+            internal const string MaxStackTraceDepthTopPercent = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
+
+            /// <summary>
             /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";

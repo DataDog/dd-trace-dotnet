@@ -431,6 +431,7 @@
   "DD_APPSEC_STACK_TRACE_ENABLED": "appsec_stack_trace_enabled",
   "DD_APPSEC_MAX_STACK_TRACES": "appsec_max_stack_traces",
   "DD_APPSEC_MAX_STACK_TRACE_DEPTH": "appsec_max_stack_trace_depth",
+  "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT": "appsec_max_stack_trace_depth_top_percent",
   "DD_APPSEC_SCA_ENABLED": "appsec_sca_enabled",
   "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE": "appsec_auto_user_instrumentation_mode",
   "DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER": "appsec_use_unsafe_encoder",

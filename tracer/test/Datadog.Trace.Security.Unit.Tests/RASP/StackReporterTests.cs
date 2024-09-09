@@ -20,7 +20,7 @@ public class StackReporterTests
     {
         int maxStackTraceDepth = 10;
         var mockFrames = CreateStackForTests(2);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 100, "test", mockFrames);
 
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
@@ -37,7 +37,7 @@ public class StackReporterTests
     {
         int maxStackTraceDepth = 2;
         var mockFrames = CreateStackForTests(4);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 75, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -53,7 +53,7 @@ public class StackReporterTests
     {
         int maxStackTraceDepth = 4;
         var mockFrames = CreateStackForTests(40);
-        var result = StackReporter.GetStack(maxStackTraceDepth, "test", mockFrames);
+        var result = StackReporter.GetStack(maxStackTraceDepth, 75, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -71,7 +71,7 @@ public class StackReporterTests
     {
         var mockFrames = CreateStackForTests(40);
 
-        var result = StackReporter.GetStack(0, "test", mockFrames);
+        var result = StackReporter.GetStack(0, 0, "test", mockFrames);
         Assert.NotNull(result);
         Assert.True(result.ContainsKey("frames"));
 
@@ -82,7 +82,7 @@ public class StackReporterTests
     public void GivenNoStackFrames_WhenGetStackIsCalled_ThenReturnsNull()
     {
         StackFrame[] mockFrames = [];
-        var result = StackReporter.GetStack(5, "test", mockFrames);
+        var result = StackReporter.GetStack(5, 100, "test", mockFrames);
         Assert.Null(result);
     }
 
