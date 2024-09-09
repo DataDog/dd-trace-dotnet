@@ -457,14 +457,6 @@ stages:
           displayName: Uploading linux tracer home artifact
           artifact: linux-tracer-home-linux-x64-r2r
 
-        - publish: $(System.DefaultWorkingDirectory)
-          displayName: Upload working directory after the build
-          artifact: build-linux-x64-r2r-working-directory
-
-        - publish: $(symbols)
-          displayName: Upload linux tracer symbols
-          artifact: linux-tracer-symbols-linux-x64-r2r
-
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
   variables:
@@ -688,14 +680,6 @@ stages:
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-linux-arm64-r2r
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the build
-      artifact: build-linux-arm64-r2r-working-directory
-
-    - publish: $(symbols)
-      displayName: Upload linux tracer symbols
-      artifact: linux-tracer-symbols-linux-arm64-r2r
 
 - stage: build_arm64_profiler
   dependsOn: [merge_commit_id]
