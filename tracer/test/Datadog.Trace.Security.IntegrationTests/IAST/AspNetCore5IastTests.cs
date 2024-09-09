@@ -359,7 +359,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsStackTraces", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200, redactionEnabled: true)
     {
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "true");
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "1");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "5");
     }
 
     [SkippableTheory]

@@ -25,6 +25,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.VendoredMicrosoftCode.System;
 using static Datadog.Trace.Configuration.ConfigurationKeys;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -422,15 +423,6 @@ internal static partial class IastModule
         }
     }
 
-    public static void OnHardcodedSecret(List<Vulnerability> vulnerabilities)
-    {
-        if (Iast.Instance.Settings.Enabled)
-        {
-            // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities).SingleSpan?.Dispose();
-        }
-    }
-
     public static IastModuleResponse OnInsecureAuthProtocol(string authHeader, IntegrationId integrationId)
     {
         OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureAuthProtocol);
@@ -667,7 +659,7 @@ internal static partial class IastModule
             return IastModuleResponse.Empty;
         }
 
-        var location = addLocation ? GetLocation(externalStack, currentSpan?.SpanId) : null;
+        var location = addLocation ? GetLocation(externalStack, currentSpan) : null;
         if (addLocation && location is null)
         {
             return IastModuleResponse.Empty;
@@ -686,6 +678,8 @@ internal static partial class IastModule
                 traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
+                vulnerability.Location?.ReportStack(currentSpan);
+
                 return IastModuleResponse.Vulnerable;
             }
             else
@@ -697,27 +691,28 @@ internal static partial class IastModule
         return IastModuleResponse.Empty;
     }
 
-    private static Location? GetLocation(StackTrace? externalStack = null, ulong? currentSpanId = null)
+    private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
-        var frameInfo = StackWalker.GetFrame(externalStack);
-        if (!frameInfo.IsValid)
+        var stackFrame = StackWalker.GetFrame(ref stack);
+        if (stackFrame is null)
         {
             return null;
         }
 
-        return new Location(frameInfo.StackFrame, currentSpanId);
-    }
-
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
-    {
-        // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
-        var batch = GetVulnerabilityBatch();
-        foreach (var vulnerability in vulnerabilities)
+        string? stackId = null;
+        if (stack != null)
         {
-            batch.Add(vulnerability);
+            if (currentSpan is null)
+            {
+                stackId = "1";
+            }
+            else
+            {
+                stackId = currentSpan.Context.TraceContext.GetNextVulnerabilityStackTraceId();
+            }
         }
 
-        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
+        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
@@ -725,22 +720,21 @@ internal static partial class IastModule
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
         batch.Add(vulnerability);
-        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
-    }
 
-    private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
-    {
         var tags = new IastTags()
         {
-            IastJson = vulnsJson,
+            IastJson = batch.ToJson(),
             IastEnabled = "1"
         };
 
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        scope.Span.Type = SpanTypes.IastVulnerability;
+        var span = scope.Span;
+        var traceContext = span.Context.TraceContext;
+        span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-        scope.Span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-        scope.Span.Context.TraceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+        traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+        traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
+        vulnerability.Location?.ReportStack(span);
         return new IastModuleResponse(scope);
     }
 

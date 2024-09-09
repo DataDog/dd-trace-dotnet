@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading;
 using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
@@ -31,6 +32,7 @@ internal class IastRequestContext
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
     private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
+    private int _lastVulnerabilityStackId = 0;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -378,5 +380,10 @@ internal class IastRequestContext
     internal void OnExecutedPropagationTelemetry()
     {
         _executedTelemetryHelper?.AddExecutedPropagation();
+    }
+
+    internal string GetNextVulnerabilityStackId()
+    {
+        return Interlocked.Increment(ref _lastVulnerabilityStackId).ToString();
     }
 }
