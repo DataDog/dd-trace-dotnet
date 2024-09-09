@@ -8,13 +8,19 @@ using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
-public class TestHeadersCollection : IBinaryHeadersCollection
+public class TestHeadersCollection : IHeadersCollection
 {
-    public Dictionary<string, byte[]> Values { get; } = new();
+    public Dictionary<string, string> Values { get; } = new();
 
-    public byte[] TryGetLastBytes(string name)
-        => Values.TryGetValue(name, out var value) ? value : null;
+    public IEnumerable<string> GetValues(string name)
+        => Values.TryGetValue(name, out var value) ? new[] { value } : null;
 
-    public void Add(string name, byte[] value)
+    public void Add(string name, string value)
         => Values[name] = value;
+
+    public void Set(string name, string value)
+        => Values[name] = value;
+
+    public void Remove(string name)
+        => Values.Remove(name);
 }

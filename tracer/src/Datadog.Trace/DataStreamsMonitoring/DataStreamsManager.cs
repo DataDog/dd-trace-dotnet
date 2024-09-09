@@ -100,6 +100,22 @@ internal class DataStreamsManager
         Log.Debug("Attempted to inject null pathway context");
     }
 
+    /// <summary>
+    /// Trys to extract a <see cref="PathwayContext"/>, from the provided <paramref name="headers"/>
+    /// Or as a fallback from  <paramref name="binaryHeaders"/>
+    /// If data streams is disabled, or no pathway is present, returns null.
+    /// </summary>
+    public PathwayContext? ExtractLegacyPathwayContext(IBinaryHeadersCollection binaryHeaders, IHeadersCollection headers)
+    {
+        if (!IsEnabled)
+        {
+            return null;
+        }
+
+        var ctx = DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers);
+        return ctx != null ? ctx : DataStreamsContextPropagator.Instance.Extract(binaryHeaders);
+    }
+
     public void TrackBacklog(string tags, long value)
     {
         if (!IsEnabled)

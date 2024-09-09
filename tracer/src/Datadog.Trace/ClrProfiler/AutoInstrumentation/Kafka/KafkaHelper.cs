@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     {
                         try
                         {
-                            pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
+                            pathwayContext = dataStreamsManager.ExtractLegacyPathwayContext(headers, headers);
                         }
                         catch (Exception ex)
                         {
@@ -332,7 +332,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
                     // produce is always the start of the edge, so defaultEdgeStartMs is always 0
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
-                    dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
+                    dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, adapter);
                 }
             }
             catch (Exception ex)

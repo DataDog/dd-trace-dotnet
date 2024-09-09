@@ -28,7 +28,7 @@ public class DataStreamsManagerTests
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
-        dsm.InjectPathwayContext(context, headers);
+        dsm.InjectPathwayContextAsBase64String(context, headers);
 
         headers.Values.Should().BeEmpty();
     }
@@ -41,7 +41,7 @@ public class DataStreamsManagerTests
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
-        dsm.InjectPathwayContext(context, headers);
+        dsm.InjectPathwayContextAsBase64String(context, headers);
 
         headers.Values.Should().NotBeEmpty();
     }
@@ -55,10 +55,10 @@ public class DataStreamsManagerTests
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
-        enabledDsm.InjectPathwayContext(context, headers);
+        enabledDsm.InjectPathwayContextAsBase64String(context, headers);
         headers.Values.Should().NotBeEmpty();
 
-        disabledDsm.ExtractPathwayContext(headers).Should().BeNull();
+        disabledDsm.ExtractPathwayContextAsBase64String(headers).Should().BeNull();
     }
 
     [Fact]
@@ -69,10 +69,10 @@ public class DataStreamsManagerTests
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1_234_000_000, 5_678_000_000);
 
-        dsm.InjectPathwayContext(context, headers);
+        dsm.InjectPathwayContextAsBase64String(context, headers);
         headers.Values.Should().NotBeEmpty();
 
-        var extracted = dsm.ExtractPathwayContext(headers);
+        var extracted = dsm.ExtractPathwayContextAsBase64String(headers);
         extracted.Should().NotBeNull();
         extracted.Value.Hash.Value.Should().Be(context.Hash.Value);
         extracted.Value.PathwayStart.Should().Be(context.PathwayStart);
