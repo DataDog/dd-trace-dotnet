@@ -112,8 +112,8 @@ internal class DataStreamsManager
             return null;
         }
 
-        var ctx = DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers);
-        return ctx != null ? ctx : DataStreamsContextPropagator.Instance.Extract(binaryHeaders);
+        return DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers) ??
+               DataStreamsContextPropagator.Instance.Extract(binaryHeaders);
     }
 
     public void TrackBacklog(string tags, long value)
