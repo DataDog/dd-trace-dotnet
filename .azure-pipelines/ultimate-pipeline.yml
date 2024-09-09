@@ -4041,55 +4041,73 @@ stages:
           displayName: Download linux profiler Alpine symbols
           inputs:
             artifact: linux-profiler-symbols-linux-musl-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler x64 symbols
           inputs:
             artifact: linux-profiler-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
             artifact: linux-profiler-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux profiler Alpine Arm64 symbols
+          inputs:
+            artifact: linux-profiler-symbols-linux-musl-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Alpine symbols
           inputs:
             artifact: linux-tracer-symbols-linux-musl-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer x64 symbols
           inputs:
             artifact: linux-tracer-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
             artifact: linux-tracer-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer Alpine Arm64 symbols
+          inputs:
+            artifact: linux-tracer-symbols-linux-musl-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux x64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux musl x64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux arm64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux musl arm64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-arm64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download dd-dotnet linux-x64 symbols
