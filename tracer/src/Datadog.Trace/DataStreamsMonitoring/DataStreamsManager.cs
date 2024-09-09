@@ -105,7 +105,7 @@ internal class DataStreamsManager
     /// Or as a fallback from  <paramref name="binaryHeaders"/>
     /// If data streams is disabled, or no pathway is present, returns null.
     /// </summary>
-    public PathwayContext? ExtractLegacyPathwayContext(IBinaryHeadersCollection binaryHeaders, IHeadersCollection headers)
+    public PathwayContext? ExtractLegacyPathwayContext(IHeadersCollection headers, IBinaryHeadersCollection binaryHeaders)
     {
         if (!IsEnabled)
         {
