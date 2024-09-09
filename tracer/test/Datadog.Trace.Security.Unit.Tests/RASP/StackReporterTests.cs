@@ -33,7 +33,7 @@ public class StackReporterTests
     }
 
     [Fact]
-    public void GivenMultipleFrames_WhenMaxDepthIsSet_ThenReturnsTop25AndBottom75Percent()
+    public void GivenMultipleFrames_WhenMaxDepthIsSet_ThenReturnsTop75AndBottom25Percent()
     {
         int maxStackTraceDepth = 2;
         var mockFrames = CreateStackForTests(4);
@@ -49,7 +49,7 @@ public class StackReporterTests
     }
 
     [Fact]
-    public void GivenMultipleFrames_WhenMaxDepthIsSetTo4_ThenReturnsTop25AndBottom75Percent()
+    public void GivenMultipleFrames_WhenMaxDepthIsSetTo4_ThenReturnsTop75AndBottom25Percent()
     {
         int maxStackTraceDepth = 4;
         var mockFrames = CreateStackForTests(40);
@@ -61,8 +61,8 @@ public class StackReporterTests
         Assert.NotNull(frames);
         Assert.Equal(maxStackTraceDepth, frames.Count);
         Assert.Equal("file1.cs", frames[0]["file"]);
-        Assert.Equal("file38.cs", frames[1]["file"]);
-        Assert.Equal("file39.cs", frames[2]["file"]);
+        Assert.Equal("file2.cs", frames[1]["file"]);
+        Assert.Equal("file3.cs", frames[2]["file"]);
         Assert.Equal("file40.cs", frames[3]["file"]);
     }
 

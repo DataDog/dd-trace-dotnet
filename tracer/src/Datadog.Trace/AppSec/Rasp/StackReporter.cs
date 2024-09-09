@@ -57,12 +57,12 @@ internal static class StackReporter
         // Determine if we need to trim the stack
         if (maxStackTraceDepth > 0 && allValidFrames.Count > maxStackTraceDepth)
         {
-            int topCount = Math.Max(1, (int)(0.25 * maxStackTraceDepth));
+            int topCount = Math.Max(1, (int)(0.75 * (double)maxStackTraceDepth));
             int bottomCount = maxStackTraceDepth - topCount;
             var trimmedStackFrames = new List<Dictionary<string, object>>(maxStackTraceDepth);
-            // Add the top 25% frames
+            // Add the top 75% frames
             trimmedStackFrames.AddRange(allValidFrames.GetRange(0, topCount));
-            // Add the bottom 75% frames
+            // Add the bottom 25% frames
             trimmedStackFrames.AddRange(allValidFrames.GetRange(allValidFrames.Count - bottomCount, bottomCount));
 
             return trimmedStackFrames;
