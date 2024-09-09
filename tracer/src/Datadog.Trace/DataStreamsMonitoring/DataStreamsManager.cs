@@ -68,14 +68,6 @@ internal class DataStreamsManager
     }
 
     /// <summary>
-    /// Trys to extract a <see cref="PathwayContext"/>, from the provided <paramref name="headers"/>
-    /// If data streams is disabled, or no pathway is present, returns null.
-    /// </summary>
-    public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
-        where TCarrier : IBinaryHeadersCollection
-        => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
-
-    /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
     /// </summary>
     /// <param name="context">The pathway context to inject</param>

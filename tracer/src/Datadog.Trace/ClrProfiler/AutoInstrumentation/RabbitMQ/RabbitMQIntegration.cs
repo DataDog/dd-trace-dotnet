@@ -125,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                                    new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                    new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
                 span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetHeadersSize(headers) + messageSize, 0);
-                dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
+                dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
             {
@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
                 var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
-                var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
+                var pathwayContext = dataStreamsManager.ExtractLegacyPathwayContext(headersAdapter, headersAdapter);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,
                     CheckpointKind.Consume,

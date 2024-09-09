@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
+            dataStreamsManager?.InjectPathwayContextAsBase64String(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 

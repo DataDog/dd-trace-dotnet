@@ -24,9 +24,9 @@ public class DataStreamsContextPropagatorTests
             DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
             DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
-        DataStreamsContextPropagator.Instance.Inject(context, headers);
+        DataStreamsContextPropagator.Instance.InjectAsBase64String(context, headers);
 
-        var extracted = DataStreamsContextPropagator.Instance.Extract(headers);
+        var extracted = DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers);
 
         extracted.Should().NotBeNull();
         extracted.Value.Hash.Value.Should().Be(context.Hash.Value);

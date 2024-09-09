@@ -6,11 +6,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
-    internal readonly struct RabbitMQHeadersCollectionAdapter : IBinaryHeadersCollection
+    internal readonly struct RabbitMQHeadersCollectionAdapter : IBinaryHeadersCollection, IHeadersCollection
     {
         private readonly IDictionary<string, object> _headers;
 
@@ -33,5 +34,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         {
             _headers[name] = value;
         }
-    }
+
+        public IEnumerable<string> GetValues(string name)
+            => _headers.TryGetValue(name, out var value) && value is string strValue ? new[] { strValue } : Enumerable.Empty<string>();
+
+        public void Add(string name, string value)
+            => _headers[name] = value;
+
+        public void Set(string name, string value)
+            => _headers[name] = value;
+
+        public void Remove(string name)
+            => _headers.Remove(name);
+        }
 }

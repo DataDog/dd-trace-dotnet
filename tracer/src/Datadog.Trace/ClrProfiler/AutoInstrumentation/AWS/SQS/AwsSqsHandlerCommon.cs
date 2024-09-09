@@ -162,7 +162,7 @@ internal static class AwsSqsHandlerCommon
                     }
 
                     var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
-                    var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
+                    var parentPathway = dataStreamsManager.ExtractLegacyPathwayContext(adapter, adapter);
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                 }
             }
