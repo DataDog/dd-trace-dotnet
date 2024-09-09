@@ -700,7 +700,7 @@ internal static partial class IastModule
         }
 
         string? stackId = null;
-        if (stack != null)
+        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
         {
             if (currentSpan is null)
             {
