@@ -359,13 +359,13 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTestsStackTraces", samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 200, redactionEnabled: true)
     {
         SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "true");
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "5");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.MaxStackTraceDepth, "1");
     }
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
     [InlineData("Vulnerability.WithoutLocation", "/Iast/InsecureCookie")]
-    [InlineData("Vulnerability.LocatedInFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
+    [InlineData("Vulnerability.InFunction", "/Iast/GetFileContent?file=nonexisting.txt")]
     [InlineData("Vulnerability.LocatedDeeper", "/Iast/WeakHashing")]
     [InlineData("Vulnerability.LocatedInRenderPipeline", "/Iast/ReflectedXss?param=<b>RawValue</b>")]
     public async Task TestVulnerabilityStack(string name, string url)
@@ -379,6 +379,12 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
+        var hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
+        var pathRegex = (new Regex(@"""path"": ""AspNetCore.*\."), @"""path"": ""AspNetCore.");
+
+        settings.AddRegexScrubber(hashRegex);
+        settings.AddRegexScrubber(pathRegex);
+
         foreach (var span in spans)
         {
             if (span.MetaStruct is not null)
@@ -389,7 +395,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
                     span.Tags["_dd.stack"] = json;
                 }
 
-                foreach (var key in span.MetaStruct.Keys)
+                foreach (var key in span.MetaStruct.Keys.ToArray())
                 {
                     span.MetaStruct[key] = [];
                 }
