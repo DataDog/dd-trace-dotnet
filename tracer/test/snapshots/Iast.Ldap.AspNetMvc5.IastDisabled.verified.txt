@@ -37,6 +37,7 @@
       aspnet.action: ldap,
       aspnet.controller: iast,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

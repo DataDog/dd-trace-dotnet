@@ -65,6 +65,7 @@ at Samples.Security.AspNetCore5.Controllers.IastController.StackTraceLeak(),
       aspnet.action: stacktraceleak,
       aspnet.controller: iast,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       error.msg: Custom exception message,
       error.stack:

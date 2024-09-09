@@ -11,6 +11,7 @@
       aspnet.action: index,
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
