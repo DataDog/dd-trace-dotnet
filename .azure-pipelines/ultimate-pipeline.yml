@@ -6562,14 +6562,26 @@ stages:
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
+
+    - bash: dotnet tool install dd-trace --global --prerelease
+      displayName: "Install dd-trace"
+      retryCountOnTaskFailure: 2
+
     - bash: |
-        dotnet run $(Build.BuildId)
+        mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
+        dotnet build
+        dd-trace run --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
 
     - bash: sleep 20
       displayName: Wait 20 seconds to agent flush before finishing pipeline
+
+    - publish: $(Build.SourcesDirectory)/artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: notify_slack_on_failures
   condition: >
