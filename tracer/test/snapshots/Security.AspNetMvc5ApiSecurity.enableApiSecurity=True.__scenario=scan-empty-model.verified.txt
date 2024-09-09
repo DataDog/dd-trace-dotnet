@@ -11,6 +11,7 @@
       aspnet.action: emptymodel,
       aspnet.controller: home,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: POST,

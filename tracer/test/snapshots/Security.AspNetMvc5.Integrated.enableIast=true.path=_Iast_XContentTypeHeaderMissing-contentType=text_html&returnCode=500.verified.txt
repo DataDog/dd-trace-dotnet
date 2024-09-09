@@ -41,6 +41,7 @@
       aspnet.action: xcontenttypeheadermissing,
       aspnet.controller: iast,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       error.msg: The HTTP response has status code 500.,
       http.method: GET,

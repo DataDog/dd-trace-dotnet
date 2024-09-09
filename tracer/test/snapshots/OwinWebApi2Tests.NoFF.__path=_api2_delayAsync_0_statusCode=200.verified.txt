@@ -11,6 +11,7 @@
       aspnet.controller: conventions,
       aspnet.route: api2/{action}/{value},
       baggage.user.id: doggo,
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

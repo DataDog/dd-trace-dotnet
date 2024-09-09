@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/home/empty-model,
+      component: aspnet,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
