@@ -78,6 +78,7 @@ publish:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  timeout: 45m
   tags: [ "arch:amd64" ]
   needs: []
   rules:
@@ -114,6 +115,38 @@ onboarding_tests_k8s_injection:
 deploy_to_reliability_env:
   rules:
     - when: never # dd-trace-dotnet does not use reliability environment
+
+download-serverless-artifacts:
+  stage: package
+  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  tags: [ "arch:amd64" ]
+  needs: []
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: on_success
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/' # Manually triggered as artifacts are from the Github release
+      when: manual
+      allow_failure: false
+    - when: delayed # Artifacts come from Azure pipeline, wait a reasonable time before polling
+      start_in: 15 minutes
+  script:
+    - .gitlab/download-serverless-artifacts.sh
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - artifacts
+
+aws-lambda-layer:
+  stage: package
+  needs: [download-serverless-artifacts]
+  when: manual
+  trigger:
+    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    strategy: depend
+  variables:
+    UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
+    UPSTREAM_PIPELINE_REF: $CI_COMMIT_REF_NAME
+  allow_failure: true
 
 benchmark-serverless:
   stage: benchmarks
