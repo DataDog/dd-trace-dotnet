@@ -14,10 +14,6 @@
           "type": "boolean",
           "description": "Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker"
         },
-        "Attach": {
-          "type": "boolean",
-          "description": "Indicates if the process should wait for debugger attach"
-        },
         "AZURE_DEVOPS_PIPELINE_ID": {
           "type": "integer",
           "description": "Azure Devops pipeline id"
@@ -96,7 +92,6 @@
             "automapper",
             "cake",
             "eShopOnWeb",
-            "ilspy",
             "paket",
             "polly",
             "protobuf",
@@ -237,10 +232,6 @@
           "type": "boolean",
           "description": "Optimize generated code. Used for debugger integrations tests"
         },
-        "Overwrite": {
-          "type": "boolean",
-          "description": "Indicates whether to overwrite existing exploration test project directory or not"
-        },
         "Partition": {
           "type": "string",
           "description": "Partition to use on CI"
@@ -271,10 +262,6 @@
         "PullRequestNumber": {
           "type": "integer",
           "description": "The Pull Request number for GitHub Actions"
-        },
-        "RejitVerify": {
-          "type": "boolean",
-          "description": "Indicates whether the profiler should output files for diagnostic the instrumentation"
         },
         "Root": {
           "type": "string",

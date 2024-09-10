@@ -31,6 +31,10 @@ partial class Build
         {
             envVars.Add("DD_INTERNAL_FAULT_TOLERANT_INSTRUMENTATION_ENABLED", "true");
         }
+
+        // Uncomment to get rejit verify files
+        // envVars.Add("DD_WRITE_INSTRUMENTATION_TO_DISK", "1");
+        // envVars.Add("CopyingOriginalModulesEnabled", "1");
     }
 
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)
@@ -61,12 +65,6 @@ partial class Build
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
             envVars.Add("CORECLR_PROFILER_PATH", MonitoringHomeDirectory / arch / $"{FileNames.NativeLoader}.{ext}");
-        }
-
-        if (RejitVerify)
-        {
-            envVars.Add("DD_WRITE_INSTRUMENTATION_TO_DISK", "1");
-            envVars.Add("CopyingOriginalModulesEnabled", "1");
         }
     }
 

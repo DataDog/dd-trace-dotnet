@@ -35,15 +35,6 @@ partial class Build
     [Parameter("Indicates whether the line probe scenario should run.")]
     readonly bool LineProbes;
 
-    [Parameter("Indicates whether the profiler should output files for diagnostic the instrumentation.")]
-    readonly bool RejitVerify;
-
-    [Parameter("Indicates if the process should wait for debugger attach.")]
-    readonly bool Attach;
-
-    [Parameter("Indicates whether to overwrite existing exploration test project directory or not.")]
-    readonly bool Overwrite;
-
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
@@ -65,7 +56,8 @@ partial class Build
     void WaitForDebuggerAttach()
     {
 #if DEBUG
-        if (!Attach)
+        var waitForAttach = Environment.GetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH");
+        if (!string.IsNullOrEmpty(waitForAttach) && waitForAttach == "1" || waitForAttach.ToLower() == "true")
         {
             return;
         }
@@ -153,10 +145,7 @@ partial class Build
         var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
         var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
-        if (Directory.Exists(target) && Overwrite)
-        {
-            DeleteExistingDirectory(target);
-        }
+        FileSystemTasks.EnsureCleanDirectory(target);
 
         var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
         GitTasks.Git(cloneCommand);
@@ -596,7 +585,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper, ilspy
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper
 }
 
 class ExplorationTestDescription
@@ -676,8 +665,7 @@ class ExplorationTestDescription
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
                     "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion"
-                },
-                ShouldRun = true // Dictates that this exploration test should not take part in the CI
+                }
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
@@ -753,17 +741,6 @@ class ExplorationTestDescription
                 SupportedOSPlatforms = new[] { OSPlatform.Windows },
                 // Workaround for https://github.com/dotnet/runtime/issues/95653
                 EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
-            },
-            ExplorationTestName.ilspy => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.ilspy,
-                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
-                GitRepositoryTag = "v9.0-preview1",
-                IsGitSubmodulesRequired = true,
-                PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-                IsTestedByVSTest = true,
-                TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
-                /* SupportedFrameworks = new[] { TargetFramework.NET8_0_WIN }, */
             },
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
