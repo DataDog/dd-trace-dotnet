@@ -1804,6 +1804,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
+#ifdef LINUX
+
+        auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+        auto scope = __builtin_expect(pThreadInfo != nullptr, 1) ?
+                        pThreadInfo->DisableCpuProfiler() :
+                        ManagedThreadInfo::CpuTimeDisableScope(nullptr);
+#endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 

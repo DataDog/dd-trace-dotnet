@@ -19,6 +19,10 @@
 #include <shared_mutex>
 #include <utility>
 
+#ifdef LINUX
+#include <sys/syscall.h>
+#endif
+
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 

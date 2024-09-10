@@ -64,6 +64,7 @@ void ClrEventsParser::ParseEvent(
     LPCBYTE eventData
     )
 {
+#ifdef LINUX
     auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
 
     // Disable timer_create-based CPU profiler if needed
@@ -72,6 +73,7 @@ void ClrEventsParser::ParseEvent(
     auto scope = pThreadInfo != nullptr ?
                     pThreadInfo->DisableCpuProfiler() :
                     ManagedThreadInfo::CpuTimeDisableScope(nullptr);
+#endif
 
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
