@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -35,14 +36,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             _headers[name] = value;
         }
 
-        public IEnumerable<string> GetValues(string name)
-            => _headers.TryGetValue(name, out var value) && value is string strValue ? new[] { strValue } : Enumerable.Empty<string>();
+        public IEnumerable<string> GetValues(string name) =>
+            _headers.TryGetValue(name, out var value) && value is byte[] bytes ? new[] { Encoding.UTF8.GetString(bytes) } : Enumerable.Empty<string>();
 
-        public void Add(string name, string value)
-            => _headers[name] = value;
+        public void Add(string name, string value) =>
+            _headers[name] = Encoding.UTF8.GetBytes(value);
 
-        public void Set(string name, string value)
-            => _headers[name] = value;
+        public void Set(string name, string value) =>
+            _headers[name] = Encoding.UTF8.GetBytes(value);
 
         public void Remove(string name)
             => _headers.Remove(name);
