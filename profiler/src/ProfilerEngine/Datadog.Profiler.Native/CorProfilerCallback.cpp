@@ -1805,11 +1805,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
 #ifdef LINUX
+        // Disable timer_create-based CPU profiler if needed
+        // When scope goes out of scope, the CPU profiler will be reenabled for
+        // pThreadInfo thread
 
         auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
         auto scope = __builtin_expect(pThreadInfo != nullptr, 1) ?
                         pThreadInfo->DisableCpuProfiler() :
-                        ManagedThreadInfo::CpuTimeDisableScope(nullptr);
+                        ManagedThreadInfo::CpuProfilerDisableScope(nullptr);
 #endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }

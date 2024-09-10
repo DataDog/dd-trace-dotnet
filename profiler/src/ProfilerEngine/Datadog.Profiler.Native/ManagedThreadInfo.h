@@ -108,10 +108,10 @@ public:
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
 #ifdef LINUX
-    struct CpuTimeDisableScope
+    struct CpuProfilerDisableScope
     {
     public:
-        explicit CpuTimeDisableScope(ManagedThreadInfo* threadInfo)
+        explicit CpuProfilerDisableScope(ManagedThreadInfo* threadInfo)
             : _timerId{-1}, _oldValue{0}
         {
             if (threadInfo == nullptr)
@@ -129,10 +129,11 @@ public:
             }
         }
 
-        ~CpuTimeDisableScope()
+        ~CpuProfilerDisableScope()
         {
             if (_timerId != -1)
             {
+                // re-arm the timer
                 syscall(__NR_timer_settime, _timerId, 0, &_oldValue, nullptr);
             }
         }
@@ -141,9 +142,9 @@ public:
         struct itimerspec _oldValue;
     };
 
-    CpuTimeDisableScope DisableCpuProfiler()
+    CpuProfilerDisableScope DisableCpuProfiler()
     {
-        return CpuTimeDisableScope(this);
+        return CpuProfilerDisableScope(this);
     }
 #endif
 

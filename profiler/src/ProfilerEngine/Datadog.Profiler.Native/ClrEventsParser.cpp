@@ -72,7 +72,7 @@ void ClrEventsParser::ParseEvent(
     // pThreadInfo thread
     auto scope = pThreadInfo != nullptr ?
                     pThreadInfo->DisableCpuProfiler() :
-                    ManagedThreadInfo::CpuTimeDisableScope(nullptr);
+                    ManagedThreadInfo::CpuProfilerDisableScope(nullptr);
 #endif
 
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
