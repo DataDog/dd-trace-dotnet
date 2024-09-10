@@ -46,8 +46,8 @@ echo "Found build with id '$buildId' for commit '$CI_COMMIT_SHA' on branch '$bra
 # Now try to download the ssi artifacts from the build
 artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$buildId/artifacts?api-version=7.1&artifactName=$artifactName"
 
-# Keep trying to get the artifact for 30 minutes
-TIMEOUT=1800
+# Keep trying to get the artifact for 40 minutes
+TIMEOUT=2400
 STARTED=0
 until (( STARTED == TIMEOUT )) || [ ! -z "${downloadUrl}" ] ; do
     echo "Checking for artifacts at '$artifactsUrl'..."

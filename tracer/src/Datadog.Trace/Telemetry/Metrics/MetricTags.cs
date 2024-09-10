@@ -284,6 +284,7 @@ internal static class MetricTags
         [Description("waf_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
         [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;rule_type:command_injection")] CommandInjection = 3,
     }
 
     public enum TruncationReason
