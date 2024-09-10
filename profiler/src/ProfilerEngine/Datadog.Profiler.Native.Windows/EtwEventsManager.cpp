@@ -215,7 +215,18 @@ void EtwEventsManager::OnEvent(
             AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
-            pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+
+            // when events are replayed, no pointer value should be used
+            // --> ClassID is invalid and should not be used
+            if (!_agentEndpoint.empty())
+            {
+                pThreadInfo->AllocationClassId = 0;
+            }
+            else
+            {
+                pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+            }
+
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
 
             // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?

@@ -18,6 +18,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
     {
         private const string ScenarioGenerics = "--scenario 9";
         private const string ScenarioMeasureAllocation = "--scenario 16";
+        private const string ScenarioWithoutGC = "--scenario 25 --threads 2 --param 1000";
 
         private readonly ITestOutputHelper _output;
 
@@ -123,6 +124,39 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 builder.AppendLine($"{stats.Count,11} {stats.Size,13}");
                 _output.WriteLine(builder.ToString());
             }
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        public void ShouldGetAllocationSamplesViaEtw(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT");
+
+            // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            if (IntPtr.Size == 4)
+            {
+                // 32-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Allocations\\allocations-32.bevents");
+            }
+            else
+            {
+                // 64-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Allocations\\allocations-64.bevents");
+            }
+
+            int eventsCount = 0;
+            agent.EventsSent += (sender, e) => eventsCount = e.Value;
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
+            allocationSamples.Should().NotBeEmpty();
         }
 
         private static Dictionary<string, AllocStats> GetProfiledAllocations(IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> allocations)
@@ -313,7 +347,12 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                             continue;
                         }
 
-                        var size = sample.Value[1];
+                        long size = 0;
+                        // no size available for .NET Framework
+                        if (sample.Value.Count > 1)
+                        {
+                           size = sample.Value[1];
+                        }
 
                         var labels = sample.Labels(profile).ToArray();
 
