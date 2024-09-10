@@ -20,6 +20,11 @@ internal static class AttackerFingerprintHelper
 
     public static void AddSpanTags(Span span)
     {
+        if (span.IsFinished || span.Type != SpanTypes.Web)
+        {
+            return;
+        }
+
         var securityCoordinator = new SecurityCoordinator(Security.Instance, span);
 
         // We need a context
