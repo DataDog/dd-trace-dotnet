@@ -103,6 +103,46 @@ public:
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
+#ifdef LINUX
+    struct CpuTimeDisableScope
+    {
+    public:
+        explicit CpuTimeDisableScope(ManagedThreadInfo* threadInfo)
+            : _timerId{-1}, _oldValue{0}
+        {
+            if (threadInfo == nullptr)
+                return;
+
+            if (_timerId != -1)
+            {
+                struct itimerspec ts;
+                ts.it_interval.tv_sec = 0;
+                ts.it_interval.tv_nsec = 0;
+                ts.it_value = ts.it_interval;
+
+                // disarm the timer so this is not accounted for the managed thread cpu usage
+                syscall(__NR_timer_settime, _timerId, 0, &ts, &_oldValue);
+            }
+        }
+
+        ~CpuTimeDisableScope()
+        {
+            if (_timerId != -1)
+            {
+                syscall(__NR_timer_settime, _timerId, 0, &_oldValue, nullptr);
+            }
+        }
+    private:
+        int32_t _timerId;
+        struct itimerspec _oldValue;
+    };
+
+    CpuTimeDisableScope DisableCpuProfiler()
+    {
+        return CpuTimeDisableScope(this);
+    }
+#endif
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();

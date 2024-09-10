@@ -10,6 +10,7 @@
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
+#include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 
 
@@ -63,6 +64,15 @@ void ClrEventsParser::ParseEvent(
     LPCBYTE eventData
     )
 {
+    auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+
+    // Disable timer_create-based CPU profiler if needed
+    // When scope goes out of scope, the CPU profiler will be reenabled for
+    // pThreadInfo thread
+    auto scope = pThreadInfo != nullptr ?
+                    pThreadInfo->DisableCpuProfiler() :
+                    ManagedThreadInfo::CpuTimeDisableScope(nullptr);
+
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);

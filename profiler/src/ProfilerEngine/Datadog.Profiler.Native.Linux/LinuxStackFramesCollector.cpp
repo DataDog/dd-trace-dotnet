@@ -121,27 +121,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             return GetStackSnapshotResult();
         }
 
-        struct itimerspec old;
-
-        if (timerId != -1)
-        {
-            struct itimerspec ts;
-            ts.it_interval.tv_sec = 0;
-            ts.it_interval.tv_nsec = 0;
-            ts.it_value = ts.it_interval;
-
-            // disarm the timer so this is not accounted for the managed thread cpu usage
-            syscall(__NR_timer_settime, timerId, 0, &ts, &old);
-        }
-
-        on_leave
-        {
-            if (timerId != -1)
-            {
-                // re-arm the timer
-                syscall(__NR_timer_settime, timerId, 0, &old, nullptr);
-            }
-        };
+        // Disable timer_create-based CPU profiler if needed
+        // When scope goes out of scope, the CPU profiler will be reenabled for
+        // pThreadInfo thread
+        auto scope = pThreadInfo->DisableCpuProfiler();
 
         _plibrariesInfo->UpdateCache();
 
