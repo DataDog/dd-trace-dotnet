@@ -8,7 +8,8 @@ StackSnapshotResultBuffer::StackSnapshotResultBuffer() :
     _representedDurationNanoseconds{0},
     _localRootSpanId{0},
     _spanId{0},
-    _callstack{}
+    _callstack{},
+    _cacheCallstacks{false}
 {
 }
 
@@ -18,6 +19,7 @@ StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
     _representedDurationNanoseconds = 0;
     _localRootSpanId = 0;
     _spanId = 0;
+    _cacheCallstacks = false;
 }
 
 void StackSnapshotResultBuffer::Reset()
@@ -27,4 +29,5 @@ void StackSnapshotResultBuffer::Reset()
     _representedDurationNanoseconds = 0;
     _unixTimeUtc = 0;
     _callstack = {};
+    _cacheCallstacks = false;
 }

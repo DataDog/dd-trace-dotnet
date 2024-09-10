@@ -11,9 +11,7 @@ add_compile_options(-fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions -DDD_TEST)
 
-if (IS_ALPINE)
-    add_compile_options(-DDD_ALPINE)
-endif()
+target_compile_options(Datadog.Profiler.Native.static PUBLIC -DDD_TEST)
 
 if (RUN_ASAN)
     add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)

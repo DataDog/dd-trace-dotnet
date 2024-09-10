@@ -79,6 +79,7 @@ public:
     bool IsTelemetryToDiskEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
+    bool IsCallstackCachingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -173,4 +174,5 @@ private:
     bool _isTelemetryToDiskEnabled;
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
+    bool _callstackCachingEnabled;
 };

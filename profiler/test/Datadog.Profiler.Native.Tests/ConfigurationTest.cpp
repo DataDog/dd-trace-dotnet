@@ -1115,3 +1115,27 @@ TEST_F(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToNegativeValue)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
 }
+
+TEST_F(ConfigurationTest, CheckCallstackCachingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_FALSE(configuration.IsCallstackCachingEnabled());
+}
+
+TEST_F(ConfigurationTest, CheckCallstackCachingIsEnabledIfEnvVarIsTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CacheCallstack, WStr("1"));
+    auto configuration = Configuration{};
+#ifdef _WINDOWS
+    ASSERT_FALSE(configuration.IsCallstackCachingEnabled());
+#else
+    ASSERT_TRUE(configuration.IsCallstackCachingEnabled());
+#endif
+}
+
+TEST_F(ConfigurationTest, CheckCAllstackCachingIsEnabledIfEnvVarIsFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CacheCallstack, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_FALSE(configuration.IsCallstackCachingEnabled());
+}

@@ -94,6 +94,7 @@ private:
     bool _areInternalMetricsEnabled;
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
+    bool _canReuseCallstacks;
 
 private:
     void MainLoop();
