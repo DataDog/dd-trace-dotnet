@@ -102,6 +102,8 @@ Building and testing can be done through the following Nuke targets:
 brew install cmake
 ```
 
+### Running tests
+
 ```bash
 # Clean and build the main tracer project
 ./build.sh Clean BuildTracerHome
