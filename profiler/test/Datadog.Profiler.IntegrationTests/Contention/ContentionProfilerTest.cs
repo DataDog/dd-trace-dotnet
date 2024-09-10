@@ -97,7 +97,17 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-            agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Contention\\lockContention.bevents");
+            if (IntPtr.Size == 4)
+            {
+                // 32-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Contention\\lockContention-32.bevents");
+            }
+            else
+            {
+                // 64-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Contention\\lockContention-64.bevents");
+            }
+
             int eventsCount = 0;
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
 

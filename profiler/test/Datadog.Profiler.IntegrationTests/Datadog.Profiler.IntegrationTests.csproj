@@ -20,13 +20,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Contention\lockContention.bevents" />
-    <None Remove="GarbageCollections\3x3GCs.bevents" />
+    <None Remove="Contention\lockContention-32.bevents" />
+    <None Remove="Contention\lockContention-64.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-32.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-64.bevents" />
     <None Remove="xunit.runner.json" />
-    <Content Include="Contention\lockContention.bevents">
+    <Content Include="Contention\lockContention-32.bevents">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="GarbageCollections\3x3GCs.bevents">
+    <Content Include="Contention\lockContention-64.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-32.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-64.bevents">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />

@@ -22,6 +22,7 @@
 // This application should be used in conjunction with a profiled .NET application that is emitting ETW events
 // for a certain scenario and serializes them into a .bevents file that can be replayed by dd-prof-etw-replay but
 // also during integration tests via the AgentEtwProxy integrated in the MockDatadogAgent.
+// NOTE: no 32/64 bit difference because the events are serialized as received
 void ShowHelp()
 {
     printf("\nDatadog CLR Events Client v1.1\n");

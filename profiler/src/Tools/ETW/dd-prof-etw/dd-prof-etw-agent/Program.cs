@@ -14,9 +14,10 @@ namespace Datadog.Profiler.IntegrationTests
         // when a profiled application tries to connect via named pipe (its endpoint is passed as the -e argument).
         //  1. start this application with the .bevents file to replay as the -f argument
         //  2. start the profiled application using the same named pipe endpoint
-        //  3. the events will be sent after the profiled application registers to the endpoint
-        //  4. the events will be replayed here
-        //  5. the application stops after the profiled application unregisters from the endpoint
+        //  3. the profiled application sends a register command to the endpoint
+        //  4. the events will be replayed and sent to the profiled application
+        //  5. the application stops after the profiled application sends unregister command to the endpoint
+        // NOTE: the .bevents file must be 32 or 64 compatible with the running profiled application
         public static void Main(string[] args)
         {
             ParseCommandLine(args, out string eventsFilename, out string endpoint);

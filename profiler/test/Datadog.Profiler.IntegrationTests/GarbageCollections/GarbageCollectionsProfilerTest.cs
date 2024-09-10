@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
@@ -72,7 +73,17 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
-            agent.StartEtwProxy("DD_ETW_TEST_AGENT", "GarbageCollections\\3x3GCs.bevents");
+            if (IntPtr.Size == 4)
+            {
+                // 32-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "GarbageCollections\\3x3GCs-32.bevents");
+            }
+            else
+            {
+                // 64-bit
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "GarbageCollections\\3x3GCs-64.bevents");
+            }
+
             int eventsCount = 0;
             agent.EventsSent += (sender, e) => eventsCount = e.Value;
             runner.Run(agent);
