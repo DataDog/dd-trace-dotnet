@@ -93,6 +93,15 @@ Alternatively, on Windows:
 You can use Rider and CLion, or Visual Studio Code to develop on macOS. When asked to select a solution file select `Datadog.Trace.OSX.slnf`. If using CLion for the native code make sure to select "Let CMake decide" for the generator.
 Building and testing can be done through the following Nuke targets:
 
+### Setup
+
+- Install [.NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet)
+
+```bash
+# Install cmake
+brew install cmake
+```
+
 ```bash
 # Clean and build the main tracer project
 ./build.sh Clean BuildTracerHome
@@ -102,6 +111,9 @@ Building and testing can be done through the following Nuke targets:
 
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
 ./build.sh PackageTracerHome
+
+# Start IntergrationTests dependencies, but only for a specific test
+docker-compose up rabbitmq_osx_arm64
 
 # Start IntegrationTests dependencies.
 docker-compose up StartDependencies.OSXARM64

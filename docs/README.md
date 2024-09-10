@@ -28,6 +28,10 @@ This library powers [Distributed Tracing](https://docs.datadoghq.com/tracing/),
 
 - Benchmarks dashboard on `master`: [Dashboard](https://p.datadoghq.com/sb/c894ecec5-944662bba07ec41974e71682d239f16d?tpl_var_branch%5B0%5D=benchmarks%5C%2F%2A&tpl_var_runtime_name%5B0%5D=.NET%20Core%203.1&from_ts=1683889690697&to_ts=1691665690697&live=true)
 
+## Development
+
+For local development and testing, see [Setup docs](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/README.MD)
+
 ## Copyright
 
 Copyright (c) 2017 Datadog
