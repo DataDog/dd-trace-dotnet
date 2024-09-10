@@ -4,15 +4,18 @@
 
 #include "DlPhdrInfoWrapper.h"
 
+#include "ServiceBase.h"
+
 #include <libunwind.h>
 #include <link.h>
 #include <shared_mutex>
+#include <thread>
 #include <vector>
 
-class LibrariesInfoCache
+class LibrariesInfoCache : public ServiceBase
 {
 public:
-    static LibrariesInfoCache* Get();
+    LibrariesInfoCache();
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const &) = delete;
@@ -21,17 +24,26 @@ public:
     LibrariesInfoCache(LibrariesInfoCache&&) = delete;
     LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
 
-    void UpdateCache();
+    const char* GetName() final override;
+
+protected:
+    bool StartImpl() final override;
+    bool StopImpl() final override;
 
 private:
-    LibrariesInfoCache();
-
     static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
+    static void NotifyCacheUpdate();
+
+    void UpdateCache();
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+    void NotifyCacheUpdateImpl();
+    void Work();
 
     std::shared_mutex _cacheLock;
     std::vector<DlPhdrInfoWrapper> LibrariesInfo;
 
     static LibrariesInfoCache* s_instance;
-    unsigned long long NbCallsToDlopenDlclose;
+    std::thread _worker;
+    bool _stopRequested;
+    std::atomic_flag _shouldReload;
 };
