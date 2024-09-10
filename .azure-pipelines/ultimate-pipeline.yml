@@ -406,6 +406,57 @@ stages:
       displayName: publish tracer and native loader test results
       artifact: build_linux_tracer_unit_tests_results_$(artifactSuffix)_$(System.JobAttempt)
 
+- stage: build_linux_tracer_r2r
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [build]
+
+    - job: build
+      timeoutInMinutes: 60 #default value
+      dependsOn: []
+      pool:
+        name: azure-linux-scale-set-2
+      
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: debian
+            command: "Clean CompileManagedLoader"
+            retryCountForRunCommand: 1
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            target: builder
+            baseImage: centos7
+            useNativeSdkVersion: true
+            command: "BuildNativeTracerHome BuildNativeLoader CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
+            retryCountForRunCommand: 1
+            apiKey: $(DD_LOGGER_DD_API_KEY)
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            target: builder
+            baseImage: debian
+            command: "BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
+            retryCountForRunCommand: 1
+
+        - publish: $(monitoringHome)
+          displayName: Uploading linux tracer home artifact
+          artifact: linux-tracer-home-linux-x64-r2r
+
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
   variables:
@@ -594,6 +645,41 @@ stages:
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
       artifact: linux-tracer-symbols-linux-arm64
+
+- stage: build_arm64_tracer_r2r
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHomeR2R ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home-linux-arm64-r2r
 
 - stage: build_arm64_profiler
   dependsOn: [merge_commit_id]

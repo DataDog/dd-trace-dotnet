@@ -259,6 +259,10 @@
           "type": "string",
           "description": "Root directory during build execution"
         },
+        "RuntimeIdentifier": {
+          "type": "string",
+          "description": "RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'.See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
+        },
         "SampleName": {
           "type": "string",
           "description": "The sample name to execute when running or building sample apps"
@@ -292,6 +296,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -398,6 +403,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",
@@ -506,6 +512,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -612,6 +619,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",
