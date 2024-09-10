@@ -41,11 +41,7 @@ extern "C" unsigned long long dd_inside_wrapped_functions()
     return inside_wrapped_functions;
 }
 
-extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose()
-{
-    // to force the first call to dl_iterate_phdr
-    return 1;
-}
+extern "C" void (*volatile dd_notify_libraries_cache_update)() = nullptr;
 
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
     {                                                                             \
@@ -142,6 +138,7 @@ private:
     int _handlerType;
     std::function<void()> _callback;
 };
+
 std::unique_ptr<SignalHandlerForTest> SignalHandlerForTest::_instance = nullptr;
 
 class LinuxStackFramesCollectorFixture : public ::testing::Test
@@ -165,6 +162,9 @@ public:
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
         inside_wrapped_functions = 0;
+
+        _librariesInfoCache = std::make_unique<LibrariesInfoCache>();
+        _librariesInfoCache->Start();
     }
 
     void TearDown() override
@@ -177,6 +177,7 @@ public:
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
         inside_wrapped_functions = 0;
+        _librariesInfoCache->Stop();
     }
 
     void StopTest()
@@ -250,7 +251,7 @@ public:
 
     static LinuxStackFramesCollector CreateStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration* configuration, CallstackProvider* p)
     {
-        return LinuxStackFramesCollector(signalManager, configuration, p, LibrariesInfoCache::Get());
+        return LinuxStackFramesCollector(signalManager, configuration, p);
     }
 
 private:
@@ -313,6 +314,7 @@ private:
     std::promise<void> _callbackCalledPromise;
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
+    std::unique_ptr<LibrariesInfoCache> _librariesInfoCache;
 };
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)

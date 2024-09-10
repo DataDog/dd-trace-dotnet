@@ -9,28 +9,42 @@
 
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
-// This function is exposed by the ld_preload wrapper library.
-// This allows us to know if we have to reload the cache or not
-extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose() __attribute__((weak));
+
+extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
 LibrariesInfoCache::LibrariesInfoCache()
+    : _stopRequested{false}
+{
+}
+
+LibrariesInfoCache::~LibrariesInfoCache() = default;
+
+const char* LibrariesInfoCache::GetName()
+{
+    return "Libraries Info Cache";
+}
+
+bool LibrariesInfoCache::StartImpl()
 {
     LibrariesInfo.reserve(100);
-    NbCallsToDlopenDlclose = 0;
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+    _worker = std::thread(&LibrariesInfoCache::Work, this);
+    // set it to true
+    _shouldReload.test_and_set();
+    return true;
 }
 
-LibrariesInfoCache* LibrariesInfoCache::Get()
-{
-    static LibrariesInfoCache Instance;
-    return s_instance;
-}
-
-LibrariesInfoCache::~LibrariesInfoCache()
+bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
+    dd_notify_libraries_cache_update = nullptr;
     s_instance = nullptr;
+
+    _stopRequested = true;
+    NotifyCacheUpdateImpl();
+    _worker.join();
+    return true;
 }
 
 struct IterationData
@@ -40,22 +54,29 @@ public:
     LibrariesInfoCache* Cache;
 };
 
+void LibrariesInfoCache::Work()
+{
+    dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
+
+    while (!_stopRequested)
+    {
+        // wait until the value is different from false
+        _shouldReload.wait(false);
+        // reset the flag
+        _shouldReload.clear();
+
+        if (_stopRequested)
+        {
+            break;
+        }
+
+        UpdateCache();
+    }
+}
+
 void LibrariesInfoCache::UpdateCache()
 {
     std::unique_lock l(_cacheLock);
-
-    auto shouldReload = true;
-    if (dd_nb_calls_to_dlopen_dlclose != nullptr) [[likely]]
-    {
-        auto previous = NbCallsToDlopenDlclose;
-        NbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose();
-        shouldReload = previous != NbCallsToDlopenDlclose;
-    }
-
-    if (!shouldReload)
-    {
-        return;
-    }
 
     IterationData data = {.Index = 0, .Cache = this};
     dl_iterate_phdr(
@@ -114,4 +135,21 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
         }
     }
     return rc;
+}
+
+void LibrariesInfoCache::NotifyCacheUpdate()
+{
+    auto* instance = s_instance;
+    if (instance == nullptr)
+    {
+        return;
+    }
+    instance->NotifyCacheUpdateImpl();
+}
+
+void LibrariesInfoCache::NotifyCacheUpdateImpl()
+{
+    // set the value to true and notify
+    _shouldReload.test_and_set();
+    _shouldReload.notify_one();
 }
