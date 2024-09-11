@@ -172,6 +172,7 @@ namespace Datadog.Trace.AspNet
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
+                tags.SetTag("component", "aspnet"); // TODO unsure why this is using WebTags and not AspNetTags
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
