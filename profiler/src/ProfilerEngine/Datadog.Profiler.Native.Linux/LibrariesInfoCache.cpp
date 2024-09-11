@@ -14,7 +14,6 @@
 
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
-
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
 LibrariesInfoCache::LibrariesInfoCache()
@@ -35,7 +34,7 @@ bool LibrariesInfoCache::StartImpl()
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
     _worker = std::thread(&LibrariesInfoCache::Work, this);
-    _mre.Clear();
+    _mre.Set(); // make sure we start by updating the cache
     return true;
 }
 
