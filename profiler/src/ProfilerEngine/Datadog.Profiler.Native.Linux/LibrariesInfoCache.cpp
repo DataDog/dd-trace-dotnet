@@ -7,6 +7,11 @@
 
 #include <string.h>
 
+
+#include <linux/futex.h>      /* Definition of FUTEX_* constants */
+#include <sys/syscall.h>      /* Definition of SYS_* constants */
+#include <unistd.h>
+
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 
@@ -30,8 +35,7 @@ bool LibrariesInfoCache::StartImpl()
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
     _worker = std::thread(&LibrariesInfoCache::Work, this);
-    // set it to true
-    _shouldReload.test_and_set();
+    _mre.Clear();
     return true;
 }
 
@@ -60,10 +64,8 @@ void LibrariesInfoCache::Work()
 
     while (!_stopRequested)
     {
-        // wait until the value is different from false
-        _shouldReload.wait(false);
-        // reset the flag
-        _shouldReload.clear();
+        _mre.Wait();
+        _mre.Clear();
 
         if (_stopRequested)
         {
@@ -149,7 +151,30 @@ void LibrariesInfoCache::NotifyCacheUpdate()
 
 void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
-    // set the value to true and notify
-    _shouldReload.test_and_set();
-    _shouldReload.notify_one();
+    _mre.Set();
+}
+
+ManualResetEvent::ManualResetEvent()
+ : _futex{0}
+{
+}
+
+void ManualResetEvent::Set()
+{
+    _futex = 1;
+    // notify
+    syscall(SYS_futex, (int*)&_futex, FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
+}
+
+void ManualResetEvent::Wait()
+{
+    if (_futex == 1)
+        return;
+
+    syscall(SYS_futex, (int*)&_futex, FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0, 0, 0, 0);
+}
+
+void ManualResetEvent::Clear()
+{
+    _futex = 0;
 }
