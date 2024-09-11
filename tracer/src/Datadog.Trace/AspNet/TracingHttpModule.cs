@@ -188,6 +188,7 @@ namespace Datadog.Trace.AspNet
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
+                tags.SetTag("component", "aspnet"); // TODO unsure why this is using WebTags and not AspNetTags
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Attempt to set Resource Name to something that will be close to what is expected
                 // Note: we will go and re-do it in OnEndRequest, but doing it here will allow for resource-based sampling
