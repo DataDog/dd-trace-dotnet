@@ -149,18 +149,7 @@ internal readonly partial struct SecurityCoordinator
 
         public override HttpContext Context { get; }
 
-        internal override bool IsBlocked
-        {
-            get
-            {
-                if (Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out var value))
-                {
-                    return value is bool boolValue && boolValue;
-                }
-
-                return false;
-            }
-        }
+        internal override bool IsBlocked => Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out _) is true;
 
         internal override int StatusCode => Context.Response.StatusCode;
 
