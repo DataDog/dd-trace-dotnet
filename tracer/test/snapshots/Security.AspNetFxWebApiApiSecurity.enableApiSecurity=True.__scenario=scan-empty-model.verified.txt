@@ -28,6 +28,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: POST,

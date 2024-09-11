@@ -29,6 +29,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -77,6 +78,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -125,6 +127,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -173,6 +176,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -221,6 +225,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
