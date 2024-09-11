@@ -115,6 +115,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
       # - RELATIVE_PROFILER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
@@ -135,6 +136,7 @@ services:
         # - DOTNETSDK_VERSION=
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
+        # - TOOL_VERSION=
       # - RELATIVE_PROFILER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
     volumes:
