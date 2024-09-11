@@ -32,6 +32,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -100,6 +101,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -168,6 +170,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -236,6 +239,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
@@ -304,6 +308,7 @@
     Tags: {
       actor.ip: 86.242.244.246,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: GET,
