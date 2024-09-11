@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -16,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 {
+    [EnvironmentRestorerAttribute(EnvironmentVariables.SsiDeployed)]
     public class SingleStepInstrumentationTest
     {
         private readonly ITestOutputHelper _output;
