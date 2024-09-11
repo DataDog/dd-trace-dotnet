@@ -8,6 +8,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Custom exception message,
       error.stack:
