@@ -6,11 +6,25 @@
 
 #include "ServiceBase.h"
 
+#include <atomic>
 #include <libunwind.h>
 #include <link.h>
 #include <shared_mutex>
 #include <thread>
 #include <vector>
+
+class ManualResetEvent
+{
+public:
+    ManualResetEvent();
+
+    void Set();
+    void Wait();
+    void Clear();
+
+private:
+    std::atomic<int> _futex;
+};
 
 class LibrariesInfoCache : public ServiceBase
 {
@@ -45,5 +59,5 @@ private:
     static LibrariesInfoCache* s_instance;
     std::thread _worker;
     bool _stopRequested;
-    std::atomic_flag _shouldReload;
+    ManualResetEvent _mre;
 };
