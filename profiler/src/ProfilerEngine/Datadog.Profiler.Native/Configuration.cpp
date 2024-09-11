@@ -96,6 +96,7 @@ Configuration::Configuration()
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
+    _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
 }
 
@@ -729,4 +730,9 @@ std::chrono::milliseconds Configuration::ExtractSsiLongLivedThreshold() const
 bool Configuration::IsTelemetryToDiskEnabled() const
 {
     return _isTelemetryToDiskEnabled;
+}
+
+bool Configuration::IsSsiTelemetryEnabled() const
+{
+    return _isSsiTelemetryEnabled;
 }

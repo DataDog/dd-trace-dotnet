@@ -96,6 +96,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -123,6 +124,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             // deployed with SSI
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -167,6 +169,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -191,6 +194,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -214,6 +218,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -237,6 +242,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -274,6 +280,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // short lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -298,6 +305,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -321,6 +329,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // short lived with span
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "600000");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -344,6 +353,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -382,6 +392,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "profiler");
             // simulate long lived
             runner.Environment.SetVariable(EnvironmentVariables.SsiShortLivedThreshold, TimeSpan.FromSeconds(6).TotalMilliseconds.ToString());
+            runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);

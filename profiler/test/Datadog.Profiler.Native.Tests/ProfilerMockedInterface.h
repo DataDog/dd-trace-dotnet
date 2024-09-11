@@ -80,6 +80,7 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetCpuProfilingInterval, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
     MOCK_METHOD(bool, IsTelemetryToDiskEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSsiTelemetryEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter
