@@ -33,15 +33,19 @@ bool LibrariesInfoCache::StartImpl()
     LibrariesInfo.reserve(100);
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
-    _worker = std::thread(&LibrariesInfoCache::Work, this);
     _mre.Set(); // make sure we start by updating the cache
+    _worker = std::thread(&LibrariesInfoCache::Work, this);
     return true;
 }
 
 bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
-    dd_notify_libraries_cache_update = nullptr;
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = nullptr;
+    }
+
     s_instance = nullptr;
 
     _stopRequested = true;
@@ -59,7 +63,10 @@ public:
 
 void LibrariesInfoCache::Work()
 {
-    dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
+    }
 
     while (!_stopRequested)
     {
