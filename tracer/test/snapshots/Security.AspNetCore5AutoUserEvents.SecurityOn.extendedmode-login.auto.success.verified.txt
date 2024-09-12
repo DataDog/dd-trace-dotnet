@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -23,8 +23,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
-      _dd.appsec.events.users.login.success.auto.mode: anonymization,
+      usr.id: Guid_2,
+      _dd.appsec.events.users.login.success.auto.mode: identification,
       _dd.runtime_family: dotnet
     },
     Metrics: {

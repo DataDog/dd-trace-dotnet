@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -8,8 +8,8 @@
     Type: web,
     Tags: {
       appsec.events.users.login.failure.track: true,
-      appsec.events.users.login.failure.usr.exists: true,
-      appsec.events.users.login.failure.usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
+      appsec.events.users.login.failure.usr.exists: false,
+      appsec.events.users.login.failure.usr.id: anon_c34de12d00b78a9977da847b7e55202e,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,

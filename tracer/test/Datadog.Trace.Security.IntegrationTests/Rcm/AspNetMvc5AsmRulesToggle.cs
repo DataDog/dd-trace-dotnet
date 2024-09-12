@@ -63,7 +63,6 @@ public class AspNetMvc5AsmRulesToggleClassicWithoutSecurity : AspNetMvc5AsmRules
 public abstract class AspNetMvc5AsmRulesToggle : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _classicMode;
 
     public AspNetMvc5AsmRulesToggle(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
