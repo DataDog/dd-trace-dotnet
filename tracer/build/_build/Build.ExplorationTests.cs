@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -45,31 +44,9 @@ partial class Build
                .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
-                    WaitForDebuggerAttach();
                     GitCloneBuild();
                     SetUpExplorationTest();
                 });
-
-    void WaitForDebuggerAttach()
-    {
-#if DEBUG
-        var waitForAttach = Environment.GetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH");
-        if (!string.IsNullOrEmpty(waitForAttach) && waitForAttach == "1" || waitForAttach!.ToLower() == "true")
-        {
-            return;
-        }
-
-        while (true)
-        {
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                break;
-            }
-
-            Thread.Sleep(250);
-        }
-#endif
-    }
 
     void SetUpExplorationTest()
     {
@@ -92,7 +69,7 @@ partial class Build
     void SetUpExplorationTest_Debugger()
     {
         Logger.Information($"Set up exploration test for debugger.");
-        CreateLineProbes();
+        CreateLineProbesIfNeeded();
     }
 
     void SetUpExplorationTest_ContinuousProfiler()
@@ -168,7 +145,6 @@ partial class Build
                .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
                .Executes(() =>
                 {
-                    WaitForDebuggerAttach();
                     FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
                     try
                     {
@@ -288,7 +264,7 @@ partial class Build
         }
     }
 
-    private void CreateLineProbes()
+    private void CreateLineProbesIfNeeded()
     {
         var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
 
