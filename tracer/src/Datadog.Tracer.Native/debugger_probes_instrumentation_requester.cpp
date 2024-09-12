@@ -235,10 +235,6 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
                       ". ProbeId:", methodProbe->probeId, ". Numbers of ReJits: ", numReJITs);
 
-#ifndef _WIN32
-        return;
-#endif
-
         if (!IsDebuggerInstrumentAllLinesEnabled())
         {
             return;

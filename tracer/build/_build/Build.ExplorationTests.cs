@@ -32,9 +32,6 @@ partial class Build
     [Parameter("Indicates if the Dynamic Instrumentation product should be disabled.")]
     readonly bool DisableDynamicInstrumentationProduct;
 
-    [Parameter("Indicates whether the line probe scenario should run.")]
-    readonly bool LineProbes;
-
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
@@ -57,7 +54,7 @@ partial class Build
     {
 #if DEBUG
         var waitForAttach = Environment.GetEnvironmentVariable("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH");
-        if (!string.IsNullOrEmpty(waitForAttach) && waitForAttach == "1" || waitForAttach.ToLower() == "true")
+        if (!string.IsNullOrEmpty(waitForAttach) && waitForAttach == "1" || waitForAttach!.ToLower() == "true")
         {
             return;
         }
@@ -95,10 +92,7 @@ partial class Build
     void SetUpExplorationTest_Debugger()
     {
         Logger.Information($"Set up exploration test for debugger.");
-        if (LineProbes)
-        {
-            CreateLineProbes();
-        }
+        CreateLineProbes();
     }
 
     void SetUpExplorationTest_ContinuousProfiler()
@@ -165,27 +159,6 @@ partial class Build
                                                             .Add("-property:NuGetAudit=false"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
-    }
-
-    void DeleteExistingDirectory(string path)
-    {
-        var dirInfo = new DirectoryInfo(path);
-        SetAttributesNormal(dirInfo);
-        dirInfo.Delete(true);
-        return;
-
-        void SetAttributesNormal(DirectoryInfo dir)
-        {
-            foreach (var subDir in dir.GetDirectories())
-            {
-                SetAttributesNormal(subDir);
-                subDir.Attributes = FileAttributes.Normal;
-            }
-            foreach (var file in dir.GetFiles())
-            {
-                file.Attributes = FileAttributes.Normal;
-            }
-        }
     }
 
     Target RunExplorationTests
@@ -317,9 +290,12 @@ partial class Build
 
     private void CreateLineProbes()
     {
-        if (ExplorationTestName.HasValue && ExplorationTestName.Value != global::ExplorationTestName.protobuf)
+        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
+
+        if (!testDescription.LineProbesEnabled)
         {
-            throw new InvalidOperationException($"The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
+            Logger.Information($"Skip line probes creation. The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
+            return;
         }
 
         if (ExplorationTestName.HasValue)
@@ -334,7 +310,6 @@ partial class Build
         var sw = new Stopwatch();
         sw.Start();
 
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
         CreateLineProbesFile(testDescription);
 
         sw.Stop();
@@ -602,6 +577,7 @@ class ExplorationTestDescription
     public string[] TestsToIgnore { get; set; }
 
     public bool ShouldRun { get; set; } = true;
+    public bool LineProbesEnabled { get; set; }
 
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
@@ -665,7 +641,8 @@ class ExplorationTestDescription
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
                     "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion"
-                }
+                },
+                LineProbesEnabled = true
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {

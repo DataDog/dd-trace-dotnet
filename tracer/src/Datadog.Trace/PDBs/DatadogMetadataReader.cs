@@ -53,6 +53,9 @@ namespace Datadog.Trace.Pdb
             IsPdbExist = PdbReader != null || DnlibPdbReader != null;
         }
 
+        /// <summary>
+        /// Gets the pdb path if exists, otherwise the assembly location
+        /// </summary>
         internal string? PdbFullPath { get; }
 
         internal MetadataReader MetadataReader { get; }
@@ -379,15 +382,15 @@ namespace Datadog.Trace.Pdb
 
                     foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
+                        if (sequencePoint.IsHidden)
+                        {
+                            continue;
+                        }
+
                         var normalizeDocumentPath = GetNormalizedPath(GetDocumentName(sequencePoint.Document));
                         if (!string.Equals(normalizeDocumentPath, normalizeFilePath, StringComparison.OrdinalIgnoreCase))
                         {
                             break;
-                        }
-
-                        if (sequencePoint.IsHidden)
-                        {
-                            continue;
                         }
 
                         // Check if the line and column match
