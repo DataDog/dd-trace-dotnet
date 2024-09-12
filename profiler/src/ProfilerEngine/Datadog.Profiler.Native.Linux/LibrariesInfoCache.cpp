@@ -76,10 +76,9 @@ void LibrariesInfoCache::Work()
 
     while (!_stopRequested)
     {
-        if (!_event.Wait(timeout))
-        {
-            continue;
-        }
+        // in the default case, notification mechanism in place, we will block until notification
+        // Otherwise, we reload the cache no matter on a regular basis (defaultTimeout)
+        _event.Wait(timeout);
 
         if (_stopRequested)
         {
