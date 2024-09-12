@@ -7,7 +7,9 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef LINUX
 #include "CpuProfilerDisableScope.h"
+#endif
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"

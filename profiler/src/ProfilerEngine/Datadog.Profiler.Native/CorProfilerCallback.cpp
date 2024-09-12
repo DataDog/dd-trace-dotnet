@@ -27,7 +27,9 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#ifdef LINUX
 #include "CpuProfilerDisableScope.h"
+#endif
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
