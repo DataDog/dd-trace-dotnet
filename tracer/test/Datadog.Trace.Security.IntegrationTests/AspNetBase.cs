@@ -115,7 +115,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintHeaders, "_dd.appsec.fp.http.header: <HeaderPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
