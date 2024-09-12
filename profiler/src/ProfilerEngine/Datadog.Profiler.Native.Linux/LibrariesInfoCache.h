@@ -4,6 +4,7 @@
 
 #include "DlPhdrInfoWrapper.h"
 
+#include "AutoResetEvent.h"
 #include "ServiceBase.h"
 
 #include <atomic>
@@ -12,19 +13,6 @@
 #include <shared_mutex>
 #include <thread>
 #include <vector>
-
-class ManualResetEvent
-{
-public:
-    ManualResetEvent();
-
-    void Set();
-    void Wait();
-    void Clear();
-
-private:
-    std::atomic<int> _futex;
-};
 
 class LibrariesInfoCache : public ServiceBase
 {
@@ -59,5 +47,5 @@ private:
     static LibrariesInfoCache* s_instance;
     std::thread _worker;
     bool _stopRequested;
-    ManualResetEvent _mre;
+    AutoResetEvent _event;
 };
