@@ -19,10 +19,6 @@
 #include <shared_mutex>
 #include <utility>
 
-#ifdef LINUX
-#include <sys/syscall.h>
-#endif
-
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
@@ -106,47 +102,6 @@ public:
     inline AppDomainID GetAppDomainId();
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
-
-#ifdef LINUX
-    struct CpuProfilerDisableScope
-    {
-    public:
-        explicit CpuProfilerDisableScope(ManagedThreadInfo* threadInfo)
-            : _timerId{-1}, _oldValue{0}
-        {
-            if (threadInfo == nullptr)
-                return;
-
-            if (_timerId != -1)
-            {
-                struct itimerspec ts;
-                ts.it_interval.tv_sec = 0;
-                ts.it_interval.tv_nsec = 0;
-                ts.it_value = ts.it_interval;
-
-                // disarm the timer so this is not accounted for the managed thread cpu usage
-                syscall(__NR_timer_settime, _timerId, 0, &ts, &_oldValue);
-            }
-        }
-
-        ~CpuProfilerDisableScope()
-        {
-            if (_timerId != -1)
-            {
-                // re-arm the timer
-                syscall(__NR_timer_settime, _timerId, 0, &_oldValue, nullptr);
-            }
-        }
-    private:
-        int32_t _timerId;
-        struct itimerspec _oldValue;
-    };
-
-    CpuProfilerDisableScope DisableCpuProfiler()
-    {
-        return CpuProfilerDisableScope(this);
-    }
-#endif
 
 private:
     inline std::string BuildProfileThreadId();

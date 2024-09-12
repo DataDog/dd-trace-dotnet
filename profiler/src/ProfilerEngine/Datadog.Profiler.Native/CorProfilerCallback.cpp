@@ -27,6 +27,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#include "CpuProfilerDisableScope.h"
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -1810,9 +1811,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
         // pThreadInfo thread
 
         auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-        auto scope = __builtin_expect(pThreadInfo != nullptr, 1) ?
-                        pThreadInfo->DisableCpuProfiler() :
-                        ManagedThreadInfo::CpuProfilerDisableScope(nullptr);
+        auto scope = CpuProfilerDisableScope(pThreadInfo.get());
 #endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }

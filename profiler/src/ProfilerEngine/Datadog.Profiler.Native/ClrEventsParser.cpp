@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "CpuProfilerDisableScope.h"
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
@@ -70,9 +71,7 @@ void ClrEventsParser::ParseEvent(
     // Disable timer_create-based CPU profiler if needed
     // When scope goes out of scope, the CPU profiler will be reenabled for
     // pThreadInfo thread
-    auto scope = pThreadInfo != nullptr ?
-                    pThreadInfo->DisableCpuProfiler() :
-                    ManagedThreadInfo::CpuProfilerDisableScope(nullptr);
+    auto scope = CpuProfilerDisableScope(pThreadInfo.get());
 #endif
 
     if (KEYWORD_GC == (keywords & KEYWORD_GC))

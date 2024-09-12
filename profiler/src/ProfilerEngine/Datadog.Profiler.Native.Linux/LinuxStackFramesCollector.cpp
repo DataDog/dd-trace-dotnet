@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 #include "CallstackProvider.h"
+#include "CpuProfilerDisableScope.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -124,7 +125,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // Disable timer_create-based CPU profiler if needed
         // When scope goes out of scope, the CPU profiler will be reenabled for
         // pThreadInfo thread
-        auto scope = pThreadInfo->DisableCpuProfiler();
+        auto scope = CpuProfilerDisableScope(pThreadInfo);
 
         _plibrariesInfo->UpdateCache();
 
