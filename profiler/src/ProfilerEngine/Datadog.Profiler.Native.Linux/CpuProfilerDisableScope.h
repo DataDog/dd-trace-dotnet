@@ -12,6 +12,11 @@ public:
     explicit CpuProfilerDisableScope(ManagedThreadInfo* threadInfo);
     ~CpuProfilerDisableScope();
 
+    CpuProfilerDisableScope(CpuProfilerDisableScope const&) = delete;
+    CpuProfilerDisableScope& operator=(CpuProfilerDisableScope const&) = delete;
+    CpuProfilerDisableScope(CpuProfilerDisableScope&&) = delete;
+    CpuProfilerDisableScope operator=(CpuProfilerDisableScope&&) = delete;
+
 private:
     std::int32_t _timerId;
     struct itimerspec _oldValue;
