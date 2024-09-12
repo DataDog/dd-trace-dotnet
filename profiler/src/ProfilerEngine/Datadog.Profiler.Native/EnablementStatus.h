@@ -8,5 +8,6 @@ enum class EnablementStatus
     NotSet,
     ManuallyEnabled,
     ManuallyDisabled,
-    SsiEnabled
+    SsiEnabled,
+    Auto
 };

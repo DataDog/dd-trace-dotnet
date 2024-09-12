@@ -197,7 +197,7 @@ bool TelemetryMetricsWorker::Start(
     std::string enablementTagValue =
         (pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
             ? "manually_enabled"
-        : (pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
+        : ((pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) || (pConfiguration->GetEnablementStatus() == EnablementStatus::Auto))
             ? "ssi_enabled"
             : "not_enabled";
 

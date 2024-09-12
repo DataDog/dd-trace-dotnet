@@ -757,11 +757,14 @@ std::string ProfileExporter::GetInfo() const
         // activation value
         builder << "\"activation\":";
         builder << "\"";
-        // TODO: we would like to make the difference between "auto" and "injection" via the configuration
-        //       today, these 2 situations are considered as EnablementStatus::SsiEnabled
         if (_configuration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
         {
             builder << "manual";
+        }
+        else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::Auto)
+        {
+            builder << "auto";
         }
         else
         {

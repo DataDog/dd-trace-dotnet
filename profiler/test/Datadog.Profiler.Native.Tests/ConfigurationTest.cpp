@@ -964,7 +964,7 @@ TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::SsiEnabled;
+    auto expectedValue = EnablementStatus::Auto;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 

@@ -698,7 +698,7 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         // This should be replaced by adding "profiler" in EnvironmentVariables::SsiDeployed
         // later that will take into account heuristics
         return !enabled.empty() && enabled == WStr("auto")
-            ? EnablementStatus::SsiEnabled
+            ? EnablementStatus::Auto
             : EnablementStatus::ManuallyDisabled;
     }
 

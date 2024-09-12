@@ -589,8 +589,11 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         return;
     }
 
-    // if not enable by SSI only, just get out
-    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::SsiEnabled)
+    // if not enabled via SSI, just get out
+    if (!(
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+        ))
     {
         return;
     }
@@ -1297,6 +1300,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
     {
         Log::Info("Profiler is enabled by SSI. Services will be started later.");
+    }
+    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+    {
+        Log::Info("Profiler is installed by SSI and automatically enabled. Services will be started later.");
     }
 
     return S_OK;
