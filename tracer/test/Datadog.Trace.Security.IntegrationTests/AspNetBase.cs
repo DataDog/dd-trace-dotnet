@@ -31,6 +31,8 @@ namespace Datadog.Trace.Security.IntegrationTests
     [UsesVerify]
     public class AspNetBase : TestHelper
     {
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable SA1202 // Elements should be ordered by access
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
         protected const string MainIp = "86.242.244.246";
@@ -47,12 +49,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
-        private readonly string _testName;
+        protected string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
+#pragma warning restore SA1202 // Elements should be ordered by access
+#pragma warning restore SA1401 // Fields should be private
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
@@ -99,13 +103,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit, methodNameOverride);
+            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -193,11 +197,20 @@ namespace Datadog.Trace.Security.IntegrationTests
                 || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
             }
 
-            // Overriding the type name here as we have multiple test classes in the file
-            // Ensures that we get nice file nesting in Solution Explorer
-            await Verifier.Verify(spans, settings)
-                          .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(testName ?? GetTestName());
+            if (string.IsNullOrEmpty(fileNameOverride))
+            {
+                // Overriding the type name here as we have multiple test classes in the file
+                // Ensures that we get nice file nesting in Solution Explorer
+                await Verifier.Verify(spans, settings)
+                              .UseMethodName(methodNameOverride ?? "_")
+                              .UseTypeName(testName ?? GetTestName());
+            }
+            else
+            {
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(fileNameOverride)
+                                  .DisableRequireUniquePrefix();
+            }
         }
 
         protected void SetClientIp(string ip)
