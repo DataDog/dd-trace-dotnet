@@ -56,11 +56,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly CookieContainer _cookieContainer;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
+        private readonly bool _clearMetaStruct;
         private int _httpPort;
 #pragma warning restore SA1202 // Elements should be ordered by access
 #pragma warning restore SA1401 // Fields should be private
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
@@ -79,6 +80,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
+
+            _clearMetaStruct = clearMetaStruct;
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -167,10 +170,17 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     }
                                 }
 
-                                // Remove all data from meta structs keys, no need to get the binary data for other keys
-                                foreach (var key in target.MetaStruct.Keys.ToList())
+                                if (_clearMetaStruct)
                                 {
-                                    target.MetaStruct[key] = [];
+                                    target.MetaStruct = null;
+                                }
+                                else
+                                {
+                                    // Remove all data from meta structs keys, no need to get the binary data for other keys
+                                    foreach (var key in target.MetaStruct.Keys.ToList())
+                                    {
+                                        target.MetaStruct[key] = [];
+                                    }
                                 }
                             }
 
