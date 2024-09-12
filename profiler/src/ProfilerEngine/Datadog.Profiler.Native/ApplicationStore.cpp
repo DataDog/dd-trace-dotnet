@@ -15,6 +15,8 @@ ApplicationStore::ApplicationStore(IConfiguration* configuration, IRuntimeInfo* 
     _pSsiManager{ssiManager},
     _pRuntimeInfo{runtimeInfo}
 {
+    // SSI telemetry is enabled if the configuration says so and the profiler has been deployed via SSI
+    _isSsiTelemetryEnabled = _pConfiguration->IsSsiTelemetryEnabled() ? (_pSsiManager->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation) : false;
 }
 
 ApplicationStore::~ApplicationStore() = default;
@@ -86,7 +88,7 @@ bool ApplicationStore::StopImpl()
 
 void ApplicationStore::InitializeTelemetryMetricsWorker(std::string const& runtimeId, ApplicationInfo& info)
 {
-    if (_pSsiManager->GetDeploymentMode() != DeploymentMode::SingleStepInstrumentation)
+    if (!_isSsiTelemetryEnabled)
     {
         return;
     }

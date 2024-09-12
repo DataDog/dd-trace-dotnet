@@ -891,7 +891,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     public async Task TestIastCookiesRequest(string url)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var filename = $"Security.AspNetCore5.enableIast={IastEnabled}.path ={sanitisedUrl}";
+        var filename = $"Iast.AspNetCore5.enableIast={IastEnabled}.path ={sanitisedUrl}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

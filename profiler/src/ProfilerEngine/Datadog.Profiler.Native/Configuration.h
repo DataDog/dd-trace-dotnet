@@ -77,6 +77,7 @@ public:
     DeploymentMode GetDeploymentMode() const override;
     std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
     bool IsTelemetryToDiskEnabled() const override;
+    bool IsSsiTelemetryEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
 
@@ -171,6 +172,8 @@ private:
     EnablementStatus _enablementStatus;
     std::chrono::milliseconds _ssiLongLivedThreshold;
     bool _isTelemetryToDiskEnabled;
+    bool _isSsiTelemetryEnabled;
+
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
 };
