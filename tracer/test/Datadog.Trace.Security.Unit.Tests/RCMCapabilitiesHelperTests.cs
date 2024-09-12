@@ -15,15 +15,15 @@ namespace Datadog.Trace.Security.Unit.Tests
         public static TheoryData<string, BigInteger, bool> RcmCapabilitiesTestCases()
         => new TheoryData<string, BigInteger, bool>
         {
-                    { "2.54", RcmCapabilitiesIndices.AsmRaspSqli, true },
-                    { "2.53", RcmCapabilitiesIndices.AsmRaspSqli, false },
-                    { "2.51", RcmCapabilitiesIndices.AsmRaspLfi, true },
-                    { "2.50", RcmCapabilitiesIndices.AsmRaspLfi, false },
-                    { "2.51", RcmCapabilitiesIndices.AsmRaspSsrf, true },
-                    { "2.50", RcmCapabilitiesIndices.AsmRaspSsrf, false },
-                    { "3.2", RcmCapabilitiesIndices.AsmRaspShi, true },
-                    { "3.1", RcmCapabilitiesIndices.AsmRaspShi, false },
-                    { "3.2", RcmCapabilitiesIndices.AsmExclusionData, true },
+                    { "1.19.1", RcmCapabilitiesIndices.AsmRaspSqli, true },
+                    { "1.12.3", RcmCapabilitiesIndices.AsmRaspSqli, false },
+                    { "1.19", RcmCapabilitiesIndices.AsmRaspLfi, true },
+                    { "1.16", RcmCapabilitiesIndices.AsmRaspLfi, false },
+                    { "1.17", RcmCapabilitiesIndices.AsmRaspSsrf, true },
+                    { "1.0.50", RcmCapabilitiesIndices.AsmRaspSsrf, false },
+                    { "1.19", RcmCapabilitiesIndices.AsmRaspShi, true },
+                    { "1.18", RcmCapabilitiesIndices.AsmRaspShi, false },
+                    { "1.19", RcmCapabilitiesIndices.AsmExclusionData, true },
                     { null, RcmCapabilitiesIndices.AsmExclusionData, false },
                     { "INVALID", RcmCapabilitiesIndices.AsmExclusionData, false },
         };

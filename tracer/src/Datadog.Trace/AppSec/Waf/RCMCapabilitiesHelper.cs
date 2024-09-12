@@ -19,11 +19,11 @@ internal static class RCMCapabilitiesHelper
 
     private static readonly Dictionary<BigInteger, Version> _CapabilitiesVersion = new Dictionary<BigInteger, Version>()
     {
-        { RcmCapabilitiesIndices.AsmRaspSqli, new Version(2, 54) },
-        { RcmCapabilitiesIndices.AsmRaspLfi, new Version(2, 51) },
-        { RcmCapabilitiesIndices.AsmRaspSsrf, new Version(2, 51) },
-        { RcmCapabilitiesIndices.AsmRaspShi, new Version(3, 2) },
-        { RcmCapabilitiesIndices.AsmExclusionData, new Version(3, 2) },
+        { RcmCapabilitiesIndices.AsmRaspSqli, new Version(1, 18) },
+        { RcmCapabilitiesIndices.AsmRaspLfi, new Version(1, 17) },
+        { RcmCapabilitiesIndices.AsmRaspSsrf, new Version(1, 17) },
+        { RcmCapabilitiesIndices.AsmRaspShi, new Version(1, 19) },
+        { RcmCapabilitiesIndices.AsmExclusionData, new Version(1, 19) },
     };
 
     internal static bool WafSupportsCapability(BigInteger capability, string? wafVersion)
