@@ -19,5 +19,5 @@ public:
 
 private:
     std::int32_t _timerId;
-    struct itimerspec _oldValue;
+    struct itimerspec _oldPeriod;
 };

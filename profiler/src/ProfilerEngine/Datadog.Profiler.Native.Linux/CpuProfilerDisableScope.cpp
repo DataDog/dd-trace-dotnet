@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 CpuProfilerDisableScope::CpuProfilerDisableScope(ManagedThreadInfo* threadInfo)
-    : _timerId{-1}, _oldValue{0}
+    : _timerId{-1}, _oldPeriod{0}
 {
     if (threadInfo == nullptr) [[unlikely]]
         return;
@@ -23,7 +23,7 @@ CpuProfilerDisableScope::CpuProfilerDisableScope(ManagedThreadInfo* threadInfo)
         ts.it_interval.tv_nsec = 0;
         ts.it_value = ts.it_interval;
         // disarm the timer so this is not accounted for the managed thread cpu usage
-        syscall(__NR_timer_settime, _timerId, 0, &ts, &_oldValue);
+        syscall(__NR_timer_settime, _timerId, 0, &ts, &_oldPeriod);
     }
 }
 
@@ -32,6 +32,6 @@ CpuProfilerDisableScope::~CpuProfilerDisableScope()
    if (_timerId != -1)
    {
        // re-arm the timer
-       syscall(__NR_timer_settime, _timerId, 0, &_oldValue, nullptr);
+       syscall(__NR_timer_settime, _timerId, 0, &_oldPeriod, nullptr);
    }
 }
