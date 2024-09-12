@@ -588,9 +588,10 @@ bool ProfileExporter::Export(bool lastCall)
             filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
         }
 
-        std::string json = GetMetadata();
+        std::string metadataJson = GetMetadata();
+        std::string infoJson = GetInfo();
 
-        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(json));
+        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson));
         if (!error_code)
         {
             Log::Error(error_code.message());
@@ -689,6 +690,84 @@ std::string ProfileExporter::GetMetadata() const
             builder << ", ";
         }
     }
+    builder << "}}";
+
+    return builder.str();
+}
+
+
+
+// Example of expected info json with SSI data:
+//  "info": {
+//     ...,
+//     "profiler": {
+//        "version": "3.2.0",
+//        "ssi" : {
+//           "mechanism": "injected_agent",
+//         },
+//        "activation": "injection"
+//     }
+//  }
+//
+std::string ProfileExporter::GetInfo() const
+{
+    // in tests, the metadata provider might be null
+    if (_ssiManager == nullptr)
+    {
+        return "";
+    }
+
+    // TODO: check if we plan to update the metadata after the application starts
+    //       otherwise, we could cache the result once for all.
+
+    auto const& metadata = _metadataProvider->Get();
+    if (metadata.empty())
+    {
+        return "";
+    }
+    auto sectionCount = metadata.size();
+    auto currentSection = 0;
+
+    // the json schema is supposed to send sections under the systemInfo element
+    std::stringstream builder;
+    builder << "{ \"profiler\": ";
+    builder << "{";
+        // version value
+        builder << "\"version\":";
+        builder << "\"";
+        builder << PROFILER_VERSION;
+        builder << "\",";
+
+        // ssi sub section
+        builder << "\"ssi\":";
+        builder << "{";
+            builder << "\"mechanism\": ";
+            builder << "\"";
+            if (_ssiManager->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
+            {
+                builder << "injected_agent";
+            }
+            else
+            {
+                builder << "none";
+            }
+            builder << "\"";
+        builder << "},";
+
+        // activation value
+        builder << "\"activation\":";
+        builder << "\"";
+        // TODO: we would like to make the difference between "auto" and "injection" via the configuration
+        //       today, these 2 situations are considered as EnablementStatus::SsiEnabled
+        if (_configuration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
+        {
+            builder << "manual";
+        }
+        else
+        {
+            builder << "injection";
+        }
+        builder << "\"";
     builder << "}}";
 
     return builder.str();
