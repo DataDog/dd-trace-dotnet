@@ -245,8 +245,8 @@ namespace PrepareRelease
 
                 // Pipeline
                 SynchronizeVersion(
-                    ".azure-pipelines/ultimate-pipeline.yml",
-                    text => Regex.Replace(text, $"ToolVersion: \"{VersionString(withPrereleasePostfix: true)}\"", $"ToolVersion: \"{VersionString(withPrereleasePostfix: true)}\""));
+                    "../.azure-pipelines/ultimate-pipeline.yml",
+                    text => Regex.Replace(text, $"ToolVersion: {VersionPattern(withPrereleasePostfix: true)}", $"ToolVersion: {VersionString(withPrereleasePostfix: true)}"));
 
                 // Nuke build
                 SynchronizeVersion(
