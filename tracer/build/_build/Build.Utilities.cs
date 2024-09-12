@@ -492,6 +492,22 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
+    
+    private static string GetDefaultRuntimeIdentifier(bool isAlpine)
+    {
+        // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+        return (Platform, (string)GetDefaultTargetPlatform()) switch
+        {
+            (PlatformFamily.Windows, "x86") => "win-x86",
+            (PlatformFamily.Windows, "x64") => "win-x64",
+
+            (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
+            (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
+            
+            (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
+            _ => null
+        };
+    }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
     private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
