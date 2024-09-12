@@ -22,6 +22,7 @@ build:
   tags: ["runner:windows-docker", "windowsversion:1809"]
   before_script:
     - git config --system core.longpaths true
+    - New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
@@ -52,6 +53,7 @@ publish:
     - build
   before_script:
     - git config --system core.longpaths true
+    - New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
     - $resultjson = $result | convertfrom-json
