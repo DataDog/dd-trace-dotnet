@@ -115,6 +115,7 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
         where T : default
     {
         Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Evaluating OTEL Key: {0}, DD Key: {1}", otelKey, datadogKey);
+        Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: OtelConfigResult.Result={0}, OtelConfigResult.IsValid={1}, OtelConfigResult.ShouldFallBack={2}, OtelConfigResult.IsPresent={3},", otelConfigResult.Result, otelConfigResult.IsValid, otelConfigResult.ShouldFallBack, otelConfigResult.IsPresent);
         if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
         {
             Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Both present");
