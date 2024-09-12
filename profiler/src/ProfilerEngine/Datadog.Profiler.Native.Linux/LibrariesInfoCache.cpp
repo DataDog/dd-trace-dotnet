@@ -12,12 +12,16 @@
 #include <sys/syscall.h>      /* Definition of SYS_* constants */
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
+constexpr auto InfiniteTimeout = -1ms;
+
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
 LibrariesInfoCache::LibrariesInfoCache()
-    : _stopRequested{false}
+    : _stopRequested{false}, _event(true)
 {
 }
 
@@ -33,7 +37,6 @@ bool LibrariesInfoCache::StartImpl()
     LibrariesInfo.reserve(100);
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
-    _mre.Set(); // make sure we start by updating the cache
     _worker = std::thread(&LibrariesInfoCache::Work, this);
     return true;
 }
@@ -41,11 +44,6 @@ bool LibrariesInfoCache::StartImpl()
 bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
-    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
-    {
-        dd_notify_libraries_cache_update = nullptr;
-    }
-
     s_instance = nullptr;
 
     _stopRequested = true;
@@ -63,15 +61,25 @@ public:
 
 void LibrariesInfoCache::Work()
 {
+    auto timeout = InfiniteTimeout;
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
     {
         dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
     }
+    else
+    {
+        // if this function is missing we still want the cache to update on a regular basis
+        constexpr auto defaultTimeout = 1s;
+        Log::Info("Wrapper library is missing. The cache will reload itself every ", defaultTimeout);
+        timeout = defaultTimeout;
+    }
 
     while (!_stopRequested)
     {
-        _mre.Wait();
-        _mre.Clear();
+        if (!_event.Wait(timeout))
+        {
+            continue;
+        }
 
         if (_stopRequested)
         {
@@ -79,6 +87,11 @@ void LibrariesInfoCache::Work()
         }
 
         UpdateCache();
+    }
+
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = nullptr;
     }
 }
 
@@ -157,30 +170,5 @@ void LibrariesInfoCache::NotifyCacheUpdate()
 
 void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
-    _mre.Set();
-}
-
-ManualResetEvent::ManualResetEvent()
- : _futex{0}
-{
-}
-
-void ManualResetEvent::Set()
-{
-    _futex = 1;
-    // notify
-    syscall(SYS_futex, (int*)&_futex, FUTEX_WAKE | FUTEX_PRIVATE_FLAG, 1);
-}
-
-void ManualResetEvent::Wait()
-{
-    if (_futex == 1)
-        return;
-
-    syscall(SYS_futex, (int*)&_futex, FUTEX_WAIT | FUTEX_PRIVATE_FLAG, 0, 0, 0, 0);
-}
-
-void ManualResetEvent::Clear()
-{
-    _futex = 0;
+    _event.Set();
 }
