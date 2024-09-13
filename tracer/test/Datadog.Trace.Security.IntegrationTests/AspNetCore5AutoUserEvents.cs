@@ -39,6 +39,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
+        public virtual string GetTestFileName(string testName)
+        {
+            return $"{_testName}-{testName}";
+        }
+
         public override void Dispose()
         {
             base.Dispose();
@@ -54,15 +59,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("login.auto.success", "Input.UserName=TestUser&Input.Password=test")]
-        [InlineData("login.auto.failure", "Input.UserName=TestUser&Input.Password=wrong")]
-        [InlineData("login.auto.failure", "Input.UserName=NoSuchUser&Input.Password=test")]
+        [InlineData("login.auto.failure1", "Input.UserName=TestUser&Input.Password=wrong")]
+        [InlineData("login.auto.failure2", "Input.UserName=NoSuchUser&Input.Password=test")]
         protected async Task TestUserLoginEvent(string eventName, string bodyString)
         {
             await TryStartApp();
             var agent = _fixture.Agent;
             var url = "/Account/Index";
             var settings = VerifyHelper.GetSpanVerifierSettings(eventName, bodyString);
-            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent));
+            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent), fileNameOverride: GetTestFileName(eventName));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");

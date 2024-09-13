@@ -27,6 +27,9 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#ifdef LINUX
+#include "CpuProfilerDisableScope.h"
+#endif
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -589,8 +592,11 @@ void CorProfilerCallback::OnStartDelayedProfiling()
         return;
     }
 
-    // if not enable by SSI only, just get out
-    if (_pConfiguration->GetEnablementStatus() != EnablementStatus::SsiEnabled)
+    // if not enabled via SSI, just get out
+    if (!(
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+        ))
     {
         return;
     }
@@ -1298,6 +1304,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     {
         Log::Info("Profiler is enabled by SSI. Services will be started later.");
     }
+    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+    {
+        Log::Info("Profiler is installed by SSI and automatically enabled. Services will be started later.");
+    }
 
     return S_OK;
 }
@@ -1804,6 +1814,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
+#ifdef LINUX
+        // Disable timer_create-based CPU profiler if needed
+        // When scope goes out of scope, the CPU profiler will be reenabled for
+        // pThreadInfo thread
+
+        auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+        auto scope = CpuProfilerDisableScope(pThreadInfo.get());
+#endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 

@@ -150,6 +150,11 @@ namespace Datadog.Trace.AppSec
                                   .AsInt32(defaultValue: 32, validator: val => val >= 1)
                                   .Value;
 
+            MaxStackTraceDepthTopPercent = config
+                                  .WithKeys(ConfigurationKeys.AppSec.MaxStackTraceDepthTopPercent)
+                                  .AsInt32(defaultValue: 75, validator: val => val >= 0 && val <= 100)
+                                  .Value;
+
             WafDebugEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.WafDebugEnabled)
                              .AsBool(defaultValue: false);
@@ -184,6 +189,8 @@ namespace Datadog.Trace.AppSec
         public int MaxStackTraces { get; }
 
         public int MaxStackTraceDepth { get; }
+
+        public int MaxStackTraceDepthTopPercent { get; }
 
         /// <summary>
         /// Gets keys indicating the optional custom appsec headers the user wants to send.

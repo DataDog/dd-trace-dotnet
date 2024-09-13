@@ -172,6 +172,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
+  ToolVersion: 3.3.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -4041,55 +4042,73 @@ stages:
           displayName: Download linux profiler Alpine symbols
           inputs:
             artifact: linux-profiler-symbols-linux-musl-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler x64 symbols
           inputs:
             artifact: linux-profiler-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
             artifact: linux-profiler-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux profiler Alpine Arm64 symbols
+          inputs:
+            artifact: linux-profiler-symbols-linux-musl-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Alpine symbols
           inputs:
             artifact: linux-tracer-symbols-linux-musl-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer x64 symbols
           inputs:
             artifact: linux-tracer-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
             artifact: linux-tracer-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer Alpine Arm64 symbols
+          inputs:
+            artifact: linux-tracer-symbols-linux-musl-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux x64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64/linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux musl x64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-x64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64/linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download linux universal libraries linux arm64 symbols
           inputs:
             artifact: linux-universal-symbols-linux-arm64
-            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64/linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux universal libraries linux musl arm64 symbols
+          inputs:
+            artifact: linux-universal-symbols-linux-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-arm64
 
         - task: DownloadPipelineArtifact@2
           displayName: Download dd-dotnet linux-x64 symbols
@@ -5253,6 +5272,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
@@ -5270,6 +5290,7 @@ stages:
         docker-compose -p $(DockerComposeProjectName) build \
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
@@ -5337,6 +5358,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5405,6 +5427,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5482,6 +5505,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg INSTALL_CMD="$(installCmd)" \
           dotnet-tool-self-instrument-smoke-tests
       env:
@@ -5711,6 +5735,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
@@ -5729,6 +5754,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-dddotnet-smoke-tests
@@ -5794,6 +5820,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           dotnet-tool-smoke-tests
       env:
         dockerTag: $(dockerTag)
@@ -5869,6 +5896,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           nuget-smoke-tests.windows
@@ -5889,6 +5917,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
           nuget-dddotnet-smoke-tests.windows
@@ -5963,6 +5992,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg TOOL_VERSION=$(ToolVersion) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           dotnet-tool-smoke-tests.windows
       env:
@@ -6271,7 +6301,7 @@ stages:
           failOnStderr: true
 
         - script: |
-            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --prerelease
+            dotnet tool install dd-trace --tool-path $(smokeTestAppDir)/publish --add-source $(smokeTestAppDir)/artifacts/. --version $(ToolVersion)
           displayName: Install tracer
 
         - script: |
@@ -6562,14 +6592,26 @@ stages:
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
+
+    - bash: dotnet tool install dd-trace --global --prerelease
+      displayName: "Install dd-trace"
+      retryCountOnTaskFailure: 2
+
     - bash: |
-        dotnet run $(Build.BuildId)
+        mkdir -p $(Build.SourcesDirectory)/artifacts/build_data
+        dotnet build
+        dd-trace run --set-env "DD_TRACE_LOG_DIRECTORY=$(Build.SourcesDirectory)/artifacts/build_data" -- dotnet run --no-restore --no-build -- $(Build.BuildId)
         exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
 
     - bash: sleep 20
       displayName: Wait 20 seconds to agent flush before finishing pipeline
+
+    - publish: $(Build.SourcesDirectory)/artifacts/build_data
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: notify_slack_on_failures
   condition: >

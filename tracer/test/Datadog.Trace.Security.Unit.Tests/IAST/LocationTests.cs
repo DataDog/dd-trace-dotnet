@@ -51,8 +51,9 @@ public class LocationTests
     [Fact]
     public void GivenALocation_WhenCreatedFromStackFrame_ValueIsExpected()
     {
-        var stack = new StackTrace().GetFrame(0);
-        var location = new Location(stack, null);
+        var stack = new StackTrace();
+        var frame = stack.GetFrame(0);
+        var location = new Location(frame, stack, null, null);
         location.Path.Should().Be("Datadog.Trace.Security.Unit.Tests.IAST.LocationTests");
         location.Method.Should().Be("GivenALocation_WhenCreatedFromStackFrame_ValueIsExpected");
     }

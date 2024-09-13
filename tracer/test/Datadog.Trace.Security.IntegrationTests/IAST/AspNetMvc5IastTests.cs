@@ -135,7 +135,6 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -147,6 +146,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
@@ -210,7 +210,6 @@ public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
 public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _enableIast;
     private readonly bool _classicMode;
 
@@ -226,6 +225,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;
