@@ -96,7 +96,7 @@ protected:
     int32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
-    ddog_prof_CrashInfo _crashInfo;
+    ddog_crasht_CrashInfo _crashInfo;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;

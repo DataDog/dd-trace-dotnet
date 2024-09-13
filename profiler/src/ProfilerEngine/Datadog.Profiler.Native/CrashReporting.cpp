@@ -5,6 +5,7 @@
 
 #include "unknwn.h"
 #include "FfiHelper.h"
+#include "ScopeFinalizer.h"
 #include <shared/src/native-src/util.h>
 #include <thread>
 
@@ -12,6 +13,7 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
+#include "datadog/crashtracker.h"
 }
 
 extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
@@ -37,14 +39,14 @@ CrashReporting::~CrashReporting()
         ddog_Error_drop(&_error.value());
     }
 
-    ddog_crashinfo_drop(&_crashInfo);
+    ddog_crasht_CrashInfo_drop(&_crashInfo);
 }
 
 int32_t CrashReporting::Initialize()
 {
-    auto crashInfoResult = ddog_crashinfo_new();
+    auto crashInfoResult = ddog_crasht_CrashInfo_new();
 
-    if (crashInfoResult.tag == DDOG_PROF_CRASH_INFO_NEW_RESULT_ERR)
+    if (crashInfoResult.tag == DDOG_CRASHT_CRASH_INFO_NEW_RESULT_ERR)
     {
         SetLastError(crashInfoResult.err);
         return 1;
@@ -52,9 +54,9 @@ int32_t CrashReporting::Initialize()
 
     _crashInfo = crashInfoResult.ok;
 
-    auto result = ddog_crashinfo_set_timestamp_to_now(&_crashInfo);
+    auto result = ddog_crasht_CrashInfo_set_timestamp_to_now(&_crashInfo);
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
         SetLastError(result.err);
         return 1;
@@ -117,9 +119,13 @@ ULONG CrashReporting::Release()
 
 int32_t CrashReporting::AddTag(const char* key, const char* value)
 {
+<<<<<<< HEAD
     auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
+=======
+    auto result = ddog_crasht_CrashInfo_add_tag(&_crashInfo, libdatadog::FfiHelper::StringToCharSlice(std::string_view(key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(value)));
+>>>>>>> efa7cf8d5 (Bump libdatadog v13)
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
         SetLastError(result.err);
         return 1;
@@ -142,7 +148,11 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
+<<<<<<< HEAD
     ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+=======
+    ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+>>>>>>> efa7cf8d5 (Bump libdatadog v13)
 
     return 0;
 }
@@ -159,14 +169,14 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
     {
         auto frames = GetThreadFrames(thread.first, resolveCallback, context);
 
-        ddog_prof_Slice_StackFrame stackTrace;
+        ddog_crasht_Slice_StackFrame stackTrace;
 
         auto count = frames.size();
 
         stackTrace.len = count;
 
-        auto stackFrames = std::make_unique<ddog_prof_StackFrame[]>(count);
-        auto stackFrameNames = std::make_unique<ddog_prof_StackFrameNames[]>(count);
+        auto stackFrames = std::make_unique<ddog_crasht_StackFrame[]>(count);
+        auto stackFrameNames = std::make_unique<ddog_crasht_StackFrameNames[]>(count);
         auto strings = std::make_unique<std::string[]>(count);
 
         stackTrace.ptr = stackFrames.get();
@@ -187,11 +197,16 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
             strings[i] = frame.method;
 
-            stackFrameNames[i] = ddog_prof_StackFrameNames{
-                .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
+            stackFrameNames[i] = ddog_crasht_StackFrameNames{
+                .colno = { DDOG_OPTION_U32_NONE_U32, 0},
                 .filename = {nullptr, 0},
+<<<<<<< HEAD
                 .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
                 .name = libdatadog::to_char_slice(strings[i])
+=======
+                .lineno = { DDOG_OPTION_U32_NONE_U32, 0},
+                .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
+>>>>>>> efa7cf8d5 (Bump libdatadog v13)
             };
 
             auto ip = static_cast<uintptr_t>(frame.ip);
@@ -199,7 +214,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
-            stackFrames[i] = ddog_prof_StackFrame{
+            stackFrames[i] = ddog_crasht_StackFrame{
                 .ip = ip,
                 .module_base_address = moduleAddress,
                 .names{
@@ -213,9 +228,9 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         auto threadIdStr = std::to_string(thread.first);
 
-        auto result = ddog_crashinfo_set_stacktrace(&_crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
+        auto result = ddog_crasht_CrashInfo_set_stacktrace(&_crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
 
-        if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+        if (result.tag == DDOG_CRASHT_RESULT_ERR)
         {
             SetLastError(result.err);
             continue;
@@ -226,9 +241,9 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
         if (thread.first == crashingThreadId)
         {
             // Setting the default stacktrace
-            result = ddog_crashinfo_set_stacktrace(&_crashInfo, { nullptr, 0 }, stackTrace);
+            result = ddog_crasht_CrashInfo_set_stacktrace(&_crashInfo, { nullptr, 0 }, stackTrace);
 
-            if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+            if (result.tag == DDOG_CRASHT_RESULT_ERR)
             {
                 SetLastError(result.err);
                 continue;
@@ -248,10 +263,17 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 {
     auto vecTags = ddog_Vec_Tag_new();
 
+<<<<<<< HEAD
     const ddog_prof_CrashtrackerMetadata metadata = {
         .profiling_library_name = libdatadog::to_char_slice(libraryName) ,
         .profiling_library_version = libdatadog::to_char_slice(libraryVersion),
         .family = libdatadog::to_char_slice(family),
+=======
+    const ddog_crasht_Metadata metadata = {
+        .library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
+        .library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
+        .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
+>>>>>>> efa7cf8d5 (Bump libdatadog v13)
         .tags = &vecTags
     };
 
@@ -261,11 +283,11 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
         ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value));
     }
 
-    auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
+    auto result = ddog_crasht_CrashInfo_set_metadata(&_crashInfo, metadata);
 
     ddog_Vec_Tag_drop(vecTags);
 
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
         SetLastError(result.err);
         return 1;
@@ -276,13 +298,9 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 
 int32_t CrashReporting::Send()
 {
-    ddog_prof_CrashtrackerConfiguration config{};
+    auto result = ddog_crasht_CrashInfo_upload_to_endpoint(&_crashInfo, nullptr);
 
-    config.timeout_secs = 10;
-
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
         SetLastError(result.err);
         return 1;
@@ -293,14 +311,12 @@ int32_t CrashReporting::Send()
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
-    ddog_prof_CrashtrackerConfiguration config{};
+    auto endpoint = ddog_endpoint_from_filename(libdatadog::to_char_slice(url));
+    auto result = ddog_crasht_CrashInfo_upload_to_endpoint(&_crashInfo, endpoint);
 
-    config.endpoint = ddog_Endpoint_file(libdatadog::to_char_slice(url));
-    config.timeout_secs = 10;
+    on_leave { ddog_endpoint_drop(endpoint); };
 
-    auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);
-
-    if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
+    if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
         SetLastError(result.err);
         return 1;
