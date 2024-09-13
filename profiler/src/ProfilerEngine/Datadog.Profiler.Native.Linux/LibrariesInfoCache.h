@@ -46,6 +46,6 @@ private:
 
     static LibrariesInfoCache* s_instance;
     std::thread _worker;
-    bool _stopRequested;
+    std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
 };
