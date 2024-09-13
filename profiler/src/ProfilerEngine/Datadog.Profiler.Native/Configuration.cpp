@@ -569,7 +569,7 @@ bool Configuration::IsEtwLoggingEnabled() const
 std::string const& Configuration::GetEtwEndpoint() const
 {
 #ifdef LINUX
-    return "";
+    return DefaultEmptyString;
 #else
     return _etwEndpoint;
 #endif
