@@ -47,7 +47,7 @@ internal class AwsSqsHeadersAdapters
         public void Add(string key, byte[] value)
         {
             _carrier
-               .Append(value: '"')
+               .Append('"')
                .Append(key)
                .Append("\":\"")
                .Append(Convert.ToBase64String(value))
@@ -57,7 +57,7 @@ internal class AwsSqsHeadersAdapters
         public void Add(string name, string value)
         {
             _carrier
-               .Append(value: '"')
+               .Append('"')
                .Append(name)
                .Append("\":\"")
                .Append(value)
@@ -66,7 +66,7 @@ internal class AwsSqsHeadersAdapters
 
         public void Set(string name, string value)
         {
-            throw new NotImplementedException("this adapter is read only. Only the add method is supported.");
+            throw new NotImplementedException("this adapter can only be use to write to a StringBuilder, not to read data");
         }
 
         public IEnumerable<string> GetValues(string name)
@@ -76,7 +76,7 @@ internal class AwsSqsHeadersAdapters
 
         public void Remove(string name)
         {
-            throw new NotImplementedException("this adapter is read only. Only Add method is supported.");
+            throw new NotImplementedException("this adapter can only be use to write to a StringBuilder, not to remove data");
         }
     }
 

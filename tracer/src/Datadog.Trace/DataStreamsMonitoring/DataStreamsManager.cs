@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -65,31 +66,6 @@ internal class DataStreamsManager
         }
 
         await writer.DisposeAsync().ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Injects a <see cref="PathwayContext"/> into headers
-    /// </summary>
-    /// <param name="context">The pathway context to inject</param>
-    /// <param name="headers">The header collection to inject the headers into</param>
-    public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
-        where TCarrier : IBinaryHeadersCollection
-    {
-        if (!IsEnabled)
-        {
-            return;
-        }
-
-        if (context is not null)
-        {
-            DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
-            return;
-        }
-
-        // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
-        // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
-        // you will hit this code path
-        Log.Debug("Attempted to inject null pathway context");
     }
 
     /// <summary>
