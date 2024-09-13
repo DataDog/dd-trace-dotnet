@@ -40,7 +40,7 @@ SsiManager::~SsiManager()
 void SsiManager::OnShortLivedEnds()
 {
     _isLongLived = true;
-    if (_hasSpan && _enablementStatus == EnablementStatus::SsiEnabled)
+    if (_hasSpan && ((_enablementStatus == EnablementStatus::SsiEnabled) || (_enablementStatus == EnablementStatus::Auto)))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -49,7 +49,7 @@ void SsiManager::OnShortLivedEnds()
 void SsiManager::OnSpanCreated()
 {
     _hasSpan = true;
-    if (_isLongLived && _enablementStatus == EnablementStatus::SsiEnabled)
+    if (_isLongLived && ((_enablementStatus == EnablementStatus::SsiEnabled) || (_enablementStatus == EnablementStatus::Auto)))
     {
         StartProfiling(_pSsiLifetime);
     }
@@ -66,11 +66,12 @@ bool SsiManager::IsLongLived() const
 }
 
 // the profiler is enabled if either:
-//     - the profiler is enabled in the configuration
+//     - the profiler is enabled in the configuration (including "auto")
 //  or - the profiler is deployed via SSI and DD_INJECTION_ENABLED contains "profiling"
 bool SsiManager::IsProfilerEnabled()
 {
     return _enablementStatus == EnablementStatus::ManuallyEnabled ||
+           _enablementStatus == EnablementStatus::Auto ||
            // in the future, users will be able to enable the profiler via SSI at agent installation time
            _enablementStatus == EnablementStatus::SsiEnabled;
 }
@@ -81,7 +82,7 @@ bool SsiManager::IsProfilerEnabled()
 bool SsiManager::IsProfilerStarted()
 {
     return _enablementStatus == EnablementStatus::ManuallyEnabled ||
-           (_enablementStatus == EnablementStatus::SsiEnabled && IsLongLived() && IsSpanCreated());
+           (((_enablementStatus == EnablementStatus::Auto) || (_enablementStatus == EnablementStatus::SsiEnabled)) && IsLongLived() && IsSpanCreated());
 }
 
 void SsiManager::ProcessStart()
