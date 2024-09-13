@@ -663,6 +663,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
         SamplingRate = samplingRate;
         IastTelemetryLevel = iastTelemetryLevel;
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
     }
 
     protected AspNetCoreTestFixture Fixture { get; }

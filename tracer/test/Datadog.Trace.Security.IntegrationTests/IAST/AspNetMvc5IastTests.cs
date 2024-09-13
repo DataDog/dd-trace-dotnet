@@ -146,6 +146,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
@@ -224,6 +225,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         DisableObfuscationQueryString();
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
         _iisFixture = iisFixture;
         _classicMode = classicMode;

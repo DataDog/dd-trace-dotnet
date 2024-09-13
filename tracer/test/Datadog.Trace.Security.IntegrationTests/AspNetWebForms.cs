@@ -62,6 +62,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.StackTraceEnabled, "false");
 
             _iisFixture = iisFixture;
             _classicMode = classicMode;
