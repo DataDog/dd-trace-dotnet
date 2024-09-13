@@ -60,7 +60,7 @@ internal static class StackReporter
             int topCount = Math.Max(1, (int)((double)topPercent * (double)maxStackTraceDepth / 100.0));
             int bottomCount = maxStackTraceDepth - topCount;
             var trimmedStackFrames = new List<Dictionary<string, object>>(maxStackTraceDepth);
-            // Add the top pecent frames
+            // Add the top percent frames
             trimmedStackFrames.AddRange(allValidFrames.GetRange(0, topCount));
             // Add the bottom percent frames
             if (bottomCount > 0)
