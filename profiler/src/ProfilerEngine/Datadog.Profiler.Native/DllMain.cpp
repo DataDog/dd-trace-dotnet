@@ -78,6 +78,14 @@ bool IsProfilingEnabled(Configuration const& configuration)
         return true;
     }
 
+    if (enablementStatus == EnablementStatus::Auto)
+    {
+        Log::Info(".NET Profiler is installed via Single Step Instrumentation and automatically enabled. It will start later.");
+
+        // delay start with SSI is now supported
+        return true;
+    }
+
     if (enablementStatus == EnablementStatus::NotSet)
     {
         // in that case, when deployed with SSI, we accept the profiler to be loaded just for the telemetry metrics

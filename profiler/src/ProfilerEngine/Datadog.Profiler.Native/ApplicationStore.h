@@ -51,4 +51,5 @@ private:
     IRuntimeInfo* _pRuntimeInfo;
     std::unordered_map<std::string, ApplicationInfo> _infos;
     std::mutex _infosLock;
+    bool _isSsiTelemetryEnabled;
 };

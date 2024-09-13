@@ -60,7 +60,6 @@ public class AspNetWebApiAsmDataClassicWithoutSecurity : AspNetWebApiAsmData
 public abstract class AspNetWebApiAsmData : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _classicMode;
 
     public AspNetWebApiAsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)

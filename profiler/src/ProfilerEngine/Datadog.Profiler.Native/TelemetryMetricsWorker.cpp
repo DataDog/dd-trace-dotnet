@@ -173,10 +173,10 @@ bool TelemetryMetricsWorker::Start(
     }
 
     // start the worker
-    // NOTE: builder is consummed after the call so no need to drop it
+    // NOTE: builder is consumed after the call so no need to drop it
     // TODO: we need to update libdatadog to avoid taking the ownership of the builder
     //       and explicitly drop it in all cases
-    result = ddog_telemetry_builder_run(builder, &_impl->_pHandle);
+    result = ddog_telemetry_builder_run_metric_logs(builder, &_impl->_pHandle); // don't send lifecycle telemetry
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         auto error = make_error(result);
@@ -197,7 +197,7 @@ bool TelemetryMetricsWorker::Start(
     std::string enablementTagValue =
         (pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
             ? "manually_enabled"
-        : (pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
+        : ((pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) || (pConfiguration->GetEnablementStatus() == EnablementStatus::Auto))
             ? "ssi_enabled"
             : "not_enabled";
 

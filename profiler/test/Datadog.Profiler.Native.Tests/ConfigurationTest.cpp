@@ -979,7 +979,7 @@ TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
     auto configuration = Configuration{};
-    auto expectedValue = EnablementStatus::SsiEnabled;
+    auto expectedValue = EnablementStatus::Auto;
     ASSERT_THAT(configuration.GetEnablementStatus(), expectedValue);
 }
 
@@ -1129,4 +1129,35 @@ TEST_F(ConfigurationTest, CheckLongLivedThresholdIsDefaultIfSetToNegativeValue)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiLongLivedThreshold, WStr("-1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetSsiLongLivedThreshold(), 30'000ms);
+}
+
+TEST_F(ConfigurationTest, CheckSsiTelemetryIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckSsiTelemetryIsDisabledIfTelemetryEnvVarIsDisabled)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiTelemetryEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckSsiTelemetryIsDisabledByDefaultEvenIfSsiDeployed)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiDeployed, WStr("profiler,tracer"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
+}
+
+TEST_F(ConfigurationTest, CheckSsiTelemetryIsEnabledIfTelemetryEnvVarIsEnabled)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SsiTelemetryEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue = true;
+    ASSERT_THAT(configuration.IsSsiTelemetryEnabled(), expectedValue);
 }

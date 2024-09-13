@@ -258,7 +258,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     {
                         if (profilingEnabled == "auto")
                         {
-                            Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                            Utils.WriteInfo(ContinuousProfilerEnabledWithHeuristics);
                             isContinuousProfilerEnabled = true;
                         }
                         else
@@ -270,10 +270,16 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
                 else
                 {
-                    isContinuousProfilerEnabled = process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var _);
-                    if (isContinuousProfilerEnabled)
+                    if (process.EnvironmentVariables.TryGetValue("DD_INJECTION_ENABLED", out var injectionEnabled))
                     {
-                        Utils.WriteInfo(ContinuousProfilerSsiDeployed);
+                        if (injectionEnabled.Contains("profiler", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiEnabledWithHeuristics);
+                        }
+                        else
+                        {
+                            Utils.WriteInfo(ContinuousProfilerSsiMonitoring);
+                        }
                     }
                     else
                     {

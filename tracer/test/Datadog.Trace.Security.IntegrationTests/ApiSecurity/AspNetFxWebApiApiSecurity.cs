@@ -28,7 +28,6 @@ public class AspNetFxWebApiApiSecurityDisabled(IisFixture iisFixture, ITestOutpu
 public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     internal AspNetFxWebApiApiSecurity(IisFixture iisFixture, ITestOutputHelper output, bool enableApiSecurity)
         : base("WebApi", output, "/home/shutdown", @"test\test-applications\security\aspnet")

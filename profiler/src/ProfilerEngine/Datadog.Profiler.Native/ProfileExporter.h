@@ -107,6 +107,7 @@ private:
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
     std::string GetMetadata() const;
+    std::string GetInfo() const;
 
 private:
     static tags CommonTags;

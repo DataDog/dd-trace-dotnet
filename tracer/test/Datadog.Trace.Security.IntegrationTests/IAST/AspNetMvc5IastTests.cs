@@ -135,7 +135,6 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
@@ -210,7 +209,6 @@ public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
 public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _enableIast;
     private readonly bool _classicMode;
 
