@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Threading;
 using System.Web;
 #if !NETFRAMEWORK
@@ -384,6 +385,6 @@ internal class IastRequestContext
 
     internal string GetNextVulnerabilityStackId()
     {
-        return Interlocked.Increment(ref _lastVulnerabilityStackId).ToString();
+        return Interlocked.Increment(ref _lastVulnerabilityStackId).ToString(CultureInfo.InvariantCulture);
     }
 }

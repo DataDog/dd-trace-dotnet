@@ -109,7 +109,7 @@ namespace Datadog.Trace
                 null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal AppSecRequestContext GetRequestContext()
+        private AppSecRequestContext GetRequestContext()
         {
             if (Volatile.Read(ref _appSecRequestContext) is null)
             {

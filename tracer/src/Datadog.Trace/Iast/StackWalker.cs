@@ -47,11 +47,13 @@ internal static class StackWalker
 
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
-    public static StackFrame? GetFrame(ref StackTrace? externalStack)
+    public static StackTrace GetStackTrace()
     {
-        var stackTrace = externalStack ?? new StackTrace(DefaultSkipFrames, true);
-        externalStack = stackTrace;
+        return new StackTrace(DefaultSkipFrames, true);
+    }
 
+    public static StackFrame? GetFrame(StackTrace stackTrace)
+    {
         foreach (var frame in stackTrace.GetFrames())
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
@@ -93,7 +95,7 @@ internal static class StackWalker
             foreach (var assemblyToSkip in AssemblyNamesToSkip)
             {
 #if NETCOREAPP3_1_OR_GREATER
-            if (assemblyToSkip.EndsWith('.'))
+                if (assemblyToSkip.EndsWith('.'))
 #else
                 if (assemblyToSkip.EndsWith("."))
 #endif

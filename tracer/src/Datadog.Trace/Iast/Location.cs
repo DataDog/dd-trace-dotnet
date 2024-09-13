@@ -78,7 +78,7 @@ internal readonly struct Location
     {
         if (span is not null && StackId is not null && _stack is not null && _stack.FrameCount > 0)
         {
-#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types. Some TFMs (pre net 6) don't have null annotations
             var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, StackId, _stack.GetFrames());
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             if (stack is not null)
