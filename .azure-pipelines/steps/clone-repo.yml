@@ -41,6 +41,7 @@ steps:
       git clean -ffdx
     displayName: checkout
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+    retryCountOnTaskFailure: 3
 
   - bash: |
       echo "Updating credentials ..."
@@ -63,6 +64,7 @@ steps:
       git status
     displayName: merge
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+    retryCountOnTaskFailure: 3
 
   - powershell: |
       echo "Cleaning up source directories ..."
@@ -107,6 +109,7 @@ steps:
       git clean -ffdx
     displayName: checkout
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+    retryCountOnTaskFailure: 3
 
   - powershell: |
       echo "Updating credentials ..."
@@ -128,6 +131,7 @@ steps:
       git status
     displayName: merge
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+    retryCountOnTaskFailure: 3
 
 - ${{ else }}:
     # The clean doesn't always work, so sudo rm -rf it
