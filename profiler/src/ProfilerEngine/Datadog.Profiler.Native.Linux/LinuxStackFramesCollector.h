@@ -89,4 +89,6 @@ private:
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
     LibrariesInfoCache* _plibrariesInfo;
+
+    std::exception* _ex;
 };

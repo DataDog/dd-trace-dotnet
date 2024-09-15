@@ -357,7 +357,7 @@ void initLibrary(void)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
 
-int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
+int dl_iterate_phdr_old(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
 {
     check_init();
 
@@ -375,18 +375,18 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  * dlopen, dladdr issue happens mainly on Alpine
  */
 
-__attribute__((visibility("hidden")))
-atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
-
-unsigned long long dd_nb_calls_to_dlopen_dlclose()
-{
-    return __dd_dlopen_dlcose_calls_counter;
-}
+//__attribute__((visibility("hidden")))
+//atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
+//
+//unsigned long long dd_nb_calls_to_dlopen_dlclose()
+//{
+//    return __dd_dlopen_dlcose_calls_counter;
+//}
 
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
-void* dlopen(const char* file, int mode)
+void* dlopen_old(const char* file, int mode)
 {
     check_init();
 
@@ -394,7 +394,7 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
-    __dd_dlopen_dlcose_calls_counter++;
+    //__dd_dlopen_dlcose_calls_counter++;
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 
@@ -404,13 +404,13 @@ void* dlopen(const char* file, int mode)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_dlclose)(void* handle) = NULL;
 
-int dlclose(void* handle)
+int dlclose_old(void* handle)
 {
     check_init();
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
-    __dd_dlopen_dlcose_calls_counter++;
+    //__dd_dlopen_dlcose_calls_counter++;
 
     return result;
 }
