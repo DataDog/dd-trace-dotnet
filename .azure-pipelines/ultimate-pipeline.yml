@@ -183,6 +183,7 @@ resources:
     resourceGroup: apm-dotnet-build
     registry: apmdotnetbuildregistry
     repository: datadog-agent
+    image: "apmdotnetbuildregistry.azurecr.io/datadog-agent:latest"
     trigger: "none"
     ports:
     - 8126:8126
