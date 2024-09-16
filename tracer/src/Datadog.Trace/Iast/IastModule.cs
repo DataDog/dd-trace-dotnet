@@ -695,7 +695,7 @@ internal static partial class IastModule
     {
         stack ??= StackWalker.GetStackTrace();
         var stackFrame = StackWalker.GetFrame(stack);
-        if (stackFrame is null)
+        if (!stackFrame.Valid)
         {
             return null;
         }
@@ -713,7 +713,7 @@ internal static partial class IastModule
             }
         }
 
-        return new Location(stackFrame, stack, stackId, currentSpan?.SpanId);
+        return new Location(stackFrame.Frame, stack, stackId, currentSpan?.SpanId);
     }
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
