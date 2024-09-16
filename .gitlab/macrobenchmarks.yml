@@ -9,6 +9,7 @@ variables:
   tags: ["runner:apm-k8s-same-cpu"]
   interruptible: true
   timeout: 1h
+  needs: []
 
   image: $BASE_CI_IMAGE
 
