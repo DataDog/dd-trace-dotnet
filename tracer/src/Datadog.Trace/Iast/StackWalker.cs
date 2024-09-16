@@ -73,7 +73,7 @@ internal static class StackWalker
             }
         }
 
-        return null;
+        return stackTrace.GetFrame(0);
     }
 
     public static bool MustSkipAssembly(string assembly)
