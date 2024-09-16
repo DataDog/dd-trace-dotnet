@@ -52,8 +52,9 @@ internal static class StackWalker
         return new StackTrace(DefaultSkipFrames, true);
     }
 
-    public static (StackFrame? Frame, bool Valid) GetFrame(StackTrace stackTrace)
+    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
     {
+        targetFrame = null;
         foreach (var frame in stackTrace.GetFrames())
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
@@ -62,18 +63,19 @@ internal static class StackWalker
             {
                 if (excludeType == declaringType?.FullName)
                 {
-                    return (null, false);
+                    return false;
                 }
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
-                return (frame, true);
+                targetFrame = frame;
+                break;
             }
         }
 
-        return (null, true);
+        return true;
     }
 
     public static bool MustSkipAssembly(string assembly)
