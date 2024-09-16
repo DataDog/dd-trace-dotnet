@@ -178,7 +178,13 @@ variables:
 resources:
   containers:
   - container: dd_agent
-    image: public.ecr.aws/datadog/agent
+    type: ACR
+    azureSubscription: us3.staging.apm-libraries-build-and-sandbox
+    resourceGroup: apm-dotnet-build
+    registry: apmdotnetbuildregistry
+    repository: datadog-agent
+    image: "datadog-agent:latest"
+    trigger: "none"
     ports:
     - 8126:8126
     env:
