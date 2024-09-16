@@ -1,60 +1,28 @@
 {
+  "$schema": "https://raw.githubusercontent.com/DataDog/auto_inject/refs/heads/main/preload_go/cmd/library_requirements_tester/testdata/requirements_schema.json",
   "version": 1,
-  "host": {
-    "linux": {
-      "x64": {
-        "supported": true,
-        "glibc": {
-          "supported": true,
-          "description": "From centOS 7",
-          "min": "2.17"
-        },
-        "musl": {
-          "supported": true,
-          "description": "From alpine 2.14",
-          "min": "1.2.2"
-        }
-      },
-      "arm64": {
-        "supported": true,
-        "glibc": {
-          "supported": true,
-          "description": "From debian buster (10)",
-          "min": "2.23"
-        },
-        "musl": {
-          "supported": false
-        }
-      },
-      "x86": {
-        "supported": false,
-        "glibc": {
-          "supported": false
-        },
-        "musl": {
-          "supported": false
-        }
-      }
+  "native_deps": {
+    "glibc": [{
+      "arch": "x64",
+      "supported": true,
+      "description": "From centOS 7",
+      "min": "2.17"
     },
-    "windows": {
-      "x64": {
-        "supported": true
-      },
-      "x86": {
-        "supported": false
-      },
-      "arm64": {
-        "supported": false
-      }
-    },
-    "macos": {
-      "x64": {
-        "supported": false
-      },
-      "arm64": {
-        "supported": false
-      }
-    }
+    {
+      "arch": "arm64",
+      "supported": true,
+      "description": "From debian buster (10)",
+      "min": "2.23"
+    }],
+    "musl": [{
+      "arch": "x64",
+      "supported": true,
+      "description": "From alpine 3.14"
+    },{
+      "arch": "arm64",
+      "supported": true,
+      "description": "From alpine 3.18"
+    }]
   },
   "deny": [
     {
