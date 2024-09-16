@@ -119,11 +119,7 @@ ULONG CrashReporting::Release()
 
 int32_t CrashReporting::AddTag(const char* key, const char* value)
 {
-<<<<<<< HEAD
     auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
-=======
-    auto result = ddog_crasht_CrashInfo_add_tag(&_crashInfo, libdatadog::FfiHelper::StringToCharSlice(std::string_view(key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(value)));
->>>>>>> efa7cf8d5 (Bump libdatadog v13)
 
     if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
@@ -148,11 +144,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-<<<<<<< HEAD
     ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
-=======
-    ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
->>>>>>> efa7cf8d5 (Bump libdatadog v13)
 
     return 0;
 }
@@ -200,13 +192,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             stackFrameNames[i] = ddog_crasht_StackFrameNames{
                 .colno = { DDOG_OPTION_U32_NONE_U32, 0},
                 .filename = {nullptr, 0},
-<<<<<<< HEAD
-                .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-                .name = libdatadog::to_char_slice(strings[i])
-=======
                 .lineno = { DDOG_OPTION_U32_NONE_U32, 0},
-                .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
->>>>>>> efa7cf8d5 (Bump libdatadog v13)
+                .name = libdatadog::to_char_slice(strings[i])
             };
 
             auto ip = static_cast<uintptr_t>(frame.ip);
@@ -263,17 +250,10 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 {
     auto vecTags = ddog_Vec_Tag_new();
 
-<<<<<<< HEAD
-    const ddog_prof_CrashtrackerMetadata metadata = {
-        .profiling_library_name = libdatadog::to_char_slice(libraryName) ,
-        .profiling_library_version = libdatadog::to_char_slice(libraryVersion),
-        .family = libdatadog::to_char_slice(family),
-=======
     const ddog_crasht_Metadata metadata = {
-        .library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
-        .library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
-        .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
->>>>>>> efa7cf8d5 (Bump libdatadog v13)
+        .library_name = libdatadog::to_char_slice(libraryName) ,
+        .library_version = libdatadog::to_char_slice(libraryVersion),
+        .family = libdatadog::to_char_slice(family),
         .tags = &vecTags
     };
 
@@ -311,7 +291,7 @@ int32_t CrashReporting::Send()
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
-    auto endpoint = ddog_endpoint_from_filename(libdatadog::to_char_slice(url));
+    auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
     auto result = ddog_crasht_CrashInfo_upload_to_endpoint(&_crashInfo, endpoint);
 
     on_leave { ddog_endpoint_drop(endpoint); };
