@@ -17,6 +17,7 @@ internal class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
+    private const string VulnerabilityStackKey = "vulnerability";
     private const string AppsecKey = "appsec";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
@@ -69,20 +70,30 @@ internal class AppSecRequestContext
 
     internal void AddRaspStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
     {
+        AddStackTrace(ExploitStackKey, stackTrace, maxStackTraces);
+    }
+
+    internal void AddVulnerabilityStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
+    {
+        AddStackTrace(VulnerabilityStackKey, stackTrace, maxStackTraces);
+    }
+
+    internal void AddStackTrace(string stackCategory, Dictionary<string, object> stackTrace, int maxStackTraces)
+    {
         lock (_sync)
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(ExploitStackKey))
+            if (!_raspStackTraces.ContainsKey(stackCategory))
             {
-                _raspStackTraces.Add(ExploitStackKey, new());
+                _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
             {
                 return;
             }
 
-            _raspStackTraces[ExploitStackKey].Add(stackTrace);
+            _raspStackTraces[stackCategory].Add(stackTrace);
         }
     }
 }
