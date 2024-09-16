@@ -7,7 +7,7 @@ stages:
   - benchmarks
 
 include:
-  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include-wip/andrew/andrew/updated-denylist/one-pipeline.yml
+  - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/one-pipeline.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
