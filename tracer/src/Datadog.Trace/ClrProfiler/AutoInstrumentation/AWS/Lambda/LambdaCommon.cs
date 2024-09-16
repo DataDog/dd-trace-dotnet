@@ -21,7 +21,7 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, ulong traceIdUpper64, string samplingPriority)
     {
         Span span;
 
@@ -32,8 +32,17 @@ internal abstract class LambdaCommon
         }
         else
         {
-            Log($"creating the placeholder traceId = {traceId}");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
+            if (traceIdUpper64 == 0)
+            {
+                Log($"creating the placeholder traceId = {traceId}");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
+            }
+            else
+            {
+                var traceIdLower64 = Convert.ToUInt64(traceId);
+                Log($"creating the placeholder traceId = {traceIdUpper64}{traceIdLower64}");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: new TraceId(traceIdUpper64, traceIdLower64), addToTraceContext: false);
+            }
         }
 
         if (samplingPriority == null)
@@ -58,13 +67,40 @@ internal abstract class LambdaCommon
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
         var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
+        var traceIdUpper64 = GetTraceIdUpper64(response.Headers.Get(HttpHeaderNames.PropagatedTags));
         var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
         if (ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            return CreatePlaceholderScope(Tracer.Instance, traceId, traceIdUpper64, samplingPriority);
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// GetTraceIdUpper64 searches the x-datadog-tags tags for the upper 64 bits of the trace id.
+    /// Per the 128 bit tracing RFC, the upper 64 bits are stored in the _dd.p.tid tag as a hex string.
+    /// </summary>
+    /// <param name="ddTags">The propagated tags from the x-datadog-tags header</param>
+    /// <returns>the upper 64 bits of the traceId as a ulong</returns>
+    internal static ulong GetTraceIdUpper64(string ddTags)
+    {
+        if (ddTags == null)
+        {
+            return 0;
+        }
+
+        var tags = ddTags.Split(',');
+        foreach (var tag in tags)
+        {
+            var keyValue = tag.Trim().Split('=');
+            if (keyValue.Length == 2 && keyValue[0] == "_dd.p.tid")
+            {
+                return Convert.ToUInt64(keyValue[1], 16);
+            }
+        }
+
+        return 0;
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
