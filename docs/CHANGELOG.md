@@ -1,6 +1,30 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+
+## [Release 2.59.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.59.0)
+
+## Summary
+
+* [Crashtracking] Fix the handling of COMPlus_DbgMiniDumpName preventing dump creation
+
+## Changes
+
+### Continuous Profiler
+* [Crashtracking] Fix the handling of COMPlus_DbgMiniDumpName (#5980 -> v2) (#6001)
+
+### Serverless
+* [backport][build] Build tracer with ReadyToRun (5962 => v2) (#6005)
+
+### Build / Test
+* [Profiler] Fix LinuxDlIteratePhdrDeadlock test (#5963 -> v2) (#6003)
+* Add explicit permissions to all workflows (#5728 => v2) (#6013)
+* Version Bump to 2.59.0 (#6021)
+* Fix gitlab build (#6025 -> v2) (#6027)
+
+
+[Changes since 3.2.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.2.0...v2.59.0)
+
 ## [Release 2.58.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.58.0)
 
 ## Summary
