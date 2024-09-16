@@ -4,7 +4,7 @@ variables:
   # https://github.com/DataDog/benchmarking-platform/blob/macro/dd-trace-dotnet/container/Dockerfile
 
 .macrobenchmarks:
-  stage: benchmarks
+  stage: macrobenchmarks
   when: manual
   tags: ["runner:apm-k8s-same-cpu"]
   interruptible: true
