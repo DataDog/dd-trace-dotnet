@@ -17,7 +17,7 @@ internal static class RCMCapabilitiesHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RCMCapabilitiesHelper));
 
-    private static readonly Dictionary<BigInteger, Version> _CapabilitiesByWafVersion = new Dictionary<BigInteger, Version>()
+    private static readonly Dictionary<BigInteger, Version> _capabilitiesByWafVersion = new Dictionary<BigInteger, Version>()
     {
         { RcmCapabilitiesIndices.AsmEnpointFingerprint, new Version(1, 19) },
         { RcmCapabilitiesIndices.AsmHeaderFingerprint, new Version(1, 19) },
@@ -39,7 +39,7 @@ internal static class RCMCapabilitiesHelper
             return false;
         }
 
-        if (_CapabilitiesByWafVersion.TryGetValue(capability, out var version))
+        if (_capabilitiesByWafVersion.TryGetValue(capability, out var version))
         {
             try
             {

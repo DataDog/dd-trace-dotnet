@@ -16,6 +16,7 @@ internal static class AttackerFingerprintHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AttackerFingerprintHelper));
     private static readonly Dictionary<string, object> _fingerprintRequest = new() { { AddressesConstants.WafContextProcessor, new Dictionary<string, object> { { "fingerprint", true } } } };
+    private static bool WarningLogged = false;
 
     public static void AddSpanTags(Span span)
     {
@@ -49,8 +50,12 @@ internal static class AttackerFingerprintHelper
                 }
                 else
                 {
-                    // This should not happen
-                    Log.Warning("Fingerprint derivative {DerivativeKey} has no value", derivative.Key);
+                    if (!WarningLogged)
+                    {
+                        // This should not happen
+                        Log.Warning("Fingerprint derivative {DerivativeKey} has no value", derivative.Key);
+                        WarningLogged = true;
+                    }
                 }
             }
         }
