@@ -14,7 +14,7 @@ variables:
   image: $BASE_CI_IMAGE
 
   script:
-    - git clone --branch dd-trace-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform && cd /platform
+    - git clone --branch macro/dd-trace-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform && cd /platform
     - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts_bp"
