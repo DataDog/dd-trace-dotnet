@@ -5005,13 +5005,25 @@ stages:
         default_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: DEFAULT
+        integrations_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS
+        integrations_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS
+        crossed_tracing_libraries_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: CROSSED_TRACING_LIBRARIES
+        crossed_tracing_libraries_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: CROSSED_TRACING_LIBRARIES
         # All the other scenarios that aren't in a secenario group
         remainder_poc:
           WEBLOG_VARIANT: "poc"
-          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
         remainder_uds:
           WEBLOG_VARIANT: "uds"
-          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
         debugger_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: DEBUGGER_SCENARIOS
