@@ -1,0 +1,249 @@
+variables:
+  BASE_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-aspnetcore-5
+  # The Dockerfile to this image is located at:
+  # https://github.com/DataDog/benchmarking-platform/blob/macro/dd-trace-dotnet/container/Dockerfile
+
+.macrobenchmarks:
+  stage: benchmarks
+  when: manual
+  tags: ["runner:apm-k8s-same-cpu"]
+  interruptible: true
+  timeout: 1h
+
+  image: $BASE_CI_IMAGE
+
+  script:
+    - bp-runner bp-runner.yml --debug
+  artifacts:
+    name: "artifacts_bp"
+    when: always
+    paths:
+      - artifacts_bp/
+    expire_in: 3 months
+  
+  allow_failure: true
+
+  variables:
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+
+    ENDPOINT: randomdate
+
+    K6_OPTIONS_WARMUP_RATE: 30
+    K6_OPTIONS_WARMUP_DURATION: 3m
+    K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
+    K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_WARMUP_MAX_VUS: 4
+
+    K6_OPTIONS_NORMAL_OPERATION_RATE: 400
+    K6_OPTIONS_NORMAL_OPERATION_DURATION: 7m
+    K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
+    K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+
+    K6_OPTIONS_HIGH_LOAD_RATE: 600
+    K6_OPTIONS_HIGH_LOAD_DURATION: 3m
+    K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
+    K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
+    K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+
+baseline:
+  extends: .macrobenchmarks
+  variables:
+    DD_SERVICE: "dotnet-aspnetcore"
+    DD_TRACE_DEBUG: "false"
+    BENCHMARKS_CFG: baseline
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    when: always
+  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
+only-tracing-auto:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: only-tracing
+    MODE: auto
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    when: always
+  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
+only-tracing-manual:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: only-tracing
+    MODE: manual
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    when: always
+  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
+otel-auto:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: otel
+    MODE: auto
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    when: always
+  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
+otel-manual:
+  extends: .macrobenchmarks
+  variables:
+    DD_TRACE_ENABLED: "true"
+    DD_PROFILING_ENABLED: "false"
+    DD_APPSEC_ENABLED: "false"
+    BENCHMARKS_CFG: otel
+    MODE: manual
+  rules:
+  - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    when: always
+  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+
+# .microbenchmarks:
+#   stage: benchmarks
+#   tags: ["runner:apm-k8s-tweaked-metal"]
+#   needs: []
+#   image:
+#     name: $BASE_CI_IMAGE
+#   interruptible: true
+#   timeout: 1h
+#   script:
+#     - export ARTIFACTS_DIR="$(pwd)/reports" && (mkdir "${ARTIFACTS_DIR}" || :)
+#     - git clone --branch dd-trace-php https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform && cd /platform
+#     - ./steps/capture-hardware-software-info.sh
+#     - ./steps/run-benchmarks.sh
+#     - ./steps/analyze-results.sh
+#     - "./steps/upload-results-to-s3.sh || :"
+#     - "./steps/post-pr-comment.sh || :"
+#   artifacts:
+#     name: "reports"
+#     paths:
+#       - reports/
+#     expire_in: 3 months
+#   variables:
+#     UPSTREAM_PROJECT_ID: $CI_PROJECT_ID
+#     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
+#     UPSTREAM_BRANCH: $CI_COMMIT_REF_NAME
+#     UPSTREAM_COMMIT_SHA: $CI_COMMIT_SHA
+
+#     KUBERNETES_SERVICE_ACCOUNT_OVERWRITE: dd-trace-php
+#     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+
+# benchmarks-profiler:
+#   extends: .microbenchmarks
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE != "schedule"
+#       changes:
+#         paths:
+#           - profiling/**/*
+#         compare_to: "master"
+#       when: on_success
+#     - when: manual
+#   variables:
+#     SCENARIO: "profiler"
+
+# benchmarks-tracer:
+#   extends: .microbenchmarks
+#   rules:
+#     - if: $CI_PIPELINE_SOURCE != "schedule"
+#       changes:
+#         paths:
+#           - ext/**/*
+#           - src/**/*
+#           - components/**/*
+#           - components-rs/**/*
+#           - zend_abstract_interface/**/*
+#           - tests/Benchmarks/**/*
+#           - benchmark/*
+#           - tea/**/*
+#         compare_to: "master"
+#       when: on_success
+#     - when: manual
+#   variables:
+#     SCENARIO: "tracer"
+
+
+# download_circle_ci_release:
+#   stage: benchmarks
+#   needs: []
+#   rules:
+#     - if: ($NIGHTLY_BENCHMARKS || $CI_PIPELINE_SOURCE != "schedule") && $CI_COMMIT_REF_NAME == "master"
+#       when: always
+#     - when: manual
+#   tags: [ "arch:amd64" ]
+#   interruptible: true
+#   timeout: 45m
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:php_laravel-realworld
+#   script:
+#     - git clone --branch php/laravel-realworld https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+#     - ./steps/download-circle-ci-release.sh
+#   artifacts:
+#     name: "artifacts"
+#     when: always
+#     paths:
+#       - circleci/artifacts/
+#     expire_in: 3 months
+#   allow_failure: true
+
+# .macrobenchmarks:
+#   stage: benchmarks
+#   rules:
+#     - if: ($NIGHTLY_BENCHMARKS || $CI_PIPELINE_SOURCE != "schedule") && $CI_COMMIT_REF_NAME == "master"
+#       when: always
+#     - when: manual
+#   tags: ["runner:apm-k8s-same-cpu"]
+#   needs: ["download_circle_ci_release"]
+#   interruptible: true
+#   timeout: 1h
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:php_laravel-realworld
+#   script:
+#     - git clone --branch php/laravel-realworld https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform platform && cd platform
+#     - ./steps/run-benchmarks.sh
+#   artifacts:
+#     name: "artifacts"
+#     when: always
+#     paths:
+#       - platform/artifacts/
+#     expire_in: 3 months
+#   variables:
+#     FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY: "true"
+
+#     K6_OPTIONS_WARMUP_RATE: 70
+#     K6_OPTIONS_WARMUP_DURATION: 1m
+#     K6_OPTIONS_WARMUP_GRACEFUL_STOP: 10s
+#     K6_OPTIONS_WARMUP_PRE_ALLOCATED_VUS: 4
+#     K6_OPTIONS_WARMUP_MAX_VUS: 4
+
+#     K6_OPTIONS_NORMAL_OPERATION_RATE: 50
+#     K6_OPTIONS_NORMAL_OPERATION_DURATION: 5m
+#     K6_OPTIONS_NORMAL_OPERATION_GRACEFUL_STOP: 10s
+#     K6_OPTIONS_NORMAL_OPERATION_PRE_ALLOCATED_VUS: 4
+#     K6_OPTIONS_NORMAL_OPERATION_MAX_VUS: 4
+
+#     K6_OPTIONS_HIGH_LOAD_RATE: 200
+#     K6_OPTIONS_HIGH_LOAD_DURATION: 2m
+#     K6_OPTIONS_HIGH_LOAD_GRACEFUL_STOP: 10s
+#     K6_OPTIONS_HIGH_LOAD_PRE_ALLOCATED_VUS: 4
+#     K6_OPTIONS_HIGH_LOAD_MAX_VUS: 4
+
+#   # Workaround: Currently we're not running the benchmarks on every PR, but GitHub still shows them as pending.
+#   # By marking the benchmarks as allow_failure, this should go away. (This workaround should be removed once the
+#   # benchmarks get changed to run on every PR)
+#   allow_failure: true
+
+# macrobenchmarks:
+#   extends: .macrobenchmarks
+#   parallel:
+#     matrix:
+#       - PHP_VERSION: "7.4"
+#       - PHP_VERSION: "8.1"
