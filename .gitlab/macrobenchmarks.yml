@@ -54,9 +54,7 @@ baseline:
     DD_TRACE_DEBUG: "false"
     BENCHMARKS_CFG: baseline
   rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - when: manual
 
 only-tracing-auto:
   extends: .macrobenchmarks
@@ -67,9 +65,7 @@ only-tracing-auto:
     BENCHMARKS_CFG: only-tracing
     MODE: auto
   rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - when: manual
 
 only-tracing-manual:
   extends: .macrobenchmarks
@@ -80,9 +76,7 @@ only-tracing-manual:
     BENCHMARKS_CFG: only-tracing
     MODE: manual
   rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - when: manual
 
 otel-auto:
   extends: .macrobenchmarks
@@ -93,9 +87,7 @@ otel-auto:
     BENCHMARKS_CFG: otel
     MODE: auto
   rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - when: manual
 
 otel-manual:
   extends: .macrobenchmarks
@@ -106,6 +98,4 @@ otel-manual:
     BENCHMARKS_CFG: otel
     MODE: manual
   rules:
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    when: always
-  - if: '$CI_PIPELINE_SOURCE != "schedule"'
+    - when: manual
