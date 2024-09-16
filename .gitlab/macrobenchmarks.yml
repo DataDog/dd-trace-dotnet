@@ -15,7 +15,9 @@ variables:
 
   script:
     - git clone --branch macro/dd-trace-dotnet https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/benchmarking-platform /platform && cd /platform
+    - echo "getting ipa key"
     - export DD_API_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.benchmarking-platform.dd_api_key --with-decryption --query "Parameter.Value" --out text)
+    - echo "got ipa key"
     - bp-runner bp-runner.yml --debug
   artifacts:
     name: "artifacts_bp"
