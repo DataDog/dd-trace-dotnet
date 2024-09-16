@@ -180,7 +180,7 @@ resources:
   - container: dd_agent
     type: ACR
     azureSubscription: us3.staging.apm-libraries-build-and-sandbox
-    resourceGroup: apm-dotnet-build
+    resourceGroup: apm-dotnet-build-agents
     registry: apmdotnetbuildregistry
     repository: datadog-agent
     image: "apmdotnetbuildregistry.azurecr.io/datadog-agent:latest"
