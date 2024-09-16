@@ -112,7 +112,7 @@ auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const
 
 void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes(const WSTRING& filename)
 {
-    std::ifstream file(filename);
+    std::ifstream file(filename.data());
     if (!file.is_open())
     {
         Logger::Error("InitializeExplorationTestLineProbes: Unable to open file: ", filename);
