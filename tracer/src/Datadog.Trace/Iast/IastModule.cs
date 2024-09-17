@@ -694,8 +694,7 @@ internal static partial class IastModule
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
         stack ??= StackWalker.GetStackTrace();
-        var stackFrame = StackWalker.GetFrame(stack);
-        if (stackFrame is null)
+        if (!StackWalker.TryGetFrame(stack, out var stackFrame))
         {
             return null;
         }
