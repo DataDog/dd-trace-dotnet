@@ -541,15 +541,16 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
         pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
 
         // substitute the methodHandler of the instrumented duplication with the original (the one of the kickoff)
-        if (!moduleHandler->TryGetMethod(methodIdOfKickoff, &methodHandler))
-        {
-            Logger::Warn("FaultTolerantRewriter::RewriteInternal(): Failed to substitute the methodHandler of the instrumented duplication with the original's.");
-            return S_FALSE;
-        }
-
         InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation =
-            [this](RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+            [this, kickOffId = methodIdOfKickoff](RejitHandlerModule* moduleHandler,
+                                                  RejitHandlerModuleMethod* methodHandler,
                    ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo, LPCBYTE pbILMethod) -> HRESULT {
+            if (!moduleHandler->TryGetMethod(kickOffId, &methodHandler))
+            {
+                Logger::Warn("FaultTolerantRewriter::RewriteInternal(): Failed to substitute the methodHandler of the instrumented duplication with the original's.");
+                return S_FALSE;
+             }
+
             return this->InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo, pbILMethod);
         };
 

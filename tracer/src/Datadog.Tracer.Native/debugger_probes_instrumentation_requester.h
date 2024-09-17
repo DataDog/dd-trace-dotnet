@@ -7,6 +7,8 @@
 #include "debugger_members.h"
 #include "fault_tolerant_method_duplicator.h"
 
+#include <map>
+
 // forward declaration
 
 namespace fault_tolerant
@@ -16,6 +18,17 @@ class FaultTolerantMethodDuplicator;
 
 namespace debugger
 {
+
+struct pair_hash
+{
+    template <class T1, class T2>
+    std::size_t operator()(const std::pair<T1, T2>& p) const
+    {
+        auto hash1 = std::hash<T1>{}(p.first);
+        auto hash2 = std::hash<T2>{}(p.second);
+        return hash1 ^ (hash2 << 1);
+    }
+};
 
 class DebuggerProbesInstrumentationRequester
 {
@@ -28,6 +41,8 @@ private:
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> m_fault_tolerant_method_duplicator = nullptr;
     bool is_debugger_or_exception_debugging_enabled = false;
+    std::unordered_map<std::pair<std::string, mdToken>, std::vector<int>, pair_hash> explorationLineProbes;
+    std::once_flag explorationLinesInitFlag;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
     static WSTRING GenerateRandomProbeId();
@@ -53,7 +68,9 @@ public:
                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
     static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
-    void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
+    void PerformInstrumentAllIfNeeded(const ModuleID& module_id, mdToken& function_token);
+    void InitializeExplorationTestLineProbes(const WSTRING& filename);
+    auto& GetExplorationTestLineProbes(const WSTRING& filename);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
     void RequestRejitForLoadedModule(ModuleID moduleId);
