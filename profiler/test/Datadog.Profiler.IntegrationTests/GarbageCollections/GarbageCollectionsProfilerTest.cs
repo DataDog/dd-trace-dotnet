@@ -77,12 +77,12 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-32.bevents");
+                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-64.bevents");
+                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-64.bevents");
             }
 
             int eventsCount = 0;

@@ -14,4 +14,8 @@
     <Compile Include="..\..\..\..\..\test\Datadog.Profiler.IntegrationTests\Helpers\RecordReader.cs" Link="RecordReader.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.0" />
+  </ItemGroup>
+
 </Project>

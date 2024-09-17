@@ -45,7 +45,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         public static NamedPipeAgent CreateNamedPipeAgent(ITestOutputHelper output) => new NamedPipeAgent(output);
 
-        public void StartEtwProxy(string namedPipeEndpoint, string eventsFilename = null)
+        public void StartEtwProxy(ITestOutputHelper output, string namedPipeEndpoint, string eventsFilename = null)
         {
             // simulate the Agent as an ETW proxy to replay events (if any)
             // 1. create a named pipe server with the given endpoint to receive registration/unregistration commands from the profiler
@@ -54,10 +54,14 @@ namespace Datadog.Profiler.IntegrationTests
             //    --> keep track of any error
             //    --> if no file is provided, don't send any event but accept registration/unregistration commands
             // NOTE: this method must be called before calling Run() on the TestApplicationRunner
-            _etwProxy = new AgentEtwProxy(namedPipeEndpoint, eventsFilename);
+            _etwProxy = new AgentEtwProxy(output, namedPipeEndpoint, eventsFilename);
             _etwProxy.ProfilerRegistered += (sender, e) => ProfilerRegistered?.Invoke(this, e);
             _etwProxy.EventsSent += (sender, e) => EventsSent?.Invoke(this, e);
             _etwProxy.ProfilerUnregistered += (sender, e) => ProfilerUnregistered?.Invoke(this, e);
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            _etwProxy.StartServerAsync();
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         }
 
         public virtual void Dispose()

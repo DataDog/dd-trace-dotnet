@@ -101,12 +101,12 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-32.bevents");
+                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-64.bevents");
+                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-64.bevents");
             }
 
             int eventsCount = 0;

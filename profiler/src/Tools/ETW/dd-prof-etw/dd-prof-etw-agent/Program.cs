@@ -38,7 +38,7 @@ namespace Datadog.Profiler.IntegrationTests
             ManualResetEventSlim mre = new ManualResetEventSlim(false);
 
             Console.WriteLine($"Waiting for profiler registration from {endpoint}");
-            AgentEtwProxy agentEtwProxy = new AgentEtwProxy(endpoint, eventsFilename);
+            AgentEtwProxy agentEtwProxy = new AgentEtwProxy(null, endpoint, eventsFilename);
             agentEtwProxy.ProfilerRegistered += (sender, e) =>
             {
                 Console.WriteLine($"Profiler registered with PID {e.Value}");

@@ -6,11 +6,11 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
 {
@@ -26,8 +26,9 @@ namespace Datadog.Profiler.IntegrationTests
         private bool _eventsHaveBeenSent;
         private int _pid;
         private NamedPipeClientStream _pipeClient;
+        private readonly ITestOutputHelper _output;
 
-        public AgentEtwProxy(string agentEndPoint, string eventsFilename)
+        public AgentEtwProxy(ITestOutputHelper output, string agentEndPoint, string eventsFilename)
         {
             _agentEndPoint = agentEndPoint;
             _eventsFilename = eventsFilename;
@@ -35,10 +36,7 @@ namespace Datadog.Profiler.IntegrationTests
             _profilerHasUnregistered = false;
             _eventsHaveBeenSent = false;
             _pipeClient = null;
-
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            StartServerAsync();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            _output = output;
         }
 
         // ---------------------------------PID
@@ -68,11 +66,12 @@ namespace Datadog.Profiler.IntegrationTests
             _pipeClient.Flush();
 
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
-            Thread.Sleep(5);
+            //Thread.Sleep(5);
         }
 
         private void OnProfilerRegistered(int pid)
         {
+            WriteLine($"process {pid} has registered");
             ProfilerRegistered?.Invoke(this, new EventArgs<int>(pid));
         }
 
@@ -83,10 +82,24 @@ namespace Datadog.Profiler.IntegrationTests
 
         private void OnProfilerUnregistered(int pid)
         {
+            WriteLine($"process {pid} is unregistered");
             ProfilerUnregistered?.Invoke(this, new EventArgs<int>(pid));
         }
 
-        private async Task StartServerAsync()
+
+        private void WriteLine(string line)
+        {
+            if (_output != null)
+            {
+                _output.WriteLine(line);
+            }
+            else
+            {
+                Console.WriteLine(line);
+            }
+        }
+
+        public async Task StartServerAsync()
         {
             try
             {
@@ -98,10 +111,11 @@ namespace Datadog.Profiler.IntegrationTests
                                             PipeTransmissionMode.Byte,
                                             PipeOptions.None))
                 {
-                    Console.WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
+                    WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
+
                     await server.WaitForConnectionAsync();
 
-                    Console.WriteLine("Client connected.");
+                    WriteLine("Client connected.");
                     byte[] inBuffer = new byte[256];
                     int bytesRead;
                     byte[] outBuffer = new byte[256];
@@ -129,7 +143,7 @@ namespace Datadog.Profiler.IntegrationTests
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"StartServerAsync: {ex.Message}");
+                WriteLine($"StartServerAsync: {ex.Message}");
             }
         }
 
@@ -172,6 +186,7 @@ namespace Datadog.Profiler.IntegrationTests
             Thread.Sleep(500);
 
             string endPoint = ProfilerNamedPipePrefix + _pid.ToString();
+            WriteLine($"Connecting to the profiler on {endPoint}...");
             using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", endPoint, PipeDirection.Out))
             {
                 _pipeClient = pipeClient;
@@ -180,6 +195,7 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     // Connect to the NamedPipe server
                     await pipeClient.ConnectAsync();
+                    WriteLine("Connected to the Profiler");
 
                     // read the events file and send each event to the profiler
                     if (_eventsFilename != null)
@@ -190,13 +206,17 @@ namespace Datadog.Profiler.IntegrationTests
                             var recordReader = new RecordReader(reader, this, null);
                             int count = 0;
 
+                            WriteLine("Start replaying events...");
+
                             // each records will be processed by the DumpRecord method
                             while (fs.Position < fs.Length)
                             {
                                 count++;
+                                WriteLine($"Sending event {count}...");
                                 recordReader.ReadRecord();
                             }
 
+                            WriteLine($"{count} events have been replayed");
                             _eventsHaveBeenSent = true;
                             OnEventsSent(count);
                         }
@@ -204,7 +224,7 @@ namespace Datadog.Profiler.IntegrationTests
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"StartClientAsync: {ex.Message}");
+                    WriteLine($"StartClientAsync: {ex.Message}");
                 }
             }
         }
