@@ -488,6 +488,20 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
                                        .AsBool(false);
 
+            var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
+            var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
+
+            if (string.IsNullOrEmpty(userDisabledAdoNetCommandTypes))
+            {
+                DisabledAdoNetCommandTypes = new HashSet<string>(defaultDisabledAdoNetCommandTypes, StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                var userSplit = TrimSplitString(userDisabledAdoNetCommandTypes, commaSeparator);
+                DisabledAdoNetCommandTypes = new HashSet<string>(userSplit, StringComparer.OrdinalIgnoreCase);
+                DisabledAdoNetCommandTypes.UnionWith(defaultDisabledAdoNetCommandTypes);
+            }
+
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
@@ -1039,6 +1053,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the metadata schema version
         /// </summary>
         internal SchemaVersion MetadataSchemaVersion { get; }
+
+        /// <summary>
+        /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
+        /// </summary>
+        internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

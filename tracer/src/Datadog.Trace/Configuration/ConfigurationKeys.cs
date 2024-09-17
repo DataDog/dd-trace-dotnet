@@ -450,6 +450,14 @@ namespace Datadog.Trace.Configuration
         public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
         /// <summary>
+        /// Configuration key for the comma-separated list of user disabled
+        /// ADO.NET CommandType names that should not have Span created for them.
+        /// <para>"InterceptableDbCommand" and "ProfiledDbCommand" are always disabled by default.</para>
+        /// </summary>
+        /// <seealso cref="TracerSettings.DisabledAdoNetCommandTypes"/>
+        public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility

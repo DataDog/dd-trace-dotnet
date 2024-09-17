@@ -4,14 +4,17 @@
 // </copyright>
 
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
+    [UsesVerify]
     public class FakeCommandTests : TracingIntegrationTest
     {
         public FakeCommandTests(ITestOutputHelper output)
@@ -29,6 +32,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         public Task SubmitsTracesV1() => RunTest("v1");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public Task SubmitTracesDisabledFakeCommandV0() => RunDisabledFakeCommandTest("v0");
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public Task SubmitTracesDisabledFakeCommandV1() => RunDisabledFakeCommandTest("v1");
 
         private async Task RunTest(string metadataSchemaVersion)
         {
@@ -63,7 +74,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 Assert.Equal(expectedOperationName, span.Name);
             }
 
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var dbResourceRegex = new Regex("Test-[0-9a-fA-F]+");
+            settings.AddRegexScrubber(dbResourceRegex, "Test-GUID");
+            await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(FakeCommandTests) + $"_{metadataSchemaVersion}");
+
             telemetry.AssertIntegrationEnabled(IntegrationId.AdoNet);
+        }
+
+        private async Task RunDisabledFakeCommandTest(string metadataSchemaVersion)
+        {
+            // ALWAYS: 21 spans - these are the custom spans from RelationalDatabaseTestHarness
+            // There should be NO SQL spans in the snapshots
+            const int expectedSpanCount = 21;
+
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_DISABLED_ADONET_COMMAND_TYPES", "FakeCommand");
+            var isExternalSpan = metadataSchemaVersion == "v0";
+            var clientSpanServiceName = EnvironmentHelper.FullSampleName;
+
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = agent.WaitForSpans(expectedSpanCount);
+            int actualSpanCount = spans.Count();
+
+            Assert.Equal(expectedSpanCount, actualSpanCount);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var dbResourceRegex = new Regex("Test-[0-9a-fA-F]+");
+            settings.AddRegexScrubber(dbResourceRegex, "Test-GUID");
+            await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(FakeCommandTests) + $"_{metadataSchemaVersion}_disabledFakeCommand");
+
+            // We should have created 0 spans from ADO.NET integration - spans created are from RelationaTestHarness and are manual spans
+            telemetry.AssertIntegrationDisabled(IntegrationId.AdoNet);
         }
     }
 }
