@@ -491,15 +491,12 @@ namespace Datadog.Trace.Configuration
             var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
             var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
 
-            if (string.IsNullOrEmpty(userDisabledAdoNetCommandTypes))
-            {
-                DisabledAdoNetCommandTypes = new HashSet<string>(defaultDisabledAdoNetCommandTypes, StringComparer.OrdinalIgnoreCase);
-            }
-            else
+            DisabledAdoNetCommandTypes = new HashSet<string>(defaultDisabledAdoNetCommandTypes, StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(userDisabledAdoNetCommandTypes))
             {
                 var userSplit = TrimSplitString(userDisabledAdoNetCommandTypes, commaSeparator);
-                DisabledAdoNetCommandTypes = new HashSet<string>(userSplit, StringComparer.OrdinalIgnoreCase);
-                DisabledAdoNetCommandTypes.UnionWith(defaultDisabledAdoNetCommandTypes);
+                DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
