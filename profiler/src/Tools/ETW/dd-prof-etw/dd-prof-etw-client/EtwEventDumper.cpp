@@ -10,14 +10,6 @@
 #include <iomanip>
 #include <iostream>
 
-EtwEventDumper::EtwEventDumper()
-{
-}
-
-EtwEventDumper::~EtwEventDumper()
-{
-}
-
 bool EtwEventDumper::BuildClrEvent(
     std::string& name,
     uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level,

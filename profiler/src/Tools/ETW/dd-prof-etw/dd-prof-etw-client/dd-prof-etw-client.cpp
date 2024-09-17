@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
     SendRegistrationCommand(client.get(), pid, false);
 
     client->Disconnect();
-    handler->Stop();
+    handler->Cleanup();
     server->Stop();
 
     return 0;

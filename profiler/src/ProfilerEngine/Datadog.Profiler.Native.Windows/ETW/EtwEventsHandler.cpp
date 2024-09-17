@@ -14,7 +14,8 @@ EtwEventsHandler::EtwEventsHandler()
     :
     _showMessages {false},
     _pReceiver {nullptr},
-    _pEventsFile {nullptr}
+    _pEventsFile {nullptr},
+    _logger {nullptr}
 {
 }
 
@@ -29,10 +30,10 @@ EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrE
 
 EtwEventsHandler::~EtwEventsHandler()
 {
-    Stop();
+    Cleanup();
 }
 
-void EtwEventsHandler::Stop()
+void EtwEventsHandler::Cleanup()
 {
     if (_pEventsFile != nullptr)
     {
@@ -45,12 +46,12 @@ void EtwEventsHandler::Stop()
 
 void EtwEventsHandler::OnStartError()
 {
-    Stop();
+    Cleanup();
 }
 
 void EtwEventsHandler::OnConnectError()
 {
-    Stop();
+    Cleanup();
 }
 
 void EtwEventsHandler::WriteSuccessResponse(HANDLE hPipe)
@@ -148,6 +149,9 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             break;
         }
     }
+
+    // close the event file if needed
+    Cleanup();
 }
 
 bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize)

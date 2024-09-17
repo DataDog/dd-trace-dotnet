@@ -22,7 +22,7 @@ public:
     EtwEventsHandler();
     EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile);
     ~EtwEventsHandler();
-    void Stop();
+    void Cleanup();
 
 public:
 // Inherited via INamedPipeHandler

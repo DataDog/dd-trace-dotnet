@@ -4,15 +4,11 @@
 
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IEtwEventsReceiver.h"
 
-#include <memory>
 #include <string>
 
 class EtwEventDumper : public IEtwEventsReceiver
 {
 public:
-    EtwEventDumper();
-    ~EtwEventDumper();
-
     // Inherited via IEtwEventsReceiver
     void OnEvent(
         uint64_t timestamp,

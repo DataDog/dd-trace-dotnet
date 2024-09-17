@@ -134,19 +134,20 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT");
+            Guid guid = Guid.NewGuid();
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Allocations\\allocations-32.bevents");
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Allocations\\allocations-64.bevents");
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-64.bevents");
             }
 
             int eventsCount = 0;

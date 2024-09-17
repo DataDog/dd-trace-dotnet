@@ -94,18 +94,19 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT");
+            Guid guid = Guid.NewGuid();
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Contention\\lockContention-32.bevents");
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy("DD_ETW_TEST_AGENT", "Contention\\lockContention-64.bevents");
+                agent.StartEtwProxy("DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-64.bevents");
             }
 
             int eventsCount = 0;

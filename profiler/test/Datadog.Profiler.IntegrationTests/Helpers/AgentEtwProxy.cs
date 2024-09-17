@@ -68,7 +68,7 @@ namespace Datadog.Profiler.IntegrationTests
             _pipeClient.Flush();
 
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
-            Thread.Sleep(10);
+            Thread.Sleep(5);
         }
 
         private void OnProfilerRegistered(int pid)
@@ -148,9 +148,9 @@ namespace Datadog.Profiler.IntegrationTests
 
                 if (_profilerHasRegistered)
                 {
-                    // NOTE: we are waiting for the events to be sent by the profiler even though we did not
-                    //       respond to the registration command yet
-                    await StartClientAsync();
+                    // NOTE: we want to accept the profiler registration command before starting to send events from another thread
+                    //       so we don't await this async method
+                    StartClientAsync();
                 }
 
                 return _profilerHasRegistered;
@@ -168,6 +168,9 @@ namespace Datadog.Profiler.IntegrationTests
 
         private async Task StartClientAsync()
         {
+            // let the profiler initialize before sending events
+            Thread.Sleep(500);
+
             string endPoint = ProfilerNamedPipePrefix + _pid.ToString();
             using (NamedPipeClientStream pipeClient = new NamedPipeClientStream(".", endPoint, PipeDirection.Out))
             {
