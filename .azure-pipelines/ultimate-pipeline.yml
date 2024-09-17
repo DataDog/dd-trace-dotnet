@@ -179,6 +179,7 @@ resources:
   containers:
   - container: dd_agent
     type: ACR
+    endpoint: us3.staging.apm-libraries-build-and-sandbox
     azureSubscription: us3.staging.apm-libraries-build-and-sandbox
     resourceGroup: apm-dotnet-build-agents
     registry: apmdotnetbuildregistry
