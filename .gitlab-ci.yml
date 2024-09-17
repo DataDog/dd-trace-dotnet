@@ -109,21 +109,6 @@ requirements_json_test:
   variables:
     REQUIREMENTS_BLOCK_JSON_PATH: "tracer/build/artifacts/requirements_block.json"
     REQUIREMENTS_ALLOW_JSON_PATH: "tracer/build/artifacts/requirements_allow.json"
-  script:
-    - |
-      if [ -z "$REQUIREMENTS_BLOCK_JSON_PATH" ] ; then 
-        echo "REQUIREMENTS_BLOCK_JSON_PATH not set, please add this variable";
-        exit 1
-      fi
-      if [ -z "$REQUIREMENTS_ALLOW_JSON_PATH" ] ; then 
-        echo "REQUIREMENTS_ALLOW_JSON_PATH not set, please add this variable";
-        exit 1
-      fi
-    - root=${PWD}
-    - cd ${HOME}
-    - git clone -b andrew/updated-denylist https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/auto_inject.git ./auto_inject
-    - cd ./auto_inject/preload_go/cmd/library_requirements_tester
-    - go run main.go -block ${root}/${REQUIREMENTS_BLOCK_JSON_PATH} -allow ${root}/${REQUIREMENTS_ALLOW_JSON_PATH} ${root}/packaging/sources/requirements.json
 
 package-oci:
   needs: [ download-single-step-artifacts ]
