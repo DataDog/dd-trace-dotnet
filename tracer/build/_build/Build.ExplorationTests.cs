@@ -313,7 +313,7 @@ partial class Build
             Logger.Information($"Creating line probes file for {testDescription.Name}.");
 
             var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
-            var allCsFiles = Directory.EnumerateFiles($"{ExplorationTestsDirectory}/{testDescription.Name}", "*.cs", SearchOption.AllDirectories).
+            var allCsFiles = Directory.EnumerateFiles($"{ExplorationTestsDirectory}{Path.DirectorySeparatorChar}{testDescription.Name}", "*.cs", SearchOption.AllDirectories).
                                        Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")).ToArray();
 
             foreach (var framework in frameworks)
