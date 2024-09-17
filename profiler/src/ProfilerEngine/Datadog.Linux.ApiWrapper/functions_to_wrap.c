@@ -187,7 +187,6 @@ static const char* datadogCrashMarker = "datadog_crashtracking";
 #define COMPlus_DbgEnableMiniDump "COMPlus_DbgEnableMiniDump"
 #define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName"
 #define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName"
-#define DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME "DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME"
 
 __attribute__((constructor))
 void initLibrary(void)
@@ -205,16 +204,6 @@ void initLibrary(void)
             // Early nope
             return;
         }
-    }
-
-    // Bash provides its own version of the getenv/setenv functions
-    // Fetch the original ones and use those instead
-    char *(*real_getenv)(const char *) = (char *(*)(const char *))dlsym(RTLD_NEXT, "getenv");
-    int (*real_setenv)(const char *, const char *, int) = (int (*)(const char *, const char *, int))dlsym(RTLD_NEXT, "setenv");
-
-    if (real_getenv == NULL || real_setenv == NULL)
-    {
-        return;
     }
 
     // If crashtracking is enabled, check the value of DOTNET_DbgEnableMiniDump
@@ -298,17 +287,17 @@ void initLibrary(void)
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
-        char* enableMiniDump = real_getenv(DOTNET_DbgEnableMiniDump);
+        char* enableMiniDump = getenv(DOTNET_DbgEnableMiniDump);
 
         if (enableMiniDump == NULL)
         {
-            enableMiniDump = real_getenv(COMPlus_DbgEnableMiniDump);
+            enableMiniDump = getenv(COMPlus_DbgEnableMiniDump);
         }
 
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
-            // Passthrough is expected by dd-dotnet to know whether it should forward the call to createdump
-            char* passthrough = real_getenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH);
+            // If DOTNET_DbgEnableMiniDump is set, the crash handler should call createdump when done
+            char* passthrough = getenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH);
 
             if (passthrough == NULL || passthrough[0] == '\0')
             {
@@ -317,40 +306,25 @@ void initLibrary(void)
                 //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
                 //  - dotnet then launches the target app
                 //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
-                real_setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "1", 1);
+                setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "1", 1);
             }
         }
         else
         {
             // If DOTNET_DbgEnableMiniDump is not set, we set it so that the crash handler is called,
             // but we instruct it to not call createdump afterwards
-            real_setenv(COMPlus_DbgEnableMiniDump, "1", 1);
-            real_setenv(DOTNET_DbgEnableMiniDump, "1", 1);
-            real_setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "0", 1);
+            setenv(COMPlus_DbgEnableMiniDump, "1", 1);
+            setenv(DOTNET_DbgEnableMiniDump, "1", 1);
+            setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "0", 1);
         }
 
-        originalMiniDumpName = real_getenv(DOTNET_DbgMiniDumpName);
-
-        if (originalMiniDumpName == NULL || strncmp(originalMiniDumpName, datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
+        originalMiniDumpName = getenv(DOTNET_DbgMiniDumpName);
+        if (originalMiniDumpName == NULL)
         {
-            originalMiniDumpName = real_getenv(COMPlus_DbgMiniDumpName);
+            originalMiniDumpName = getenv(COMPlus_DbgMiniDumpName);
         }
-
-        if (originalMiniDumpName != NULL && strncmp(originalMiniDumpName, datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
-        {
-            // If LD_PRELOAD was set in the parent process, then we replaced COMPlus_DbgMiniDumpName with datadogCrashMarker and lost the original value
-            // We use DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME to retrieve it
-            originalMiniDumpName = real_getenv(DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME);
-        }
-
-        if (originalMiniDumpName != NULL && originalMiniDumpName[0] != '\0')
-        {
-            // Save the original value in DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME so that child processes can retrieve it
-            real_setenv(DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME, originalMiniDumpName, 1);
-        }
-
-        real_setenv(COMPlus_DbgMiniDumpName, datadogCrashMarker, 1);
-        real_setenv(DOTNET_DbgMiniDumpName, datadogCrashMarker, 1);
+        setenv(COMPlus_DbgMiniDumpName, datadogCrashMarker, 1);
+        setenv(DOTNET_DbgMiniDumpName, datadogCrashMarker, 1);
     }
 }
 

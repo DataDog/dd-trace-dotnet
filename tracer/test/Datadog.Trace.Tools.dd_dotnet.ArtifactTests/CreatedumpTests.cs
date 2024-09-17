@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public class CreatedumpTests : ConsoleTestHelper
 {
-    private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
+    private const string CreatedumpExpectedOutput = "Writing minidump";
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
 
     public CreatedumpTests(ITestOutputHelper output)
@@ -92,41 +92,6 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
-    }
-
-    [SkippableFact]
-    public async Task BashScript()
-    {
-        // This tests the case when an app is called through a bash script
-        // This scenario has unique challenges because:
-        //   - The COMPlus_DbgMiniDumpName environment variable that we override is then inherited by the child
-        //   - Bash overrides the getenv/setenv functions, which cause some unexpected behaviors
-
-        SkipOn.Platform(SkipOn.PlatformValue.Windows);
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-
-        using var reportFile = new TemporaryFile();
-
-        (string, string)[] environment = [LdPreloadConfig, .. CreatedumpConfig, CrashReportConfig(reportFile)];
-
-        var (executable, args) = PrepareSampleApp(EnvironmentHelper);
-
-        var bashScript = $"#!/bin/bash\n{executable} {args} crash-datadog\n";
-        using var bashFile = new TemporaryFile();
-        bashFile.SetContent(bashScript);
-
-        using var helper = await StartConsole("/bin/bash", bashFile.Path, EnvironmentHelper, false, environment);
-
-        await helper.Task;
-
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("stdout", helper.StandardOutput);
-        assertionScope.AddReportable("stderr", helper.ErrorOutput);
-
-        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
-        File.Exists(reportFile.Path).Should().BeTrue();
-
-        helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
     }
 
     [SkippableTheory]
@@ -517,8 +482,6 @@ public class CreatedumpTests : ConsoleTestHelper
         public string Url => $"file:/{Path}";
 
         public string GetContent() => File.ReadAllText(Path);
-
-        public void SetContent(string content) => File.WriteAllText(Path, content);
 
         public void Dispose()
         {
