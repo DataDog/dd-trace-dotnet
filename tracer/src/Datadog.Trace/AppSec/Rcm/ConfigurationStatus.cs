@@ -35,6 +35,7 @@ internal record ConfigurationStatus
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
+    internal const string WafExclusionsDataKey = "exclusions_data";
     internal const string WafCustomRulesKey = "custom_rules";
     internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
@@ -56,6 +57,8 @@ internal record ConfigurationStatus
     internal Dictionary<string, RuleOverride[]> RulesOverridesByFile { get; } = new();
 
     internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
+
+    internal Dictionary<string, RuleData[]> ExclusionsDataByFile { get; } = new();
 
     internal Dictionary<string, JArray> ExclusionsByFile { get; } = new();
 
@@ -121,6 +124,12 @@ internal record ConfigurationStatus
         {
             var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
             dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+        }
+
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsDataKey))
+        {
+            var rulesData = MergeRuleData(ExclusionsDataByFile.SelectMany(x => x.Value));
+            dictionary.Add(WafExclusionsDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))

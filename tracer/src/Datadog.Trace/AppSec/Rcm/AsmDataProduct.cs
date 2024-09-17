@@ -1,4 +1,4 @@
-﻿// <copyright file="AsmDataProduct.cs" company="Datadog">
+// <copyright file="AsmDataProduct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,20 +24,34 @@ internal class AsmDataProduct : IAsmConfigUpdater
                 configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             }
+
+            var exclusionsData = asmDataConfig.TypedFile!.ExclusionsData;
+            if (exclusionsData != null)
+            {
+                configurationStatus.ExclusionsDataByFile[rawFile.Path.Path] = exclusionsData;
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsDataKey);
+            }
         }
     }
 
     public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var removedData = false;
+        var removedRulesData = false;
+        var removedExclusionsData = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
-            removedData |= configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
+            removedRulesData |= configurationStatus.RulesDataByFile.Remove(configurationPath.Path);
+            removedExclusionsData |= configurationStatus.ExclusionsDataByFile.Remove(configurationPath.Path);
         }
 
-        if (removedData)
+        if (removedRulesData)
         {
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+        }
+
+        if (removedExclusionsData)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsDataKey);
         }
     }
 }

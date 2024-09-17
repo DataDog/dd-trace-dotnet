@@ -18,6 +18,8 @@ using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -218,6 +220,11 @@ namespace Datadog.Trace.AppSec.Waf
             UpdateResult updated;
             try
             {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Updating WAF with new configuration: {Arguments}", JsonConvert.SerializeObject(arguments));
+                }
+
                 var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
                 updated = UpdateWafAndDispose(encodedArgs);
 
