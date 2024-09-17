@@ -12,12 +12,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
-using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -108,6 +106,12 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
         var testName = IastEnabled ? "RaspIast.AspNetCore5" : "Rasp.AspNetCore5";
         IncludeAllHttpSpans = true;
         await TryStartApp();
