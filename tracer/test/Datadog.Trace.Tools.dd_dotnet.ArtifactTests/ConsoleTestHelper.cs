@@ -49,16 +49,12 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return (executable, args);
     }
 
-    protected Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
+    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
     {
         var (executable, baseArgs) = PrepareSampleApp(environmentHelper);
+
         args = $"{baseArgs} {args}";
 
-        return StartConsole(executable, args, environmentHelper, enableProfiler, environmentVariables);
-    }
-
-    protected async Task<ProcessHelper> StartConsole(string executable, string args, EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
-    {
         var processStart = new ProcessStartInfo(executable, args) { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
 
         MockTracerAgent? agent = null;
