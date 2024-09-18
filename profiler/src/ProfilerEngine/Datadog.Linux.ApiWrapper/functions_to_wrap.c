@@ -209,8 +209,8 @@ void initLibrary(void)
 
     // Bash provides its own version of the getenv/setenv functions
     // Fetch the original ones and use those instead
-    char *(*real_getenv)(const char *) = (char *(*)(const char *))dlsym(RTLD_NEXT, "getenv");
-    int (*real_setenv)(const char *, const char *, int) = (int (*)(const char *, const char *, int))dlsym(RTLD_NEXT, "setenv");
+    char *(*real_getenv)(const char *) = __dd_dlsym(RTLD_NEXT, "getenv");
+    int (*real_setenv)(const char *, const char *, int) = __dd_dlsym(RTLD_NEXT, "setenv");
 
     if (real_getenv == NULL || real_setenv == NULL)
     {
