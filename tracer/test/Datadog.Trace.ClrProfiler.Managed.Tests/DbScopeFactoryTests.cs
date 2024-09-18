@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
             command.CommandText = DbmCommandText;
 
-            bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, tracer: Tracer.Instance, out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
             Assert.True(result);
             Assert.Equal(expectedIntegrationName, actualIntegrationId.ToString());
             Assert.Equal(expectedDbType, actualDbType);
@@ -262,12 +262,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         internal void TryGetIntegrationDetails_FailsForKnownCommandType()
         {
-            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", tracer: Tracer.Instance, out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
 
-            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", tracer: Tracer.Instance, out var actualIntegrationId2, out var actualDbType2);
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
             Assert.False(result2);
             Assert.False(actualIntegrationId2.HasValue);
             Assert.Null(actualDbType2);
@@ -277,17 +277,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         internal void TryGetIntegrationDetails_FailsForKnownCommandTypes_AndUserDefined()
         {
             Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DisabledAdoNetCommandTypes, "SomeFakeDbCommand" } }));
-            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", tracer: Tracer.Instance, out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
 
-            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", tracer: Tracer.Instance, out var actualIntegrationId2, out var actualDbType2);
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
             Assert.False(result2);
             Assert.False(actualIntegrationId2.HasValue);
             Assert.Null(actualDbType2);
 
-            bool result3 = DbScopeFactory.TryGetIntegrationDetails("SomeFakeDbCommand", tracer: Tracer.Instance, out var actualIntegrationId3, out var actualDbType3);
+            bool result3 = DbScopeFactory.TryGetIntegrationDetails("SomeFakeDbCommand", out var actualIntegrationId3, out var actualDbType3);
             Assert.False(result3);
             Assert.False(actualIntegrationId3.HasValue);
             Assert.Null(actualDbType3);
@@ -304,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("Custom.DB.Command", "AdoNet", "db")]
         internal void TryGetIntegrationDetails_CustomCommandType(string commandTypeFullName, string integrationId, string expectedDbType)
         {
-            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, tracer: Tracer.Instance, out var actualIntegrationId, out var actualDbType);
+            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out var actualIntegrationId, out var actualDbType);
             Assert.Equal(integrationId, actualIntegrationId?.ToString());
             Assert.Equal(expectedDbType, actualDbType);
         }
