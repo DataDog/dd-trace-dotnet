@@ -552,7 +552,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key for set the test session name
             /// </summary>
-            public const string TestSessionName = "DD_SESSION_NAME";
+            public const string TestSessionName = "DD_TEST_SESSION_NAME";
         }
 
         /// <summary>
