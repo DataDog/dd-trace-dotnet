@@ -211,6 +211,7 @@ partial class Build : NukeBuild
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
         .DependsOn(CompileProfilerNativeSrc)
+        .DependsOn(TestNativeWrapper)
         .DependsOn(PublishProfiler);
 
     Target BuildNativeLoader => _ => _

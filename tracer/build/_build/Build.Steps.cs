@@ -97,6 +97,7 @@ partial class Build
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
     [LazyPathExecutable(name: "cppcheck")] readonly Lazy<Tool> CppCheck;
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
+    [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
