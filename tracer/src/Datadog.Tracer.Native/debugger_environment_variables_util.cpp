@@ -26,4 +26,9 @@ bool IsDebuggerInstrumentAllEnabled()
     CheckIfTrue(GetEnvironmentValue(environment::internal_instrument_all_enabled));
 }
 
+bool IsDebuggerInstrumentAllLinesEnabled()
+{
+    CheckIfTrue(GetEnvironmentValue(environment::internal_instrument_all_lines_enabled));
+}
+
 } // namespace debugger

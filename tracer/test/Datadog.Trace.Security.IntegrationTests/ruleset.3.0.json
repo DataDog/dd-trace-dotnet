@@ -14,6 +14,173 @@
       }
     }
   ],
+  "processors": [
+    {
+      "id": "processor-001",
+      "generator": "http_endpoint_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "method": [
+              {
+                "address": "server.request.method"
+              }
+            ],
+            "uri_raw": [
+              {
+                "address": "server.request.uri.raw"
+              }
+            ],
+            "body": [
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "query": [
+              {
+                "address": "server.request.query"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.endpoint"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": true
+    },
+    {
+      "id": "processor-002",
+      "generator": "http_header_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.header"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": true
+    },
+    {
+      "id": "processor-003",
+      "generator": "http_network_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "headers": [
+              {
+                "address": "server.request.headers.no_cookies"
+              }
+            ],
+            "output": "_dd.appsec.fp.http.network"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": true
+    },
+    {
+      "id": "processor-004",
+      "generator": "session_fingerprint",
+      "conditions": [
+        {
+          "operator": "equals",
+          "parameters": {
+            "inputs": [
+              {
+                "address": "waf.context.processor",
+                "key_path": [
+                  "fingerprint"
+                ]
+              }
+            ],
+            "value": true,
+            "type": "boolean"
+          }
+        }
+      ],
+      "parameters": {
+        "mappings": [
+          {
+            "cookies": [
+              {
+                "address": "server.request.cookies"
+              }
+            ],
+            "session_id": [
+              {
+                "address": "usr.session_id"
+              }
+            ],
+            "user_id": [
+              {
+                "address": "usr.id"
+              }
+            ],
+            "output": "_dd.appsec.fp.session"
+          }
+        ]
+      },
+      "evaluate": true,
+      "output": true
+    }
+  ],
   "rules": [
     {
       "id": "ublock",

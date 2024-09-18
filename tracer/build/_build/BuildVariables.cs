@@ -1,17 +1,26 @@
 using System.Collections.Generic;
+using System.IO;
 using Nuke.Common;
-using Logger = Serilog.Log;
 
 partial class Build
 {
-    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars)
+    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars, ExplorationTestDescription description, TargetFramework framework)
     {
         AddTracerEnvironmentVariables(envVars);
 
-        if (!DisableDynamicInstrumentationProduct)
+        if (DisableDynamicInstrumentationProduct)
         {
-            envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
-            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+            return;
+        }
+
+        envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
+        envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+
+        if (description.LineProbesEnabled)
+        {
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
         }
 
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
@@ -22,6 +31,10 @@ partial class Build
         {
             envVars.Add("DD_INTERNAL_FAULT_TOLERANT_INSTRUMENTATION_ENABLED", "true");
         }
+
+        // Uncomment to get rejit verify files
+        // envVars.Add("DD_WRITE_INSTRUMENTATION_TO_DISK", "1");
+        // envVars.Add("CopyingOriginalModulesEnabled", "1");
     }
 
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)

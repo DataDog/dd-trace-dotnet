@@ -41,6 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = Fixture.Agent;
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            ScrubFingerprintHeaders(settings);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }
@@ -86,6 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, (int)expectedStatusCode, sanitisedUrl);
+            ScrubFingerprintHeaders(settings);
             await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
         }
     }

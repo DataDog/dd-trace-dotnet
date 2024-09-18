@@ -82,6 +82,13 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
         IncludeAllHttpSpans = true;
         await TryStartApp();
