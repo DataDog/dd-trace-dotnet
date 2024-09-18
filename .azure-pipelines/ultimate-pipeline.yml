@@ -9,7 +9,6 @@ trigger:
       - hotfix/*
     exclude:
       - refs/pull/*/head
-      - refs/tags/*
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
