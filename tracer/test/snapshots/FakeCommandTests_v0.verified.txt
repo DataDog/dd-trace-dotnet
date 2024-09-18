@@ -12,7 +12,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -33,7 +32,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -54,7 +52,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -75,7 +72,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -96,7 +92,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -117,7 +112,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -138,7 +132,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -159,7 +152,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -180,7 +172,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -201,7 +192,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -222,7 +212,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -243,7 +232,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -264,7 +252,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -285,7 +272,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -306,7 +292,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -327,7 +312,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -348,7 +332,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -369,7 +352,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -390,7 +372,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -411,7 +392,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -432,7 +412,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -453,7 +432,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -474,7 +452,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -495,7 +472,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -516,7 +492,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -537,7 +512,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -558,7 +532,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -579,7 +552,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -600,7 +572,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -621,7 +592,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -642,7 +612,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -663,7 +632,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -684,7 +652,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -705,7 +672,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -726,7 +692,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -747,7 +712,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -768,7 +732,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -789,7 +752,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -810,7 +772,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -831,7 +792,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -852,7 +812,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -873,7 +832,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -894,7 +852,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -915,7 +872,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -936,7 +892,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -957,7 +912,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -978,7 +932,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -999,7 +952,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1020,7 +972,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1041,7 +992,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1062,7 +1012,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1083,7 +1032,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1104,7 +1052,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1125,7 +1072,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1146,7 +1092,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1167,7 +1112,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1188,7 +1132,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1209,7 +1152,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1230,7 +1172,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1251,7 +1192,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1272,7 +1212,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1293,7 +1232,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1314,7 +1252,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1335,7 +1272,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1356,7 +1292,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1377,7 +1312,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1398,7 +1332,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1419,7 +1352,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1440,7 +1372,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1461,7 +1392,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1482,7 +1412,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1503,7 +1432,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1524,7 +1452,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1545,7 +1472,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1566,7 +1492,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1587,7 +1512,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1608,7 +1532,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1629,7 +1552,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1650,7 +1572,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1671,7 +1592,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1692,7 +1612,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1713,7 +1632,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1734,7 +1652,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1755,7 +1672,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1776,7 +1692,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1797,7 +1712,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1818,7 +1732,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1839,7 +1752,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1860,7 +1772,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1881,7 +1792,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1902,7 +1812,6 @@
       db.name: fake,
       db.type: fake,
       env: integration_tests,
-      language: dotnet,
       runtime-id: Guid_1,
       span.kind: client
     },
