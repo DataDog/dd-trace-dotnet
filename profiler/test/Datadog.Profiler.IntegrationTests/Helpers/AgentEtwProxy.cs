@@ -164,7 +164,7 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     // NOTE: we want to accept the profiler registration command before starting to send events from another thread
                     //       so we don't await this async method
-                    StartClientAsync();
+                    Task.Run(() => StartClientAsync());
                 }
 
                 return _profilerHasRegistered;
