@@ -548,6 +548,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for set the rum flushing wait in milliseconds
             /// </summary>
             public const string RumFlushWaitMillis = "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS";
+
+            /// <summary>
+            /// Configuration key for set the test session name
+            /// </summary>
+            public const string TestSessionName = "DD_SESSION_NAME";
         }
 
         /// <summary>

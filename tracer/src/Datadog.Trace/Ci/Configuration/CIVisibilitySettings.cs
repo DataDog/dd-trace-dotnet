@@ -6,10 +6,14 @@
 
 using System;
 using System.Collections.Specialized;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
@@ -63,6 +67,39 @@ namespace Datadog.Trace.Ci.Configuration
 
             // RUM flush milliseconds
             RumFlushWaitMillis = config.WithKeys(ConfigurationKeys.CIVisibility.RumFlushWaitMillis).AsInt32(500);
+
+            // Test session name
+            TestSessionName = config.WithKeys(ConfigurationKeys.CIVisibility.TestSessionName).AsString(
+                getDefaultValue: () =>
+                {
+                    // We try to get the command from the active test session or test module
+                    var command = TestSession.ActiveTestSessions.FirstOrDefault()?.Command ??
+                                  TestModule.ActiveTestModules.FirstOrDefault()?.Tags.Command ??
+                                  string.Empty;
+
+                    if (string.IsNullOrEmpty(command))
+                    {
+                        // If there's no active test session or test module we try to get the command from the environment (sent by dd-trace session)
+                        var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
+                        if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand) && !string.IsNullOrEmpty(testSessionCommand))
+                        {
+                            command = testSessionCommand;
+                        }
+                        else
+                        {
+                            // As last resort we use the command line that started this process
+                            command = Environment.CommandLine;
+                        }
+                    }
+
+                    if (CiEnvironment.CIEnvironmentValues.Instance.JobName is { } jobName)
+                    {
+                        return $"{jobName}-{command}";
+                    }
+
+                    return command;
+                },
+                validator: null);
         }
 
         /// <summary>
@@ -169,6 +206,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating the number of milliseconds to wait after flushing RUM data.
         /// </summary>
         public int RumFlushWaitMillis { get; }
+
+        /// <summary>
+        /// Gets the test session name
+        /// </summary>
+        public string TestSessionName { get; }
 
         /// <summary>
         /// Gets the tracer settings
