@@ -230,6 +230,7 @@ partial class Build : NukeBuild
         .Description("")
         .After(Clean)
         .DependsOn(CompileNativeWrapper)
+        .DependsOn(TestNativeWrapper)
         .DependsOn(PublishNativeWrapper);
 
     Target PackageTracerHome => _ => _
