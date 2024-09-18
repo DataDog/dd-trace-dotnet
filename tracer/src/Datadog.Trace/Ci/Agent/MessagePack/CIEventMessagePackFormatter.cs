@@ -27,10 +27,10 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("env");
         private readonly byte[]? _environmentValueBytes;
 
-        private readonly byte[] _testBytes = StringEncoding.UTF8.GetBytes("test");
-        private readonly byte[] _testSuiteEndBytes = StringEncoding.UTF8.GetBytes("test_suite_end");
-        private readonly byte[] _testModuleEndBytes = StringEncoding.UTF8.GetBytes("test_module_end");
-        private readonly byte[] _testSessionEndBytes = StringEncoding.UTF8.GetBytes("test_session_end");
+        private readonly byte[] _testBytes = StringEncoding.UTF8.GetBytes(SpanTypes.Test);
+        private readonly byte[] _testSuiteEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestSuite);
+        private readonly byte[] _testModuleEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestModule);
+        private readonly byte[] _testSessionEndBytes = StringEncoding.UTF8.GetBytes(SpanTypes.TestSession);
         private readonly byte[] _testSessionNameBytes = StringEncoding.UTF8.GetBytes("test_session.name");
         private readonly byte[]? _testSessionNameValueBytes;
 
