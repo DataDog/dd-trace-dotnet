@@ -83,6 +83,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
 
             _clearMetaStruct = clearMetaStruct;
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
