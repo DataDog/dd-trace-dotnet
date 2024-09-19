@@ -109,6 +109,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
+        public void ResetDefaultUserAgent()
+        {
+            _httpClient.DefaultRequestHeaders.Remove("user-agent");
+        }
+
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
@@ -351,9 +356,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
-            var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
+            _httpClient.DefaultRequestHeaders.TryGetValues("user-agent", out var values);
 
-            if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
+            if (!string.IsNullOrEmpty(userAgent) && (values == null || values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0)))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
