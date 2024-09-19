@@ -2625,6 +2625,14 @@ partial class Build
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
            
+           // CI Visibility known errors
+           knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*The Git commit sha couldn't be automatically extracted.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*DD_GIT_COMMIT_SHA must be a full-length git SHA.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled));
+           knownPatterns.Add(new(@".*ITR: .*", RegexOptions.Compiled));
+
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 
