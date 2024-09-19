@@ -35,7 +35,7 @@ internal record ConfigurationStatus
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
-    internal const string WafExclusionsDataKey = "exclusions_data";
+    internal const string WafExclusionsDataKey = "exclusion_data";
     internal const string WafCustomRulesKey = "custom_rules";
     internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
