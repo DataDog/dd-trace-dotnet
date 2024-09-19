@@ -406,45 +406,45 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
                                       IMetaDataAssemblyEmit** ppAssemblyEmit)
 {
     HRESULT hr = S_OK;
-    if (SUCCEEDED(hr))
+    if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk);
-        if (SUCCEEDED(hr))
+        if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
+            REL(piUnk);
         }
-        REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
-        if (SUCCEEDED(hr))
+        if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
+            REL(piUnk);
         }
-        REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
-        if (SUCCEEDED(hr))
+        if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
+            REL(piUnk);
         }
-        REL(piUnk);
     }
-    if (SUCCEEDED(hr))
+    if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyEmit, &piUnk);
-        if (SUCCEEDED(hr))
+        if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataAssemblyEmit, (void**) ppAssemblyEmit);
+            REL(piUnk);
         }
-        REL(piUnk);
     }
     return hr;
 }

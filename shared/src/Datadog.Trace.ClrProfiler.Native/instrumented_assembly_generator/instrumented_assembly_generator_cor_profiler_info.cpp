@@ -70,7 +70,13 @@ HRESULT CorProfilerInfo::GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags,
 {
     HRESULT hr;
     ComPtr<IUnknown> temp;
-    IfFailRet(m_corProfilerInfo->GetModuleMetaData(moduleId, dwOpenFlags, riid, temp.GetAddressOf()));
+    hr = m_corProfilerInfo->GetModuleMetaData(moduleId, dwOpenFlags, riid, temp.GetAddressOf());
+
+    if (hr != S_OK)
+    {
+        return hr;
+    }
+
     try
     {
         const auto metadataInterfaces = new MetadataInterfaces(temp);

@@ -1107,7 +1107,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = info->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2,
                                                             metadata_interfaces.GetAddressOf());
-        if (FAILED(hr))
+        if (hr != S_OK)
         {
             Logger::Warn("[ResolveTypeInternal] GetModuleMetaData has failed with: ", shared::WSTRING(refTypeName.data()));
             continue;
