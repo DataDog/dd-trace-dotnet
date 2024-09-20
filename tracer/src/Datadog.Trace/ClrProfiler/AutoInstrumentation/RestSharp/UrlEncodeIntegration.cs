@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp;
     MinimumVersion = "1.0.0",
     MaximumVersion = "112.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
-    IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
+    IntegrationName = nameof(Configuration.IntegrationId.Ssrf))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class UrlEncodeIntegration

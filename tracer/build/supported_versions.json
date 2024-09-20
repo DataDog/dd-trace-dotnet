@@ -1142,6 +1142,13 @@
     ]
   },
   {
+    "integrationName": "Ssrf",
+    "assemblyName": "RestSharp",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "112.65535.65535",
+    "packages": []
+  },
+  {
     "integrationName": "StackExchangeRedis",
     "assemblyName": "StackExchange.Redis",
     "minAssemblyVersionInclusive": "1.0.0",
