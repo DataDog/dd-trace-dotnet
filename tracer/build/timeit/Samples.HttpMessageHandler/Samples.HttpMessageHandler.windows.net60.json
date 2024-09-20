@@ -8,14 +8,14 @@
       "name": "Execute",
       "options": {
         "onScenarioStart": {
-          "processName": "call",
-          "processArguments": "remove_logs.cmd",
+          "processName": "cmd.exe",
+          "processArguments": "/c remove_logs.cmd",
           "workingDirectory": "$(CWD)\\..",
           "redirectStandardOutput": true
         },
         "onExecutionEnd": {
-          "processName": "call",
-          "processArguments": "remove_logs.cmd",
+          "processName": "cmd.exe",
+          "processArguments": "/c remove_logs.cmd",
           "workingDirectory": "$(CWD)\\.."
         }
       }
