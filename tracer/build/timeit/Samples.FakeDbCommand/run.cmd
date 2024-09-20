@@ -2,6 +2,7 @@
 IF EXIST results_Samples.FakeDbCommand.windows.net462.json DEL /F results_Samples.FakeDbCommand.windows.net462.json
 IF EXIST results_Samples.FakeDbCommand.windows.netcoreapp31.json DEL /F results_Samples.FakeDbCommand.windows.netcoreapp31.json
 IF EXIST results_Samples.FakeDbCommand.windows.net60.json DEL /F results_Samples.FakeDbCommand.windows.net60.json
+IF EXIST results_Samples.FakeDbCommand.windows.net80.json DEL /F results_Samples.FakeDbCommand.windows.net80.json
 
 echo *********************
 echo Installing timeitsharp
@@ -22,3 +23,8 @@ echo *********************
 echo .NET Core 6.0
 echo *********************
 dotnet timeit Samples.FakeDbCommand.windows.net60.json
+
+echo *********************
+echo .NET Core 8.0
+echo *********************
+dotnet timeit Samples.FakeDbCommand.windows.net80.json
