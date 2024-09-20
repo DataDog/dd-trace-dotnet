@@ -199,7 +199,7 @@ internal static class Ranges
 
         foreach (var range in ranges)
         {
-            var newRange = new Range(range.Start, range.Length, range.Source, secureMarks);
+            var newRange = new Range(range.Start, range.Length, range.Source, range.SecureMarks | secureMarks);
             newRanges.Add(newRange);
         }
 
@@ -225,7 +225,7 @@ internal static class Ranges
     }
 
     /// <summary>
-    /// Returns an array of ranges without ranges that are marked with the given marks.
+    /// Returns an array of ranges without ranges that are not marked with the given marks.
     /// </summary>
     internal static Range[]? UnsafeRanges(Range[]? ranges, SecureMarks secureMarks)
     {

@@ -28,7 +28,7 @@ public class UriAspect
         var result = new Uri(uriBase);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
         }
         catch (Exception ex)
         {
@@ -53,7 +53,7 @@ public class UriAspect
 #pragma warning restore CS0618 // Type or member is obsolete
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
         }
         catch (Exception ex)
         {
@@ -75,7 +75,7 @@ public class UriAspect
         var result = new Uri(uriBase, relativeUri);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri);
         }
         catch (Exception ex)
         {
@@ -97,7 +97,7 @@ public class UriAspect
         var result = new Uri(uriBase, relativeUri);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
         }
         catch (Exception ex)
         {
@@ -121,7 +121,7 @@ public class UriAspect
 #pragma warning restore CS0618 // Type or member is obsolete
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
         }
         catch (Exception ex)
         {
@@ -143,7 +143,7 @@ public class UriAspect
         var result = new Uri(uriBase, uriKind);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
         }
         catch (Exception ex)
         {
@@ -166,7 +166,7 @@ public class UriAspect
         var result = new Uri(uriBase, in options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
         }
         catch (Exception ex)
         {
@@ -192,7 +192,7 @@ public class UriAspect
         {
             if (uriCreated is not null)
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, uri);
             }
         }
         catch (Exception ex)
@@ -219,7 +219,7 @@ public class UriAspect
         {
             if (uriCreated is not null)
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, uri);
             }
         }
         catch (Exception ex)
@@ -246,7 +246,7 @@ public class UriAspect
         {
             if (uriCreated is not null)
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri);
             }
         }
         catch (Exception ex)
@@ -272,7 +272,7 @@ public class UriAspect
         {
             if (uriCreated is not null)
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri?.OriginalString);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri?.OriginalString);
             }
         }
         catch (Exception ex)
@@ -294,7 +294,7 @@ public class UriAspect
         var result = Uri.UnescapeDataString(uri);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
         }
         catch (Exception ex)
         {
@@ -317,7 +317,7 @@ public class UriAspect
 #pragma warning restore SYSLIB0013
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
         }
         catch (Exception ex)
         {
@@ -338,7 +338,7 @@ public class UriAspect
         var result = Uri.EscapeDataString(uri);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
         }
         catch (Exception ex)
         {
@@ -359,7 +359,7 @@ public class UriAspect
         var result = instance.AbsoluteUri;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -380,7 +380,7 @@ public class UriAspect
         var result = instance.AbsolutePath;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -401,7 +401,7 @@ public class UriAspect
         var result = instance.LocalPath;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -427,7 +427,7 @@ public class UriAspect
         {
             if (!string.IsNullOrWhiteSpace(result))
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri.OriginalString);
             }
         }
         catch (Exception ex)
@@ -452,7 +452,7 @@ public class UriAspect
         {
             if (!string.IsNullOrWhiteSpace(result?.OriginalString))
             {
-                PropagationModuleImpl.PropagateResultWhenInputTainted(result!.OriginalString, uri.OriginalString);
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result!.OriginalString, uri.OriginalString);
             }
         }
         catch (Exception ex)
@@ -474,7 +474,7 @@ public class UriAspect
         var result = instance.Host;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -495,7 +495,7 @@ public class UriAspect
         var result = instance.PathAndQuery;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -516,7 +516,7 @@ public class UriAspect
         var result = instance.Authority;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -537,7 +537,7 @@ public class UriAspect
         var result = instance.Query;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
         }
         catch (Exception ex)
         {
@@ -559,7 +559,7 @@ public class UriAspect
         var result = instance!.ToString();
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
         }
         catch (Exception ex)
         {

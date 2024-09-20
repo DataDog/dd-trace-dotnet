@@ -348,9 +348,29 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         newFixture.Dispose();
         newFixture.SetOutput(null);
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastRestSharpSSRFRequest()
+    {
+        var filename = IastEnabled ? "Iast.RestSharpSSRF.AspNetCore5.IastEnabled" : "Iast.RestSharpSSRF.AspNetCore5.IastDisabled";
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/RestSharpSSRF?host=http://www.google.com&url=/search&param=dd";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
 }
 
-// Class to test particular features (not running all the default tests)
+// Class to test particular features
 public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsStackTraces(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
@@ -403,42 +423,6 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
-    }
-}
-
-public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5IastTests
-{
-    public AspNetCore5IastTests50PctSamplingIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-        : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastTests50PctSamplingIastEnabled", isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100, samplingRate: 50)
-    {
-    }
-
-    public override async Task TryStartApp()
-    {
-        EnableIast(IastEnabled);
-        EnableEvidenceRedaction(RedactionEnabled);
-        DisableObfuscationQueryString();
-        SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
-        SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
-        SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
-        await Fixture.TryStartApp(this, enableSecurity: false, sendHealthCheck: false);
-        SetHttpPort(Fixture.HttpPort);
-    }
-
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    public async Task TestIastWeakHashingRequestSampling()
-    {
-        var filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        await TestWeakHashing(filename, Fixture.Agent);
-
-        filename = "Iast.WeakHashing.AspNetCore5.IastDisabledFlag";
-        await TestWeakHashing(filename, Fixture.Agent);
-
-        filename = "Iast.WeakHashing.AspNetCore5.IastEnabled";
-        await TestWeakHashing(filename, Fixture.Agent);
     }
 }
 

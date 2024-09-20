@@ -108,6 +108,7 @@ static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("System.Web.Http*"),
     WStr("MongoDB.*"),
     WStr("JetBrains*"),
+    WStr("RestSharp.Extensions.StringExtensions::UrlEncode*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodAttributeExcludeFilters[] = {

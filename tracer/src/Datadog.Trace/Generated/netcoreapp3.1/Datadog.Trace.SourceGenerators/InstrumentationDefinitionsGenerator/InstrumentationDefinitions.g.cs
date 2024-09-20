@@ -638,6 +638,8 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Diagnostics"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("DisplayException"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task", "Microsoft.AspNetCore.Diagnostics.ErrorContext"), 2, 7, 0, 0, 8, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak.DeveloperExceptionPageMiddlewareIntegration_Pre_3_0_0"), 0, 4),
 
                 // SymmetricAlgorithm
+                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RestSharp"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RestSharp.Extensions.StringExtensions"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("UrlEncode"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.String", "System.String", "System.Text.Encoding"), 3, 1, 0, 0, 112, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp.UrlEncode2Integration"), 0, 4),
+                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RestSharp"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("RestSharp.Extensions.StringExtensions"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("UrlEncode"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.String", "System.String"), 2, 1, 0, 0, 112, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp.UrlEncodeIntegration"), 0, 4),
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Security.Cryptography"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Security.Cryptography.SymmetricAlgorithm"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(".ctor"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void"), 1, 7, 0, 0, 8, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"), 0, 4),
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Security.Cryptography.Primitives"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Security.Cryptography.SymmetricAlgorithm"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(".ctor"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void"), 1, 1, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"), 0, 4),
 
@@ -711,6 +713,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Oracle.DataAccess,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Oracle.ManagedDataAccess,", StringComparison.Ordinal)
             || assemblyName.StartsWith("RabbitMQ.Client,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("RestSharp,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Serilog,", StringComparison.Ordinal)
             || assemblyName.StartsWith("ServiceStack.Redis,", StringComparison.Ordinal)
             || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
@@ -1132,7 +1135,9 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak.DeveloperExceptionPageMiddlewareIntegration_Pre_3_0_0"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak.DeveloperExceptionPageMiddlewareIntegration_Pre_3_0_0"
                     => Datadog.Trace.Configuration.IntegrationId.StackTraceLeak,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp.UrlEncode2Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp.UrlEncodeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.PlatformAssemblyResolverAssemblyResolverEventIntegration"
