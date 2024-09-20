@@ -18,14 +18,14 @@ internal class AsmDataProduct : IAsmConfigUpdater
         {
             var rawFile = new NamedRawFile(file.Path, file.Contents);
             var asmDataConfig = rawFile.Deserialize<Payload>();
-            var rulesData = asmDataConfig.TypedFile!.RulesData;
+            var rulesData = asmDataConfig.TypedFile?.RulesData;
             if (rulesData != null)
             {
                 configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             }
 
-            var exclusionsData = asmDataConfig.TypedFile!.ExclusionsData;
+            var exclusionsData = asmDataConfig.TypedFile?.ExclusionsData;
             if (exclusionsData != null)
             {
                 configurationStatus.ExclusionsDataByFile[rawFile.Path.Path] = exclusionsData;
