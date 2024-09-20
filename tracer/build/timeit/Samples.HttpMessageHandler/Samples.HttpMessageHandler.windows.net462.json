@@ -9,14 +9,14 @@
       "options": {
         "onScenarioStart": {
           "processName": "cmd.exe",
-          "processArguments": "/c remove_logs.cmd",
-          "workingDirectory": "$(CWD)\\..",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)",
           "redirectStandardOutput": true
         },
         "onExecutionEnd": {
           "processName": "cmd.exe",
-          "processArguments": "/c remove_logs.cmd",
-          "workingDirectory": "$(CWD)\\.."
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)"
         }
       }
     }
