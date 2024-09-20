@@ -372,7 +372,15 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 foreach (var header in headers)
                 {
-                    _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    if (_httpClient.DefaultRequestHeaders.Contains(header.Key))
+                    {
+                        _httpClient.DefaultRequestHeaders.Remove(header.Key);
+                    }
+
+                    if (header.Value is not null)
+                    {
+                        _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    }
                 }
             }
 
