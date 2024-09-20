@@ -121,7 +121,10 @@ public class UriAspect
 #pragma warning restore CS0618 // Type or member is obsolete
         try
         {
-            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+            if (dontEscape)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+            }
         }
         catch (Exception ex)
         {
@@ -317,7 +320,7 @@ public class UriAspect
 #pragma warning restore SYSLIB0013
         try
         {
-            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
+            result = IastModule.OnSsrfEscape(uri, result)!;
         }
         catch (Exception ex)
         {
@@ -338,7 +341,7 @@ public class UriAspect
         var result = Uri.EscapeDataString(uri);
         try
         {
-            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
+            result = IastModule.OnSsrfEscape(uri, result)!;
         }
         catch (Exception ex)
         {
