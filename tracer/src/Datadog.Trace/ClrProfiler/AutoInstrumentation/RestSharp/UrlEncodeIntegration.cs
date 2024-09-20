@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 #nullable enable
 
 using System;
@@ -81,5 +79,3 @@ public class UrlEncodeIntegration
         return new CallTargetReturn<TReturn>(returnValue);
     }
 }
-
-#endif
