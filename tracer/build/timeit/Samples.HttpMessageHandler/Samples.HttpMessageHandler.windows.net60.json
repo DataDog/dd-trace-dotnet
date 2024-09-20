@@ -3,6 +3,24 @@
   "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net60.json",
   "warmUpCount": 5,
   "count": 60,
+  "services": [
+    {
+      "name": "Execute",
+      "options": {
+        "onScenarioStart": {
+          "processName": "call",
+          "processArguments": "remove_logs.cmd",
+          "workingDirectory": "$(CWD)\\..",
+          "redirectStandardOutput": true
+        },
+        "onExecutionEnd": {
+          "processName": "call",
+          "processArguments": "remove_logs.cmd",
+          "workingDirectory": "$(CWD)\\.."
+        }
+      }
+    }
+  ],
   "scenarios": [
     {
       "name": "Baseline",
