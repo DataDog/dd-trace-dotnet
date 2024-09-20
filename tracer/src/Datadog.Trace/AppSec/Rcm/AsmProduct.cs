@@ -15,6 +15,8 @@ internal class AsmProduct : IAsmConfigUpdater
 {
     public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
     {
+        bool actionsCleared = false;
+
         foreach (var file in files)
         {
             var payload = new NamedRawFile(file.Path, file.Contents).Deserialize<Payload>();
