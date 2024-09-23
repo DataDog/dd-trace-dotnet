@@ -114,6 +114,7 @@ internal static class CiUtils
         var codeCoverageEnabled = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
         var testSkippingEnabled = ciVisibilitySettings.TestsSkippingEnabled == true;
         var earlyFlakeDetectionEnabled = ciVisibilitySettings.EarlyFlakeDetectionEnabled == true;
+        var flakyRetryEnabled = ciVisibilitySettings.FlakyRetryEnabled == true;
 
         var hasEvpProxy = !string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint);
         if (agentless || hasEvpProxy)
@@ -166,7 +167,10 @@ internal static class CiUtils
 
             // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
             if (ciVisibilitySettings.IntelligentTestRunnerEnabled
-             && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null || ciVisibilitySettings.EarlyFlakeDetectionEnabled == null))
+             && (ciVisibilitySettings.CodeCoverageEnabled == null ||
+                 ciVisibilitySettings.TestsSkippingEnabled == null ||
+                 ciVisibilitySettings.EarlyFlakeDetectionEnabled == null ||
+                 ciVisibilitySettings.FlakyRetryEnabled == null))
             {
                 try
                 {
@@ -188,6 +192,7 @@ internal static class CiUtils
                     codeCoverageEnabled = codeCoverageEnabled || itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
                     testSkippingEnabled = itrSettings.TestsSkipping == true;
                     earlyFlakeDetectionEnabled = earlyFlakeDetectionEnabled || itrSettings.EarlyFlakeDetection.Enabled == true;
+                    flakyRetryEnabled = flakyRetryEnabled || itrSettings.FlakyTestRetries == true;
                 }
                 catch (Exception ex)
                 {
@@ -199,10 +204,13 @@ internal static class CiUtils
         Log.Debug("RunCiCommand: CodeCoverageEnabled = {Value}", codeCoverageEnabled);
         Log.Debug("RunCiCommand: TestSkippingEnabled = {Value}", testSkippingEnabled);
         Log.Debug("RunCiCommand: EarlyFlakeDetectionEnabled = {Value}", earlyFlakeDetectionEnabled);
+        Log.Debug("RunCiCommand: FlakyRetryEnabled = {Value}", flakyRetryEnabled);
         ciVisibilitySettings.SetCodeCoverageEnabled(codeCoverageEnabled);
         ciVisibilitySettings.SetEarlyFlakeDetectionEnabled(earlyFlakeDetectionEnabled);
+        ciVisibilitySettings.SetFlakyRetryEnabled(flakyRetryEnabled);
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.CodeCoverage] = codeCoverageEnabled ? "1" : "0";
         profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled] = earlyFlakeDetectionEnabled ? "1" : "0";
+        profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.FlakyRetryEnabled] = flakyRetryEnabled ? "1" : "0";
 
         if (!testSkippingEnabled)
         {

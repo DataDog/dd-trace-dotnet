@@ -754,6 +754,12 @@ namespace Datadog.Trace.Ci
                     {
                         settings.SetEarlyFlakeDetectionEnabled(false);
                     }
+
+                    if (settings.FlakyRetryEnabled == null && itrSettings.FlakyTestRetries.HasValue)
+                    {
+                        Log.Information("ITR: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
+                        settings.SetFlakyRetryEnabled(itrSettings.FlakyTestRetries.Value);
+                    }
                 }
 
                 // Log code coverage status
