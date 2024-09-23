@@ -150,7 +150,10 @@ docker-compose.serverless.yml                                      @DataDog/trac
 /tracer/test/test-applications/integrations/Samples.MSTestTests/  @DataDog/ci-app-libraries-dotnet
 /tracer/test/test-applications/integrations/Samples.MSTestTests2/  @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/SourceCodeIntegrationGitMetadataTests.cs  @DataDog/ci-app-libraries-dotnet
-
+/tracer/test/snapshots/MsTestV2* @DataDog/ci-app-libraries-dotnet
+/tracer/test/snapshots/NUnit* @DataDog/ci-app-libraries-dotnet
+/tracer/test/snapshots/XUnit* @DataDog/ci-app-libraries-dotnet
+/tracer/test/snapshots/Selenium* @DataDog/ci-app-libraries-dotnet
 # Common Files
 Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
 Directory.Build.props                     @DataDog/apm-dotnet
