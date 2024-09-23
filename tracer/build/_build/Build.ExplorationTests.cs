@@ -158,6 +158,45 @@ partial class Build
                 })
         ;
 
+    Target SetUpSnapshotExplorationTests
+        => _ => _
+               .Description("Sets up the Snapshot Exploration Test")
+               .Requires(() => ExplorationTestUseCase)
+               .After(Clean, BuildTracerHome)
+               .Executes(() =>
+                {
+                    if (ExplorationTestUseCase != global::ExplorationTestUseCase.Debugger)
+                    {
+                        return;
+                    }
+
+                    GitCloneBuild();
+                    CreateSnapshotExplorationTestCsv();
+                });
+
+    Target RunSnapshotExplorationTests
+        => _ => _
+               .Description("Runs the Snapshot Exploration Test")
+               .Requires(() => ExplorationTestUseCase)
+               .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpSnapshotExplorationTests)
+               .Executes(() =>
+                {
+                    if (ExplorationTestUseCase != global::ExplorationTestUseCase.Debugger)
+                    {
+                        return;
+                    }
+
+                    FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
+                    try
+                    {
+                        RunSnapshotExplorationTestsInternal();
+                    }
+                    finally
+                    {
+                        CopyDumpsToBuildData();
+                    }
+                });
+
     Dictionary<string, string> GetEnvironmentVariables(ExplorationTestDescription testDescription, TargetFramework framework)
     {
         var envVariables = new Dictionary<string, string>
@@ -224,44 +263,44 @@ partial class Build
 
         Logger.Information($"Running exploration test {testDescription.Name}.");
 
-        if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
-        {
-            throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
-        }
-
         if (Framework == null)
         {
             foreach (var targetFramework in testDescription.SupportedFrameworks)
             {
                 var envVariables = GetEnvironmentVariables(testDescription, targetFramework);
-                Test(targetFramework, envVariables);
+                Test(testDescription, targetFramework, envVariables);
             }
         }
         else
         {
+            if (!testDescription.IsFrameworkSupported(Framework))
+            {
+                throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            }
+
             var envVariables = GetEnvironmentVariables(testDescription, Framework);
-            Test(Framework, envVariables);
+            Test(testDescription, Framework, envVariables);
         }
+    }
 
-        void Test(TargetFramework targetFramework, Dictionary<string, string> envVariables)
-        {
-            DotNetTest(
-                x =>
-                {
-                    x = x
-                       .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
-                       .EnableNoRestore()
-                       .EnableNoBuild()
-                       .SetConfiguration(BuildConfiguration)
-                       .SetFramework(targetFramework)
-                       .SetProcessEnvironmentVariables(envVariables)
-                       .SetIgnoreFilter(testDescription.TestsToIgnore)
-                       .WithMemoryDumpAfter(100)
-                        ;
+    void Test(ExplorationTestDescription testDescription, TargetFramework targetFramework, Dictionary<string, string> envVariables)
+    {
+        DotNetTest(
+            x =>
+            {
+                x = x
+                   .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
+                   .EnableNoRestore()
+                   .EnableNoBuild()
+                   .SetConfiguration(BuildConfiguration)
+                   .SetFramework(targetFramework)
+                   .SetProcessEnvironmentVariables(envVariables)
+                   .SetIgnoreFilter(testDescription.TestsToIgnore)
+                   .WithMemoryDumpAfter(100)
+                    ;
 
-                    return x;
-                });
-        }
+                return x;
+            });
     }
 
     private void CreateLineProbesIfNeeded()
@@ -554,7 +593,7 @@ class ExplorationTestDescription
 
     public bool ShouldRun { get; set; } = true;
     public bool LineProbesEnabled { get; set; }
-
+    public bool IsSnapshotScenario { get; set; }
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
         var projectPath = $"{explorationTestsDirectory}/{Name}/{PathToUnitTestProject}";
