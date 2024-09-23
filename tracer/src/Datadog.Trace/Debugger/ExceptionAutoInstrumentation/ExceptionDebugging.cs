@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static bool _isDisabled;
 
         private static SnapshotUploader? _uploader;
-        private static SnapshotSink? _snapshotSink;
+        private static ISnapshotSink? _snapshotSink;
 
         public static ExceptionReplaySettings Settings
         {

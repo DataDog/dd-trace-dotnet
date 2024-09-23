@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -283,10 +284,16 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private static void SetRateLimit(ProbeDefinition probe)
+        private void SetRateLimit(ProbeDefinition probe)
         {
             if (probe is not LogProbe logProbe)
             {
+                return;
+            }
+
+            if (Settings.IsSnapshotExplorationTestEnabled)
+            {
+                ProbeRateLimiter.Instance.TryAddSampler(probe.Id, NopAdaptiveSampler.Instance);
                 return;
             }
 
@@ -522,6 +529,68 @@ namespace Datadog.Trace.Debugger
 
         private void DiscoveryCallback(AgentConfiguration x)
             => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
+
+        public LiveDebugger InitializeSync()
+        {
+            InitializeAsync().GetAwaiter().GetResult();
+            return this;
+        }
+
+        public void WithProbesFromFile()
+        {
+            var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesPath);
+            UpdateAddedProbeInstrumentations(probes);
+        }
+
+        private List<ProbeDefinition> ReadProbesFromCsv(string filePath)
+        {
+            var probes = new List<ProbeDefinition>();
+            using var reader = new StreamReader(filePath);
+
+            // Skip header
+            reader.ReadLine();
+
+            while (reader.ReadLine() is { } line)
+            {
+                var parts = line.Split(',');
+                if (parts.Length != 5)
+                {
+                    Log.Warning("Invalid CSV line: {Line}", line);
+                    continue;
+                }
+
+                var probe = new LogProbe
+                {
+                    Id = parts[3], // probeId
+                    Where = new Where
+                    {
+                        TypeName = parts[0], // target type name (FQN)
+                        MethodName = parts[1], // target method name
+                        Signature = parts[2], // signature
+                    },
+                    EvaluateAt = EvaluateAt.Exit
+                };
+
+                // ReSharper disable once UnusedVariable
+                if (bool.TryParse(parts[4], out var isInstanceMethod) && probes.Count % 2 == 0)
+                {
+                    const string condition = """
+                                             "ne": [
+                                                 {
+                                                   "ref": "this"
+                                                 },
+                                                 null
+                                               ]
+                                             """;
+                    // Add condition for half of the instance methods
+                    probe.When = new SnapshotSegment("ref this != null", condition, string.Empty);
+                }
+
+                probes.Add(probe);
+            }
+
+            return probes;
+        }
     }
 }
 
