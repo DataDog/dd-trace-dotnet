@@ -44,12 +44,21 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             ResetDefaultUserAgent();
             var block405Action = new Payload() { Actions = [new Action { Id = "block", Type = "block_request", Parameters = new Parameter { StatusCode = 405, Type = "json" } }] };
             var block405ActionProductId = "action";
+
             await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", block405ActionProductId), (GetNonBlockingRules(), "ASM_DD", productId) });
             var spans4 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
+            // Should trigger on the new applied rule "new-test-non-blocking"
+            // Should not block and return a 200
+
             await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (block405Action, "ASM", block405ActionProductId) });
             var spans5 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
+            // Should fall back to the default rules and trigger "ua0-600-56x"
+            // Should block and return a 405 (from the defined action)
+
             await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)> { (new Payload { Actions = [] }, "ASM", block405ActionProductId) });
             var spans6 = await SendRequestsAsync(agent, "/", null, 1, 1, null, null, "dd-test-scanner-log-block");
+            // Should use the default rules with no defined action and trigger "ua0-600-56x"
+            // Should block and return a 403
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);

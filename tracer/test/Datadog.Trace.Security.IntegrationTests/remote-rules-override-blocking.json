@@ -5,8 +5,8 @@
   },
   "rules": [
     {
-      "id": "ua0-600-56x",
-      "name": "Datadog test scanner - non blocking version: user-agent",
+      "id": "new-test-non-blocking",
+      "name": "Datadog test scanner - NON blocking version: user-agent",
       "tags": {
         "type": "attack_tool",
         "category": "attack_attempt",

@@ -356,9 +356,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
-            _httpClient.DefaultRequestHeaders.TryGetValues("user-agent", out var values);
+            var found = _httpClient.DefaultRequestHeaders.TryGetValues("user-agent", out var values);
 
-            if (!string.IsNullOrEmpty(userAgent) && (values == null || values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0)))
+            if (!string.IsNullOrEmpty(userAgent) && (!found || values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0)))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
