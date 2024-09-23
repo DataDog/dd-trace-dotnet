@@ -5,12 +5,15 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -37,10 +40,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
+        // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+        private static readonly HashSet<string> ClaimsToTest = new HashSet<string>
+        {
+            ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
+        };
+
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
             var security = Security.Instance;
-            if (security.TrackUserEvents)
+            if (security.IsTrackUserEventsEnabled)
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
@@ -53,43 +62,45 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
-            // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-            var claimsToTestInSafeMode = new[] { ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub" };
-            if (claimsPrincipal?.Claims != null && Security.Instance is { TrackUserEvents: true } security)
+            if (claimsPrincipal?.Claims != null && Security.Instance is { IsTrackUserEventsEnabled: true } security)
             {
                 var span = state.Scope.Span;
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, Security.Instance.Settings.UserEventsAutomatedTracking);
+
+                var foundUserId = false;
+
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (security.IsExtendedUserTrackingEnabled)
+                    if (ClaimsToTest.Contains(claim.Type))
                     {
-                        switch (claim.Type)
+                        if (security.IsAnonUserTrackingMode)
                         {
-                            case ClaimTypes.NameIdentifier or "sub":
-                                tryAddTag(Tags.User.Id, claim.Value);
-                                break;
-                            case ClaimTypes.Email:
-                                tryAddTag(Tags.User.Email, claim.Value);
-                                break;
-                            case ClaimTypes.Name:
-                                tryAddTag(Tags.User.Name, claim.Value);
-                                break;
+                            var anonId = UserEventsCommon.GetAnonId(claim.Value);
+                            tryAddTag(Tags.User.Id, anonId);
+                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
                         }
-                    }
-                    else if (claimsToTestInSafeMode.Contains(claim.Type))
-                    {
-                        if (Guid.TryParse(claim.Value, out _))
+                        else
                         {
                             tryAddTag(Tags.User.Id, claim.Value);
-                            break;
+                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
                         }
+
+                        foundUserId = true;
+
+                        break;
                     }
                 }
 
-                security.SetTraceSamplingPriority(span);
+                if (foundUserId)
+                {
+                    security.SetTraceSamplingPriority(span);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
+                }
+                else
+                {
+                    TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                }
             }
 
             return returnValue;

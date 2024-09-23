@@ -1,0 +1,39 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core.request,
+    Resource: POST /account/index,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      appsec.events.users.login.failure.track: true,
+      appsec.events.users.login.failure.usr.exists: false,
+      appsec.events.users.login.failure.usr.id: NoSuchUser,
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
+      aspnet_core.route: {controller=home}/{action=index}/{id?},
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller=home}/{action=index}/{id?},
+      http.status_code: 302,
+      http.url: http://localhost:00000/Account/Index,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.events.users.login.failure.auto.mode: identification,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

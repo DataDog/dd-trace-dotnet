@@ -27,7 +27,11 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         /// <param name="telemetry">Records the origin of telemetry values</param>
-        internal GlobalSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        /// <param name="overrideHandler">Records any errors </param>
+        internal GlobalSettings(
+            IConfigurationSource source,
+            IConfigurationTelemetry telemetry,
+            IConfigurationOverrideHandler overrideHandler)
         {
             var builder = new ConfigurationBuilder(source, telemetry);
 
@@ -41,7 +45,7 @@ namespace Datadog.Trace.Configuration
             DebugEnabledInternal = builder
                                   .WithKeys(ConfigurationKeys.DebugEnabled)
                                   .AsBoolResult()
-                                  .OverrideWith(in otelConfig, false);
+                                  .OverrideWith(in otelConfig, overrideHandler, false);
 
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
@@ -132,6 +136,6 @@ namespace Datadog.Trace.Configuration
         }
 
         private static GlobalSettings CreateFromDefaultSources()
-            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, OverrideErrorLog.Instance);
     }
 }

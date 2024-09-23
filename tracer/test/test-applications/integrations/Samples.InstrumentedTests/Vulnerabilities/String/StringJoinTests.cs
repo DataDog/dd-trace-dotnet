@@ -249,7 +249,7 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
-#if !NET462
+#if NETCOREAPP3_1_OR_GREATER
 
     [Fact]
     public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()

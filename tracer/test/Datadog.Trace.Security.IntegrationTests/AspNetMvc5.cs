@@ -57,7 +57,6 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
-        private readonly string _testName;
         private readonly bool _classicMode;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)

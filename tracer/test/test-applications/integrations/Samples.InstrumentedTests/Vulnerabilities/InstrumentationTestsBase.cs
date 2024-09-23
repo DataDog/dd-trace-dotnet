@@ -112,9 +112,9 @@ public class InstrumentationTestsBase : IDisposable
         return tainted;
     }
 
-    protected void AssertTainted(object tainted)
+    protected void AssertTainted(object tainted, string additionalInfo = "")
     {
-        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted.");
+        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted. " + additionalInfo);
     }
 
     private object GetTainted(object tainted)
@@ -122,9 +122,9 @@ public class InstrumentationTestsBase : IDisposable
         return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
 
-    protected void AssertNotTainted(object value)
+    protected void AssertNotTainted(object value, string additionalInfo = "")
     {
-        GetTainted(value).Should().BeNull(value + " is tainted.");
+        GetTainted(value).Should().BeNull(value + " is tainted. " + additionalInfo);
     }
 
     protected void AssertInstrumented()
@@ -337,7 +337,8 @@ public class InstrumentationTestsBase : IDisposable
         foreach (var range in rangesList)
         {
             var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
-            result = result.Insert(start + (int)_lengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
+            result = result.Insert(start + length, "-+:");
             result = result.Insert(start, ":+-");
         }
 
@@ -364,7 +365,7 @@ public class InstrumentationTestsBase : IDisposable
         return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
-    public static object TestRealDDBBLocalCall(Func<object> expression)
+    public static T TestRealDDBBLocalCall<T>(Func<T> expression)
     {
         if (!IsWindows())
         {
@@ -374,7 +375,7 @@ public class InstrumentationTestsBase : IDisposable
             }
             catch (InvalidOperationException)
             {
-                return null;
+                return default(T);
             }
         }
         else

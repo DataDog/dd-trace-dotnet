@@ -92,8 +92,16 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);

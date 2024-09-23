@@ -11,6 +11,8 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -49,7 +51,7 @@ public static class SignInManagerPasswordSignInUserIntegration
         where TUser : IIdentityUser
     {
         var security = Security.Instance;
-        if (security.TrackUserEvents)
+        if (security.IsTrackUserEventsEnabled)
         {
             var tracer = Tracer.Instance;
             var scope = tracer.InternalActiveScope;
@@ -62,40 +64,49 @@ public static class SignInManagerPasswordSignInUserIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (Security.Instance is { TrackUserEvents: true } security && state.Scope is { Span: { } span })
+        if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { Span: { } span })
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
             var user = state.State as IIdentityUser;
+            var id = UserEventsCommon.GetId(user);
+
+            if (id == null)
+            {
+                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                return returnValue;
+            }
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
             if (!returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
 
-                if (userExists && security.IsExtendedUserTrackingEnabled)
+                if (security.IsAnonUserTrackingMode)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, user!.Id?.ToString());
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureEmail, user.Email);
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, user.UserName);
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
                 }
                 else
                 {
-                    if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
-                    {
-                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, user!.Id?.ToString());
-                    }
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
                 }
             }
-            else if (userExists && security.IsExtendedUserTrackingEnabled)
+            else if (userExists)
             {
                 // AuthenticatedHttpcontExtextensions should fill these, but on core <3.1 email doesnt appear in claims
                 // so let's try to fill these up here if we have the chance to come here
-                tryAddTag(Tags.User.Id, user!.Id?.ToString());
-                tryAddTag(Tags.User.Email, user.Email);
-                tryAddTag(Tags.User.Name, user.UserName);
+                if (security.IsAnonUserTrackingMode)
+                {
+                    var anonId = UserEventsCommon.GetAnonId(id);
+                    tryAddTag(Tags.User.Id, anonId);
+                }
+                else
+                {
+                    tryAddTag(Tags.User.Id, id);
+                }
             }
 
             security.SetTraceSamplingPriority(span);

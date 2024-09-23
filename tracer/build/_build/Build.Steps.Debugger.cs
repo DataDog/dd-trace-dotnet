@@ -1,3 +1,4 @@
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
@@ -26,6 +27,8 @@ partial class Build
     Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
     Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
+
+    Project ExceptionReplaySamples => Solution.GetProject(Projects.ExceptionReplaySamples);
 
     Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
 
@@ -68,6 +71,7 @@ partial class Build
 
     Target CompileDebuggerIntegrationTestsSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .DependsOn(CompileDebuggerIntegrationTestsDependencies)
         .Requires(() => Framework)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -76,6 +80,11 @@ partial class Build
         .Executes(() =>
         {
             DotnetBuild(DebuggerSamples, framework: Framework);
+
+            if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
+            {
+                DotnetBuild(ExceptionReplaySamples, framework: Framework);
+            }
 
             if (!IsWin)
             {
@@ -86,6 +95,15 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetNoWarnDotNetCore3()
                     .SetProject(DebuggerSamples));
+
+                if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
+                {
+                    DotNetPublish(x => x
+                                      .SetFramework(Framework)
+                                      .SetConfiguration(BuildConfiguration)
+                                      .SetNoWarnDotNetCore3()
+                                      .SetProject(ExceptionReplaySamples));
+                }
             }
         });
 
@@ -98,7 +116,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
             try

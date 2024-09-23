@@ -64,6 +64,7 @@ fault_tolerant_*.cpp                       @DataDog/debugger-dotnet
 fault_tolerant_*.h                         @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/FaultTolerant/   @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/Configuration/ConfigurationKeys.Debugger.cs   @DataDog/debugger-dotnet
+Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
 # Serverless
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/Lambda/    @DataDog/tracing-dotnet  @DataDog/serverless-aws

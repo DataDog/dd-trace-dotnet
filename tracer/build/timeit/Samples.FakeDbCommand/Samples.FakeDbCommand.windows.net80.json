@@ -1,0 +1,64 @@
+{
+  "enableDatadog": true,
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.FakeDbCommand.windows.net80.json",
+  "warmUpCount": 5,
+  "count": 80,
+  "services": [
+    {
+      "name": "Execute",
+      "options": {
+        "onScenarioStart": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)",
+          "redirectStandardOutput": true
+        },
+        "onExecutionEnd": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)"
+        }
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "Baseline",
+      "environmentVariables": {
+        "CORECLR_ENABLE_PROFILING": "0",
+        "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "CallTarget\u002BInlining\u002BNGEN"
+    }
+  ],
+  "processName": "dotnet",
+  "processArguments": ".\\Samples.FakeDbCommand.dll no-wait",
+  "processTimeout": 15,
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.FakeDbCommand\\release_net8.0",
+  "environmentVariables": {
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+    "CORECLR_PROFILER_PATH_32": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "CORECLR_PROFILER_PATH_ARM64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-ARM64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "DD_DOTNET_TRACER_HOME": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home",
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+    "COR_PROFILER_PATH_32": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "COR_PROFILER_PATH_ARM64": "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-ARM64\\Datadog.Trace.ClrProfiler.Native.dll"
+  },
+  "pathValidations": [
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
+    "$(CWD)\\..\\..\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+  ],
+  "tags": {
+    "runtime.architecture": "x64",
+    "runtime.name": ".NET Core",
+    "runtime.version": "8.0",
+    "benchmark.job.runtime.name": ".NET 8.0",
+    "benchmark.job.runtime.moniker": "net8.0"
+  }
+}

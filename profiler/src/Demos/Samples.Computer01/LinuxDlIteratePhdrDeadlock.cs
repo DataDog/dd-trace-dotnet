@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+#if NETCOREAPP3_0_OR_GREATER
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +19,13 @@ namespace Samples.Computer01
         private ManualResetEvent _stopEvent;
         private Task _exceptionTask;
         private Thread _worker;
+
+        public LinuxDlIteratePhdrDeadlock()
+        {
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+        }
+
+        private static string ApiWrapperPath { get; } = Environment.GetEnvironmentVariable("LD_PRELOAD");
 
         public void Start()
         {
@@ -87,10 +97,20 @@ namespace Samples.Computer01
             _stopEvent = null;
         }
 
-        [DllImport("libdl.so", EntryPoint = "dlopen")]
+        private static IntPtr DllImportResolver(string resolverName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (resolverName == "DatadogApiWrapper")
+            {
+                return NativeLibrary.Load(ApiWrapperPath, assembly, searchPath);
+            }
+
+            return IntPtr.Zero;
+        }
+
+        [DllImport("DatadogApiWrapper", EntryPoint = "dlopen")]
         private static extern IntPtr Dlopen(string filename, int flags);
 
-        [DllImport("libdl.so", EntryPoint = "dlclose")]
+        [DllImport("DatadogApiWrapper", EntryPoint = "dlclose")]
         private static extern void DlClose(IntPtr handle);
 
         private void ExecuteCallToDlOpenDlClose()
@@ -122,3 +142,4 @@ namespace Samples.Computer01
         }
     }
 }
+#endif

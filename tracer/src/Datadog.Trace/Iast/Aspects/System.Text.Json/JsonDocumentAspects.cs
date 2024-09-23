@@ -29,7 +29,7 @@ public class JsonDocumentAspects
     /// <param name="json">the JsonDocument result of Parse</param>
     /// <param name="options">the JsonDocumentOptions</param>
     /// <returns>the JsonDocument result</returns>
-    [AspectMethodReplace("System.Text.Json.JsonDocument::Parse(System.String,System.Text.Json.JsonDocumentOptions)")]
+    [AspectMethodReplaceFromVersion("2.49.0", "System.Text.Json.JsonDocument::Parse(System.String,System.Text.Json.JsonDocumentOptions)")]
     public static object Parse(string json, JsonDocumentOptions options)
     {
         var doc = JsonDocument.Parse(json, options);
@@ -52,8 +52,9 @@ public class JsonDocumentAspects
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the string result</returns>
-    [AspectMethodReplace("System.Text.Json.JsonElement::GetString()", [0], [true])]
+    [AspectMethodReplaceFromVersion("2.49.0", "System.Text.Json.JsonElement::GetString()", [0], [true])]
     public static string? GetString(object target)
+#pragma warning disable DD0005 // Function is already safe where needed
     {
         IJsonElement? element;
         try
@@ -84,6 +85,7 @@ public class JsonDocumentAspects
 
         return str;
     }
+#pragma warning restore DD0005
 
     /// <summary>
     /// GetRawText method aspect
@@ -91,8 +93,9 @@ public class JsonDocumentAspects
     /// </summary>
     /// <param name="target">the JsonElement instance</param>
     /// <returns>the raw string result</returns>
-    [AspectMethodReplace("System.Text.Json.JsonElement::GetRawText()", [0], [true])]
+    [AspectMethodReplaceFromVersion("2.49.0", "System.Text.Json.JsonElement::GetRawText()", [0], [true])]
     public static string? GetRawText(object target)
+#pragma warning disable DD0005  // Function is already safe where needed
     {
         IJsonElement? element;
         try
@@ -123,6 +126,7 @@ public class JsonDocumentAspects
 
         return str;
     }
+#pragma warning restore DD0005
 
     private static void TaintJsonElements(string json, JsonDocument doc)
     {

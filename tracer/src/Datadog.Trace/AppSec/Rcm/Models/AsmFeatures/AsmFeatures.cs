@@ -7,7 +7,12 @@
 
 namespace Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+
 internal class AsmFeatures
 {
-    public AsmFeature Asm { get; set; } = new();
+    public AsmFeature? Asm { get; set; } = new();
+
+    [JsonProperty("auto_user_instrum")]
+    public AutoUserInstrum? AutoUserInstrum { get; set; } = new();
 }

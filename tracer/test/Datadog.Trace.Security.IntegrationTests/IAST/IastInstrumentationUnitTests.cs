@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -44,18 +45,26 @@ public class IastInstrumentationUnitTests : TestHelper
     }
 
     [SkippableTheory]
+#if NETCOREAPP3_1_OR_GREATER
     [InlineData(typeof(StringBuilder), "Append")]
+#else
+    [InlineData(typeof(StringBuilder), "Append", new string[] { "System.Text.StringBuilder Append(System.Text.StringBuilder, Int32, Int32)" })]
+#endif
     [InlineData(typeof(StringBuilder), "AppendLine", null, true)]
     [InlineData(typeof(StringBuilder), ".ctor", null, true)]
     [InlineData(typeof(StringBuilder), "Insert", null, true)]
 #if NETCOREAPP3_1_OR_GREATER
-    [InlineData(typeof(StringBuilder), "AppendJoin", null, true)]
+    [InlineData(typeof(StringBuilder), "AppendJoin", new string[] { "System.Text.StringBuilder AppendJoin[T](System.String, System.Collections.Generic.IEnumerable`1[T])" }, true)]
 #endif
     [InlineData(typeof(StringBuilder), "Replace", null, true)]
     [InlineData(typeof(StringBuilder), "Remove", null, true)]
     [InlineData(typeof(StringBuilder), "CopyTo", null, true)]
-    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder::AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])" }, true)]
-    [InlineData(typeof(string), "Join")]
+    [InlineData(typeof(StringBuilder), "AppendFormat", new string[] { "System.StringBuilder AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])" }, true)]
+#if NETCOREAPP3_1_OR_GREATER
+    [InlineData(typeof(string), "Join", new string[] { "System.String Join[T](System.String, System.Collections.Generic.IEnumerable`1[T])" })]
+#else
+    [InlineData(typeof(string), "Join", new string[] { "System.String Join[T](System.String, System.Collections.Generic.IEnumerable`1[T])", "System.String Join(Char, System.String[])", "System.String Join(Char, System.Object[])", "System.String Join(Char, System.String[], Int32, Int32)" })]
+#endif
     [InlineData(typeof(string), "Copy")]
     [InlineData(typeof(string), "ToUpper")]
     [InlineData(typeof(string), "ToUpperInvariant")]
@@ -69,7 +78,13 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "Substring")]
     [InlineData(typeof(string), "TrimEnd")]
     [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])" })]
-    [InlineData(typeof(string), "Split")]
+#if NETCOREAPP2_1
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)", "System.String[] Split(System.String, Int32, System.StringSplitOptions)", "System.String Join(Char, System.String[], Int32, Int32)", "System.String Join(Char, System.String[], Int32, Int32)", "System.String Join(Char, System.String[], Int32, Int32)" })]
+#elif NETCOREAPP3_0
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)", "System.String[] Split(System.String, Int32, System.StringSplitOptions)" })]
+#else
+    [InlineData(typeof(string), "Split", new string[] { "System.String[] Split(System.String, System.StringSplitOptions)" })]
+#endif
     [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]
     [InlineData(typeof(StreamReader), ".ctor")]
@@ -102,6 +117,9 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(Type), "InvokeMember", null, true)]
     [InlineData(typeof(Assembly), "Load", null, true)]
     [InlineData(typeof(Assembly), "LoadFrom", null, true)]
+    [InlineData(typeof(SmtpClient), "Send", new[] { "Void Send(System.String, System.String, System.String, System.String)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendAsync", new[] { "Void SendAsync(System.String, System.String, System.String, System.String, System.Object)" }, true)]
+    [InlineData(typeof(SmtpClient), "SendMailAsync", new[] { "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String, System.Threading.CancellationToken)", "System.Threading.Tasks.Task SendMailAsync(System.String, System.String, System.String, System.String)" }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -224,13 +242,14 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(XmlNode))]
     [InlineData(typeof(Extensions))]
     [InlineData(typeof(XPathExpression))]
+    [InlineData(typeof(SmtpClient), new[] { "System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])]" })]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
-    #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
     [InlineData(typeof(Type))]
-    #else
+#else
     [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])" })]
-    #endif
+#endif
 #else
     [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Reflection.CallingConventions,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Reflection.Binder,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[],System.Reflection.ParameterModifier[])", "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])", "System.Type::GetMethod(System.String,System.Int32,System.Type[])" })]
 #endif
@@ -288,14 +307,12 @@ public class IastInstrumentationUnitTests : TestHelper
 #else
             if (!EnvironmentTools.IsWindows())
             {
-                if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                arguments += (RuntimeInformation.ProcessArchitecture == Architecture.Arm64, EnvironmentHelper.IsAlpine()) switch
                 {
-                    arguments += " --TestCaseFilter:\"(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)\"";
-                }
-                else
-                {
-                    arguments += " --TestCaseFilter:\"Category!=LinuxUnsupported\"";
-                }
+                    (true, false) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    (true, true) => @" --TestCaseFilter:""(Category!=ArmUnsupported)&(Category!=AlpineArmUnsupported)&(Category!=LinuxUnsupported)""",
+                    _ => @" --TestCaseFilter:""Category!=LinuxUnsupported""",
+                };
             }
 #endif
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want

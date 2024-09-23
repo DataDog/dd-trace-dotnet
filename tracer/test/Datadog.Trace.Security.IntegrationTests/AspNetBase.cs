@@ -18,6 +18,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -31,6 +33,8 @@ namespace Datadog.Trace.Security.IntegrationTests
     [UsesVerify]
     public class AspNetBase : TestHelper
     {
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable SA1202 // Elements should be ordered by access
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
         protected const string MainIp = "86.242.244.246";
@@ -44,17 +48,21 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecFingerPrintHeaders = new(@"_dd.appsec.fp.http.header: hdr-\d+-\S*-\d+-\S*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
-        private readonly string _testName;
+        protected string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
+        private readonly bool _clearMetaStruct;
         private int _httpPort;
+#pragma warning restore SA1202 // Elements should be ordered by access
+#pragma warning restore SA1401 // Fields should be private
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
@@ -73,6 +81,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
+
+            _clearMetaStruct = clearMetaStruct;
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -99,13 +109,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
-            await VerifySpans(spans, settings, testInit, methodNameOverride);
+            await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride);
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false)
+        public void ScrubFingerprintHeaders(VerifySettings settings)
+        {
+            settings.AddRegexScrubber(AppSecFingerPrintHeaders, "_dd.appsec.fp.http.header: <HeaderPrint>");
+        }
+
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -154,8 +169,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
                                     target.Tags[Tags.AppSecJson] = orderedJson;
 
-                                    target.MetaStruct.Remove("appsec");
-
                                     // Let the snapshot know that the data comes from the meta struct
                                     if (forceMetaStruct)
                                     {
@@ -163,10 +176,17 @@ namespace Datadog.Trace.Security.IntegrationTests
                                     }
                                 }
 
-                                // Remove all data from meta structs keys, no need to get the binary data for other keys
-                                foreach (var key in target.MetaStruct.Keys.ToList())
+                                if (_clearMetaStruct)
                                 {
-                                    target.MetaStruct[key] = [];
+                                    target.MetaStruct = null;
+                                }
+                                else
+                                {
+                                    // Remove all data from meta structs keys, no need to get the binary data for other keys
+                                    foreach (var key in target.MetaStruct.Keys.ToList())
+                                    {
+                                        target.MetaStruct[key] = [];
+                                    }
                                 }
                             }
 
@@ -193,17 +213,44 @@ namespace Datadog.Trace.Security.IntegrationTests
                 || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
             }
 
-            // Overriding the type name here as we have multiple test classes in the file
-            // Ensures that we get nice file nesting in Solution Explorer
-            await Verifier.Verify(spans, settings)
-                          .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(testName ?? GetTestName());
+            if (string.IsNullOrEmpty(fileNameOverride))
+            {
+                // Overriding the type name here as we have multiple test classes in the file
+                // Ensures that we get nice file nesting in Solution Explorer
+                await Verifier.Verify(spans, settings)
+                              .UseMethodName(methodNameOverride ?? "_")
+                              .UseTypeName(testName ?? GetTestName());
+            }
+            else
+            {
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(fileNameOverride)
+                                  .DisableRequireUniquePrefix();
+            }
+        }
+
+        public void StacksMetaStructScrubbing(MockSpan target)
+        {
+            var key = "_dd.stack";
+            if (target.MetaStruct is not null && target.MetaStruct.TryGetValue(key, out var appsec))
+            {
+                var metaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
+                target.Tags[key] = json;
+            }
         }
 
         protected void SetClientIp(string ip)
         {
             _httpClient.DefaultRequestHeaders.Remove(XffHeader);
             _httpClient.DefaultRequestHeaders.Add(XffHeader, ip);
+        }
+
+        protected string MetaStructToJson(byte[] data)
+        {
+            var metaStruct = MetaStructByteArrayToObject.Invoke(null, [data]);
+            var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
+            return json;
         }
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)

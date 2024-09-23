@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Script.Serialization;
 using System.Xml;
+using System.Net.Mail;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -157,18 +158,31 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Route("ExecuteCommand")]
-        public ActionResult ExecuteCommand(string file, string argumentLine)
+        public ActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
-            return ExecuteCommandInternal(file, argumentLine);
+            return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
-        private ActionResult ExecuteCommandInternal(string file, string argumentLine)
+        private ActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
             try
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    var result = Process.Start(file, argumentLine);
+                    Process result;
+                    if (fromShell)
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                        startInfo.FileName = file;
+                        startInfo.Arguments = argumentLine;
+                        startInfo.UseShellExecute = true;
+                        result = Process.Start(startInfo);
+                    }
+                    else
+                    {
+                        result = Process.Start(file, argumentLine);
+                    }
+
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -179,10 +193,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             catch (Win32Exception ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
-            }
-            catch (Exception ex)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
             }
         }
 
@@ -692,6 +702,66 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             var result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
             return Content(result);
+        }
+
+        [Route("SendEmailSmtpData")]
+        public ActionResult SendEmailSmtpData(string email, string name, string lastname,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587)
+        {
+            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+        }
+
+        [Route("SendEmail")]
+        public ActionResult SendEmail(string email, string name, string lastname)
+        {
+            return SendMailAux(name, lastname, email);
+        }
+
+        private ActionResult SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587, bool escape = false)
+        {
+            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
+                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
+                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
+
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = $"{firstName}, welcome!";
+
+            if (string.IsNullOrEmpty(smtpUsername))
+            {
+                smtpUsername = email;
+            }
+
+            try
+            {
+
+                var mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress(smtpUsername);
+                mailMessage.To.Add(email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = contentHtml;
+                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+                var client = new SmtpClient(smtpserver, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = true,
+                    Timeout = 10000
+                };
+                client.Send(mailMessage);
+            }
+            catch (SmtpException)
+            {
+                return new HttpStatusCodeResult(200, "Mail message was not sent");
+            }
+
+            return Content("Email sent");
         }
     }
 }

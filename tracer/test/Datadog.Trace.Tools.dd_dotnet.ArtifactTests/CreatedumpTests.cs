@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public class CreatedumpTests : ConsoleTestHelper
 {
-    private const string CreatedumpExpectedOutput = "Writing minidump";
+    private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
 
     public CreatedumpTests(ITestOutputHelper output)
@@ -64,14 +64,14 @@ public class CreatedumpTests : ConsoleTestHelper
         // If it wasn't set, then we set it so that dd-dotnet will be invoked in case of crash.
         // If a child dotnet process is spawned, we may then mistakenly think that COMPlus_DbgEnableMiniDump
         // was set from the environment, even though it was set by us. To prevent that, we set the
-        // DD_TRACE_CRASH_HANDLER_PASSTHROUGH environment variable, which codifies the result of the
+        // DD_INTERNAL_CRASHTRACKING_PASSTHROUGH environment variable, which codifies the result of the
         // "was COMPlus_DbgEnableMiniDump set?" check.
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
+        (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
         using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
 
@@ -94,6 +94,41 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 
+    [SkippableFact]
+    public async Task BashScript()
+    {
+        // This tests the case when an app is called through a bash script
+        // This scenario has unique challenges because:
+        //   - The COMPlus_DbgMiniDumpName environment variable that we override is then inherited by the child
+        //   - Bash overrides the getenv/setenv functions, which cause some unexpected behaviors
+
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        using var reportFile = new TemporaryFile();
+
+        (string, string)[] environment = [LdPreloadConfig, .. CreatedumpConfig, CrashReportConfig(reportFile)];
+
+        var (executable, args) = PrepareSampleApp(EnvironmentHelper);
+
+        var bashScript = $"#!/bin/bash\n{executable} {args} crash-datadog\n";
+        using var bashFile = new TemporaryFile();
+        bashFile.SetContent(bashScript);
+
+        using var helper = await StartConsole("/bin/bash", bashFile.Path, EnvironmentHelper, false, environment);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+    }
+
     [SkippableTheory]
     [InlineData(true)]
     [InlineData(false)]
@@ -103,7 +138,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ("DD_TRACE_CRASH_HANDLER_ENABLED", "0")];
+        (string, string)[] args = [LdPreloadConfig, ("DD_CRASHTRACKING_ENABLED", "0")];
 
         if (enableCrashDumps)
         {
@@ -444,7 +479,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {
-        return ("DD_TRACE_CRASH_OUTPUT", reportFile.Url);
+        return ("DD_INTERNAL_CRASHTRACKING_OUTPUT", reportFile.Url);
     }
 
     private static void CopyDirectory(string source, string destination)
@@ -482,6 +517,8 @@ public class CreatedumpTests : ConsoleTestHelper
         public string Url => $"file:/{Path}";
 
         public string GetContent() => File.ReadAllText(Path);
+
+        public void SetContent(string content) => File.WriteAllText(Path, content);
 
         public void Dispose()
         {

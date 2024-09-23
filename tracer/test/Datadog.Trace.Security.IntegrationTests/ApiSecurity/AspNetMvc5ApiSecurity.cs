@@ -41,7 +41,6 @@ public class AspNetMvc5ApiSecurityDisabled : AspNetMvc5ApiSecurity
 public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
 
     internal AspNetMvc5ApiSecurity(IisFixture iisIisFixture, ITestOutputHelper output, bool enableApiSecurity)
         : base("AspNetMvc5", output, "/home/shutdown", @"test\test-applications\security\aspnet")

@@ -12,7 +12,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 3.1.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 3.4.0)
 
 if (UNIVERSAL)
    find_package(GlibcCompat REQUIRED)
@@ -122,7 +122,7 @@ add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (UNIVERSAL)
     add_compile_options(-stdlib=libc++ -DUNIVERSAL)
 elseif (ISMACOS)
-    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden)
+    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden -Wno-deprecated-this-capture)
 else()
     add_compile_options(-stdlib=libstdc++)
 endif()

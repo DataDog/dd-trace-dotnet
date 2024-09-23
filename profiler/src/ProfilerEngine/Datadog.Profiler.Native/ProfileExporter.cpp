@@ -15,6 +15,7 @@
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
+#include "ISsiManager.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -76,13 +77,16 @@ ProfileExporter::ProfileExporter(
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
     IMetadataProvider* metadataProvider,
+    ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _allocationsRecorder{allocationsRecorder},
     _metadataProvider{metadataProvider},
-    _configuration{configuration}
+    _configuration{configuration},
+    _runtimeInfo{runtimeInfo},
+    _ssiManager{ssiManager}
 {
     _exporter = CreateExporter(_configuration, CreateTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -160,6 +164,11 @@ void ProfileExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
 {
     assert(provider != nullptr);
     _processSamplesProviders.push_back(provider);
+}
+
+void ProfileExporter::RegisterApplication(std::string_view runtimeId)
+{
+    GetOrCreateInfo(runtimeId);
 }
 
 libdatadog::Tags ProfileExporter::CreateTags(
@@ -265,7 +274,7 @@ std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledPr
     return buffer.str();
 }
 
-std::string ProfileExporter::BuildAgentEndpoint(IConfiguration* configuration)
+std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configuration)
 {
     // handle "with agent" case
     auto url = configuration->GetAgentUrl(); // copy expected here
@@ -448,7 +457,7 @@ void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<
     }
 }
 
-bool ProfileExporter::Export()
+bool ProfileExporter::Export(bool lastCall)
 {
     bool exported = false;
 
@@ -527,7 +536,22 @@ bool ProfileExporter::Export()
         if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
+
+            if (applicationInfo.Worker != nullptr)
+            {
+                applicationInfo.Worker->IncNumberOfProfiles(false);
+                if (lastCall)
+                    applicationInfo.Worker->IncNumberOfApplications();
+            }
+
             continue;
+        }
+
+        if (applicationInfo.Worker != nullptr)
+        {
+            applicationInfo.Worker->IncNumberOfProfiles(true);
+            if (lastCall)
+                applicationInfo.Worker->IncNumberOfApplications();
         }
 
         if (_exporter == nullptr)
@@ -564,13 +588,17 @@ bool ProfileExporter::Export()
             filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
         }
 
-        std::string json = GetMetadata();
+        std::string metadataJson = GetMetadata();
+        std::string infoJson = GetInfo();
 
-        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(json));
+        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(metadataJson), std::move(infoJson));
         if (!error_code)
         {
             Log::Error(error_code.message());
+
+            // TODO: send telemetry about failed sendings
         }
+
         exported &= error_code;
     }
 
@@ -662,6 +690,87 @@ std::string ProfileExporter::GetMetadata() const
             builder << ", ";
         }
     }
+    builder << "}}";
+
+    return builder.str();
+}
+
+
+
+// Example of expected info json with SSI data:
+//  "info": {
+//     ...,
+//     "profiler": {
+//        "version": "3.2.0",
+//        "ssi" : {
+//           "mechanism": "injected_agent",
+//         },
+//        "activation": "injection"
+//     }
+//  }
+//
+std::string ProfileExporter::GetInfo() const
+{
+    // in tests, the metadata provider might be null
+    if (_ssiManager == nullptr)
+    {
+        return "";
+    }
+
+    // TODO: check if we plan to update the metadata after the application starts
+    //       otherwise, we could cache the result once for all.
+
+    auto const& metadata = _metadataProvider->Get();
+    if (metadata.empty())
+    {
+        return "";
+    }
+    auto sectionCount = metadata.size();
+    auto currentSection = 0;
+
+    // the json schema is supposed to send sections under the systemInfo element
+    std::stringstream builder;
+    builder << "{ \"profiler\": ";
+    builder << "{";
+        // version value
+        builder << "\"version\":";
+        builder << "\"";
+        builder << PROFILER_VERSION;
+        builder << "\",";
+
+        // ssi sub section
+        builder << "\"ssi\":";
+        builder << "{";
+            builder << "\"mechanism\": ";
+            builder << "\"";
+            if (_ssiManager->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
+            {
+                builder << "injected_agent";
+            }
+            else
+            {
+                builder << "none";
+            }
+            builder << "\"";
+        builder << "},";
+
+        // activation value
+        builder << "\"activation\":";
+        builder << "\"";
+        if (_configuration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
+        {
+            builder << "manual";
+        }
+        else
+        if (_configuration->GetEnablementStatus() == EnablementStatus::Auto)
+        {
+            builder << "auto";
+        }
+        else
+        {
+            builder << "injection";
+        }
+        builder << "\"";
     builder << "}}";
 
     return builder.str();

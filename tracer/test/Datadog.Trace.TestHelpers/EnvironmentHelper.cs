@@ -128,7 +128,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 ("win", _, "X64", _) => ("dll", "win-x64"),
                 ("win", _, "X86", _) => ("dll", "win-x86"),
-                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, false) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, true) => ("so", "linux-musl-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),
@@ -453,66 +454,46 @@ namespace Datadog.Trace.TestHelpers
         public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true, bool usePublishWithRID = false)
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
-            var binDir = Path.Combine(
-                GetSampleProjectDirectory(),
-                "bin");
-
-            string outputDir;
+            var binDir = Path.Combine(GetSampleProjectDirectory(), "bin");
+            var artifactsBinDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "bin");
+            var artifactsPublishDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "publish");
 
             if (_samplesDirectory.Contains("aspnet"))
             {
-                outputDir = Path.Combine(
+                return Path.Combine(
                     binDir,
                     EnvironmentTools.GetBuildConfiguration(),
                     "publish");
             }
             else if (EnvironmentTools.GetOS() == "win" && !usePublishWithRID)
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework);
+                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
             }
             else if (usePublishWithRID)
             {
-                string rid;
-                if (IsAlpine())
-                {
-                    rid = $"{EnvironmentTools.GetOS()}-musl-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
-                }
-                else
-                {
-                    rid = $"{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
-                }
-
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework,
-                    rid,
-                    "publish");
+                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
             }
             else if (usePublishFolder)
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework,
-                    "publish");
+                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
             }
             else
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework);
+                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
             }
 
-            return outputDir;
+            string GetPivot()
+            {
+                var rid = (usePublishWithRID, IsAlpine()) switch
+                {
+                    (false, _) => string.Empty,
+                    (true, false) => $"_{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}",
+                    (true, true) => $"_{EnvironmentTools.GetOS()}-musl-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}",
+                };
+                var config = EnvironmentTools.GetBuildConfiguration().ToLowerInvariant();
+                var packageVersionPivot = string.IsNullOrEmpty(packageVersion) ? string.Empty : $"_{packageVersion}";
+                return $"{config}_{targetFramework}{packageVersionPivot}{rid}";
+            }
         }
 
         public string GetTargetFramework()

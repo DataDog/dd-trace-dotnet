@@ -246,15 +246,17 @@ namespace Datadog.Trace.Debugger
 
                         case ProbeLocationType.Method:
                         {
+                            SignatureParser.TryParse(probe.Where.Signature, out var signature);
+
                             fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
                             if (probe is SpanProbe)
                             {
-                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 spanProbes.Add(spanDefinition);
                             }
                             else
                             {
-                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, probe.Where.Signature?.Split(separator: ','));
+                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
                                 methodProbes.Add(nativeDefinition);
                                 ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
                                 SetRateLimit(probe);

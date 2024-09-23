@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public ImmutableTracerSettings(IConfigurationSource source)
-            : this(new TracerSettings(source, new ConfigurationTelemetry()), true)
+            : this(new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog()), true)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableTracerSettings_Ctor_Source);
         }
@@ -160,7 +161,7 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
-            IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
+            IsRunningMiniAgentInAzureFunctions = settings.IsRunningMiniAgentInAzureFunctions;
 
             IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
             LambdaMetadata = settings.LambdaMetadata;
@@ -189,6 +190,8 @@ namespace Datadog.Trace.Configuration
             // but we can't send it to the static collector, as this settings object may never be "activated"
             Telemetry = new ConfigurationTelemetry();
             settings.CollectTelemetry(Telemetry);
+
+            ErrorLog = settings.ErrorLog.Clone();
 
             // Record the final disabled settings values in the telemetry, we can't quite get this information
             // through the IntegrationTelemetryCollector currently so record it here instead
@@ -549,7 +552,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Azure Functions
         /// on a consumption plan
         /// </summary>
-        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+        internal bool IsRunningMiniAgentInAzureFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
@@ -621,12 +624,17 @@ namespace Datadog.Trace.Configuration
         internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
+        /// Gets the error logs that were collected from <see cref="TracerSettings"/> when this instance was built
+        /// </summary>
+        internal OverrideErrorLog ErrorLog { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
             !(IsRunningInAzureAppService
-           || IsRunningInAzureFunctionsConsumptionPlan
+           || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
 

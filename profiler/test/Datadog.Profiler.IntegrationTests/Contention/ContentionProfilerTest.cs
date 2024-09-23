@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,6 +37,11 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             // only contention profiler enabled so should only see the 2 related values per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
             Assert.True(SamplesHelper.IsLabelPresent(runner.Environment.PprofDir, "raw duration"));
+
+            if (framework == "net8.0")
+            {
+                AssertBlockingThreadLabel(runner.Environment.PprofDir);
+            }
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0" })]
@@ -54,6 +62,11 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             // only contention profiler enabled so should see 2 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
             Assert.NotEqual(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
+
+            if (framework == "net8.0")
+            {
+                AssertBlockingThreadLabel(runner.Environment.PprofDir);
+            }
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0" })]
@@ -70,6 +83,27 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             // only walltime profiler enabled so should see 1 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+        }
+
+        private static void AssertBlockingThreadLabel(string pprofDir)
+        {
+            var threadIds = SamplesHelper.GetThreadIds(pprofDir);
+            // get samples with lock-count value set and blocking thread info
+            var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count")
+                .Where(e => e.Labels.Any(x => x.Name == "blocking thread id"));
+
+            contentionSamples.Should().NotBeEmpty();
+
+            foreach (var (_, labels, _) in contentionSamples)
+            {
+                var blockingThreadIdLabel = labels.FirstOrDefault(l => l.Name == "blocking thread id");
+                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
+                threadIds.Should().Contain(int.Parse(blockingThreadIdLabel.Value), $"Unknown blocking thread id {blockingThreadIdLabel.Value}");
+
+                var blockingThreadNameLabel = labels.FirstOrDefault(l => l.Name == "blocking thread name");
+                blockingThreadIdLabel.Name.Should().NotBeNullOrWhiteSpace();
+                blockingThreadIdLabel.Value.Should().NotBeNullOrWhiteSpace();
+            }
         }
     }
 }

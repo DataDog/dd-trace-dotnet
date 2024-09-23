@@ -48,11 +48,11 @@ namespace iast
     }
 
     //------------------------------------
+    VersionInfo currentVersion = GetVersionInfo(GetDatadogVersion());
 
     DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line)
     {
         this->_dataflow = dataflow;
-        //[AspectClassAttribute("mscorlib,netstandard,System.Private.CoreLib",PROPAGATION,"")] Hdiv.AST.Aspects.Aspects.System_StringAspect
         this->_aspectsAssembly = aspectsAssembly;
         this->_line = line;
         size_t offset = 0;
@@ -60,7 +60,20 @@ namespace iast
         if (pos0 == std::string::npos) { return; }
         pos0 = offset;
         auto pos1 = IndexOf(line, WStr(")] "), &offset);
-        if (pos1 == std::string::npos) { return; }
+        if (pos1 == std::string::npos) 
+        {
+            //Check for version limitation
+            pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
+            auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
+            auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
+            auto version = GetVersionInfo(versionTxt);
+            if (Compare(currentVersion, version) < 0)
+            {
+                return; // Current version is lower than minimum required
+            }
+        }
         auto params = line.substr(pos0, pos1 - pos0);
 
         auto parts = SplitParams(params);
@@ -104,7 +117,6 @@ namespace iast
 
     DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line)
     {
-        //[AspectMethodReplaceAttribute("System.String::Concat(System.String,System.String)","",[0,1],[False,True],DEFAULT,"")] 100663375|100663444
         this->_aspectClass = aspectClass;
         this->_line = line;
         size_t offset = 0;
@@ -115,10 +127,24 @@ namespace iast
         if (pos1 == std::string::npos) { return; }
         auto aspectAttribute = line.substr(pos0, pos1 - pos0);
         _behavior = ParseAspectApplication(aspectAttribute);
+        if (_behavior == AspectBehavior::Unknown) { return; }
 
         pos0 = offset;
         pos1 = IndexOf(line, WStr(")] "), &offset);
-        if (pos1 == std::string::npos) { return; }
+        if (pos1 == std::string::npos)
+        {
+            // Check for version limitation
+            pos1 = IndexOf(line, WStr(");V"), &offset);
+            if (pos1 == std::string::npos) { return; }
+            auto pos2 = IndexOf(line, WStr("] "), &offset);
+            if (pos2 == std::string::npos) { return; }
+            auto versionTxt = shared::ToString(line.substr(pos1 + 3, pos2 - pos1 - 3));
+            auto version = GetVersionInfo(versionTxt);
+            if (Compare(currentVersion, version) < 0)
+            {
+                return; // Current version is lower than minimum required
+            }
+        }
         auto params = line.substr(pos0, pos1 - pos0);
         auto parts = SplitParams(params);
 
@@ -172,7 +198,7 @@ namespace iast
         _aspectMethodParams = aspectMethod.substr(pos0);
 
         _isVirtual = _targetType.length() > 0 && _targetMethodType != _targetType;
-        _isGeneric = Contains(_targetMethod, WStr("!!"));
+        _isGeneric = Contains(_aspectMethodParams, WStr("!!"));
         _isValid = true;
     }
 
@@ -321,15 +347,6 @@ namespace iast
         }
     }
 
-    void DataflowAspectReference::ResolveAspect()
-    {
-        if (_aspectMemberRef == 0)
-        {
-            //Import aspect
-            _aspectMemberRef = _module->DefineMemberRef(_aspect->_aspectClass->_aspectsAssembly, _aspect->_aspectClass->_aspectTypeName, _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
-        }
-    }
-
     std::string DataflowAspectReference::GetAspectTypeName()
     {
         return shared::ToString(_aspect->_aspectClass->_aspectTypeName);
@@ -347,9 +364,31 @@ namespace iast
         return _aspect->GetVulnerabilityTypes();
     }
 
-    mdMemberRef DataflowAspectReference::GetAspectMemberRef()
+    mdToken DataflowAspectReference::GetAspectMemberRef(MethodSpec* methodSpec)
     {
-        ResolveAspect();
+        if (_aspectMemberRef == 0)
+        {
+            // Import aspect
+            _aspectMemberRef = _module->DefineMemberRef(_aspect->_aspectClass->_aspectsAssembly,
+                                                        _aspect->_aspectClass->_aspectTypeName,
+                                                        _aspect->_aspectMethodName, _aspect->_aspectMethodParams);
+        }
+
+        if (_aspect->IsGeneric() && _aspectMemberRef != 0 && methodSpec != nullptr)
+        {
+            // Retrieve aspect method spec
+            auto it = _aspectMethodSpecs.find(methodSpec->GetMethodSpecId());
+            if (it == _aspectMethodSpecs.end())
+            {
+                // Create the MethodSpec
+                auto aspectMethodSpec = _module->DefineMethodSpec(_aspectMemberRef, methodSpec->GetMethodSpecSignature());
+                _aspectMethodSpecs[methodSpec->GetMethodSpecId()] = aspectMethodSpec;
+                return aspectMethodSpec;
+            }
+
+            return it->second;
+        }
+
         return _aspectMemberRef;
     }
 
@@ -409,9 +448,10 @@ namespace iast
         bool process = false;
         std::vector<InstructionProcessInfo> instructionsToProcess;
 
+        MethodSpec* methodSpec = nullptr; 
         if (TypeFromToken(operand) == mdtMethodSpec && !IsTargetMethod(operand))
         {
-            MethodSpec* methodSpec = module->GetMethodSpec(operand);
+            methodSpec = module->GetMethodSpec(operand);
             if (methodSpec != nullptr && methodSpec->GetGenericMethod() != nullptr)
             {
                 operand = methodSpec->GetGenericMethod()->GetMemberId();
@@ -479,26 +519,24 @@ namespace iast
 
                 //Replace call function with aspect
 
-                mdMemberRef methodRef;
-                int spotInfoId = GetSpotInfoId(method, instructionToProcess.instruction->GetLine(), &methodRef);
-
-                if (methodRef == 0) { continue; } //Disabled Spot
+                mdToken memberRef = GetAspectMemberRef(methodSpec);
+                if (memberRef == 0) { continue; } //Disabled Spot
                 if (instructionToProcess.behavior == AspectBehavior::InsertBefore)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, memberRef, true);
                     processor->InsertBefore(instructionToProcess.instruction, aspectInstruction);
                 }
                 else if (instructionToProcess.behavior == AspectBehavior::InsertAfter)
                 {
-                    aspectInstruction = processor->NewILInstr(CEE_CALL, methodRef);
+                    aspectInstruction = processor->NewILInstr(CEE_CALL, memberRef, true);
                     auto inserted = processor->InsertAfter(instructionToProcess.instruction, aspectInstruction);
 
                     if (_aspect->_boxParam[instructionToProcess.paramIndex])
                     {
                         // Retrieve type of the valueType in target argument
                         auto paramType = _targetParamTypeToken[instructionToProcess.paramIndex];
-                        processor->InsertBefore(aspectInstruction, processor->NewILInstr(CEE_BOX, paramType));
-                        inserted = processor->InsertAfter(aspectInstruction, processor->NewILInstr(CEE_UNBOX_ANY, paramType));
+                        processor->InsertBefore(aspectInstruction, processor->NewILInstr(CEE_BOX, paramType, true));
+                        inserted = processor->InsertAfter(aspectInstruction, processor->NewILInstr(CEE_UNBOX_ANY, paramType, true));
                     }
 
                     if (instructionToProcess.instruction == instruction)
@@ -525,7 +563,7 @@ namespace iast
                                      paramCount - _aspect->_paramShift[x] - 1)) // Locate param load instruction
                             {
                                 auto paramType = _targetParamTypeToken[x];
-                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType));
+                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType, true));
 
                                 // Figure out if param is byref
                                 if (iInfo->IsArgument())
@@ -534,7 +572,7 @@ namespace iast
                                     auto param = sig->_params[iInfo->_instruction->m_Arg32];
                                     if (param->IsByRef())
                                     {
-                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType));
+                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType, true));
                                     }
                                 }
 
@@ -545,7 +583,7 @@ namespace iast
 
                     aspectInstruction = instructionToProcess.instruction;
                     instructionToProcess.instruction->m_opcode = CEE_CALL;
-                    instructionToProcess.instruction->m_Arg32 = methodRef;
+                    instructionToProcess.instruction->m_Arg32 = memberRef;
                 }
             }
         }

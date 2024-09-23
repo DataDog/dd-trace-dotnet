@@ -64,4 +64,16 @@ public class HashTests
         var hashCode = vulnerability.GetHashCode();
         Assert.Equal(expectedHash, hashCode);
     }
+
+    [Theory]
+    [InlineData(VulnerabilityTypeName.InsecureCookie, "AspNetCoreRateLimit.RateLimitProcessor", false, -304624042)]
+    [InlineData(VulnerabilityTypeName.InsecureCookie, "AspNetCoreRateLimit.RateLimitProcessor", true, 990913114)]
+    [InlineData(VulnerabilityTypeName.InsecureCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", true, 990913114)]
+    [InlineData(VulnerabilityTypeName.NoSameSiteCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", false, 1003850134)]
+    [InlineData(VulnerabilityTypeName.NoSameSiteCookie, "AspNetCore.Views_Iast_ReflectedXss+<<ExecuteAsync>b__8_1>d", true, -636226626)]
+    [InlineData(VulnerabilityTypeName.NoSameSiteCookie, "AspNetCoreRateLimit.RateLimitProcessor", true, -636226626)]
+    public void GivenACookie_WhenCalculatedHash_ValueIsExpected(string vulnName, string cookieName, bool isFiltered, int hash)
+    {
+        IastModule.GetCookieHash(vulnName, cookieName, isFiltered).Should().Be(hash);
+    }
 }

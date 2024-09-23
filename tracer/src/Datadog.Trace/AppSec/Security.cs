@@ -8,8 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
@@ -34,7 +36,6 @@ namespace Datadog.Trace.AppSec
     internal class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
-
         private static Security? _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
@@ -52,6 +53,7 @@ namespace Datadog.Trace.AppSec
         private bool _spanMetaStructs;
         private string? _blockedHtmlTemplateCache;
         private string? _blockedJsonTemplateCache;
+        private HashSet<string>? _activeAddresses;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -77,7 +79,7 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var subscriptionsKeys = new List<string>();
-                if (_settings.CanBeToggled)
+                if (_settings.CanBeToggled || _settings.Enabled)
                 {
                     subscriptionsKeys.Add(RcmProducts.AsmFeatures);
                 }
@@ -90,6 +92,7 @@ namespace Datadog.Trace.AppSec
                 SubscribeToChanges(subscriptionsKeys.ToArray());
 
                 SetRemoteConfigCapabilites();
+                UpdateActiveAddresses();
             }
             catch (Exception ex)
             {
@@ -142,11 +145,38 @@ namespace Datadog.Trace.AppSec
 
         internal string? DdlibWafVersion => _waf?.Version;
 
-        internal bool TrackUserEvents => Enabled && Settings.UserEventsAutomatedTracking != "disabled";
+        internal bool IsTrackUserEventsEnabled =>
+            Enabled && CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
-        internal bool IsExtendedUserTrackingEnabled => Settings.UserEventsAutomatedTracking == SecuritySettings.UserTrackingExtendedMode;
+        internal bool IsAnonUserTrackingMode => CalculateIsAnonUserTrackingMode(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
         internal ApiSecurity ApiSecurity { get; }
+
+        internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
+        {
+            if (remote is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode)
+            {
+                return true;
+            }
+
+            if (remote is SecuritySettings.UserTrackingDisabled or not null)
+            {
+                return false;
+            }
+
+            // local can never be null, we handle the default in the setting class (so it will be recorded by telemetry)
+            return local is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode;
+        }
+
+        internal static bool CalculateIsAnonUserTrackingMode(string? remote, string local)
+        {
+            if (remote != null)
+            {
+                return remote is SecuritySettings.UserTrackingAnonMode;
+            }
+
+            return local == SecuritySettings.UserTrackingAnonMode;
+        }
 
         internal void SubscribeToChanges(params string[] productNames)
         {
@@ -161,6 +191,11 @@ namespace Datadog.Trace.AppSec
                 _rcmSubscription = new Subscription(UpdateFromRcm, productNames.ToArray());
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
             }
+        }
+
+        internal ApplyDetails[] UpdateFromRcmForTest(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
+        {
+            return UpdateFromRcm(configsByProduct, null);
         }
 
         private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
@@ -186,6 +221,7 @@ namespace Datadog.Trace.AppSec
                     {
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
+                        UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
@@ -205,6 +241,7 @@ namespace Datadog.Trace.AppSec
                         }
 
                         _configurationStatus.ResetUpdateMarkers();
+                        UpdateActiveAddresses();
                     }
                 }
             }
@@ -221,12 +258,13 @@ namespace Datadog.Trace.AppSec
                 productsCount += config.Value.Count;
             }
 
+            bool onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
             var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
             int index = 0;
 
-            if (string.IsNullOrEmpty(finalError))
+            if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
             {
                 foreach (var config in configsByProduct.Values.SelectMany(v => v))
                 {
@@ -242,6 +280,26 @@ namespace Datadog.Trace.AppSec
             }
 
             return applyDetails;
+        }
+
+        internal static bool HasOnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object>? errors)
+        {
+            if (errors is not null && errors.Count > 0)
+            {
+                // if all the errors start with "unknown matcher:", we should not report the error
+                // It will happen if the WAF version used does not support new operators defined in the rules
+                foreach (var error in errors)
+                {
+                    if (!error.Key.ToLower().StartsWith("unknown matcher:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         internal BlockingAction GetBlockingAction(string[]? requestAcceptHeaders, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
@@ -441,6 +499,23 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
+            // follows a different pattern to rest of ASM remote config, if available it's the RC value
+            // that takes precedence. This follows what other products do.
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
+        }
+
+        private bool WafSupportsCapability(BigInteger capability)
+        {
+            return RCMCapabilitiesHelper.WafSupportsCapability(capability, _waf?.Version);
         }
 
         private void InitWafAndInstrumentations(bool configurationFromRcm = false)
@@ -572,6 +647,40 @@ namespace Datadog.Trace.AppSec
             }
 
             return _spanMetaStructs;
+        }
+
+        internal void UpdateActiveAddresses()
+        {
+            // So far, RASP is the only one that uses this
+            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            {
+                var addresses = _waf.GetKnownAddresses();
+                Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
+                _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+            }
+            else
+            {
+                _activeAddresses = null;
+            }
+        }
+
+        internal bool AddressEnabled(string address)
+        {
+            // So far, RASP is the only one that uses this
+            if (!_settings.RaspEnabled)
+            {
+                return false;
+            }
+
+            if (_waf?.IsKnowAddressesSuported() == true)
+            {
+                return _activeAddresses?.Contains(address) ?? false;
+            }
+            else
+            {
+                // If we don't support knowAddresses, we will have to call the WAF
+                return true;
+            }
         }
     }
 }

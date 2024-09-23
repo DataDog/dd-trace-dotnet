@@ -23,6 +23,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.IntegrationTests.Checks;
 
 #pragma warning disable CS0436 // Type conflicts with imported type
 
+// Some of these tests use SSI variables, so we have to explicitly reset them
+[EnvironmentRestorer("DD_INJECTION_ENABLED")]
 [Collection(nameof(ConsoleTestsCollection))]
 public class ProcessBasicChecksTests : ConsoleTestHelper
 {
@@ -33,6 +35,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     private const string CorProfilerPath32Key = "CORECLR_PROFILER_PATH_32";
     private const string CorProfilerPath64Key = "CORECLR_PROFILER_PATH_64";
     private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
+    private const string LogDirectoryKey = "DD_TRACE_LOG_DIRECTORY";
 
     private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
@@ -231,7 +234,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
         {
-            archFolder = "linux-arm64";
+            archFolder = Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
         }
         else
         {
@@ -243,6 +246,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         using var helper = await StartConsole(
                                enableProfiler: true,
                                ("DD_PROFILING_ENABLED", "1"),
+                               (LogDirectoryKey, this.LogDirectory),
                                ("LD_PRELOAD", apiWrapperPath));
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
@@ -329,16 +333,46 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     }
 
     [SkippableTheory]
-    [InlineData(true)]
-    [InlineData(false)]
-    [InlineData(null)]
-    public async Task DetectContinousProfilerState(bool? enabled)
+    [InlineData("auto", null)]
+    [InlineData("1", null)]
+    [InlineData("0", null)]
+    [InlineData(null, null)]
+    [InlineData("auto", false)]
+    [InlineData("1", false)]
+    [InlineData("0", false)]
+    [InlineData(null, false)]
+    [InlineData("auto", true)]
+    [InlineData("1", true)]
+    [InlineData("0", true)]
+    [InlineData(null, true)]
+    public async Task DetectContinuousProfilerState(string enabled, bool? ssiInjectionEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        var environmentVariables = enabled == null ? Array.Empty<(string, string)>()
-            : new[] { ("DD_PROFILING_ENABLED", enabled == true ? "1" : "0") };
+        var ssiInjection = ssiInjectionEnabled is null
+                               ? null
+                               : ssiInjectionEnabled == true ? "tracer,profiler" : "tracer";
 
-        using var helper = await StartConsole(enableProfiler: true, environmentVariables);
+        var expected = (enabled, ssiInjectionEnabled) switch
+        {
+            ("0", _) => ContinuousProfilerDisabled,
+            ("1", _) => ContinuousProfilerEnabled,
+            ("auto", _) => ContinuousProfilerEnabledWithHeuristics,
+            (null, null) => ContinuousProfilerNotSet,
+            (null, true) => ContinuousProfilerSsiEnabledWithHeuristics,
+            (null, false) => ContinuousProfilerSsiMonitoring,
+            _ => throw new InvalidOperationException("Unexpected test combination"),
+        };
+
+        (string, string)[] envVars = (enabled, ssiInjection) switch
+        {
+            (null, null) => [],
+            ({ } prof, null) => [("DD_PROFILING_ENABLED", prof)],
+            (null, { } ssi) => [("DD_INJECTION_ENABLED", ssi)],
+            ({ } prof, { } ssi) => [("DD_PROFILING_ENABLED", prof), ("DD_INJECTION_ENABLED", ssi)],
+        };
+
+        using var helper = await StartConsole(enableProfiler: true, envVars);
+
         var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
         processInfo.Should().NotBeNull();
@@ -350,18 +384,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         using var scope = new AssertionScope();
         scope.AddReportable("Output", console.Output);
 
-        if (enabled == null)
-        {
-            console.Output.Should().Contain(ContinuousProfilerNotSet);
-        }
-        else if (enabled == true)
-        {
-            console.Output.Should().Contain(ContinuousProfilerEnabled);
-        }
-        else
-        {
-            console.Output.Should().Contain(ContinuousProfilerDisabled);
-        }
+        console.Output.Should().Contain(expected);
     }
 
     [SkippableFact]
@@ -469,7 +492,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             {
                 ("win", _, "X64", _) => ("dll", "win-x64"),
                 ("win", _, "X86", _) => ("dll", "win-x86"),
-                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, false) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, true) => ("so", "linux-musl-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),

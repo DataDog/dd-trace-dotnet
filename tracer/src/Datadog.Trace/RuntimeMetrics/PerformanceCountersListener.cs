@@ -55,6 +55,7 @@ namespace Datadog.Trace.RuntimeMetrics
             // That's because performance counters may rely on wmiApSrv being started,
             // and the windows service manager only allows one service at a time to be starting: https://docs.microsoft.com/en-us/windows/win32/services/service-startup
             _initializationTask = Task.Run(InitializePerformanceCounters);
+            _initializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in performance counter initialization task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public Task WaitForInitialization() => _initializationTask;

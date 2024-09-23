@@ -82,6 +82,8 @@ public class RaspWafTests : WafLibraryRequiredTest
     [InlineData("select * from employees where name = 'John' or '1' = '1'", "John' or '1' = '1", "rasp-942-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DBStatement)]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
     [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("ls; echo hello", "echo hello", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
+    [InlineData("ls &> file; echo hello", "&> file", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     public void GivenARaspRule_WhenInsecureAccess_ThenBlock(string value, string paramValue, string rule, string action, string actionType, string address)
     {
         ExecuteRule(

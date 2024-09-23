@@ -14,20 +14,19 @@ namespace Datadog.Trace.Iast;
 
 internal static partial class IastModule
 {
-    public static string? OnXssEscape(string? text)
+    public static string? OnXssEscape(string? text, string? encoded)
     {
-        var res = WebUtility.HtmlEncode(text);
         try
         {
-            if (!iastSettings.Enabled || string.IsNullOrEmpty(text))
+            if (!IastSettings.Enabled || string.IsNullOrEmpty(text))
             {
-                return res;
+                return encoded;
             }
 
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Xss))
             {
-                return res;
+                return encoded;
             }
 
             var scope = tracer.ActiveScope as Scope;
@@ -35,13 +34,13 @@ internal static partial class IastModule
 
             if (traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() != true)
             {
-                return res;
+                return encoded;
             }
 
             var tainted = traceContext?.IastRequestContext?.GetTainted(text!);
             if (tainted is null)
             {
-                return res;
+                return encoded;
             }
 
             // Add the mark (exclusion) to the tainted ranges
@@ -52,6 +51,6 @@ internal static partial class IastModule
             Log.Error(ex, "Error while escaping string for XSS.");
         }
 
-        return res;
+        return encoded;
     }
 }

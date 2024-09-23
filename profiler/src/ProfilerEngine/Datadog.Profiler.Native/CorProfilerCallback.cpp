@@ -27,6 +27,9 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#ifdef LINUX
+#include "CpuProfilerDisableScope.h"
+#endif
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -48,6 +51,7 @@
 #include "RuntimeInfo.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
+#include "SsiManager.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -106,7 +110,7 @@ CorProfilerCallback::~CorProfilerCallback()
 #endif
 }
 
-bool CorProfilerCallback::InitializeServices()
+void CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
 
@@ -145,7 +149,7 @@ bool CorProfilerCallback::InitializeServices()
         return _pCodeHotspotsThreadList->Count();
     });
 
-    auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
+    _pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
 
@@ -156,14 +160,14 @@ bool CorProfilerCallback::InitializeServices()
             _pFrameStore.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore,
+            _pRuntimeIdStore,
             _pConfiguration.get(),
             MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), MemoryResourceManager::GetDefault());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
@@ -178,7 +182,7 @@ bool CorProfilerCallback::InitializeServices()
         }
 #endif
         _pCpuTimeProvider = RegisterService<CpuTimeProvider>(
-            valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get(), memoryResource);
+            valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), _pRuntimeIdStore, _pConfiguration.get(), memoryResource);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -191,7 +195,7 @@ bool CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore,
+            _pRuntimeIdStore,
             _metricsRegistry,
             CallstackProvider(_memoryResourceManager.GetDefault()),
             MemoryResourceManager::GetDefault());
@@ -212,18 +216,19 @@ bool CorProfilerCallback::InitializeServices()
                     _pFrameStore.get(),
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
-                    pRuntimeIdStore,
+                    _pRuntimeIdStore,
                     _pConfiguration.get(),
                     _metricsRegistry);
 
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                    false, // not .NET Framework
                     valueTypeProvider,
                     _pCorProfilerInfo,
                     _pManagedThreadList,
                     _pFrameStore.get(),
                     _pThreadsCpuManager,
                     _pAppDomainStore.get(),
-                    pRuntimeIdStore,
+                    _pRuntimeIdStore,
                     _pConfiguration.get(),
                     _pLiveObjectsProvider,
                     _metricsRegistry,
@@ -246,13 +251,14 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                false, // not .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
@@ -270,7 +276,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -285,7 +291,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 MemoryResourceManager::GetDefault()
             );
@@ -294,7 +300,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault()
@@ -330,13 +336,14 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                true, // is .NET Framework
                 valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 nullptr, // no listener
                 _metricsRegistry,
@@ -353,7 +360,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 CallstackProvider(_memoryResourceManager.GetDefault()),
@@ -367,7 +374,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 MemoryResourceManager::GetDefault());
 
@@ -376,7 +383,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore,
+                _pRuntimeIdStore,
                 _pConfiguration.get(),
                 _metricsRegistry,
                 MemoryResourceManager::GetDefault());
@@ -463,7 +470,7 @@ bool CorProfilerCallback::InitializeServices()
     }
 #endif
 
-    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
+    _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get(), _pSsiManager.get());
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
@@ -475,7 +482,9 @@ bool CorProfilerCallback::InitializeServices()
         _pEnabledProfilers.get(),
         _metricsRegistry,
         _pMetadataProvider.get(),
-        _pAllocationsRecorder.get());
+        _pSsiManager.get(),
+        _pAllocationsRecorder.get()
+        );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pCpuTimeProvider != nullptr &&
@@ -571,17 +580,50 @@ bool CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
     }
+}
 
-    Log::Info("{{{{ starting services");
-    auto started = StartServices();
-    Log::Info("{{{{ services started ");
-    if (!started)
+
+// Single Step Instrumentation heuristics are triggered so profiling can start
+void CorProfilerCallback::OnStartDelayedProfiling()
+{
+    // check race conditions for shutdown
+    if (!_isInitialized.load())
     {
-        Log::Error("One or multiple services failed to start. Stopping all services.");
-        StopServices();
+        return;
     }
 
-    return started;
+    // if not enabled via SSI, just get out
+    if (!(
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled) ||
+        (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+        ))
+    {
+        return;
+    }
+
+    if (StartServices())
+    {
+        Log::Info("Profiler is started after a delay.");
+
+        StartEtwCommunication();
+    }
+    else
+    {
+        Log::Error("Profiler failed to start after a delay.");
+    }
+}
+
+void CorProfilerCallback::StartEtwCommunication()
+{
+    _isETWStarted = true;
+    auto success = _pEtwEventsManager->Start();
+    if (!success)
+    {
+        Log::Error("Failed to contact the Datadog Agent named pipe dedicated to profiling. Try to install the latest version.");
+
+        _pEtwEventsManager->Stop();
+        _pEtwEventsManager = nullptr;
+    }
 }
 
 bool CorProfilerCallback::StartServices()
@@ -1018,6 +1060,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
+    _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
+    _pSsiManager->ProcessStart();
+
     double coresThreshold = _pConfiguration->MinimumCores();
     double cpuLimit = 0;
     if (!OpSysTools::IsSafeToStartProfiler(coresThreshold, cpuLimit))
@@ -1134,15 +1179,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
 
-    // Init global services:
-    if (!InitializeServices())
-    {
-        Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
-        return E_FAIL;
-    }
+    // create services without starting them
+    InitializeServices();
 
     // Configure which profiler callbacks we want to receive by setting the event mask:
-    DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
+    DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -1227,9 +1268,46 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
     }
 
-    // Initialization complete:
+    // the Tracer needs to know that the Profiler is here to enable code hotspots
     _isInitialized.store(true);
     ProfilerEngineStatus::WriteIsProfilerEngineActive(true);
+
+    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation &&
+        _pConfiguration->GetEnablementStatus() != EnablementStatus::ManuallyEnabled)
+    {
+        _pSamplesCollector->Start();
+        _pRuntimeIdStore->Start();
+    }
+
+    // if the profiler is not enabled (either manually or via SSI), nothing is profiled
+    if (!_pSsiManager->IsProfilerEnabled())
+    {
+        Log::Info("Profiler is not enabled: nothing will be profiled.");
+        return S_OK;
+    }
+
+    // Start services only if the profiler is activated
+    // For SSI deployment, the services will be started later based on heuristics
+    if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled)
+    {
+        auto started = StartServices();
+        if (!started)
+        {
+            Log::Error("One or multiple services failed to start. Stopping all services.");
+            StopServices();
+
+            Log::Error("Failed to initialize all services (at least one failed). Stopping the profiler initialization.");
+            return E_FAIL;
+        }
+    }
+    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::SsiEnabled)
+    {
+        Log::Info("Profiler is enabled by SSI. Services will be started later.");
+    }
+    else if (_pConfiguration->GetEnablementStatus() == EnablementStatus::Auto)
+    {
+        Log::Info("Profiler is installed by SSI and automatically enabled. Services will be started later.");
+    }
 
     return S_OK;
 }
@@ -1243,6 +1321,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     _pStackSamplerLoopManager->Stop();
 
     _pSamplesCollector->Stop();
+
+    // wait until the last .pprof is generated to send the telemetry metrics
+    _pSsiManager->ProcessEnd();
 
     // Calling Stop on providers transforms the last raw samples
     if (_pWallTimeProvider != nullptr)
@@ -1304,6 +1385,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
+    {
+        auto runtimeId = _pRuntimeIdStore->GetId(appDomainId);
+        _pExporter->RegisterApplication(runtimeId);
+    }
+
     return S_OK;
 }
 
@@ -1438,17 +1525,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    if (!_isETWStarted && (_pEtwEventsManager != nullptr))
+    // Since SSI deployment mode is Linux only, only start the ETW communication if the profiler is manually enabled
+    // TODO: when SSI will be supported on Windows, we will need to start the ETW communication like the other services that are delayed start
+    //       -> Look at OnStartDelayedProfiling()
+    if (_pConfiguration->GetEnablementStatus() == EnablementStatus::ManuallyEnabled && !_isETWStarted && (_pEtwEventsManager != nullptr))
     {
-        _isETWStarted = true;
-        auto success = _pEtwEventsManager->Start();
-        if (!success)
-        {
-            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version.");
-
-            _pEtwEventsManager->Stop();
-            _pEtwEventsManager = nullptr;
-        }
+        StartEtwCommunication();
     }
 
     if (_pThreadLifetimeProvider != nullptr)
@@ -1538,11 +1620,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
-#ifdef LINUX
     auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     // CurrentThreadInfo relies on the assumption that the native thread calling ThreadAssignedToOSThread/ThreadDestroyed
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
+
+#ifdef LINUX
 
     if (_pCpuProfiler != nullptr)
     {
@@ -1729,8 +1812,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
         return S_OK;
     }
 
-    if (_pConfiguration->IsExceptionProfilingEnabled())
+    if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
+#ifdef LINUX
+        // Disable timer_create-based CPU profiler if needed
+        // When scope goes out of scope, the CPU profiler will be reenabled for
+        // pThreadInfo thread
+
+        auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+        auto scope = CpuProfilerDisableScope(pThreadInfo.get());
+#endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 
@@ -1944,7 +2035,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    if (_pEventPipeEventsManager != nullptr)
+    if (_pEventPipeEventsManager != nullptr && _pSsiManager->IsProfilerStarted())
     {
         _pEventPipeEventsManager->ParseEvent(
             provider,

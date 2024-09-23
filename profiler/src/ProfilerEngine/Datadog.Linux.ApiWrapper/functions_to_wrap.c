@@ -58,7 +58,7 @@ enum FUNCTION_ID
 // counters: one byte per function
 __thread unsigned long long functions_entered_counter = 0;
 
-__attribute__((visibility("hidden"))) 
+__attribute__((visibility("hidden")))
 atomic_int is_app_crashing = 0;
 
 // this function is called by the profiler
@@ -179,12 +179,22 @@ char* getSubfolder(const char* path)
 
 static void check_init();
 
+static char* originalMiniDumpName = NULL;
+static const char* datadogCrashMarker = "datadog_crashtracking";
+#define DD_CRASHTRACKING_ENABLED "DD_CRASHTRACKING_ENABLED"
+#define DD_INTERNAL_CRASHTRACKING_PASSTHROUGH "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH"
+#define DOTNET_DbgEnableMiniDump "DOTNET_DbgEnableMiniDump"
+#define COMPlus_DbgEnableMiniDump "COMPlus_DbgEnableMiniDump"
+#define DOTNET_DbgMiniDumpName "DOTNET_DbgMiniDumpName"
+#define COMPlus_DbgMiniDumpName "COMPlus_DbgMiniDumpName"
+#define DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME "DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME"
+
 __attribute__((constructor))
 void initLibrary(void)
 {
     check_init();
 
-    const char* crashHandlerEnabled = getenv("DD_TRACE_CRASH_HANDLER_ENABLED");
+    const char* crashHandlerEnabled = getenv(DD_CRASHTRACKING_ENABLED);
 
     if (crashHandlerEnabled != NULL)
     {
@@ -197,109 +207,108 @@ void initLibrary(void)
         }
     }
 
+    // Bash provides its own version of the getenv/setenv functions
+    // Fetch the original ones and use those instead
+    char *(*real_getenv)(const char *) = __dd_dlsym(RTLD_NEXT, "getenv");
+    int (*real_setenv)(const char *, const char *, int) = __dd_dlsym(RTLD_NEXT, "setenv");
+
+    if (real_getenv == NULL || real_setenv == NULL)
+    {
+        return;
+    }
+
     // If crashtracking is enabled, check the value of DOTNET_DbgEnableMiniDump
     // If set, set DD_TRACE_CRASH_HANDLER_PASSTHROUGH to indicate dd-dotnet that it should call createdump
     // If not set, set it to 1 so that .NET calls createdump in case of crash
     // (and we will redirect the call to dd-dotnet)
-    const char* crashHandlerEnv = getenv("DD_TRACE_CRASH_HANDLER");
+    // The path to the crash handler is not set, try to deduce it  
+    const char* libraryPath = getLibraryPath();
 
-    if (crashHandlerEnv == NULL || crashHandlerEnv[0] == '\0')
-    {
-        // The path to the crash handler is not set, try to deduce it
-        const char* libraryPath = getLibraryPath();
+    if (libraryPath != NULL)
+    {            
+        // If the library is in linux-x64 or linux-musl-x64, we use that folder
+        // Otherwise, if the library is in continuousprofiler, we have to call isAlpine()
+        // and use either ../linux-x64/ or ../linux-musl-x64/, or their ARM64 equivalent
+        char* subFolder = getSubfolder(libraryPath);
 
-        if (libraryPath != NULL)
-        {            
-            // If the library is in linux-x64 or linux-musl-x64, we use that folder
-            // Otherwise, if the library is in continuousprofiler, we have to call isAlpine()
-            // and use either ../linux-x64/ or ../linux-musl-x64/, or their ARM64 equivalent
-            char* subFolder = getSubfolder(libraryPath);
+        if (subFolder != NULL)
+        {
+            char* newCrashHandler = NULL;
 
-            if (subFolder != NULL)
+            if (strcmp(subFolder, DdDotnetFolder) == 0
+                || strcmp(subFolder, DdDotnetMuslFolder) == 0)
             {
-                char* newCrashHandler = NULL;
+                // We use the dd-dotnet in that same folder
+                char* folder = getFolder(libraryPath);
 
-                if (strcmp(subFolder, DdDotnetFolder) == 0
-                    || strcmp(subFolder, DdDotnetMuslFolder) == 0)
+                if (folder != NULL)
                 {
-                    // We use the dd-dotnet in that same folder
-                    char* folder = getFolder(libraryPath);
-
-                    if (folder != NULL)
-                    {
-                        asprintf(&newCrashHandler, "%s/dd-dotnet", folder);
-                        free(folder);
-                    }
+                    asprintf(&newCrashHandler, "%s/dd-dotnet", folder);
+                    free(folder);
                 }
-                else
+            }
+            else
+            {
+                char* folder = getFolder(libraryPath);
+
+                if (folder != NULL)
                 {
-                    char* folder = getFolder(libraryPath);
+                    const char* currentDdDotnetFolder;
 
-                    if (folder != NULL)
+                    if (isAlpine() == 0)
                     {
-                        const char* currentDdDotnetFolder;
-
-                        if (isAlpine() == 0)
-                        {
-                            currentDdDotnetFolder = DdDotnetFolder;
-                        }
-                        else
-                        {
-                            currentDdDotnetFolder = DdDotnetMuslFolder;
-                        }
-
-                        if (strcmp(subFolder, "continuousprofiler") == 0)
-                        {
-                            // If we're in continuousprofiler, we need to go up one folder
-                            asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
-                        }
-                        else
-                        {
-                            // Assume we're at the root
-                            asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
-                        }
-                        
-                        free(folder);
-                    }
-                }
-
-                free(subFolder);
-
-                if (newCrashHandler != NULL)
-                {
-                    // Make sure the file exists and has execute permissions
-                    if (access(newCrashHandler, X_OK) == 0)
-                    {
-                        crashHandler = newCrashHandler;
+                        currentDdDotnetFolder = DdDotnetFolder;
                     }
                     else
                     {
-                        free(newCrashHandler);
+                        currentDdDotnetFolder = DdDotnetMuslFolder;
                     }
+
+                    if (strcmp(subFolder, "continuousprofiler") == 0)
+                    {
+                        // If we're in continuousprofiler, we need to go up one folder
+                        asprintf(&newCrashHandler, "%s/../%s/dd-dotnet", folder, currentDdDotnetFolder);
+                    }
+                    else
+                    {
+                        // Assume we're at the root
+                        asprintf(&newCrashHandler, "%s/%s/dd-dotnet", folder, currentDdDotnetFolder);
+                    }
+                        
+                    free(folder);
+                }
+            }
+
+            free(subFolder);
+
+            if (newCrashHandler != NULL)
+            {
+                // Make sure the file exists and has execute permissions
+                if (access(newCrashHandler, X_OK) == 0)
+                {
+                    crashHandler = newCrashHandler;
+                }
+                else
+                {
+                    free(newCrashHandler);
                 }
             }
         }
     }
-    else
-    {
-        // The environment variables can change during the lifetime of the process,
-        // so make a copy of the string
-        crashHandler = strdup(crashHandlerEnv);
-    }
 
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
-        char* enableMiniDump = getenv("DOTNET_DbgEnableMiniDump");
+        char* enableMiniDump = real_getenv(DOTNET_DbgEnableMiniDump);
 
         if (enableMiniDump == NULL)
         {
-            enableMiniDump = getenv("COMPlus_DbgEnableMiniDump");
+            enableMiniDump = real_getenv(COMPlus_DbgEnableMiniDump);
         }
 
         if (enableMiniDump != NULL && enableMiniDump[0] == '1')
         {
-            // If DOTNET_DbgEnableMiniDump is set, the crash handler should call createdump when done
-            char* passthrough = getenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH");
+            // Passthrough is expected by dd-dotnet to know whether it should forward the call to createdump
+            char* passthrough = real_getenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH);
 
             if (passthrough == NULL || passthrough[0] == '\0')
             {
@@ -308,17 +317,40 @@ void initLibrary(void)
                 //  - dotnet run sets DOTNET_DbgEnableMiniDump=1
                 //  - dotnet then launches the target app
                 //  - the target app thinks DOTNET_DbgEnableMiniDump has been set by the user and enables passthrough
-                setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "1", 1);
+                real_setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "1", 1);
             }
         }
         else
         {
             // If DOTNET_DbgEnableMiniDump is not set, we set it so that the crash handler is called,
             // but we instruct it to not call createdump afterwards
-            setenv("COMPlus_DbgEnableMiniDump", "1", 1);
-            setenv("DOTNET_DbgEnableMiniDump", "1", 1);
-            setenv("DD_TRACE_CRASH_HANDLER_PASSTHROUGH", "0", 1);
+            real_setenv(COMPlus_DbgEnableMiniDump, "1", 1);
+            real_setenv(DOTNET_DbgEnableMiniDump, "1", 1);
+            real_setenv(DD_INTERNAL_CRASHTRACKING_PASSTHROUGH, "0", 1);
         }
+
+        originalMiniDumpName = real_getenv(DOTNET_DbgMiniDumpName);
+
+        if (originalMiniDumpName == NULL || strncmp(originalMiniDumpName, datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
+        {
+            originalMiniDumpName = real_getenv(COMPlus_DbgMiniDumpName);
+        }
+
+        if (originalMiniDumpName != NULL && strncmp(originalMiniDumpName, datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
+        {
+            // If LD_PRELOAD was set in the parent process, then we replaced COMPlus_DbgMiniDumpName with datadogCrashMarker and lost the original value
+            // We use DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME to retrieve it
+            originalMiniDumpName = real_getenv(DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME);
+        }
+
+        if (originalMiniDumpName != NULL && originalMiniDumpName[0] != '\0')
+        {
+            // Save the original value in DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME so that child processes can retrieve it
+            real_setenv(DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME, originalMiniDumpName, 1);
+        }
+
+        real_setenv(COMPlus_DbgMiniDumpName, datadogCrashMarker, 1);
+        real_setenv(DOTNET_DbgMiniDumpName, datadogCrashMarker, 1);
     }
 }
 
@@ -403,74 +435,116 @@ int dladdr(const void* addr_arg, Dl_info* info)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
 
+__attribute__((visibility("hidden")))
+int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
+{
+    if (crashHandler == NULL || pathname == NULL)
+    {
+        return 0;
+    }
+
+    size_t length = strlen(pathname);
+
+    if (length < 11 || strcmp(pathname + length - 11, "/createdump") != 0)
+    {
+        return 0;
+    }
+
+    // datadog_crashtracking is set to identify actual crash to dump generation requests (ex: dotnet-dump)
+    int previousWasNameOpt = 0;
+    for (int i = 0; argv[i] != NULL; i++)
+    {
+        if (previousWasNameOpt != 0 && strncmp(argv[i], datadogCrashMarker, strlen(datadogCrashMarker)) == 0)
+        {
+            return 1;
+        }
+        previousWasNameOpt = strncmp(argv[i], "--name", strlen("--name")) == 0;
+    }
+
+    return 0;
+}
+
 int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     check_init();
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-compare"
-    if (crashHandler != NULL && pathname != NULL)
+    int callCustomCreatedump = ShouldCallCustomCreatedump(pathname, argv);
+
+    if (callCustomCreatedump == 0)
     {
-        size_t length = strlen(pathname);
+        return __real_execve(pathname, argv, envp);
+    }
 
-        if (length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0)
+    is_app_crashing = 1;
+    // Execute the alternative crash handler, and prepend "createdump" to the arguments
+
+    // Count the number of arguments (the list ends with a null pointer)
+    int argc = 0;
+    while (argv[argc++] != NULL);
+
+    // We add two arguments: the path to dd-dotnet, and "createdump"
+    char** newArgv = malloc((argc + 2) * sizeof(char*));
+
+    // By convention, argv[0] contains the name of the executable
+    // Insert createdump as the first actual argument
+    newArgv[0] = crashHandler;
+    newArgv[1] = "createdump";
+
+    // Copy the remaining arguments and replace datadog_crashtracking by the original name if needed
+    size_t idx = 0;
+    size_t new_idx = 2;
+    while (argv[idx] != NULL)
+    {
+        if (strncmp(argv[idx], "--name", strlen("--name")) == 0)
         {
-            is_app_crashing = 1;
-            // Execute the alternative crash handler, and prepend "createdump" to the arguments
-
-            // Count the number of arguments (the list ends with a null pointer)
-            int argc = 0;
-            while (argv[argc++] != NULL);
-
-            // We add two arguments: the path to dd-dotnet, and "createdump"
-            char** newArgv = malloc((argc + 2) * sizeof(char*));
-
-            // By convention, argv[0] contains the name of the executable
-            // Insert createdump as the first actual argument
-            newArgv[0] = crashHandler;
-            newArgv[1] = "createdump";
-
-            // Copy the remaining arguments
-            memcpy(newArgv + 2, argv, sizeof(char*) * argc);
-
-            size_t envp_count;
-            for (envp_count = 0; envp[envp_count]; ++envp_count);
-            char** new_envp = malloc((envp_count + 1) * sizeof(char*)); // +1 for NULL terminator
-
-            int index = 0;
-
-            for (size_t i = 0; i < envp_count; ++i) {
-                if (strncmp(envp[i], "LD_PRELOAD=", strlen("LD_PRELOAD=")) == 0) {
-                    continue;
-                }
-
-                if (strncmp(envp[i], "CORECLR_ENABLE_PROFILING=", strlen("CORECLR_ENABLE_PROFILING=")) == 0) {
-                    continue;
-                }
-
-                if (strncmp(envp[i], "DOTNET_DbgEnableMiniDump=", strlen("DOTNET_DbgEnableMiniDump=")) == 0) {
-                    continue;
-                }
-
-                if (strncmp(envp[i], "COMPlus_DbgEnableMiniDump=", strlen("COMPlus_DbgEnableMiniDump=")) == 0) {
-                    continue;
-                }
-
-                new_envp[index++] = envp[i];
+            if (originalMiniDumpName != NULL)
+            {
+                newArgv[new_idx++] = "--name";
+                newArgv[new_idx++] = originalMiniDumpName; // no need to check for datadog_crashtracking, this was done in ShouldCallOurOwnCreatedump
             }
-            new_envp[index] = NULL; // NULL terminate the array
 
-            int result = __real_execve(crashHandler, newArgv, new_envp);
-
-            free(newArgv);
-            free(new_envp);
-
-            return result;
+            idx += 2;
+        }
+        else
+        {
+            newArgv[new_idx++] = argv[idx++];
         }
     }
-#pragma clang diagnostic pop
+    newArgv[new_idx] = NULL;  // NULL terminate the array
 
-    return __real_execve(pathname, argv, envp);
+    size_t envp_count;
+    for (envp_count = 0; envp[envp_count]; ++envp_count);
+    char** new_envp = malloc((envp_count + 1) * sizeof(char*)); // +1 for NULL terminator
+
+    int index = 0;
+
+    for (size_t i = 0; i < envp_count; ++i) {
+        if (strncmp(envp[i], "LD_PRELOAD=", strlen("LD_PRELOAD=")) == 0) {
+            continue;
+        }
+
+        if (strncmp(envp[i], "CORECLR_ENABLE_PROFILING=", strlen("CORECLR_ENABLE_PROFILING=")) == 0) {
+            continue;
+        }
+
+        if (strncmp(envp[i], "DOTNET_DbgEnableMiniDump=", strlen("DOTNET_DbgEnableMiniDump=")) == 0) {
+            continue;
+        }
+
+        if (strncmp(envp[i], "COMPlus_DbgEnableMiniDump=", strlen("COMPlus_DbgEnableMiniDump=")) == 0) {
+            continue;
+        }
+
+        new_envp[index++] = envp[i];
+    }
+    new_envp[index] = NULL; // NULL terminate the array
+
+    int result = __real_execve(crashHandler, newArgv, new_envp);
+
+    free(newArgv);
+    free(new_envp);
+
+    return result;
 }
 
 #ifdef DD_ALPINE

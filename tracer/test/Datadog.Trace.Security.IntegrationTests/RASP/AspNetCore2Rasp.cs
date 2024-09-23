@@ -78,9 +78,17 @@ public abstract class AspNetCore2Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var testName = IastEnabled ? "RaspIast.AspNetCore2" : "Rasp.AspNetCore2";
         IncludeAllHttpSpans = true;
         await TryStartApp();

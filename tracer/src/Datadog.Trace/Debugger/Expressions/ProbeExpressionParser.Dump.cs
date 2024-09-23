@@ -13,6 +13,7 @@ using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
+using Enumerable = System.Linq.Enumerable;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -26,14 +27,14 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
         }
 
-        var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
+        var ifNull = Expression.Equal(expression, Expression.Constant(null));
 
         if (IsSafeException(expression.Type))
         {
             // for known Exception types we can assume it's safe to call .Message
             // whereas the others might have overriden it in a way that could cause side effects
+            var stringConcat = GetMethodByReflection(typeof(string), nameof(string.Concat), new[] { typeof(object[]) });
             var typeNameExpression = Expression.Constant(expression.Type.FullName, typeof(string));
-            var ifNull = Expression.Equal(expression, Expression.Constant(null));
             var exceptionAsString = Expression.Call(
                stringConcat,
                Expression.NewArrayInit(
@@ -47,9 +48,11 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Condition(ifNull, typeNameExpression, exceptionAsString);
         }
 
-        return IsSafeCollection(expression.Type) ?
-                   DumpCollectionExpression(expression, scopeMembers) :
-                   DumpFieldsExpression(expression, scopeMembers);
+        var dumpExpression = IsSafeCollection(expression.Type) ?
+                                 DumpCollectionExpression(expression, scopeMembers) :
+                                 DumpFieldsExpression(expression, scopeMembers);
+
+        return Expression.Condition(ifNull, Expression.Constant("null"), dumpExpression);
     }
 
     private Expression DumpCollectionExpression(Expression collection, List<ParameterExpression> scopeMembers)
@@ -125,14 +128,21 @@ internal partial class ProbeExpressionParser<T>
     {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
-        var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), new[] { typeof(BindingFlags) });
-        var getFields = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
-        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), new[] { typeof(string) });
+        var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), [typeof(BindingFlags)]);
+        var orderByMethod = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.OrderBy), [typeof(IEnumerable<>), typeof(Func<,>)], [typeof(FieldInfo), typeof(int)]);
+        var toArray = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.ToArray), [typeof(IEnumerable<>)], [typeof(FieldInfo)]);
+
+        ParameterExpression parameterExp = Expression.Parameter(typeof(FieldInfo), "fieldInfo");
+        MemberExpression propertyExp = Expression.Property(parameterExp, "MetadataToken");
+        Expression<Func<FieldInfo, int>> lambdaExp = Expression.Lambda<Func<FieldInfo, int>>(propertyExp, parameterExp);
+        var fieldInfoArray = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
+        var fieldInfoOrderedArray = Expression.Call(null, toArray, Expression.Call(null, orderByMethod, fieldInfoArray, lambdaExp));
+        var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), [typeof(string)]);
         var expressions = new List<Expression>();
 
         var fields = Expression.Variable(typeof(FieldInfo[]), "fieldsArray");
         scopeMembers.Add(fields);
-        expressions.Add(Expression.Assign(fields, getFields));
+        expressions.Add(Expression.Assign(fields, fieldInfoOrderedArray));
 
         var result = Expression.Variable(typeof(StringBuilder), "fieldValues");
         scopeMembers.Add(result);
@@ -151,7 +161,7 @@ internal partial class ProbeExpressionParser<T>
            Expression.Call(
                fieldAtIndex,
                GetMethodByReflection(typeof(FieldInfo), nameof(FieldInfo.GetValue), new[] { typeof(object) }),
-               expression);
+               Expression.Convert(expression, typeof(object)));
 
         var dumpObjectCallExpression = Expression.Call(
             result,

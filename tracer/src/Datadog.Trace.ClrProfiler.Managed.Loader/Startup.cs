@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
-        private const string AssemblyName = "Datadog.Trace, Version=3.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AssemblyName = "Datadog.Trace, Version=3.4.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
 
         private static int _startupCtorInitialized;
@@ -39,36 +39,54 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return;
             }
 
-            ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
-            if (ManagedProfilerDirectory is null)
-            {
-                StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
-                return;
-            }
-
-            StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
-
             try
             {
-                AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+                ManagedProfilerDirectory = ResolveManagedProfilerDirectory();
+                if (ManagedProfilerDirectory is null)
+                {
+                    StartupLogger.Log("Managed profiler directory doesn't exist. Automatic instrumentation will be disabled");
+                    return;
+                }
+
+                StartupLogger.Debug("Resolving managed profiler directory to: {0}", ManagedProfilerDirectory);
+
+                try
+                {
+                    AppDomain.CurrentDomain.AssemblyResolve += AssemblyResolve_ManagedProfilerDependencies;
+                }
+                catch (Exception ex)
+                {
+                    StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
+                }
+
+                var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
+                if (runInAas)
+                {
+                    // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
+                    StartupLogger.Log("Invoking managed method to start external processes.");
+                    TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                }
+
+                // We need to invoke the managed tracer regardless of whether tracing is enabled
+                // because other products rely on it
+                StartupLogger.Log("Invoking managed tracer.");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
-            }
+                try
+                {
+                    StartupLogger.Log(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
+                    return;
+                }
+                catch
+                {
+                    // Nothing to do here.
+                }
 
-            var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
-            if (runInAas)
-            {
-                // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                StartupLogger.Log("Invoking managed method to start external processes.");
-                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
+                // If the logger fails, throw the original exception. The profiler emits code to log it.
+                throw;
             }
-
-            // We need to invoke the managed tracer regardless of whether tracing is enabled
-            // because other products rely on it
-            StartupLogger.Log("Invoking managed tracer.");
-            TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
         }
 
         internal static string? ManagedProfilerDirectory { get; }
@@ -149,6 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
         {
             var value = ReadEnvironmentVariable(key);
+
             return value switch
             {
                 "1" or "true" or "True" or "TRUE" or "t" or "T" => true,

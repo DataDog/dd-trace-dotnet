@@ -11,6 +11,8 @@ jobs:
       startsWith(github.event.release.tag_name, 'v3.')
       && !endsWith(github.event.release.tag_name, '-prerelease')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Creates and deletes branches
     steps:
       - name: Checkout
         uses: actions/checkout@v2

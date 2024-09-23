@@ -14,7 +14,6 @@ namespace Datadog.Trace.Iast.SensitiveData;
 
 internal class EvidenceRedactor
 {
-    private static bool _showTimeoutExceptionError = true;
     private readonly Regex _keysRegex;
     private readonly Regex _valuesRegex;
     private readonly IDatadogLogger? _logger;
@@ -41,7 +40,8 @@ internal class EvidenceRedactor
             { VulnerabilityTypeName.UnvalidatedRedirect, urlTokenizer },
             { VulnerabilityTypeName.HeaderInjection, new HeaderInjectionTokenizer(_timeout) },
             { VulnerabilityTypeName.NoSqlMongoDbInjection, new JsonTokenizer(_timeout) },
-            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer(_timeout) },
+            { VulnerabilityTypeName.Xss, new TaintedRangeBasedTokenizer() },
+            { VulnerabilityTypeName.EmailHtmlInjection, new TaintedRangeBasedTokenizer() }
         };
     }
 
@@ -58,7 +58,7 @@ internal class EvidenceRedactor
         }
         catch (RegexMatchTimeoutException err)
         {
-            LogTimeoutError(err);
+            IastModule.LogTimeoutError(err);
             return true;
         }
     }
@@ -76,21 +76,8 @@ internal class EvidenceRedactor
         }
         catch (RegexMatchTimeoutException err)
         {
-            LogTimeoutError(err);
+            IastModule.LogTimeoutError(err);
             return true;
-        }
-    }
-
-    private void LogTimeoutError(RegexMatchTimeoutException err)
-    {
-        if (_showTimeoutExceptionError)
-        {
-            _logger?.Warning(err, "Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
-            _showTimeoutExceptionError = false;
-        }
-        else
-        {
-            _logger?.Debug(err, "Regex timed out when trying to match value against pattern {Pattern}.", err.Pattern);
         }
     }
 
@@ -120,7 +107,7 @@ internal class EvidenceRedactor
             }
             catch (RegexMatchTimeoutException ex)
             {
-                LogTimeoutError(ex);
+                IastModule.LogTimeoutError(ex);
                 // We redact the whole vulnerability if the tokenizer times out
                 return new Vulnerability(vulnerability.Type, vulnerability.Location, new Evidence(evidenceValue!, vulnerability.Evidence?.Ranges, vulnerability.Evidence?.Ranges), vulnerability.GetIntegrationId());
             }

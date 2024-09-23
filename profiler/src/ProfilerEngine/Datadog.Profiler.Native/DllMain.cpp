@@ -50,37 +50,57 @@ bool IsProfilingEnabled(Configuration const& configuration)
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
-    // However, we still want to respect the DD_PROFILING_ENABLED variable for:
-    //  - consistency with other profiling products;
-    //  - supporting scenarios where CORECLR_PROFILER_XXX point to the shared native loader, where some of the suit's products
-    //    are enabled, but profiling is explicitly disabled;
-    //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
-
+    // With Single Step Instrumentation deployment, it is possible that the profiler needs to be loaded (to emit telemetry metrics)
+    // but not started (i.e. no profiling) so this function will return true in that case.
+    //
     auto enablementStatus = configuration.GetEnablementStatus();
     auto deploymentMode = configuration.GetDeploymentMode();
 
     Log::Info(".NET Profiler deployment mode: ", to_string(deploymentMode));
 
-    if (enablementStatus == EnablementStatus::NotSet || enablementStatus == EnablementStatus::SsiEnabled)
+    if (enablementStatus == EnablementStatus::ManuallyEnabled)
     {
-        auto isSsiDeployed = deploymentMode == DeploymentMode::SingleStepInstrumentation;
-        if (isSsiDeployed)
-        {
-            Log::Info(".NET Profiler is deployed using Single Step Instrumentation.");
-        }
-        else
-        {
-            assert(enablementStatus != EnablementStatus::SsiEnabled);
-            Log::Info(".NET Profiler environment variable '", EnvironmentVariables::ProfilerEnabled, "' was not set. The .NET profiler will be disabled.");
-        }
-
-        // delay start with SSI is not supported yet so we don't override manually enabled status
+        Log::Info(".NET Profiler is explictly enabled.");
+        return true;
     }
 
-    auto isEnabled = (enablementStatus == EnablementStatus::ManuallyEnabled);
-    Log::Info(".NET Profiler is ", std::boolalpha, (isEnabled ? "enabled." : "disabled."));
+    if (enablementStatus == EnablementStatus::ManuallyDisabled)
+    {
+        Log::Info(".NET Profiler is explictly disabled.");
+        return false;
+    }
 
-    return isEnabled;
+    if (enablementStatus == EnablementStatus::SsiEnabled)
+    {
+        Log::Info(".NET Profiler is enabled via Single Step Instrumentation. It will start later.");
+
+        // delay start with SSI is now supported
+        return true;
+    }
+
+    if (enablementStatus == EnablementStatus::Auto)
+    {
+        Log::Info(".NET Profiler is installed via Single Step Instrumentation and automatically enabled. It will start later.");
+
+        // delay start with SSI is now supported
+        return true;
+    }
+
+    if (enablementStatus == EnablementStatus::NotSet)
+    {
+        // in that case, when deployed with SSI, we accept the profiler to be loaded just for the telemetry metrics
+        if (deploymentMode == DeploymentMode::SingleStepInstrumentation)
+        {
+            Log::Info(".NET Profiler is loaded via Single Step Instrumentation but not enabled.");
+            return true;
+        }
+
+        Log::Info(".NET Profiler environment variable '", EnvironmentVariables::ProfilerEnabled, "' was not set. The .NET profiler will be disabled.");
+        return false;
+    }
+
+    Log::Warn(".NET Profiler is disabled for an unknown reason.");
+    return false;
 }
 
 class __declspec(uuid("BD1A650D-AC5D-4896-B64F-D6FA25D6B26A")) CorProfilerCallback;

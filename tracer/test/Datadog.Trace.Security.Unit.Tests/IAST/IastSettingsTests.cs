@@ -166,4 +166,19 @@ public class IastSettingsTests : SettingsTestsBase
 
         settings.DeduplicationEnabled.Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData("1", 1)]
+    [InlineData("0", 0)]
+    [InlineData("-1", 1)]
+    [InlineData("A", 1)]
+    [InlineData(null, 1)]
+    [InlineData("", 1)]
+    public void DataBaseRowsToTaint(string value, int expected)
+    {
+        var source = CreateConfigurationSource((ConfigurationKeys.Iast.DataBaseRowsToTaint, value));
+        var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
+
+        settings.DataBaseRowsToTaint.Should().Be(expected);
+    }
 }

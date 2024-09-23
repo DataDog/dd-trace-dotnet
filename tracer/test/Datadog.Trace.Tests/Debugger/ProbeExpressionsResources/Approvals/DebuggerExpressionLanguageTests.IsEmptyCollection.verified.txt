@@ -1,0 +1,42 @@
+﻿Condition:
+Json:
+{
+  "isEmpty": [
+    {
+      "ref": "Collection"
+    }
+  ]
+}
+Expression: (
+    scopeMember,
+    scopeMember,
+    scopeMember,
+    exception,
+    scopeMemberArray) =>
+{
+    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var @return = (string)scopeMember.Value;
+    var @duration = (TimeSpan)scopeMember.Value;
+    var @exception = exception;
+    var IntLocal = (int)scopeMemberArray[0].Value;
+    var DoubleLocal = (double)scopeMemberArray[1].Value;
+    var StringLocal = (string)scopeMemberArray[2].Value;
+    var CollectionLocal = (List<string>)scopeMemberArray[3].Value;
+    var DictionaryLocal = (Dictionary<string, string>)scopeMemberArray[4].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[5].Value;
+    var NullLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[6].Value;
+    var BooleanValue = (bool)scopeMemberArray[7].Value;
+    var Char = (char)scopeMemberArray[8].Value;
+    var AnotherChar = (char)scopeMemberArray[9].Value;
+    var NullableNotNullValueLocal = (Guid?)scopeMemberArray[10].Value;
+    var NullableNullValueLocal = (Guid?)scopeMemberArray[11].Value;
+    var IntArg = (int)scopeMemberArray[12].Value;
+    var DoubleArg = (double)scopeMemberArray[13].Value;
+    var StringArg = (string)scopeMemberArray[14].Value;
+    var CollectionArg = (List<string>)scopeMemberArray[15].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[16].Value;
+    var $dd_el_result = this.Collection.Count == 0;
+
+    return $dd_el_result;
+}
+Result: False

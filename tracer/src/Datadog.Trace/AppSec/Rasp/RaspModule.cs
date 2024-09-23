@@ -7,6 +7,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
@@ -26,6 +28,7 @@ internal static class RaspModule
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
         AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
         AddressesConstants.DBStatement => RaspRuleType.SQlI,
+        AddressesConstants.ShellInjection => RaspRuleType.CommandInjection,
         _ => null,
     };
 
@@ -64,7 +67,7 @@ internal static class RaspModule
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled)
+        if (!security.RaspEnabled || !security.AddressEnabled(address))
         {
             return;
         }
@@ -170,11 +173,33 @@ internal static class RaspModule
 
     private static void SendStack(Span rootSpan, string id)
     {
-        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, id);
 
         if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AddRaspStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+        }
+    }
+
+    internal static void OnCommandInjection(string fileName, string argumentLine, Collection<string>? argumentList, bool useShellExecute)
+    {
+        try
+        {
+            if (!Security.Instance.RaspEnabled || !useShellExecute)
+            {
+                return;
+            }
+
+            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
+
+            if (!string.IsNullOrEmpty(commandLine))
+            {
+                CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
 }

@@ -12,6 +12,9 @@
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- Ignore complaints from NuGet about out of support packages-->
     <NoWarn>NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
 
   <ItemGroup>

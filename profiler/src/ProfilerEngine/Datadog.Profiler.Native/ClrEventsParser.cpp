@@ -7,9 +7,13 @@
 #include <iostream>
 #include <sstream>
 
+#ifdef LINUX
+#include "CpuProfilerDisableScope.h"
+#endif
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
+#include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 
 
@@ -63,6 +67,15 @@ void ClrEventsParser::ParseEvent(
     LPCBYTE eventData
     )
 {
+#ifdef LINUX
+    auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+
+    // Disable timer_create-based CPU profiler if needed
+    // When scope goes out of scope, the CPU profiler will be reenabled for
+    // pThreadInfo thread
+    auto scope = CpuProfilerDisableScope(pThreadInfo.get());
+#endif
+
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);
@@ -291,6 +304,18 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         }
 
         _pContentionListener->OnContention(payload.DurationNs);
+    }
+
+    if ((id == EVENT_CONTENTION_START) && (version >= 2))
+    {
+        ContentionStartV2Payload payload{0};
+        ULONG offset = 0;
+        if (!Read<ContentionStartV2Payload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        _pContentionListener->SetBlockingThread(payload.LockOwnerThreadID);
     }
 }
 

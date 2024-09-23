@@ -18,11 +18,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string _solutionDirectory = null;
         private readonly string _framework;
         private readonly string _testOutputPath;
+        private readonly bool _enableProfiler;
 
-        public EnvironmentHelper(string framework, bool enableTracer)
+        public EnvironmentHelper(string framework, bool enableTracer, bool enableProfiler)
         {
             _framework = framework;
             _testOutputPath = BuildTestOutputPath(framework);
+            _enableProfiler = enableProfiler;
 
             if (enableTracer)
             {
@@ -171,7 +173,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
             }
 
-            environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            if (_enableProfiler)
+            {
+                environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            }
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
@@ -326,7 +332,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("win", "x86", _) => "win-x86",
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", _) => "linux-arm64",
+                ("linux", "Arm64", false) => "linux-arm64",
+                ("linux", "Arm64", true) => "linux-musl-arm64",
                 ("osx", _, _) => "osx-x64",
                 _ => throw new PlatformNotSupportedException()
             };

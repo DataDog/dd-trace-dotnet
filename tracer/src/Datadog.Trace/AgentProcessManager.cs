@@ -222,8 +222,7 @@ namespace Datadog.Trace
 
                                     var startInfo = new ProcessStartInfo
                                     {
-                                        FileName = path,
-                                        UseShellExecute = false // Force consistency in behavior between Framework and Core
+                                        FileName = path, UseShellExecute = false // Force consistency in behavior between Framework and Core
                                     };
 
                                     if (!string.IsNullOrWhiteSpace(metadata.ProcessArguments))
@@ -277,6 +276,10 @@ namespace Datadog.Trace
                                 }
                             }
                         }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error occured in keep-alive for {Process}.", path);
                     }
                     finally
                     {

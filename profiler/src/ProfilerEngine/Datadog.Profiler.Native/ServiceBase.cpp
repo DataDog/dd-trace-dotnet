@@ -36,7 +36,7 @@ bool ServiceBase::Start()
 
     if (!exchange)
     {
-        Log::Debug("Unable to start the service. Current state: ", to_string(_currentState.load()));
+        Log::Debug("Unable to start the service '", GetName(), "'. Current state : ", to_string(_currentState.load()));
         return false;
     }
 
@@ -48,7 +48,7 @@ bool ServiceBase::Start()
     else
     {
         _currentState = State::Init;
-        Log::Debug("Unable to start the service. Call to StartImpl failed. Current state: ", to_string(_currentState.load()));
+        Log::Debug("Unable to start the service '", GetName(), "'. Call to StartImpl failed. Current state : ", to_string(_currentState.load()));
     }
 
     return result;
@@ -61,7 +61,7 @@ bool ServiceBase::Stop()
 
     if (!exchange)
     {
-        Log::Debug("Unable to stop the service. Current state: ", to_string(_currentState.load()));
+        Log::Debug("Unable to stop the service '", GetName(), "'.Current state : ", to_string(_currentState.load()));
         return false;
     }
 
@@ -73,7 +73,7 @@ bool ServiceBase::Stop()
     else
     {
         _currentState = State::Started;
-        Log::Debug("Unable to stop the service. Call to StartImpl failed. Current state: ", to_string(_currentState.load()));
+        Log::Debug("Unable to stop the service '", GetName(), "'. Call to StartImpl failed.Current state : ", to_string(_currentState.load()));
     }
 
     return result;

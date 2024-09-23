@@ -116,6 +116,33 @@ internal static class MetricTags
         [Description("type:status_code")] StatusCode,
     }
 
+    internal enum DatadogConfiguration
+    {
+        [Description("config_datadog:dd_trace_debug")] DebugEnabled,
+        [Description("config_datadog:dd_runtime_metrics_enabled")] RuntimeMetricsEnabled,
+        [Description("config_datadog:dd_service")] Service,
+        [Description("config_datadog:dd_tags")] Tags,
+        [Description("config_datadog:dd_trace_enabled")] TraceEnabled,
+        [Description("config_datadog:dd_trace_propagation_style")] PropagationStyle,
+        [Description("config_datadog:dd_trace_sample_rate")] SampleRate,
+        [Description("config_datadog:dd_trace_otel_enabled")] OpenTelemetryEnabled,
+        [Description("config_datadog:unknown")] Unknown,
+    }
+
+    internal enum OpenTelemetryConfiguration
+    {
+        [Description("config_opentelemetry:otel_log_level")] LogLevel,
+        [Description("config_opentelemetry:otel_metrics_exporter")] MetricsExporter,
+        [Description("config_opentelemetry:otel_propagators")] Propagators,
+        [Description("config_opentelemetry:otel_resource_attributes")] ResourceAttributes,
+        [Description("config_opentelemetry:otel_sdk_disabled")] SdkDisabled,
+        [Description("config_opentelemetry:otel_service_name")] ServiceName,
+        [Description("config_opentelemetry:otel_traces_exporter")] TracesExporter,
+        [Description("config_opentelemetry:otel_traces_sampler")] TracesSampler,
+        [Description("config_opentelemetry:otel_traces_sampler_arg")] TracesSamplerArg,
+        [Description("config_opentelemetry:unknown")] Unknown,
+    }
+
     internal enum PartialFlushReason
     {
         [Description("reason:large_trace")] LargeTrace,
@@ -228,6 +255,7 @@ internal static class MetricTags
         [Description("integration_name:directorylistingleak")] DirectoryListingLeak,
         [Description("integration_name:sessiontimeout")] SessionTimeout,
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
+        [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection
     }
 
     public enum InstrumentationError
@@ -256,6 +284,7 @@ internal static class MetricTags
         [Description("waf_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
         [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
+        [Description("waf_version;rule_type:command_injection")] CommandInjection = 3,
     }
 
     public enum TruncationReason
@@ -281,6 +310,7 @@ internal static class MetricTags
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
         [Description("source_type:http.request.uri")] RequestUri = 11,
         [Description("source_type:grpc.request.body")] GrpcRequestBody = 12,
+        [Description("source_type:sql.row.value")] SqlRowValue = 13,
     }
 
     [EnumExtensions]
@@ -312,6 +342,13 @@ internal static class MetricTags
         [Description("vulnerability_type:xss")] Xss = 23,
         [Description("vulnerability_type:directory_listing_leak")] DirectoryListingLeak = 24,
         [Description("vulnerability_type:session_timeout")] SessionTimeout = 25,
+        [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
+    }
+
+    public enum AuthenticationFramework
+    {
+        [Description("framework:aspnetcore_identity")] AspNetCoreIdentity,
+        [Description("framework:unknown")] Unknown,
     }
 
     public enum CIVisibilityTestFramework

@@ -6,6 +6,7 @@
 
 #nullable enable
 
+using System;
 using System.Web;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
@@ -29,10 +30,16 @@ public class HttpCookieAspect
     public static string GetValue(HttpCookie cookie)
     {
         var value = cookie.Value;
-
-        if (!string.IsNullOrEmpty(value))
+        try
         {
-            PropagationModuleImpl.AddTaintedSource(value, new Source(SourceType.CookieValue, cookie?.Name, value));
+            if (!string.IsNullOrEmpty(value))
+            {
+                PropagationModuleImpl.AddTaintedSource(value, new Source(SourceType.CookieValue, cookie?.Name, value));
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpCookieAspect)}.{nameof(GetValue)}");
         }
 
         return value;

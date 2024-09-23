@@ -58,11 +58,14 @@ partial class Build : NukeBuild
     [Parameter("Is the build running on Alpine linux? Default is 'false'")]
     readonly bool IsAlpine = false;
 
+    [Parameter("The current latest tracer version")]
+    const int LatestMajorVersion = 3;
+
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.1.0";
+    readonly string Version = "3.4.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = true;
+    readonly bool IsPrerelease = false;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
@@ -99,6 +102,15 @@ partial class Build : NukeBuild
 
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
+    
+    [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
+               "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
+    string RuntimeIdentifier { get; }
+    
+    public Build()
+    {
+        RuntimeIdentifier = GetDefaultRuntimeIdentifier(IsAlpine);
+    }
 
     Target Info => _ => _
                        .Description("Describes the current configuration")
@@ -115,6 +127,7 @@ partial class Build : NukeBuild
                             Logger.Information($"IncludeAllTestFrameworks: {IncludeAllTestFrameworks}");
                             Logger.Information($"IsAlpine: {IsAlpine}");
                             Logger.Information($"Version: {Version}");
+                            Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                         });
 
     Target Clean => _ => _
@@ -132,6 +145,7 @@ partial class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -181,6 +195,19 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
         .DependsOn(CreateRootDescriptorsFile);
+    
+    Target BuildManagedTracerHomeR2R => _ => _
+        .Unlisted()
+        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .After(Clean, BuildNativeTracerHome)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(Restore)
+        .DependsOn(CompileManagedSrc)
+        .DependsOn(PublishManagedTracerR2R)
+        .DependsOn(DownloadLibDdwaf)
+        .DependsOn(CopyLibDdwaf)
+        .DependsOn(CreateMissingNullabilityFile)
+        .DependsOn(CreateRootDescriptorsFile);
 
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -203,6 +230,7 @@ partial class Build : NukeBuild
         .Description("")
         .After(Clean)
         .DependsOn(CompileNativeWrapper)
+        .DependsOn(TestNativeWrapper)
         .DependsOn(PublishNativeWrapper);
 
     Target PackageTracerHome => _ => _
@@ -470,6 +498,7 @@ partial class Build : NukeBuild
                 (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),
                 (rid: "osx-x64", archiveFormat: ".tar.gz"),
                 (rid: "linux-arm64", archiveFormat: ".tar.gz"),
+                (rid: "linux-musl-arm64", archiveFormat: ".tar.gz"),
             }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
 

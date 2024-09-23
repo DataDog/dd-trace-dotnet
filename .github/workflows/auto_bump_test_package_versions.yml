@@ -11,6 +11,10 @@ jobs:
   bump_package_versions:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
     runs-on: windows-latest
+    permissions:
+      actions: read # read secrets
+      contents: write # Creates a branch
+      pull-requests: write # Creates a PR
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 

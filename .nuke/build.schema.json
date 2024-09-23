@@ -204,6 +204,10 @@
           "type": "boolean",
           "description": "Whether the current build version is a prerelease(for packaging purposes)"
         },
+        "LatestMajorVersion": {
+          "type": "integer",
+          "description": "The current latest tracer version"
+        },
         "MonitoringHome": {
           "type": "string",
           "description": "The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home "
@@ -263,6 +267,10 @@
           "type": "string",
           "description": "Root directory during build execution"
         },
+        "RuntimeIdentifier": {
+          "type": "string",
+          "description": "RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'.See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog"
+        },
         "SampleName": {
           "type": "string",
           "description": "The sample name to execute when running or building sample apps"
@@ -296,6 +304,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -405,6 +414,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",
@@ -467,12 +477,14 @@
               "SignDlls",
               "SignMsi",
               "SummaryOfSnapshotChanges",
+              "TestNativeWrapper",
               "UpdateChangeLog",
               "UpdateSnapshots",
               "UpdateSnapshotsFromBuild",
               "UpdateVendoredCode",
               "UpdateVersion",
               "VerifyChangedFilesFromVersionBump",
+              "VerifyReleaseReadiness",
               "ZipMonitoringHome",
               "ZipMonitoringHomeLinux",
               "ZipMonitoringHomeOsx",
@@ -514,6 +526,7 @@
               "BuildIisSampleApp",
               "BuildLinuxIntegrationTests",
               "BuildManagedTracerHome",
+              "BuildManagedTracerHomeR2R",
               "BuildMsi",
               "BuildNativeLoader",
               "BuildNativeTracerHome",
@@ -623,6 +636,7 @@
               "PublishDdDotnetSymbolsWindows",
               "PublishIisSamples",
               "PublishManagedTracer",
+              "PublishManagedTracerR2R",
               "PublishNativeLoader",
               "PublishNativeLoaderOsx",
               "PublishNativeLoaderUnix",
@@ -685,12 +699,14 @@
               "SignDlls",
               "SignMsi",
               "SummaryOfSnapshotChanges",
+              "TestNativeWrapper",
               "UpdateChangeLog",
               "UpdateSnapshots",
               "UpdateSnapshotsFromBuild",
               "UpdateVendoredCode",
               "UpdateVersion",
               "VerifyChangedFilesFromVersionBump",
+              "VerifyReleaseReadiness",
               "ZipMonitoringHome",
               "ZipMonitoringHomeLinux",
               "ZipMonitoringHomeOsx",

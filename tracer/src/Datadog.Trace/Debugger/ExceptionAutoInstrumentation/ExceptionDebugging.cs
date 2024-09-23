@@ -21,16 +21,16 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionDebugging));
 
-        private static ExceptionDebuggingSettings? _settings;
+        private static ExceptionReplaySettings? _settings;
         private static int _firstInitialization = 1;
         private static bool _isDisabled;
 
         private static SnapshotUploader? _uploader;
         private static SnapshotSink? _snapshotSink;
 
-        public static ExceptionDebuggingSettings Settings
+        public static ExceptionReplaySettings Settings
         {
-            get => LazyInitializer.EnsureInitialized(ref _settings, ExceptionDebuggingSettings.FromDefaultSource)!;
+            get => LazyInitializer.EnsureInitialized(ref _settings, ExceptionReplaySettings.FromDefaultSource)!;
             private set => _settings = value;
         }
 
@@ -88,7 +88,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 snapshotBatchUploader: snapshotBatchUploader,
                 debuggerSettings);
 
-            Task.Run(async () => await _uploader.StartFlushingAsync().ConfigureAwait(false));
+            Task.Run(() => _uploader.StartFlushingAsync())
+                .ContinueWith(t => Log.Error(t.Exception, "Error in flushing task"), TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static void Report(Span span, Exception exception)
