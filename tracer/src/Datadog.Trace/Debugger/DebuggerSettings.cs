@@ -152,8 +152,11 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
-
-            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+			ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+			
+			IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+            SnapshotExplorationTestProbesPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesPath).AsString(string.Empty);
+            SnapshotExplorationTestReportPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportPath).AsString(string.Empty);
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -199,6 +202,8 @@ namespace Datadog.Trace.Debugger
         public bool CodeOriginForSpansCanBeEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
+		
+		public string SnapshotExplorationTestReportPath { get; set; }
 
         public string ProbeFile { get; }
 
