@@ -23,6 +23,14 @@ partial class Build
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH", Path.Combine(testRootPath, LineProbesFileName));
         }
 
+        if (description.IsSnapshotScenario)
+        {
+            envVars.Add(SnapshotExplorationEnabledKey, "1");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add(SnapshotExplorationProbesPathKey, Path.Combine(testRootPath, SnapshotExplorationTestProbesFileName));
+            envVars.Add(SnapshotExplorationReportPathKey, Path.Combine(testRootPath, SnapshotExplorationTestReportFileName));
+        }
+
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
         envVars.Add("COMPlus_EnableCrashReport", "1");

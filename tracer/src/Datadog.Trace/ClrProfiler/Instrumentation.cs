@@ -499,6 +499,14 @@ namespace Datadog.Trace.ClrProfiler
             var manager = DebuggerManager.Instance;
             var debuggerSettings = manager.DebuggerSettings;
 
+if (debuggerSettings.IsSnapshotExplorationTestEnabled)
+            {
+                var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                Log.Debug("Initializing live debugger for snapshot exploration test.");
+                liveDebugger.InitializeAsync().GetAwaiter().GetResult();
+                liveDebugger.InitializeSync().WithProbesFromFile();
+            }
+			
             if (!debuggerSettings.DynamicInstrumentationEnabled)
             {
                 // we need this line for tests
