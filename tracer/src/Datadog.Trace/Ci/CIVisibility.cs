@@ -561,7 +561,7 @@ namespace Datadog.Trace.Ci
                     test.SetErrorInfo(exception);
                 }
 
-                test.Close(TestStatus.Fail);
+                test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
             }
 
             foreach (var testSuite in TestSuite.ActiveTestSuites)
@@ -591,7 +591,7 @@ namespace Datadog.Trace.Ci
                     testSession.SetErrorInfo(exception);
                 }
 
-                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+                await testSession.CloseAsync(TestStatus.Skip).ConfigureAwait(false);
             }
 
             await FlushAsync().ConfigureAwait(false);
