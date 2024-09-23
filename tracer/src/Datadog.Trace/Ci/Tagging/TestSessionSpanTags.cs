@@ -16,6 +16,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     public TestSessionSpanTags()
     {
         LibraryVersion = TracerConstants.AssemblyVersion;
+
+        // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/environment-processorcount-on-windows#change-description
+        LogicalCpuCount = Environment.ProcessorCount;
     }
 
     public ulong SessionId { get; set; }
@@ -112,6 +115,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
 
     [Tag(EarlyFlakeDetectionTags.AbortReason)]
     public string EarlyFlakeDetectionTestAbortReason { get; set; }
+
+    [Metric(CommonTags.LogicalCpuCount)]
+    public double? LogicalCpuCount { get; }
 
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {

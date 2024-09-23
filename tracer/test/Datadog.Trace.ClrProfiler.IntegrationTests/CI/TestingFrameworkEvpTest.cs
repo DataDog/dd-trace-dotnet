@@ -164,6 +164,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         AssertTargetSpanExists(targetTest, CommonTags.OSArchitecture);
         AssertTargetSpanExists(targetTest, CommonTags.OSPlatform);
         AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
+        targetTest.Metrics[CommonTags.LogicalCpuCount].Should().Be(Environment.ProcessorCount);
+        targetTest.Metrics.Remove(CommonTags.LogicalCpuCount);
     }
 
     protected virtual void CheckOriginTag(MockCIVisibilityTest targetTest)

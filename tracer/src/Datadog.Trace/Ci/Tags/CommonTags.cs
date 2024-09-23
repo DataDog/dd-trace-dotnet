@@ -184,4 +184,9 @@ internal static class CommonTags
     /// BenchmarkDotNet testing framework
     /// </summary>
     public const string TestingFrameworkNameBenchmarkDotNet = "BenchmarkDotNet";
+
+    /// <summary>
+    /// Logical CPU count
+    /// </summary>
+    public const string LogicalCpuCount = "_dd.host.vcpu_count";
 }
