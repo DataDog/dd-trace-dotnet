@@ -110,6 +110,9 @@ internal static class MsTestIntegration
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
 
+        // Flaky retry
+        Common.SetFlakyRetryTags(test, isRetry);
+
         // Set test method
         test.SetTestMethodInfo(testMethod);
 

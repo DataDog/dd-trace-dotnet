@@ -9,8 +9,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodAttributeExecuteIntegration
 {
+    private static int _totalRetries = -1;
+
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -85,6 +87,7 @@ public static class TestMethodAttributeExecuteIntegration
             var testMethod = testMethodState.TestMethod;
             var isTestNew = false;
             var allowRetries = false;
+            var resultStatus = TestStatus.Skip;
             if (returnValue is IList { Count: > 0 } returnValueList)
             {
                 MsTestIntegration.AddTotalTestCases(returnValueList.Count - 1);
@@ -100,8 +103,8 @@ public static class TestMethodAttributeExecuteIntegration
                         }
                     }
 
-                    var result = HandleTestResult(test, testMethod, returnValueList[i], exception);
-                    allowRetries = allowRetries || result != TestStatus.Skip;
+                    resultStatus = HandleTestResult(test, testMethod, returnValueList[i], exception);
+                    allowRetries = allowRetries || resultStatus != TestStatus.Skip;
                 }
             }
             else
@@ -157,6 +160,77 @@ public static class TestMethodAttributeExecuteIntegration
 
                     // Calculate final results
                     returnValue = (TReturn)GetFinalResults(results);
+                }
+            }
+            else if (CIVisibility.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
+            {
+                // Flaky retry is enabled and the test failed
+                Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
+                var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+                if (remainingRetries > 0)
+                {
+                    // Handle retries
+                    var results = new List<IList>();
+                    results.Add(returnValueList);
+                    for (var i = 0; i < remainingRetries; i++)
+                    {
+                        if (Interlocked.Decrement(ref _totalRetries) <= 0)
+                        {
+                            Common.Log.Debug<int>("FlakyRetry: Exceeded de number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            break;
+                        }
+
+                        Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", i);
+                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+                        object? retryTestResult = null;
+                        Exception? retryException = null;
+                        var failedResult = false;
+                        try
+                        {
+                            retryTestResult = testMethodState.TestMethod.Invoke(null);
+                        }
+                        catch (Exception ex)
+                        {
+                            retryException = ex;
+                        }
+                        finally
+                        {
+                            if (retryTestResult is IList { Count: > 0 } retryTestResultList)
+                            {
+                                for (var j = 0; j < retryTestResultList.Count; j++)
+                                {
+                                    var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
+                                    var localResult = HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
+                                    if (localResult == TestStatus.Fail)
+                                    {
+                                        failedResult = true;
+                                    }
+                                }
+
+                                results.Add(retryTestResultList);
+                            }
+                            else
+                            {
+                                var localResult = HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
+                                if (localResult == TestStatus.Fail)
+                                {
+                                    failedResult = true;
+                                }
+
+                                results.Add(new List<object?> { retryTestResult });
+                            }
+                        }
+
+                        // If the retried test passed, we can stop the retries
+                        if (!failedResult)
+                        {
+                            Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", i);
+                            break;
+                        }
+                    }
+
+                    // Calculate final results
+                    returnValue = (TReturn)GetFinalResults(results.ToArray());
                 }
             }
         }
