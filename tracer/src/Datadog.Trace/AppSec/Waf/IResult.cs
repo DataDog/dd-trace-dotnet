@@ -40,9 +40,9 @@ namespace Datadog.Trace.AppSec.Waf
 
         bool Timeout { get; }
 
-        Dictionary<string, object?> Derivatives { get; }
+        Dictionary<string, object?>? ExtractSchemaDerivatives { get; }
 
-        bool ShouldReportSchema { get; }
+        Dictionary<string, object?>? FingerprintDerivatives { get; }
 
         bool ShouldReportSecurityResult { get; }
     }

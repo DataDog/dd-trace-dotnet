@@ -10,7 +10,12 @@
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
 #include "fault_tolerant_method_duplicator.h"
+#include "fault_tolerant_tracker.h"
+#include "iast/iast_util.h"
 #include "logger.h"
+
+#include <fstream>
+#include <map>
 #include <random>
 
 namespace debugger
@@ -97,25 +102,74 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
     return converted;
 }
 
+auto& DebuggerProbesInstrumentationRequester::GetExplorationTestLineProbes(const WSTRING& filename)
+{
+    std::call_once(explorationLinesInitFlag, [this, fn = filename] {
+        DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes(fn);
+    });
+    return explorationLineProbes;
+}
+
+void DebuggerProbesInstrumentationRequester::InitializeExplorationTestLineProbes(const WSTRING& filename)
+{
+#ifdef _WIN32
+    std::ifstream file(filename);
+#else
+    std::ifstream file(ToString(filename).c_str());
+#endif
+
+    if (!file.is_open())
+    {
+        Logger::Error("InitializeExplorationTestLineProbes: Unable to open file: ", filename);
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        std::istringstream lineStream(line);
+        std::string guid;
+        std::string methodTokenStr;
+        std::string bytecodeOffsetStr;
+
+        // Split the line by commas
+        if (std::getline(lineStream, guid, ',') && std::getline(lineStream, methodTokenStr, ',') &&
+            std::getline(lineStream, bytecodeOffsetStr, ','))
+        {
+            auto methodToken = static_cast<mdToken>(std::stoul(methodTokenStr));
+            int bytecodeOffset = std::stoi(bytecodeOffsetStr);
+
+            auto key = std::make_pair(guid, methodToken);
+            explorationLineProbes[key].push_back(bytecodeOffset);
+        }
+    }
+
+    file.close();
+}
+
 /**
  * \brief For Testing-Purposes. Requests ReJIT for the given method if certain checks are met. Relevant when the
  * environment variable `DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL` is set to true. \param module_info the ModuleInfo of the
  * module entering into instrumentation-all. \param module_id the ModuleID of the module entering into
  * instrumentation-all. \param function_token the mdToken of the method entering into instrumentation-all.
  */
-void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id,
-                                                                          const mdToken& function_token)
+void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const ModuleID& module_id, mdToken& function_token)
 {
-    if (!IsDebuggerInstrumentAllEnabled())
+    try
     {
-        return;
-    }
+        if (!IsDebuggerInstrumentAllEnabled())
+        {
+            return;
+        }
 
-    const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
-    const auto assembly_name = module_info.assembly.name;
+        const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
+        const auto assembly_name = module_info.assembly.name;
 
-    if (!IsCoreLibOr3rdParty(assembly_name))
-    {
+        if (IsCoreLibOr3rdParty(assembly_name))
+        {
+            return;
+        }
+
         ComPtr<IUnknown> metadataInterfaces;
         auto hr = m_corProfiler->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                           metadataInterfaces.GetAddressOf());
@@ -125,7 +179,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-        Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id,
+        Logger::Debug("Temporally allocating the ModuleMetadata for injection. ModuleId=", module_id,
                       " ModuleName=", module_info.assembly.name);
 
         std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
@@ -143,9 +197,10 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         hr = caller.method_signature.TryParse();
         if (FAILED(hr))
         {
-            Logger::Warn(
-                " * DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded: The method signature: ",
-                caller.method_signature.str(), " cannot be parsed.");
+            Logger::Warn("    * DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded: [MethodDef=",
+                         shared::TokenStr(&function_token), ", Type=", caller.type.name, ", Method=", caller.name, "]",
+                         ": could not parse method signature.");
+            Logger::Debug("    Method signature is: ", caller.method_signature.str());
             return;
         }
 
@@ -180,9 +235,82 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             /* is_exact_signature_match */ false));
 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
-            std::vector{module_id}, std::vector{methodProbe},
-            /* enqueueInSameThread */ true);
-        Logger::Debug("Instrument-All: Total number of ReJIT Requested: ", numReJITs);
+            std::vector{module_id}, std::vector{methodProbe}, /* enqueueInSameThread */ true);
+
+        Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
+                      ". ProbeId:", methodProbe->probeId, ". Numbers of ReJits: ", numReJITs);
+
+        if (!IsDebuggerInstrumentAllLinesEnabled())
+        {
+            return;
+        }
+
+        const auto lineProbesPath = GetEnvironmentValue(environment::internal_instrument_all_lines_path);
+        const shared::WSTRING& probeFilePath = WStr("line_exploration_file_path");
+
+        auto lineProbesMap = GetExplorationTestLineProbes(lineProbesPath);
+
+        WCHAR moduleName[MAX_PACKAGE_NAME];
+        ULONG nSize;
+        GUID mvid;
+        hr = metadataImport->GetScopeProps(moduleName, MAX_PACKAGE_NAME, &nSize, &mvid);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Can't read module scope props for module ID: ", module_id);
+        }
+        else
+        {
+            auto original_function_token = function_token;
+
+            if (fault_tolerant::FaultTolerantTracker::Instance()->IsInstrumentedMethod(module_id, function_token))
+            {
+                function_token =
+                    fault_tolerant::FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(
+                        module_id, function_token);
+            }
+
+            auto lowerMvid = iast::ToLower(ToString(mvid));
+            lowerMvid = lowerMvid.substr(1, lowerMvid.length() - 2);
+            auto key = std::make_pair(lowerMvid, function_token);
+            auto it = lineProbesMap.find(key);
+            if (it == lineProbesMap.end())
+            {
+                Logger::Warn("No line probes found in method: ", caller.type.name, ".", caller.name);
+            }
+            else
+            {
+                std::vector<std::shared_ptr<LineProbeDefinition>> lineProbeDefinitions;
+                auto bytecodeOffsets = it->second;
+                for (const auto& offset : bytecodeOffsets)
+                {
+                    const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(
+                        GenerateRandomProbeId(), offset, offset, mvid, original_function_token, probeFilePath));
+                    lineProbeDefinitions.push_back(lineProbe);
+                }
+
+                std::promise<std::vector<MethodIdentifier>> promise;
+                std::future<std::vector<MethodIdentifier>> future = promise.get_future();
+                m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(std::vector{module_id}, lineProbeDefinitions,
+                                                                           &promise);
+                const auto& lineProbeRequests = future.get();
+
+                // RequestRejit
+                auto requestRejitPromise = std::make_shared<std::promise<void>>();
+                std::future<void> requestRejitFuture = requestRejitPromise->get_future();
+                std::vector<MethodIdentifier> requests(lineProbeRequests.size());
+                std::copy(lineProbeRequests.begin(), lineProbeRequests.end(), requests.begin());
+                m_debugger_rejit_preprocessor->EnqueueRequestRejit(requests, requestRejitPromise);
+                // wait and get the value from the future<void>
+                requestRejitFuture.get();
+                Logger::Debug("Instrument-All: ReJIT Requested for: ", methodProbe->target_method.method_name,
+                              ". Numbers of line probes: ", lineProbeDefinitions.size());
+            }
+        }
+    }
+    catch (...)
+    {
+        Logger::Error("PerformInstrumentAllIfNeeded: fail for module: ", module_id, ". method: ", function_token);
     }
 }
 
@@ -192,7 +320,7 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator) :
     m_corProfiler(corProfiler),
     m_debugger_rejit_preprocessor(
-    std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
+        std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
@@ -424,8 +552,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
     std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions,
-                                                                  promise);
+    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions, promise);
 
     const auto& methodProbeRequests = future.get();
 
@@ -471,8 +598,8 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 
             const shared::WSTRING& probeId = shared::WSTRING(current.probeId);
             const shared::WSTRING& probeFilePath = shared::WSTRING(current.probeFilePath);
-            const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(probeId, current.bytecodeOffset, current.lineNumber,
-                                                        current.mvid, current.methodId, probeFilePath));
+            const auto& lineProbe = std::make_shared<LineProbeDefinition>(LineProbeDefinition(
+                probeId, current.bytecodeOffset, current.lineNumber, current.mvid, current.methodId, probeFilePath));
 
             lineProbeDefinitions.push_back(lineProbe);
         }
@@ -751,7 +878,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     Logger::Debug("  Loading Assembly Metadata...");
     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                  metadataInterfaces.GetAddressOf());
-    if (FAILED(hr))
+    if (hr != S_OK)
     {
         Logger::Warn(
             "DebuggerProbesInstrumentationRequester::sAddMetadataToModule failed to get metadata interface for ",

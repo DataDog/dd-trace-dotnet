@@ -30,7 +30,8 @@
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "ExecuteQuery"
+        "method": "ExecuteQuery",
+        "stackId": "1"
       },
       "evidence": {
         "valueParts": [
@@ -58,6 +59,9 @@
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
+    },
+    MetaStruct: {
+      _dd.stack: 
     }
   }
 ]

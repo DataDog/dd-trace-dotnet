@@ -32,7 +32,7 @@ public:
 
     ~FileSaver() = default;
 
-    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata)
+    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata, std::string const& info)
     {
         auto const& profileId = profile.GetId();
         auto success = WriteProfileToDisk(profile, serviceName, profileId);
@@ -61,6 +61,18 @@ public:
         {
             static const std::string MetadataFilename = "metadata.json";
             success = WriteTextFileToDisk(MetadataFilename, metadata, serviceName, profileId);
+
+            if (!success)
+            {
+                errorMessage << success.message() << "\n";
+                hasError = true;
+            }
+        }
+
+        if (!info.empty())
+        {
+            static const std::string InfoFilename = "info.json";
+            success = WriteTextFileToDisk(InfoFilename, info, serviceName, profileId);
 
             if (!success)
             {

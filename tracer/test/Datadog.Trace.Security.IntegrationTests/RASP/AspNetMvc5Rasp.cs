@@ -95,6 +95,13 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);

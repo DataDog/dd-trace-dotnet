@@ -208,3 +208,37 @@ TEST(ApplicationStoreTest, CheckTelemetryMetricsWorkerNotCreatedIfNotExplicitely
 
     ASSERT_EQ(info.Worker, nullptr);
 }
+
+TEST(ApplicationStoreTest, CheckTelemetryMetricsWorkerCreationIfAutoEnabled)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    const std::string expectedServiceName = "DefaultServiceName";
+    const std::string expectedVersion = "DefaultVersion";
+    const std::string expectedEnvironment = "DefaultEnvironment";
+    const std::string expectedGitRepository = "DefaultGitRepository";
+    const std::string expectedGitCommitSha = "DefaultGitCommitSha";
+    const std::string agentUrl = "http://localhost:8126";
+    const std::string emptyString = "";
+
+    EXPECT_CALL(mockConfiguration, GetServiceName()).WillRepeatedly(ReturnRef(expectedServiceName));
+    EXPECT_CALL(mockConfiguration, GetVersion()).WillRepeatedly(ReturnRef(expectedVersion));
+    EXPECT_CALL(mockConfiguration, GetEnvironment()).WillRepeatedly(ReturnRef(expectedEnvironment));
+    EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(expectedGitRepository));
+    EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(expectedGitCommitSha));
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).WillRepeatedly(ReturnRef(agentUrl));
+    EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
+    EXPECT_CALL(mockConfiguration, IsSsiTelemetryEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfiguration, IsTelemetryToDiskEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(emptyString));
+
+    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    RuntimeInfoHelper helper(6, 0, false);
+
+    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo(), ssiManager.get());
+
+    const auto& info = applicationStore.GetApplicationInfo("{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}");
+
+    ASSERT_NE(info.Worker, nullptr);
+}

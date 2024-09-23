@@ -127,9 +127,9 @@ namespace Datadog.Trace.Ci
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
+            Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
 
             // Set the service name if empty
-            Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
@@ -138,6 +138,7 @@ namespace Datadog.Trace.Ci
 
             // Normalize the service name
             tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -195,9 +196,9 @@ namespace Datadog.Trace.Ci
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
+            Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
 
             // Set the service name if empty
-            Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
@@ -206,6 +207,7 @@ namespace Datadog.Trace.Ci
 
             // Normalize the service name
             tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");

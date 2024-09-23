@@ -11,6 +11,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
@@ -503,6 +504,10 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);

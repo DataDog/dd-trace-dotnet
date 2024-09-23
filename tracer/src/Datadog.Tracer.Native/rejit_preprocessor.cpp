@@ -218,13 +218,19 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueFaultTolerantMethods(
     {
         const auto originalMethod =
             fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
+        const auto& originalMethodNewFunctionInfo = FunctionInfo(
+            originalMethod, functionInfo.name, functionInfo.type, functionInfo.signature,
+            functionInfo.function_spec_signature, functionInfo.method_def_id, functionInfo.method_signature);
         RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
-                                            rejitRequests, originalMethod, functionInfo, moduleHandler);
+                                            rejitRequests, originalMethod, originalMethodNewFunctionInfo,
+                                            moduleHandler);
 
         const auto instrumentedMethod =
             fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
+        const auto& instrumentedMethodNewFunctionInfo = FunctionInfo(instrumentedMethod, functionInfo.name, functionInfo.type, functionInfo.signature, functionInfo.function_spec_signature, functionInfo.method_def_id, functionInfo.method_signature);
         RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
-                                            rejitRequests, instrumentedMethod, functionInfo, moduleHandler);
+                                            rejitRequests, instrumentedMethod, instrumentedMethodNewFunctionInfo,
+                                            moduleHandler);
     }
 }
 
@@ -322,7 +328,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
+            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": could not get function info for MethodDef token.");
             continue;
         }
 
@@ -332,8 +338,10 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         auto hr = functionInfo.method_signature.TryParse();
         if (FAILED(hr))
         {
-            Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
-                         ": the method signature cannot be parsed.");
+            Logger::Warn(
+                    "    * Skipping [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
+            Logger::Debug("    Method signature is: ", functionInfo.method_signature.str());
             continue;
         }
 
@@ -381,8 +389,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        Logger::Info("Method enqueued for ReJIT for ", target_method.type.name, ".", target_method.method_name, "(",
-                     (target_method.signature_types.size() - 1), " params).");
+        Logger::Info("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
+                  "(", caller.method_signature.NumberOfArguments(), " params).");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 
@@ -576,7 +584,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     Logger::Debug("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                                  metadataInterfaces.GetAddressOf());
-                    if (FAILED(hr))
+                    if (hr != S_OK)
                     {
                         Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
                                      moduleInfo.id, " ", moduleInfo.assembly.name);
@@ -799,7 +807,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     Logger::Debug("  Loading Assembly Metadata...");
                     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                                  metadataInterfaces.GetAddressOf());
-                    if (FAILED(hr))
+                    if (hr != S_OK)
                     {
                         Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
                                      moduleInfo.id, " ", moduleInfo.assembly.name);

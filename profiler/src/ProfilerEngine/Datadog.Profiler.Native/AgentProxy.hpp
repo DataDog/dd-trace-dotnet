@@ -33,9 +33,9 @@ public:
 
     ~AgentProxy() = default;
 
-    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
-        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata));
+        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata), std::move(info));
         if (!ec)
         {
             return std::move(ec); // ?? really ?? otherwise it calls the copy constructor :sad:
@@ -107,7 +107,7 @@ private:
         ddog_prof_Exporter_Request* _inner;
     };
 
-    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
         auto start = encodedProfile->start;
         auto end = encodedProfile->end;
@@ -142,15 +142,23 @@ private:
         }
 
         // json defined in internal RFC - Pprof System Info Support
+        // that is used for SSI telemetry metrics.
         // Mostly already passed through tags today
-        ddog_CharSlice* pOptions = nullptr;
+        ddog_CharSlice* pInfo = nullptr;
+        ddog_CharSlice ffi_info{};
+        if (!info.empty())
+        {
+            ffi_info = FfiHelper::StringToCharSlice(info);
+            pInfo = &ffi_info;
+        }
+
         auto* endpoints_stats = encodedProfile->endpoints_stats;
         auto requestResult =
             ddog_prof_Exporter_Request_build(
                 _exporter.get(), start, end,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                endpoints_stats, pMetadata, pOptions,
+                endpoints_stats, pMetadata, pInfo,
                 10000);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)

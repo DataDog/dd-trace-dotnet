@@ -5,6 +5,69 @@
 
 
 
+
+## [Release 3.3.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.3.0)
+
+## Summary
+
+- [ASM] Fix some minor bugs (#5943, #5955, #6017)
+- [ASM] Improvements to stack trace reporting (#6011, #5997)
+- [Dynamic Instrumentation] Add support for `typeof` expression
+- [Continuous Profiler] Add support for heuristic-based activation (#5240, #6002, #6026)
+- [DBM] Full propagation mode for SQL Server (#5859)
+
+## Changes
+
+### ASM
+* [ASM] Avoid unhandled HttpRequestValidationExceptions (#5943)
+* [ASM] Avoid reporting unknown matcher WAF errors (#5955)
+* [ASM] RASP: add telemetry tag for shell injection (#5993)
+* [ASM] Add new capabilities for RC (#6008)
+* [ASM] Change stack trim proportion (#6011)
+* [ASM]Fix InvalidOperationException in httpContext.Items (#6017)
+* [ASM] Capabilities reporting against WAF versions. (#6028)
+* [IAST] Add Stack trace to vuln location (#5997)
+* [IAST] Fix system test weak_cipher system test (#6034)
+
+### Continuous Profiler
+* [Profiler] Support Single Step Instrumentation deployment and activation (#5240)
+* [Profiler] Contention profiling: add blocking thread name (#5981)
+* [Profiler] Fix duplicated lifecycle telemetry (#6002)
+* [Tool] update continuous profiler diagnostics (#6014)
+* [Profiler] Disable `timer_create`-based CPU profiler when required (#6015)
+* [Profiler] Send ssi info with profiles (#6026)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-2323 Add support for `typeof` expression in EL (#5539)
+
+### Build / Test
+* [Profiler] Disable SSI telemetry by default (#6020)
+* Fix SSI tests for profiler integration tests (#6016)
+* [Profiler/CI] Disable Profiler Windows ASAN job (#5987)
+* Add explicit permissions to all workflows (#5728)
+* [Test Package Versions Bump] Updating package versions (#5873)
+* [build] Build tracer with ReadyToRun (#5962)
+* Display the crash tests stdout live (#5964)
+* Timeit bump and fixes (#5971)
+* Add `linux-musl-arm64` standalone `dd-trace` to the v3 release artifacts (#5974)
+* [CONTSEC-1501] Comment the action that uploads SARIF to Datadog (#5977)
+* Include snapshot diff in snapshot body (#5988)
+* Make sure we run all the TFMs on master builds (#5990)
+* Minor CI fixes (#6000)
+* Fix installer tests (#5994 => main) (#6004)
+* Fix the trace pipeline stage (#6007)
+* [Build] Update and fix linux debug symbols artifact (#6009)
+* Fix bug in version bump task (#6022)
+* [CI] Shorten too long snapshot file names (#6024)
+* Fix gitlab build (#6025)
+* [BUILD] Fix merge conflict (#6033)
+
+### Miscellaneous
+* DSM Full propagation mode for SQL Server (#5859)
+* [Crashtracking] Fix the handling of COMPlus_DbgMiniDumpName (#5980)
+
+[Changes since 3.2.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.2.0...v3.3.0)
+
 ## [Release 3.2.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.2.0)
 
 ## Summary
