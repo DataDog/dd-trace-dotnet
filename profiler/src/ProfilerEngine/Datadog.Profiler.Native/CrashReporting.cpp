@@ -278,23 +278,20 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
 
 int32_t CrashReporting::Send()
 {
-    auto result = ddog_crasht_CrashInfo_upload_to_endpoint(&_crashInfo, nullptr);
-
-    if (result.tag == DDOG_CRASHT_RESULT_ERR)
-    {
-        SetLastError(result.err);
-        return 1;
-    }
-
-    return 0;
+    return ExportImpl(nullptr);
 }
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
     auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
+    return ExportImpl(endpoint);
+}
+
+int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
+{
     auto result = ddog_crasht_CrashInfo_upload_to_endpoint(&_crashInfo, endpoint);
 
-    on_leave { ddog_endpoint_drop(endpoint); };
+    on_leave { if (endpoint != nullptr) ddog_endpoint_drop(endpoint); };
 
     if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {

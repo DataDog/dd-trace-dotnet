@@ -103,5 +103,6 @@ protected:
     virtual std::string GetSignalInfo(int32_t signal) = 0;
 
 private:
+    int32_t ExportImpl(ddog_Endpoint* endpoint);
     int32_t _refCount;
 };
