@@ -67,9 +67,9 @@ internal record ConfigurationStatus
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
-    internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
+    internal Dictionary<string, Action[]> ActionsByFile { get; set; } = new();
 
-    internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
+    internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
     internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
     {
@@ -125,7 +125,8 @@ internal record ConfigurationStatus
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
         {
-            dictionary.Add(WafActionsKey, Actions.Select(a => a.Value.ToKeyValuePair()).ToArray());
+            var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
+            dictionary.Add(WafActionsKey, actions.Select(a => a.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))
