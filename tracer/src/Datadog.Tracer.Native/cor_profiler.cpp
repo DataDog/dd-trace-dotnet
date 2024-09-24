@@ -3709,12 +3709,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
         rewriter.SetTkLocalVarSig(locals_signature_token);
 
-        if (FAILED(hr))
-        {
-            Logger::Warn("RunILStartupHook: Call to ILRewriter.Import() failed for outer method ", module_id, " ", ret_method_token);
-            return hr;
-        }
-
         ILRewriterWrapper rewriter_wrapper(&rewriter);
         rewriter_wrapper.SetILPosition(rewriter.GetILList()->m_pNext);
 
