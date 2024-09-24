@@ -139,6 +139,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.WeakCipher\\Samples.WeakCipher.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.WebRequest.NetFramework20\\Samples.WebRequest.NetFramework20.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.WebRequest\\Samples.WebRequest.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.XUnitTestsRetries\\Samples.XUnitTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTests\\Samples.XUnitTests.csproj",
       "tracer\\test\\test-applications\\regression\\AspNetCoreSmokeTest\\AspNetCoreSmokeTest.csproj",
       "tracer\\test\\test-applications\\regression\\AssemblyLoad.FileNotFoundException\\AssemblyLoad.FileNotFoundException.csproj",
