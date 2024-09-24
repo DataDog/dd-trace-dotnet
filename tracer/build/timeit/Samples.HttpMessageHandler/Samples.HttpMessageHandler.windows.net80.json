@@ -1,6 +1,6 @@
 {
   "enableDatadog": true,
-  "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.netcoreapp31.json",
+  "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net80.json",
   "warmUpCount": 5,
   "count": 80,
   "services": [
@@ -36,7 +36,7 @@
   "processName": "dotnet",
   "processArguments": ".\\Samples.HttpMessageHandler.dll",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_netcoreapp3.1",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net8.0",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
     "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -57,8 +57,8 @@
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Core",
-    "runtime.version": "3.1",
-    "benchmark.job.runtime.name": ".NET Core 3.1",
-    "benchmark.job.runtime.moniker": "netcoreapp3.1"
+    "runtime.version": "8.0",
+    "benchmark.job.runtime.name": ".NET 8.0",
+    "benchmark.job.runtime.moniker": "net8.0"
   }
 }
