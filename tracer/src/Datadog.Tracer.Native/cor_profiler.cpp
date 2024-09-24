@@ -3162,7 +3162,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 {
     ComPtr<IUnknown> metadata_interfaces;
     auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-        metadata_interfaces.GetAddressOf());
+                                             metadata_interfaces.GetAddressOf());
     if (hr != S_OK)
     {
         Logger::Warn("GenerateVoidILStartupMethod: failed to get metadata interface for ", module_id);
@@ -3257,7 +3257,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Get a TypeRef for System.Runtime.InteropServices.Marshal
     mdTypeRef marshal_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Runtime.InteropServices.Marshal"),
-        &marshal_type_ref);
+                                            &marshal_type_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Runtime.InteropServices.Marshal failed");
@@ -3268,7 +3268,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Get a TypeRef for System.Reflection.Assembly
     mdTypeRef system_reflection_assembly_type_ref;
     hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Reflection.Assembly"),
-        &system_reflection_assembly_type_ref);
+                                            &system_reflection_assembly_type_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName::System.Reflection.Assembly failed");
@@ -3295,13 +3295,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
     mdMemberRef interlocked_compare_member_ref;
-    COR_SIGNATURE interlocked_compare_exchange_signature[] = { IMAGE_CEE_CS_CALLCONV_DEFAULT,
+    COR_SIGNATURE interlocked_compare_exchange_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT,
                                                               3,
                                                               ELEMENT_TYPE_I4,
                                                               ELEMENT_TYPE_BYREF,
                                                               ELEMENT_TYPE_I4,
                                                               ELEMENT_TYPE_I4,
-                                                              ELEMENT_TYPE_I4 };
+                                                              ELEMENT_TYPE_I4};
     hr = metadata_emit->DefineMemberRef(
         interlocked_type_ref, WStr("CompareExchange"), interlocked_compare_exchange_signature,
         sizeof(interlocked_compare_exchange_signature), &interlocked_compare_member_ref);
@@ -3314,16 +3314,16 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Get a MemberRef for System.Runtime.InteropServices.Marshal.Copy(IntPtr, Byte[], int, int)
     mdMemberRef marshal_copy_member_ref;
-    COR_SIGNATURE marshal_copy_signature[] = { IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
+    COR_SIGNATURE marshal_copy_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
                                               4,                             // Number of parameters
                                               ELEMENT_TYPE_VOID,             // Return type
                                               ELEMENT_TYPE_I,                // List of parameter types
                                               ELEMENT_TYPE_SZARRAY,
                                               ELEMENT_TYPE_U1,
                                               ELEMENT_TYPE_I4,
-                                              ELEMENT_TYPE_I4 };
+                                              ELEMENT_TYPE_I4};
     hr = metadata_emit->DefineMemberRef(marshal_type_ref, WStr("Copy"), marshal_copy_signature,
-        sizeof(marshal_copy_signature), &marshal_copy_member_ref);
+                                        sizeof(marshal_copy_signature), &marshal_copy_member_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Marshal.Copy");
@@ -3338,11 +3338,11 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         ELEMENT_TYPE_CLASS // ret = System.Reflection.Assembly
             // insert compressed token for System.Reflection.Assembly TypeRef here
     };
-    COR_SIGNATURE appdomain_load_signature_end[] = { ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1, ELEMENT_TYPE_SZARRAY,
-                                                    ELEMENT_TYPE_U1 };
+    COR_SIGNATURE appdomain_load_signature_end[] = {ELEMENT_TYPE_SZARRAY, ELEMENT_TYPE_U1, ELEMENT_TYPE_SZARRAY,
+                                                    ELEMENT_TYPE_U1};
     ULONG start_length = sizeof(appdomain_load_signature_start);
     ULONG end_length = sizeof(appdomain_load_signature_end);
-
+    
     BYTE system_reflection_assembly_type_ref_compressed_token[4];
     ULONG token_length =
         CorSigCompressToken(system_reflection_assembly_type_ref, system_reflection_assembly_type_ref_compressed_token);
@@ -3354,7 +3354,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     memcpy(&appdomain_load_signature[start_length + token_length], appdomain_load_signature_end, end_length);
 
     hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("Load"), appdomain_load_signature,
-        appdomain_load_signature_length, &appdomain_load_member_ref);
+                                        appdomain_load_signature_length, &appdomain_load_member_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Assembly.Load");
@@ -3364,13 +3364,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Create method signature for Assembly.CreateInstance(string)
     mdMemberRef assembly_create_instance_member_ref;
-    COR_SIGNATURE assembly_create_instance_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 1,
+    COR_SIGNATURE assembly_create_instance_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 1,
                                                           ELEMENT_TYPE_OBJECT, // ret = System.Object
-                                                          ELEMENT_TYPE_STRING };
+                                                          ELEMENT_TYPE_STRING};
 
     hr = metadata_emit->DefineMemberRef(system_reflection_assembly_type_ref, WStr("CreateInstance"),
-        assembly_create_instance_signature, sizeof(assembly_create_instance_signature),
-        &assembly_create_instance_member_ref);
+                                        assembly_create_instance_signature, sizeof(assembly_create_instance_signature),
+                                        &assembly_create_instance_member_ref);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for Assembly.CreateInstance");
@@ -3445,7 +3445,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     if (system_appdomain_type_ref != mdTypeRefNil)
     {
         // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
-        COR_SIGNATURE appdomain_get_currentdomain_signature_start[] = { IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_CLASS };
+        COR_SIGNATURE appdomain_get_currentdomain_signature_start[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_CLASS};
         ULONG appdomain_get_currentdomain_signature_start_length = sizeof(appdomain_get_currentdomain_signature_start);
 
         BYTE system_appdomain_type_ref_compressed_token[4];
@@ -3457,7 +3457,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         memcpy(&appdomain_get_currentdomain_signature[appdomain_get_currentdomain_signature_start_length], system_appdomain_type_ref_compressed_token, system_appdomain_type_ref_compressed_token_length);
 
         hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_CurrentDomain"), appdomain_get_currentdomain_signature,
-            appdomain_get_currentdomain_signature_length, &appdomain_get_currentdomain_member_ref);
+                                            appdomain_get_currentdomain_signature_length, &appdomain_get_currentdomain_member_ref);
         if (FAILED(hr))
         {
             Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
@@ -3465,10 +3465,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         }
 
         // Get a mdMemberRef for System.AppDomain.get_IsFullyTrusted()
-        COR_SIGNATURE appdomain_get_isfullytrusted_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_BOOLEAN };
+        COR_SIGNATURE appdomain_get_isfullytrusted_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0, ELEMENT_TYPE_BOOLEAN};
         hr = metadata_emit->DefineMemberRef(system_appdomain_type_ref, WStr("get_IsFullyTrusted"),
-            appdomain_get_isfullytrusted_signature, sizeof(appdomain_get_isfullytrusted_signature),
-            &appdomain_get_isfullytrusted_member_ref);
+                                            appdomain_get_isfullytrusted_signature, sizeof(appdomain_get_isfullytrusted_signature),
+                                            &appdomain_get_isfullytrusted_member_ref);
         if (FAILED(hr))
         {
             Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsFullyTrusted");
@@ -3476,8 +3476,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         }
 
         // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
-        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = { IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
-                                                                  ELEMENT_TYPE_BOOLEAN };
+        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                                  ELEMENT_TYPE_BOOLEAN};
         hr = metadata_emit->DefineMemberRef(
             system_appdomain_type_ref, WStr("get_IsHomogenous"), appdomain_get_ishomogenous_signature,
             sizeof(appdomain_get_ishomogenous_signature), &appdomain_get_ishomogenous_member_ref);
@@ -3508,7 +3508,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 #endif
 
     mdString load_helper_token;
-    hr = metadata_emit->DefineUserString(load_helper_str, (ULONG)load_helper_str_size, &load_helper_token);
+    hr = metadata_emit->DefineUserString(load_helper_str, (ULONG) load_helper_str_size, &load_helper_token);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineUserString failed");
@@ -3542,7 +3542,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Define a new TypeDef __DDVoidMethodType__ that extends System.Object
     mdTypeDef new_type_def;
     hr = metadata_emit->DefineTypeDef(WStr("__DDVoidMethodType__"), tdAbstract | tdSealed, object_type_ref, nullptr,
-        &new_type_def);
+                                      &new_type_def);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineTypeDef failed");
@@ -3556,9 +3556,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Define a new static int field _isAssemblyLoaded on the new type.
     mdFieldDef isAssemblyLoadedFieldToken = mdFieldDefNil;
-    BYTE field_signature[] = { IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4 };
+    BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4};
     hr = metadata_emit->DefineField(new_type_def, WStr("_isAssemblyLoaded"), fdStatic | fdPrivate, field_signature,
-        sizeof(field_signature), 0, nullptr, 0, &isAssemblyLoadedFieldToken);
+                                    sizeof(field_signature), 0, nullptr, 0, &isAssemblyLoadedFieldToken);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineField _isAssemblyLoaded failed");
@@ -3589,8 +3589,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         ELEMENT_TYPE_I4,
     };
     hr = metadata_emit->DefineMethod(new_type_def, WStr("GetAssemblyAndSymbolsBytes"),
-        mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
-        sizeof(get_assembly_bytes_signature), 0, 0, &pinvoke_method_def);
+                                     mdStatic | mdPinvokeImpl | mdHideBySig, get_assembly_bytes_signature,
+                                     sizeof(get_assembly_bytes_signature), 0, 0, &pinvoke_method_def);
     if (FAILED(hr))
     {
         Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed");
@@ -3606,7 +3606,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     shared::WSTRING native_profiler_file = shared::GetCurrentModuleFileName();
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
-        native_profiler_file);
+                  native_profiler_file);
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
