@@ -7,30 +7,49 @@
 
 #include <string.h>
 
+
+#include <linux/futex.h>      /* Definition of FUTEX_* constants */
+#include <sys/syscall.h>      /* Definition of SYS_* constants */
+#include <unistd.h>
+
+using namespace std::chrono_literals;
+
+constexpr auto InfiniteTimeout = -1ms;
+
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
-// This function is exposed by the ld_preload wrapper library.
-// This allows us to know if we have to reload the cache or not
-extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose() __attribute__((weak));
+extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
 LibrariesInfoCache::LibrariesInfoCache()
+    : _stopRequested{false}, _event(true)
+{
+}
+
+LibrariesInfoCache::~LibrariesInfoCache() = default;
+
+const char* LibrariesInfoCache::GetName()
+{
+    return "Libraries Info Cache";
+}
+
+bool LibrariesInfoCache::StartImpl()
 {
     LibrariesInfo.reserve(100);
-    NbCallsToDlopenDlclose = 0;
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+    _worker = std::thread(&LibrariesInfoCache::Work, this);
+    return true;
 }
 
-LibrariesInfoCache* LibrariesInfoCache::Get()
-{
-    static LibrariesInfoCache Instance;
-    return s_instance;
-}
-
-LibrariesInfoCache::~LibrariesInfoCache()
+bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
     s_instance = nullptr;
+
+    _stopRequested = true;
+    NotifyCacheUpdateImpl();
+    _worker.join();
+    return true;
 }
 
 struct IterationData
@@ -40,22 +59,44 @@ public:
     LibrariesInfoCache* Cache;
 };
 
+void LibrariesInfoCache::Work()
+{
+    auto timeout = InfiniteTimeout;
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
+    }
+    else
+    {
+        // if this function is missing we still want the cache to update on a regular basis
+        constexpr auto defaultTimeout = 1s;
+        Log::Info("Wrapper library is missing. The cache will reload itself every ", defaultTimeout);
+        timeout = defaultTimeout;
+    }
+
+    while (!_stopRequested)
+    {
+        // in the default case, notification mechanism in place, we will block until notification
+        // Otherwise, we reload the cache no matter on a regular basis (defaultTimeout)
+        _event.Wait(timeout);
+
+        if (_stopRequested)
+        {
+            break;
+        }
+
+        UpdateCache();
+    }
+
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = nullptr;
+    }
+}
+
 void LibrariesInfoCache::UpdateCache()
 {
     std::unique_lock l(_cacheLock);
-
-    auto shouldReload = true;
-    if (dd_nb_calls_to_dlopen_dlclose != nullptr) [[likely]]
-    {
-        auto previous = NbCallsToDlopenDlclose;
-        NbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose();
-        shouldReload = previous != NbCallsToDlopenDlclose;
-    }
-
-    if (!shouldReload)
-    {
-        return;
-    }
 
     IterationData data = {.Index = 0, .Cache = this};
     dl_iterate_phdr(
@@ -114,4 +155,19 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
         }
     }
     return rc;
+}
+
+void LibrariesInfoCache::NotifyCacheUpdate()
+{
+    auto* instance = s_instance;
+    if (instance == nullptr)
+    {
+        return;
+    }
+    instance->NotifyCacheUpdateImpl();
+}
+
+void LibrariesInfoCache::NotifyCacheUpdateImpl()
+{
+    _event.Set();
 }

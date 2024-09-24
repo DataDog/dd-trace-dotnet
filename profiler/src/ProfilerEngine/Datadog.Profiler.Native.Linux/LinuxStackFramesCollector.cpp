@@ -30,16 +30,14 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackProvider* callstackProvider,
-    LibrariesInfoCache* librariesCacheInfo) :
+    CallstackProvider* callstackProvider) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _processId{OpSysTools::GetProcId()},
     _signalManager{signalManager},
     _errorStatistics{},
-    _useBacktrace2{configuration->UseBacktrace2()},
-    _plibrariesInfo{librariesCacheInfo}
+    _useBacktrace2{configuration->UseBacktrace2()}
 {
     if (_signalManager != nullptr)
     {
@@ -105,8 +103,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
         pThreadInfo->GetStackWalkLock().Acquire();
 
-        _plibrariesInfo->UpdateCache();
-
         on_leave
         {
             pThreadInfo->GetStackWalkLock().Release();
@@ -126,8 +122,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // When scope goes out of scope, the CPU profiler will be reenabled for
         // pThreadInfo thread
         auto scope = CpuProfilerDisableScope(pThreadInfo);
-
-        _plibrariesInfo->UpdateCache();
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
