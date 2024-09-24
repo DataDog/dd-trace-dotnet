@@ -139,7 +139,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
                     if (isRetryEnabled)
                     {
-                        messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount;
+                        messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
                     }
                     else
                     {
@@ -182,7 +182,14 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 }
                 else
                 {
-                    Common.Log.Debug("EFD/Retry: All retries were executed.");
+                    if (isRetryEnabled && runSummary.Failed == 0)
+                    {
+                        Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
+                    }
+                    else
+                    {
+                        Common.Log.Debug("EFD/Retry: All retries were executed.");
+                    }
                 }
 
                 if (index == 0)

@@ -180,7 +180,7 @@ public static class TestMethodAttributeExecuteIntegration
                             break;
                         }
 
-                        Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", i);
+                        Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", i + 1);
                         var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
                         object? retryTestResult = null;
                         Exception? retryException = null;
@@ -224,7 +224,7 @@ public static class TestMethodAttributeExecuteIntegration
                         // If the retried test passed, we can stop the retries
                         if (!failedResult)
                         {
-                            Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", i);
+                            Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", i + 1);
                             break;
                         }
                     }
