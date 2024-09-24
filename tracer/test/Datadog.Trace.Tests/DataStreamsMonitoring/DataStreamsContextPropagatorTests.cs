@@ -38,6 +38,43 @@ public class DataStreamsContextPropagatorTests
            .BeCloseTo(FromUnixTimeNanoseconds(context.EdgeStart), oneMs);
     }
 
+    [Fact]
+    public void Inject_WhenLegacyHeadersEnabled_IncludesBothBase64AndBinaryHeaders()
+    {
+        var headers = new TestHeadersCollection();
+        var context = new PathwayContext(
+            new PathwayHash(1234),
+            DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
+            DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+        DataStreamsContextPropagator.Instance.Inject(context, headers);
+
+        headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
+        headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
+
+        headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKey);
+        headers.Values[DataStreamsPropagationHeaders.PropagationKey].Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void Extract_WhenBothHeadersPresent_PrefersBase64Header()
+    {
+        var headers = new TestHeadersCollection();
+        var originalContext = new PathwayContext(
+            new PathwayHash(1234),
+            DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
+            DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+        DataStreamsContextPropagator.Instance.Inject(originalContext, headers);
+
+        var extractedContext = DataStreamsContextPropagator.Instance.Extract(headers);
+
+        extractedContext.Should().NotBeNull();
+        extractedContext.Value.Hash.Value.Should().Be(originalContext.Hash.Value);
+        (extractedContext.Value.PathwayStart / 1_000_000).Should().Be(originalContext.PathwayStart / 1_000_000);
+        (extractedContext.Value.EdgeStart / 1_000_000).Should().Be(originalContext.EdgeStart / 1_000_000);
+    }
+
     private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
         => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
 }
