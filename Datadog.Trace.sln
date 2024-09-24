@@ -580,6 +580,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsRetries",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.NUnitTestsRetries", "tracer\test\test-applications\integrations\Samples.NUnitTestsRetries\Samples.NUnitTestsRetries.csproj", "{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MSTestTestsRetries", "tracer\test\test-applications\integrations\Samples.MSTestTestsRetries\Samples.MSTestTestsRetries.csproj", "{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1396,6 +1398,10 @@ Global
 		{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1623,6 +1629,7 @@ Global
 		{3978A7D5-7B6E-4152-9C3A-5852F1F6E223} = {16427BFB-B4C6-46A9-A290-8EA51FF73FEA}
 		{B8DAF87D-A30D-48AE-B630-C65A64D0C3AF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
