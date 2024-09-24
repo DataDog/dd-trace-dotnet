@@ -117,7 +117,7 @@ ULONG CrashReporting::Release()
 
 int32_t CrashReporting::AddTag(const char* key, const char* value)
 {
-    auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::FfiHelper::StringToCharSlice(std::string_view(key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(value)));
+    auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
 
     if (result.tag == DDOG_PROF_CRASHTRACKER_RESULT_ERR)
     {
@@ -142,7 +142,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::FfiHelper::StringToCharSlice(signalInfo) });
+    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
 
     return 0;
 }
@@ -191,7 +191,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 .colno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
                 .filename = {nullptr, 0},
                 .lineno = { DDOG_PROF_OPTION_U32_NONE_U32, 0},
-                .name = libdatadog::FfiHelper::StringToCharSlice(strings[i])
+                .name = libdatadog::to_char_slice(strings[i])
             };
 
             auto ip = static_cast<uintptr_t>(frame.ip);
@@ -249,16 +249,16 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
     auto vecTags = ddog_Vec_Tag_new();
 
     const ddog_prof_CrashtrackerMetadata metadata = {
-        .profiling_library_name = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryName)) ,
-        .profiling_library_version = libdatadog::FfiHelper::StringToCharSlice(std::string_view(libraryVersion)),
-        .family = libdatadog::FfiHelper::StringToCharSlice(std::string_view(family)),
+        .profiling_library_name = libdatadog::to_char_slice(libraryName) ,
+        .profiling_library_version = libdatadog::to_char_slice(libraryVersion),
+        .family = libdatadog::to_char_slice(family),
         .tags = &vecTags
     };
 
     for (int32_t i = 0; i < tagCount; i++)
     {
         auto tag = tags[i];
-        ddog_Vec_Tag_push(&vecTags, libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.key)), libdatadog::FfiHelper::StringToCharSlice(std::string_view(tag.value)));
+        ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value));
     }
 
     auto result = ddog_crashinfo_set_metadata(&_crashInfo, metadata);
@@ -295,7 +295,7 @@ int32_t CrashReporting::WriteToFile(const char* url)
 {
     ddog_prof_CrashtrackerConfiguration config{};
 
-    config.endpoint = ddog_Endpoint_file(libdatadog::FfiHelper::StringToCharSlice(std::string_view(url)));
+    config.endpoint = ddog_Endpoint_file(libdatadog::to_char_slice(url));
     config.timeout_secs = 10;
 
     auto result = ddog_crashinfo_upload_to_endpoint(&_crashInfo, config);

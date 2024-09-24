@@ -216,7 +216,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                 stackFrame.method = std::string(methodData.symbolName);
                 hasName = true;
 
-                auto demangleResult = ddog_demangle(libdatadog::FfiHelper::StringToCharSlice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
+                auto demangleResult = ddog_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
 
                 if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
                 {

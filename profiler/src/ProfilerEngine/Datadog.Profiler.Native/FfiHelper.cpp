@@ -14,41 +14,41 @@ extern "C"
 }
 
 namespace libdatadog {
-ddog_ByteSlice FfiHelper::StringToByteSlice(std::string const& str)
+ddog_ByteSlice to_byte_slice(std::string const& str)
 {
     return {(uint8_t*)str.c_str(), str.size()};
 }
 
-ddog_ByteSlice FfiHelper::StringToByteSlice(char const* str)
+ddog_ByteSlice to_byte_slice(char const* str)
 {
     return {(uint8_t*)str, strlen(str)};
 }
 
-ddog_CharSlice FfiHelper::StringToCharSlice(std::string const& str)
+ddog_CharSlice to_char_slice(std::string const& str)
 {
     return {str.data(), str.size()};
 }
 
-ddog_CharSlice FfiHelper::StringToCharSlice(std::string_view str)
+ddog_CharSlice to_char_slice(std::string_view str)
 {
     return {str.data(), str.size()};
 }
 
-ddog_prof_ValueType FfiHelper::CreateValueType(std::string const& type, std::string const& unit)
+ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit)
 {
     auto valueType = ddog_prof_ValueType{};
-    valueType.type_ = FfiHelper::StringToCharSlice(type);
-    valueType.unit = FfiHelper::StringToCharSlice(unit);
+    valueType.type_ = to_char_slice(type);
+    valueType.unit = to_char_slice(unit);
     return valueType;
 }
 
-std::string FfiHelper::GetErrorMessage(ddog_Error& error)
+std::string GetErrorMessage(ddog_Error& error)
 {
     auto message = ddog_Error_message(&error);
     return std::string(message.ptr, message.len);
 }
 
-std::string FfiHelper::GetErrorMessage(ddog_MaybeError& error)
+std::string GetErrorMessage(ddog_MaybeError& error)
 {
     return std::string((char*)error.some.message.ptr, error.some.message.len);
 }
