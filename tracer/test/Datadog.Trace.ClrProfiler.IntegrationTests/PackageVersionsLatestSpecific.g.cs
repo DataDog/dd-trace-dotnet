@@ -113,13 +113,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET6_0
-                new object[] { "1.10.0" },
+                new object[] { "1.11.0" },
 #endif
 #if NET7_0
-                new object[] { "1.10.0" },
+                new object[] { "1.11.0" },
 #endif
 #if NET8_0
-                new object[] { "1.10.0" },
+                new object[] { "1.11.0" },
 #endif
 #endif
             };
