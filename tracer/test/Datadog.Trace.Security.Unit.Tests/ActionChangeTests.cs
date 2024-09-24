@@ -47,7 +47,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
         ConfigurationStatus configurationStatus = new(string.Empty);
         var newAction = CreateNewStatusAction(action, actionType, newStatus);
-        configurationStatus.ActionsByFile[action] = newAction;
+        configurationStatus.ActionsByFile[action] = [newAction];
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();
@@ -101,13 +101,8 @@ public class ActionChangeTests : WafLibraryRequiredTest
     private void UpdateAction(string action, string actionType, Waf waf)
     {
         ConfigurationStatus configurationStatus = new(string.Empty);
-        var newAction = new Action();
-        newAction.Id = action;
-        newAction.Type = actionType;
-        newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
-        newAction.Parameters.StatusCode = 500;
-        newAction.Parameters.Type = "auto";
-        configurationStatus.ActionsByFile[action] = newAction;
+        var newAction = new Action { Id = action, Type = actionType, Parameters = new AppSec.Rcm.Models.Asm.Parameter { StatusCode = 500, Type = "auto" } };
+        configurationStatus.ActionsByFile[action] = [newAction];
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();
