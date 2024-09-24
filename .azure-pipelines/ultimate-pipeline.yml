@@ -2658,6 +2658,12 @@ stages:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux debug symbols
+      inputs:
+        artifact: linux-profiler-symbols-$(artifactSuffix)
+        path: $(monitoringHome)
+
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
