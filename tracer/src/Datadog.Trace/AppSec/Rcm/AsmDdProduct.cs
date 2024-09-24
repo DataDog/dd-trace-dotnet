@@ -33,7 +33,7 @@ internal class AsmDdProduct : IAsmConfigUpdater
                 ruleSet = RuleSet.From(result.TypedFile);
             }
 
-            configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
+            configurationStatus.RulesByFile[firstFile.Path.Path] = ruleSet;
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
         }
     }
