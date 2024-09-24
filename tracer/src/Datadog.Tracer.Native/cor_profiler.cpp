@@ -3635,12 +3635,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         sizeof(outer_signature), 0, 0, ret_method_token);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed for __DDVoidMethodCall__");
         return hr;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Define a new inner static method __DDVoidMethodCall2__ on the new type that has a void return type and takes no
+    // Define a new inner static method __DDInvokeLoader__ on the new type that has a void return type and takes no
     // arguments
     BYTE inner_signature[] = {
         IMAGE_CEE_CS_CALLCONV_DEFAULT, // Calling convention
@@ -3654,7 +3654,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         sizeof(inner_signature), 0, 0, &inner_method_token);
     if (FAILED(hr))
     {
-        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed");
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMethod failed for __DDInvokeLoader__");
         return hr;
     }
 
