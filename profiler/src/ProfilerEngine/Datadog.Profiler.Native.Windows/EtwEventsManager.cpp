@@ -441,12 +441,14 @@ bool EtwEventsManager::SendRegistrationCommand(bool add)
         SetupUnregisterCommand(message, pid);
     }
 
+    Log::Info("Sending command to the Datadog Agent...");
     auto code = pClient->Send(&message, sizeof(message));
     if (code != NamedPipesCode::Success)
     {
         LogLastError("Failed to write to pipe", code);
         return false;
     }
+    Log::Info("Command sent to the Datadog Agent");
 
     IpcHeader response;
     code = pClient->Read(&response, sizeof(response));
