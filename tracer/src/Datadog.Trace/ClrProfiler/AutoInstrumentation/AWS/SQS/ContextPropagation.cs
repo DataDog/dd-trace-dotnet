@@ -27,10 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
 
-            // Inject the span context
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
 
-            // Manually inject the Data Streams context
             if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.PathwayContext != null)
             {
                 var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
@@ -38,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
                 {
-                    // Also inject the binary header, base64 encoded
                     var binaryEncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
                     sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, binaryEncodedContext);
                 }

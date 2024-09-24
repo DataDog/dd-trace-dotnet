@@ -34,11 +34,9 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        // Always inject the base64 header
         var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context));
         headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes(base64EncodedContext));
 
-        // Conditionally inject the binary header
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
             headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
