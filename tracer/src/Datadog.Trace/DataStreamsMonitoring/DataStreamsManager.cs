@@ -73,7 +73,7 @@ internal class DataStreamsManager
     /// </summary>
     public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
-    => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+        => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
