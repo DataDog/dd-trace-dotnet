@@ -5,9 +5,12 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -66,41 +69,23 @@ internal abstract class LambdaCommon
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
-        var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-        var traceIdUpper64 = GetTraceIdUpper64(response.Headers.Get(HttpHeaderNames.PropagatedTags));
-        var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
-        if (ValidateOkStatus(response))
+
+        // response.Headers is a WebHeaderCollection, which is not convertable to IHeadersCollection, so we have to make it into a dictionary.
+        var myHeaders = response.Headers.AllKeys.ToDictionary(k => k, k => response.Headers.Get(k));
+        if (!ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, traceIdUpper64, samplingPriority);
+            return null;
         }
 
-        return null;
+        var tracer = Tracer.Instance;
+        return NewCreatePlaceholderScope(tracer, myHeaders);
     }
 
-    /// <summary>
-    /// GetTraceIdUpper64 searches the x-datadog-tags tags for the upper 64 bits of the trace id.
-    /// Per the 128 bit tracing RFC, the upper 64 bits are stored in the _dd.p.tid tag as a hex string.
-    /// </summary>
-    /// <param name="ddTags">The propagated tags from the x-datadog-tags header</param>
-    /// <returns>the upper 64 bits of the traceId as a ulong</returns>
-    internal static ulong GetTraceIdUpper64(string ddTags)
+    internal static Scope NewCreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
     {
-        if (ddTags == null)
-        {
-            return 0;
-        }
-
-        var tags = ddTags.Split(',');
-        foreach (var tag in tags)
-        {
-            var keyValue = tag.Trim().Split('=');
-            if (keyValue.Length == 2 && keyValue[0] == "_dd.p.tid")
-            {
-                return Convert.ToUInt64(keyValue[1], 16);
-            }
-        }
-
-        return 0;
+        var sc = SpanContextPropagator.Instance.Extract(myHeaders);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+        return tracer.StartActiveInternal(PlaceholderOperationName, sc);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)

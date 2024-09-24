@@ -17,6 +17,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    extern alias DatadogTraceManual;
+
     public class LambdaCommonTests
     {
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
@@ -25,8 +27,9 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWithTraceIdOnly()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", null);
 
+            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
             ((ISpan)scope.Span).TraceId.Should().Be(1234);
@@ -37,7 +40,11 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, "-1");
+            var myHeaders = new Dictionary<string, string>
+            {
+                { HttpHeaderNames.SamplingPriority, "-1" },
+            };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
@@ -47,13 +54,34 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task TestCreatePlaceholderScopeSuccessWithFullContext()
+        public async Task TestCreatePlaceholderScopeSuccessWith64BitTraceIdContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+            var myHeaders = new Dictionary<string, string>
+            {
+                { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" }
+            };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
+            ((ISpan)scope.Span).TraceId.Should().Be(1234);
+            scope.Span.SpanId.Should().BeGreaterThan(0);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+        }
+
+        [Fact]
+        public async Task TestCreatePlaceholderScopeSuccessWith128BitTraceIdContext()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var myHeaders = new Dictionary<string, string>
+            {
+                { HttpHeaderNames.TraceId, "15744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
+            };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+
+            scope.Should().NotBeNull();
+            scope.Span.TraceId128.ToString().Should().Be("1914fe7789eb32be4fb6f07e011a6faf");
             ((ISpan)scope.Span).TraceId.Should().Be(1234);
             scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
@@ -64,26 +92,12 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWithoutContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, new Dictionary<string, string>());
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan((TraceId.Zero));
             ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
             scope.Span.SpanId.Should().BeGreaterThan(0);
-        }
-
-        [Fact]
-        public async Task TestCreatePlaceholderScopeInvalidTraceId()
-        {
-            await using var tracer = TracerHelper.CreateWithFakeAgent();
-            Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "invalid-trace-id", "-1"));
-        }
-
-        [Fact]
-        public async Task TestCreatePlaceholderScopeInvalidSamplingPriority()
-        {
-            await using var tracer = TracerHelper.CreateWithFakeAgent();
-            Assert.Throws<FormatException>(() => LambdaCommon.CreatePlaceholderScope(tracer, "1234", "invalid-sampling-priority"));
         }
 
         [Fact]
@@ -146,7 +160,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationFailure()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -166,7 +181,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationSuccess()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -189,7 +205,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationFalse()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
+            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
