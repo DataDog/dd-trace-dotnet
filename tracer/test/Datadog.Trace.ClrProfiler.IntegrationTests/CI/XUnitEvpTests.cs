@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -138,6 +139,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
 
                 var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                ValidateMetadata(payload.Metadata, sessionCommand);
                 if (payload.Events?.Length > 0)
                 {
                     foreach (var @event in payload.Events)

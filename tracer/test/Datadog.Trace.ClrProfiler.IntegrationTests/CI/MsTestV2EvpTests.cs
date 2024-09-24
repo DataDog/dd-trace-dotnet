@@ -127,6 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
 
                             var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                            ValidateMetadata(payload.Metadata, sessionCommand);
                             if (payload.Events?.Length > 0)
                             {
                                 foreach (var @event in payload.Events)

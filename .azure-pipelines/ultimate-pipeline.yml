@@ -9,7 +9,6 @@ trigger:
       - hotfix/*
     exclude:
       - refs/pull/*/head
-      - refs/tags/*
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
@@ -2659,6 +2658,12 @@ stages:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux debug symbols
+      inputs:
+        artifact: linux-profiler-symbols-$(artifactSuffix)
+        path: $(monitoringHome)
+
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
@@ -5005,13 +5010,25 @@ stages:
         default_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: DEFAULT
+        integrations_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS
+        integrations_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS
+        crossed_tracing_libraries_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: CROSSED_TRACING_LIBRARIES
+        crossed_tracing_libraries_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: CROSSED_TRACING_LIBRARIES
         # All the other scenarios that aren't in a secenario group
         remainder_poc:
           WEBLOG_VARIANT: "poc"
-          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
         remainder_uds:
           WEBLOG_VARIANT: "uds"
-          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+          SCENARIO: "+S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
         debugger_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: DEBUGGER_SCENARIOS
@@ -5053,6 +5070,10 @@ stages:
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
           TEST_LIBRARY: dotnet
+          AWS_ACCESS_KEY_ID: $(SYSTEM_TESTS_IDM_AWS_ACCESS_KEY_ID)
+          AWS_SECRET_ACCESS_KEY: $(SYSTEM_TESTS_IDM_AWS_SECRET_ACCESS_KEY)
+          AWS_REGION: us-east-1
+          AWS_DEFAULT_REGION: us-east-1  # AWS services should use `AWS_REGION`, but some still use the older `AWS_DEFAULT_REGION`
 
       - script: |
           mkdir -p all_logs

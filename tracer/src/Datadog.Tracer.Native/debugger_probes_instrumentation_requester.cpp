@@ -878,7 +878,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     Logger::Debug("  Loading Assembly Metadata...");
     auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                  metadataInterfaces.GetAddressOf());
-    if (FAILED(hr))
+    if (hr != S_OK)
     {
         Logger::Warn(
             "DebuggerProbesInstrumentationRequester::sAddMetadataToModule failed to get metadata interface for ",

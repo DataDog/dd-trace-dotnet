@@ -21,13 +21,13 @@ namespace libdatadog {
 struct SuccessImpl
 {
     SuccessImpl(ddog_Error error) :
-        SuccessImpl(FfiHelper::GetErrorMessage(error))
+        SuccessImpl(GetErrorMessage(error))
     {
         ddog_Error_drop(&error);
     }
 
     SuccessImpl(ddog_MaybeError error) :
-        SuccessImpl(FfiHelper::GetErrorMessage(error.some))
+        SuccessImpl(GetErrorMessage(error.some))
     {
         assert(error.tag == DDOG_OPTION_ERROR_SOME_ERROR);
         ddog_MaybeError_drop(error);

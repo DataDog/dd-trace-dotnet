@@ -288,8 +288,13 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
     try
     {
         ComPtr<IUnknown> metadataInterfaces;
-        IfFailRet(corProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport,
-                                                     metadataInterfaces.GetAddressOf()));
+        hr = corProfilerInfo->GetModuleMetaData(moduleId, CorOpenFlags::ofRead, IID_IMetaDataImport,
+                                                     metadataInterfaces.GetAddressOf());
+
+        if (hr != S_OK)
+        {
+            return hr;
+        }
 
         auto metadataImport = metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
 
