@@ -3659,47 +3659,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     // ****************************************************************************************************************
-    // Locals signature
-    // ****************************************************************************************************************
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Generate a locals signature defined in the following way:
-    //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
-    //   [1] System.Int32  ("assemblySize" - size of assembly bytes)
-    //   [2] System.IntPtr ("symbolsPtr" - address of symbols bytes)
-    //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
-    //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
-    //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
-    //   [6] System.String (exception message)
-    //   [7] char*         (pointer to the exception message)
-    //   [8] char[] pinned (pinned char array for the exception message)
-    mdSignature locals_signature_token;
-    COR_SIGNATURE locals_signature[] = {
-        IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
-        9,                               // Number of variables
-        ELEMENT_TYPE_I,                  // List of variable types
-        ELEMENT_TYPE_I4,
-        ELEMENT_TYPE_I,
-        ELEMENT_TYPE_I4,
-        ELEMENT_TYPE_SZARRAY,
-        ELEMENT_TYPE_U1,
-        ELEMENT_TYPE_SZARRAY,
-        ELEMENT_TYPE_U1,
-        ELEMENT_TYPE_STRING,
-        ELEMENT_TYPE_PTR,
-        ELEMENT_TYPE_CHAR,
-        ELEMENT_TYPE_PINNED,
-        ELEMENT_TYPE_SZARRAY,
-        ELEMENT_TYPE_CHAR,
-    };
-    hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
-    if (FAILED(hr))
-    {
-        Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
-        return hr;
-    }
-
-    // ****************************************************************************************************************
     // Standalone signature
     // ****************************************************************************************************************
 
@@ -3718,13 +3677,12 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     metadata_emit->GetTokenFromSig(log_signature, sizeof(log_signature), &log_signature_token);
 
     // ****************************************************************************************************************
-    // IL instructions
+    // Outer method
     // ****************************************************************************************************************
 
     {
-        ILRewriter rewriter(this->info_, nullptr, module_id, *ret_method_token);
-        rewriter.InitializeTiny();
-
+        /////////////////////////////////////////////
+        // Generate a locals signature defined in the following way:
         //   [0] System.String (exception message)
         //   [1] char*         (pointer to the exception message)
         //   [2] char[] pinned (pinned char array for the exception message)
@@ -3746,6 +3704,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
             return hr;
         }
 
+        ILRewriter rewriter(this->info_, nullptr, module_id, *ret_method_token);
+        rewriter.InitializeTiny();
+
         rewriter.SetTkLocalVarSig(locals_signature_token);
 
         if (FAILED(hr))
@@ -3762,6 +3723,19 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
         auto first_instruction = rewriter_wrapper.CallMember(inner_method_token, false);
         rewriter_wrapper.CreateInstr(CEE_LEAVE_S, returnInstr);
+
+        // Catch block
+        // catch (Exception ex)
+        // {
+        //      var message = "An error occured in the managed loader: " + ex.ToString();
+        //      var chars = message.ToCharArray();
+        // 
+        //      fixed (char* p = chars)
+        //      {
+        //          var nativeLog = (delegate* unmanaged<int, IntPtr, int, void>)0xFFFFFFFF; // Replaced with the actual address
+        //          nativeLog(3, p, chars.Length);
+        //      }
+        // }
 
         auto catchBegin = rewriter_wrapper.CallMember(object_to_string_member_ref, true);
         rewriter_wrapper.StLocal(0);
@@ -3809,6 +3783,38 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         }
     }
 
+    // ****************************************************************************************************************
+    // Inner method
+    // ****************************************************************************************************************
+
+    /////////////////////////////////////////////
+    // Generate a locals signature defined in the following way:
+    //   [0] System.IntPtr ("assemblyPtr" - address of assembly bytes)
+    //   [1] System.Int32  ("assemblySize" - size of assembly bytes)
+    //   [2] System.IntPtr ("symbolsPtr" - address of symbols bytes)
+    //   [3] System.Int32  ("symbolsSize" - size of symbols bytes)
+    //   [4] System.Byte[] ("assemblyBytes" - managed byte array for assembly)
+    //   [5] System.Byte[] ("symbolsBytes" - managed byte array for symbols)
+    mdSignature locals_signature_token;
+    COR_SIGNATURE locals_signature[] = {
+        IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, // Calling convention
+        6,                               // Number of variables
+        ELEMENT_TYPE_I,                  // List of variable types
+        ELEMENT_TYPE_I4,
+        ELEMENT_TYPE_I,
+        ELEMENT_TYPE_I4,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_U1,
+        ELEMENT_TYPE_SZARRAY,
+        ELEMENT_TYPE_U1
+    };
+    hr = metadata_emit->GetTokenFromSig(locals_signature, sizeof(locals_signature), &locals_signature_token);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Unable to generate locals signature. ModuleID=", module_id);
+        return hr;
+    }
+
     /////////////////////////////////////////////
     // Add IL instructions into the void method
     ILRewriter rewriter_void(this->info_, nullptr, module_id, inner_method_token);
@@ -3816,9 +3822,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriter_void.SetTkLocalVarSig(locals_signature_token);
     ILRewriterWrapper rewriterWrapper_void(&rewriter_void);
     rewriterWrapper_void.SetILPosition(rewriter_void.GetILList()->m_pNext);
-
-    auto returnInstr = rewriter_void.NewILInstr();
-    returnInstr->m_opcode = CEE_RET;
 
     // Step 0) Check if the assembly was already loaded
 
@@ -3837,7 +3840,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // check if the return of the method call is true or false
     ILInstr* pIsNotAlreadyLoadedBranch = rewriterWrapper_void.CreateInstr(CEE_BRFALSE_S);
     // return if IsAlreadyLoaded is true
-    rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
+    rewriterWrapper_void.Return();
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
     ILInstr* pIsHomogenousBranch = nullptr;
@@ -3857,7 +3860,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // check if the return of the method call is true or false
         pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
         // return if IsHomogenous is false
-        rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
+        rewriterWrapper_void.Return();
 
         // call System.AppDomain.get_CurrentDomain()
         pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
@@ -3867,7 +3870,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // check if the return of the method call is true or false
         pIsFullyTrustedBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
         // return if IsFullyTrusted is false
-        rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
+        rewriterWrapper_void.Return();
     }
 
     // Step 2) Call void GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr,
@@ -3956,56 +3959,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // pop the returned object
     rewriterWrapper_void.Pop();
     // return
-    rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
-
-    // Step 7) Catch block
-    // catch (Exception ex)
-    // {
-    //      var message = "An error occured in the managed loader: " + ex.ToString();
-    //      var chars = message.ToCharArray();
-    // 
-    //      fixed (char* p = chars)
-    //      {
-    //          var nativeLog = (delegate* unmanaged<int, IntPtr, int, void>)0xFFFFFFFF; // Replaced with the actual address
-    //          nativeLog(3, p, chars.Length);
-    //      }
-    // }
-    auto catchBegin = rewriterWrapper_void.CallMember(object_to_string_member_ref, true);
-    rewriterWrapper_void.StLocal(6);
-    rewriterWrapper_void.LoadStr(error_token);
-    rewriterWrapper_void.LoadLocal(6);
-    rewriterWrapper_void.CallMember(string_concat_member_ref, false);
-    rewriterWrapper_void.StLocal(6);
-    rewriterWrapper_void.LoadLocal(6);
-    rewriterWrapper_void.CallMember(string_to_char_array_member_ref, true);
-    rewriterWrapper_void.StLocal(8);
-    rewriterWrapper_void.LoadLocal(8);
-    rewriterWrapper_void.CreateInstr(CEE_LDC_I4_0);
-    rewriterWrapper_void.CreateInstr(CEE_LDELEMA, char_type_ref);
-    rewriterWrapper_void.CreateInstr(CEE_CONV_U);
-    rewriterWrapper_void.StLocal(7);
-    rewriterWrapper_void.CreateInstr(CEE_LDC_I4_3);
-    rewriterWrapper_void.LoadLocal(7);
-    rewriterWrapper_void.LoadLocal(6);
-    rewriterWrapper_void.CallMember(string_get_length_member_ref, true);
-    rewriterWrapper_void.LoadInt64((INT64)&NativeLog);
-    rewriterWrapper_void.CreateInstr(CEE_CONV_I);
-    rewriterWrapper_void.CreateInstr(CEE_CALLI, log_signature_token);
-    rewriterWrapper_void.CreateInstr(CEE_LDNULL);
-    rewriterWrapper_void.StLocal(8);
-    auto catchEnd = rewriterWrapper_void.CreateInstr(CEE_LEAVE_S, returnInstr);
-
-    rewriterWrapper_void.GetILRewriter()->InsertAfter(catchEnd, returnInstr);
-
-    auto catchClause = new EHClause();
-    catchClause->m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
-    catchClause->m_pTryBegin = first_instruction;
-    catchClause->m_pTryEnd = catchBegin;
-    catchClause->m_pHandlerBegin = catchBegin;
-    catchClause->m_pHandlerEnd = catchEnd;
-    catchClause->m_ClassToken = exception_type_ref;
-
-    rewriter_void.SetEHClause(catchClause, 1);
+    rewriterWrapper_void.Return();
 
     if (IsDumpILRewriteEnabled())
     {
