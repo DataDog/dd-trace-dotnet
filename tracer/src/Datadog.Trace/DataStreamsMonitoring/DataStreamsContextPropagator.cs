@@ -8,6 +8,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal class DataStreamsContextPropagator
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsContextPropagator>();
+
     public static DataStreamsContextPropagator Instance { get; } = new();
 
     /// <summary>
@@ -31,7 +34,15 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
+        // Always inject the base64 header
+        var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context));
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes(base64EncodedContext));
+
+        // Conditionally inject the binary header
+        if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
+        }
     }
 
     /// <summary>
@@ -45,9 +56,37 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+        // Try to extract from the base64 header first
+        var base64Bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKeyBase64);
+        if (base64Bytes is { Length: > 0 })
+        {
+            try
+            {
+                var base64String = Encoding.UTF8.GetString(base64Bytes);
+                var decodedBytes = Convert.FromBase64String(base64String);
+                return PathwayContextEncoder.Decode(decodedBytes);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to decode base64 Data Streams context.");
+            }
+        }
 
-        return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
+        // Fallback to the binary header
+        var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+        if (binaryBytes is { Length: > 0 })
+        {
+            try
+            {
+                return PathwayContextEncoder.Decode(binaryBytes);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to decode binary Data Streams context.");
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

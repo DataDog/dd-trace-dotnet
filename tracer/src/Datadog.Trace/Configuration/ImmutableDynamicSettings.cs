@@ -20,6 +20,8 @@ namespace Datadog.Trace.Configuration
 
         public bool? DataStreamsMonitoringEnabled { get; init; }
 
+        public bool? DataStreamsLegacyHeadersEnabled { get; init; }
+
         public double? GlobalSamplingRate { get; init; }
 
         public string? SamplingRules { get; init; }
@@ -49,6 +51,7 @@ namespace Datadog.Trace.Configuration
              && AppsecStandaloneEnabled == other.AppsecStandaloneEnabled
              && RuntimeMetricsEnabled == other.RuntimeMetricsEnabled
              && DataStreamsMonitoringEnabled == other.DataStreamsMonitoringEnabled
+             && DataStreamsLegacyHeadersEnabled == other.DataStreamsLegacyHeadersEnabled
              && Nullable.Equals(GlobalSamplingRate, other.GlobalSamplingRate)
              && SamplingRules == other.SamplingRules
              && LogsInjectionEnabled == other.LogsInjectionEnabled
@@ -84,6 +87,7 @@ namespace Datadog.Trace.Configuration
                 AppsecStandaloneEnabled,
                 RuntimeMetricsEnabled,
                 DataStreamsMonitoringEnabled,
+                DataStreamsLegacyHeadersEnabled,
                 GlobalSamplingRate,
                 SamplingRules,
                 LogsInjectionEnabled);

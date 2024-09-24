@@ -29,6 +29,8 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.Vendors.dnlib.DotNet.Writer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -527,6 +529,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
+
+                    writer.WritePropertyName("data_streams_legacy_headers_enabled");
+                    writer.WriteValue(instanceSettings.IsDataStreamsLegacyHeadersEnabled);
 
                     writer.WritePropertyName("span_sampling_rules");
                     writer.WriteValue(instanceSettings.SpanSamplingRules);

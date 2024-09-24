@@ -26,8 +26,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
+
+            // Inject the span context
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
+
+            // Manually inject the Data Streams context
+            if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.PathwayContext != null)
+            {
+                var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
+                sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContext);
+
+                if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
+                {
+                    // Also inject the binary header, base64 encoded
+                    var binaryEncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
+                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, binaryEncodedContext);
+                }
+            }
+
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 

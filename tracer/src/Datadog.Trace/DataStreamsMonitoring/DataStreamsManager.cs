@@ -73,7 +73,9 @@ internal class DataStreamsManager
     /// </summary>
     public PathwayContext? ExtractPathwayContext<TCarrier>(TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
-        => IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+    {
+        return IsEnabled ? DataStreamsContextPropagator.Instance.Extract(headers) : null;
+    }
 
     /// <summary>
     /// Injects a <see cref="PathwayContext"/> into headers
@@ -83,16 +85,12 @@ internal class DataStreamsManager
     public void InjectPathwayContext<TCarrier>(PathwayContext? context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
     {
-        if (!IsEnabled)
+        if (!IsEnabled || context is null)
         {
             return;
         }
 
-        if (context is not null)
-        {
-            DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
-            return;
-        }
+        DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
 
         // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
         // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
