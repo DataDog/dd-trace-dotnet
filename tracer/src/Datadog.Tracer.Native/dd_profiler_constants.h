@@ -65,6 +65,7 @@ const shared::WSTRING include_assemblies[]{
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
 const shared::WSTRING default_exclude_assemblies[]{
+    WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("aspnet_state.exe"),
@@ -72,6 +73,7 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("sqlagent.exe"),
     WStr("sqlbrowser.exe"),
     WStr("sqlservr.exe"),
+    WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
 };

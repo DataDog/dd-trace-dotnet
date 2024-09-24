@@ -23,6 +23,7 @@ const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
 // Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
 const shared::WSTRING default_exclude_assemblies[]{
+    WStr("csc.exe"),
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
     WStr("aspnet_state.exe"),
@@ -30,6 +31,7 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("sqlagent.exe"),
     WStr("sqlbrowser.exe"),
     WStr("sqlservr.exe"),
+    WStr("VBCSCompiler.exe"),
     WStr("vsdbg"),
     WStr("vsdbg.exe"),
 };
