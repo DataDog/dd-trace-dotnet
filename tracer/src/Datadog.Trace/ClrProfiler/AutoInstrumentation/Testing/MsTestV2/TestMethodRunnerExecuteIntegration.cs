@@ -63,6 +63,7 @@ public static class TestMethodRunnerExecuteIntegration
                     }
                     else if (unitTestResult.Outcome is UnitTestResultOutcome.Error or UnitTestResultOutcome.Failed)
                     {
+                        /*
                         // We need to check if the test is failing because a Class initialization error
                         if (instance.TestMethodInfo.Parent.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct))
                         {
@@ -106,6 +107,7 @@ public static class TestMethodRunnerExecuteIntegration
                         {
                             Common.Log.Warning("Parent assembly cannot be duck casted to AssemblyInfoExceptionsStruct.");
                         }
+                    */
                     }
                 }
                 else
