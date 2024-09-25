@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var integrationId = IntegrationId.Npgsql;
             var samplingPriority = SamplingPriority.AutoReject;
             var dbServiceName = "Test.Service-postgres";
-            var expectedComment = "/*dddbs='dbname',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
+            var expectedComment = $"/*dddbs='{dbServiceName}',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
             var traceParentInjected = false;
             var dbName = "dbname";
 
