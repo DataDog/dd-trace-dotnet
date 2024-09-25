@@ -120,6 +120,7 @@
    <assembly fullname="Oracle.DataAccess" />
    <assembly fullname="Oracle.ManagedDataAccess" />
    <assembly fullname="RabbitMQ.Client" />
+   <assembly fullname="RestSharp" />
    <assembly fullname="Serilog" />
    <assembly fullname="ServiceStack.Redis" />
    <assembly fullname="StackExchange.Redis" />

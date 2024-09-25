@@ -1107,7 +1107,7 @@ public class StringAspects
         var result = string.Format(format, arg0);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0);
         }
         catch (Exception ex)
         {
@@ -1130,7 +1130,7 @@ public class StringAspects
         var result = string.Format(format, arg0, arg1);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1);
         }
         catch (Exception ex)
         {
@@ -1154,7 +1154,7 @@ public class StringAspects
         var result = string.Format(format, arg0, arg1, arg2);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1, arg2);
         }
         catch (Exception ex)
         {
@@ -1176,7 +1176,7 @@ public class StringAspects
         var result = string.Format(format, args);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+            PropagationModuleImpl.PropagateWholeResultWhenInputArrayTainted(result, format, args);
         }
         catch (Exception ex)
         {
@@ -1199,7 +1199,7 @@ public class StringAspects
         var result = string.Format(provider, format, arg0);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0);
         }
         catch (Exception ex)
         {
@@ -1223,7 +1223,7 @@ public class StringAspects
         var result = string.Format(provider, format, arg0, arg1);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1);
         }
         catch (Exception ex)
         {
@@ -1248,7 +1248,7 @@ public class StringAspects
         var result = string.Format(provider, format, arg0, arg1, arg2);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, format, arg0, arg1, arg2);
         }
         catch (Exception ex)
         {
@@ -1271,7 +1271,7 @@ public class StringAspects
         var result = string.Format(provider, format, args);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+            PropagationModuleImpl.PropagateWholeResultWhenInputArrayTainted(result, format, args);
         }
         catch (Exception ex)
         {
@@ -1297,7 +1297,7 @@ public class StringAspects
         var result = target.Replace(oldValue, newValue, ignore, culture);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
         }
         catch (Exception ex)
         {
@@ -1321,7 +1321,7 @@ public class StringAspects
         var result = target.Replace(oldValue, newValue, comparison);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
         }
         catch (Exception ex)
         {
@@ -1345,7 +1345,7 @@ public class StringAspects
         var result = target.Replace(oldChar, newChar);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1368,7 +1368,7 @@ public class StringAspects
         var result = target.Replace(oldValue, newValue);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target, oldValue, newValue);
         }
         catch (Exception ex)
         {
@@ -1390,7 +1390,7 @@ public class StringAspects
         var result = target.Split(separator);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1413,7 +1413,7 @@ public class StringAspects
         var result = target.Split(separator, count);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1436,7 +1436,7 @@ public class StringAspects
         var result = target.Split(separator, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1460,7 +1460,7 @@ public class StringAspects
         var result = target.Split(separator, count, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1483,7 +1483,7 @@ public class StringAspects
         var result = target.Split(separator, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1507,7 +1507,7 @@ public class StringAspects
         var result = target.Split(separator, count, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1533,7 +1533,7 @@ public class StringAspects
         var result = target.Split(separator, count, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1556,7 +1556,7 @@ public class StringAspects
         var result = target.Split(separator, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1579,7 +1579,7 @@ public class StringAspects
         var result = target.Split(separator, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1603,7 +1603,7 @@ public class StringAspects
         var result = target.Split(separator, count, options);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultsWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
@@ -1626,7 +1626,7 @@ public class StringAspects
         var result = string.Copy(target);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, target);
         }
         catch (Exception ex)
         {
