@@ -27,18 +27,24 @@ public class TestSuite
     [TestMethod]
     public void AlwaysFails()
     {
-        Assert.Fail();
+        throw new Exception("This test should always fail");
     }
 
     [TestMethod]
     public void TrueAtLastRetry()
     {
-        Assert.AreEqual(_retryCount, Interlocked.Increment(ref _trueAtLastRetryCount));
+        if (Interlocked.Increment(ref _trueAtLastRetryCount) != _retryCount)
+        {
+            throw new Exception("This test should be retried.");
+        }
     }
     
     [TestMethod]
     public void TrueAtThirdRetry()
     {
-        Assert.AreEqual(3, Interlocked.Increment(ref _trueAtThirdRetryCount));
+        if (Interlocked.Increment(ref _trueAtThirdRetryCount) != 3)
+        {
+            throw new Exception("This test should be retried.");
+        }
     }
 }
