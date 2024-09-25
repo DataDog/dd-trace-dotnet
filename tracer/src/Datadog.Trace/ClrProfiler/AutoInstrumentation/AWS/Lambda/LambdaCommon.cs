@@ -24,45 +24,6 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, ulong traceIdUpper64, string samplingPriority)
-    {
-        Span span;
-
-        if (traceId == null)
-        {
-            Log("traceId not found");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        }
-        else
-        {
-            if (traceIdUpper64 == 0)
-            {
-                Log($"creating the placeholder traceId = {traceId}");
-                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
-            }
-            else
-            {
-                var traceIdLower64 = Convert.ToUInt64(traceId);
-                Log($"creating the placeholder traceId = {traceIdUpper64}{traceIdLower64}");
-                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: new TraceId(traceIdUpper64, traceIdLower64), addToTraceContext: false);
-            }
-        }
-
-        if (samplingPriority == null)
-        {
-            Log("samplingPriority not found");
-            _ = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-        }
-        else
-        {
-            Log($"setting the placeholder sampling priority to = {samplingPriority}");
-            span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
-        }
-
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-        return tracer.TracerManager.ScopeManager.Activate(span, false);
-    }
-
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
         var request = requestBuilder.GetStartInvocationRequest();
