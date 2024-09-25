@@ -13,7 +13,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public interface ITracer
+    public partial interface ITracer
     {
         /// <summary>
         /// Gets the active scope
