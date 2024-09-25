@@ -1144,7 +1144,7 @@
   {
     "integrationName": "Ssrf",
     "assemblyName": "RestSharp",
-    "minAssemblyVersionInclusive": "1.0.0",
+    "minAssemblyVersionInclusive": "104.0.0",
     "maxAssemblyVersionInclusive": "112.65535.65535",
     "packages": []
   },
