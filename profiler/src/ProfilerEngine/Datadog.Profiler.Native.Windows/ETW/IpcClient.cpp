@@ -50,6 +50,12 @@ std::unique_ptr<IpcClient> IpcClient::Connect(IIpcLogger* pLogger, const std::st
         return nullptr;
     }
 
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Pipe to  " << portName << " has been created";
+        pLogger->Info(builder.str());
+    }
     return std::make_unique<IpcClient>(pLogger, hPipe);
  }
 
@@ -99,7 +105,14 @@ uint32_t IpcClient::Read(PVOID pBuffer, uint32_t bufferSize)
 
 HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, uint16_t timeoutMS)
 {
-    bool success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Waiting for " << portName << " endpoint...";
+        pLogger->Info(builder.str());
+    }
+
+    auto success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
     if (!success)
     {
         if (pLogger != nullptr)
@@ -111,6 +124,13 @@ HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, 
         }
 
         return INVALID_HANDLE_VALUE;
+    }
+
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Opening " << portName << " pipe...";
+        pLogger->Info(builder.str());
     }
 
     HANDLE hPipe = ::CreateFileA(

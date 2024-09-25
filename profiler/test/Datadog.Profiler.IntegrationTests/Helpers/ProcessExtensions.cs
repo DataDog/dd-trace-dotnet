@@ -16,13 +16,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static void TakeMemoryDump(this Process process, string outputFolderPath, ITestOutputHelper output)
         {
-            if (EnvironmentHelper.IsRunningOnWindows())
-            {
-                // TODO it for windows
-                output.WriteLine("No memory dump will be taken on Windows (for now)");
-                return;
-            }
-
             if (!EnvironmentHelper.IsRunningInCi())
             {
                 output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^ Currently not running in Github Actions CI. No memory dump will be taken.");
@@ -31,6 +24,47 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             output.WriteLine($"^^^^^^^^^^^^^^^^^^^^^^ Taking memory dump of process Id {process.Id}...");
 
+            if (EnvironmentHelper.IsRunningOnWindows())
+            {
+                TakeWindowsMemoryDump(process, outputFolderPath, output);
+                return;
+            }
+
+            TakeLinuxMemoryDump(process, outputFolderPath, output);
+        }
+
+        public static void KillTree(this Process process)
+        {
+            Microsoft.Extensions.Internal.ProcessExtensions.KillTree(process);
+        }
+
+        public static void GetAllThreadsStack(this Process process, string outputFolder, ITestOutputHelper output)
+        {
+            if (EnvironmentHelper.IsRunningOnWindows())
+            {
+                output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^^^^ For now cannot get callstack of all threads on Windows");
+                return;
+            }
+
+            Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
+                "gdb",
+                $"-p {process.Id} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
+                TimeSpan.FromMinutes(1),
+                out var stdout);
+
+            output.WriteLine("================ Debug");
+            output.WriteLine(stdout);
+            File.WriteAllText($"{outputFolder}/parallel_stacks_{process.Id}", stdout);
+        }
+
+        private static void TakeWindowsMemoryDump(this Process process, string outputFolderPath, ITestOutputHelper output)
+        {
+            MemoryDumpHelper.InitializeAsync(output).GetAwaiter().GetResult();
+            MemoryDumpHelper.CaptureMemoryDump(process, outputFolderPath, output);
+        }
+
+        private static void TakeLinuxMemoryDump(this Process process, string outputFolderPath, ITestOutputHelper output)
+        {
             using var processDump = new Process();
 
             var dotnetRuntimeFolder = Path.GetDirectoryName(typeof(object).Assembly.Location);
@@ -81,30 +115,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 output.WriteLine($"   Memory dump tool error: {Environment.NewLine}{errorOutput}");
             }
-        }
-
-        public static void KillTree(this Process process)
-        {
-            Microsoft.Extensions.Internal.ProcessExtensions.KillTree(process);
-        }
-
-        public static void GetAllThreadsStack(this Process process, string outputFolder, ITestOutputHelper output)
-        {
-            if (EnvironmentHelper.IsRunningOnWindows())
-            {
-                output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^^^^ For now cannot get callstack of all threads on Windows");
-                return;
-            }
-
-            Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                "gdb",
-                $"-p {process.Id} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
-                TimeSpan.FromMinutes(1),
-                out var stdout);
-
-            output.WriteLine("================ Debug");
-            output.WriteLine(stdout);
-            File.WriteAllText($"{outputFolder}/parallel_stacks_{process.Id}", stdout);
         }
     }
 }

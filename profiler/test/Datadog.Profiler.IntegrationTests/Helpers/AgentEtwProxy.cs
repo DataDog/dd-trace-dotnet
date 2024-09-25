@@ -19,6 +19,7 @@ namespace Datadog.Profiler.IntegrationTests
         // endpoint serviced by the profiler based on its PID
         private const string ProfilerNamedPipePrefix = "DD_ETW_CLIENT_";
 
+        private readonly ITestOutputHelper _output;
         private string _agentEndPoint;
         private string _eventsFilename;
         private bool _profilerHasRegistered;
@@ -26,7 +27,6 @@ namespace Datadog.Profiler.IntegrationTests
         private bool _eventsHaveBeenSent;
         private int _pid;
         private NamedPipeClientStream _pipeClient;
-        private readonly ITestOutputHelper _output;
 
         public AgentEtwProxy(ITestOutputHelper output, string agentEndPoint, string eventsFilename)
         {
@@ -66,37 +66,7 @@ namespace Datadog.Profiler.IntegrationTests
             _pipeClient.Flush();
 
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
-            //Thread.Sleep(5);
-        }
-
-        private void OnProfilerRegistered(int pid)
-        {
-            WriteLine($"process {pid} has registered");
-            ProfilerRegistered?.Invoke(this, new EventArgs<int>(pid));
-        }
-
-        private void OnEventsSent(int count)
-        {
-            EventsSent?.Invoke(this, new EventArgs<int>(count));
-        }
-
-        private void OnProfilerUnregistered(int pid)
-        {
-            WriteLine($"process {pid} is unregistered");
-            ProfilerUnregistered?.Invoke(this, new EventArgs<int>(pid));
-        }
-
-
-        private void WriteLine(string line)
-        {
-            if (_output != null)
-            {
-                _output.WriteLine(line);
-            }
-            else
-            {
-                Console.WriteLine(line);
-            }
+            // Thread.Sleep(5);
         }
 
         public async Task StartServerAsync()
@@ -122,7 +92,7 @@ namespace Datadog.Profiler.IntegrationTests
 
                     while ((bytesRead = await server.ReadAsync(inBuffer, 0, inBuffer.Length)) > 0)
                     {
-                        bool success = await ProcessCommand(inBuffer);
+                        bool success = ProcessCommand(inBuffer);
 
                         // build the response based on success/failure
                         IpcHeader header = new IpcHeader
@@ -137,7 +107,9 @@ namespace Datadog.Profiler.IntegrationTests
 
                         await server.WriteAsync(outBuffer, 0, IpcHeader.HeaderSize);
                         await server.FlushAsync();
+#pragma warning disable CA1416 // Validate platform compatibility
                         server.WaitForPipeDrain();
+#pragma warning restore CA1416 // Validate platform compatibility
                     }
                 }
             }
@@ -147,7 +119,36 @@ namespace Datadog.Profiler.IntegrationTests
             }
         }
 
-        private async Task<bool> ProcessCommand(byte[] receivedData)
+        private void OnProfilerRegistered(int pid)
+        {
+            WriteLine($"process {pid} has registered");
+            ProfilerRegistered?.Invoke(this, new EventArgs<int>(pid));
+        }
+
+        private void OnEventsSent(int count)
+        {
+            EventsSent?.Invoke(this, new EventArgs<int>(count));
+        }
+
+        private void OnProfilerUnregistered(int pid)
+        {
+            WriteLine($"process {pid} is unregistered");
+            ProfilerUnregistered?.Invoke(this, new EventArgs<int>(pid));
+        }
+
+        private void WriteLine(string line)
+        {
+            if (_output != null)
+            {
+                _output.WriteLine(line);
+            }
+            else
+            {
+                Console.WriteLine(line);
+            }
+        }
+
+        private bool ProcessCommand(byte[] receivedData)
         {
             RegistrationCommand command = MemoryMarshal.Read<RegistrationCommand>(receivedData);
 
@@ -164,7 +165,9 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     // NOTE: we want to accept the profiler registration command before starting to send events from another thread
                     //       so we don't await this async method
-                    Task.Run(() => StartClientAsync());
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+                    Task.Run(StartClientAsync);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 }
 
                 return _profilerHasRegistered;
