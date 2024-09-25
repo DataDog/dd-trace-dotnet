@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp;
     MethodName = "UrlEncode",
     ReturnTypeName = ClrNames.String,
     ParameterTypeNames = new[] { ClrNames.String },
-    MinimumVersion = "1.0.0",
+    MinimumVersion = "104.0.0",
     MaximumVersion = "112.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.Ssrf))]
