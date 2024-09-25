@@ -347,6 +347,24 @@ public class StringReplaceTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", _taintedValue.Replace('%', 'e'), () => _taintedValue.Replace('%', 'e'));
     }
 
+    [Fact]
+    public void GivenANonTaintedString_WhenCallingReplaceWithUntaintedReplace_ResultIsNonTainted()
+    {
+        AssertUntaintedWithOriginalCallCheck("UNT*new*INTED", "UNTAINTED".Replace("A", "*new*"), () => "UNTAINTED".Replace("A", "*new*"));
+    }
+
+    [Fact]
+    public void GivenANonTaintedString_WhenCallingReplaceWithTaintedNoReplace_ResultIsNonTainted()
+    {
+        AssertUntaintedWithOriginalCallCheck("UNTAINTED", "UNTAINTED".Replace("%", _taintedValue), () => "UNTAINTED".Replace("%", _taintedValue));
+    }
+
+    [Fact]
+    public void GivenANonTaintedString_WhenCallingReplaceWithTaintedReplace_ResultIsTainted()
+    {
+        AssertTaintedFormatWithOriginalCallCheck(":+-UNtaintedAINtaintedED-+:", "UNTAINTED".Replace("T", _taintedValue), () => "UNTAINTED".Replace("T", _taintedValue));
+    }
+
     // testing Replace(string oldValue, string? newValue, bool ignoreCase, CultureInfo? culture)
 
 #if NETCOREAPP3_1_OR_GREATER

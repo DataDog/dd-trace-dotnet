@@ -7,9 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef LINUX
-#include "CpuProfilerDisableScope.h"
-#endif
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
@@ -67,15 +64,6 @@ void ClrEventsParser::ParseEvent(
     LPCBYTE eventData
     )
 {
-#ifdef LINUX
-    auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-
-    // Disable timer_create-based CPU profiler if needed
-    // When scope goes out of scope, the CPU profiler will be reenabled for
-    // pThreadInfo thread
-    auto scope = CpuProfilerDisableScope(pThreadInfo.get());
-#endif
-
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);

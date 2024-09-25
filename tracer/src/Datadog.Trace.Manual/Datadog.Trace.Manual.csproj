@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>3.3.0</Version>
+    <Version>3.4.0</Version>
     <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
     <PackageId>Datadog.Trace</PackageId>
     <Title>Datadog APM</Title>
@@ -29,6 +29,7 @@
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\TracerSettingKeyConstants.cs"  Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\ClrProfiler\AutoInstrumentation\ManualInstrumentation\IntegrationSettingsSerializationHelper.cs"  Link="Configuration\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\Configuration\DeprecationMessages.cs" Link="Configuration\%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace\DuckTyping\DuckAsClassAttribute.cs" Link="DuckTyping\%(Filename)%(Extension)" />
     <Compile Include="..\Datadog.Trace\HttpHeaderNames.cs" />
     <Compile Include="..\Datadog.Trace\IDatadogOpenTracingTracer.cs" />
     <Compile Include="..\Datadog.Trace\IScope.cs" />

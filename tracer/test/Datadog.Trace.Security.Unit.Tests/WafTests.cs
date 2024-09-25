@@ -165,7 +165,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             if (extractSchema)
             {
-                var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);
+                var serializedDerivatives = JsonConvert.SerializeObject(result.ExtractSchemaDerivatives);
                 serializedDerivatives.Should().BeJsonEquivalentTo(schemaExtraction);
             }
         }

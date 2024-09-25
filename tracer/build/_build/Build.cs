@@ -62,7 +62,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.3.0";
+    readonly string Version = "3.4.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -230,6 +230,7 @@ partial class Build : NukeBuild
         .Description("")
         .After(Clean)
         .DependsOn(CompileNativeWrapper)
+        .DependsOn(TestNativeWrapper)
         .DependsOn(PublishNativeWrapper);
 
     Target PackageTracerHome => _ => _

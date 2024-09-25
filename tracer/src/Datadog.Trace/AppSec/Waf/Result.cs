@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
@@ -16,8 +17,8 @@ namespace Datadog.Trace.AppSec.Waf
             ReturnCode = returnCode;
             Actions = returnStruct.Actions.DecodeMap();
             ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
-            Derivatives = returnStruct.Derivatives.DecodeMap();
-            ShouldReportSchema = Derivatives is { Count: > 0 };
+            var derivatives = returnStruct.Derivatives.DecodeMap();
+            BuildDerivatives(derivatives);
             if (ShouldReportSecurityResult)
             {
                 Data = returnStruct.Events.DecodeObjectArray();
@@ -59,13 +60,13 @@ namespace Datadog.Trace.AppSec.Waf
 
         public WafReturnCode ReturnCode { get; }
 
-        public bool ShouldReportSchema { get; }
-
         public IReadOnlyCollection<object>? Data { get; }
 
         public Dictionary<string, object?>? Actions { get; }
 
-        public Dictionary<string, object?> Derivatives { get; }
+        public Dictionary<string, object?>? ExtractSchemaDerivatives { get; private set; }
+
+        public Dictionary<string, object?>? FingerprintDerivatives { get; private set; }
 
         /// <summary>
         /// Gets the total runtime in nanoseconds
@@ -103,5 +104,30 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
+
+        private void BuildDerivatives(Dictionary<string, object?> derivatives)
+        {
+            foreach (var derivative in derivatives)
+            {
+                if ((derivative.Key == Tags.AppSecFpEndpoint) || (derivative.Key == Tags.AppSecFpHeader) || (derivative.Key == Tags.AppSecFpHttpNetwork) || (derivative.Key == Tags.AppSecFpSession))
+                {
+                    if (FingerprintDerivatives is null)
+                    {
+                        FingerprintDerivatives = new Dictionary<string, object?>();
+                    }
+
+                    FingerprintDerivatives.Add(derivative.Key, derivative.Value);
+                }
+                else
+                {
+                    if (ExtractSchemaDerivatives is null)
+                    {
+                        ExtractSchemaDerivatives = new Dictionary<string, object?>();
+                    }
+
+                    ExtractSchemaDerivatives.Add(derivative.Key, derivative.Value);
+                }
+            }
+        }
     }
 }

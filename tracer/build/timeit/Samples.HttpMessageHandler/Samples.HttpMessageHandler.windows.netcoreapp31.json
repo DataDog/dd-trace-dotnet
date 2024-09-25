@@ -2,7 +2,25 @@
   "enableDatadog": true,
   "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.netcoreapp31.json",
   "warmUpCount": 5,
-  "count": 50,
+  "count": 80,
+  "services": [
+    {
+      "name": "Execute",
+      "options": {
+        "onScenarioStart": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)",
+          "redirectStandardOutput": true
+        },
+        "onExecutionEnd": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)"
+        }
+      }
+    }
+  ],
   "scenarios": [
     {
       "name": "Baseline",

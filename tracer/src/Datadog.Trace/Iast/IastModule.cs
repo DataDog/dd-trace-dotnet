@@ -214,7 +214,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
-            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, NoDbSource);
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, NoDbSource, exclusionSecureMarks: SecureMarks.Ssrf);
         }
         catch (Exception ex)
         {
@@ -375,7 +375,7 @@ internal static partial class IastModule
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int GetCookieHash(string vulnerability, string cookieName, bool isFiltered)
     {
-        return (vulnerability.ToString() + ":" + (isFiltered ? "Filtered" : cookieName)).GetStaticHashCode();
+        return (isFiltered ? ("FILTERED_" + vulnerability) : (vulnerability + ":" + cookieName)).GetStaticHashCode();
     }
 
     public static IastModuleResponse OnInsecureCookie(IntegrationId integrationId, string cookieName, bool isFiltered)
@@ -694,8 +694,7 @@ internal static partial class IastModule
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
         stack ??= StackWalker.GetStackTrace();
-        var stackFrame = StackWalker.GetFrame(stack);
-        if (stackFrame is null)
+        if (!StackWalker.TryGetFrame(stack, out var stackFrame))
         {
             return null;
         }

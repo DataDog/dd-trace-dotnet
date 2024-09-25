@@ -47,7 +47,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
         Logger::Debug("  Loading Assembly Metadata...");
         auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                      metadataInterfaces.GetAddressOf());
-        if (FAILED(hr))
+        if (hr != S_OK)
         {
             Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", moduleInfo.id, " ",
                          moduleInfo.assembly.name);
@@ -438,7 +438,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The methoddef: ",
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The MethodDef: ",
                       shared::TokenStr(&moveNextMethod), " is not valid!");
         return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }
@@ -446,8 +446,10 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     const auto hr = caller.method_signature.TryParse();
     if (FAILED(hr))
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",
-                      caller.method_signature.str(), " cannot be parsed.");
+        Logger::Error(
+                    "    * DebuggerRejitPreprocessor::TransformKickOffToMoveNext: [MethodDef=", shared::TokenStr(&moveNextMethod),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
+        Logger::Debug("    Method signature is: ", caller.method_signature.str());
         return {hr, mdMethodDefNil, FunctionInfo()};
     }
 
@@ -476,7 +478,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMe
 
     if (moveNextMethod == mdMethodDefNil)
     {
-        Logger::Info("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
+        Logger::Debug("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
         return {S_OK, methodDef, functionInfo};
     }
 

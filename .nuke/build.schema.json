@@ -204,6 +204,10 @@
           "type": "boolean",
           "description": "Whether the current build version is a prerelease(for packaging purposes)"
         },
+        "LatestMajorVersion": {
+          "type": "integer",
+          "description": "The current latest tracer version"
+        },
         "MonitoringHome": {
           "type": "string",
           "description": "The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home "
@@ -473,6 +477,7 @@
               "SignDlls",
               "SignMsi",
               "SummaryOfSnapshotChanges",
+              "TestNativeWrapper",
               "UpdateChangeLog",
               "UpdateSnapshots",
               "UpdateSnapshotsFromBuild",
@@ -694,6 +699,7 @@
               "SignDlls",
               "SignMsi",
               "SummaryOfSnapshotChanges",
+              "TestNativeWrapper",
               "UpdateChangeLog",
               "UpdateSnapshots",
               "UpdateSnapshotsFromBuild",

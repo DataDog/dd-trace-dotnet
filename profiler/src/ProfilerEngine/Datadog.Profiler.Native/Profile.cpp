@@ -41,11 +41,11 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         auto& location = locations[idx];
 
         location.mapping = {};
-        location.mapping.filename = FfiHelper::StringToCharSlice(frame.ModuleName);
-        location.function.filename = FfiHelper::StringToCharSlice(frame.Filename);
+        location.mapping.filename = to_char_slice(frame.ModuleName);
+        location.function.filename = to_char_slice(frame.Filename);
         location.function.start_line = frame.StartLine;
         location.line = frame.StartLine; // For now we only have the start line of the function.
-        location.function.name = FfiHelper::StringToCharSlice(frame.Frame);
+        location.function.name = to_char_slice(frame.Frame);
         location.address = 0; // TODO check if we can get that information in the provider
 
         ++idx;
@@ -95,7 +95,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 
 void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
 {
-    auto endpointName = FfiHelper::StringToCharSlice(endpoint);
+    auto endpointName = to_char_slice(endpoint);
 
     auto res = ddog_prof_Profile_set_endpoint(*_impl, traceId, endpointName);
     if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
@@ -113,7 +113,7 @@ void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
 
 void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 {
-    auto endpointName = FfiHelper::StringToCharSlice(endpoint);
+    auto endpointName = to_char_slice(endpoint);
 
     auto res = ddog_prof_Profile_add_endpoint_count(*_impl, endpointName, 1);
     if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
@@ -133,8 +133,8 @@ libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintp
                                                           uint64_t sampled, uint64_t real)
 {
     ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
-    ddog_CharSlice labelName_slice = FfiHelper::StringToCharSlice(labelName);
-    ddog_CharSlice groupName_slice = FfiHelper::StringToCharSlice(groupName);
+    ddog_CharSlice labelName_slice = to_char_slice(labelName);
+    ddog_CharSlice groupName_slice = to_char_slice(groupName);
 
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
     if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
@@ -160,12 +160,12 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
 
     for (auto const& type : valueTypes)
     {
-        samplesTypes.push_back(FfiHelper::CreateValueType(type.Name, type.Unit));
+        samplesTypes.push_back(CreateValueType(type.Name, type.Unit));
     }
 
     struct ddog_prof_Slice_ValueType sample_types = {samplesTypes.data(), samplesTypes.size()};
 
-    auto period_value_type = FfiHelper::CreateValueType(periodType, periodUnit);
+    auto period_value_type = CreateValueType(periodType, periodUnit);
 
     auto period = ddog_prof_Period{};
     period.type_ = period_value_type;

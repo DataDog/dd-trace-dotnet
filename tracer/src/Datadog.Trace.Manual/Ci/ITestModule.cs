@@ -14,6 +14,7 @@ namespace Datadog.Trace.Ci;
 /// CI Visibility test module
 /// </summary>
 [DuckType("Datadog.Trace.Ci.TestModule", "Datadog.Trace")]
+[DuckAsClass]
 public interface ITestModule
 {
     /// <summary>

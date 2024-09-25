@@ -1,0 +1,215 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "message": "ScrubbedValue",
+              "this": {
+                "type": "TryFinallyMethodAndLine",
+                "value": "TryFinallyMethodAndLine"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "message": "ScrubbedValue",
+              "this": {
+                "type": "TryFinallyMethodAndLine",
+                "value": "TryFinallyMethodAndLine"
+              }
+            },
+            "locals": {
+              "ctx": {
+                "type": "ParseContext",
+                "value": "ParseContext"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "ReadRawMessageOriginal",
+            "type": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "ReadRawMessageOriginal",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "17": {
+              "arguments": {
+                "message": "ScrubbedValue",
+                "this": {
+                  "type": "TryFinallyMethodAndLine",
+                  "value": "TryFinallyMethodAndLine"
+                }
+              },
+              "locals": {
+                "ctx": {
+                  "isNull": "true",
+                  "type": "ParseContext"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryFinallyMethodAndLine.cs",
+            "lines": [
+              "17"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "ReadRawMessageOriginal",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "20": {
+              "arguments": {
+                "message": "ScrubbedValue",
+                "this": {
+                  "type": "TryFinallyMethodAndLine",
+                  "value": "TryFinallyMethodAndLine"
+                }
+              },
+              "locals": {
+                "ctx": {
+                  "type": "ParseContext",
+                  "value": "ParseContext"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryFinallyMethodAndLine.cs",
+            "lines": [
+              "20"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "ReadRawMessageOriginal",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "24": {
+              "arguments": {
+                "message": "ScrubbedValue",
+                "this": {
+                  "type": "TryFinallyMethodAndLine",
+                  "value": "TryFinallyMethodAndLine"
+                }
+              },
+              "locals": {
+                "ctx": {
+                  "type": "ParseContext",
+                  "value": "ParseContext"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryFinallyMethodAndLine.cs",
+            "lines": [
+              "24"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "ReadRawMessageOriginal",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryFinallyMethodAndLine",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

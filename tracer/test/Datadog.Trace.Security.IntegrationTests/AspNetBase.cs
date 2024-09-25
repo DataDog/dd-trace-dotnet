@@ -48,6 +48,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecFingerPrintHeaders = new(@"_dd.appsec.fp.http.header: hdr-\d+-\S*-\d+-\S*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
@@ -108,10 +109,20 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
+        public void ResetDefaultUserAgent()
+        {
+            _httpClient.DefaultRequestHeaders.Remove("user-agent");
+        }
+
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
         {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
             await VerifySpans(spans, settings, testInit, methodNameOverride, fileNameOverride: fileNameOverride);
+        }
+
+        public void ScrubFingerprintHeaders(VerifySettings settings)
+        {
+            settings.AddRegexScrubber(AppSecFingerPrintHeaders, "_dd.appsec.fp.http.header: <HeaderPrint>");
         }
 
         public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
@@ -345,9 +356,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
-            var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
+            var found = _httpClient.DefaultRequestHeaders.TryGetValues("user-agent", out var values);
 
-            if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
+            if (!string.IsNullOrEmpty(userAgent) && (!found || values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0)))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
