@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 
+using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -25,6 +26,16 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     protected override string TrueAtLastRetry => "Samples.MSTestTestsRetries.TestSuite.TrueAtLastRetry";
 
     protected override string TrueAtThirdRetry => "Samples.MSTestTestsRetries.TestSuite.TrueAtThirdRetry";
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.MSTest), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task FlakyRetries(string packageVersion)
+    {
+        return base.FlakyRetries(packageVersion);
+    }
 }
 
 #endif

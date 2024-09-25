@@ -35,12 +35,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected abstract string TrueAtThirdRetry { get; }
 
-    [SkippableTheory]
-    [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "TestIntegrations")]
-    [Trait("Category", "FlakyRetries")]
-    public async Task FlakyRetries(string packageVersion)
+    public virtual async Task FlakyRetries(string packageVersion)
     {
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
