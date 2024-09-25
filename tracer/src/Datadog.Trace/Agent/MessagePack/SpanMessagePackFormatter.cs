@@ -429,9 +429,14 @@ namespace Datadog.Trace.Agent.MessagePack
             // add _dd.base_service tag to spans where the service name has been overrideen
             if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
             {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, model.TraceChunk.DefaultServiceName);
+                var serviceNameRawBytes = MessagePackStringCache.GetServiceBytes(model.TraceChunk.DefaultServiceName);
+
+                if (serviceNameRawBytes is not null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
+                }
             }
 
             // SCI tags will be sent only once per trace
