@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string>();
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: true);
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string>();
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
                 { HttpHeaderNames.TraceId, "1234" },
                 { HttpHeaderNames.SamplingPriority, "-1" }
             };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string>();
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
             scope.Span.SetTag("error.msg", "Exception");
             scope.Span.SetTag("error.type", "Exception");
             scope.Span.SetTag("error.stack", "everything is " + System.Environment.NewLine + "fine");
@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string>();
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);

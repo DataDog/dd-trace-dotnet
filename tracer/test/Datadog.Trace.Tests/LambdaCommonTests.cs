@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
             ((ISpan)scope.Span).TraceId.Should().Be(1234);
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests
             {
                 { HttpHeaderNames.SamplingPriority, "-1" },
             };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests
             {
                 { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" }
             };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests
             {
                 { HttpHeaderNames.TraceId, "15744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
             };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.ToString().Should().Be("1914fe7789eb32be4fb6f07e011a6faf");
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWithoutContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, new Dictionary<string, string>());
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, new Dictionary<string, string>());
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan((TraceId.Zero));
@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -206,7 +206,7 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);

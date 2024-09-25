@@ -39,10 +39,10 @@ internal abstract class LambdaCommon
         }
 
         var tracer = Tracer.Instance;
-        return NewCreatePlaceholderScope(tracer, myHeaders);
+        return CreatePlaceholderScope(tracer, myHeaders);
     }
 
-    internal static Scope NewCreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
     {
         var sc = SpanContextPropagator.Instance.Extract(myHeaders);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
