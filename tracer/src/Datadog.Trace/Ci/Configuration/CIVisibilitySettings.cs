@@ -100,6 +100,15 @@ namespace Datadog.Trace.Ci.Configuration
                     return command;
                 },
                 validator: null);
+
+            // Flaky retry
+            FlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryEnabled).AsBool();
+
+            // Maximum number of retry attempts for a single test case.
+            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
+
+            // Maximum number of retry attempts for the entire session.
+            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
         }
 
         /// <summary>
@@ -213,6 +222,21 @@ namespace Datadog.Trace.Ci.Configuration
         public string TestSessionName { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the Flaky Retry feature is enabled.
+        /// </summary>
+        public bool? FlakyRetryEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the maximum number of retry attempts for a single test case.
+        /// </summary>
+        public int FlakyRetryCount { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating the maximum number of retry attempts for the entire session.
+        /// </summary>
+        public int TotalFlakyRetryCount { get; private set; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -235,6 +259,11 @@ namespace Datadog.Trace.Ci.Configuration
         internal void SetEarlyFlakeDetectionEnabled(bool value)
         {
             EarlyFlakeDetectionEnabled = value;
+        }
+
+        internal void SetFlakyRetryEnabled(bool value)
+        {
+            FlakyRetryEnabled = value;
         }
 
         internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)
