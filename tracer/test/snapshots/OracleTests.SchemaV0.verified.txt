@@ -291,9 +291,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -312,9 +314,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -333,9 +337,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -354,9 +360,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -375,9 +383,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -396,9 +406,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -417,9 +429,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -438,9 +452,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -459,9 +475,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -480,9 +498,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -501,9 +521,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -522,9 +544,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -543,9 +567,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -564,9 +590,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -585,9 +613,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -606,9 +636,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -627,9 +659,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -648,9 +682,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -669,9 +705,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -690,9 +728,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -711,9 +751,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -732,9 +774,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -753,9 +797,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -774,9 +820,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -795,9 +843,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -816,9 +866,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -837,9 +889,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -858,9 +912,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -879,9 +935,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -900,9 +958,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -921,9 +981,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -942,9 +1004,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -963,9 +1027,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -984,9 +1050,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1005,9 +1073,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1026,9 +1096,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1047,9 +1119,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1068,9 +1142,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1089,9 +1165,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1110,9 +1188,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1131,9 +1211,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1152,9 +1234,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1173,9 +1257,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1194,9 +1280,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1215,9 +1303,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1236,9 +1326,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1257,9 +1349,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1278,9 +1372,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1299,9 +1395,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1320,9 +1418,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1341,9 +1441,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1362,9 +1464,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1383,9 +1487,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1404,9 +1510,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1425,9 +1533,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1446,9 +1556,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1467,9 +1579,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1488,9 +1602,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1509,9 +1625,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1530,9 +1648,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1551,9 +1671,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1572,9 +1694,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1593,9 +1717,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1614,9 +1740,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1635,9 +1763,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1656,9 +1786,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1677,9 +1809,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1698,9 +1832,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1719,9 +1855,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1740,9 +1878,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1761,9 +1901,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1782,9 +1924,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1803,9 +1947,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1824,9 +1970,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1845,9 +1993,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1866,9 +2016,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1887,9 +2039,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1908,9 +2062,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1929,9 +2085,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1950,9 +2108,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1971,9 +2131,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1992,9 +2154,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2013,9 +2177,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2034,9 +2200,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2055,9 +2223,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2076,9 +2246,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2097,9 +2269,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2118,9 +2292,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2139,9 +2315,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2160,9 +2338,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2181,9 +2361,11 @@
       db.type: oracle,
       db.user: system,
       env: integration_tests,
+      language: dotnet,
       out.host: host:1521/FREE,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.OracleMDA
     },
     Metrics: {
       _dd.top_level: 1.0
