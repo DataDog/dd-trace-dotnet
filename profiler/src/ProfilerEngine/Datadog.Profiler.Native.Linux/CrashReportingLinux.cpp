@@ -177,6 +177,8 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.symbolAddress = managedFrame.symbolAddress;
             stackFrame.isSuspicious = managedFrame.isSuspicious;
 
+            stackFrame.meta = { .mouleType = Elf};
+
             managedFrames.push_back(std::move(stackFrame));
         }
     }

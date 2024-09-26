@@ -122,6 +122,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -pthread
     -ldl
     -Wl,--build-id
+    -lelf
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)

@@ -30,6 +30,31 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
+enum ModuleType
+{
+    Elf,
+    PE
+};
+
+struct ElfMeta{
+                std::string modulePath;
+                std::vector<std::byte> buildId;
+            };
+struct PEMeta{
+                std::string modulePath;
+                std::vector<std::byte> buildId;
+            };
+
+    union meta {
+        struct ElfMeta elf;
+        struct PEMeta pe;
+    };
+struct MetaInfo
+{
+    ModuleType moduleType;
+    meta meta;
+};
+
 struct StackFrame 
 {
     uint64_t ip;    
@@ -38,6 +63,7 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
+    struct MetaInfo meta;
 };
 
 struct Tag

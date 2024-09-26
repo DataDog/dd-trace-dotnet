@@ -100,6 +100,11 @@ message(STATUS "GoogleTest library")
 find_package(PPDB REQUIRED)
 message(STATUS "PPDB library")
 
+if (NOT ISMACOS)
+    find_package(LibElf REQUIRED)
+    message(STATUS "Libelf library")
+endif()
+
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)
