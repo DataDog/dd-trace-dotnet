@@ -4,7 +4,6 @@
 // </copyright>
 
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -12,6 +11,7 @@ namespace Datadog.Trace;
 /// Span context interface.
 /// </summary>
 [DuckType("Datadog.Trace.SpanContext", "Datadog.Trace")]
+[DuckAsClass]
 public partial interface ISpanContext
 {
 }
