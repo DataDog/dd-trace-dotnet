@@ -35,16 +35,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 var isNewVersion = string.IsNullOrEmpty(version) || Version.Parse(version).Major >= 8;
                 if (newVersionsOnly != isNewVersion)
                 {
-                    yield return [version, "v0", "disabled"];
-                    yield return [version, "v1", "disabled"];
+                    continue;
                 }
-                else
+
+                foreach (var propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" })
                 {
-                    foreach (var propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" })
-                    {
-                        yield return [version, "v0", propagation];
-                        yield return [version, "v1", propagation];
-                    }
+                    yield return [version, "v0", propagation];
+                    yield return [version, "v1", propagation];
                 }
             }
         }
