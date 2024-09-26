@@ -7,7 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 
@@ -22,18 +22,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
     ParameterTypeNames = ["Amazon.EventBridge.Model.PutEventsRequest"],
     MinimumVersion = "3.3.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = nameof(IntegrationId.AwsEventBridge))]
+    IntegrationName = AwsEventBridgeCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class PutEventsIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, ref TRequest? request)
+    private const string Operation = "PutEvents";
+    private const string SpanKind = SpanKinds.Producer;
+
+    /// <summary>
+    /// OnMethodBegin callback
+    /// </summary>
+    /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <typeparam name="TPutEventsRequest">Type of the request object</typeparam>
+    /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
+    /// <param name="request">The request for the SNS operation</param>
+    /// <returns>CallTarget state value</returns>
+    internal static CallTargetState OnMethodBegin<TTarget, TPutEventsRequest>(TTarget instance, TPutEventsRequest request)
+        where TPutEventsRequest : IPutEventsRequest, IDuckType
     {
-        return CallTargetState.GetDefault();
+        if (request.Instance is null)
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var scope = AwsEventBridgeCommon.CreateScope(Tracer.Instance, Operation, SpanKind, out var tags);
+        if (tags is not null)
+        {
+            var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
+            if (busName is not null)
+            {
+                tags.EventBusName = busName;
+            }
+        }
+
+        if (scope?.Span.Context is { } context)
+        {
+            ContextPropagation.InjectTracingContext(request, context);
+        }
+
+        return new CallTargetState(scope);
     }
 
-    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        return new CallTargetReturn<TReturn?>(returnValue);
+        state.Scope.DisposeWithException(exception);
+        return new CallTargetReturn<TReturn>(returnValue);
     }
 }
