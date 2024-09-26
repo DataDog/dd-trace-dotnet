@@ -104,6 +104,25 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Fact]
+        public void PeerServiceInjected()
+        {
+            var dbmPropagationLevel = DbmPropagationLevel.Service;
+            var traceParentInjected = false;
+            var peerService = "myPeerService";
+            var dbName = "myDbName";
+
+            var sqlTags = new SqlV1Tags { DbName = dbName };
+            sqlTags.SetTag(Tags.PeerService, peerService);
+
+            var span = _v1Tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
+
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.Npgsql, out var traceParentInjectedValue);
+
+            traceParentInjectedValue.Should().Be(traceParentInjected);
+            returnedComment.Should().Be("/*dddbs='myServiceName',ddprs='myPeerService',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");
+        }
+
+        [Fact]
         public void ExpectedCommentInjectedV1()
         {
             var dbmPropagationLevel = DbmPropagationLevel.Service;
