@@ -77,7 +77,7 @@ internal class CIVisibilityTestCommand
                 {
                     if (Interlocked.Decrement(ref _totalRetries) <= 0)
                     {
-                        Common.Log.Debug<int>("FlakyRetry: Exceeded de number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                        Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
                         break;
                     }
 

@@ -160,7 +160,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                         }
                         else
                         {
-                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded de number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
                         }
                     }
                     else
