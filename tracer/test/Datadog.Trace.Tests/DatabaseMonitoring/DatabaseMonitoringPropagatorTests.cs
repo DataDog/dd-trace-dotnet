@@ -184,7 +184,8 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             sqlTags.SetTag(Tags.PeerServiceRemappedFrom, "old_value");
             sqlTags.SetTag(Tags.PeerService, peerService);
 
-            var span = _v1Tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
+            var tracer = version == SchemaVersion.V1 ? _v1Tracer : _v0Tracer;
+            var span = tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.Npgsql, out var traceParentInjectedValue);
 
