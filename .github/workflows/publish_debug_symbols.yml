@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'An already released version of .NET APM'
+        description: 'An already released version of .NET APM, without the "v" suffix, e.g. "3.3.1"'
         required: true
 
 jobs:
