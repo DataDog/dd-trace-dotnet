@@ -32,72 +32,74 @@ internal class CIVisibilityTestCommand
         var result = ExecuteTest(context, executionNumber++, out var isTestNew, out var duration);
         var resultStatus = result.ResultState.Status;
 
-        if (resultStatus != TestStatus.Skipped &&
-            resultStatus != TestStatus.Inconclusive)
+        if (resultStatus is TestStatus.Skipped or TestStatus.Inconclusive)
         {
-            if (isTestNew)
+            context.CurrentResult = result;
+            return result.Instance!;
+        }
+
+        if (isTestNew)
+        {
+            // **************************************************************
+            // Early flake detection mode
+            // **************************************************************
+
+            // Get retries number
+            var remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
+
+            // Retries
+            var retryNumber = 0;
+            var totalRetries = remainingRetries;
+            while (remainingRetries-- > 0)
             {
-                // **************************************************************
-                // Early flake detection mode
-                // **************************************************************
+                retryNumber++;
+                Common.Log.Debug<int, int>("EFD: [Retry {Num}] Running retry of {TotalRetries}.", retryNumber, totalRetries);
+                ClearResultForRetry(context);
+                var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
+                Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
+                AgregateResults(result, retryResult);
+            }
 
-                // Get retries number
-                var remainingRetries = Common.GetNumberOfExecutionsForDuration(duration) - 1;
+            if (retryNumber > 0)
+            {
+                Common.Log.Debug("EFD: All retries were executed.");
+            }
+        }
+        else if (resultStatus == TestStatus.Failed && CIVisibility.Settings.FlakyRetryEnabled == true)
+        {
+            // **************************************************************
+            // Flaky retry mode
+            // **************************************************************
 
-                // Retries
-                var retryNumber = 0;
-                var totalRetries = remainingRetries;
-                while (remainingRetries-- > 0)
+            // Get retries number
+            var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
+
+            // Retries
+            var retryNumber = 0;
+            while (remainingRetries-- > 0)
+            {
+                if (Interlocked.Decrement(ref _totalRetries) <= 0)
                 {
-                    retryNumber++;
-                    Common.Log.Debug<int, int>("EFD: [Retry {Num}] Running retry of {TotalRetries}.", retryNumber, totalRetries);
-                    ClearResultForRetry(context);
-                    var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
-                    Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
-                    AgregateResults(result, retryResult);
+                    Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                    break;
                 }
 
-                if (retryNumber > 0)
+                retryNumber++;
+                Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", retryNumber);
+                ClearResultForRetry(context);
+                var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
+                Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Aggregating results.", retryNumber);
+                AgregateResults(result, retryResult);
+                if (retryResult.ResultState.Status != TestStatus.Failed)
                 {
-                    Common.Log.Debug("EFD: All retries were executed.");
+                    Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", retryNumber);
+                    break;
                 }
             }
-            else if (resultStatus == TestStatus.Failed && CIVisibility.Settings.FlakyRetryEnabled == true)
+
+            if (remainingRetries <= 0)
             {
-                // **************************************************************
-                // Flaky retry mode
-                // **************************************************************
-
-                // Get retries number
-                var remainingRetries = CIVisibility.Settings.FlakyRetryCount;
-
-                // Retries
-                var retryNumber = 0;
-                while (remainingRetries-- > 0)
-                {
-                    if (Interlocked.Decrement(ref _totalRetries) <= 0)
-                    {
-                        Common.Log.Debug<int>("FlakyRetry: Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
-                        break;
-                    }
-
-                    retryNumber++;
-                    Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", retryNumber);
-                    ClearResultForRetry(context);
-                    var retryResult = ExecuteTest(context, executionNumber++, out _, out _);
-                    Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Aggregating results.", retryNumber);
-                    AgregateResults(result, retryResult);
-                    if (retryResult.ResultState.Status != TestStatus.Failed)
-                    {
-                        Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Test passed in retry.", retryNumber);
-                        break;
-                    }
-                }
-
-                if (remainingRetries <= 0)
-                {
-                    Common.Log.Debug("FlakyRetry: All retries were executed.");
-                }
+                Common.Log.Debug("FlakyRetry: All retries were executed.");
             }
         }
 
