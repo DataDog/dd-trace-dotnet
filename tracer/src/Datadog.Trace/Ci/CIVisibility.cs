@@ -745,7 +745,7 @@ namespace Datadog.Trace.Ci
 
                     if (settings.EarlyFlakeDetectionEnabled == true || itrSettings.EarlyFlakeDetection.Enabled == true)
                     {
-                        Log.Information("ITR: Early flake detection settings has been enabled by the settings api.");
+                        Log.Information("CIVisibility: Early flake detection settings has been enabled by the settings api.");
                         EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;
                         settings.SetEarlyFlakeDetectionEnabled(true);
                         EarlyFlakeDetectionResponse = await lazyItrClient.Value.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
@@ -757,7 +757,7 @@ namespace Datadog.Trace.Ci
 
                     if (settings.FlakyRetryEnabled == null && itrSettings.FlakyTestRetries.HasValue)
                     {
-                        Log.Information("ITR: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
+                        Log.Information("CIVisibility: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
                         settings.SetFlakyRetryEnabled(itrSettings.FlakyTestRetries.Value);
                     }
                 }
@@ -766,7 +766,10 @@ namespace Datadog.Trace.Ci
                 Log.Information("{V}", settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
                 // Log early flake detection status
-                Log.Information("{V}", settings.EarlyFlakeDetectionEnabled == true ? "ITR: Early flake detection is enabled." : "ITR: Early flake detection is disabled.");
+                Log.Information("{V}", settings.EarlyFlakeDetectionEnabled == true ? "CIVisibility: Early flake detection is enabled." : "CIVisibility: Early flake detection is disabled.");
+
+                // Log flaky retries status
+                Log.Information("{V}", settings.FlakyRetryEnabled == true ? "CIVisibility: Flaky retries is enabled." : "CIVisibility: Flaky retries is disabled.");
 
                 // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
