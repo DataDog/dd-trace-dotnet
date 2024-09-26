@@ -105,10 +105,10 @@ namespace Datadog.Trace.Ci.Configuration
             FlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryEnabled).AsBool();
 
             // Maximum number of retry attempts for a single test case.
-            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(5);
+            FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
 
             // Maximum number of retry attempts for the entire session.
-            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(1000);
+            TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
         }
 
         /// <summary>

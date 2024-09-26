@@ -132,12 +132,12 @@ public static class XUnitTestRunnerRunAsyncIntegration
             if (messageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
              && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
-                var isRetryEnabled = messageBus.FlakyRetryEnabled;
+                var isFlakyRetryEnabled = messageBus.FlakyRetryEnabled;
                 var index = messageBus.ExecutionIndex;
                 if (index == 0)
                 {
                     // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
-                    if (isRetryEnabled)
+                    if (isFlakyRetryEnabled)
                     {
                         messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
                     }
@@ -152,18 +152,23 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                 if (messageBus.ExecutionNumber > 0)
                 {
-                    if (isRetryEnabled && (Interlocked.Decrement(ref _totalRetries) < 1 || runSummary.Failed == 0))
+                    var doRetry = true;
+                    if (isFlakyRetryEnabled)
                     {
+                        var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
                         if (runSummary.Failed == 0)
                         {
                             Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                            doRetry = false;
                         }
-                        else
+                        else if (remainingTotalRetries < 1)
                         {
                             Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            doRetry = false;
                         }
                     }
-                    else
+
+                    if (doRetry)
                     {
                         var retryNumber = messageBus.ExecutionIndex + 1;
                         // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
@@ -182,7 +187,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 }
                 else
                 {
-                    if (isRetryEnabled && runSummary.Failed == 0)
+                    if (isFlakyRetryEnabled && runSummary.Failed == 0)
                     {
                         Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
                     }
