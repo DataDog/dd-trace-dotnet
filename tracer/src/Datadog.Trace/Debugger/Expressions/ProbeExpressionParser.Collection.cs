@@ -51,15 +51,33 @@ internal partial class ProbeExpressionParser<T>
                 throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
             }
 
-            var itParameter = Expression.Parameter(source.Type.GetGenericArguments()[0]);
+            Type itParameterType = null;
+            if (source.Type.IsArray)
+            {
+                itParameterType = source.Type.GetElementType();
+            }
+            else
+            {
+                if (source.Type.GetGenericArguments().Length > 0)
+                {
+                    itParameterType = source.Type.GetGenericArguments()[0];
+                }
+            }
+
+            if (predicateMethod == null)
+            {
+                throw new InvalidOperationException("Fail to determined the iterator parameter type");
+            }
+
+            ParameterExpression itParameter = Expression.Parameter(itParameterType);
             var predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
-            var lambda = Expression.Lambda<Func<string, bool>>(predicate, itParameter);
-            var genericPredicateMethod = predicateMethod.MakeGenericMethod(source.Type.GetGenericArguments()[0]);
+            var lambda = Expression.Lambda(predicate, itParameter);
+            var genericPredicateMethod = predicateMethod.MakeGenericMethod(itParameterType);
             callExpression = Expression.Call(null, genericPredicateMethod, source, lambda);
             if (IsIEnumerable(callExpression.Type))
             {
                 var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
-                var genericToListMethod = toListMethod.MakeGenericMethod(source.Type.GetGenericArguments()[0]);
+                var genericToListMethod = toListMethod.MakeGenericMethod(itParameterType);
                 callExpression = Expression.Call(null, genericToListMethod, callExpression);
             }
 
@@ -186,7 +204,7 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Call(source, lengthMethod);
         }
 
-        if (!IsTypeSupportCount(source))
+        if (!IsSafeCollection(source?.Type))
         {
             throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
         }
@@ -198,23 +216,27 @@ internal partial class ProbeExpressionParser<T>
 
     private bool IsSafeCollection(Type type)
     {
-        return IsMicrosoftType(type) &&
-               (type.GetInterface("ICollection") != null ||
-               type.GetInterface("IReadOnlyCollection") != null ||
-               type.IsArray);
+        if (type == null)
+        {
+            return false;
+        }
+
+        return type.IsArray || (IsMicrosoftType(type) && IsCollection(type));
     }
 
     private bool IsIEnumerable(Type type)
     {
-        return IsSafeCollection(type) || type.GetInterface("IEnumerable") != null;
+        return IsSafeCollection(type) || type.GetInterface(nameof(IEnumerable)) != null;
     }
 
-    private bool IsTypeSupportCount(Expression source)
+    private bool IsCollection(Type type)
     {
-        return IsMicrosoftType(source.Type) &&
-               (source.Type.GetInterface("ICollection") != null ||
-                source.Type.GetInterface("IReadOnlyCollection") != null ||
-                source.Type.IsArray);
+        return type.GetInterfaces()
+                   .Any(i =>
+                            i.IsGenericType
+                         && (i.GetGenericTypeDefinition() == typeof(ICollection)
+                          || i.GetGenericTypeDefinition() == typeof(ICollection<>)
+                          || i.GetGenericTypeDefinition() == typeof(IReadOnlyCollection<>)));
     }
 
     private bool IsTypeSupportIndex(Type type, out Type assignableFrom)

@@ -39,7 +39,9 @@ namespace Datadog.Trace.Tests.Debugger
         {
             TestObject = new TestStruct
             {
-                Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
+                Collection = ["hello", "1st Item", "2nd item", "3rd item"],
+                CollectionInt = [1, 2, 3],
+                HashInt = [1, 2, 3],
                 Array = ["first", "second"],
                 CustomArray = [new TestStruct.NestedObject() { NestedString = "Nested" }, new TestStruct.ChildNestedObject() { NestedString = "Nested Child" }],
                 Dictionary = new Dictionary<string, string> { { "hello", "world" } },
@@ -201,6 +203,8 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("StringLocal", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionLocal", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CollectionIntLocal", TestObject.CollectionInt.GetType(), TestObject.CollectionInt, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("HashIntLocal", TestObject.HashInt.GetType(), TestObject.HashInt, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("ArrayLocal", TestObject.Array.GetType(), TestObject.Array, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CustomArrayLocal", TestObject.CustomArray.GetType(), TestObject.CustomArray, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DictionaryLocal", TestObject.Dictionary.GetType(), TestObject.Dictionary, ScopeMemberKind.Local));
@@ -335,6 +339,10 @@ namespace Datadog.Trace.Tests.Debugger
             public int IntNumber;
 
             public List<string> Collection;
+
+            public List<int> CollectionInt;
+
+            public HashSet<int> HashInt;
 
             public string[] Array;
 
