@@ -67,7 +67,9 @@ uint32_t IpcClient::Send(PVOID pBuffer, uint32_t bufferSize)
         auto lastError = ShowLastError("Failed to write to pipe");
         return lastError;
     }
-    ::FlushFileBuffers(_hPipe);
+
+    // this might hang
+    //::FlushFileBuffers(_hPipe);
 
     return (bufferSize == writtenSize) ? NamedPipesCode::Success : NamedPipesCode::MissingData;
  }
