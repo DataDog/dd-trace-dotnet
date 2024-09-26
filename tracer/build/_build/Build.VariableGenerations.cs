@@ -52,6 +52,7 @@ partial class Build : NukeBuild
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
                     "tracer/build/_build/Build.Steps.Debugger.cs",
+                    "tracer/build/_build/Build.ExplorationTests.cs",
                 }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
                 {
