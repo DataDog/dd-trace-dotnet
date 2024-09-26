@@ -9,6 +9,10 @@
 #include <shared/src/native-src/util.h>
 #include <thread>
 
+#if _WIN32
+#include <windows.h>
+#endif
+
 extern "C"
 {
 #include "datadog/common.h"
@@ -233,6 +237,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             }
         }
     }
+
+    OutputDebugString(L"Finished inspecting threads");
 
     if (successfulThreads != threads.size())
     {

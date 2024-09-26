@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -25,7 +23,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public class CreatedumpTests : ConsoleTestHelper
 {
+#if !NETFRAMEWORK // Createdump is not supported on .NET Framework
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
+#endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
 
     public CreatedumpTests(ITestOutputHelper output)
@@ -54,6 +54,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
     private static (string Key, string Value)[] CreatedumpConfig => [("COMPlus_DbgEnableMiniDump", "1"), ("COMPlus_DbgMiniDumpName", "/dev/null")];
 
+#if !NETFRAMEWORK
     [SkippableTheory]
     [InlineData("1", true)]
     [InlineData("0", false)]
@@ -69,12 +70,13 @@ public class CreatedumpTests : ConsoleTestHelper
         // "was COMPlus_DbgEnableMiniDump set?" check.
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.Platform(SkipOn.PlatformValue.Windows); // This test is not needed on Windows because we don't hook createdump
 
         using var reportFile = new TemporaryFile();
 
         (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
 
         await helper.Task;
 
@@ -98,6 +100,7 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
     }
+#endif
 
     [SkippableFact]
     public async Task BashScript()
@@ -150,7 +153,7 @@ public class CreatedumpTests : ConsoleTestHelper
             args = [.. args, .. CreatedumpConfig];
         }
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
 
         await helper.Task;
 
@@ -163,6 +166,7 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
         }
 
+#if !NETFRAMEWORK
         if (enableCrashDumps)
         {
             helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
@@ -171,6 +175,7 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
+#endif
 
         File.Exists(reportFile.Path).Should().BeFalse();
     }
@@ -194,7 +199,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", false, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
 
         await helper.Task;
 
@@ -202,6 +207,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
+#if !NETFRAMEWORK
         if (crashdumpEnabled)
         {
             helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
@@ -210,6 +216,7 @@ public class CreatedumpTests : ConsoleTestHelper
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
+#endif
 
         if (telemetryEnabled)
         {
@@ -240,7 +247,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
+                               true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -265,7 +272,11 @@ public class CreatedumpTests : ConsoleTestHelper
                        .FirstOrDefault(t => t.StartsWith("exception:"));
 
         exception.Should().NotBeNull().And.StartWith("exception:Type: System.BadImageFormatException\nMessage: Expected\nStack Trace:\n");
-        report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            report["siginfo"]!["signum"]!.Value<string>().Should().Be("6");
+        }
     }
 
 #if !NETFRAMEWORK
@@ -296,7 +307,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             using var helper = await StartConsoleWithArgs(
                                    "crash-datadog",
-                                   false,
+                                   true,
                                    [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
 
             await helper.Task;
@@ -383,12 +394,10 @@ public class CreatedumpTests : ConsoleTestHelper
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-        using var agent = new MockTelemetryAgent(TcpPortProvider.GetOpenPort()) { OptionalHeaders = true };
-
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
-                               [LdPreloadConfig, ("DD_TRACE_AGENT_URL", $"http://localhost:{agent.Port}")]);
+                               true,
+                               [LdPreloadConfig]);
 
         await helper.Task;
 
@@ -401,14 +410,50 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
         }
 
-        var data = agent.WaitForLatestTelemetry(d => d.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs));
+        bool IsCrashReport(object payload)
+        {
+            Output.WriteLine($"Payload: {payload}");
+            if (payload is not TelemetryData data)
+            {
+                return false;
+            }
+
+            if (!data.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs))
+            {
+                return false;
+            }
+
+            var log = (LogsPayload)data.Payload;
+
+            Output.WriteLine($"Count: {log.Logs.Count}");
+
+            if (log.Logs.Count != 1)
+            {
+                return false;
+            }
+
+            Output.WriteLine($"Log: {log.Logs[0]}");
+
+            var report = JObject.Parse(log.Logs[0].Message);
+            return report["additional_stacktraces"] != null;
+        }
+
+        var agent = helper.Agent;
+
+        var data = agent.WaitForLatestTelemetry(IsCrashReport);
         data.Should().NotBeNull();
 
-        var log = (LogsPayload)data.Payload;
+        var log = (LogsPayload)((TelemetryData)data).Payload;
         log.Logs.Should().HaveCount(1);
         var report = JObject.Parse(log.Logs[0].Message);
 
-        report["additional_stacktraces"].Should().NotBeNull();
+        if (report["additional_stacktraces"] is null || report["additional_stacktraces"] == null)
+        {
+            throw new Exception($"Empty report: {report}");
+        }
+
+        Output.WriteLine($"Report: {report}");
+        report.Should().ContainKey("additional_stacktraces").WhoseValue.Should().NotBeNull();
     }
 
     [SkippableFact]
@@ -420,7 +465,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
-                               false,
+                               true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -444,7 +489,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               false,
+                               true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -453,18 +498,18 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var reader = new StringReader(helper.StandardOutput);
 
-        int? expectedPid = null;
+        int? mainThreadId = null;
         var expectedCallstack = new List<string>();
 
-        var pidRegex = "PID: (?<pid>[0-9]+)";
+        var tidRegex = "Main thread: (?<tid>[0-9]+)";
 
         while (reader.ReadLine() is { } line)
         {
-            var pidMatch = Regex.Match(line, pidRegex);
+            var tidMatch = Regex.Match(line, tidRegex);
 
-            if (pidMatch.Success)
+            if (tidMatch.Success)
             {
-                expectedPid = int.Parse(pidMatch.Groups["pid"].Value);
+                mainThreadId = int.Parse(tidMatch.Groups["tid"].Value);
                 continue;
             }
 
@@ -474,7 +519,7 @@ public class CreatedumpTests : ConsoleTestHelper
             }
         }
 
-        expectedPid.Should().NotBeNull();
+        mainThreadId.Should().NotBeNull();
         expectedCallstack.Should().HaveCountGreaterOrEqualTo(2);
 
         var report = JObject.Parse(reportFile.GetContent());
@@ -483,7 +528,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("Report", report.ToString());
 
         ValidateStacktrace(report["stacktrace"]);
-        ValidateStacktrace(report["additional_stacktraces"][expectedPid.Value.ToString()]);
+        ValidateStacktrace(report["additional_stacktraces"][mainThreadId.Value.ToString()]);
 
         void ValidateStacktrace(JToken callstack)
         {
@@ -542,13 +587,16 @@ public class CreatedumpTests : ConsoleTestHelper
     {
         public TemporaryFile()
         {
-            Path = System.IO.Path.GetTempFileName();
+            // TODO: Fix
+            // Path = System.IO.Path.GetTempFileName();
+            Path = $@"C:\Temp\{Guid.NewGuid()}.txt";
             File.Delete(Path);
         }
 
         public string Path { get; }
 
-        public string Url => $"file://{Path}";
+        // public string Url => $"file:/{Path}";
+        public string Url => $"file:/temp/{System.IO.Path.GetFileName(Path)}";
 
         public string GetContent() => File.ReadAllText(Path);
 
@@ -560,5 +608,3 @@ public class CreatedumpTests : ConsoleTestHelper
         }
     }
 }
-
-#endif

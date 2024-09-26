@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -186,9 +188,6 @@ internal class CreatedumpCommand : Command
 
         return false;
     }
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern unsafe bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte* lpBuffer, int dwSize, out int lpNumberOfBytesRead);
 
     [UnmanagedCallersOnly]
     private static unsafe int ResolveManagedCallstack(int threadId, IntPtr context, ResolveMethodData** managedCallstack, int* numberOfFrames)
@@ -744,14 +743,5 @@ internal class CreatedumpCommand : Command
         public ulong Sp;
         public bool IsSuspicious;
         public fixed byte Name[SymbolNameMaxLength];
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private unsafe struct CrashMetadata
-    {
-        public fixed byte CrashReportPath[255];
-        public fixed byte ServiceName[255];
-        public fixed byte Env[255];
-        public fixed byte Version[255];
     }
 }
