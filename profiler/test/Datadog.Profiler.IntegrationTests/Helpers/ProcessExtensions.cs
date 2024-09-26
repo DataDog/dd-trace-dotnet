@@ -26,8 +26,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             if (EnvironmentHelper.IsRunningOnWindows())
             {
-                TakeWindowsMemoryDump(process, outputFolderPath, output);
                 return;
+                // TODO: uncomment when CI is fine
+                TakeWindowsMemoryDump(process, outputFolderPath, output);
             }
 
             TakeLinuxMemoryDump(process, outputFolderPath, output);
