@@ -119,7 +119,7 @@ ULONG CrashReporting::Release()
 
 int32_t CrashReporting::AddTag(const char* key, const char* value)
 {
-    auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
+    auto result = ddog_crasht_CrashInfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
 
     if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
@@ -144,7 +144,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+    ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
 
     return 0;
 }
