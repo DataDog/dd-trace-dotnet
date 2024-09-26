@@ -1,15 +1,16 @@
-Condition:
-Json:
-{
-  "eq": [
-    {
-      "ref": "BooleanValue"
-    },
-    true
-  ]
-}
+Template:
+Segments: 
 
-Expression: (
+{
+    "index": [
+        {
+            "ref": "ArrayLocal"
+        },
+        0
+    ]
+}
+Expressions: 
+(
     scopeMember,
     scopeMember,
     scopeMember,
@@ -39,8 +40,8 @@ Expression: (
     var StringArg = (string)scopeMemberArray[16].Value;
     var CollectionArg = (List<string>)scopeMemberArray[17].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[18].Value;
-    var $dd_el_result = BooleanValue;
+    var $dd_el_result = (string)ArrayLocal[0];
 
     return $dd_el_result;
 }
-Result: True
+Result: The result of the expression is: first

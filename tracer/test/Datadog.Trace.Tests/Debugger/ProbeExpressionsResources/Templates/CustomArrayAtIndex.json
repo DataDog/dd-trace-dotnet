@@ -1,0 +1,9 @@
+{
+    "dsl": "The item in index 0 is {index(ref CustomArrayLocal, 0)}",
+    "index": [
+        {
+            "ref": "CustomArrayLocal"
+        },
+        0
+    ]
+}

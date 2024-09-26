@@ -40,6 +40,8 @@ namespace Datadog.Trace.Tests.Debugger
             TestObject = new TestStruct
             {
                 Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
+                Array = ["first", "second"],
+                CustomArray = [new TestStruct.NestedObject() { NestedString = "Nested" }, new TestStruct.ChildNestedObject() { NestedString = "Nested Child" }],
                 Dictionary = new Dictionary<string, string> { { "hello", "world" } },
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
@@ -199,6 +201,8 @@ namespace Datadog.Trace.Tests.Debugger
             scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("StringLocal", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionLocal", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("ArrayLocal", TestObject.Array.GetType(), TestObject.Array, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CustomArrayLocal", TestObject.CustomArray.GetType(), TestObject.CustomArray, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DictionaryLocal", TestObject.Dictionary.GetType(), TestObject.Dictionary, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NestedObjectLocal", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullLocal", TestObject.Nested.GetType(), TestObject.Null, ScopeMemberKind.Local));
@@ -331,6 +335,10 @@ namespace Datadog.Trace.Tests.Debugger
             public int IntNumber;
 
             public List<string> Collection;
+
+            public string[] Array;
+
+            public NestedObject[] CustomArray;
 
             public Dictionary<string, string> Dictionary;
 

@@ -113,7 +113,11 @@ internal partial class ProbeExpressionParser<T>
         var genericTypeArguments = source.Type.GenericTypeArguments;
         if (assignableFrom == typeof(IList) || assignableFrom == typeof(IReadOnlyList<>))
         {
-            if (genericTypeArguments.Length > 0)
+            if (source.Type.IsArray)
+            {
+                convertToType = source.Type.GetElementType();
+            }
+            else if (genericTypeArguments.Length > 0)
             {
                 convertToType = genericTypeArguments[0];
             }
@@ -138,6 +142,11 @@ internal partial class ProbeExpressionParser<T>
             }
 
             getItemMethod = ProbeExpressionParserHelper.GetMethodByReflection(assignableFrom, "get_Item", new[] { keyType });
+        }
+
+        if (getItemMethod == null)
+        {
+            throw new InvalidOperationException("Unsupported collection");
         }
 
         var getItemCall = Expression.Call(source, getItemMethod, indexOrKey);
@@ -210,12 +219,19 @@ internal partial class ProbeExpressionParser<T>
 
     private bool IsTypeSupportIndex(Type type, out Type assignableFrom)
     {
+        if (type.IsArray)
+        {
+            assignableFrom = typeof(IList);
+            return true;
+        }
+
         if (!IsMicrosoftType(type))
         {
             assignableFrom = null;
             return false;
         }
 
+        // Do not use IsInstanceOfType
         if (type == typeof(IList) || type.GetInterface(nameof(IList)) != null)
         {
             assignableFrom = typeof(IList);
