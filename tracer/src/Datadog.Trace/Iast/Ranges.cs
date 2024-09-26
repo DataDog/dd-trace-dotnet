@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast;
 
@@ -204,6 +205,45 @@ internal static class Ranges
         }
 
         return newRanges.ToArray();
+    }
+
+    internal static Range[]? GetUnsafeRanges(Range[] ranges, SecureMarks safeMarks, SourceType[]? safeSources)
+    {
+        if (safeMarks == SecureMarks.None && safeSources is null)
+        {
+            return ranges;
+        }
+
+        bool existsSecureRanges = false;
+        for (int x = 0; x < ranges.Length; x++)
+        {
+            var range = ranges[x];
+            if (range.IsMarked(safeMarks) || range.IsSafeSource(safeSources))
+            {
+                existsSecureRanges = true;
+                break;
+            }
+        }
+
+        if (!existsSecureRanges)
+        {
+            // This is made in order to avoid unnecesary allocations (most common situation)
+            return ranges;
+        }
+
+        List<Range> insecureRanges = new List<Range>(ranges.Length);
+        for (int x = 0; x < ranges.Length; x++)
+        {
+            var range = ranges[x];
+            if (range.IsMarked(safeMarks) || range.IsSafeSource(safeSources))
+            {
+                continue;
+            }
+
+            insecureRanges.Add(range);
+        }
+
+        return insecureRanges.ToArray();
     }
 
     internal static bool ContainsUnsafeRange(IEnumerable<Range>? ranges)
