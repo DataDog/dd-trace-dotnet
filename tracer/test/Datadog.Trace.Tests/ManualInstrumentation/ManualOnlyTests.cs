@@ -6,6 +6,12 @@
 extern alias DatadogTraceManual;
 
 using System;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.TestHelpers;
 using DatadogTraceManual::Datadog.Trace.Ci;
 using FluentAssertions;
 using Xunit;
@@ -20,6 +26,7 @@ using ManualITest = DatadogTraceManual::Datadog.Trace.Ci.ITest;
 using ManualITestModule = DatadogTraceManual::Datadog.Trace.Ci.ITestModule;
 using ManualITestSession = DatadogTraceManual::Datadog.Trace.Ci.ITestSession;
 using ManualITestSuite = DatadogTraceManual::Datadog.Trace.Ci.ITestSuite;
+using ManualTracer = DatadogTraceManual::Datadog.Trace.Tracer;
 using TestParameters = DatadogTraceManual::Datadog.Trace.Ci.TestParameters;
 using TestStatus = DatadogTraceManual::Datadog.Trace.Ci.TestStatus;
 
@@ -75,4 +82,19 @@ public class ManualOnlyTests
         module.Close();
         manualSession.Close(TestStatus.Pass);
     }
+
+    [Fact]
+    public async Task ManualSpanCanBeUsedInExpressions()
+    {
+        // Regression test for https://github.com/DataDog/dd-trace-dotnet/issues/6073
+        await using var autoTracer = TracerHelper.CreateWithFakeAgent();
+        using var scope = autoTracer.StartActive("test");
+        var manualScope = scope.DuckCast<ManualIScope>();
+
+        Expression.Call(
+            typeof(ManualOnlyTests).GetMethod(nameof(CallMe), BindingFlags.Static | BindingFlags.NonPublic),
+            Expression.Constant(manualScope));
+    }
+
+    private static void CallMe(ManualIScope scope) => _ = scope;
 }

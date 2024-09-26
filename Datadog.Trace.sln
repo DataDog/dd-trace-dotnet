@@ -582,6 +582,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.NUnitTestsRetries",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.MSTestTestsRetries", "tracer\test\test-applications\integrations\Samples.MSTestTestsRetries\Samples.MSTestTestsRetries.csproj", "{2CA0D70C-DFC1-458A-871B-328AB6E87E3A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{E1B0F72C-991A-409D-9266-DE5ED1BD940E}"
+	ProjectSection(SolutionItems) = preProject
+		tracer\build\PackageVersionsLatestMajors.g.props = tracer\build\PackageVersionsLatestMajors.g.props
+		tracer\build\PackageVersionsLatestMinors.g.props = tracer\build\PackageVersionsLatestMinors.g.props
+		tracer\build\PackageVersionsLatestSpecific.g.props = tracer\build\PackageVersionsLatestSpecific.g.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1630,6 +1637,7 @@ Global
 		{B8DAF87D-A30D-48AE-B630-C65A64D0C3AF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{7131FE5A-6B27-4BBC-B0CF-09780F6D2DFE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{2CA0D70C-DFC1-458A-871B-328AB6E87E3A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{E1B0F72C-991A-409D-9266-DE5ED1BD940E} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1682,7 +1690,6 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{536f1d82-d40c-4e33-b7fa-76a0f17bf672}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{560e1104-9a6e-41e7-ab3d-85ba2740a0f7}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{56de0d44-e9e5-48da-baea-2934b1e28d4e}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5c2829c2-ed0d-414c-b5a0-2bfdca07b493}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5e290fa1-e87b-4782-b977-eb5fa6c96efe}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5ee6b6eb-b768-47ec-882b-8dcaca2b1360}*SharedItemsImports = 5

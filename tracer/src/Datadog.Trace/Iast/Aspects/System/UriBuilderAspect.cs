@@ -28,7 +28,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(uriText);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uriText);
         }
         catch (Exception ex)
         {
@@ -49,7 +49,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(uri);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
         }
         catch (Exception ex)
         {
@@ -71,7 +71,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(scheme, host);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
         }
         catch (Exception ex)
         {
@@ -94,7 +94,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(scheme, host, port);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
         }
         catch (Exception ex)
         {
@@ -118,7 +118,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(scheme, host, port, path);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path);
         }
         catch (Exception ex)
         {
@@ -143,7 +143,7 @@ public class UriBuilderAspect
         var result = new UriBuilder(scheme, host, port, path, extra);
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
         }
         catch (Exception ex)
         {
@@ -164,7 +164,7 @@ public class UriBuilderAspect
         instance.Host = parameter;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
         catch (Exception ex)
         {
@@ -183,7 +183,7 @@ public class UriBuilderAspect
         instance.Query = parameter;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
         catch (Exception ex)
         {
@@ -202,7 +202,7 @@ public class UriBuilderAspect
         instance.Path = parameter;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
         }
         catch (Exception ex)
         {
@@ -221,7 +221,7 @@ public class UriBuilderAspect
         var result = instance.Host;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
         catch (Exception ex)
         {
@@ -242,7 +242,7 @@ public class UriBuilderAspect
         var result = instance.Query;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
         catch (Exception ex)
         {
@@ -263,7 +263,7 @@ public class UriBuilderAspect
         var result = instance.Path;
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
         }
         catch (Exception ex)
         {
@@ -285,7 +285,7 @@ public class UriBuilderAspect
         var result = instance!.ToString();
         try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
         }
         catch (Exception ex)
         {

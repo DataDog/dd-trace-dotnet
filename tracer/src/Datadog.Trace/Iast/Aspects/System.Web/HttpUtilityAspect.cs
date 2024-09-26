@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Net;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
 
 #nullable enable
 
@@ -19,14 +17,14 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 public class HttpUtilityAspect
 {
     /// <summary>
-    /// Launches a SSRF vulnerability if the url is tainted
+    /// Escapes the HTML string making it safe for XSS
     /// </summary>
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
     [AspectMethodReplace("System.Web.HttpUtility::HtmlEncode(System.String)")]
-    public static string? Review(string? parameter)
+    public static string? XssEscape(string? parameter)
     {
-        var result = WebUtility.HtmlEncode(parameter);
+        var result = global::System.Web.HttpUtility.HtmlEncode(parameter);
         try
         {
             if (parameter is not null && result is not null)
@@ -36,7 +34,56 @@ public class HttpUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpUtilityAspect)}.{nameof(Review)}");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpUtilityAspect)}.{nameof(XssEscape)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Escapes the URL string making it safe for SSRF
+    /// </summary>
+    /// <param name="parameter">the sensitive parameter of the method</param>
+    /// <returns>the parameter</returns>
+    [AspectMethodReplace("System.Web.HttpUtility::UrlEncode(System.String)")]
+    public static string? SsrfEscape(string? parameter)
+    {
+        var result = global::System.Web.HttpUtility.UrlEncode(parameter);
+        try
+        {
+            if (parameter is not null && result is not null)
+            {
+                return IastModule.OnSsrfEscape(parameter, result);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpUtilityAspect)}.{nameof(SsrfEscape)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Launches a SSRF vulnerability if the url is tainted
+    /// </summary>
+    /// <param name="parameter">the sensitive parameter of the method</param>
+    /// <param name="e">encoding used to encode the string</param>
+    /// <returns>the parameter</returns>
+    [AspectMethodReplace("System.Web.HttpUtility::UrlEncode(System.String,System.Text.Encoding)")]
+    public static string? SsrfEscape(string? parameter, global::System.Text.Encoding e)
+    {
+        var result = global::System.Web.HttpUtility.UrlEncode(parameter, e);
+        try
+        {
+            if (parameter is not null && result is not null)
+            {
+                return IastModule.OnSsrfEscape(parameter, result);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpUtilityAspect)}.{nameof(SsrfEscape)}");
         }
 
         return result;

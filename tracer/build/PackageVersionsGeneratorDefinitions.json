@@ -38,7 +38,7 @@
     "MinVersion": "1.4.0",
     "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
-      "1.10.*"
+      "1.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "1.4.0",

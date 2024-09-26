@@ -4,7 +4,6 @@
 // </copyright>
 
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace;
 
@@ -16,6 +15,7 @@ namespace Datadog.Trace;
 /// </summary>
 // [DuckType("Datadog.Trace.IScope", "Datadog.Trace")] // This one is weird, the unit tests fail, will address later as may need duck typing changes
 [DuckType("Datadog.Trace.Scope", "Datadog.Trace")]
+[DuckAsClass]
 public partial interface IScope
 {
 }
