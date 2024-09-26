@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialize first in the trace chunk
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
-            deserializedSpan.Tags[Tags.BaseService].Should().BeOneOf(TestRunners.ValidNames);
+            deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
             deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
