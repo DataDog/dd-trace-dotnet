@@ -249,6 +249,23 @@
     ]
   },
   {
+    "integrationName": "AwsEventBridge",
+    "assemblyName": "AWSSDK.EventBridge",
+    "minAssemblyVersionInclusive": "3.3.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.EventBridge",
+        "minVersionAvailableInclusive": "3.3.100",
+        "minVersionSupportedInclusive": "3.3.100",
+        "minVersionTestedInclusive": "3.3.102.16",
+        "maxVersionSupportedInclusive": "3.7.401.22",
+        "maxVersionAvailableInclusive": "3.7.401.22",
+        "maxVersionTestedInclusive": "3.7.401.22"
+      }
+    ]
+  },
+  {
     "integrationName": "AwsKinesis",
     "assemblyName": "AWSSDK.Kinesis",
     "minAssemblyVersionInclusive": "3.0.0",
