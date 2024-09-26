@@ -266,22 +266,24 @@ partial class Build
 
     private void CreateLineProbesIfNeeded()
     {
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
-
-        if (!testDescription.LineProbesEnabled)
-        {
-            Logger.Information($"Skip line probes creation. The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
-            return;
-        }
-
+        ExplorationTestDescription testDescription = null;
         if (ExplorationTestName.HasValue)
         {
-            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            if (!testDescription.LineProbesEnabled)
+            {
+                Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+                return;
+            }
         }
         else
         {
-            Logger.Information("Exploration test name is not provided. Running protobuf test case");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
         }
+
+        Logger.Information($"Provided exploration test name is {testDescription.Name}.");
+
+        ExplorationTestDescription.GetAllExplorationTestDescriptions();
 
         var sw = new Stopwatch();
         sw.Start();
