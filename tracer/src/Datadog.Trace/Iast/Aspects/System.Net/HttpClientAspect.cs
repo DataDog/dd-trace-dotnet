@@ -129,7 +129,7 @@ public class HttpClientAspect
 #endif
     [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
 #if !NETFRAMEWORK
-    public static object ReviewHttpRequestMessage(HttpRequestMessage parameter)
+    public static HttpRequestMessage ReviewHttpRequestMessage(HttpRequestMessage parameter)
     {
         try
         {
