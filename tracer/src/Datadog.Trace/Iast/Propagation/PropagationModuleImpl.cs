@@ -9,7 +9,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast.Propagation;
@@ -92,59 +94,162 @@ internal static class PropagationModuleImpl
         return result;
     }
 
-    public static object? PropagateResultWhenInputTainted(string? result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool TryPropagateWholeResult(string? result, object? input, out TaintedObjects? taintedObjects)
+    {
+        IastModule.OnExecutedPropagationTelemetry();
+        if (result is null || input is null || result == string.Empty)
+        {
+            taintedObjects = null;
+            return true;
+        }
+
+        if (object.ReferenceEquals(result, input))
+        {
+            taintedObjects = null;
+            return true;
+        }
+
+        var iastContext = IastModule.GetIastContext();
+        if (iastContext == null)
+        {
+            taintedObjects = null;
+            return true;
+        }
+
+        taintedObjects = iastContext.GetTaintedObjects();
+
+        if (result.Equals(input))
+        {
+            var tainted = taintedObjects.Get(input);
+            if (tainted is not null)
+            {
+                taintedObjects.Taint(result, tainted.Ranges);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool PropagateWholeResultWhenInputTainted(string result, object? input, TaintedObjects taintedObjects)
+    {
+        if (input is not null)
+        {
+            var tainted = taintedObjects.Get(input);
+            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null && taintedObjects.Get(result) is null)
+            {
+                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source, tainted.Ranges[0].SecureMarks) });
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static string? PropagateWholeResultWhenInputTainted(string? result, object? input1)
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-            if (string.IsNullOrEmpty(result))
+            if (TryPropagateWholeResult(result, input1, out var taintedObjects) || taintedObjects is null)
             {
                 return result;
             }
 
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            PropagateWholeResultWhenInputTainted(result!, input1, taintedObjects);
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputTainted)} exception");
+        }
+
+        return result;
+    }
+
+    public static object? PropagateWholeResultWhenInputTainted(string? result, object? input1, object? input2)
+    {
+        try
+        {
+            if (TryPropagateWholeResult(result, input1, out var taintedObjects) || taintedObjects is null)
             {
                 return result;
             }
 
-            var taintedObjects = iastContext.GetTaintedObjects();
-
-            if (PropagateResultWhenInputTainted(result!, firstInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result!, secondInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result!, thirdInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result!, fourthInput, taintedObjects))
+            if (PropagateWholeResultWhenInputTainted(result!, input1, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input2, taintedObjects))
             {
                 return result;
             }
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputTainted)} exception");
         }
 
         return result;
     }
 
-    public static object? PropagateResultWhenInputArrayTainted(string result, object? firstInput, object[]? otherInputs)
+    public static object? PropagateWholeResultWhenInputTainted(string? result, object? input1, object? input2, object? input3)
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
-            if (string.IsNullOrEmpty(result))
+            if (TryPropagateWholeResult(result, input1, out var taintedObjects) || taintedObjects is null)
             {
                 return result;
             }
 
-            var iastContext = IastModule.GetIastContext();
-            if (iastContext == null)
+            if (PropagateWholeResultWhenInputTainted(result!, input1, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input2, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input3, taintedObjects))
+            {
+                return result;
+            }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputTainted)} exception");
+        }
+
+        return result;
+    }
+
+    public static object? PropagateWholeResultWhenInputTainted(string? result, object? input1, object? input2, object? input3, object? input4)
+    {
+        try
+        {
+            if (TryPropagateWholeResult(result, input1, out var taintedObjects) || taintedObjects is null)
             {
                 return result;
             }
 
-            var taintedObjects = iastContext.GetTaintedObjects();
+            if (PropagateWholeResultWhenInputTainted(result!, input1, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input2, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input3, taintedObjects) ||
+                PropagateWholeResultWhenInputTainted(result!, input4, taintedObjects))
+            {
+                return result;
+            }
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputTainted)} exception");
+        }
 
-            if (PropagateResultWhenInputTainted(result, firstInput, taintedObjects))
+        return result;
+    }
+
+    public static object? PropagateWholeResultWhenInputArrayTainted(string result, object? input1, object[]? otherInputs)
+    {
+        try
+        {
+            if (TryPropagateWholeResult(result, input1, out var taintedObjects) || taintedObjects is null)
+            {
+                return result;
+            }
+
+            if (PropagateWholeResultWhenInputTainted(result, input1, taintedObjects))
             {
                 return result;
             }
@@ -153,7 +258,7 @@ internal static class PropagationModuleImpl
             {
                 for (int i = 0; i < otherInputs.Length; i++)
                 {
-                    if (PropagateResultWhenInputTainted(result, otherInputs[i], taintedObjects))
+                    if (PropagateWholeResultWhenInputTainted(result, otherInputs[i], taintedObjects))
                     {
                         return result;
                     }
@@ -162,28 +267,13 @@ internal static class PropagationModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputArrayTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputArrayTainted)} exception");
         }
 
         return result;
     }
 
-    private static bool PropagateResultWhenInputTainted(string result, object? input, TaintedObjects taintedObjects)
-    {
-        if (input is not null)
-        {
-            var tainted = taintedObjects.Get(input);
-            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null && taintedObjects.Get(result) is null)
-            {
-                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static string[]? PropagateResultWhenInputTainted(string[]? results, object? input)
+    public static string[]? PropagateWholeResultsWhenInputTainted(string[]? results, object? input)
     {
         try
         {
@@ -217,7 +307,7 @@ internal static class PropagationModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateWholeResultWhenInputTainted)} exception");
         }
 
         return results;

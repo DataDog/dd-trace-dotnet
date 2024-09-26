@@ -101,6 +101,7 @@ AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/  @DataDog/asm-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/  @DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.ProcessStart  @DataDog/asm-dotnet
 
 # Profiler
