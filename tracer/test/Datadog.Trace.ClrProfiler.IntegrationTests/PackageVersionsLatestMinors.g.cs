@@ -241,10 +241,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
       public static IEnumerable<object[]> AwsEventBridge =>
 
-          new List<object[]>
-          {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
-              new object[] { string.Empty },
+                new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
                 new object[] { "3.3.102.16" },
@@ -282,7 +282,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.7.401.22" },
 #endif
 #endif
-          };
+            };
 
       public static IEnumerable<object[]> MongoDB =>
 

@@ -170,25 +170,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP2_1
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NET5_0
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NET6_0
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NET7_0
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #if NET8_0
-                new object[] { "3.7.400.13" },
+                new object[] { "3.7.401.22" },
 #endif
 #endif
             };
