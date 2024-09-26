@@ -121,41 +121,13 @@ public static class TestMethodAttributeExecuteIntegration
                 if (remainingRetries > 0)
                 {
                     // Handle retries
-                    var results = new IList[remainingRetries + 1];
-                    results[0] = returnValueList;
+                    var results = new List<IList>();
+                    results.Add(returnValueList);
                     Common.Log.Debug<int>("EFD: We need to retry {Times} times", remainingRetries);
                     for (var i = 0; i < remainingRetries; i++)
                     {
                         Common.Log.Debug<int>("EFD: Retry number: {RetryNumber}", i);
-                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
-                        object? retryTestResult = null;
-                        Exception? retryException = null;
-                        try
-                        {
-                            retryTestResult = testMethodState.TestMethod.Invoke(null);
-                        }
-                        catch (Exception ex)
-                        {
-                            retryException = ex;
-                        }
-                        finally
-                        {
-                            if (retryTestResult is IList { Count: > 0 } retryTestResultList)
-                            {
-                                for (var j = 0; j < retryTestResultList.Count; j++)
-                                {
-                                    var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
-                                    HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
-                                }
-
-                                results[i + 1] = retryTestResultList;
-                            }
-                            else
-                            {
-                                HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
-                                results[i + 1] = new List<object?> { retryTestResult };
-                            }
-                        }
+                        RunRetry(testMethod, testMethodState, results, out _);
                     }
 
                     // Calculate final results
@@ -181,45 +153,7 @@ public static class TestMethodAttributeExecuteIntegration
                         }
 
                         Common.Log.Debug<int>("FlakyRetry: [Retry {Num}] Running retry...", i + 1);
-                        var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
-                        object? retryTestResult = null;
-                        Exception? retryException = null;
-                        var failedResult = false;
-                        try
-                        {
-                            retryTestResult = testMethodState.TestMethod.Invoke(null);
-                        }
-                        catch (Exception ex)
-                        {
-                            retryException = ex;
-                        }
-                        finally
-                        {
-                            if (retryTestResult is IList { Count: > 0 } retryTestResultList)
-                            {
-                                for (var j = 0; j < retryTestResultList.Count; j++)
-                                {
-                                    var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
-                                    var localResult = HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException);
-                                    if (localResult == TestStatus.Fail)
-                                    {
-                                        failedResult = true;
-                                    }
-                                }
-
-                                results.Add(retryTestResultList);
-                            }
-                            else
-                            {
-                                var localResult = HandleTestResult(retryTest, testMethod, retryTestResult, retryException);
-                                if (localResult == TestStatus.Fail)
-                                {
-                                    failedResult = true;
-                                }
-
-                                results.Add(new List<object?> { retryTestResult });
-                            }
-                        }
+                        RunRetry(testMethod, testMethodState, results, out var failedResult);
 
                         // If the retried test passed, we can stop the retries
                         if (!failedResult)
@@ -230,12 +164,53 @@ public static class TestMethodAttributeExecuteIntegration
                     }
 
                     // Calculate final results
-                    returnValue = (TReturn)GetFinalResults(results.ToArray());
+                    returnValue = (TReturn)GetFinalResults(results);
                 }
             }
         }
 
         return new CallTargetReturn<TReturn>(returnValue);
+
+        static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, List<IList> resultsCollection, out bool hasFailed)
+        {
+            var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+            object? retryTestResult = null;
+            Exception? retryException = null;
+            hasFailed = false;
+            try
+            {
+                retryTestResult = testMethodState.TestMethod.Invoke(null);
+            }
+            catch (Exception ex)
+            {
+                retryException = ex;
+            }
+            finally
+            {
+                if (retryTestResult is IList { Count: > 0 } retryTestResultList)
+                {
+                    for (var j = 0; j < retryTestResultList.Count; j++)
+                    {
+                        var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
+                        if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException) == TestStatus.Fail)
+                        {
+                            hasFailed = true;
+                        }
+                    }
+
+                    resultsCollection.Add(retryTestResultList);
+                }
+                else
+                {
+                    if (HandleTestResult(retryTest, testMethod, retryTestResult, retryException) == TestStatus.Fail)
+                    {
+                        hasFailed = true;
+                    }
+
+                    resultsCollection.Add(new List<object?> { retryTestResult });
+                }
+            }
+        }
     }
 
     private static TestStatus HandleTestResult(Test test, ITestMethod testMethod, object? testResultObject, Exception? exception)
@@ -294,7 +269,7 @@ public static class TestMethodAttributeExecuteIntegration
         return TestStatus.Fail;
     }
 
-    private static IList GetFinalResults(IList[] executionStatuses)
+    private static IList GetFinalResults(List<IList> executionStatuses)
     {
         var lstExceptions = new List<Exception>();
         var initialResults = executionStatuses[0];
