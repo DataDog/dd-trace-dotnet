@@ -43,9 +43,24 @@ namespace Datadog.Trace.DatabaseMonitoring
                 var dddbs = span.Context.ServiceNameInternal;
                 propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
 
-                if (span.Tags is SqlV1Tags { PeerServiceSource: "peer.service" } sqlTags)
+                string? ddprs = null;
+                if (span.Tags is SqlV1Tags sqlTags)
                 {
-                    var ddprs = sqlTags.PeerService;
+                    if (sqlTags.PeerServiceSource == "peer.service")
+                    {
+                        ddprs = sqlTags.PeerService;
+                    }
+                }
+                else
+                {
+                    if (span.Tags.GetTag(Tags.PeerServiceRemappedFrom) != null)
+                    {
+                        ddprs = span.Tags.GetTag(Tags.PeerService);
+                    }
+                }
+
+                if (ddprs != null)
+                {
                     propagatorStringBuilder.Append(',').Append(SqlCommentPeerService).Append("='").Append(Uri.EscapeDataString(ddprs)).Append('\'');
                 }
 
