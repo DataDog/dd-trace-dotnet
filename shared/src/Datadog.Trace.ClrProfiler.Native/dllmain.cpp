@@ -1,7 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 
 #if _WIN32 && AMD64
-#define CRASHTRACKING
+#define CRASHTRACKING 1
 #endif
 
 #include "cor_profiler_class_factory.h"
