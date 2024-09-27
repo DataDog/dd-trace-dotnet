@@ -214,54 +214,35 @@ internal static class Ranges
             return ranges;
         }
 
-        bool existsSecureRanges = false;
+        int insecureCount = 0;
         for (int x = 0; x < ranges.Length; x++)
         {
             var range = ranges[x];
-            if (range.IsMarked(safeMarks) || range.IsSafeSource(safeSources))
+            if (!range.IsSecure(safeMarks, safeSources))
             {
-                existsSecureRanges = true;
-                break;
+                insecureCount++;
             }
         }
 
-        if (!existsSecureRanges)
+        if (insecureCount == ranges.Length)
         {
-            // This is made in order to avoid unnecesary allocations (most common situation)
+            // This is made in order to avoid unnecessary allocations (most common situation)
             return ranges;
         }
 
-        List<Range> insecureRanges = new List<Range>(ranges.Length);
+        Range[] insecureRanges = new Range[insecureCount];
+        int i = 0;
         for (int x = 0; x < ranges.Length; x++)
         {
             var range = ranges[x];
-            if (range.IsMarked(safeMarks) || range.IsSafeSource(safeSources))
+            if (!range.IsSecure(safeMarks, safeSources))
             {
-                continue;
-            }
-
-            insecureRanges.Add(range);
-        }
-
-        return insecureRanges.ToArray();
-    }
-
-    internal static bool ContainsUnsafeRange(IEnumerable<Range>? ranges)
-    {
-        if (ranges is null)
-        {
-            return false;
-        }
-
-        foreach (var range in ranges)
-        {
-            if (range.SecureMarks == SecureMarks.None)
-            {
-                return true;
+                insecureRanges[i] = range;
+                i++;
             }
         }
 
-        return false;
+        return insecureRanges;
     }
 
     /// <summary>

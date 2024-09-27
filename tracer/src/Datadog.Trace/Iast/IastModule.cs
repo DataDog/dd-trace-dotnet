@@ -59,8 +59,8 @@ internal static partial class IastModule
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy = new Lazy<EvidenceRedactor?>(() => CreateRedactor(IastSettings));
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
-    private static bool _showTimeoutExceptionError = true;
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
+    private static bool _showTimeoutExceptionError = true;
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
     {
