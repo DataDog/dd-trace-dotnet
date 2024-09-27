@@ -3168,11 +3168,16 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
+    - script: |
+        echo ##vso[task.setvariable variable=explorationTestUseCase;isOutput=true]$explorationTestUseCase
+        env | sort
+      displayName: 'Print all variables'
+
     - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
     - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: RunExplorationTest
+      displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
