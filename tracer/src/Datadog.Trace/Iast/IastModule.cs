@@ -60,7 +60,7 @@ internal static partial class IastModule
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static bool _showTimeoutExceptionError = true;
-    private static SourceType[] _dbSources = [SourceType.SqlRowValue];
+    private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
     {
