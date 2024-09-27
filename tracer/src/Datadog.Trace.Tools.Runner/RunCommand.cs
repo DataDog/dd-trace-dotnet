@@ -7,6 +7,7 @@ using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -41,7 +42,10 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
-            AnsiConsole.WriteLine("Running: {0} {1}", program, arguments);
+            if (GlobalSettings.Instance.DebugEnabledInternal)
+            {
+                Console.WriteLine("Running: {0} {1}", program, arguments);
+            }
 
             if (Program.CallbackForTests != null)
             {

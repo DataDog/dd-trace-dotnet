@@ -14,7 +14,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -40,7 +41,8 @@
       error.msg: KeyNotFound,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -64,7 +66,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -88,7 +91,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -112,7 +116,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -136,7 +141,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -160,7 +166,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -184,7 +191,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -208,7 +216,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -232,7 +241,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -256,7 +266,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,
@@ -281,7 +292,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3
     },
     Metrics: {
       process_id: 0,

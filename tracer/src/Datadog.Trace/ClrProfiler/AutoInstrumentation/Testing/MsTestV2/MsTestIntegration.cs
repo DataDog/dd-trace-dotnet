@@ -55,7 +55,8 @@ internal static class MsTestIntegration
         ["601b9a9e-4ec5-4d00-bd02-b9990a2ef6c1"] = "3.2.1",
         ["82f48315-774a-4e06-afb3-f1f684eca38d"] = "3.2.2",
         ["82c42f21-febe-4eb2-80ad-8e793eabd8f2"] = "3.3.0",
-        ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1"
+        ["139449f1-8ab4-46b1-bf76-1a0e70ed75c7"] = "3.3.1",
+        ["f5fedf4d-dd4d-4086-956b-a288dfe47482"] = "3.6.0"
     };
 
     private static long _totalTestCases;
@@ -109,6 +110,9 @@ internal static class MsTestIntegration
 
         // Early flake detection flags
         Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
+
+        // Flaky retry
+        Common.SetFlakyRetryTags(test, isRetry);
 
         // Set test method
         test.SetTestMethodInfo(testMethod);

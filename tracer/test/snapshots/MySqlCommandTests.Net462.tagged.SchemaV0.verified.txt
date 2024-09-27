@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -13,9 +13,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -36,9 +38,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -59,9 +63,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -82,9 +88,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -105,9 +113,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -128,9 +138,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -151,9 +163,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -174,9 +188,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -197,9 +213,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -220,9 +238,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -243,9 +263,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -266,9 +288,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -289,9 +313,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -312,9 +338,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -335,9 +363,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -358,9 +388,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -381,9 +413,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -404,9 +438,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -427,9 +463,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -450,9 +488,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -473,9 +513,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -496,9 +538,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -519,9 +563,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -542,9 +588,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -565,9 +613,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -588,9 +638,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -611,9 +663,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -634,9 +688,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -657,9 +713,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -680,9 +738,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -703,9 +763,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -726,9 +788,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -749,9 +813,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -772,9 +838,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -795,9 +863,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -818,9 +888,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -841,9 +913,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -864,9 +938,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -887,9 +963,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -910,9 +988,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -933,9 +1013,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -956,9 +1038,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -979,9 +1063,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1002,9 +1088,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1025,9 +1113,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1048,9 +1138,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1071,9 +1163,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1094,9 +1188,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1117,9 +1213,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1140,9 +1238,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1163,9 +1263,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1186,9 +1288,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1209,9 +1313,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1232,9 +1338,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1255,9 +1363,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1278,9 +1388,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1301,9 +1413,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1324,9 +1438,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1347,9 +1463,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1370,9 +1488,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1393,9 +1513,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1416,9 +1538,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1439,9 +1563,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1462,9 +1588,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1485,9 +1613,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1508,9 +1638,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1531,9 +1663,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1554,9 +1688,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1577,9 +1713,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1600,9 +1738,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1623,9 +1763,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1646,9 +1788,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1669,9 +1813,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1692,9 +1838,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1715,9 +1863,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1738,9 +1888,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1761,9 +1913,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1784,9 +1938,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1807,9 +1963,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1830,9 +1988,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1853,9 +2013,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1876,9 +2038,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1899,9 +2063,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1922,9 +2088,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1945,9 +2113,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1968,9 +2138,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1991,9 +2163,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2014,9 +2188,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2037,9 +2213,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2060,9 +2238,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2083,9 +2263,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2106,9 +2288,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2129,9 +2313,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2152,9 +2338,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2175,9 +2363,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2198,9 +2388,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2221,9 +2413,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2244,9 +2438,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2267,9 +2463,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2290,9 +2488,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2313,9 +2513,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2336,9 +2538,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2359,9 +2563,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2382,9 +2588,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2405,9 +2613,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2428,9 +2638,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2451,9 +2663,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2474,9 +2688,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2497,9 +2713,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2520,9 +2738,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2543,9 +2763,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2566,9 +2788,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2589,9 +2813,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2612,9 +2838,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2635,9 +2863,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2658,9 +2888,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2681,9 +2913,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2704,9 +2938,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2727,9 +2963,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2750,9 +2988,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2773,9 +3013,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2796,9 +3038,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2819,9 +3063,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2842,9 +3088,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2865,9 +3113,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2888,9 +3138,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2911,9 +3163,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2934,9 +3188,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2957,9 +3213,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2980,9 +3238,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3003,9 +3263,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3026,9 +3288,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3049,9 +3313,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3072,9 +3338,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3095,9 +3363,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3118,9 +3388,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3141,9 +3413,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3164,9 +3438,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3187,9 +3463,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3210,9 +3488,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3233,9 +3513,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3256,9 +3538,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3279,9 +3563,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3302,9 +3588,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3325,9 +3613,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3348,9 +3638,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3371,9 +3663,11 @@
       db.type: mysql,
       db.user: mysqldb,
       env: integration_tests,
+      language: dotnet,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {

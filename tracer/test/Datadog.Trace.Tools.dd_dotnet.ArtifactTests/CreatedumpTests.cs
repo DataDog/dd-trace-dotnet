@@ -514,7 +514,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         public string Path { get; }
 
-        public string Url => $"file:/{Path}";
+        public string Url => $"file://{Path}";
 
         public string GetContent() => File.ReadAllText(Path);
 

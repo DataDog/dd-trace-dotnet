@@ -158,8 +158,7 @@ private:
                 _exporter.get(), start, end,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                endpoints_stats, pMetadata, pInfo,
-                10000);
+                endpoints_stats, pMetadata, pInfo);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {
