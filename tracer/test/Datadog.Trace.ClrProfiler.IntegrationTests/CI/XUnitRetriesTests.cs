@@ -36,7 +36,7 @@ public class XUnitRetriesTests : TestingFrameworkRetriesTests
     protected override string TrueAtThirdRetry => "Samples.XUnitTestsRetries.TestSuite.TrueAtThirdRetry";
 
     [SkippableTheory]
-    [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(PackageVersions.XUnitRetries), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]

@@ -377,7 +377,7 @@
     ]
   },
   {
-    "IntegrationName": "XUnit",
+    "IntegrationName": "XUnitRetries",
     "SampleProjectName": "Samples.XUnitTestsRetries",
     "NugetPackageSearchName": "xunit",
     "MinVersion": "2.2.0",
@@ -415,7 +415,7 @@
     ]
   },
   {
-    "IntegrationName": "NUnit",
+    "IntegrationName": "NUnitRetries",
     "SampleProjectName": "Samples.NUnitTestsRetries",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
@@ -458,7 +458,7 @@
     ]
   },
   {
-    "IntegrationName": "MSTest2",
+    "IntegrationName": "MSTest2Retries",
     "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",

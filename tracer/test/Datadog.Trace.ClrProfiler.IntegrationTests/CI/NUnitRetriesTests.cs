@@ -28,7 +28,7 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
     protected override string TrueAtThirdRetry => "Samples.NUnitTestsRetries.TestSuite.TrueAtThirdRetry";
 
     [SkippableTheory]
-    [MemberData(nameof(PackageVersions.NUnit), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]

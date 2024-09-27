@@ -211,7 +211,7 @@
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.6.0 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.5.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -322,13 +322,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.1 -->
-    <PackageReference Include="xunit" Version="2.9.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.2 -->
+    <PackageReference Include="xunit" Version="2.9.2" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.1 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.9.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.2 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.9.2" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->
