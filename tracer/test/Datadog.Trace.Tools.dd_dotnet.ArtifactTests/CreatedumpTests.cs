@@ -100,7 +100,6 @@ public class CreatedumpTests : ConsoleTestHelper
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
         }
     }
-#endif
 
     [SkippableFact]
     public async Task BashScript()
@@ -136,6 +135,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
     }
+#endif
 
     [SkippableTheory]
     [InlineData(true)]
@@ -146,7 +146,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var reportFile = new TemporaryFile();
 
-        (string, string)[] args = [LdPreloadConfig, ("DD_CRASHTRACKING_ENABLED", "0")];
+        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_CRASHTRACKING_ENABLED", "0")];
 
         if (enableCrashDumps)
         {
@@ -587,16 +587,13 @@ public class CreatedumpTests : ConsoleTestHelper
     {
         public TemporaryFile()
         {
-            // TODO: Fix
-            // Path = System.IO.Path.GetTempFileName();
-            Path = $@"C:\Temp\{Guid.NewGuid()}.txt";
+            Path = System.IO.Path.GetTempFileName();
             File.Delete(Path);
         }
 
         public string Path { get; }
 
-        // public string Url => $"file:/{Path}";
-        public string Url => $"file:/temp/{System.IO.Path.GetFileName(Path)}";
+        public string Url => $"file://{Path}";
 
         public string GetContent() => File.ReadAllText(Path);
 
