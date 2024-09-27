@@ -23,7 +23,6 @@ using Logger = Serilog.Log;
 partial class Build
 {
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
-    const string LinuxApiWrapperLibrary = "Datadog.Linux.ApiWrapper.x64.so";
 
     AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 
@@ -146,7 +145,7 @@ partial class Build
         .Executes(() =>
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var libraryPath = ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary;
+            var libraryPath = ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
 
             var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
 
@@ -250,7 +249,7 @@ partial class Build
         {
             // LD_PRELOAD must be set for this test library to validate that it works correctly.
             var (arch, _) = GetUnixArchitectureAndExtension();
-            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / FileNames.ProfilerLinuxApiWrapper}" };
             RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
@@ -332,8 +331,8 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var source = sourceDir / LinuxApiWrapperLibrary;
-            var dest = MonitoringHomeDirectory / arch / LinuxApiWrapperLibrary;
+            var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
+            var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
             if (AsUniversal)
