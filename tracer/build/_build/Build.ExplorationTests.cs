@@ -472,8 +472,7 @@ partial class Build
             throw new Exception("Can't determined the correct tracer framework version");
         }
 
-        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
-        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace." + extension;
+        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace.dll";
     }
 
     static string[] GetAllTestAssemblies(string rootPath)

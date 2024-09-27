@@ -325,7 +325,7 @@ partial class Build : NukeBuild
                     useCases.Add(global::ExplorationTestUseCase.Tracer.ToString());
                 }
 
-                if (true)
+                if (isDebuggerChanged)
                 {
                     useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
                 }
