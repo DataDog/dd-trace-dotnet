@@ -3127,16 +3127,6 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: exploration_tests_windows
-  condition: >
-    and(
-      succeeded(),
-      eq(variables['isBenchmarksOnlyBuild'], 'False'),
-      or(
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
-      )
-    )
   dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
