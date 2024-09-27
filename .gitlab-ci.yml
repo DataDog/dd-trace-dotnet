@@ -170,6 +170,7 @@ benchmark-serverless-trigger:
   needs: []
   trigger:
     project: DataDog/serverless-tools
+    branch: jordan.gonzalez/dotnet/update-build-target
     strategy: depend
   allow_failure: true
   variables:
