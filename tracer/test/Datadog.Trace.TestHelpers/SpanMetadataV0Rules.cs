@@ -150,6 +150,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
                 .Matches("component", "aws-sdk")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
         public static Result IsAwsKinesisOutboundV0(this MockSpan span) => Result.FromSpan(span)
@@ -170,6 +171,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
                 .Matches("component", "aws-sdk")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
@@ -237,6 +239,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "consumer")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "consumer"));
 
         public static Result IsAzureServiceBusOutboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -258,6 +261,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "producer")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusRequestV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -281,6 +285,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IfPresentMatches("component", "servicebus")
                 .IfPresentMatches("kind", "client")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
         public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
@@ -379,6 +384,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
                 .Matches("component", "HotChocolate")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "server"));
 
         public static Result IsHttpMessageHandlerV0(this MockSpan span) => Result.FromSpan(span)
@@ -470,6 +476,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client")
+                .IsOptional("_dd.base_service")
                 .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsNpgsqlV0(this MockSpan span) => Result.FromSpan(span)
@@ -547,6 +554,7 @@ namespace Datadog.Trace.TestHelpers
                .IsPresent("rpc.method")
                .Matches("rpc.system", "dotnet_remoting")
                .Matches("component", "Remoting")
+               .IsOptional("_dd.base_service")
                .Matches("span.kind", "client"));
 
         public static Result IsRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
@@ -556,6 +564,7 @@ namespace Datadog.Trace.TestHelpers
                .IsPresent("rpc.method")
                .Matches("rpc.system", "dotnet_remoting")
                .Matches("component", "Remoting")
+               .IsOptional("_dd.base_service")
                .Matches("span.kind", "server"));
 
         public static Result IsServiceRemotingClientV0(this MockSpan span) => Result.FromSpan(span)

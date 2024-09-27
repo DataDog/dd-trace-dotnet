@@ -52,7 +52,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -145,7 +146,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -171,7 +173,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -197,7 +200,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -225,7 +229,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: AzureFunctionsAllTriggers
     },
     Metrics: {
       _dd.top_level: 1.0
