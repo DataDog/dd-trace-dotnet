@@ -325,11 +325,10 @@ partial class Build : NukeBuild
                     useCases.Add(global::ExplorationTestUseCase.Tracer.ToString());
                 }
 
-                // Debugger exploration tests are currently all broken, so disabling
-                // if (isDebuggerChanged)
-                // {
-                //     useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
-                // }
+                if (true)
+                {
+                    useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
+                }
 
                 if (isProfilerChanged)
                 {
