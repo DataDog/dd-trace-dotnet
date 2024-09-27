@@ -47,7 +47,6 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
         private readonly object _instanceLock = new();
-        private bool _isInitialized;
         private bool _isRcmAvailable;
 
         private LiveDebugger(
@@ -87,6 +86,8 @@ namespace Datadog.Trace.Debugger
         }
 
         public static LiveDebugger Instance { get; private set; }
+        
+        public bool IsInitialized { get; private set; }
 
         public string ServiceName { get; }
 
@@ -132,7 +133,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                _isInitialized = true;
+                IsInitialized = true;
             }
 
             try
@@ -153,7 +154,7 @@ namespace Datadog.Trace.Debugger
 
             bool CanInitialize()
             {
-                if (_isInitialized)
+                if (IsInitialized)
                 {
                     return false;
                 }
