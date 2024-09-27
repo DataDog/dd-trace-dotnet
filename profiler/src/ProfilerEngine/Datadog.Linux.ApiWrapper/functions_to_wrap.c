@@ -12,6 +12,8 @@
 
 #include "common.h"
 
+#include <stdio.h>
+
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
 Which means that we send a signal (USR1 or USR2) to the thread we want to collect. When the thread handles the signal
@@ -214,6 +216,7 @@ void initLibrary(void)
 
     if (real_getenv == NULL || real_setenv == NULL)
     {
+	printf("No getenv nor setenv\n");
         return;
     }
 
@@ -223,6 +226,7 @@ void initLibrary(void)
     // (and we will redirect the call to dd-dotnet)
     // The path to the crash handler is not set, try to deduce it  
     const char* libraryPath = getLibraryPath();
+    printf("library path %s\n", libraryPath);
 
     if (libraryPath != NULL)
     {            
@@ -296,6 +300,7 @@ void initLibrary(void)
         }
     }
 
+    printf("crash handler path %s\n", crashHandler);
     if (crashHandler != NULL && crashHandler[0] != '\0')
     {
         char* enableMiniDump = real_getenv(DOTNET_DbgEnableMiniDump);
@@ -472,6 +477,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
     if (callCustomCreatedump == 0)
     {
+	printf("hummm no call to custom createdump\n");
         return __real_execve(pathname, argv, envp);
     }
 
@@ -539,6 +545,7 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
     }
     new_envp[index] = NULL; // NULL terminate the array
 
+    printf("Calling into crash handler %s\n", crashHandler);
     int result = __real_execve(crashHandler, newArgv, new_envp);
 
     free(newArgv);
