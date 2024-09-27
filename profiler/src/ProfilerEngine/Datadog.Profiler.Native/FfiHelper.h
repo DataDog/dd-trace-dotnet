@@ -6,6 +6,9 @@
 #include "Success.h"
 #include <string>
 #include <string_view>
+#include <vector>
+
+#include "shared/src/native-src/dd_span.hpp"
 
 extern "C"
 {
@@ -13,6 +16,18 @@ extern "C"
 }
 
 namespace libdatadog {
+
+template <class T>
+ddog_ByteSlice to_byte_slice(std::vector<T> const& v)
+{
+    return {(uint8_t*)v.data(), v.size()};
+}
+template <class T>
+ddog_ByteSlice to_byte_slice(shared::span<T> const& v)
+{
+    return {(uint8_t*)v.data(), v.size()};
+}
+
 ddog_CharSlice to_char_slice(std::string const& str);
 ddog_CharSlice to_char_slice(std::string_view str);
 constexpr ddog_CharSlice to_char_slice(const char* str)

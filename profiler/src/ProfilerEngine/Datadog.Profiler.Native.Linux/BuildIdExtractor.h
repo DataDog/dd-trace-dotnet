@@ -13,5 +13,5 @@ public:
 
     BuildIdExtractor() = delete;
 
-    static std::optional<BuildId> Get(fs::path const& file); 
+    static BuildIdSpan Get(fs::path const& file); 
 };

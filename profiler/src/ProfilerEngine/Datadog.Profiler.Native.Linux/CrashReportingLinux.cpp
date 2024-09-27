@@ -19,6 +19,8 @@
 #include <sstream>
 #include <map>
 #include <string.h>
+
+#include "BuildIdExtractor.h"
 #include "FfiHelper.h"
 
 extern "C"
@@ -177,8 +179,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             stackFrame.symbolAddress = managedFrame.symbolAddress;
             stackFrame.isSuspicious = managedFrame.isSuspicious;
 
-            stackFrame.meta = { .mouleType = Elf};
-
             managedFrames.push_back(std::move(stackFrame));
         }
     }
@@ -257,6 +257,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
             {
                 stackFrame.isSuspicious = true;
             }
+            stackFrame.modulePath = modulePath.string();
         }
 
         frames.push_back(std::move(stackFrame));
@@ -370,4 +371,9 @@ std::string CrashReportingLinux::GetThreadName(int32_t tid)
     std::getline(commFile, threadName);
     commFile.close();
     return threadName;    
+}
+
+BuildIdSpan CrashReportingLinux::GetModuleId(std::string const& s)
+{
+    return BuildIdExtractor::Get(s);
 }

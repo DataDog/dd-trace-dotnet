@@ -119,7 +119,7 @@ ULONG CrashReporting::Release()
 
 int32_t CrashReporting::AddTag(const char* key, const char* value)
 {
-    auto result = ddog_crashinfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
+    auto result = ddog_crasht_CrashInfo_add_tag(&_crashInfo, libdatadog::to_char_slice(key), libdatadog::to_char_slice(value));
 
     if (result.tag == DDOG_CRASHT_RESULT_ERR)
     {
@@ -144,7 +144,7 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crashinfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+    ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
 
     return 0;
 }
@@ -201,6 +201,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
+            auto buildId = GetModuleId(frame.modulePath);
+
             stackFrames[i] = ddog_crasht_StackFrame{
                 .ip = ip,
                 .module_base_address = moduleAddress,
@@ -208,8 +210,14 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                     .ptr = &stackFrameNames[i],
                     .len = 1,
                 },
+                .normalized_ip{
+                    .file_offset = ip - moduleAddress,
+                    .build_id = libdatadog::to_byte_slice(buildId),
+                    .path = libdatadog::to_char_slice(frame.modulePath),
+                    .typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_ELF
+                },
                 .sp = sp,
-                .symbol_address = symbolAddress,
+                .symbol_address = symbolAddress
             };
         }
 

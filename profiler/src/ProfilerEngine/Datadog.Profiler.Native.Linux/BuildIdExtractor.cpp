@@ -50,13 +50,13 @@ std::optional<BuildId> process_note(Elf_Data *data, Elf64_Word note_type,
   }
   return {};
 }
-
+using namespace std::literals;
 std::optional<BuildId> find_build_id(Elf* elf)
 {
     Elf_Scn *scn = elf_nextscn(elf, nullptr);
 
     const char* node_section_name = ".note.gnu.build-id";
-    constexpr std::string_view note_name = "GNU\0";
+    constexpr std::string_view note_name = "GNU\0"sv;
     Elf64_Word note_type = NT_GNU_BUILD_ID;
   if (scn) {
     // there is a section hdr, try it first
@@ -97,18 +97,38 @@ std::optional<BuildId> find_build_id(Elf* elf)
   return {};
 }
 
-std::optional<BuildId> BuildIdExtractor::Get(fs::path const& file)
+BuildIdSpan BuildIdExtractor::Get(fs::path const& file)
 {
+    static std::unordered_map<std::string, BuildId> CachedIds;
+
+    elf_version(EV_CURRENT);
+    static BuildId EmptyBuildID;
+    auto [it, inserted] = CachedIds.emplace(file.string(), EmptyBuildID);
+
+    if (!inserted)
+    {
+        return it->second;
+    }
+
+    if (file.empty())
+    {
+        return it->second;
+    }
+
     auto fd_holder = ::open(file.c_str(), O_RDONLY);
-  if (!fd_holder) {
-    return {};
-  }
-  Elf *elf = elf_begin(fd_holder, ELF_C_READ_MMAP, nullptr);
-  if (elf == nullptr) {
-    return {};
-  }
 
-  on_leave { elf_end(elf); ::close(fd_holder); };
+    if (!fd_holder)
+    {
+        return it->second;
+    }
 
-  return find_build_id(elf);
+    Elf *elf = elf_begin(fd_holder, ELF_C_READ_MMAP, nullptr);
+    if (elf == nullptr) {
+        ::close(fd_holder);
+        return it->second;
+    }  
+
+    on_leave { elf_end(elf); ::close(fd_holder); }; 
+    it->second = find_build_id(elf).value_or(EmptyBuildID);
+    return it->second;
 }

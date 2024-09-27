@@ -12,10 +12,13 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "BuildIdExtractor.h"
+
 extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
+#include "datadog/crashtracker.h"
 }
 
 struct ResolveMethodData
@@ -30,31 +33,6 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
-enum ModuleType
-{
-    Elf,
-    PE
-};
-
-struct ElfMeta{
-                std::string modulePath;
-                std::vector<std::byte> buildId;
-            };
-struct PEMeta{
-                std::string modulePath;
-                std::vector<std::byte> buildId;
-            };
-
-    union meta {
-        struct ElfMeta elf;
-        struct PEMeta pe;
-    };
-struct MetaInfo
-{
-    ModuleType moduleType;
-    meta meta;
-};
-
 struct StackFrame 
 {
     uint64_t ip;    
@@ -63,7 +41,7 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
-    struct MetaInfo meta;
+    std::string modulePath;
 };
 
 struct Tag
@@ -127,6 +105,7 @@ protected:
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;
+    virtual BuildIdSpan GetModuleId(std::string const& path) = 0;
 
 private:
     int32_t ExportImpl(ddog_Endpoint* endpoint);

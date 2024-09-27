@@ -33,6 +33,7 @@ private:
     std::string GetSignalInfo(int32_t signal) override;
     std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
     std::string GetThreadName(int32_t tid);
+    BuildIdSpan GetModuleId(std::string const& path) override;
 
     unw_addr_space_t _addressSpace;
     std::vector<ModuleInfo> _modules;
