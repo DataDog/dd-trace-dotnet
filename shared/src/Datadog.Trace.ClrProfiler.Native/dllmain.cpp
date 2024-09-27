@@ -1,11 +1,16 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
+
+#if _WIN32 && AMD64
+#define CRASHTRACKING
+#endif
+
 #include "cor_profiler_class_factory.h"
 
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
 
-#if  _WIN32
+#if CRASHTRACKING
 #include "werapi.h"
 #endif 
 
@@ -21,7 +26,7 @@ using namespace datadog::shared::nativeloader;
 
 IDynamicDispatcher* dispatcher;
 
-#if _WIN32
+#if CRASHTRACKING
 std::wstring crashHandler;
 
 struct CrashMetadata
@@ -142,7 +147,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
             Log::EnableDebug(true);
         }
 
-#if _WIN32
+#if CRASHTRACKING
         bool telemetry_enabled = true;
         shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(L"DD_INSTRUMENTATION_TELEMETRY_ENABLED"), telemetry_enabled);
 
@@ -200,7 +205,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         // Perform any necessary cleanup.
         Log::Debug("DllMain: DLL_PROCESS_DETACH");
 
-#if _WIN32
+#if CRASHTRACKING
         if (!crashHandler.empty())
         {
             auto hr = WerUnregisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
@@ -242,7 +247,7 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
     return dispatcher->DllCanUnloadNow();
 }
 
-#if _WIN32
+#if CRASHTRACKING
 LPWSTR ConcatenateEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2) {
     // First, calculate the total length needed
     size_t lenFirstBlock = 0;

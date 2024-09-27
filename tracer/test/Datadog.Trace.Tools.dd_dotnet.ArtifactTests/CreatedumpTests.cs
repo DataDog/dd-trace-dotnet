@@ -143,6 +143,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -187,6 +188,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DisableTelemetry(bool telemetryEnabled, bool crashdumpEnabled)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -242,6 +244,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task WriteCrashReport()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -334,6 +337,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task NativeCrash()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         if (Utils.IsAlpine())
         {
@@ -367,6 +371,7 @@ public class CreatedumpTests : ConsoleTestHelper
         // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
 
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -393,6 +398,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task SendReportThroughTelemetry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
@@ -412,7 +418,6 @@ public class CreatedumpTests : ConsoleTestHelper
 
         bool IsCrashReport(object payload)
         {
-            Output.WriteLine($"Payload: {payload}");
             if (payload is not TelemetryData data)
             {
                 return false;
@@ -425,14 +430,10 @@ public class CreatedumpTests : ConsoleTestHelper
 
             var log = (LogsPayload)data.Payload;
 
-            Output.WriteLine($"Count: {log.Logs.Count}");
-
             if (log.Logs.Count != 1)
             {
                 return false;
             }
-
-            Output.WriteLine($"Log: {log.Logs[0]}");
 
             var report = JObject.Parse(log.Logs[0].Message);
             return report["additional_stacktraces"] != null;
@@ -440,26 +441,14 @@ public class CreatedumpTests : ConsoleTestHelper
 
         var agent = helper.Agent;
 
-        var data = agent.WaitForLatestTelemetry(IsCrashReport);
-        data.Should().NotBeNull();
-
-        var log = (LogsPayload)((TelemetryData)data).Payload;
-        log.Logs.Should().HaveCount(1);
-        var report = JObject.Parse(log.Logs[0].Message);
-
-        if (report["additional_stacktraces"] is null || report["additional_stacktraces"] == null)
-        {
-            throw new Exception($"Empty report: {report}");
-        }
-
-        Output.WriteLine($"Report: {report}");
-        report.Should().ContainKey("additional_stacktraces").WhoseValue.Should().NotBeNull();
+        agent.WaitForLatestTelemetry(IsCrashReport).Should().NotBeNull();
     }
 
     [SkippableFact]
     public async Task IgnoreNonDatadogCrashes()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
@@ -484,6 +473,7 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task ReportedStacktrace()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
