@@ -39,7 +39,7 @@ std::wstring GetCurrentDllPath()
         return L"";  // Failed to get module handle
     }
 
-    if (GetModuleFileNameW(hm, path, sizeof(path)) == 0) {
+    if (GetModuleFileNameW(hm, path, MAX_PATH) == 0) {
         return L"";  // Failed to get module filename
     }
 
@@ -262,8 +262,8 @@ LPWSTR ConcatenateEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2) {
     }
 
     // Now copy the entries from both environment blocks
-    memccpy(mergedEnvBlock, envBlock1, 0, lenFirstBlock * sizeof(WCHAR));
-    memccpy(mergedEnvBlock, envBlock1, 0, lenSecondBlock * sizeof(WCHAR));
+    memcpy(mergedEnvBlock, envBlock1, lenFirstBlock * sizeof(WCHAR));
+    memcpy(mergedEnvBlock + lenFirstBlock, envBlock2, lenSecondBlock * sizeof(WCHAR));
 
     // Add final null character for double null termination
     mergedEnvBlock[lenFirstBlock + lenSecondBlock] = L'\0';
@@ -339,7 +339,7 @@ extern "C"
         OutputDebugString(L"Spawning dd-dotnet");
 
         // Create the process
-        if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, newEnv, NULL, &si, &pi))
+        if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock, NULL, &si, &pi))
         {
             DWORD error = GetLastError();
             std::wstring errorMessage = L"Failed to spawn dd-dotnet with error code: " + std::to_wstring(error);
