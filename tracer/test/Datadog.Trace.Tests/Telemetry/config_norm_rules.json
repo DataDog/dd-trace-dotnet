@@ -329,6 +329,8 @@
   "DD_DIAGNOSTIC_SOURCE_ENABLED": "trace_diagnostic_source_enabled",
   "DD_SITE": "site",
   "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS": "trace_http_client_excluded_urls",
+  "DD_HTTP_SERVER_ERROR_STATUSES": "trace_http_server_error_statuses",
+  "DD_HTTP_CLIENT_ERROR_STATUSES": "trace_http_client_error_statuses",
   "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": "trace_http_server_error_statuses",
   "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": "trace_http_client_error_statuses",
   "DD_TRACE_CLIENT_IP_HEADER": "trace_client_ip_header",
