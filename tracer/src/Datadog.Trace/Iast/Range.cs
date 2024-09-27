@@ -69,7 +69,15 @@ internal readonly struct Range : IComparable<Range>
             return false;
         }
 
-        return safeSources.Contains(Source.Origin);
+        foreach (var source in safeSources)
+        {
+            if (Source.Origin == source)
+            {
+                return true;
+            }
+        }
+
+        return false
     }
 
     internal bool IsBefore(Range? range)
