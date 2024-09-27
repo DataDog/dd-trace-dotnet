@@ -207,7 +207,7 @@ internal static class Ranges
         return newRanges.ToArray();
     }
 
-    internal static Range[]? GetUnsafeRanges(Range[] ranges, SecureMarks safeMarks, SourceType[]? safeSources)
+    internal static Range[] GetUnsafeRanges(Range[] ranges, SecureMarks safeMarks, SourceType[]? safeSources)
     {
         if (safeMarks == SecureMarks.None && safeSources is null)
         {
@@ -228,6 +228,10 @@ internal static class Ranges
         {
             // This is made in order to avoid unnecessary allocations (most common situation)
             return ranges;
+        }
+        else if (insecureCount == 0)
+        {
+            return [];
         }
 
         Range[] insecureRanges = new Range[insecureCount];
