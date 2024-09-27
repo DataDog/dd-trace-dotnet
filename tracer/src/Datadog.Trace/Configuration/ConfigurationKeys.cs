@@ -567,6 +567,21 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for set the test session name
             /// </summary>
             public const string TestSessionName = "DD_TEST_SESSION_NAME";
+
+            /// <summary>
+            /// Configuration key for a kill-switch that allows to explicitly disable retries even if the remote setting is enabled.
+            /// </summary>
+            public const string FlakyRetryEnabled = "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for a single test case.
+            /// </summary>
+            public const string FlakyRetryCount = "DD_CIVISIBILITY_FLAKY_RETRY_COUNT";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for the entire session.
+            /// </summary>
+            public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
         }
 
         /// <summary>

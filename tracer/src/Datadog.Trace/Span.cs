@@ -31,7 +31,6 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private int _isFinished;
-        private bool _baseServiceTagSet;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -80,13 +79,6 @@ namespace Datadog.Trace
             get => Context.ServiceNameInternal;
             set
             {
-                // Ignore case because service name and _dd.base_service are normalized in the agent and backend
-                if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
-                {
-                    Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
-                    _baseServiceTagSet = true;
-                }
-
                 Context.ServiceNameInternal = value;
             }
         }

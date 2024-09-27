@@ -8,7 +8,7 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_1
     },
     Metrics: {
       process_id: 0,
@@ -31,6 +31,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_kinesis,
       peer.service: aws_kinesis,
       span.kind: client,
@@ -56,6 +57,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
@@ -81,6 +83,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
@@ -101,6 +104,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_kinesis,
       peer.service: aws_kinesis,
       span.kind: client,
@@ -116,7 +120,7 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1,
+      runtime-id: Guid_1
     },
     Metrics: {
       process_id: 0,
@@ -139,6 +143,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_kinesis,
       peer.service: aws_kinesis,
       span.kind: client,
@@ -164,6 +169,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
@@ -189,6 +195,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       peer.service: MyStreamName,
       span.kind: producer,
       streamname: MyStreamName,
@@ -209,6 +216,7 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_kinesis,
       peer.service: aws_kinesis,
       span.kind: client,

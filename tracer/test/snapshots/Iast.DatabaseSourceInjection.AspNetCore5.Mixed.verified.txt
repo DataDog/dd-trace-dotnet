@@ -42,11 +42,7 @@
             "source": 0
           },
           {
-            "value": "<script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>",
-            "source": 1
-          },
-          {
-            "value": ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo"
+            "value": "<script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>:443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo"
           }
         ]
       }
@@ -57,11 +53,6 @@
       "origin": "http.request.parameter",
       "name": "host",
       "value": "localhost"
-    },
-    {
-      "origin": "sql.row.value",
-      "name": "Details",
-      "value": "<script language='javascript' type='text/javascript'>alert('Stored XSS attack');</script>"
     }
   ]
 }
