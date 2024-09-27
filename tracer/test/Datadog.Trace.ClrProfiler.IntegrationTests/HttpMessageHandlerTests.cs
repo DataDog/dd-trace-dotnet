@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public HttpMessageHandlerTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
         {
-            SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "400-499, 502,-343,11-53, 500-500-200");
+            SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_ERROR_STATUSES", "400-499, 502,-343,11-53, 500-500-200");
             SetServiceVersion("1.0.0");
         }
 

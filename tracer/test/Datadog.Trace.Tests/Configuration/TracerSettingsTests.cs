@@ -1234,6 +1234,48 @@ namespace Datadog.Trace.Tests.Configuration
             finalTagName.Should().Be(expectedTagName);
         }
 
+        [Theory]
+        [InlineData(null, null, "555")]
+        [InlineData(null, "400", "400")]
+        [InlineData("444", null, "444")]
+        [InlineData("444", "424", "444")]
+        public void ValidateServerErrorStatusCodes(string newServerErrorKeyValue, string deprecatedServerErrorKeyValue, string expectedServerError)
+        {
+            const string httpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
+            const string deprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+
+            var source = CreateConfigurationSource(
+                (httpServerErrorStatusCodes, newServerErrorKeyValue),
+                (deprecatedHttpServerErrorStatusCodes, deprecatedServerErrorKeyValue));
+
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+            var result = settings.HttpServerErrorStatusCodes;
+
+            Assert.True(result[int.Parse(expectedServerError)]);
+        }
+
+        [Theory]
+        [InlineData(null, null, "444")]
+        [InlineData(null, "500", "500")]
+        [InlineData("555", null, "555")]
+        [InlineData("555", "525", "555")]
+        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string expectedClientError)
+        {
+            const string httpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
+            const string deprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+
+            var source = CreateConfigurationSource(
+                (httpClientErrorStatusCodes, newClientErrorKeyValue),
+                (deprecatedHttpClientErrorStatusCodes, deprecatedClientErrorKeyValue));
+
+            var errorLog = new OverrideErrorLog();
+            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+            var result = settings.HttpClientErrorStatusCodes;
+
+            Assert.True(result[int.Parse(expectedClientError)]);
+        }
+
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
         {
             var settings = new TracerSettings();

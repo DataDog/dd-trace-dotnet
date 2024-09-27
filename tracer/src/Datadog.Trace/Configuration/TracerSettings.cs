@@ -303,13 +303,17 @@ namespace Datadog.Trace.Configuration
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
             var httpServerErrorStatusCodes = config
-                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+#pragma warning restore 618
                                             .AsString(defaultValue: "500-599");
 
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
             var httpClientErrorStatusCodes = config
-                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+#pragma warning restore 618
                                             .AsString(defaultValue: "400-499");
 
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
