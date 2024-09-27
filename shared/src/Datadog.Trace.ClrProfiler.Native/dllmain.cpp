@@ -4,7 +4,10 @@
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
+
+#if  _WIN32
 #include "werapi.h"
+#endif 
 
 #include "util.h"
 #include <map>
@@ -18,6 +21,7 @@ using namespace datadog::shared::nativeloader;
 
 IDynamicDispatcher* dispatcher;
 
+#if _WIN32
 std::wstring crashHandler;
 
 struct CrashMetadata
@@ -90,6 +94,7 @@ void GetEnvironBlock(WCHAR*& environmentVariables, int32_t& length)
     environmentVariables = new WCHAR[length];
     memcpy(environmentVariables, envBlock.c_str(), length * sizeof(WCHAR));
 }
+#endif
 
 EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -195,12 +200,14 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         // Perform any necessary cleanup.
         Log::Debug("DllMain: DLL_PROCESS_DETACH");
 
+#if _WIN32
         if (!crashHandler.empty())
         {
             auto hr = WerUnregisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
             Log::Debug("Unregistering Datadog crash handler: ", hr);
             crashHandler.clear();
         }
+#endif
 
         break;
     }
@@ -235,6 +242,7 @@ EXTERN_C HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
     return dispatcher->DllCanUnloadNow();
 }
 
+#if _WIN32
 LPWSTR ConcatenateEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2) {
     // First, calculate the total length needed
     size_t lenFirstBlock = 0;
@@ -385,3 +393,4 @@ extern "C"
         return E_NOTIMPL;
     }
 }
+#endif
