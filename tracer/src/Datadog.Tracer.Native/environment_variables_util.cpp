@@ -68,4 +68,9 @@ bool IsRaspEnabled()
     return IsRaspSettingEnabled() && IsAsmSettingEnabled();
 }
 
+bool IsEditAndContinueEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue), false);
+}
+
 } // namespace trace
