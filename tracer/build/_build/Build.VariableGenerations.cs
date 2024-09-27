@@ -348,8 +348,8 @@ partial class Build : NukeBuild
                     foreach (var testDescription in testDescriptions)
                     {
                         matrix.Add(
-                            $"{explorationTestUseCase}_{testDescription.Name}",
-                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name });
+                            $"{explorationTestUseCase}_{testDescription.Name.ToString()}",
+                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name.ToString() });
                     }
                 }
 
