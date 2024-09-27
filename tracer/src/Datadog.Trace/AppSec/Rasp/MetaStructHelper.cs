@@ -124,6 +124,11 @@ internal static class MetaStructHelper
                         locationDict["line"] = location.Line.Value;
                     }
 
+                    if (location.StackId is { Length: > 0 })
+                    {
+                        locationDict["stackId"] = location.StackId;
+                    }
+
                     vulnerabilityDictionary["location"] = locationDict;
                 }
 
