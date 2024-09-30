@@ -9,9 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -30,11 +28,14 @@ namespace Datadog.Trace.Propagators
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
+        internal SpanContextPropagator(
+            IEnumerable<IContextInjector>? injectors,
+            IEnumerable<IContextExtractor>? extractors,
+            bool propagationExtractFirstValue)
         {
-            _propagationExtractFirstOnly = propagationExtractFirsValue;
-            _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
-            _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
+            _propagationExtractFirstOnly = propagationExtractFirstValue;
+            _injectors = injectors?.ToArray() ?? [];
+            _extractors = extractors?.ToArray() ?? [];
         }
 
         public static SpanContextPropagator Instance
@@ -54,13 +55,9 @@ namespace Datadog.Trace.Propagators
                     }
 
                     _instance = new SpanContextPropagator(
-                        new IContextInjector[] { DatadogContextPropagator.Instance },
-                        new IContextExtractor[]
-                        {
-                            DistributedContextExtractor.Instance,
-                            DatadogContextPropagator.Instance
-                        },
-                        false);
+                        [DatadogContextPropagator.Instance],
+                        [DistributedContextExtractor.Instance, DatadogContextPropagator.Instance],
+                        propagationExtractFirstValue: false);
 
                     return _instance;
                 }
@@ -125,9 +122,9 @@ namespace Datadog.Trace.Propagators
             // trigger a sampling decision if it hasn't happened yet
             _ = context.GetOrMakeSamplingDecision();
 
-            for (var i = 0; i < _injectors.Length; i++)
+            foreach (var injector in _injectors)
             {
-                _injectors[i].Inject(context, carrier, carrierSetter);
+                injector.Inject(context, carrier, carrierSetter);
             }
         }
 

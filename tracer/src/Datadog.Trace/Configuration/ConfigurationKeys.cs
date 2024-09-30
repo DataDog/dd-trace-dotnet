@@ -383,6 +383,7 @@ namespace Datadog.Trace.Configuration
         /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
         /// they will override any header injections or extraction styled defined here, respectively.
         /// </summary>
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>

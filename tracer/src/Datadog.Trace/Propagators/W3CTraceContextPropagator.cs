@@ -201,7 +201,7 @@ namespace Datadog.Trace.Propagators
                     sb.Append(additionalState);
                 }
 
-                return sb.ToString();
+                return StringBuilderCache.GetStringAndRelease(sb);
             }
             finally
             {
