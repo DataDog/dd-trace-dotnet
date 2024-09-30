@@ -9,6 +9,7 @@ using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Utilities.Collections;
 using NukeExtensions;
 using YamlDotNet.Serialization.NamingConventions;
 using Logger = Serilog.Log;
@@ -116,9 +117,17 @@ partial class Build : NukeBuild
 
                 foreach (var framework in targetFrameworks)
                 {
+                    string channel = string.Empty;
+                    string frameworkString = framework;
+                    if (frameworkString.Contains("netcoreapp") || (frameworkString.Contains("net") && frameworkString.Contains(".")))
+                    {
+                        // "netcoreapp2.1" -> "2.1"
+                        // "net7.0" -> "7.0"
+                        channel = frameworkString.Replace("netcoreapp", "").Replace("net", "");
+                    }
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, channel = channel});
                     }
                 }
 
