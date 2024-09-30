@@ -9,8 +9,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -24,6 +22,20 @@ internal abstract class LambdaCommon
     private const string PlaceholderOperationName = "placeholder-operation";
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
+
+    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
+    {
+        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+
+        if (spanContext != null)
+        {
+            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
+        }
+
+        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+        return tracer.TracerManager.ScopeManager.Activate(span, false);
+    }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
@@ -41,21 +53,6 @@ internal abstract class LambdaCommon
 
         var tracer = Tracer.Instance;
         return CreatePlaceholderScope(tracer, myHeaders);
-    }
-
-    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
-    {
-        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-
-        if (spanContext != null)
-        {
-            // The problem is, we're not setting span.SamplingPriority
-            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
-        }
-
-        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
