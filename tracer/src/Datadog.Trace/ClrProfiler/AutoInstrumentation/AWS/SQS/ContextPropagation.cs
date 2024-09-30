@@ -31,13 +31,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.PathwayContext != null)
             {
-                var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
+                var encodedBytes = PathwayContextEncoder.Encode(context.PathwayContext.Value);
+                var base64EncodedContext = Convert.ToBase64String(encodedBytes);
                 sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContext);
 
                 if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
                 {
-                    var binaryEncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context.PathwayContext.Value));
-                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, binaryEncodedContext);
+                    var binaryContext = Encoding.UTF8.GetString(encodedBytes);
+                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, binaryContext);
                 }
             }
 

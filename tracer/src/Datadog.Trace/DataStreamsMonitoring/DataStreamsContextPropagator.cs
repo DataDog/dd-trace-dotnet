@@ -34,12 +34,13 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var base64EncodedContext = Convert.ToBase64String(PathwayContextEncoder.Encode(context));
+        var encodedBytes = PathwayContextEncoder.Encode(context);
+        var base64EncodedContext = Convert.ToBase64String(encodedBytes);
         headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes(base64EncodedContext));
 
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
-            headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
+            headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBytes);
         }
     }
 
@@ -67,20 +68,24 @@ internal class DataStreamsContextPropagator
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to decode base64 Data Streams context.");
+                // Do not return null yet; try to extract from binary header
             }
         }
 
-        // Fallback to the binary header
-        var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
-        if (binaryBytes is { Length: > 0 })
+        // Fallback to the binary header if legacy headers are enabled
+        if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
-            try
+            var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+            if (binaryBytes is { Length: > 0 })
             {
-                return PathwayContextEncoder.Decode(binaryBytes);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to decode binary Data Streams context.");
+                try
+                {
+                    return PathwayContextEncoder.Decode(binaryBytes);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to decode binary Data Streams context.");
+                }
             }
         }
 
