@@ -5,6 +5,7 @@
 
 namespace datadog::shared::nativeloader
 {
+    // Get the path of the current module
     std::wstring GetCurrentDllPath()
     {
         wchar_t path[MAX_PATH];
@@ -23,7 +24,8 @@ namespace datadog::shared::nativeloader
         return std::wstring(path);
     }
 
-    void GetEnvironBlock(WCHAR*& environmentVariables, int32_t& length)
+    // Capture all the environment variables starting with "DD_"
+    void GetDatadogEnvironmentBlock(WCHAR*& environmentVariables, int32_t& length)
     {
         auto envStrings = GetEnvironmentStrings();
 
@@ -61,6 +63,7 @@ namespace datadog::shared::nativeloader
         memcpy(environmentVariables, envBlock.c_str(), length * sizeof(WCHAR));
     }
 
+    // Concatenate two environment blocks
     LPWSTR ConcatenateEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2) {
         // First, calculate the total length needed
         size_t lenFirstBlock = 0;
@@ -116,8 +119,11 @@ namespace datadog::shared::nativeloader
             return false;
         }
 
-        GetEnvironBlock(_context.Environ, _context.EnvironLength);
+        GetDatadogEnvironmentBlock(_context.Environ, _context.EnvironLength);
 
+        // Register the crash handler in the registry
+        // Windows expects a DWORD value with the full path of the DLL as the name, 
+        // in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules
         HKEY hKey;
         LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules";
         DWORD value = 1;
@@ -135,7 +141,8 @@ namespace datadog::shared::nativeloader
         RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
         RegCloseKey(hKey);
 
-        // TODO: handle coreclr
+        // The profiler API is not initialized yet, so we look for clr.dll/coreclr.dll
+        // to know if we're running with .NET Framework or .NET Core
         bool isDotnetCore = true;
         HMODULE hModule = GetModuleHandle(L"coreclr.dll");
 
@@ -229,15 +236,17 @@ namespace datadog::shared::nativeloader
         {
             if (pbOwnershipClaimed != nullptr)
             {
+                // We don't claim the ownership of the crash.
+                // This way, the original crash handler registered by .NET will be invoked,
+                // and we don't affect the normal behavior.
                 *pbOwnershipClaimed = FALSE;
             }
 
-            // Get the pid from the exception
+            // Get the pid and tid from the exception
             auto pid = GetProcessId(pExceptionInformation->hProcess);
             auto tid = GetThreadId(pExceptionInformation->hThread);
 
-            auto crashHandler = GetCurrentDllPath();
-
+            // Read the environment variables saved in the crashing process
             WerContext context{};
 
             BOOL hasContext = ReadProcessMemory(pExceptionInformation->hProcess, pContext, &context, sizeof(context), nullptr);
@@ -251,6 +260,7 @@ namespace datadog::shared::nativeloader
                 hasEnviron = ReadProcessMemory(pExceptionInformation->hProcess, context.Environ, envBlock, context.EnvironLength * sizeof(WCHAR), nullptr);
             }
 
+            // Merge them with the current environment variables
             auto currentEnv = GetEnvironmentStrings();
 
             if (hasEnviron)
@@ -262,8 +272,8 @@ namespace datadog::shared::nativeloader
                 envBlock = currentEnv;
             }
 
-            // Extract the directory using filesystem, then append dd-dotnet.exe
-            std::filesystem::path p(crashHandler);
+            // Create the command-line for dd-dotnet
+            std::filesystem::path p(GetCurrentDllPath());
             auto directory = p.parent_path();
             auto ddDotnetPath = directory / "dd-dotnet.exe";
 
@@ -274,14 +284,13 @@ namespace datadog::shared::nativeloader
             // Convert command line to a wide string
             std::wstring wCommandLine(commandLine.begin(), commandLine.end());
 
-            // Initialize the STARTUPINFO and PROCESS_INFORMATION structures
+            // Spawn dd-dotnet
             STARTUPINFO si;
             PROCESS_INFORMATION pi;
             ZeroMemory(&si, sizeof(si));
             si.cb = sizeof(si);
             ZeroMemory(&pi, sizeof(pi));
 
-            // Create the process
             if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock, NULL, &si, &pi))
             {
                 return S_OK;
