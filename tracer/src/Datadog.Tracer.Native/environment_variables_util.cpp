@@ -68,9 +68,17 @@ bool IsRaspEnabled()
     return IsRaspSettingEnabled() && IsAsmSettingEnabled();
 }
 
+bool IsEditAndContinueEnabledCore()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_core), false);
+}
+bool IsEditAndContinueEnabledNetFx()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_netfx), false);
+}
 bool IsEditAndContinueEnabled()
 {
-    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue), false);
+    return IsEditAndContinueEnabledCore() || IsEditAndContinueEnabledNetFx();
 }
 
 } // namespace trace
