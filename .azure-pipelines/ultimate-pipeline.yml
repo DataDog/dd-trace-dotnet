@@ -1549,7 +1549,7 @@ stages:
     - template: steps/install-specific-dotnet-sdk.yml
       parameters:
         channel: $(channel)
-        includeX86: $(eq($(targetPlatform), 'x86'))
+        includeX86: $(includeX86)
     - template: steps/restore-working-directory.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time

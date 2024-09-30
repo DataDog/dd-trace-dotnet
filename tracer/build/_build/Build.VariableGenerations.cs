@@ -127,7 +127,7 @@ partial class Build : NukeBuild
                     }
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, channel = channel});
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, channel = channel, includeX86 = targetPlatform == "x86"});
                     }
                 }
 
