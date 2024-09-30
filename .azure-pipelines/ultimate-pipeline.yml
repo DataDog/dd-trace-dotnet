@@ -1548,8 +1548,8 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-specific-dotnet-sdk.yml
       parameters:
-        channel: ${{ matrix.channel }}
-        includeX86: ${{ eq(matrix.targetPlatform, 'x86') }}
+        channel: ${{ parameters.channel }}
+        includeX86: ${{ eq(parameters.targetPlatform, 'x86') }}
     - template: steps/restore-working-directory.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
