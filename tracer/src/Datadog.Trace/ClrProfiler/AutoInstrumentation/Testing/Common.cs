@@ -170,6 +170,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
         }
 
+        internal static void SetFlakyRetryTags(Test test, bool isRetry)
+        {
+            if (CIVisibility.Settings.FlakyRetryEnabled == true && isRetry)
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            }
+        }
+
         internal static void CheckFaultyThreshold(Test test, long nTestCases, long tTestCases)
         {
             if (tTestCases > 0 && CIVisibility.EarlyFlakeDetectionSettings.FaultySessionThreshold is { } faultySessionThreshold and > 0 and < 100)

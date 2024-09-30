@@ -21,6 +21,7 @@ namespace Datadog.Trace.DatabaseMonitoring
     {
         private const string SqlCommentSpanService = "dddbs";
         private const string SqlCommentRootService = "ddps";
+        private const string SqlCommentPeerService = "ddprs";
         private const string SqlCommentDbName = "dddb";
         private const string SqlCommentOuthost = "ddh";
         private const string SqlCommentVersion = "ddpv";
@@ -39,8 +40,29 @@ namespace Datadog.Trace.DatabaseMonitoring
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                var dddbs = (span.Tags is SqlV1Tags sqlTags) ? sqlTags.PeerService : span.Context.ServiceNameInternal;
+                var dddbs = span.Context.ServiceNameInternal;
                 propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
+
+                string? ddprs = null;
+                if (span.Tags is SqlV1Tags sqlTags)
+                {
+                    if (sqlTags.PeerServiceSource == "peer.service")
+                    {
+                        ddprs = sqlTags.PeerService;
+                    }
+                }
+                else
+                {
+                    if (span.Tags.GetTag(Tags.PeerServiceRemappedFrom) != null)
+                    {
+                        ddprs = span.Tags.GetTag(Tags.PeerService);
+                    }
+                }
+
+                if (ddprs != null)
+                {
+                    propagatorStringBuilder.Append(',').Append(SqlCommentPeerService).Append("='").Append(Uri.EscapeDataString(ddprs)).Append('\'');
+                }
 
                 if (span.Context.TraceContext?.Environment is { } envTag)
                 {

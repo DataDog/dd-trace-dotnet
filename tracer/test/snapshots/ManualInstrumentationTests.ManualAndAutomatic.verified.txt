@@ -47,7 +47,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -123,7 +124,8 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      Updated-key: Updated Value
+      Updated-key: Updated Value,
+      _dd.base_service: updated-name
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -246,7 +248,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -366,7 +369,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -438,7 +442,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -528,7 +533,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -619,7 +625,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
