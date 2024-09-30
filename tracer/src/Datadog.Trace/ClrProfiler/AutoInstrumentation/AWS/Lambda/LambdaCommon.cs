@@ -58,6 +58,22 @@ internal abstract class LambdaCommon
 
         var tracer = Tracer.Instance;
         return CreatePlaceholderScope(tracer, headers);
+
+    }
+
+    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
+    {
+        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+
+        if (spanContext != null)
+        {
+            // The problem is, we're not setting span.SamplingPriority
+            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
+        }
+
+        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+        return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
