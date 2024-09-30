@@ -5,6 +5,7 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,33 +23,17 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
     {
-        Span span;
-
-        if (traceId == null)
-        {
-            Log("traceId not found");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        }
-        else
-        {
-            Log($"creating the placeholder traceId = {traceId}");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
-        }
-
-        if (samplingPriority == null)
-        {
-            Log("samplingPriority not found");
-            _ = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-        }
-        else
-        {
-            Log($"setting the placeholder sampling priority to = {samplingPriority}");
-            span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
-        }
-
+        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+
+        if (spanContext != null)
+        {
+            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
+        }
+
+        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
@@ -58,30 +43,16 @@ internal abstract class LambdaCommon
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
-        var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-        var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
-        if (ValidateOkStatus(response))
+
+        // response.Headers is a WebHeaderCollection, which is not convertable to IHeadersCollection, so we have to make it into a dictionary.
+        var myHeaders = response.Headers.AllKeys.ToDictionary(k => k, k => response.Headers.Get(k));
+        if (!ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            return null;
         }
 
         var tracer = Tracer.Instance;
-        return NewCreatePlaceholderScope(tracer, new Dictionary<string, string>());
-    }
-
-    internal static Scope NewCreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
-    {
-        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
-
-        if (spanContext != null)
-        {
-            // The problem is, we're not setting span.SamplingPriority
-            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
-        }
-
-        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        return tracer.TracerManager.ScopeManager.Activate(span, false);
+        return CreatePlaceholderScope(tracer, myHeaders);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
@@ -20,7 +21,8 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithError()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, traceId: null, samplingPriority: null);
+            var myHeaders = new Dictionary<string, string>();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: true);
@@ -35,7 +37,8 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithoutError()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, traceId: null, samplingPriority: null);
+            var myHeaders = new Dictionary<string, string>();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
@@ -50,7 +53,12 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithScope()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, traceId: "1234", samplingPriority: "-1");
+            var myHeaders = new Dictionary<string, string>
+            {
+                { HttpHeaderNames.TraceId, "1234" },
+                { HttpHeaderNames.SamplingPriority, "-1" }
+            };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, isError: false);
@@ -77,7 +85,8 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithErrorTags()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, traceId: null, samplingPriority: null);
+            var myHeaders = new Dictionary<string, string>();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
             scope.Span.SetTag("error.msg", "Exception");
             scope.Span.SetTag("error.type", "Exception");
             scope.Span.SetTag("error.stack", "everything is " + System.Environment.NewLine + "fine");
@@ -98,7 +107,8 @@ namespace Datadog.Trace.Tests
         public async Task TestGetEndInvocationRequestWithoutErrorTags()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
+            var myHeaders = new Dictionary<string, string>();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);
