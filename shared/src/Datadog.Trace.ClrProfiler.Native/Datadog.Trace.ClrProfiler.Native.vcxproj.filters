@@ -93,6 +93,9 @@
     <ClInclude Include="single_step_guard_rails.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="crashhandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -150,6 +153,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="single_step_guard_rails.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crashhandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
