@@ -127,11 +127,8 @@ internal record ConfigurationStatus
         {
             var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
             var dupes = actions.GroupBy(a => a.Id).Where(g => g.Count() > 1).Select(a => a.Key).ToList();
-            var actionsDic = actions.Where(a => !dupes.Contains(a.Id)).Select(a => a.ToKeyValuePair()).ToList();
-            if (actionsDic.Count > 0)
-            {
-                dictionary.Add(WafActionsKey, actionsDic);
-            }
+            var actionsDic = actions.Where(a => !dupes.Contains(a.Id)).Select(a => a.ToKeyValuePair()).ToArray();
+            dictionary.Add(WafActionsKey, actionsDic);
 
             foreach (var dupe in dupes)
             {
