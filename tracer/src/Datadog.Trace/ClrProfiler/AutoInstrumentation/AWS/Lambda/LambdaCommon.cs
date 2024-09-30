@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -64,7 +65,23 @@ internal abstract class LambdaCommon
             return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
         }
 
-        return null;
+        var tracer = Tracer.Instance;
+        return NewCreatePlaceholderScope(tracer, new Dictionary<string, string>());
+    }
+
+    internal static Scope NewCreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
+    {
+        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+
+        if (spanContext != null)
+        {
+            // The problem is, we're not setting span.SamplingPriority
+            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
+        }
+
+        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+        return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
