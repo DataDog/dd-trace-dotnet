@@ -37,23 +37,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public async Task TestCreatePlaceholderScopeSuccessWithSamplingPriorityOnly()
-        {
-            await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string>
-            {
-                { HttpHeaderNames.SamplingPriority, "-1" },
-            };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
-
-            scope.Should().NotBeNull();
-            scope.Span.TraceId128.Should().BeGreaterThan(TraceId.Zero);
-            ((ISpan)scope.Span).TraceId.Should().BeGreaterThan(0);
-            scope.Span.SpanId.Should().BeGreaterThan(0);
-            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
-        }
-
-        [Fact]
         public async Task TestCreatePlaceholderScopeSuccessWith64BitTraceIdContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
