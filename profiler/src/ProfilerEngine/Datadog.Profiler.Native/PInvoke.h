@@ -41,3 +41,5 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext();
 extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version);
 
 extern "C" void __stdcall FlushProfile();
+
+extern "C" int32_t __stdcall GetTraceContextVersion();

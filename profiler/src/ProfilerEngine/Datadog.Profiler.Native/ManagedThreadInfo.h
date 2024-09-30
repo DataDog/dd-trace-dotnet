@@ -21,12 +21,26 @@
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
-struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
+enum class ThreadMetaInfo : std::uint64_t
+{
+    UnsafeToUnwind = 1
+};
+
+struct alignas(FieldAlignRequirement) TraceContextInfo
 {
 public:
     std::uint64_t _writeGuard;
     std::uint64_t _currentLocalRootSpanId;
     std::uint64_t _currentSpanId;
+    std::uint64_t _threadMetaInfo;
+};
+
+struct TraceContext
+{
+public:
+    static constexpr std::uint8_t Version = 2;
+
+    TraceContextInfo _impl;
 };
 
 struct ManagedThreadInfo : public IThreadInfo
@@ -36,6 +50,7 @@ private:
     static std::uint32_t GenerateProfilerThreadInfoId();
 
 public:
+
     explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
     ~ManagedThreadInfo() = default;
 
@@ -80,7 +95,7 @@ public:
     inline void SetThreadDestroyed();
     inline std::pair<uint64_t, shared::WSTRING> SetBlockingThread(uint64_t osThreadId, shared::WSTRING name);
 
-    inline TraceContextTrackingInfo* GetTraceContextPointer();
+    inline TraceContextInfo* GetTraceContextPointer();
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
@@ -95,6 +110,7 @@ public:
     inline int32_t GetTimerId() const;
     inline bool CanBeInterrupted() const;
 #endif
+    inline bool IsSafeToUnwind() const;
 
     inline AppDomainID GetAppDomainId();
 
@@ -130,7 +146,7 @@ private:
 
     bool _isThreadDestroyed;
 
-    TraceContextTrackingInfo _traceContext;
+    TraceContext _traceContext;
 
     //  strings to be used by samples: avoid allocations when rebuilding them over and over again
     std::string _profileThreadId;
@@ -140,13 +156,12 @@ private:
     std::shared_mutex _threadIdMutex;
     std::shared_mutex _threadNameMutex;
 #ifdef LINUX
-    // Linux only
+    std::int32_t _timerId;
     // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWrapper library.
     // This establishes a simple communication channel between the profiler and this library
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
-    std::int32_t _timerId;
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
@@ -416,14 +431,14 @@ inline std::pair<uint64_t, shared::WSTRING> ManagedThreadInfo::SetBlockingThread
     return {oldId, oldName};
 }
 
-inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()
+inline TraceContextInfo* ManagedThreadInfo::GetTraceContextPointer()
 {
-    return &_traceContext;
+    return &_traceContext._impl;
 }
 
 inline bool ManagedThreadInfo::CanReadTraceContext() const
 {
-    bool canReadTraceContext = _traceContext._writeGuard;
+    bool canReadTraceContext = _traceContext._impl._writeGuard;
 
     // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
     // In our case, it suffices. We have to make sure that reading this field is done
@@ -445,7 +460,6 @@ inline bool ManagedThreadInfo::HasTraceContext() const
 }
 
 #ifdef LINUX
-
 inline bool ManagedThreadInfo::CanBeInterrupted() const
 {
     return _sharedMemoryArea == nullptr;
@@ -477,6 +491,11 @@ inline std::int32_t ManagedThreadInfo::GetTimerId() const
 }
 #endif
 
+inline bool ManagedThreadInfo::IsSafeToUnwind() const
+{
+    return (_traceContext._impl._threadMetaInfo & static_cast<std::uint64_t>(ThreadMetaInfo::UnsafeToUnwind)) == 0;
+}
+
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
 {
     // This function will be called in the signal handler.
@@ -495,8 +514,8 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
 
     if (CanReadTraceContext())
     {
-        localRootSpanId = _traceContext._currentLocalRootSpanId;
-        spanId = _traceContext._currentSpanId;
+        localRootSpanId = _traceContext._impl._currentLocalRootSpanId;
+        spanId = _traceContext._impl._currentSpanId;
     }
 
     return {localRootSpanId, spanId};

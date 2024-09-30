@@ -181,6 +181,11 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
                                                                                               uint32_t* pHR,
                                                                                               bool selfCollect)
 {
+    if (!pThreadInfo->IsSafeToUnwind())
+    {
+        return GetStackSnapshotResult();
+    }
+
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
