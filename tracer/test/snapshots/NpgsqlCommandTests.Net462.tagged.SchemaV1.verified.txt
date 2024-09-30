@@ -17,6 +17,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -38,6 +39,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -59,6 +61,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -80,6 +83,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -101,6 +105,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -122,6 +127,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -143,6 +149,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -164,6 +171,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -185,6 +193,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -206,6 +215,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -227,6 +237,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -248,6 +259,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -269,6 +281,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -290,6 +303,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -311,6 +325,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -332,6 +347,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -353,6 +369,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -374,6 +391,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -395,6 +413,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -416,6 +435,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -437,6 +457,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -458,6 +479,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -479,6 +501,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -500,6 +523,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -521,6 +545,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -542,6 +567,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -563,6 +589,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -584,6 +611,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -605,6 +633,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -626,6 +655,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -647,6 +677,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -668,6 +699,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -689,6 +721,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -710,6 +743,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -731,6 +765,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -752,6 +787,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -773,6 +809,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -794,6 +831,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -815,6 +853,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -836,6 +875,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -857,6 +897,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -878,6 +919,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -899,6 +941,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -920,6 +963,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -941,6 +985,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -962,6 +1007,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -983,6 +1029,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1004,6 +1051,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1025,6 +1073,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1046,6 +1095,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1067,6 +1117,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1088,6 +1139,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1109,6 +1161,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1130,6 +1183,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1151,6 +1205,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1172,6 +1227,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1193,6 +1249,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1214,6 +1271,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1235,6 +1293,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1256,6 +1315,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1277,6 +1337,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1298,6 +1359,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1319,6 +1381,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1340,6 +1403,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1361,6 +1425,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1382,6 +1447,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1403,6 +1469,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1424,6 +1491,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1445,6 +1513,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1466,6 +1535,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1487,6 +1557,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1508,6 +1579,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1529,6 +1601,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1550,6 +1623,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1571,6 +1645,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1592,6 +1667,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1613,6 +1689,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1634,6 +1711,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1655,6 +1733,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1676,6 +1755,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1697,6 +1777,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1718,6 +1799,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1739,6 +1821,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1760,6 +1843,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1781,6 +1865,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1802,6 +1887,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1823,6 +1909,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1844,6 +1931,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1865,6 +1953,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1886,6 +1975,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1907,6 +1997,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1928,6 +2019,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1949,6 +2041,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1970,6 +2063,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1991,6 +2085,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2012,6 +2107,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2033,6 +2129,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2054,6 +2151,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2075,6 +2173,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2096,6 +2195,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2117,6 +2217,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2138,6 +2239,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2159,6 +2261,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2180,6 +2283,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2201,6 +2305,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2222,6 +2327,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2243,6 +2349,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2264,6 +2371,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2285,6 +2393,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2306,6 +2415,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2327,6 +2437,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2348,6 +2459,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2369,6 +2481,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2390,6 +2503,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2411,6 +2525,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2432,6 +2547,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2453,6 +2569,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2474,6 +2591,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2495,6 +2613,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2516,6 +2635,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2537,6 +2657,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2558,6 +2679,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2579,6 +2701,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2600,6 +2723,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2621,6 +2745,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2642,6 +2767,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2663,6 +2789,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2684,6 +2811,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2705,6 +2833,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2726,6 +2855,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2747,6 +2877,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2768,6 +2899,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2789,6 +2921,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2810,6 +2943,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2831,6 +2965,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2852,6 +2987,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2873,6 +3009,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2894,6 +3031,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2915,6 +3053,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2936,6 +3075,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2957,6 +3097,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2978,6 +3119,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2999,6 +3141,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3020,6 +3163,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3041,6 +3185,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3062,6 +3207,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3083,6 +3229,7 @@
       peer.service: postgres,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   }

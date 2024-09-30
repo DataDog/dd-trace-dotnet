@@ -16,7 +16,8 @@
       language: dotnet,
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Yarp.DistributedTracing
     },
     Metrics: {
       process_id: 0,
@@ -73,7 +74,8 @@
       language: dotnet,
       out.host: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Yarp.DistributedTracing
     },
     Metrics: {
       _dd.top_level: 1.0

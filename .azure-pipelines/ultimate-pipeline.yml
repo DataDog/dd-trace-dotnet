@@ -1357,7 +1357,7 @@ stages:
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        condition: succeededOrFailed()
+        condition: always()
         continueOnError: true
 
       - task: PublishTestResults@2
@@ -1407,7 +1407,7 @@ stages:
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        condition: succeededOrFailed()
+        condition: always()
         continueOnError: true
 
       - task: PublishTestResults@2
@@ -1460,7 +1460,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -1513,7 +1513,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -1585,13 +1585,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1648,13 +1648,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_debugger tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1708,13 +1708,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1768,13 +1768,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1840,13 +1840,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -2052,13 +2052,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -2134,7 +2134,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2147,7 +2147,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2234,7 +2234,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2247,7 +2247,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2414,7 +2414,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2427,7 +2427,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2508,7 +2508,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2521,7 +2521,7 @@ stages:
     - publish: tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2594,7 +2594,7 @@ stages:
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2702,7 +2702,7 @@ stages:
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2772,7 +2772,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
   - job: Windows
@@ -2798,7 +2798,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
 - stage: ubsan_profiler_tests
@@ -2861,7 +2861,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading test results
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
 - stage: integration_tests_arm64
@@ -2928,7 +2928,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -2941,7 +2941,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3018,7 +3018,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -3031,7 +3031,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3104,7 +3104,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -3117,7 +3117,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3179,7 +3179,7 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading exploration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -3284,7 +3284,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -3807,7 +3807,7 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -3935,7 +3935,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -5161,7 +5161,7 @@ stages:
         snapshotPrefix: "smoke_test"
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5242,7 +5242,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests
@@ -5328,7 +5328,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5393,7 +5393,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5462,7 +5462,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5541,7 +5541,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5625,7 +5625,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -5705,7 +5705,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests_arm64
@@ -5791,7 +5791,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5855,7 +5855,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5956,7 +5956,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6030,7 +6030,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6103,7 +6103,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6177,7 +6177,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
@@ -6249,7 +6249,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6379,7 +6379,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - script: ./tracer/build.sh CheckSmokeTestsForErrors
@@ -6631,7 +6631,7 @@ stages:
 
     - publish: $(Build.SourcesDirectory)/artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
 - stage: notify_slack_on_failures

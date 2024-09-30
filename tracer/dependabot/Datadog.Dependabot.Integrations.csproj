@@ -18,13 +18,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!--    Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.22 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.400.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.400.26 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.400.26" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!--    Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.401 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.401" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.401.4 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.401.4" />
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
@@ -33,18 +33,18 @@
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.401.20 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.401.20" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.3 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.402.3" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!--    Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.22 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.400.26 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.400.26" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!--    Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.22 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.400.26 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.400.26" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!--    Assembly: Azure.Messaging.ServiceBus -->
@@ -95,8 +95,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.9.12 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.12" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.9.13 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.13" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
@@ -105,7 +105,7 @@
 
     <!-- Integration: log4net -->
     <!--    Assembly: log4net -->
-    <!-- Latest package https://www.nuget.org/packages/log4net/3.0.0 -->
+    <!-- Latest package https://www.nuget.org/packages/log4net/3.0.1 -->
     <PackageReference Include="log4net" Version="2.0.17" />
 
     <!-- Integration: System.Web.Mvc -->
@@ -216,7 +216,7 @@
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!--    Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.6.0 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.5.2" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.6.0" />
 
     <!-- Integration: MySql.Data -->
     <!--    Assembly: MySql.Data -->
@@ -270,8 +270,8 @@
 
     <!-- Integration: Serilog -->
     <!--    Assembly: Serilog -->
-    <!-- Latest package https://www.nuget.org/packages/Serilog/4.0.1 -->
-    <PackageReference Include="Serilog" Version="4.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/Serilog/4.0.2 -->
+    <PackageReference Include="Serilog" Version="4.0.2" />
 
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
@@ -327,13 +327,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!--    Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.1 -->
-    <PackageReference Include="xunit" Version="2.9.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.9.2 -->
+    <PackageReference Include="xunit" Version="2.9.2" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!--    Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.1 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.9.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.9.2 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.9.2" />
 
     <!-- Integration: Yarp.ReverseProxy -->
     <!--    Assembly: Yarp.ReverseProxy -->

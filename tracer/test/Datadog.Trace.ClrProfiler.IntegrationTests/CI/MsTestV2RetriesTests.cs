@@ -28,7 +28,7 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     protected override string TrueAtThirdRetry => "Samples.MSTestTestsRetries.TestSuite.TrueAtThirdRetry";
 
     [SkippableTheory]
-    [MemberData(nameof(PackageVersions.MSTest), MemberType = typeof(PackageVersions))]
+    [MemberData(nameof(PackageVersions.MSTest2Retries), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
