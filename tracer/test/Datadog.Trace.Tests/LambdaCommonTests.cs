@@ -48,6 +48,22 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public async Task TestCreatePlaceholderScopeSuccessWith128BitTraceIdContext()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var myHeaders = new Dictionary<string, string>
+            {
+                { HttpHeaderNames.TraceId, "5744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
+            };
+            var scope = LambdaCommon.NewCreatePlaceholderScope(tracer, myHeaders);
+
+            scope.Should().NotBeNull();
+            scope.Span.TraceId128.ToString().Should().Be("1914fe7789eb32be4fb6f07e011a6faf");
+            scope.Span.SpanId.Should().BeGreaterThan(0);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
+        }
+
+        [Fact]
         [Trait("Category", "ArmUnsupported")]
         public async Task TestCreatePlaceholderScopeSuccessWithoutContext()
         {
