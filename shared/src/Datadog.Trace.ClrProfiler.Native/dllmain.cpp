@@ -55,50 +55,139 @@ std::wstring GetCurrentDllPath()
     return std::wstring(path);
 }
 
-void RegisterCrashHandler(const std::wstring& moduleName)
-{
-    HKEY hKey;
-    LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules";
-    DWORD value = 1;
-
-    // Open the key
-    DWORD disposition;
-    LONG result = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, &disposition);
-    if (result != ERROR_SUCCESS) {
-        return;
-    }
-
-    // Set the value
-    result = RegSetValueEx(hKey, moduleName.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
-    if (result != ERROR_SUCCESS) {
-        RegCloseKey(hKey);
-        return;
-    }
-
-    RegCloseKey(hKey);
-}
-
 void GetEnvironBlock(WCHAR*& environmentVariables, int32_t& length)
 {
     auto envStrings = GetEnvironmentStrings();
+
     std::wstring envBlock;
+
+    if (envStrings == nullptr)
+    {
+        length = 2;
+        environmentVariables = new WCHAR[length];
+        environmentVariables[0] = L'\0';
+        environmentVariables[1] = L'\0';
+        return;
+    }
 
     for (LPWCH env = envStrings; *env != L'\0'; env += wcslen(env) + 1)
     {
         if (wcsncmp(env, L"DD_", 3) == 0)
         {
             envBlock.append(env);
-            envBlock.push_back('\0'); // Null terminator for the current variable
+            envBlock.push_back('\0');
         }
     }
 
-    // Add the double null terminator
+    // Environment block ends with a double null terminator
     envBlock.push_back('\0');
+
+    if (envBlock.length() == 1)
+    {
+        // If the environment block was empty, we're still missing one null terminator
+        envBlock.push_back('\0');
+    }
 
     length = envBlock.length();
     environmentVariables = new WCHAR[length];
     memcpy(environmentVariables, envBlock.c_str(), length * sizeof(WCHAR));
 }
+
+std::wstring RegisterCrashHandler()
+{
+    auto dllPath = GetCurrentDllPath();
+
+    if (dllPath.empty())
+    {
+        Log::Warn("Crashtracking - Could not register the crash handler: error when retrieving the path of the DLL");
+        return std::wstring();
+    }
+
+    GetEnvironBlock(crashMetadata.Environ, crashMetadata.EnvironLength);
+
+    HKEY hKey;
+    LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules";
+    DWORD value = 1;
+
+    // Open the key
+    DWORD disposition;
+    auto result = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, &disposition);
+
+    if (result != ERROR_SUCCESS)
+    {
+        return std::wstring();
+    }
+
+    // Set the value
+    RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
+    RegCloseKey(hKey);
+
+    // TODO: handle coreclr
+    bool isDotnetCore = true;
+    HMODULE hModule = GetModuleHandle(L"coreclr.dll");
+
+    if (hModule == NULL)
+    {
+        hModule = GetModuleHandle(L"clr.dll");
+        isDotnetCore = false;
+
+        if (hModule == NULL)
+        {
+            Log::Warn("Crashtracking - Failed to get module handle for coreclr.dll or clr.dll");
+            return std::wstring();
+        }
+    }
+
+    wchar_t buffer[MAX_PATH];
+
+    if (GetModuleFileNameW(hModule, buffer, MAX_PATH) == 0)
+    {
+        Log::Warn("Crashtracking - Failed to get module filename");
+        return std::wstring();
+    }
+
+    auto clrFileName = std::wstring(buffer);
+    
+    std::filesystem::path clrFileNamePath(clrFileName);
+    auto clrDirectory = clrFileNamePath.parent_path();
+
+    // Build the path to the DAC (mscordacwks.dll on .NET, mscordaccore.dll on .NET Core)
+    std::wstring dacFileName = isDotnetCore ? L"mscordaccore.dll" : L"mscordacwks.dll";
+    std::filesystem::path dacFilePath = clrDirectory / dacFileName;
+
+    // Unregister the .NET handler
+    Log::Debug("Crashtracking - Unregistering the .NET handler ", dacFilePath.c_str());
+    auto unregisterDacHr = WerUnregisterRuntimeExceptionModule(dacFilePath.c_str(), (PVOID)hModule);
+
+    if (FAILED(unregisterDacHr))
+    {
+        Log::Warn("Crashtracking - Failed to unregister the DAC handler: ", unregisterDacHr);
+    }
+
+    // Register our handler
+    Log::Debug("Crashtracking - Registering the crash handler ", dllPath.c_str());
+    auto registrationHr = WerRegisterRuntimeExceptionModule(dllPath.c_str(), &crashMetadata);
+
+    // If we successfully unregistered the .NET handler, put it back in place
+    if (SUCCEEDED(unregisterDacHr))
+    {
+        auto registrationHr2 = WerRegisterRuntimeExceptionModule(dacFilePath.c_str(), (PVOID)hModule);
+
+        if (FAILED(registrationHr2))
+        {
+            Log::Warn("Crashtracking - Failed to re-register the DAC handler: ", registrationHr2);
+        }
+    }
+
+    if (FAILED(registrationHr))
+    {
+        Log::Warn("Crashtracking - Could not register the crash handler: ", registrationHr);
+        return std::wstring();
+    }
+
+    return dllPath;
+}
+
 #endif
 
 EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -156,42 +245,13 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
 
         if (telemetry_enabled && crashtracking_enabled)
         {
-            Log::Debug("Registering unhandled exception filter.");
-            OutputDebugString(L"Registering unhandled exception filter.");
-
-            crashHandler = GetCurrentDllPath();
-
-            if (!crashHandler.empty())
-            {
-                OutputDebugString(L"Crash handler not empty.");
-
-                GetEnvironBlock(crashMetadata.Environ, crashMetadata.EnvironLength);
-
-                RegisterCrashHandler(crashHandler);
-
-                // TODO: handle coreclr
-                HMODULE hModule = GetModuleHandle(L"clr.dll");
-
-                // TODO: Build the path dynamically
-                auto unregisterDacHr = WerUnregisterRuntimeExceptionModule(L"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscordacwks.dll", (PVOID)hModule);
-                Log::Debug("Unregistering DAC handler : ", unregisterDacHr);
-
-                auto registrationHr = WerRegisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
-                Log::Debug("Registering Datadog crash handler: ", registrationHr);
-
-                if (SUCCEEDED(unregisterDacHr))
-                {
-                    // Put the .NET handler back in place
-                    registrationHr = WerRegisterRuntimeExceptionModule(L"C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\mscordacwks.dll", (PVOID)hModule);
-                    Log::Info("Re-register DAC handler: ", registrationHr);
-                }
-            }
-            else
-            {
-                Log::Error("Could not register the crash handler: error when retrieving the path of the DLL");
-            }
+            Log::Info("Crashtracking - Registering unhandled exception filter.");
+            crashHandler = RegisterCrashHandler();
         }
-
+        else
+        {
+            Log::Info("Crashtracking is disabled by configuration.");
+        }
 #endif
 
         dispatcher = new DynamicDispatcherImpl();
@@ -209,7 +269,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         if (!crashHandler.empty())
         {
             auto hr = WerUnregisterRuntimeExceptionModule(crashHandler.c_str(), &crashMetadata);
-            Log::Debug("Unregistering Datadog crash handler: ", hr);
+            Log::Debug("Crashtracking - Unregistering crash handler: ", hr);
             crashHandler.clear();
         }
 #endif
@@ -352,23 +412,14 @@ extern "C"
         si.cb = sizeof(si);
         ZeroMemory(&pi, sizeof(pi));
 
-        OutputDebugString(L"Spawning dd-dotnet");
-
         // Create the process
         if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock, NULL, &si, &pi))
         {
-            DWORD error = GetLastError();
-            std::wstring errorMessage = L"Failed to spawn dd-dotnet with error code: " + std::to_wstring(error);
-            OutputDebugString(errorMessage.c_str());
             return S_OK;
         }
 
-        OutputDebugString(L"Waiting for exit");
-
         // Wait for the process to exit
         WaitForSingleObject(pi.hProcess, INFINITE);
-
-        OutputDebugString(L"Done");
 
         return S_OK;
     }
