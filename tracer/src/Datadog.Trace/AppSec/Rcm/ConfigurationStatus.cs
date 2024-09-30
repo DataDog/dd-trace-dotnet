@@ -67,7 +67,7 @@ internal record ConfigurationStatus
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
-    internal Dictionary<string, Action[]> ActionsByFile { get; set; } = new();
+    internal Dictionary<string, Action[]> ActionsByFile { get; init; } = new();
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
@@ -126,7 +126,17 @@ internal record ConfigurationStatus
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
         {
             var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
-            dictionary.Add(WafActionsKey, actions.Select(a => a.ToKeyValuePair()).ToArray());
+            var dupes = actions.GroupBy(a => a.Id).Where(g => g.Count() > 1).Select(a => a.Key).ToList();
+            var actionsDic = actions.Where(a => !dupes.Contains(a.Id)).Select(a => a.ToKeyValuePair()).ToList();
+            if (actionsDic.Count > 0)
+            {
+                dictionary.Add(WafActionsKey, actionsDic);
+            }
+
+            foreach (var dupe in dupes)
+            {
+                Log.Warning("Duplicate action found with id: {ActionId}, this action will be discarded, default waf action, if any, will apply", dupe);
+            }
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))

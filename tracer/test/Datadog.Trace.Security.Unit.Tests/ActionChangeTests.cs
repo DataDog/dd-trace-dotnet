@@ -20,12 +20,12 @@ namespace Datadog.Trace.Security.Unit.Tests;
 public class ActionChangeTests : WafLibraryRequiredTest
 {
     [Theory]
-    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.BlockRequestType, 500)]
-    [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType, 500)]
-    // Redirect status code is restricted in newer versions of the WAF to 301, 302, 303, 307
-    [InlineData("dummyrule2", "test-dummy-rule2", "rasp-rule-set.json", "customblock", BlockingAction.RedirectRequestType, 303)]
-    [InlineData("dummy_rule", "test-dummy-rule", "rasp-rule-set.json", "block", BlockingAction.RedirectRequestType, 303)]
-    public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string ruleFile, string action, string actionType, int newStatus)
+    [InlineData("dummy_rule", "test-dummy-rule", "block", BlockingAction.BlockRequestType, 500)]
+    [InlineData("dummyrule2", "test-dummy-rule2", "customblock", BlockingAction.BlockRequestType, 500)]
+    // Redirect status code is restricted in newer versions of the waf to 301, 302, 303, 307
+    [InlineData("dummyrule2", "test-dummy-rule2", "customblock", BlockingAction.RedirectRequestType, 303)]
+    [InlineData("dummy_rule", "test-dummy-rule", "block", BlockingAction.RedirectRequestType, 303)]
+    public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string action, string actionType, int newStatus)
     {
         var args = CreateArgs(paramValue);
         var initResult = Waf.Create(
@@ -33,7 +33,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
             string.Empty,
             string.Empty,
             useUnsafeEncoder: true,
-            embeddedRulesetPath: ruleFile);
+            embeddedRulesetPath: "rasp-rule-set.json");
 
         var waf = initResult.Waf;
         waf.Should().NotBeNull();
@@ -44,13 +44,9 @@ public class ActionChangeTests : WafLibraryRequiredTest
         var jsonString = JsonConvert.SerializeObject(result.Data);
         var resultData = JsonConvert.DeserializeObject<WafMatch[]>(jsonString).FirstOrDefault();
         resultData.Rule.Id.Should().Be(rule);
-
-        ConfigurationStatus configurationStatus = new(string.Empty);
         var newAction = CreateNewStatusAction(action, actionType, newStatus);
-        configurationStatus.ActionsByFile[action] = [newAction];
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
-        res.Success.Should().BeTrue();
+        UpdateWafWithActions([newAction], waf);
+
         using var contextNew = waf.CreateContext();
         result = contextNew.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
@@ -66,43 +62,54 @@ public class ActionChangeTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData("dummyrule2", "rasp-rule-set.json", "customblock", BlockingAction.BlockRequestType)]
-    public void GivenADummyRule_WhenActionReturnCodeIsChangedAfterInit_ThenChangesAreApplied(string paramValue, string ruleFile, string action, string actionType)
+    [InlineData("dummy_rule", "block", BlockingAction.BlockRequestType, 401)]
+    [InlineData("dummy_rule", "block", BlockingAction.BlockRequestType, 401, true)]
+    public void GivenADummyRule_WhenDuplicateActionIsReceived_ThenBackToDefaultWafActions(string paramValue, string action, string actionType, int newStatus, bool placeInDifferentFiles = false)
     {
         var args = CreateArgs(paramValue);
         var initResult = Waf.Create(
-            WafLibraryInvoker,
+            WafLibraryInvoker!,
             string.Empty,
             string.Empty,
             useUnsafeEncoder: true,
-            embeddedRulesetPath: ruleFile);
+            embeddedRulesetPath: "rasp-rule-set.json");
 
         var waf = initResult.Waf;
         waf.Should().NotBeNull();
+        Action[] newActions =
+        [
+            CreateNewStatusAction(action, actionType, newStatus), CreateNewStatusAction(action, actionType, newStatus), CreateNewStatusAction(action, actionType, newStatus),
+            CreateNewStatusAction("dummy_rule", BlockingAction.BlockRequestType, 500) // add a dummy one, otherwise nothing will be updated
+        ];
 
-        UpdateAction(action, actionType, waf);
+        UpdateWafWithActions(newActions, waf, placeInDifferentFiles);
 
-        using var context = waf.CreateContext();
-        var result = context.Run(args, TimeoutMicroSeconds);
-        result.Timeout.Should().BeFalse("Timeout should be false");
-        result.BlockInfo["status_code"].Should().Be("500");
+        using var context = waf!.CreateContext();
+        var result = context!.Run(args, TimeoutMicroSeconds);
+        result.Should().NotBeNull();
+        result!.Timeout.Should().BeFalse("Timeout should be false");
+        // default waf action block
+        result.BlockInfo!["status_code"].Should().Be("403");
+        result.BlockInfo["grpc_status_code"].Should().Be("10");
     }
 
-    private Dictionary<string, object> CreateArgs(string requestParam)
+    private Dictionary<string, object> CreateArgs(string requestParam) => new() { { AddressesConstants.RequestUriRaw, "http://localhost:54587/" }, { AddressesConstants.RequestBody, new[] { "param", requestParam } }, { AddressesConstants.RequestMethod, "GET" } };
+
+    private void UpdateWafWithActions(Action[] actions, Waf waf, bool placeInDifferentFiles = false)
     {
-        return new Dictionary<string, object>
+        ConfigurationStatus configurationStatus;
+        if (placeInDifferentFiles)
         {
-            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
-            { AddressesConstants.RequestBody, new[] { "param", requestParam } },
-            { AddressesConstants.RequestMethod, "GET" }
-        };
-    }
+            var i = 0;
+            var dic = actions.ToDictionary<Action, string, Action[]>(_ => $"file{i++}", action => [action]);
 
-    private void UpdateAction(string action, string actionType, Waf waf)
-    {
-        ConfigurationStatus configurationStatus = new(string.Empty);
-        var newAction = new Action { Id = action, Type = actionType, Parameters = new AppSec.Rcm.Models.Asm.Parameter { StatusCode = 500, Type = "auto" } };
-        configurationStatus.ActionsByFile[action] = [newAction];
+            configurationStatus = new(string.Empty) { ActionsByFile = dic };
+        }
+        else
+        {
+            configurationStatus = new(string.Empty) { ActionsByFile = { ["file"] = actions } };
+        }
+
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();
@@ -110,12 +117,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
     private Action CreateNewStatusAction(string action, string actionType, int newStatus)
     {
-        var newAction = new Action();
-        newAction.Id = action;
-        newAction.Type = actionType;
-        newAction.Parameters = new AppSec.Rcm.Models.Asm.Parameter();
-        newAction.Parameters.StatusCode = newStatus;
-        newAction.Parameters.Type = "auto";
+        var newAction = new Action { Id = action, Type = actionType, Parameters = new AppSec.Rcm.Models.Asm.Parameter { StatusCode = newStatus, Type = "auto" } };
 
         if (newAction.Type == BlockingAction.RedirectRequestType)
         {

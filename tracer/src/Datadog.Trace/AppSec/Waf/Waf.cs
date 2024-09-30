@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 
@@ -169,6 +170,12 @@ namespace Datadog.Trace.AppSec.Waf
         public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
         {
             var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
+            if (dic.IsEmpty())
+            {
+                Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
+                return new(null, false);
+            }
+
             return Update(dic);
         }
 
