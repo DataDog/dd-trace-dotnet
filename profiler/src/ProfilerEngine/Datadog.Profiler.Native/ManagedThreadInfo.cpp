@@ -21,7 +21,7 @@ std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId()
 }
 
 ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo) :
-    ManagedThreadInfo(clrThreadId,pCorProfilerInfo, 0, static_cast<HANDLE>(0), shared::WSTRING())
+    ManagedThreadInfo(clrThreadId, pCorProfilerInfo, 0, static_cast<HANDLE>(0), shared::WSTRING())
 {
 }
 
