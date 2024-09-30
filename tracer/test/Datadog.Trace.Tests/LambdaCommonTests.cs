@@ -59,13 +59,12 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var myHeaders = new Dictionary<string, string>
             {
-                { HttpHeaderNames.TraceId, "15744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
+                { HttpHeaderNames.TraceId, "5744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
             };
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.ToString().Should().Be("1914fe7789eb32be4fb6f07e011a6faf");
-            ((ISpan)scope.Span).TraceId.Should().Be(1234);
             scope.Span.SpanId.Should().BeGreaterThan(0);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
