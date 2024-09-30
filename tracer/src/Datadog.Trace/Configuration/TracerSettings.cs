@@ -968,7 +968,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
         /// </summary>
-        public bool IsDataStreamsLegacyHeadersEnabled { get; }
+        internal bool IsDataStreamsLegacyHeadersEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the rare sampler is enabled or not.
