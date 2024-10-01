@@ -35,8 +35,7 @@
       language: dotnet,
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -64,8 +63,7 @@
       http.url: http://localhost:00000/,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -89,8 +87,7 @@
       language: dotnet,
       out.host: aws_eventbridge,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.base_service: Samples.AWS.EventBridge
+      span.kind: client
     },
     Metrics: {
       _dd.top_level: 1.0
