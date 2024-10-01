@@ -183,8 +183,8 @@ partial class Build
                 .Select(x => x.Contains('@') ? x.Substring(0, x.IndexOf('@')) : x)
                 .OrderBy(x => x)
                 .ToList();
-            
 
+            Logger.Information("======== Got symbols:\n" + symbols.Join("\n") + "\n==========");
 
             var received = string.Join(Environment.NewLine, symbols);
             var verifiedPath = TestsDirectory / "snapshots" / $"native-wrapper-symbols-{UnixArchitectureIdentifier}.verified.txt";
