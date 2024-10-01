@@ -180,7 +180,7 @@ partial class Build
                 .Select(x => x.Trim())
                 .Where(x => x.StartsWith("U "))
                 .Select(x => x.TrimStart("U "))
-                .Select(x => x.Contains("@") ? x.Substring(0, x.IndexOf("@")) : x)
+                .Select(x => x.Contains('@') ? x.Substring(0, x.IndexOf('@')) : x)
                 .OrderBy(x => x)
                 .ToList();
             
