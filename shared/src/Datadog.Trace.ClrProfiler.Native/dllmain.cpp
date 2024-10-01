@@ -27,7 +27,7 @@ using namespace datadog::shared::nativeloader;
 IDynamicDispatcher* dispatcher;
 
 #if CRASHTRACKING
-CrashHandler crashHandler;
+std::unique_ptr<CrashHandler> crashHandler;
 #endif
 
 EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -86,7 +86,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         if (telemetry_enabled && crashtracking_enabled)
         {
             Log::Info("Crashtracking - Registering unhandled exception filter.");
-            crashHandler.Register();
+            crashHandler = CrashHandler::Create();
         }
         else
         {
@@ -106,7 +106,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         Log::Debug("DllMain: DLL_PROCESS_DETACH");
 
 #if CRASHTRACKING
-        crashHandler.Unregister();
+        crashHandler = nullptr;
 #endif
 
         break;

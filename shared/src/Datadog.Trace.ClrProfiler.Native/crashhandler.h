@@ -14,10 +14,15 @@ namespace datadog::shared::nativeloader
     class CrashHandler
     {
     public:
+        static std::unique_ptr<CrashHandler> Create();
+
+        ~CrashHandler();
+
+    private:
+        CrashHandler();
         bool Register();
         bool Unregister();
 
-    private:
         std::wstring _crashHandler;
         WerContext _context;
     };

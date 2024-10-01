@@ -2,6 +2,7 @@
 #include <string>
 #include "util.h"
 #include "WerApi.h"
+#include <map>
 
 namespace datadog::shared::nativeloader
 {
@@ -13,12 +14,16 @@ namespace datadog::shared::nativeloader
 
         if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
             GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-            (LPCWSTR)&GetCurrentDllPath, &hm) == 0) {
-            return std::wstring();  // Failed to get module handle
+            (LPCWSTR)&GetCurrentDllPath, &hm) == 0)
+        {
+            Log::Warn("Crashtracking - Failed to get the current module handle: ", GetLastError());
+            return std::wstring();
         }
 
-        if (GetModuleFileNameW(hm, path, MAX_PATH) == 0) {
-            return std::wstring();  // Failed to get module filename
+        if (GetModuleFileNameW(hm, path, MAX_PATH) == 0)
+        {
+            Log::Warn("Crashtracking - Failed to get the current module filename: ", GetLastError());
+            return std::wstring();
         }
 
         return std::wstring(path);
@@ -61,46 +66,92 @@ namespace datadog::shared::nativeloader
         length = static_cast<int32_t>(envBlock.length());
         environmentVariables = new WCHAR[length];
         memcpy(environmentVariables, envBlock.c_str(), length * sizeof(WCHAR));
+        FreeEnvironmentStrings(envStrings);
     }
 
-    // Concatenate two environment blocks
-    LPWSTR ConcatenateEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2) {
-        // First, calculate the total length needed
-        size_t lenFirstBlock = 0;
-        size_t lenSecondBlock = 0;
-        LPCWSTR p;
+    // Merge two environment blocks. The first one takes precedence.
+    std::vector<WCHAR> MergeEnvironmentBlocks(LPCWSTR envBlock1, LPCWSTR envBlock2)
+    {
+        // Define a case-insensitive comparator for keys
+        struct CaseInsensitiveCompare
+        {
+            bool operator()(const std::wstring& lhs, const std::wstring& rhs) const
+            {
+                return _wcsicmp(lhs.c_str(), rhs.c_str()) < 0;
+            }
+        };
 
-        // Calculate length of the first environment block
-        p = envBlock1;
-        while (*p) {
-            size_t len = wcslen(p) + 1; // Length of the entry including null terminator
-            lenFirstBlock += len;
-            p += len;
+        // Map to hold environment variables with case-insensitive keys
+        std::map<std::wstring, std::wstring, CaseInsensitiveCompare> envMap;
+
+        // Helper lambda to parse an environment block into the map
+        auto parseEnvBlock = [&envMap](LPCWSTR envBlock)
+            {
+                if (envBlock)
+                {
+                    LPCWSTR curr = envBlock;
+                    while (*curr)
+                    {
+                        std::wstring entry = curr;
+                        size_t pos = entry.find(L'=');
+                        if (pos != std::wstring::npos)
+                        {
+                            std::wstring key = entry.substr(0, pos);
+                            std::wstring value = entry.substr(pos + 1);
+                            envMap[key] = value; // Insert or overwrite the key
+                        }
+                        // Move to the next null-terminated string
+                        curr += entry.length() + 1;
+                    }
+                }
+            };
+
+        // Parse envBlock2 first so that envBlock1 values take precedence
+        parseEnvBlock(envBlock2);
+        parseEnvBlock(envBlock1);
+
+        // Reconstruct the combined environment block
+        std::vector<WCHAR> result;
+        for (const auto& kv : envMap)
+        {
+            std::wstring entry = kv.first + L"=" + kv.second;
+            result.insert(result.end(), entry.begin(), entry.end());
+            result.push_back(L'\0'); // Null terminator for the entry
+        }
+        result.push_back(L'\0'); // Double null terminator at the end
+
+        return result;
+    }
+
+    std::unique_ptr<CrashHandler> CrashHandler::Create()
+    {
+        std::unique_ptr<CrashHandler> crashHandler(new CrashHandler());
+
+        if (crashHandler->Register())
+        {
+            return crashHandler;
         }
 
-        // Calculate length of the second environment block
-        p = envBlock2;
-        while (*p) {
-            size_t len = wcslen(p) + 1;
-            lenSecondBlock += len;
-            p += len;
+        return nullptr;
+    }
+
+    CrashHandler::~CrashHandler()
+    {
+        Unregister();
+
+        if (_context.Environ != nullptr)
+        {
+            delete[] _context.Environ;
         }
 
-        // Allocate buffer for the merged environment block, add one for the final null character (double null termination)
-        LPWSTR mergedEnvBlock = (LPWSTR)malloc((lenFirstBlock + lenSecondBlock + 1) * sizeof(WCHAR));
-        if (!mergedEnvBlock) {
-            // Handle allocation failure
-            return NULL;
-        }
+        _context.Environ = nullptr;
+        _context.EnvironLength = 0;
+    }
 
-        // Now copy the entries from both environment blocks
-        memcpy(mergedEnvBlock, envBlock1, lenFirstBlock * sizeof(WCHAR));
-        memcpy(mergedEnvBlock + lenFirstBlock, envBlock2, lenSecondBlock * sizeof(WCHAR));
-
-        // Add final null character for double null termination
-        mergedEnvBlock[lenFirstBlock + lenSecondBlock] = L'\0';
-
-        return mergedEnvBlock;
+    CrashHandler::CrashHandler()
+        : _context(),
+        _crashHandler()
+    {
     }
 
     bool CrashHandler::Register()
@@ -134,12 +185,22 @@ namespace datadog::shared::nativeloader
 
         if (result != ERROR_SUCCESS)
         {
-            return false;
+            // Failing to set the registry is not a fatal error: it may already exist, or the MSI may have set it in HKLM
+            // It's safe to continue, in the worst case scenario the crash handler just won't be invoked by WER
+            Log::Warn("Crashtracking - Failed to create registry key: ", GetLastError());
         }
+        else
+        {
+            // Set the value
+            result = RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
 
-        // Set the value
-        RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
-        RegCloseKey(hKey);
+            if (result != ERROR_SUCCESS)
+            {
+                Log::Warn("Crashtracking - Failed to set registry value: ", GetLastError());
+            }
+
+            RegCloseKey(hKey);
+        }
 
         // The profiler API is not initialized yet, so we look for clr.dll/coreclr.dll
         // to know if we're running with .NET Framework or .NET Core
@@ -162,7 +223,7 @@ namespace datadog::shared::nativeloader
 
         if (GetModuleFileNameW(hModule, buffer, MAX_PATH) == 0)
         {
-            Log::Warn("Crashtracking - Failed to get module filename");
+            Log::Warn("Crashtracking - Failed to get module filename: ", GetLastError());
             return false;
         }
 
@@ -252,12 +313,12 @@ namespace datadog::shared::nativeloader
             BOOL hasContext = ReadProcessMemory(pExceptionInformation->hProcess, pContext, &context, sizeof(context), nullptr);
             BOOL hasEnviron = FALSE;
 
-            WCHAR* envBlock = nullptr;
+            std::vector<WCHAR> envBlock;
 
             if (hasContext && context.EnvironLength > 0 && context.Environ != nullptr)
             {
-                envBlock = new WCHAR[context.EnvironLength];
-                hasEnviron = ReadProcessMemory(pExceptionInformation->hProcess, context.Environ, envBlock, context.EnvironLength * sizeof(WCHAR), nullptr);
+                envBlock.resize(context.EnvironLength * sizeof(WCHAR));
+                hasEnviron = ReadProcessMemory(pExceptionInformation->hProcess, context.Environ, envBlock.data(), context.EnvironLength * sizeof(WCHAR), nullptr);
             }
 
             // Merge them with the current environment variables
@@ -265,12 +326,14 @@ namespace datadog::shared::nativeloader
 
             if (hasEnviron)
             {
-                envBlock = ConcatenateEnvironmentBlocks((LPCWSTR)envBlock, currentEnv);
+                envBlock = MergeEnvironmentBlocks((LPCWSTR)envBlock.data(), currentEnv);
             }
             else
             {
-                envBlock = currentEnv;
+                envBlock.assign(currentEnv, currentEnv + envBlock.size());
             }
+
+            FreeEnvironmentStrings(currentEnv);
 
             // Create the command-line for dd-dotnet
             std::filesystem::path p(GetCurrentDllPath());
@@ -291,13 +354,16 @@ namespace datadog::shared::nativeloader
             si.cb = sizeof(si);
             ZeroMemory(&pi, sizeof(pi));
 
-            if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock, NULL, &si, &pi))
+            if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock.data(), NULL, &si, &pi))
             {
                 return S_OK;
             }
 
             // Wait for the process to exit
             WaitForSingleObject(pi.hProcess, INFINITE);
+
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
 
             return S_OK;
         }
