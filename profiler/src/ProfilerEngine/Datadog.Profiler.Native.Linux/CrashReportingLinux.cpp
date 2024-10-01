@@ -25,6 +25,7 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
+#include "datadog/crashtracker.h"
 }
 
 CrashReporting* CrashReporting::Create(int32_t pid)
@@ -216,9 +217,9 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                 stackFrame.method = std::string(methodData.symbolName);
                 hasName = true;
 
-                auto demangleResult = ddog_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
+                auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
 
-                if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
+                if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
                 {
                     // TODO: There is currently no safe way to free the StringWrapper
                     auto stringWrapper = demangleResult.ok;

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.2.8</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.6.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

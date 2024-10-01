@@ -6,10 +6,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq.Expressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -330,5 +332,33 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         metadata.Should().ContainKey(SpanTypes.TestSession);
         metadata[SpanTypes.TestSession].Should().Contain(selector);
+    }
+
+    protected void InjectSession(
+        out ulong sessionId,
+        out string sessionCommand,
+        out string sessionWorkingDirectory,
+        out string gitRepositoryUrl,
+        out string gitBranch,
+        out string gitCommitSha)
+    {
+        // Inject session
+        sessionId = RandomIdGenerator.Shared.NextSpanId();
+        sessionCommand = "test command";
+        sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+        SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+        SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+
+        gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
+        gitBranch = "main";
+        gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
     }
 }

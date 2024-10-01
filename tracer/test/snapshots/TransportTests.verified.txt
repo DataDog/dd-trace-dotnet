@@ -16,7 +16,8 @@
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Telemetry
     },
     Metrics: {
       process_id: 0,

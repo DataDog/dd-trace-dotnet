@@ -13,7 +13,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -36,7 +37,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -59,7 +61,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -82,7 +85,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -107,7 +111,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -132,7 +137,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -157,7 +163,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -182,7 +189,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -206,7 +214,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -231,7 +240,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -256,7 +266,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -281,7 +292,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -306,7 +318,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -331,7 +344,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -356,7 +370,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -381,7 +396,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -406,7 +422,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -431,7 +448,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
@@ -456,7 +474,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Aerospike
     },
     Metrics: {
       process_id: 0,
