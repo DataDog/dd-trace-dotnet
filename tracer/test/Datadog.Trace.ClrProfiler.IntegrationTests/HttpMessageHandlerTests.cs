@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "400-499, 502,-343,11-53, 500-500-200");
             SetServiceVersion("1.0.0");
+            // Temporarily enable to try to find cause of slow logs
+            SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         }
 
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
