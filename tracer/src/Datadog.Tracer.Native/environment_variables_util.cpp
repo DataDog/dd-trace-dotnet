@@ -65,7 +65,7 @@ bool IsRaspSettingEnabled()
 
 bool IsRaspEnabled()
 {
-    return IsRaspSettingEnabled() && IsAsmSettingEnabled();
+    return IsRaspSettingEnabled();
 }
 
 } // namespace trace

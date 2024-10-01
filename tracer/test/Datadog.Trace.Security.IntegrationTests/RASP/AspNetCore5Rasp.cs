@@ -10,12 +10,15 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
+using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,6 +29,62 @@ public class AspNetCore5RaspEnabledIastEnabled : AspNetCore5Rasp
     public AspNetCore5RaspEnabledIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
     : base(fixture, outputHelper, enableIast: true)
     {
+    }
+}
+
+public class AspNetCore5ASMDisabled : AspNetBase, IClassFixture<AspNetCoreTestFixture>
+{
+    // This class is used to test RASP features either with IAST enabled or disabled. Since they both use common instrumentation
+    // points, we should test that IAST works normally with or without RASP enabled.
+    public AspNetCore5ASMDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityDisabled")
+    {
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, null);
+        EnableRasp();
+        Fixture = fixture;
+        Fixture.SetOutput(outputHelper);
+    }
+
+    protected bool IastEnabled { get; }
+
+    protected AspNetCoreTestFixture Fixture { get; }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        Fixture.SetOutput(null);
+    }
+
+    [SkippableTheory]
+    [InlineData("/Iast/GetFileContent?file=/etc/password")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestRaspRequestASMDisabled_ThenEnable_ThenDisable(string url)
+    {
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+
+        var fileId = Guid.NewGuid().ToString();
+
+        var result = SubmitRequest(url, null, null);
+        result.Result.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestRaspRequestASMDisabled_ThenEnable_ThenDisable)) });
+        result = SubmitRequest(url, null, null);
+        result.Result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestRaspRequestASMDisabled_ThenEnable_ThenDisable)) });
+        result = SubmitRequest(url, null, null);
+        result.Result.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    private async Task TryStartApp()
+    {
+        await Fixture.TryStartApp(this, true);
+        SetHttpPort(Fixture.HttpPort);
     }
 }
 
