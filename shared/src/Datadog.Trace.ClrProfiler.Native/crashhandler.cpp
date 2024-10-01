@@ -29,6 +29,24 @@ namespace datadog::shared::nativeloader
         return std::wstring(path);
     }
 
+    bool RegistryValueExists(HKEY rootKey, LPCWSTR subKey, LPCWSTR valueName)
+    {
+        HKEY hKey;
+        auto result = RegOpenKeyEx(rootKey, subKey, 0, KEY_QUERY_VALUE, &hKey);
+        
+        if (result == ERROR_SUCCESS)
+        {
+            DWORD dataSize = 0;
+            DWORD valueType = 0;
+            result = RegQueryValueEx(hKey, valueName, NULL, &valueType, NULL, &dataSize);
+            RegCloseKey(hKey);
+
+            return result == ERROR_SUCCESS;
+        }
+
+        return false;
+    }
+
     // Capture all the environment variables starting with "DD_"
     void GetDatadogEnvironmentBlock(WCHAR*& environmentVariables, int32_t& length)
     {
@@ -179,32 +197,36 @@ namespace datadog::shared::nativeloader
 
         // Register the crash handler in the registry
         // Windows expects a DWORD value with the full path of the DLL as the name, 
-        // in HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules
+        // in SOFTWARE\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules.
+        // The key can be located either in HKLM or HKCU. The MSI will create the value in HKLM,
+        // but if it's missing we add it to HKCU.
         HKEY hKey;
         LPCWSTR subKey = L"SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\RuntimeExceptionHelperModules";
         DWORD value = 1;
 
-        // Open the key
-        DWORD disposition;
-        auto result = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, &disposition);
-
-        if (result != ERROR_SUCCESS)
+        if (!RegistryValueExists(HKEY_LOCAL_MACHINE, subKey, dllPath.c_str()))
         {
-            // Failing to set the registry is not a fatal error: it may already exist, or the MSI may have set it in HKLM
-            // It's safe to continue, in the worst case scenario the crash handler just won't be invoked by WER
-            Log::Warn("Crashtracking - Failed to create registry key: ", GetLastError());
-        }
-        else
-        {
-            // Set the value
-            result = RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
+            // Open the key
+            DWORD disposition;
+            auto result = RegCreateKeyEx(HKEY_CURRENT_USER, subKey, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, &disposition);
 
             if (result != ERROR_SUCCESS)
             {
-                Log::Warn("Crashtracking - Failed to set registry value: ", GetLastError());
+                // Failing to set the registry is not a fatal error: in the worst case scenario the crash handler just won't be invoked by WER
+                Log::Warn("Crashtracking - Failed to create registry key: ", GetLastError());
             }
+            else
+            {
+                // Set the value
+                result = RegSetValueEx(hKey, dllPath.c_str(), 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
 
-            RegCloseKey(hKey);
+                if (result != ERROR_SUCCESS)
+                {
+                    Log::Warn("Crashtracking - Failed to set registry value: ", GetLastError());
+                }
+
+                RegCloseKey(hKey);
+            }
         }
 
         // The profiler API is not initialized yet, so we look for clr.dll/coreclr.dll
