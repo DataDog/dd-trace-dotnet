@@ -61,6 +61,28 @@ public class ActionChangeTests : WafLibraryRequiredTest
         }
     }
 
+    [Fact]
+    public void GivenADummyRule_WhenActionReturnCodeIsChangedAfterInit_ThenChangesAreApplied()
+    {
+        var args = CreateArgs("dummyrule2");
+        var initResult = Waf.Create(
+            WafLibraryInvoker,
+            string.Empty,
+            string.Empty,
+            useUnsafeEncoder: true,
+            embeddedRulesetPath: "rasp-rule-set.json");
+
+        var waf = initResult.Waf;
+        waf.Should().NotBeNull();
+
+        UpdateWafWithActions([CreateNewStatusAction("customblock", BlockingAction.BlockRequestType, 500)], waf);
+
+        using var context = waf.CreateContext();
+        var result = context.Run(args, TimeoutMicroSeconds);
+        result.Timeout.Should().BeFalse("Timeout should be false");
+        result.BlockInfo["status_code"].Should().Be("500");
+    }
+
     private Dictionary<string, object> CreateArgs(string requestParam) => new() { { AddressesConstants.RequestUriRaw, "http://localhost:54587/" }, { AddressesConstants.RequestBody, new[] { "param", requestParam } }, { AddressesConstants.RequestMethod, "GET" } };
 
     private void UpdateWafWithActions(Action[] actions, Waf waf)
