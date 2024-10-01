@@ -126,14 +126,7 @@ internal record ConfigurationStatus
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
         {
             var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
-            var dupes = actions.GroupBy(a => a.Id).Where(g => g.Count() > 1).Select(a => a.Key).ToList();
-            var actionsDic = actions.Where(a => !dupes.Contains(a.Id)).Select(a => a.ToKeyValuePair()).ToArray();
-            dictionary.Add(WafActionsKey, actionsDic);
-
-            foreach (var dupe in dupes)
-            {
-                Log.Warning("Duplicate action found with id: {ActionId}, this action will be discarded, default waf action, if any, will apply", dupe);
-            }
+            dictionary.Add(WafActionsKey, actions.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))

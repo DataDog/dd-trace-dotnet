@@ -61,55 +61,11 @@ public class ActionChangeTests : WafLibraryRequiredTest
         }
     }
 
-    [Theory]
-    [InlineData("dummy_rule", "block", BlockingAction.BlockRequestType, 401)]
-    [InlineData("dummy_rule", "block", BlockingAction.BlockRequestType, 401, true)]
-    public void GivenADummyRule_WhenDuplicateActionIsReceived_ThenBackToDefaultWafActions(string paramValue, string action, string actionType, int newStatus, bool placeInDifferentFiles = false)
-    {
-        var args = CreateArgs(paramValue);
-        var initResult = Waf.Create(
-            WafLibraryInvoker!,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: true,
-            embeddedRulesetPath: "rasp-rule-set.json");
-
-        var waf = initResult.Waf;
-        waf.Should().NotBeNull();
-        Action[] newActions =
-        [
-            CreateNewStatusAction(action, actionType, newStatus), CreateNewStatusAction(action, actionType, newStatus), CreateNewStatusAction(action, actionType, newStatus),
-            CreateNewStatusAction("dummy_rule", BlockingAction.BlockRequestType, 500) // add a dummy one, otherwise nothing will be updated
-        ];
-
-        UpdateWafWithActions(newActions, waf, placeInDifferentFiles);
-
-        using var context = waf!.CreateContext();
-        var result = context!.Run(args, TimeoutMicroSeconds);
-        result.Should().NotBeNull();
-        result!.Timeout.Should().BeFalse("Timeout should be false");
-        // default waf action block
-        result.BlockInfo!["status_code"].Should().Be("403");
-        result.BlockInfo["grpc_status_code"].Should().Be("10");
-    }
-
     private Dictionary<string, object> CreateArgs(string requestParam) => new() { { AddressesConstants.RequestUriRaw, "http://localhost:54587/" }, { AddressesConstants.RequestBody, new[] { "param", requestParam } }, { AddressesConstants.RequestMethod, "GET" } };
 
-    private void UpdateWafWithActions(Action[] actions, Waf waf, bool placeInDifferentFiles = false)
+    private void UpdateWafWithActions(Action[] actions, Waf waf)
     {
-        ConfigurationStatus configurationStatus;
-        if (placeInDifferentFiles)
-        {
-            var i = 0;
-            var dic = actions.ToDictionary<Action, string, Action[]>(_ => $"file{i++}", action => [action]);
-
-            configurationStatus = new(string.Empty) { ActionsByFile = dic };
-        }
-        else
-        {
-            configurationStatus = new(string.Empty) { ActionsByFile = { ["file"] = actions } };
-        }
-
+        ConfigurationStatus configurationStatus = new(string.Empty) { ActionsByFile = { ["file"] = actions } };
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();
