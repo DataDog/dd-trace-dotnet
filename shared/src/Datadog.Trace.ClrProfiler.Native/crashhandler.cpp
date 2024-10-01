@@ -137,7 +137,12 @@ namespace datadog::shared::nativeloader
 
     CrashHandler::~CrashHandler()
     {
-        Unregister();
+        if (!_crashHandler.empty())
+        {
+            auto hr = WerUnregisterRuntimeExceptionModule(_crashHandler.c_str(), &_context);
+            Log::Debug("Crashtracking - Unregistering crash handler: ", hr);
+            _crashHandler.clear();
+        }
 
         if (_context.Environ != nullptr)
         {
@@ -268,20 +273,6 @@ namespace datadog::shared::nativeloader
 
         _crashHandler = dllPath;
         return true;
-    }
-
-    bool CrashHandler::Unregister()
-    {
-        if (!_crashHandler.empty())
-        {
-            auto hr = WerUnregisterRuntimeExceptionModule(_crashHandler.c_str(), &_context);
-            Log::Debug("Crashtracking - Unregistering crash handler: ", hr);
-            _crashHandler.clear();
-
-            return SUCCEEDED(hr);
-        }
-
-        return false;
     }
 
     extern "C"

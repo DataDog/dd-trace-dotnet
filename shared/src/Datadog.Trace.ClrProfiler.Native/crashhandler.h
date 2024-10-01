@@ -21,7 +21,6 @@ namespace datadog::shared::nativeloader
     private:
         CrashHandler();
         bool Register();
-        bool Unregister();
 
         std::wstring _crashHandler;
         WerContext _context;
