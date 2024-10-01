@@ -5,7 +5,6 @@
 #if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,9 +22,9 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, Dictionary<string, string> myHeaders)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, WebHeaderCollection headers)
     {
-        var spanContext = SpanContextPropagator.Instance.Extract(myHeaders);
+        var spanContext = SpanContextPropagator.Instance.Extract(headers, (h, name) => h.GetValues(name));
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
 
         if (spanContext != null)
@@ -45,14 +44,14 @@ internal abstract class LambdaCommon
         var response = (HttpWebResponse)request.GetResponse();
 
         // response.Headers is a WebHeaderCollection, which is not convertable to IHeadersCollection, so we have to make it into a dictionary.
-        var myHeaders = response.Headers.AllKeys.ToDictionary(k => k, k => response.Headers.Get(k));
+        var headers = response.Headers;
         if (!ValidateOkStatus(response))
         {
             return null;
         }
 
         var tracer = Tracer.Instance;
-        return CreatePlaceholderScope(tracer, myHeaders);
+        return CreatePlaceholderScope(tracer, headers);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)

@@ -28,8 +28,8 @@ namespace Datadog.Trace.Tests
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
-            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
             ((ISpan)scope.Span).TraceId.Should().Be(1234);
@@ -40,11 +40,8 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWith64BitTraceIdContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string>
-            {
-                { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" }
-            };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().Be((TraceId)1234);
@@ -57,11 +54,8 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWith128BitTraceIdContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string>
-            {
-                { HttpHeaderNames.TraceId, "5744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" }
-            };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "5744042798732701615" }, { HttpHeaderNames.SamplingPriority, "-1" }, { HttpHeaderNames.PropagatedTags, "_dd.p.tid=1914fe7789eb32be" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.ToString().Should().Be("1914fe7789eb32be4fb6f07e011a6faf");
@@ -74,7 +68,7 @@ namespace Datadog.Trace.Tests
         public async Task TestCreatePlaceholderScopeSuccessWithoutContext()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, new Dictionary<string, string>());
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, new WebHeaderCollection());
 
             scope.Should().NotBeNull();
             scope.Span.TraceId128.Should().BeGreaterThan((TraceId.Zero));
@@ -142,8 +136,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationFailure()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -163,8 +157,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationSuccess()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
@@ -187,8 +181,8 @@ namespace Datadog.Trace.Tests
         public async Task TestSendEndInvocationFalse()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
-            var myHeaders = new Dictionary<string, string> { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
-            var scope = LambdaCommon.CreatePlaceholderScope(tracer, myHeaders);
+            var headers = new WebHeaderCollection { { HttpHeaderNames.TraceId, "1234" }, { HttpHeaderNames.SamplingPriority, "-1" } };
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
 
             var response = new Mock<HttpWebResponse>(MockBehavior.Loose);
             var responseStream = new Mock<Stream>(MockBehavior.Loose);
