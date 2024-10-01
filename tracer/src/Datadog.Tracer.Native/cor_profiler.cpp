@@ -345,7 +345,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (isIastEnabled || isRaspEnabled)
     {
-        _dataflow = new iast::Dataflow(info_, rejit_handler);
+        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
         if (FAILED(_dataflow->Init()))
         {
             Logger::Error("Callsite Dataflow failed to initialize");
