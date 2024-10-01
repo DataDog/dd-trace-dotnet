@@ -79,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests
                                             PipeDirection.InOut,
                                             2,
                                             PipeTransmissionMode.Byte,
-                                            PipeOptions.None))
+                                            PipeOptions.WriteThrough))
                 {
                     WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
 
@@ -105,8 +105,8 @@ namespace Datadog.Profiler.IntegrationTests
                             MemoryMarshal.CreateSpan<byte>(ref header.Magic._element, 14));
                         MemoryMarshal.Write<IpcHeader>(outBuffer, in header);
 
-                        await server.WriteAsync(outBuffer, 0, IpcHeader.HeaderSize);
-                        await server.FlushAsync();
+                        server.Write(outBuffer, 0, IpcHeader.HeaderSize);
+                        server.Flush();
 #pragma warning disable CA1416 // Validate platform compatibility
                         server.WaitForPipeDrain();
 #pragma warning restore CA1416 // Validate platform compatibility

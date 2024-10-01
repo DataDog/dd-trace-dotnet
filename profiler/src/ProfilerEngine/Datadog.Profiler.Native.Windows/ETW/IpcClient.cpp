@@ -141,7 +141,7 @@ HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, 
         0,
         nullptr,
         OPEN_EXISTING,
-        0,
+        FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
         nullptr);
 
     return hPipe;
