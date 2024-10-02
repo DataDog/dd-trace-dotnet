@@ -517,8 +517,6 @@ internal class CreatedumpCommand : Command
             var suspiciousExceptionTypes = new[]
             {
                 "System.InvalidProgramException",
-                "System.Security.VerificationException",
-                "System.MissingMethodException",
                 "System.MissingFieldException",
                 "System.MissingMemberException",
                 "System.BadImageFormatException",
