@@ -76,7 +76,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         (string, string)[] args = [LdPreloadConfig, .. CreatedumpConfig, ("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH", passthrough), CrashReportConfig(reportFile)];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
 
         await helper.Task;
 
@@ -84,10 +84,7 @@ public class CreatedumpTests : ConsoleTestHelper
         assertionScope.AddReportable("stdout", helper.StandardOutput);
         assertionScope.AddReportable("stderr", helper.ErrorOutput);
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
-        }
+        helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
 
         File.Exists(reportFile.Path).Should().BeTrue();
 
@@ -143,7 +140,12 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task DoNothingIfNotEnabled(bool enableCrashDumps)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        if (enableCrashDumps)
+        {
+            // Crashtracking is not supported on Windows x86
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+        }
 
         using var reportFile = new TemporaryFile();
 
@@ -154,7 +156,7 @@ public class CreatedumpTests : ConsoleTestHelper
             args = [.. args, .. CreatedumpConfig];
         }
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
 
         await helper.Task;
 
@@ -201,7 +203,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
 
-        using var helper = await StartConsoleWithArgs("crash-datadog", true, args);
+        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
 
         await helper.Task;
 
@@ -250,7 +252,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -310,7 +312,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
             using var helper = await StartConsoleWithArgs(
                                    "crash-datadog",
-                                   true,
+                                   enableProfiler: true,
                                    [("LD_PRELOAD", newApiWrapperPath), CrashReportConfig(reportFile)]);
 
             await helper.Task;
@@ -348,7 +350,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-native",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -377,7 +379,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-thread",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -402,7 +404,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig]);
 
         await helper.Task;
@@ -423,12 +425,10 @@ public class CreatedumpTests : ConsoleTestHelper
                 return false;
             }
 
-            if (!data.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs))
+            if (data.TryGetPayload<LogsPayload>(TelemetryRequestTypes.RedactedErrorLogs) is not { } log)
             {
                 return false;
             }
-
-            var log = (LogsPayload)data.Payload;
 
             if (log.Logs.Count != 1)
             {
@@ -454,7 +454,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;
@@ -479,7 +479,7 @@ public class CreatedumpTests : ConsoleTestHelper
 
         using var helper = await StartConsoleWithArgs(
                                "crash-datadog",
-                               true,
+                               enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
         await helper.Task;

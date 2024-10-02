@@ -310,6 +310,8 @@ namespace datadog::shared::nativeloader
             PDWORD pdwSignatureCount
         )
         {
+            Log::Debug("Crashtracking - OutOfProcessExceptionEventCallback");
+
             if (pbOwnershipClaimed != nullptr)
             {
                 // We don't claim the ownership of the crash.
@@ -334,6 +336,11 @@ namespace datadog::shared::nativeloader
             {
                 envBlock.resize(context.EnvironLength * sizeof(WCHAR));
                 hasEnviron = ReadProcessMemory(pExceptionInformation->hProcess, context.Environ, envBlock.data(), context.EnvironLength * sizeof(WCHAR), nullptr);
+                
+                if (!hasEnviron)
+                {
+                    Log::Warn("Crashtracking - Failed to read the environment block from crashing process");
+                }
             }
 
             // Merge them with the current environment variables
@@ -355,6 +362,12 @@ namespace datadog::shared::nativeloader
             auto directory = p.parent_path();
             auto ddDotnetPath = directory / "dd-dotnet.exe";
 
+            if (!fs::exists(ddDotnetPath))
+            {
+                Log::Error("Crashtracking - dd-dotnet.exe not found at ", ddDotnetPath.c_str());
+                return S_OK;
+            }
+
             std::wstringstream ss;
             ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid;
             auto commandLine = ss.str();
@@ -368,6 +381,7 @@ namespace datadog::shared::nativeloader
 
             if (!CreateProcessW(NULL, &commandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock.data(), NULL, &si, &pi))
             {
+                Log::Error("Crashtracking - Failed to spawn dd-dotnet.exe: ", GetLastError());
                 return S_OK;
             }
 
@@ -376,6 +390,8 @@ namespace datadog::shared::nativeloader
 
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
+
+            Log::Debug("Crashtracking - Crash report sent.");
 
             return S_OK;
         }

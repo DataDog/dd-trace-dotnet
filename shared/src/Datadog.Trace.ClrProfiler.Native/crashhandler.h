@@ -5,6 +5,7 @@
 
 namespace datadog::shared::nativeloader
 {
+    // Be careful when updating the WerContext structure, it is read across processes using ReadProcessMemory
     struct WerContext
     {
         WCHAR* Environ;
