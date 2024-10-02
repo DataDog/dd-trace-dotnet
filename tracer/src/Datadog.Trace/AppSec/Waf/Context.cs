@@ -140,8 +140,9 @@ namespace Datadog.Trace.AppSec.Waf
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug(
-                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {Data}",
+                    "DDAS-0011-00: AppSec In-App WAF returned: {ReturnCode} {BlockInfo} {Data}",
                     result.ReturnCode,
+                    result.BlockInfo,
                     result.Data);
             }
 
