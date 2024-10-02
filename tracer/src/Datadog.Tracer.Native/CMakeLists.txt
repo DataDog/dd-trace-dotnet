@@ -194,6 +194,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         fault_tolerant_tokens.cpp
         fault_tolerant_tracker.cpp
         fault_tolerant_cor_profiler_function_control.cpp
+        TraceExporter.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
@@ -206,6 +207,7 @@ if (ISMACOS)
         coreclr
         re2-lib
         spdlog-headers
+        libdatadog-lib
         ${CMAKE_DL_LIBS}
         ${GENERATED_OBJ_FILES}
     )
@@ -216,6 +218,7 @@ elseif(ISLINUX)
         re2-lib
         spdlog-headers
         managed-loader-objs
+        libdatadog-lib
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++

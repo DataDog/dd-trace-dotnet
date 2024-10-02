@@ -46,27 +46,39 @@ public:
 TraceExporter::TraceExporter() = default;
 TraceExporter::~TraceExporter() = default;
 
-bool TraceExporter::Initialize(std::string_view const& host, std::uint16_t port, std::string_view const& tracer_version,
+bool TraceExporter::Initialize(std::string_view const& host, std::string_view const& tracer_version,
                                std::string_view const& language, std::string_view const& language_version,
-                               std::string_view const& language_interpreter)
+                               std::string_view const& language_interpreter, std::string_view const& url,
+                               std::string_view const& env, std::string_view const& version,
+                               std::string_view const& service, const bool compute_stats)
 {
-    auto* traceExporter = ddog_trace_exporter_new(
-        {.ptr = host.data(), .len = host.size()}, port, {.ptr = tracer_version.data(), .len = tracer_version.size()},
+    ddog_TraceExporter** exporter = nullptr; //todo: do we need to alloc here?
+
+    auto maybeError = ddog_trace_exporter_new(
+        exporter,  {.ptr = url.data(), .len = url.size()},
+        {.ptr = tracer_version.data(), .len = tracer_version.size()},
         {.ptr = language.data(), .len = language.size()},
         {.ptr = language_version.data(), .len = language_version.size()},
-        {.ptr = language_interpreter.data(), .len = language_interpreter.size()});
+        {.ptr = language_interpreter.data(), .len = language_interpreter.size()},
+        {.ptr = host.data(), .len = host.size()},
+        {.ptr = env.data(), .len = env.size()},
+        {.ptr = version.data(), .len = version.size()},
+    {.ptr = service.data(), .len = service.size()},
+        DDOG_TRACE_EXPORTER_INPUT_FORMAT_V04,
+        DDOG_TRACE_EXPORTER_OUTPUT_FORMAT_V04,
+        compute_stats, nullptr); //todo: callback?
 
-    if (traceExporter == nullptr)
+    if (maybeError.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
         Logger::Info("Failed to initialize TraceExporter.");
         return false;
     }
 
-    _impl = std::make_unique<Impl>(traceExporter);
+    _impl = std::make_unique<Impl>(*exporter); //TODO: is this ok?
     return true;
 }
 
-std::string TraceExporter::Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count) const
+bool TraceExporter::Send(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count) const
 {
     if (_impl == nullptr)
     {
@@ -82,12 +94,9 @@ std::string TraceExporter::Send(std::uint8_t* buffer, std::uintptr_t buffer_size
         }
     };
 
-    // ddog_trace_exporter_send allocates a char* using libc::malloc
-    // so we own the memory and have to release it by calling free
-    auto result = std::unique_ptr<char, free_char>(
-        ddog_trace_exporter_send(_impl->Exporter, {.ptr = buffer, .len = buffer_size}, trace_count));
+    const auto result = ddog_trace_exporter_send(_impl->Exporter, {.ptr = buffer, .len = buffer_size}, trace_count);
 
-    return std::string(result.get());
+    return result.tag == DDOG_OPTION_ERROR_NONE_ERROR;
 }
 
 } // namespace trace

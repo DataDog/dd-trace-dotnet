@@ -269,14 +269,14 @@ EXTERN_C int dddlclose (void *handle)
 }
 #endif
 
-EXTERN_C void InitializeTraceExporter(const char* host, std::uint16_t port, const char* tracer_version, const char* language, const char* language_version, const char* language_interpreter)
+EXTERN_C void InitializeTraceExporter(const char* host, const char* tracer_version, const char* language, const char* language_version, const char* language_interpreter, const char* url, const char* env, const char* version, const char* service, bool compute_stats)
 {
     if (trace::profiler == nullptr)
     {
         trace::Logger::Error("Error in InitializeTraceExporter call. Tracer CLR Profiler was not initialized.");
     }
 
-    trace::profiler->InitializeTraceExporter(host, port, tracer_version, language, language_version, language_interpreter);
+    trace::profiler->InitializeTraceExporter(host, tracer_version, language, language_version, language_interpreter, url, env, version, service, compute_stats);
 }
 
 EXTERN_C void SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::uintptr_t trace_count)
@@ -288,41 +288,4 @@ EXTERN_C void SendTrace(std::uint8_t* buffer, std::uintptr_t buffer_size, std::u
 
     auto s = trace::profiler->SendTrace(buffer, buffer_size, trace_count);
     Logger::Debug("Trace sent. Result: ", s);
-}
-
-EXTERN_C void InitializeStatsExporter(const char* hostname, const char* env, const char* version,
-                                      const char* lang, const char* tracerVersion, const char* runtimeId,
-                                      const char* service, const char* containerId,
-                                      const char* gitCommitSha, const char** tags, std::size_t nbTags,
-                                      const char* agentUrl)
-{
-    if (trace::profiler == nullptr)
-    {
-        trace::Logger::Error("Error in InitializeStatsExporter call. Tracer CLR Profiler was not initialized.");
-    }
-
-    std::vector<std::string_view> empty_tags; // TODO for now
-    trace::profiler->InitializeStatsExporter(hostname, env, version, lang, tracerVersion, runtimeId, service, containerId, gitCommitSha, empty_tags, agentUrl);
-}
-
-EXTERN_C void AddSpanToBucket(const char* resourceName, const char* serviceName,
-                              const char* operationName, const char* spanType, std::int32_t httpStatusCode,
-                              bool isSyntheticsRequest, bool isTopLevel, bool isError, std::int64_t duration)
-{
-    if (trace::profiler == nullptr)
-    {
-        trace::Logger::Error("Error in AddSpanToBucket call. Tracer CLR Profiler was not initialized.");
-    }
-
-    trace::profiler->AddSpanToBucket(resourceName, serviceName, operationName, spanType, httpStatusCode, isSyntheticsRequest, isTopLevel, isError, duration);
-}
-
-EXTERN_C void FlushStats()
-{
-    if (trace::profiler == nullptr)
-    {
-        trace::Logger::Error("Error in FlushStats call. Tracer CLR Profiler was not initialized.");
-    }
-
-    trace::profiler->FlushStats();
 }

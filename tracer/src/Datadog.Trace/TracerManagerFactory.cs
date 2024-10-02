@@ -294,6 +294,7 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
+            // TODO: Add config to swap between libdatadog Trace-Exporter and old setup
             // var apiRequestFactory = TracesTransportStrategy.Get(settings.ExporterInternal);
             // var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.ExporterInternal.PartialFlushEnabledInternal);
             var api = new NativeApi(updateSampleRates, settings);

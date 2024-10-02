@@ -21,8 +21,8 @@ else()
 endif()
 
 FetchContent_Declare(libdatadog-${LIBDATADOG_VERSION}
-    URL https://github.com/DataDog/libdatadog/releases/download/${LIBDATADOG_VERSION}/${FILE_TO_DOWNLOAD}
-    URL_HASH SHA256=${SHA256_LIBDATADOG}
+    URL file:///Users/andrew.glaude/go/src/github.com/DataDog/libdatadog/libdatadog.tar.gz
+    #URL_HASH SHA256=${SHA256_LIBDATADOG}
     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBDATADOG_VERSION}
 )
 if(NOT libdatadog-${LIBDATADOG_VERSION}_POPULATED)
