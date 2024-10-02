@@ -52,7 +52,7 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
@@ -75,6 +75,7 @@ namespace iast
     protected:
         bool _initialized = false;
         bool _loaded = false;
+        bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
         std::vector<DataflowAspect*> _aspects;
