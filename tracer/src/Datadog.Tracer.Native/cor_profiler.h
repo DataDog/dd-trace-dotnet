@@ -170,10 +170,10 @@ public:
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
 
     HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline) override;
+
     //
     // ReJIT Methods
     //
-
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                  ICorProfilerFunctionControl* pFunctionControl) override;
 
@@ -251,7 +251,6 @@ public:
     //
     // Getters for exception filter
     //
-
     bool IsCallTargetBubbleUpExceptionTypeAvailable() const;
     bool IsCallTargetBubbleUpFunctionAvailable() const;
 };

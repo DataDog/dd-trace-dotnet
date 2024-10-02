@@ -143,9 +143,9 @@ partial class Build
                .Description("Run exploration tests.")
                .Requires(() => ExplorationTestUseCase)
                .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
+               .DependsOn(CleanTestLogs)
                .Executes(() =>
                 {
-                    FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
                     try
                     {
                         RunExplorationTestsGitUnitTest();
