@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const string StartTimeKey = "x-datadog-start-time";
         private const string ResourceNameKey = "x-datadog-resource-name";
 
+        // Loops through all entries of the EventBridge event and tries to inject Datadog context into each.
         public static void InjectTracingContext<TPutEventsRequest>(TPutEventsRequest request, SpanContext context)
             where TPutEventsRequest : IPutEventsRequest, IDuckType
         {
@@ -37,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             }
         }
 
+        // Tries to add Datadog trace context under the `_datadog` key at the top level of the `detail` field.
+        // `detail` is a string, so we have to manually modify it using a StringBuilder.
         private static void InjectHeadersIntoDetail(IPutEventsRequestEntry entry, SpanContext context, string? eventBusName)
         {
             var detail = entry.Detail?.Trim() ?? "{}";
@@ -53,12 +56,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = GetTraceContext(context, eventBusName);
+            var traceContext = BuildTraceContextJson(context, eventBusName);
             detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
             entry.Detail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
         }
 
-        private static string GetTraceContext(SpanContext context, string? eventBusName)
+        // Builds a JSON string containing Datadog trace context
+        private static string BuildTraceContextJson(SpanContext context, string? eventBusName)
         {
             // Inject trace context
             var jsonBuilder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);

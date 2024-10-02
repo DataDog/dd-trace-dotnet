@@ -28,8 +28,8 @@
 
     <!-- Integration: AWSSDK.EventBridge -->
     <!--    Assembly: AWSSDK.EventBridge -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.401.23 -->
-    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.401.23" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.401.25 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.401.25" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->

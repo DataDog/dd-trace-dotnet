@@ -89,5 +89,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsEventBridge);
             }
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public async Task IntegrationDisabled()
+        {
+            const string expectedOperationName = "aws.eventbridge.request";
+
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.AwsEventBridge)}_ENABLED", "false");
+
+            using var telemetry = this.ConfigureTelemetry();
+            string packageVersion = PackageVersions.AwsEventBridge.First()[0] as string;
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = agent.WaitForSpans(1, returnAllOperations: true);
+
+                Assert.NotEmpty(spans);
+                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+                telemetry.AssertIntegrationDisabled(IntegrationId.AwsEventBridge);
+            }
+        }
     }
 }

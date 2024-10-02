@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "3.7.401.23",
-        "maxVersionAvailableInclusive": "3.7.401.23",
-        "maxVersionTestedInclusive": "3.7.401.23"
+        "maxVersionSupportedInclusive": "3.7.401.25",
+        "maxVersionAvailableInclusive": "3.7.401.25",
+        "maxVersionTestedInclusive": "3.7.401.25"
       }
     ]
   },

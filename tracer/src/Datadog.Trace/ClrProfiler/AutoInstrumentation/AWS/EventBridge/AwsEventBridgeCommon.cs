@@ -67,12 +67,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         // Finds the first entry that has a valid bus name, or null if not found.
         public static string? GetBusName(IEnumerable? entries)
         {
-            return entries?
-                  .Cast<object>()
-                  .Select(entry => entry.DuckCast<IPutEventsRequestEntry>())
-                  .Where(duckEntry => duckEntry != null)
-                  .Select(duckEntry => duckEntry!.EventBusName)
-                  .FirstOrDefault(eventBusName => !string.IsNullOrEmpty(eventBusName));
+            if (entries is null)
+            {
+                return null;
+            }
+
+            foreach (var entry in entries)
+            {
+                var duckEntry = entry.DuckCast<IPutEventsRequestEntry>();
+                if (duckEntry is not null && !string.IsNullOrEmpty(duckEntry.EventBusName))
+                {
+                    return duckEntry.EventBusName;
+                }
+            }
+
+            return null;
         }
 
         internal static string GetOperationName(Tracer tracer)
