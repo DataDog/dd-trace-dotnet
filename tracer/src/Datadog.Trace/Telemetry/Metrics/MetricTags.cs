@@ -155,6 +155,7 @@ internal static class MetricTags
         [Description("header_style:datadog")] Datadog,
         [Description("header_style:b3multi")] B3Multi,
         [Description("header_style:b3single")] B3SingleHeader,
+        [Description("header_style:baggage")] Baggage,
     }
 
     internal enum TelemetryEndpoint
