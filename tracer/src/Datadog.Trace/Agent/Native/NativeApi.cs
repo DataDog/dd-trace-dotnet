@@ -32,11 +32,15 @@ namespace Datadog.Trace.Agent.Native
             {
                 if (!ExporterBindings.TryInitializeExporter(
                         settings.ExporterInternal.AgentUriInternal.Host,
-                        settings.ExporterInternal.AgentUriInternal.Port,
                         TracerConstants.AssemblyVersion,
                         ".NET",
                         FrameworkDescription.Instance.ProductVersion,
-                        FrameworkDescription.Instance.Name))
+                        FrameworkDescription.Instance.Name,
+                        settings.ExporterInternal.AgentUriInternal.ToString(),
+                        settings.EnvironmentInternal,
+                        settings.ServiceVersionInternal,
+                        settings.ServiceNameInternal,
+                        false))
                 {
                     _log.Error("Cannot configure the exporter");
                     return;
