@@ -71,6 +71,7 @@ namespace Datadog.Profiler.IntegrationTests
 
         public async Task StartServerAsync()
         {
+            Thread.CurrentThread.Name = "AgentProxy";
             try
             {
                 // simulate the Agent that accepts register/unregister commands from the profiler
@@ -78,7 +79,7 @@ namespace Datadog.Profiler.IntegrationTests
                                             _agentEndPoint,
                                             PipeDirection.InOut,
                                             2,
-                                            PipeTransmissionMode.Byte,
+                                            PipeTransmissionMode.Message,
                                             PipeOptions.WriteThrough))
                 {
                     WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");

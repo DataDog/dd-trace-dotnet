@@ -59,9 +59,10 @@ namespace Datadog.Profiler.IntegrationTests
             _etwProxy.EventsSent += (sender, e) => EventsSent?.Invoke(this, e);
             _etwProxy.ProfilerUnregistered += (sender, e) => ProfilerUnregistered?.Invoke(this, e);
 
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            _etwProxy.StartServerAsync();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            Task.Run(() => _etwProxy.StartServerAsync());
+
+            // let the time for the server to start
+            Thread.Sleep(200);
         }
 
         public virtual void Dispose()
