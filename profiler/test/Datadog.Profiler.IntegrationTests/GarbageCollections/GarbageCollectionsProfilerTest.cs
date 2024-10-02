@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "1");
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
@@ -52,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckSamplesAreGC(runner.Environment.PprofDir));
@@ -73,16 +73,16 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-32.bevents");
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-64.bevents");
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "GarbageCollections\\3x3GCs-64.bevents");
             }
 
             int eventsCount = 0;

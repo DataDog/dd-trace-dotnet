@@ -46,7 +46,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             EnvironmentHelper.DisableDefaultProfilers(runner);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -86,7 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -99,10 +99,10 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             Dictionary<string, AllocStats> profiledAllocations = GetProfiledAllocations(allocationSamples);
             Dictionary<string, AllocStats> realAllocations = GetRealAllocations(runner.ProcessOutput);
 
-            _output.WriteLine("Comparing allocations");
-            _output.WriteLine("-------------------------------------------------------");
-            _output.WriteLine("      Count          Size Type");
-            _output.WriteLine("-------------------------------------------------------");
+            runner.XUnitLogger.WriteLine("Comparing allocations");
+            runner.XUnitLogger.WriteLine("-------------------------------------------------------");
+            runner.XUnitLogger.WriteLine("      Count          Size Type");
+            runner.XUnitLogger.WriteLine("-------------------------------------------------------");
             foreach (var allocation in profiledAllocations)
             {
                 var allocStats = allocation.Value;
@@ -122,7 +122,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine($"{allocStats.Count,11} {allocStats.Size,13} {type}");
                 builder.AppendLine($"{stats.Count,11} {stats.Size,13}");
-                _output.WriteLine(builder.ToString());
+                runner.XUnitLogger.WriteLine(builder.ToString());
             }
         }
 
@@ -138,16 +138,16 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             if (IntPtr.Size == 4)
             {
                 // 32-bit
-                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-32.bevents");
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-32.bevents");
             }
             else
             {
                 // 64-bit
-                agent.StartEtwProxy(_output, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-64.bevents");
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-64.bevents");
             }
 
             int eventsCount = 0;
@@ -372,7 +372,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
         private void CheckAllocationProfiles(TestApplicationRunner runner)
         {
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

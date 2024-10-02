@@ -205,7 +205,7 @@ namespace Datadog.Profiler.IntegrationTests
                     // show only in error cases
                     if ((message != null) && (NbCallsOnProfilingEndpoint < 2))
                     {
-                        Console.WriteLine(message);
+                        Output.WriteLine(message);
                     }
                 }
             }
