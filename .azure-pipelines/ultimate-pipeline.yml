@@ -1537,7 +1537,7 @@ stages:
   - job: Win
     pool:
       name: azure-windows-scale-set-2
-    timeoutInMinutes: 90
+    timeoutInMinutes: 35
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
 
