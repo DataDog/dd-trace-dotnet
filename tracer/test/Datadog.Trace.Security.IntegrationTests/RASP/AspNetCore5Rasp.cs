@@ -8,10 +8,13 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
@@ -19,8 +22,10 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using ICSharpCode.Decompiler.Solution;
 using Xunit;
 using Xunit.Abstractions;
+using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 
@@ -40,7 +45,7 @@ public class AspNetCore5ASMDisabled : AspNetBase, IClassFixture<AspNetCoreTestFi
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityDisabled")
     {
         SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
+        // SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
         SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, null);
         EnableRasp();
         Fixture = fixture;
@@ -65,14 +70,21 @@ public class AspNetCore5ASMDisabled : AspNetBase, IClassFixture<AspNetCoreTestFi
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, [url]);
-
-        var fileId = Guid.NewGuid().ToString();
 
         var result = SubmitRequest(url, null, null);
         result.Result.StatusCode.Should().Be(HttpStatusCode.OK);
 
         await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestRaspRequestASMDisabled_ThenEnable_ThenDisable)) });
+
+         // Read the JSON file
+        string jsonString = "{ \"version\": \"2.2\", \"metadata\": { \"rules_version\": \"1.10.0\" }, \"actions\": [ { \"id\": \"customblock\", \"type\": \"block_request\", \"parameters\": { \"status_code\": 403, \"grpc_status_code\": \"10\", \"type\": \"auto\" } } ], \"rules\": [ { \"id\": \"rasp-001-001\", \"name\": \"Path traversal attack\", \"tags\": { \"type\": \"lfi\", \"category\": \"vulnerability_trigger\", \"module\": \"rasp\" }, \"conditions\": [ { \"operator\": \"lfi_detector\", \"parameters\": { \"resource\": [ { \"address\": \"server.io.fs.file\" } ], \"params\": [ { \"address\": \"server.request.query\" } ] } } ], \"on_match\": [ \"block\" ] } ]}";
+
+        await agent.SetupRcmAndWait(Output, new List<(object Config, string ProductName, string Id)>
+        {
+            ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestRaspRequestASMDisabled_ThenEnable_ThenDisable)),
+            (jsonString, "ASM_DD", "rules")
+        });
+
         result = SubmitRequest(url, null, null);
         result.Result.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
