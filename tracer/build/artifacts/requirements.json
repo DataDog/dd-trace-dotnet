@@ -11,7 +11,7 @@
     {
       "arch": "arm64",
       "supported": true,
-      "description": "From debian buster (10)",
+      "description": "From debian buster (10), which is 2.28, but we verify we don't exceed 2.23",
       "min": "2.23"
     }],
     "musl": [{
