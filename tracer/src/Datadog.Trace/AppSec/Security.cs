@@ -217,10 +217,12 @@ namespace Datadog.Trace.AppSec
                     // disable ASM scenario
                     if (Enabled && _configurationStatus.EnableAsm == false)
                     {
+                        Log.Debug("Disabling ASM.");
                         DisposeWafAndInstrumentations(true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
+                        Log.Debug("Enabling ASM.");
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
                         UpdateActiveAddresses();

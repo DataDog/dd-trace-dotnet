@@ -47,7 +47,6 @@ namespace Datadog.Trace.AppSec
 
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
             Enabled = enabledEnvVar.WithDefault(false);
-            Log.Error("Security settings are enabled: {Enabled} and CanBeToggled is {CanBeToggled}", Enabled, CanBeToggled);
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
@@ -139,8 +138,6 @@ namespace Datadog.Trace.AppSec
                                 .AsBool(true);
 
             RaspInstrumentationRequired = RaspEnabled && (Enabled || CanBeToggled);
-
-            Log.Error("Rasp settings are enabled: {Enabled} {RaspInstrumentationRequired}", Enabled, RaspInstrumentationRequired);
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);
