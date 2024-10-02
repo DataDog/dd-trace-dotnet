@@ -298,6 +298,49 @@ int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
     return 0;
 }
 
+std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
+{
+    std::vector<StackFrame> result;
+    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
+
+    size_t i = 0, j = 0;
+    while (i < nativeFrames.size() && j < managedFrames.size())
+    {
+        if (nativeFrames.at(i).sp < managedFrames.at(j).sp)
+        {
+            result.push_back(nativeFrames.at(i));
+            ++i;
+        }
+        else if (managedFrames.at(j).sp < nativeFrames.at(i).sp)
+        {
+            result.push_back(managedFrames.at(j));
+            ++j;
+        }
+        else
+        { // frames[i].sp == managedFrames[j].sp
+            // Prefer managedFrame when sp values are the same
+            result.push_back(managedFrames.at(j));
+            ++i;
+            ++j;
+        }
+    }
+
+    // Add any remaining frames that are left in either vector
+    while (i < nativeFrames.size())
+    {
+        result.push_back(nativeFrames.at(i));
+        ++i;
+    }
+
+    while (j < managedFrames.size())
+    {
+        result.push_back(managedFrames.at(j));
+        ++j;
+    }
+
+    return result;
+}
+
 int32_t CrashReporting::CrashProcess()
 {
     std::thread crashThread([]()

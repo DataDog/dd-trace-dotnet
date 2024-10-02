@@ -26,7 +26,6 @@ private:
     std::string GetSignalInfo(int32_t signal) override;
     std::vector<ModuleInfo> GetModules();
     std::pair<std::string, uintptr_t> FindModule(uintptr_t ip);
-    std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 
     HANDLE _process;
     std::vector<ModuleInfo> _modules;

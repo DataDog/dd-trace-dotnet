@@ -116,7 +116,7 @@ namespace datadog::shared::nativeloader
                         {
                             std::wstring key = entry.substr(0, pos);
                             std::wstring value = entry.substr(pos + 1);
-                            envMap[key] = value; // Insert or overwrite the key
+                            envMap[key] = std::move(value); // Insert or overwrite the key
                         }
                         // Move to the next null-terminated string
                         curr += entry.length() + 1;
@@ -130,6 +130,8 @@ namespace datadog::shared::nativeloader
 
         // Reconstruct the combined environment block
         std::vector<WCHAR> result;
+        result.reserve(envMap.size());
+
         for (const auto& kv : envMap)
         {
             std::wstring entry = kv.first + L"=" + kv.second;
@@ -256,12 +258,12 @@ namespace datadog::shared::nativeloader
 
         auto clrFileName = std::wstring(buffer);
 
-        std::filesystem::path clrFileNamePath(clrFileName);
+        fs::path clrFileNamePath(clrFileName);
         auto clrDirectory = clrFileNamePath.parent_path();
 
         // Build the path to the DAC (mscordacwks.dll on .NET, mscordaccore.dll on .NET Core)
         std::wstring dacFileName = isDotnetCore ? L"mscordaccore.dll" : L"mscordacwks.dll";
-        std::filesystem::path dacFilePath = clrDirectory / dacFileName;
+        fs::path dacFilePath = clrDirectory / dacFileName;
 
         // Unregister the .NET handler
         Log::Debug("Crashtracking - Unregistering the .NET handler ", dacFilePath.c_str());
@@ -349,16 +351,13 @@ namespace datadog::shared::nativeloader
             FreeEnvironmentStrings(currentEnv);
 
             // Create the command-line for dd-dotnet
-            std::filesystem::path p(GetCurrentDllPath());
+            fs::path p(GetCurrentDllPath());
             auto directory = p.parent_path();
             auto ddDotnetPath = directory / "dd-dotnet.exe";
 
-            std::stringstream ss;
+            std::wstringstream ss;
             ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid;
-            std::string commandLine = ss.str();
-
-            // Convert command line to a wide string
-            std::wstring wCommandLine(commandLine.begin(), commandLine.end());
+            auto commandLine = ss.str();
 
             // Spawn dd-dotnet
             STARTUPINFO si;
@@ -367,7 +366,7 @@ namespace datadog::shared::nativeloader
             si.cb = sizeof(si);
             ZeroMemory(&pi, sizeof(pi));
 
-            if (!CreateProcessW(NULL, &wCommandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock.data(), NULL, &si, &pi))
+            if (!CreateProcessW(NULL, &commandLine[0], NULL, NULL, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT, envBlock.data(), NULL, &si, &pi))
             {
                 return S_OK;
             }
