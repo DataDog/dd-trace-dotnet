@@ -28,7 +28,7 @@ public class AspNetCore5AsmAttackerBlocking : RcmBase
     public AspNetCore5AsmAttackerBlocking(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmAttackerBlocking))
     {
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         SetEnvironmentVariable("DD_APPSEC_WAF_DEBUG", "0");
     }
 
@@ -71,7 +71,6 @@ public class AspNetCore5AsmAttackerBlocking : RcmBase
             new KeyValuePair<string, string>("User-Agent", "dd-test-scanner-log-block"),
         };
 
-        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
         string url = "/Health";
         IncludeAllHttpSpans = true;
         await TryStartApp();
