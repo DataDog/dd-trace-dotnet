@@ -24,7 +24,7 @@ internal abstract class LambdaCommon
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, WebHeaderCollection headers)
     {
-        var spanContext = SpanContextPropagator.Instance.Extract(headers, (h, name) => h.GetValues(name));
+        var spanContext = SpanContextPropagator.Instance.Extract(headers, SafeGetValues);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
 
         if (spanContext != null)
@@ -34,6 +34,13 @@ internal abstract class LambdaCommon
 
         var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
+    }
+
+    // parseUtility.ParseUInt64 falls over and dies when it tries to parse a null collection of values, and WebHeadersCollection.GetValues will return null if the header does not exist.
+    private static string[] SafeGetValues(WebHeaderCollection headers, string name)
+    {
+        var values = headers.GetValues(name);
+        return values ?? [];
     }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
