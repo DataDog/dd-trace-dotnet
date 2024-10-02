@@ -46,20 +46,8 @@ internal class AsmProduct : IAsmConfigUpdater
 
             if (asmConfig.Actions != null)
             {
-                foreach (var action in asmConfig.Actions)
-                {
-                    if (action.Id is not null)
-                    {
-                        configurationStatus.Actions[action.Id] = action;
-                    }
-                }
-
+                configurationStatus.ActionsByFile[asmConfigName] = asmConfig.Actions;
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-
-                if (asmConfig.Actions.Length == 0)
-                {
-                    configurationStatus.Actions.Clear();
-                }
             }
         }
     }
@@ -69,11 +57,13 @@ internal class AsmProduct : IAsmConfigUpdater
         var removedRulesOverride = false;
         var removedExclusions = false;
         var removedCustomRules = false;
+        var removedActions = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
             removedRulesOverride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
             removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
             removedCustomRules |= configurationStatus.CustomRulesByFile.Remove(configurationPath.Path);
+            removedActions |= configurationStatus.ActionsByFile.Remove(configurationPath.Path);
         }
 
         if (removedRulesOverride)
@@ -89,6 +79,11 @@ internal class AsmProduct : IAsmConfigUpdater
         if (removedCustomRules)
         {
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafCustomRulesKey);
+        }
+
+        if (removedActions)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         }
     }
 }
