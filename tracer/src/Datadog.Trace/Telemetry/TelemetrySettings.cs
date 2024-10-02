@@ -60,6 +60,7 @@ namespace Datadog.Trace.Telemetry
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, bool? isAgentAvailable, bool isServerless)
         {
+            var log = DatadogLogging.GetLoggerFor<TelemetrySettings>();
             string? configurationError = null;
             var config = new ConfigurationBuilder(source, telemetry);
 
@@ -70,6 +71,7 @@ namespace Datadog.Trace.Telemetry
 
             var haveApiKey = !string.IsNullOrEmpty(apiKey);
 
+            log.Debug("TelemetrySettings: AgentlessEnabled");
             var agentlessEnabled = config
                                   .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled)
                                   .AsBool(
@@ -85,6 +87,7 @@ namespace Datadog.Trace.Telemetry
                                            return true;
                                        });
 
+            log.Debug("TelemetrySettings: AgentProxyEnabled");
             var agentProxyEnabled = config
                                    .WithKeys(ConfigurationKeys.Telemetry.AgentProxyEnabled)
                                    .AsBool(isAgentAvailable ?? true);
@@ -95,6 +98,7 @@ namespace Datadog.Trace.Telemetry
                                   .AsBool(agentlessEnabled || agentProxyEnabled);
 
             AgentlessSettings? agentless = null;
+            log.Debug("TelemetrySettings: agentless/agentProxyEnabled");
             if (telemetryEnabled && agentlessEnabled)
             {
                 // We have an API key, so try to send directly to intake
@@ -132,6 +136,7 @@ namespace Datadog.Trace.Telemetry
                 agentless = AgentlessSettings.Create(finalUri, apiKey!);
             }
 
+            log.Debug("TelemetrySettings: heartbeat");
             var heartbeatInterval = config
                                    .WithKeys(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds)
                                    .AsDouble(defaultValue: 60, rawInterval => rawInterval is > 0 and <= 3600)
@@ -143,6 +148,7 @@ namespace Datadog.Trace.Telemetry
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
             bool metricsEnabled;
+            log.Debug("TelemetrySettings: isServerless");
             if (isServerless)
             {
                 // disable metrics by default in serverless, because we can't guarantee the correctness
@@ -156,6 +162,7 @@ namespace Datadog.Trace.Telemetry
                                 .AsBool(defaultValue: true);
             }
 
+            log.Debug("TelemetrySettings: done");
             return new TelemetrySettings(
                 telemetryEnabled,
                 configurationError,

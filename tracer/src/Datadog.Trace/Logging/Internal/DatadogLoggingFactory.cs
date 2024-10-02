@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -18,6 +19,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging;
 
@@ -116,6 +118,7 @@ internal static class DatadogLoggingFactory
 
         try
         {
+            loggerConfiguration.Enrich.With<ThreadIdEnricher>();
             loggerConfiguration.Enrich.WithProperty("MachineName", domainMetadata.MachineName);
             loggerConfiguration.Enrich.WithProperty("Process", $"[{domainMetadata.ProcessId} {domainMetadata.ProcessName}]");
             loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{domainMetadata.AppDomainId} {domainMetadata.AppDomainName}]");
@@ -275,5 +278,54 @@ internal static class DatadogLoggingFactory
 
         // If telemetry is disabled
         return null;
+    }
+
+    private sealed class ThreadIdEnricher : ILogEventEnricher
+    {
+        /// <summary>
+        /// The property name added to enriched log events.
+        /// </summary>
+        private const string ThreadIdPropertyName = "ThreadId";
+
+        private const string ThreadNamePropertyName = "ThreadName";
+
+        /// <summary>
+        /// The cached last created "ThreadId" property with some thread id. It is likely to be reused frequently so avoiding heap allocations.
+        /// </summary>
+        private LogEventProperty? _lastIdValue;
+
+        private LogEventProperty? _lastNameValue;
+
+        /// <summary>
+        /// Enrich the log event.
+        /// </summary>
+        /// <param name="logEvent">The log event to enrich.</param>
+        /// <param name="propertyFactory">Factory for creating new properties to add to the event.</param>
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            var threadId = Environment.CurrentManagedThreadId;
+
+            var last = _lastIdValue;
+            if (last is null || (int)((ScalarValue)last.Value).Value! != threadId)
+            {
+                // no need to synchronize threads on write - just some of them will win
+                _lastIdValue = last = new LogEventProperty(ThreadIdPropertyName, new ScalarValue(threadId));
+            }
+
+            logEvent.AddPropertyIfAbsent(last);
+
+            var threadName = Thread.CurrentThread.Name;
+            if (threadName is not null)
+            {
+                var lastName = _lastNameValue;
+                if (lastName is null || (string)((ScalarValue)lastName.Value).Value! != threadName)
+                {
+                    // no need to synchronize threads on write - just some of them will win
+                    _lastNameValue = last = new LogEventProperty(ThreadNamePropertyName, new ScalarValue(threadName));
+                }
+
+                logEvent.AddPropertyIfAbsent(last);
+            }
+        }
     }
 }

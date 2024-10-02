@@ -339,6 +339,7 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
             try
             {
+                Log.Debug("Checking diagnostic source enablement");
                 if (GlobalSettings.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
@@ -361,6 +362,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // we only support Service Fabric Service Remoting instrumentation on .NET Core (including .NET 5+)
+            Log.Debug("Checking ServiceFabric enablement");
             if (FrameworkDescription.Instance.IsCoreClr())
             {
                 Log.Information("Initializing ServiceFabric instrumentation");
@@ -387,6 +389,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Checking activity listener enablement");
                 if (Tracer.Instance.Settings.IsActivityListenerEnabled)
                 {
                     Log.Debug("Initializing activity listener.");
