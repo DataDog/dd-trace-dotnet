@@ -1235,11 +1235,11 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(null, null, "555")]
+        [InlineData(null, null, "500-599")]
         [InlineData(null, "400", "400")]
         [InlineData("444", null, "444")]
         [InlineData("444", "424", "444")]
-        public void ValidateServerErrorStatusCodes(string newServerErrorKeyValue, string deprecatedServerErrorKeyValue, string expectedServerError)
+        public void ValidateServerErrorStatusCodes(string newServerErrorKeyValue, string deprecatedServerErrorKeyValue, string expectedServerErrorCodes)
         {
             const string httpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
             const string deprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
@@ -1252,15 +1252,15 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var result = settings.HttpServerErrorStatusCodes;
 
-            Assert.True(result[int.Parse(expectedServerError)]);
+            ValidateErrorStatusCodes(result, newServerErrorKeyValue, deprecatedServerErrorKeyValue, expectedServerErrorCodes);
         }
 
         [Theory]
-        [InlineData(null, null, "444")]
+        [InlineData(null, null, "400-499")]
         [InlineData(null, "500", "500")]
         [InlineData("555", null, "555")]
         [InlineData("555", "525", "555")]
-        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string expectedClientError)
+        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string expectedClientErrorCodes)
         {
             const string httpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
             const string deprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
@@ -1273,7 +1273,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var result = settings.HttpClientErrorStatusCodes;
 
-            Assert.True(result[int.Parse(expectedClientError)]);
+            ValidateErrorStatusCodes(result, newClientErrorKeyValue, deprecatedClientErrorKeyValue, expectedClientErrorCodes);
         }
 
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
@@ -1296,6 +1296,22 @@ namespace Datadog.Trace.Tests.Configuration
             }
 
             Assert.Empty(statusCodes);
+        }
+
+        private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
+        {
+            if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
+            {
+                Assert.True(result[int.Parse(expectedErrorRange)]);
+            }
+            else
+            {
+                var statusCodeLimitsRange = expectedErrorRange.Split('-');
+                for (var i = int.Parse(statusCodeLimitsRange[0]); i <= int.Parse(statusCodeLimitsRange[1]); i++)
+                {
+                    Assert.True(result[i]);
+                }
+            }
         }
     }
 }
