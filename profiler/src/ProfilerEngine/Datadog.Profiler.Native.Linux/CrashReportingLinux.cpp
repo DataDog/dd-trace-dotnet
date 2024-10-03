@@ -198,8 +198,8 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
         ResolveMethodData methodData;
 
-        auto module = FindModule(ip);
-        stackFrame.moduleAddress = module.second;
+        auto [moduleName, moduleAddress] = FindModule(ip);
+        stackFrame.moduleAddress = moduleAddress;
 
         bool hasName = false;
 
@@ -236,13 +236,13 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         if (!hasName)
         {
             std::ostringstream unknownModule;
-            unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
+            unknownModule << moduleName << "!<unknown>+" << std::hex << (ip - moduleAddress);
             stackFrame.method = unknownModule.str();
         }
 
         stackFrame.isSuspicious = false;
 
-        fs::path modulePath(module.first);
+        fs::path modulePath(moduleName);
 
         if (modulePath.has_filename())
         {

@@ -163,20 +163,20 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             nullptr,
             SYM_STKWALK_DEFAULT))
         {
-            auto module = FindModule(nativeStackFrame.AddrPC.Offset);
+            auto [moduleName, moduleAddress] = FindModule(nativeStackFrame.AddrPC.Offset);
 
             StackFrame stackFrame;
             stackFrame.ip = nativeStackFrame.AddrPC.Offset;
             stackFrame.sp = nativeStackFrame.AddrStack.Offset;
             stackFrame.isSuspicious = false;
-            stackFrame.moduleAddress = module.second;
+            stackFrame.moduleAddress = moduleAddress;
             stackFrame.symbolAddress = nativeStackFrame.AddrPC.Offset;
 
             std::ostringstream methodName;
-            methodName << module.first << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module.second);
+            methodName << moduleName << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - moduleAddress);
             stackFrame.method = methodName.str();
 
-            fs::path modulePath(module.first);
+            fs::path modulePath(moduleName);
 
             if (modulePath.has_filename())
             {
