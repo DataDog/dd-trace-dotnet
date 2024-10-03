@@ -10,7 +10,6 @@
 
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
-#include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -76,8 +75,6 @@ public:
                                   std::uint64_t* deadlockDetectionsInAggregationPeriodCount,
                                   std::uint64_t* usedDeadlockDetectionsAggregationPeriodIndex) const;
 
-    inline Semaphore& GetStackWalkLock();
-
     inline bool IsThreadDestroyed();
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
@@ -90,6 +87,8 @@ public:
 
     inline std::string GetProfileThreadId() override;
     inline std::string GetProfileThreadName() override;
+    inline void AcquireLock();
+    inline void ReleaseLock();
 
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
@@ -131,7 +130,6 @@ private:
     std::uint64_t _deadlockInPeriodCount;
     std::uint64_t _deadlockDetectionPeriod;
 
-    Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
 
     TraceContextTrackingInfo _traceContextTrackingInfo;
@@ -154,6 +152,7 @@ private:
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
+    std::mutex _objLock;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -193,6 +192,16 @@ std::string ManagedThreadInfo::GetProfileThreadName()
         _profileThreadName = std::move(s);
     }
     return _profileThreadName;
+}
+
+inline void ManagedThreadInfo::AcquireLock()
+{
+    _objLock.lock();
+}
+
+inline void ManagedThreadInfo::ReleaseLock()
+{
+    _objLock.unlock();
 }
 
 inline std::string ManagedThreadInfo::BuildProfileThreadId()
@@ -383,15 +392,10 @@ inline void ManagedThreadInfo::GetDeadlocksCount(std::uint64_t* deadlockTotalCou
     }
 }
 
-inline Semaphore& ManagedThreadInfo::GetStackWalkLock()
-{
-    return _stackWalkLock;
-}
-
 // TODO: this does not seem to be needed
 inline bool ManagedThreadInfo::IsThreadDestroyed()
 {
-    SemaphoreScope guardedLock(_stackWalkLock);
+    std::unique_lock l(_objLock);
     return _isThreadDestroyed;
 }
 
@@ -403,7 +407,7 @@ inline bool ManagedThreadInfo::IsDestroyed()
 
 inline void ManagedThreadInfo::SetThreadDestroyed()
 {
-    SemaphoreScope guardedLock(_stackWalkLock);
+    std::unique_lock l(_objLock);
     _isThreadDestroyed = true;
 }
 

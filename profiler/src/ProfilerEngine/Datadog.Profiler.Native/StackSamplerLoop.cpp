@@ -510,7 +510,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // ----------- ----------- ----------- ----------- ----------- -----------
         } // _pManager->AllowStackWalk(..)
 
-    } // SemaphoreScope guardedLock(pThreadInfo->GetStackWalkLock())
+    }
 
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
