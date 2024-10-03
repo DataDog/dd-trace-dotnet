@@ -189,7 +189,8 @@ namespace datadog::shared::nativeloader
 
     HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)
     {
-        HRESULT GHR = S_OK;
+        // We consider the loading a success if at least one class factory is properly loaded.
+        HRESULT GHR = E_FAIL;
 
         if (m_continuousProfilerInstance != nullptr)
         {
@@ -197,11 +198,19 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
-                     m_continuousProfilerInstance->GetFilePath());
+                     m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_continuousProfilerInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
@@ -210,11 +219,20 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
+                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ",
+                    m_tracerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
@@ -223,11 +241,20 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_customInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
+                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ",
+                    m_customInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
@@ -236,7 +263,8 @@ namespace datadog::shared::nativeloader
 
     HRESULT DynamicDispatcherImpl::LoadInstance()
     {
-        HRESULT GHR = S_OK;
+        // We consider the loading a success if at least one class factory is properly loaded.
+        HRESULT GHR = E_FAIL;
 
         if (m_continuousProfilerInstance != nullptr)
         {
@@ -244,11 +272,19 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
-                     m_continuousProfilerInstance->GetFilePath());
+                    m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_continuousProfilerInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
@@ -257,11 +293,20 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadInstance();
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ",
+                    m_tracerInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
@@ -270,11 +315,20 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_customInstance->LoadInstance();
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ",
+                    m_customInstance->GetFilePath(), ", error code: ", result);
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
-                GHR = result;
+
+                if (GHR != S_OK)
+                {
+                    GHR = result;
+                }
+            }
+            else
+            {
+                GHR = S_OK;
             }
         }
 
