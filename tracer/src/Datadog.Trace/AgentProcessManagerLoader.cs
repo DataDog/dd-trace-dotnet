@@ -21,6 +21,6 @@ public sealed class AgentProcessManagerLoader
     /// </summary>
     public AgentProcessManagerLoader()
     {
-        AgentProcessManager.Initialize();
+        // AgentProcessManager.Initialize();
     }
 }

@@ -112,16 +112,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                         StartupLogger.Debug("Creating '{0}' instance.", loaderHelperTypeName);
                         Activator.CreateInstance(loaderHelperType);
                         StartupLogger.Debug("'{0}' instance created.", loaderHelperTypeName);
-                        return;
+                        // return;
                     }
 
-                    StartupLogger.Log("Loader Helper '{0}' cannot be found. Invoking {1}.{2}()", loaderHelperTypeName, typeName, methodName);
+                    // StartupLogger.Log("Loader Helper '{0}' cannot be found. Invoking {1}.{2}()", loaderHelperTypeName, typeName, methodName);
                 }
 
+                StartupLogger.Debug("Getting type ", typeName);
                 var type = assembly.GetType(typeName, throwOnError: false);
+                StartupLogger.Debug("Getting method ", methodName);
                 var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
                 StartupLogger.Debug("Calling method '{0}.{1}'.", typeName, methodName);
                 method?.Invoke(obj: null, parameters: null);
+                StartupLogger.Debug("Called method '{0}.{1}'.", typeName, methodName);
             }
             catch (Exception ex)
             {

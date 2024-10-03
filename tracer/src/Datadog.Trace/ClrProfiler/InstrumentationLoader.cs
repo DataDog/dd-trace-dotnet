@@ -21,6 +21,6 @@ public sealed class InstrumentationLoader
     /// </summary>
     public InstrumentationLoader()
     {
-        Instrumentation.Initialize();
+        // Instrumentation.Initialize();
     }
 }
