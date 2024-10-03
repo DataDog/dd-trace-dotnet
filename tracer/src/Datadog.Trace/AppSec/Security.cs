@@ -75,7 +75,15 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
+                    // We only provide an external waf in tests
+                    if (_waf == null)
+                    {
+                        Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
+                    }
+                    else
+                    {
+                        Enabled = _settings.Enabled;
+                    }
                 }
 
                 var subscriptionsKeys = new List<string>();

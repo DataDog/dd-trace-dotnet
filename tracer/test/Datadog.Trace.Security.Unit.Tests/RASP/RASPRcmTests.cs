@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
@@ -27,7 +29,7 @@ public class RaspRcmTests : SettingsTestsBase
     public void GivenANewOperator_WhenUpdateFromRcm_NoErrorIsReported(bool errorExpected, string rules)
     {
         var remoteConfigValues = CreateRemoteConfigValues(rules);
-        var security = CreateSecurity();
+        var security = CreateSecurity(CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]));
         var result = security.UpdateFromRcmForTest(remoteConfigValues);
         result.Length.Should().Be(1);
 
@@ -41,15 +43,59 @@ public class RaspRcmTests : SettingsTestsBase
         }
     }
 
+    [Theory]
+    [InlineData("true", "true", true, true)]
+    [InlineData("false", "true", false, false)]
+    [InlineData("true", "false", false, false)]
+    [InlineData("false", "false", false, false)]
+    [InlineData(null, "false", false, false)]
+    [InlineData(null, "true", false, true)]
+    [InlineData("true", null, true, true)]
+    [InlineData("false", null, false, false)]
+    [InlineData(null, null, false, true)]
+    [InlineData("notdefined", "false", false, false)]
+    [InlineData("notdefined", "true", false, true)]
+    [InlineData("true", "notdefined", true, true)]
+    [InlineData("false", "notdefined", false, false)]
+    [InlineData("notdefined", "notdefined", false, true)]
+    public void GivenSomeSettings_WhenCreateSecurity_RaspValuesAreOk(string asmEnableSettingValue, string raspEnableSettingValue, bool expectedRaspEnableValue, bool raspInstrumentationRequired)
+    {
+        IConfigurationSource source;
+        if (asmEnableSettingValue == "notdefined" && raspEnableSettingValue == "notdefined")
+        {
+            source = CreateConfigurationSource();
+        }
+        else if (raspEnableSettingValue == "notdefined")
+        {
+            source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, asmEnableSettingValue));
+        }
+        else if (asmEnableSettingValue == "notdefined")
+        {
+            source = CreateConfigurationSource((ConfigurationKeys.AppSec.RaspEnabled, raspEnableSettingValue));
+        }
+        else
+        {
+            source = CreateConfigurationSource(
+                (ConfigurationKeys.AppSec.Enabled, asmEnableSettingValue),
+                (ConfigurationKeys.AppSec.RaspEnabled, raspEnableSettingValue));
+        }
+
+        var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
+        var security = new AppSec.Security(settings, new Mock<IWaf>().Object, new Mock<IRcmSubscriptionManager>().Object);
+        security.RaspEnabled.Should().Be(expectedRaspEnableValue);
+        security.RaspInstrumentationRequired.Should().Be(raspInstrumentationRequired);
+        security.RaspInstrumentationRequired.Should().Be(security.Settings.RaspEnabled && (security.Enabled || security.Settings.CanBeToggled));
+        security.RaspEnabled.Should().Be(security.Settings.RaspEnabled && security.Enabled);
+    }
+
     private static void AssertHasErrors(ApplyDetails[] result)
     {
         result[0].Error.Should().NotBeEmpty();
         result[0].ApplyState.Should().Be(ApplyStates.ERROR);
     }
 
-    private static AppSec.Security CreateSecurity()
+    private static AppSec.Security CreateSecurity(IConfigurationSource source)
     {
-        var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]);
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
         var security = new AppSec.Security(settings);
         // Set it to true with reflection to avoid all the initialization
