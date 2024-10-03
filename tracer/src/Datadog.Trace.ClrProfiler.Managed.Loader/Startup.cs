@@ -111,6 +111,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     {
                         StartupLogger.Debug("Creating '{0}' instance.", loaderHelperTypeName);
                         Activator.CreateInstance(loaderHelperType);
+                        StartupLogger.Debug("'{0}' instance created.", loaderHelperTypeName);
                         return;
                     }
 
