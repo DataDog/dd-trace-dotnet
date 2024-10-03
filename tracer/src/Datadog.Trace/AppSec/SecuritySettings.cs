@@ -137,8 +137,6 @@ namespace Datadog.Trace.AppSec
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
                                 .AsBool(true);
 
-            RaspInstrumentationRequired = RaspEnabled && (Enabled || CanBeToggled);
-
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);
 
@@ -185,8 +183,6 @@ namespace Datadog.Trace.AppSec
         // RASP related variables
 
         public bool RaspEnabled { get; }
-
-        public bool RaspInstrumentationRequired { get; }
 
         public bool StackTraceEnabled { get; }
 

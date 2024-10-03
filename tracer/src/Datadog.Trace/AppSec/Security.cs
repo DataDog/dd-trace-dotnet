@@ -136,7 +136,7 @@ namespace Datadog.Trace.AppSec
 
         internal bool RaspEnabled => _settings.RaspEnabled && Enabled;
 
-        internal bool RaspInstrumentationRequired => _settings.RaspInstrumentationRequired;
+        internal bool RaspInstrumentationRequired => _settings.RaspEnabled && (_settings.Enabled || _settings.CanBeToggled);
 
         internal string? InitializationError { get; private set; }
 
