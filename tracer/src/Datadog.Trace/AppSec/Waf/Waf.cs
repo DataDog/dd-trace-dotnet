@@ -15,8 +15,11 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -146,7 +149,7 @@ namespace Datadog.Trace.AppSec.Waf
                         _wafHandle = newHandle;
                         _wafLocker.ExitWriteLock();
                         _wafLibraryInvoker.Destroy(oldHandle);
-                        return new(diagnosticsValue, true);
+                        return UpdateResult.FromSuccess(diagnosticsValue);
                     }
 
                     _wafLibraryInvoker.Destroy(newHandle);
@@ -158,7 +161,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
             finally
             {
-                res ??= new(diagnosticsValue, false);
+                res ??= UpdateResult.FromFailed(diagnosticsValue);
                 _wafLibraryInvoker.ObjectFree(ref diagnosticsValue);
                 updateData.Dispose();
             }
@@ -169,6 +172,12 @@ namespace Datadog.Trace.AppSec.Waf
         public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
         {
             var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
+            if (dic.IsEmpty())
+            {
+                Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
+                return UpdateResult.FromNothingToUpdate();
+            }
+
             return Update(dic);
         }
 
@@ -211,6 +220,11 @@ namespace Datadog.Trace.AppSec.Waf
             UpdateResult updated;
             try
             {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Updating WAF with new configuration: {Arguments}", JsonConvert.SerializeObject(arguments));
+                }
+
                 var encodedArgs = _encoder.Encode(arguments, applySafetyLimits: false);
                 updated = UpdateWafAndDispose(encodedArgs);
 

@@ -13,7 +13,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false)
+        private UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false, bool nothingToUpdate = false)
         {
             if (diagObject != null)
             {
@@ -33,11 +33,14 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
             Success = success;
             UnusableRules = unusableRules;
+            NothingToUpdate = nothingToUpdate;
         }
 
         internal bool Success { get; }
 
         internal bool UnusableRules { get; }
+
+        public bool NothingToUpdate { get; }
 
         internal ushort? FailedToLoadRules { get; }
 
@@ -56,6 +59,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         public static UpdateResult FromUnusableRules() => new(null, false, true);
 
+        public static UpdateResult FromNothingToUpdate() => new(null, true, nothingToUpdate: true);
+
         public static UpdateResult FromFailed() => new(null, false);
+
+        public static UpdateResult FromFailed(DdwafObjectStruct diagObj) => new(diagObj, false);
+
+        public static UpdateResult FromSuccess(DdwafObjectStruct diagObj) => new(diagObj, true);
     }
 }
