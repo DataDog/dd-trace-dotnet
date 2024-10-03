@@ -26,7 +26,7 @@ private:
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
     std::string GetSignalInfo(int32_t signal) override;
     std::vector<ModuleInfo> GetModules();
-    std::pair<std::string, uintptr_t> FindModule(uintptr_t ip);
+    std::pair<std::string_view, uintptr_t> FindModule(uintptr_t ip);
 
     ScopedHandle _process;
     std::vector<ModuleInfo> _modules;

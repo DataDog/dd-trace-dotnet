@@ -80,7 +80,7 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
                         threadName = shared::ToString(description);
                     }
 
-                    threads.push_back({ threadEntry.th32ThreadID, threadName });
+                    threads.push_back({ threadEntry.th32ThreadID, std::move(threadName) });
                 }                
             }
         } while (Thread32Next(threadSnapshot, &threadEntry));
@@ -225,7 +225,7 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
                     resolvedModuleName = moduleName;
                 }
 
-                modules.push_back({ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, resolvedModuleName });
+                modules.push_back({ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName) });
             }
         }
     }
@@ -233,9 +233,9 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
     return modules;
 }
 
-std::pair<std::string, uintptr_t> CrashReportingWindows::FindModule(uintptr_t ip)
+std::pair<std::string_view, uintptr_t> CrashReportingWindows::FindModule(uintptr_t ip)
 {
-    for (auto& module : _modules)
+    for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {

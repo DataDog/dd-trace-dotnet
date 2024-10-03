@@ -67,9 +67,9 @@ int32_t CrashReportingLinux::Initialize()
     return result;
 }
 
-std::pair<std::string, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
+std::pair<std::string_view, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
 {
-    for (auto& module : _modules)
+    for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {
@@ -114,10 +114,10 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             continue;
         }
 
-        std::string startStr = addressRange.substr(0, dashPos);
-        std::string endStr = addressRange.substr(dashPos + 1);
-        uintptr_t start = std::stoull(startStr, nullptr, 16);
-        uintptr_t end = std::stoull(endStr, nullptr, 16);
+        auto startStr = std::string_view(addressRange).substr(0, dashPos);
+        auto endStr = std::string_view(addressRange).substr(dashPos + 1);
+        uintptr_t start = std::stoull(startStr.data(), nullptr, 16);
+        uintptr_t end = std::stoull(endStr.data(), nullptr, 16);
 
         // Get the base address of the module if we have it, otherwise add it
         auto it = moduleBaseAddresses.find(path);
@@ -133,7 +133,7 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        modules.push_back(ModuleInfo{ start, end, baseAddress, path });
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path) });
     }
 
     return modules;
@@ -303,7 +303,7 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingLinux::GetThreads()
                 continue;
             auto threadId = atoi(entry->d_name);
             auto threadName = GetThreadName(threadId);
-            threads.push_back(std::make_pair(threadId, threadName));
+            threads.push_back(std::make_pair(threadId, std::move(threadName)));
         }
 
         closedir(proc_dir);
