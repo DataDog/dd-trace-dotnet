@@ -10,6 +10,7 @@
 #include <fstream>
 #include <chrono>
 #include "../../../../shared/src/native-src/com_ptr.h"
+#include "../environment_variables_util.h"
 
 using namespace std::chrono;
 
@@ -153,23 +154,26 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler) :
+Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
+                   const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low)
 {
-    HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
-    if (_profiler != nullptr)
-    {
-        USHORT major;
-        USHORT minor;
-        USHORT build;
-
-        if (SUCCEEDED(_profiler->GetRuntimeInformation(nullptr, &m_runtimeType, &major, &minor, &build, nullptr, 0,
-                                                       nullptr, nullptr)))
-        {
-            m_runtimeVersion = VersionInfo{major, minor, build, 0};
-        }
-    }
+    m_runtimeType = runtimeInfo.runtime_type;
+    m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
+
+    this->_setILOnJit = trace::IsEditAndContinueEnabled();
+    if (this->_setILOnJit)
+    {
+        trace::Logger::Info("Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
+    }
+
+    HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
+    if (FAILED(hr))
+    {
+        _profiler = nullptr;
+        trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. Disabling Dataflow. HRESULT : ", Hex(hr));
+    }
 }
 Dataflow::~Dataflow()
 {
@@ -181,6 +185,10 @@ HRESULT Dataflow::Init()
     if (_initialized)
     {
         return S_FALSE;
+    }
+    if (_profiler == nullptr)
+    {
+        return E_FAIL;
     }
     HRESULT hr = S_OK;
     try
@@ -654,8 +662,9 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
                     }
                 }
             }
-            if (!pFunctionControl && written)
+            if (!pFunctionControl && written && !_setILOnJit)
             {
+                // We are in JIT event. If _setILOnJit is false, we abort the commit and request a rejit
                 context.aborted = true;
             }
             method->SetInstrumented(written);
@@ -667,6 +676,10 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             if (pFunctionControl)
             {
                 hr = method->ApplyFinalInstrumentation((ICorProfilerFunctionControl*) pFunctionControl);
+            }
+            else if (_setILOnJit)
+            {
+                hr = method->ApplyFinalInstrumentation();
             }
             else
             {

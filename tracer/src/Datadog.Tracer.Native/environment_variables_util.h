@@ -60,6 +60,7 @@ bool IsAzureFunctionsEnabled();
 bool IsVersionCompatibilityEnabled();
 bool IsIastEnabled();
 bool IsRaspEnabled();
+bool IsEditAndContinueEnabled();
 
 } // namespace trace
 

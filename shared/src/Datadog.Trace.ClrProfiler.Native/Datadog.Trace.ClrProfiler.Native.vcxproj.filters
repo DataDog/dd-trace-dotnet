@@ -84,6 +84,18 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\shared\src\native-src\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="process_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="single_step_guard_rails.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crashhandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -136,6 +148,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\dynamic_com_library.cpp">
       <Filter>shared</Filter>
+    </ClCompile>
+    <ClCompile Include="process_helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="single_step_guard_rails.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crashhandler.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

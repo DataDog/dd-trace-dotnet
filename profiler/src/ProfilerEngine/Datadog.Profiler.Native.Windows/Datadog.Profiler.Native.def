@@ -10,3 +10,4 @@
   SetEndpointForTrace PRIVATE
   SetGitMetadataForApplication PRIVATE
   FlushProfile PRIVATE
+  CreateCrashReport PRIVATE
