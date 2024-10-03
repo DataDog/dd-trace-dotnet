@@ -84,43 +84,43 @@ namespace Datadog.Trace.Propagators
         /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
         /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier headers)
+        public void Inject<TCarrier>(PropagationContext context, TCarrier headers)
             where TCarrier : IHeadersCollection
         {
             Inject(context, headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
         }
 
         /// <summary>
-        /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
-        /// This locks the sampling priority for <paramref name="context"/>.
+        /// Propagates the specified context by adding new headers to a <paramref name="carrier"/>.
         /// </summary>
-        /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="carrier"/>.</param>
+        /// <param name="context">A <see cref="PropagationContext"/> with values that will be propagated into <paramref name="carrier"/>.</param>
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
-        /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
+        /// <typeparam name="TCarrier">Type of header collection.</typeparam>
+        public void Inject<TCarrier>(PropagationContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
-            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (setter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             Inject(context, carrier, new ActionSetter<TCarrier>(setter));
         }
 
-        internal void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        internal void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
-            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            var spanContext = context.SpanContext;
+
             // If appsec standalone is enabled and appsec propagation is disabled (no ASM events) -> stop propagation
-            if (context.TraceContext?.Tracer.Settings?.AppsecStandaloneEnabledInternal == true && context.TraceContext.Tags.GetTag(Tags.Propagated.AppSec) != "1")
+            if (spanContext?.TraceContext is { Tracer.Settings.AppsecStandaloneEnabledInternal: true } trace &&
+                trace.Tags.GetTag(Tags.Propagated.AppSec) != "1")
             {
                 return;
             }
 
             // trigger a sampling decision if it hasn't happened yet
-            _ = context.GetOrMakeSamplingDecision();
+            _ = spanContext?.GetOrMakeSamplingDecision();
 
             foreach (var injector in _injectors)
             {
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="headers">The headers that contain the values to be extracted.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
-        public SpanContext? Extract<TCarrier>(TCarrier headers)
+        public PropagationContext Extract<TCarrier>(TCarrier headers)
             where TCarrier : IHeadersCollection
         {
             return Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Propagators
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
-        public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
+        public PropagationContext Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter == null!) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
@@ -155,65 +155,80 @@ namespace Datadog.Trace.Propagators
             return Extract(carrier, new FuncGetter<TCarrier>(getter));
         }
 
-        internal SpanContext? Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
+        internal PropagationContext Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            PropagationContext context = default;
             SpanContext? localSpanContext = null;
 
-            for (var i = 0; i < _extractors.Length; i++)
+            foreach (var extractor in _extractors)
             {
-                if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
+                if (!extractor.TryExtract(carrier, carrierGetter, out var extractedContext))
                 {
-                    if (_propagationExtractFirstOnly)
-                    {
-                        return spanContext;
-                    }
+                    continue;
+                }
 
-                    if (localSpanContext is not null && spanContext is not null && _extractors[i] is W3CTraceContextPropagator)
+                if (context.SpanContext is null && extractedContext.SpanContext is not null)
+                {
+                    context = context with { SpanContext = extractedContext.SpanContext };
+                }
+
+                if (context.Baggage is null && extractedContext.Baggage is not null)
+                {
+                    context = context with { Baggage = extractedContext.Baggage };
+                }
+
+                if (_propagationExtractFirstOnly && context.SpanContext is not null)
+                {
+                    // we already have a SpanContext, and we only want to extract the first one,
+                    // but don't exit the loop because non-SpanContext extractors need to run (e.g. Baggage)
+                    continue;
+                }
+
+                var extractedSpanContext = extractedContext.SpanContext;
+
+                if (localSpanContext is not null && extractedSpanContext is not null && extractor is W3CTraceContextPropagator)
+                {
+                    if (localSpanContext.RawTraceId == extractedSpanContext.RawTraceId)
                     {
-                        if (localSpanContext.RawTraceId == spanContext.RawTraceId)
+                        localSpanContext.AdditionalW3CTraceState += extractedSpanContext.AdditionalW3CTraceState;
+
+                        if (localSpanContext.RawSpanId != extractedSpanContext.RawSpanId)
                         {
-                            localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
-
-                            if (localSpanContext.RawSpanId != spanContext.RawSpanId)
+                            if (!string.IsNullOrEmpty(extractedSpanContext.LastParentId) && extractedSpanContext.LastParentId != W3CTraceContextPropagator.ZeroLastParent)
                             {
-                                if (!string.IsNullOrEmpty(spanContext.LastParentId) && spanContext.LastParentId != W3CTraceContextPropagator.ZeroLastParent)
-                                {
-                                    localSpanContext.LastParentId = spanContext.LastParentId;
-                                }
-                                else
-                                {
-                                    localSpanContext.LastParentId = HexString.ToHexString(localSpanContext.SpanId);
-                                }
-
-                                localSpanContext.SpanId = spanContext.SpanId;
-                                localSpanContext.RawSpanId = spanContext.RawSpanId;
+                                localSpanContext.LastParentId = extractedSpanContext.LastParentId;
                             }
+                            else
+                            {
+                                localSpanContext.LastParentId = HexString.ToHexString(localSpanContext.SpanId);
+                            }
+
+                            localSpanContext.SpanId = extractedSpanContext.SpanId;
+                            localSpanContext.RawSpanId = extractedSpanContext.RawSpanId;
                         }
                     }
-
-                    if (localSpanContext is null)
-                    {
-                        localSpanContext = spanContext;
-                    }
                 }
+
+                localSpanContext ??= extractedSpanContext;
+                context = context with { SpanContext = localSpanContext };
             }
 
-            return localSpanContext;
+            return context;
         }
 
         /// <summary>
-        /// Extracts a <see cref="SpanContext"/> from its serialized dictionary.
+        /// Extracts a <see cref="PropagationContext"/> from its serialized dictionary.
         /// </summary>
         /// <param name="serializedSpanContext">The serialized dictionary.</param>
-        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
-        internal SpanContext? Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
+        /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from the serialized dictionary.</returns>
+        internal PropagationContext Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
         {
             if (serializedSpanContext == null)
             {
-                return null;
+                return default;
             }
 
             return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
