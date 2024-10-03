@@ -112,7 +112,7 @@ namespace Datadog.Trace.Configuration
             internal const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
 
             /// <summary>
-            /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
+            /// When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
             /// </summary>
             internal const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
 
