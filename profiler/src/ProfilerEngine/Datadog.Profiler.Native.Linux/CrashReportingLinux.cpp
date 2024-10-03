@@ -266,49 +266,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     return MergeFrames(frames, managedFrames);
 }
 
-std::vector<StackFrame> CrashReportingLinux::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
-{
-    std::vector<StackFrame> result;
-    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
-
-    size_t i = 0, j = 0;
-    while (i < nativeFrames.size() && j < managedFrames.size())
-    {
-        if (nativeFrames.at(i).sp < managedFrames.at(j).sp)
-        {
-            result.push_back(nativeFrames.at(i));
-            ++i;
-        }
-        else if (managedFrames.at(j).sp < nativeFrames.at(i).sp)
-        {
-            result.push_back(managedFrames.at(j));
-            ++j;
-        }
-        else
-        { // frames[i].sp == managedFrames[j].sp
-            // Prefer managedFrame when sp values are the same
-            result.push_back(managedFrames.at(j));
-            ++i;
-            ++j;
-        }
-    }
-
-    // Add any remaining frames that are left in either vector
-    while (i < nativeFrames.size())
-    {
-        result.push_back(nativeFrames.at(i));
-        ++i;
-    }
-
-    while (j < managedFrames.size())
-    {
-        result.push_back(managedFrames.at(j));
-        ++j;
-    }
-
-    return result;
-}
-
 std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
 {
     auto signalInfo = strsignal(signal);

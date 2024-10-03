@@ -2322,6 +2322,7 @@ partial class Build
 
                DotNetTest(config => config
                        .SetProjectFile(project)
+                       .SetDotnetPath(TargetPlatform)
                        .SetConfiguration(BuildConfiguration)
                        .SetFramework(Framework)
                        .SetTestTargetPlatform(TargetPlatform)
