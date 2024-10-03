@@ -46,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             if (!detail.EndsWith("}"))
             {
                 // Unable to parse detail string, so just leave it unmodified. Don't inject trace context.
+                Console.WriteLine("Unable to parse detail string. Not injecting trace context.");
                 return;
             }
 
