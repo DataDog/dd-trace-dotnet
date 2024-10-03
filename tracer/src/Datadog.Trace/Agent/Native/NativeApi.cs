@@ -31,7 +31,7 @@ namespace Datadog.Trace.Agent.Native
             try
             {
                 if (!ExporterBindings.TryInitializeExporter(
-                        settings.ExporterInternal.AgentUriInternal.Host,
+                        settings.ExporterInternal.AgentUriInternal.Host, // todo: this should be local hostname
                         TracerConstants.AssemblyVersion,
                         ".NET",
                         FrameworkDescription.Instance.ProductVersion,

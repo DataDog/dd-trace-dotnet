@@ -282,7 +282,6 @@ src/Datadog.Trace/Agent/MessagePack/SpanFormatterResolver.cs
 src/Datadog.Trace/Agent/MessagePack/SpanMessagePackFormatter.cs
 src/Datadog.Trace/Agent/Native/ExporterBindings.cs
 src/Datadog.Trace/Agent/Native/NativeApi.cs
-src/Datadog.Trace/Agent/Native/NativeStatsAggregator.cs
 src/Datadog.Trace/Agent/StreamFactories/NamedPipeClientStreamFactory.cs
 src/Datadog.Trace/Agent/StreamFactories/UnixDomainSocketStreamFactory.cs
 src/Datadog.Trace/Agent/TraceSamplers/AnalyticsEventsSampler.cs
