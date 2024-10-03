@@ -201,7 +201,7 @@ namespace Datadog.Trace.TestHelpers
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
             var process = helper.Process;
-            var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
+            var timeoutMs = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 
             var standardOutput = helper.StandardOutput;
