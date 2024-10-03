@@ -75,6 +75,7 @@ namespace Datadog.Profiler.IntegrationTests
             try
             {
                 // simulate the Agent that accepts register/unregister commands from the profiler
+#pragma warning disable CA1416 // Validate platform compatibility
                 using (var server = new NamedPipeServerStream(
                                             _agentEndPoint,
                                             PipeDirection.InOut,
@@ -108,11 +109,10 @@ namespace Datadog.Profiler.IntegrationTests
 
                         server.Write(outBuffer, 0, IpcHeader.HeaderSize);
                         server.Flush();
-#pragma warning disable CA1416 // Validate platform compatibility
                         server.WaitForPipeDrain();
-#pragma warning restore CA1416 // Validate platform compatibility
                     }
                 }
+#pragma warning restore CA1416 // Validate platform compatibility
             }
             catch (Exception ex)
             {

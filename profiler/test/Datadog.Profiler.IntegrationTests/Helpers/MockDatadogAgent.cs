@@ -205,7 +205,8 @@ namespace Datadog.Profiler.IntegrationTests
                     // show only in error cases
                     if ((message != null) && (NbCallsOnProfilingEndpoint < 2))
                     {
-                        Output.WriteLine(message);
+                        // NOTE: we can't use ITestOutputHelper here because it will throw an exception about missing current test
+                        // Output.WriteLine(message);
                     }
                 }
             }
