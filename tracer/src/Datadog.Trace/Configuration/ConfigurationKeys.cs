@@ -394,6 +394,22 @@ namespace Datadog.Trace.Configuration
         public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
 
         /// <summary>
+        /// Configuration key to set the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumItems"/>
+        public const string BaggageMaximumItems = "DD_TRACE_BAGGAGE_MAX_ITEMS";
+
+        /// <summary>
+        /// Configuration key to set the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumBytes"/>
+        public const string BaggageMaximumBytes = "DD_TRACE_BAGGAGE_MAX_BYTES";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>

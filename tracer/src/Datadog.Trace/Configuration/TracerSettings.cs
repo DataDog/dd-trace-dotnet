@@ -417,6 +417,14 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
                                          .AsBool(false);
 
+            BaggageMaximumItems = config
+                                 .WithKeys(ConfigurationKeys.BaggageMaximumItems)
+                                 .AsInt32(defaultValue: 64);
+
+            BaggageMaximumBytes = config
+                                 .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
+                                 .AsInt32(defaultValue: 8192);
+
             // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
             if (!IsActivityListenerEnabled)
             {
@@ -883,6 +891,22 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumItems"/>
+        internal int BaggageMaximumItems { get; }
+
+        /// <summary>
+        /// Gets the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumBytes"/>
+        internal int BaggageMaximumBytes { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics
