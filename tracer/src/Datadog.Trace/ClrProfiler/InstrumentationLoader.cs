@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.ComponentModel;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler;
 
@@ -16,11 +17,14 @@ namespace Datadog.Trace.ClrProfiler;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class InstrumentationLoader
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<InstrumentationLoader>();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="InstrumentationLoader"/> class.
     /// </summary>
     public InstrumentationLoader()
     {
+        Log.Debug("InstrumentationLoader initialized");
         // Instrumentation.Initialize();
     }
 }
