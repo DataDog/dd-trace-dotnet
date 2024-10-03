@@ -44,9 +44,7 @@ public class AspNetCore5ASMDisabled : AspNetBase, IClassFixture<AspNetCoreTestFi
     public AspNetCore5ASMDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: "AspNetCore5.SecurityDisabled")
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "true");
-        // SetEnvironmentVariable(ConfigurationKeys.AppSec.Rules, "rasp-rule-set.json");
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, null);
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "0");
         EnableRasp();
         Fixture = fixture;
         Fixture.SetOutput(outputHelper);
