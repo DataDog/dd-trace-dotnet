@@ -942,7 +942,14 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (ShouldRewriteProfilerMaps())
         {
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
-            RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+            if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
+            {
+                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+            }
+            else
+            {
+                Logger::Warn("Skipped rewrite of PInvoke maps for continuous profiler as path does not exist: ", profiler_library_path);
+            }
         }
 
         if (IsVersionCompatibilityEnabled())
