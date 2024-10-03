@@ -36,6 +36,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
+        private static readonly Random Rand = new();
+
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -201,7 +203,8 @@ namespace Datadog.Trace.TestHelpers
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
             var process = helper.Process;
-            var timeoutMs = (int)TimeSpan.FromSeconds(5).TotalMilliseconds;
+
+            var timeoutMs = TestHelper.Rand.Next(4000, 7000);
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 
             var standardOutput = helper.StandardOutput;
