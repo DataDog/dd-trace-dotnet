@@ -10,6 +10,8 @@ using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Text;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
@@ -35,8 +37,19 @@ internal class DataStreamsContextPropagator
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
         var encodedBytes = PathwayContextEncoder.Encode(context);
-        var base64EncodedContext = Convert.ToBase64String(encodedBytes);
-        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes(base64EncodedContext));
+
+        int base64Length = ((encodedBytes.Length + 2) / 3) * 4;
+        byte[] base64EncodedContextBytes = new byte[base64Length];
+
+        var status = Base64.EncodeToUtf8(encodedBytes, base64EncodedContextBytes, out int bytesConsumed, out int bytesWritten);
+
+        if (status != OperationStatus.Done)
+        {
+            Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
+            throw new InvalidOperationException($"Base64 encoding failed with status: {status}");
+        }
+
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes);
 
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
@@ -61,8 +74,7 @@ internal class DataStreamsContextPropagator
         {
             try
             {
-                var base64String = Encoding.UTF8.GetString(base64Bytes);
-                var decodedBytes = Convert.FromBase64String(base64String);
+                var decodedBytes = Convert.FromBase64String(Encoding.UTF8.GetString(base64Bytes));
                 return PathwayContextEncoder.Decode(decodedBytes);
             }
             catch (Exception ex)
