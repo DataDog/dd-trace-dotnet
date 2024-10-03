@@ -35,6 +35,7 @@ internal record ConfigurationStatus
     internal const string WafRulesOverridesKey = "rules_override";
     internal const string WafExclusionsKey = "exclusions";
     internal const string WafRulesDataKey = "rules_data";
+    internal const string WafExclusionsDataKey = "exclusion_data";
     internal const string WafCustomRulesKey = "custom_rules";
     internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
@@ -57,6 +58,8 @@ internal record ConfigurationStatus
 
     internal Dictionary<string, RuleData[]> RulesDataByFile { get; } = new();
 
+    internal Dictionary<string, RuleData[]> ExclusionsDataByFile { get; } = new();
+
     internal Dictionary<string, JArray> ExclusionsByFile { get; } = new();
 
     internal Dictionary<string, RuleSet> RulesByFile { get; } = new();
@@ -67,9 +70,9 @@ internal record ConfigurationStatus
 
     internal Dictionary<string, JArray> CustomRulesByFile { get; } = new();
 
-    internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
+    internal Dictionary<string, Action[]> ActionsByFile { get; init; } = new();
 
-    internal IDictionary<string, Action> Actions { get; set; } = new Dictionary<string, Action>();
+    internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
     internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
     {
@@ -123,9 +126,16 @@ internal record ConfigurationStatus
             dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsDataKey))
+        {
+            var rulesData = MergeRuleData(ExclusionsDataByFile.SelectMany(x => x.Value));
+            dictionary.Add(WafExclusionsDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+        }
+
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
         {
-            dictionary.Add(WafActionsKey, Actions.Select(a => a.Value.ToKeyValuePair()).ToArray());
+            var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
+            dictionary.Add(WafActionsKey, actions.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))

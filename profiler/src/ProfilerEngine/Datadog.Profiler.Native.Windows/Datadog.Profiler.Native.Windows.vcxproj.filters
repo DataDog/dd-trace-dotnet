@@ -65,6 +65,9 @@
     <ClInclude Include="ETW\ProfilerLogger.h">
       <Filter>ETW</Filter>
     </ClInclude>
+    <ClInclude Include="CrashReportingWindows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -105,6 +108,9 @@
     </ClCompile>
     <ClCompile Include="ETW\ProfilerLogger.cpp">
       <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="CrashReportingWindows.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
