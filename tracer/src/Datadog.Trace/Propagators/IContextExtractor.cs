@@ -13,7 +13,7 @@ internal interface IContextExtractor
 {
     PropagatorType PropagatorType { get; }
 
-    bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? context)
+    bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
         where TCarrierGetter : struct, ICarrierGetter<TCarrier>;
 }
 
