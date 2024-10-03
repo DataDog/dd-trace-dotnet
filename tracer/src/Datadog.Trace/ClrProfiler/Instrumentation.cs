@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static readonly string ProfilerClsid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
+        private static readonly Lazy<IDatadogLogger> _log = new(() => DatadogLogging.GetLoggerFor(typeof(Instrumentation)));
 
         private static bool legacyMode = false;
 
@@ -70,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        private static IDatadogLogger Log => _log.Value;
+
         /// <summary>
         /// Gets a value indicating the version of the native Datadog profiler. This method
         /// is rewritten by the profiler.
@@ -83,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler
         /// </summary>
         public static void Initialize()
         {
+            Log.Debug("Initialize() called");
+
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
