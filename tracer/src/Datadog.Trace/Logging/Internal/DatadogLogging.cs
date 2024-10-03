@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -24,31 +25,44 @@ namespace Datadog.Trace.Logging
 
         static DatadogLogging()
         {
+            var sb = new StringBuilder();
             // Initialize the fallback logger right away
             // because some part of the code might produce logs while we initialize the actual logger
             SharedLogger = DatadogSerilogLogger.NullLogger;
 
             try
             {
+                sb.AppendFormat("{0}, GlobalSettings.Instance.DebugEnabledInternal", DateTime.UtcNow);
+
                 if (GlobalSettings.Instance.DebugEnabledInternal)
                 {
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
 
+                sb.AppendFormat("{0}, DatadogLoggingFactory.GetConfiguration", DateTime.UtcNow);
                 var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 
+                sb.AppendFormat("{0}, LogFileRetentionDays", DateTime.UtcNow);
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {
+                    sb.AppendFormat("{0}, CleanLogFiles", DateTime.UtcNow);
                     Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
                 }
 
+                sb.AppendFormat("{0}, DomainMetadata.Instance", DateTime.UtcNow);
                 var domainMetadata = DomainMetadata.Instance;
+                sb.AppendFormat("{0}, DomainMetadata.Instance", DateTime.UtcNow);
                 SharedLogger = DatadogLoggingFactory.CreateFromConfiguration(in config, domainMetadata) ?? SharedLogger;
+                sb.AppendFormat("{0}, Finished", DateTime.UtcNow);
             }
             catch
             {
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
             }
+
+#pragma warning disable DDLOG004
+            SharedLogger.Debug(sb.ToString());
+#pragma warning restore DDLOG004
         }
 
         public static IDatadogLogger GetLoggerFor(Type classType)
