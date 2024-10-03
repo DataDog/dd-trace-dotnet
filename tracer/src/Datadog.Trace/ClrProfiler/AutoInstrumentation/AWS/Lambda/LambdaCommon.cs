@@ -50,7 +50,6 @@ internal abstract class LambdaCommon
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
 
-        // response.Headers is a WebHeaderCollection, which is not convertable to IHeadersCollection, so we have to make it into a dictionary.
         var headers = response.Headers;
         if (!ValidateOkStatus(response))
         {
