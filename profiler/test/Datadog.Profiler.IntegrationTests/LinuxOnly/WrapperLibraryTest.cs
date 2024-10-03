@@ -108,6 +108,13 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 foreach (var process in processes)
                 {
                     _output.WriteLine($"Process: {process.ProcessName} ({process.Id})");
+
+                    if (process.ProcessName == "createdump")
+                    {
+                        var testBaseOutputDir = runner.Environment.GetTestOutputPath();
+                        process.GetAllThreadsStack(testBaseOutputDir, _output);
+                        process.TakeMemoryDump(testBaseOutputDir, _output);
+                    }
                 }
             }
 
