@@ -10,11 +10,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.Configuration;
@@ -22,10 +20,8 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using ICSharpCode.Decompiler.Solution;
 using Xunit;
 using Xunit.Abstractions;
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rasp;
 

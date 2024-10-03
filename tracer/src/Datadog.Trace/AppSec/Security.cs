@@ -233,13 +233,14 @@ namespace Datadog.Trace.AppSec
                         Log.Debug("Enabling ASM.");
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
-                        UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
                     }
+
+                    UpdateActiveAddresses();
                 } // update asm configuration
                 else if (Enabled && anyChange)
                 {
@@ -664,9 +665,7 @@ namespace Datadog.Trace.AppSec
         internal void UpdateActiveAddresses()
         {
             // So far, RASP is the only one that uses this
-            // If we recieve a new configuration, we need to update the active addresses even if RASP is disabled
-            // because it could be enabled later
-            if (RaspInstrumentationRequired && _waf?.IsKnowAddressesSuported() == true)
+            if (RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);

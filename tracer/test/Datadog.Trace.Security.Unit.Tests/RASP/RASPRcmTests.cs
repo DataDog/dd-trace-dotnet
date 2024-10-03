@@ -29,7 +29,7 @@ public class RaspRcmTests : SettingsTestsBase
     public void GivenANewOperator_WhenUpdateFromRcm_NoErrorIsReported(bool errorExpected, string rules)
     {
         var remoteConfigValues = CreateRemoteConfigValues(rules);
-        var security = CreateSecurity(CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]));
+        var security = CreateSecurity();
         var result = security.UpdateFromRcmForTest(remoteConfigValues);
         result.Length.Should().Be(1);
 
@@ -94,8 +94,9 @@ public class RaspRcmTests : SettingsTestsBase
         result[0].ApplyState.Should().Be(ApplyStates.ERROR);
     }
 
-    private static AppSec.Security CreateSecurity(IConfigurationSource source)
+    private static AppSec.Security CreateSecurity()
     {
+        var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]);
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
         var security = new AppSec.Security(settings);
         // Set it to true with reflection to avoid all the initialization
