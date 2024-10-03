@@ -9,7 +9,6 @@
 #include <dirent.h>
 #include <string>
 #include <memory>
-#include <filesystem>
 
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
@@ -27,6 +26,8 @@ extern "C"
 #include "datadog/profiling.h"
 #include "datadog/crashtracker.h"
 }
+
+#include <shared/src/native-src/dd_filesystem.hpp>
 
 CrashReporting* CrashReporting::Create(int32_t pid)
 {
@@ -241,7 +242,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
         stackFrame.isSuspicious = false;
 
-        std::filesystem::path modulePath(module.first);
+        fs::path modulePath(module.first);
 
         if (modulePath.has_filename())
         {

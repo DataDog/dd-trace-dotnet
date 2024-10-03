@@ -9,7 +9,7 @@
 #include "Psapi.h"
 
 #include <shared/src/native-src/string.h>
-#include <filesystem>
+#include <shared/src/native-src/dd_filesystem.hpp>
 
 #pragma comment(lib, "dbghelp.lib")
 
@@ -176,7 +176,7 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             methodName << module.first << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module.second);
             stackFrame.method = methodName.str();
 
-            std::filesystem::path modulePath(module.first);
+            fs::path modulePath(module.first);
 
             if (modulePath.has_filename())
             {
