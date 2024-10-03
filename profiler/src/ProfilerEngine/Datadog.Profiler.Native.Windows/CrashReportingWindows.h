@@ -3,6 +3,7 @@
 
 #pragma once
 #include "CrashReporting.h"
+#include "ScopedHandle.h"
 
 struct ModuleInfo
 {
@@ -27,6 +28,6 @@ private:
     std::vector<ModuleInfo> GetModules();
     std::pair<std::string, uintptr_t> FindModule(uintptr_t ip);
 
-    HANDLE _process;
+    ScopedHandle _process;
     std::vector<ModuleInfo> _modules;
 };
