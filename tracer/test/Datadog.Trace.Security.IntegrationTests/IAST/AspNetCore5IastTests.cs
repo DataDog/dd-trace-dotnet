@@ -494,10 +494,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
                     span.Tags["_dd.stack"] = json;
                 }
 
-                foreach (var key in span.MetaStruct.Keys.ToArray())
-                {
-                    span.MetaStruct[key] = [];
-                }
+                span.MetaStruct.Remove("_dd.stack");
             }
         }
 
