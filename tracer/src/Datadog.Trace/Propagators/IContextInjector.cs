@@ -11,7 +11,7 @@ internal interface IContextInjector
 {
     PropagatorType PropagatorType { get; }
 
-    void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+    void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
         where TCarrierSetter : struct, ICarrierSetter<TCarrier>;
 }
 
