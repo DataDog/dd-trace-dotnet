@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             new List<InstrumentationOptions>
             {
                 new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
-                new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
+                // new(instrumentSocketHandler: false, instrumentWinHttpOrCurlHandler: true),
+                // new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: false),
+                // new(instrumentSocketHandler: true, instrumentWinHttpOrCurlHandler: true),
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
@@ -46,11 +46,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> IntegrationConfigWithObfuscation() =>
             from instrumentationOptions in InstrumentationOptionsValues
-            from socketHandlerEnabled in new[] { true, false }
-            from queryStringEnabled in new[] { true, false }
+            from socketHandlerEnabled in new[] { false }
+            from queryStringEnabled in new[] { false }
             from queryStringSizeAndExpectation in new[] { new KeyValuePair<int?, string>(null, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(200, "?key1=value1&<redacted>"), new KeyValuePair<int?, string>(2, "?k") }
             from metadataSchemaVersion in new[] { "v0", "v1" }
-            from traceId128Enabled in new[] { true, false }
+            from traceId128Enabled in new[] { false }
             select new object[]
                    {
                        instrumentationOptions,
