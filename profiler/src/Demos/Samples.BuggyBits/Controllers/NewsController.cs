@@ -18,9 +18,9 @@ namespace BuggyBits.Controllers
         private static int _id = 0;
         private int _instanceId;
 
-//#pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
-//        private readonly int[] bits = new int[25000];
-//#pragma warning restore IDE0052
+#pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
+        private readonly int[] bits = new int[1024];
+#pragma warning restore IDE0052
         private IMemoryCache cache;
         private DateTime _creationTime;
 
@@ -29,6 +29,8 @@ namespace BuggyBits.Controllers
             _creationTime = DateTime.Now;
             _instanceId = Interlocked.Increment(ref _id);
             this.cache = cache;
+
+            // Note: this is needed to have the gen2 size metric updated
             GC.Collect();
         }
 
