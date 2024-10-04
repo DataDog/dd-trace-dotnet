@@ -66,7 +66,6 @@ namespace Datadog.Profiler.IntegrationTests
             _pipeClient.Flush();
 
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
-            // Thread.Sleep(5);
         }
 
         public async Task StartServerAsync()
@@ -166,9 +165,7 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     // NOTE: we want to accept the profiler registration command before starting to send events from another thread
                     //       so we don't await this async method
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                     Task.Run(StartClientAsync);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
                 }
 
                 return _profilerHasRegistered;

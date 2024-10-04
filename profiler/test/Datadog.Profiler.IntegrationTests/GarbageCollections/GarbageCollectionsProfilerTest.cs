@@ -72,7 +72,6 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             Guid guid = Guid.NewGuid();
             runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
-            // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             if (IntPtr.Size == 4)
             {

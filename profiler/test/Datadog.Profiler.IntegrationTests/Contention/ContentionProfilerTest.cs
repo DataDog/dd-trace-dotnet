@@ -114,11 +114,6 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             runner.Run(agent);
 
-            // TODO: the recorded InstructionPointers are not usable so we need to
-            //       create fake frames when replaying an events recording.
-            //       Use IPs with specific format (0xFFFFFFxx) to identify them where xx
-            //       would be the index of the fake frame string to use.
-            //       --> EtwEventsHandler.cpp and FrameStore.cpp/.h should be impacted
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             AssertContainLockContentionSamples(runner.Environment.PprofDir);
             Assert.True(eventsCount > 0);
