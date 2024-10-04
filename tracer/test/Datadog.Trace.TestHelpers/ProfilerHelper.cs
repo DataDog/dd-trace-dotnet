@@ -79,7 +79,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
 
-                // await MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
+                await MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
 
                 return suspendedProcess.ResumeProcess();
             }

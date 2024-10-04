@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
             // Temporarily enable to try to find cause of slow logs
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
-            // SetEnvironmentVariable("_NO_DEBUG_HEAP", "1");
+            SetEnvironmentVariable("_NO_DEBUG_HEAP", "1");
         }
 
         internal static IEnumerable<InstrumentationOptions> InstrumentationOptionsValues =>
