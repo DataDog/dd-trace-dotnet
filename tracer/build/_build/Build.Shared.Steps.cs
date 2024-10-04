@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using Nuke.Common;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
+using System.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using Nuke.Common.Tools.NuGet;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -284,4 +284,81 @@ partial class Build
                 FileExistsPolicy.Overwrite,
                 true);
         });
+
+    Target ValidateNativeTracerGlibcCompatibility => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileTracerNativeSrc)
+        .After(PublishNativeTracer)
+        .Before(ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+            var dest = MonitoringHomeDirectory / arch / $"{NativeTracerProject.Name}.{extension}";
+
+            // The profiler has a different minimum glibc version to the tracer.
+            // The _overall_ minimum is the highest of the two, but as we don't
+            // currently enable the profiler on ARM64, we take the .NET runtime's minimum
+            // glibc as our actual minimum in practice. Before we can enable the profiler
+            // on arm64 we must first ensure we bring this glibc version down to 2.23.
+            //
+            // If we need to increase this version on arm64 later, that is ok as long
+            // as it doesn't go above 2.23. Just update the version below. We must
+            // NOT increase it beyond 2.23, or increase the version on x64.
+            //
+            // See also the ValidateNativeProfilerGlibcCompatibility Nuke task and the checks
+            // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
+            var expectedGlibcVersion = IsArm64
+                ? new Version(2, 18)
+                : new Version(2, 17);
+
+            ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
+        });
+
+    void ValidateNativeLibraryGlibcCompatibility(AbsolutePath libraryPath, Version expectedGlibcVersion)
+    {
+        var filename = Path.GetFileNameWithoutExtension(libraryPath);
+        var glibcVersion = FindMinimumGlibcVersion(libraryPath);
+
+        Logger.Information("Minimum required glibc version for {Filename} is {GlibcVersion}", filename, glibcVersion);
+
+        if (IsAlpine && glibcVersion is not null)
+        {
+            throw new Exception($"Alpine build of {filename} should not have glibc symbols in the binary, but found {glibcVersion}");
+        }
+        else if (!IsAlpine && glibcVersion != expectedGlibcVersion)
+        {
+            throw new Exception($"{filename} should have a minimum required glibc version of {expectedGlibcVersion} but has {glibcVersion}");
+        }
+    }
+
+    Version FindMinimumGlibcVersion(AbsolutePath libraryPath)
+    {
+        var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
+
+        // Gives output similar to this:
+        // 0000000000170498 T SetGitMetadataForApplication
+        // 000000000016f944 T ThreadsCpuManager_Map
+        //                  w __cxa_finalize@GLIBC_2.17
+        //                  U __cxa_thread_atexit_impl@GLIBC_2.18
+        //                  U __duplocale@GLIBC_2.17
+        //                  U __environ@GLIBC_2.17
+        //                  U __errno_location@GLIBC_2.17
+        //                  U __freelocale@GLIBC_2.17
+        //                  U __fxstat@GLIBC_2.17
+        //                  U __fxstat64@GLIBC_2.17
+        //                  U __getdelim@GLIBC_2.17
+        //                  w __gmon_start__
+        //                  U __iswctype_l@GLIBC_2.17
+        //                  U __lxstat@GLIBC_2.17
+        //                  U __newlocale@GLIBC_2.17
+        //
+        // We only care about the Undefined symbols that are in glibc
+
+        return output
+              .Where(x=>x.Contains("@GLIBC_"))
+              .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
+              .OrderDescending()
+              .FirstOrDefault();
+    }
 }
