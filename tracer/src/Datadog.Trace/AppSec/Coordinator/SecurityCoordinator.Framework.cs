@@ -490,14 +490,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static object GetHeaderValueForWaf(string[] value)
     {
-        if (value.Count() == 1)
-        {
-            return value[0];
-        }
-        else
-        {
-            return value;
-        }
+        return (value.Count() == 1 ? value[0] : value);
     }
 
     public Dictionary<string, object> GetResponseHeadersForWaf()
