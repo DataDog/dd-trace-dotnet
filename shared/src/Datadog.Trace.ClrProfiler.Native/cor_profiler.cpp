@@ -2,11 +2,6 @@
 #include "log.h"
 #include "dynamic_dispatcher.h"
 #include "util.h"
-
-#ifdef LINUX
-#include <unistd.h> // For confstr and _CS_GNU_LIBC_VERSION
-#endif
-
 #include "../../../shared/src/native-src/pal.h"
 #include "EnvironmentVariables.h"
 #include "single_step_guard_rails.h"
@@ -122,11 +117,6 @@ namespace datadog::shared::nativeloader
     {
         Log::Debug("CorProfiler::Initialize");
         const auto inferredVersion = InspectRuntimeCompatibility(pICorProfilerInfoUnk);
-
-        if (!IsLibcVersionCompatible())
-        {
-            return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-        }
 
         const auto process_name = ::shared::GetCurrentProcessName();
         Log::Debug("ProcessName: ", process_name);
@@ -1260,61 +1250,6 @@ namespace datadog::shared::nativeloader
         }
 
         return m_this->m_runtimeIdStore.Get(appDomain).c_str();
-    }
-
-    bool CorProfiler::IsLibcVersionCompatible()
-    {
-#ifdef LINUX
-
-        static char libc_version[32];
-
-        if (confstr(_CS_GNU_LIBC_VERSION, libc_version, sizeof(libc_version)) <= 0)
-        {
-            Log::Debug("CorProfiler::IsLibcVersionCompatible: get_libc_ptr not found, assuming musl libc");
-            return true;
-        }
-
-        Log::Debug("CorProfiler::IsLibcVersionCompatible: found libc version ", libc_version);
-
-#if ARM64
-        const int major_required = 2;
-        const int minor_required = 23;
-#else // assume x64
-        const int major_required = 2;
-        const int minor_required = 17;
-#endif
-
-        int major = 0, minor = 0, patch = 0;
-        char dot;
-
-        std::istringstream iss(libc_version);
-
-        if(!(iss >> major >> dot >> minor)) // Failed to parse, weird, lets just assume it's ok (safer to bail out, but do we want to?)
-        {
-            Log::Debug("CorProfiler::IsLibcVersionCompatible: could not parse libc version, assuming compatibility");
-            return true;
-        }
-
-        // Patch version is optional
-        if (iss >> dot >> patch) {
-            // Successfully read patch, but we don't care about it currently so just ignore
-        }
-
-        if (major > major_required || (major == major_required && minor >= minor_required))
-        {
-            Log::Debug("CorProfiler::IsLibcVersionCompatible: detected libc version ", libc_version,
-                       " is compatible with required minimum ", major_required, ".", minor_required);
-            return true;
-        }
-
-        Log::Warn("CorProfiler::IsLibcVersionCompatible: detected libc version ", libc_version,
-                   " is not compatible with required minimum ", major_required, ".", minor_required,
-                   ". ClrProfiler disabled");
-        return false;
-#endif
-
-        // not libc
-        return true;
     }
 
 } // namespace datadog::shared::nativeloader

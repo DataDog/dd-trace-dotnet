@@ -33,7 +33,6 @@ namespace datadog::shared::nativeloader
 
         static std::string InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
         static RuntimeInformation GetRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo, const std::string& inferred_version);
-        static bool IsLibcVersionCompatible();
 
     public:
         CorProfiler(IDynamicDispatcher* dispatcher);
