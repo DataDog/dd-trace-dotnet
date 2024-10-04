@@ -46,7 +46,8 @@
       http.url: http://localhost:00000/Guid_2/?q=1.Initial,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -121,7 +122,8 @@
       out.host: localhost,
       runtime-id: Guid_1,
       span.kind: client,
-      Updated-key: Updated Value
+      Updated-key: Updated Value,
+      _dd.base_service: updated-name
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -243,7 +245,8 @@
       http.url: http://localhost:00000/Guid_2/?q=4.DefaultsReinstated,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -362,7 +365,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.url: http://localhost:00000/Guid_2/?q=5.Ext,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -433,7 +437,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.url: http://localhost:00000/Guid_2/?q=6.Ext,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -522,7 +527,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.url: http://localhost:00000/Guid_2/?q=7.Ext,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -612,7 +618,8 @@ CustomException: Exception of type 'CustomException' was thrown.
       http.url: http://localhost:00000/Guid_2/?q=8.Ext,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.ManualInstrumentation
     },
     Metrics: {
       _dd.top_level: 1.0

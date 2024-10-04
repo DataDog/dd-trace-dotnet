@@ -34,7 +34,8 @@
       http.url: http://localhost:00000/,
       out.host: aws_sns,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -63,7 +64,8 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      topicname: MyTopic
+      topicname: MyTopic,
+      _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -86,7 +88,8 @@
       http.url: http://localhost:00000/,
       out.host: aws_sns,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SimpleNotificationService
     },
     Metrics: {
       _dd.top_level: 1.0

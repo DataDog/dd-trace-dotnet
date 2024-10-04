@@ -16,6 +16,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -39,6 +40,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -62,6 +64,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -85,6 +88,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -108,6 +112,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -131,6 +136,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -154,6 +160,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -177,6 +184,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -200,6 +208,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -223,6 +232,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -246,6 +256,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -269,6 +280,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -292,6 +304,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -315,6 +328,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -338,6 +352,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -361,6 +376,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -384,6 +400,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -407,6 +424,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -430,6 +448,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -453,6 +472,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -476,6 +496,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -499,6 +520,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -522,6 +544,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -545,6 +568,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -568,6 +592,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -591,6 +616,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -614,6 +640,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -637,6 +664,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -660,6 +688,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -683,6 +712,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -706,6 +736,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -729,6 +760,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -752,6 +784,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -775,6 +808,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -798,6 +832,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -821,6 +856,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -844,6 +880,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -867,6 +904,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -890,6 +928,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -913,6 +952,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -936,6 +976,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -959,6 +1000,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -982,6 +1024,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1005,6 +1048,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1028,6 +1072,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1051,6 +1096,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1074,6 +1120,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1097,6 +1144,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1120,6 +1168,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1143,6 +1192,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1166,6 +1216,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1189,6 +1240,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1212,6 +1264,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1235,6 +1288,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1258,6 +1312,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1281,6 +1336,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1304,6 +1360,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1327,6 +1384,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1350,6 +1408,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1373,6 +1432,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1396,6 +1456,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1419,6 +1480,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1442,6 +1504,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1465,6 +1528,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1488,6 +1552,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1511,6 +1576,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1534,6 +1600,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1557,6 +1624,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1580,6 +1648,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1603,6 +1672,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1626,6 +1696,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1649,6 +1720,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1672,6 +1744,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1695,6 +1768,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1718,6 +1792,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1741,6 +1816,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1764,6 +1840,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1787,6 +1864,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1810,6 +1888,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1833,6 +1912,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1856,6 +1936,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1879,6 +1960,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1902,6 +1984,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1925,6 +2008,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1948,6 +2032,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1971,6 +2056,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -1994,6 +2080,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2017,6 +2104,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2040,6 +2128,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2063,6 +2152,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2086,6 +2176,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2109,6 +2200,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2132,6 +2224,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2155,6 +2248,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2178,6 +2272,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2201,6 +2296,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2224,6 +2320,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2247,6 +2344,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2270,6 +2368,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2293,6 +2392,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2316,6 +2416,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2339,6 +2440,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2362,6 +2464,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2385,6 +2488,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2408,6 +2512,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2431,6 +2536,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2454,6 +2560,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2477,6 +2584,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2500,6 +2608,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2523,6 +2632,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2546,6 +2656,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2569,6 +2680,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2592,6 +2704,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2615,6 +2728,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2638,6 +2752,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2661,6 +2776,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2684,6 +2800,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2707,6 +2824,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2730,6 +2848,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2753,6 +2872,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2776,6 +2896,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2799,6 +2920,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2822,6 +2944,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2845,6 +2968,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2868,6 +2992,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2891,6 +3016,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2914,6 +3040,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2937,6 +3064,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2960,6 +3088,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -2983,6 +3112,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3006,6 +3136,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3029,6 +3160,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3052,6 +3184,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3075,6 +3208,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3098,6 +3232,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3121,6 +3256,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3144,6 +3280,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3167,6 +3304,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3190,6 +3328,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3213,6 +3352,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3236,6 +3376,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3259,6 +3400,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3282,6 +3424,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3305,6 +3448,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3328,6 +3472,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3351,6 +3496,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
@@ -3374,6 +3520,7 @@
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.base_service: Samples.MySql,
       _dd.dbm_trace_injected: true
     },
     Metrics: {
