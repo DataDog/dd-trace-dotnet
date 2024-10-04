@@ -19,11 +19,14 @@ WORKDIR /app
 COPY --from=builder /src/artifacts /app/install
 
 ARG INSTALL_CMD
+# A simple non-install command to simplify the RUN command below
+ARG ADDITIONAL_INSTALL="ls /var/log/datadog"
 RUN mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
     && cd /app/install \
     && $INSTALL_CMD \
-    && rm -rf /app/install
+    && rm -rf /app/install \
+    && $ADDITIONAL_INSTALL
 
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1
