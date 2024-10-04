@@ -31,13 +31,13 @@ public class SpanMessagePackFormatterTests
     public void SerializeSpans()
     {
         var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
-
+        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
         var parentContext = new SpanContext(new TraceId(0, 1), 2, (int)SamplingPriority.UserKeep, "ServiceName1", "origin1");
 
         var spans = new[]
         {
             new Span(parentContext, DateTimeOffset.UtcNow),
-            new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
+            new Span(new SpanContext(parentContext, traceContext, "ServiceName1"), DateTimeOffset.UtcNow),
             new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
 

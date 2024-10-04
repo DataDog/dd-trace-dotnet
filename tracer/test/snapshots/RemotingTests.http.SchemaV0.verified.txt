@@ -31,7 +31,8 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -50,7 +51,8 @@
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -72,7 +74,8 @@
       http.url: http://localhost:00000/RemoteServer,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -100,7 +103,8 @@ at System.Net.HttpWebRequest.GetResponse(),
       http.url: http://localhost:00000/RemoteServer,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Remoting
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -16,7 +16,8 @@
         "http.url": "http://localhost:5000/api/values",
         "out.host": "localhost",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "client"
+        "span.kind": "client",
+        "_dd.base_service": "AspNetCoreSmokeTest"
       },
       "metrics": {
         "_dd.top_level": 1.0,
