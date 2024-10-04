@@ -40,8 +40,7 @@ internal class DataStreamsContextPropagator
 
         int base64Length = ((encodedBytes.Length + 2) / 3) * 4;
         byte[] base64EncodedContextBytes = new byte[base64Length];
-
-        var status = Base64.EncodeToUtf8(encodedBytes, base64EncodedContextBytes, out int bytesConsumed, out int bytesWritten);
+        var status = Base64.EncodeToUtf8(encodedBytes, base64EncodedContextBytes, out _, out int bytesWritten);
 
         if (status != OperationStatus.Done)
         {
@@ -49,7 +48,7 @@ internal class DataStreamsContextPropagator
             throw new InvalidOperationException($"Base64 encoding failed with status: {status}");
         }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes);
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
 
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
@@ -74,17 +73,26 @@ internal class DataStreamsContextPropagator
         {
             try
             {
-                var decodedBytes = Convert.FromBase64String(Encoding.UTF8.GetString(base64Bytes));
-                return PathwayContextEncoder.Decode(decodedBytes);
+                int decodedLength = (base64Bytes.Length * 3) / 4;
+                byte[] decodedBytes = new byte[decodedLength];
+
+                var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
+
+                if (status != OperationStatus.Done)
+                {
+                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                }
+                else
+                {
+                    return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to decode base64 Data Streams context.");
-                // Do not return null yet; try to extract from binary header
             }
         }
 
-        // Fallback to the binary header if legacy headers are enabled
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
             var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
