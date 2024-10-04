@@ -355,7 +355,6 @@
     <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
-    <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
