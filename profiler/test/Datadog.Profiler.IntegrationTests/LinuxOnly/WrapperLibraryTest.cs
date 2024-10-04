@@ -101,6 +101,34 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 _output.WriteLine("Standard output:");
                 _output.WriteLine(processHelper.StandardOutput);
 
+                var pid = processHelper.Process.Id;
+
+                var status = File.ReadAllText($"/proc/{pid}/status");
+
+                _output.WriteLine("Process status:");
+                _output.WriteLine(status);
+
+                _output.WriteLine("************************");
+
+                // Enumerating status for each thread
+                var threads = Directory.GetFiles($"/proc/{pid}/task");
+
+                foreach (var thread in threads)
+                {
+                    _output.WriteLine($"**** {thread}:");
+                    try
+                    {
+                        var threadStatus = File.ReadAllText($"{thread}/status");
+                        _output.WriteLine(threadStatus);
+                    }
+                    catch (Exception ex)
+                    {
+                        _output.WriteLine(ex.Message);
+                    }
+                }
+
+                _output.WriteLine("************************");
+
                 var processes = Process.GetProcesses();
 
                 _output.WriteLine("Processes:");
