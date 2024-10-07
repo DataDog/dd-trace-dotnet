@@ -331,6 +331,8 @@
   "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS": "trace_http_client_excluded_urls",
   "DD_HTTP_SERVER_ERROR_STATUSES": "trace_http_server_error_statuses",
   "DD_HTTP_CLIENT_ERROR_STATUSES": "trace_http_client_error_statuses",
+  "DD_TRACE_HTTP_SERVER_ERROR_STATUSES": "trace_http_server_error_statuses",
+  "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES": "trace_http_client_error_statuses",
   "DD_TRACE_CLIENT_IP_HEADER": "trace_client_ip_header",
   "DD_TRACE_CLIENT_IP_ENABLED": "trace_client_ip_enabled",
   "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED": "trace_kafka_create_consumer_scope_enabled",

@@ -533,7 +533,6 @@ public sealed class TestSession
             CIVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
 
             // Adds the global code coverage percentage to the session
-            SetTag(CodeCoverageTags.Enabled, "true");
             SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);
         }
     }

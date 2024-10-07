@@ -3,36 +3,31 @@
 
 #pragma once
 #include "CrashReporting.h"
-
-#include <string>
-
-#include <libunwind.h>
+#include "ScopedHandle.h"
 
 struct ModuleInfo
 {
     uintptr_t startAddress;
     uintptr_t endAddress;
-    uintptr_t baseAddress;
     std::string path;
 };
 
-class CrashReportingLinux : public CrashReporting
+class CrashReportingWindows : public CrashReporting
 {
 public:
-    CrashReportingLinux(int32_t pid);
+    CrashReportingWindows(int32_t pid);
 
-    ~CrashReportingLinux() override;
+    ~CrashReportingWindows() override;
 
-    int32_t Initialize() override;
+    int32_t STDMETHODCALLTYPE Initialize() override;
 
 private:
     std::vector<std::pair<int32_t, std::string>> GetThreads() override;
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
-    std::pair<std::string_view, uintptr_t> FindModule(uintptr_t ip);
-    std::vector<ModuleInfo> GetModules();
     std::string GetSignalInfo(int32_t signal) override;
-    std::string GetThreadName(int32_t tid);
+    std::vector<ModuleInfo> GetModules();
+    std::pair<std::string_view, uintptr_t> FindModule(uintptr_t ip);
 
-    unw_addr_space_t _addressSpace;
+    ScopedHandle _process;
     std::vector<ModuleInfo> _modules;
 };

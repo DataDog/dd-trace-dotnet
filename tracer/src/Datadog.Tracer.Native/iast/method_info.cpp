@@ -98,16 +98,20 @@ namespace iast
             CSGuard lock(&_module->_cs);
             if (_fullName.size() == 0)
             {
-                auto fullName = GetTypeName() + WStr("::") + _name;
-                auto signature = GetSignature();
-                if (signature != nullptr)
-                {
-                    fullName = signature->CharacterizeMember(fullName);
-                }
-                _fullName = fullName;
+                _fullName = BuildFullName();
             }
         }
         return _fullName;
+    }
+    WSTRING MemberRefInfo::BuildFullName()
+    {
+        auto fullName = GetTypeName() + WStr("::") + _name;
+        auto signature = GetSignature();
+        if (signature != nullptr)
+        {
+            fullName = signature->CharacterizeMember(fullName);
+        }
+        return fullName;
     }
     WSTRING MemberRefInfo::GetFullNameWithReturnType()
     {
@@ -232,8 +236,9 @@ namespace iast
             _name = methodName;
         }
         _allowRestoreOnSecondJit = GetRestoreOnSecondJitConfigValue();
+        _fullName = BuildFullName(); // Avoid the lock in the constructor
 
-        _isExcluded = _module->_dataflow->IsMethodExcluded(GetFullName());
+        _isExcluded = _module->_dataflow->IsMethodExcluded(_fullName);
         if (!_isExcluded && _module->_dataflow->HasMethodAttributeExclusions())
         {
             for (auto methodAttribute : GetCustomAttributes())
