@@ -9,7 +9,7 @@
 #include "Psapi.h"
 
 #include <shared/src/native-src/string.h>
-#include <filesystem>
+#include <shared/src/native-src/dd_filesystem.hpp>
 
 #pragma comment(lib, "dbghelp.lib")
 
@@ -25,10 +25,7 @@ CrashReportingWindows::CrashReportingWindows(int32_t pid)
 {
 }
 
-CrashReportingWindows::~CrashReportingWindows()
-{
-    CloseHandle(_process);
-}
+CrashReportingWindows::~CrashReportingWindows() = default;
 
 int32_t CrashReportingWindows::Initialize()
 {
@@ -36,9 +33,9 @@ int32_t CrashReportingWindows::Initialize()
 
     if (result == 0)
     {
-        _process = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, _pid);
+        _process = ScopedHandle(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, _pid));
 
-        if (_process == NULL)
+        if (!_process.IsValid())
         {
             return 1;
         }
@@ -55,9 +52,9 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
 {
     std::vector<std::pair<int32_t, std::string>> threads;
 
-    auto threadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, _pid);
+    auto threadSnapshot = ScopedHandle(CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, _pid));
 
-    if (threadSnapshot == INVALID_HANDLE_VALUE)
+    if (!threadSnapshot.IsValid())
     {
         return threads;
     }
@@ -71,9 +68,9 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
         {
             if (threadEntry.th32OwnerProcessID == _pid)
             {
-                auto thread = OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadEntry.th32ThreadID);
+                auto thread = ScopedHandle(OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadEntry.th32ThreadID));
 
-                if (thread)
+                if (thread.IsValid())
                 {
                     std::string threadName;
                     PWSTR description;
@@ -83,15 +80,11 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
                         threadName = shared::ToString(description);
                     }
 
-                    threads.push_back({ threadEntry.th32ThreadID, threadName });
-
-                    CloseHandle(thread);
+                    threads.push_back({ threadEntry.th32ThreadID, std::move(threadName) });
                 }                
             }
         } while (Thread32Next(threadSnapshot, &threadEntry));
     }
-
-    CloseHandle(threadSnapshot);
 
     return threads;
 }
@@ -131,9 +124,9 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
     CONTEXT context = {};
     context.ContextFlags = CONTEXT_FULL;
 
-    auto thread = OpenThread(THREAD_GET_CONTEXT, FALSE, tid);
+    auto thread = ScopedHandle(OpenThread(THREAD_GET_CONTEXT, FALSE, tid));
 
-    if (thread == NULL)
+    if (!thread.IsValid())
     {
         return managedFrames;
     }
@@ -170,20 +163,20 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             nullptr,
             SYM_STKWALK_DEFAULT))
         {
-            auto module = FindModule(nativeStackFrame.AddrPC.Offset);
+            auto [moduleName, moduleAddress] = FindModule(nativeStackFrame.AddrPC.Offset);
 
             StackFrame stackFrame;
             stackFrame.ip = nativeStackFrame.AddrPC.Offset;
             stackFrame.sp = nativeStackFrame.AddrStack.Offset;
             stackFrame.isSuspicious = false;
-            stackFrame.moduleAddress = module.second;
+            stackFrame.moduleAddress = moduleAddress;
             stackFrame.symbolAddress = nativeStackFrame.AddrPC.Offset;
 
             std::ostringstream methodName;
-            methodName << module.first << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module.second);
+            methodName << moduleName << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - moduleAddress);
             stackFrame.method = methodName.str();
 
-            std::filesystem::path modulePath(module.first);
+            fs::path modulePath(moduleName);
 
             if (modulePath.has_filename())
             {
@@ -202,8 +195,6 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             frames.push_back(std::move(stackFrame));
         }
     }
-
-    CloseHandle(thread);
 
     return MergeFrames(frames, managedFrames);
 }
@@ -234,7 +225,7 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
                     resolvedModuleName = moduleName;
                 }
 
-                modules.push_back({ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, resolvedModuleName });
+                modules.push_back({ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName) });
             }
         }
     }
@@ -242,9 +233,9 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
     return modules;
 }
 
-std::pair<std::string, uintptr_t> CrashReportingWindows::FindModule(uintptr_t ip)
+std::pair<std::string_view, uintptr_t> CrashReportingWindows::FindModule(uintptr_t ip)
 {
-    for (auto& module : _modules)
+    for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {

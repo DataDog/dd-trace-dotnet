@@ -48,6 +48,7 @@ namespace iast
         PCCOR_SIGNATURE _pSig = nullptr;
         ULONG _nSig = 0;
 
+        WSTRING BuildFullName();
     public:
         mdMemberRef GetMemberId();
 
