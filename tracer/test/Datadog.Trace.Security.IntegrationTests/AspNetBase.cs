@@ -49,6 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecRaspWafDuration = new(@"_dd.appsec.rasp.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecRaspWafDurationWithBindings = new(@"_dd.appsec.rasp.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecFingerPrintHeaders = new(@"_dd.appsec.fp.http.header: hdr-\d+-\S*-\d+-\S*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecFingerPrintNetwork = new(@"_dd.appsec.fp.http.network: net-\d+-\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecSpanIdRegex = (new Regex("\"span_id\":\\d+"));
         private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
         private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
@@ -59,12 +60,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private readonly bool _clearMetaStruct;
         private int _httpPort;
+        private bool _autoApproveChanges = false;
 #pragma warning restore SA1202 // Elements should be ordered by access
 #pragma warning restore SA1401 // Fields should be private
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
+            OverwriteVerifiedSpans();
             _testName = Prefix + (testName ?? sampleName);
             _cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler();
@@ -123,6 +126,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public void ScrubFingerprintHeaders(VerifySettings settings)
         {
             settings.AddRegexScrubber(AppSecFingerPrintHeaders, "_dd.appsec.fp.http.header: <HeaderPrint>");
+            settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
         public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
