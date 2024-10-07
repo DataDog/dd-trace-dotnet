@@ -75,7 +75,15 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
+                    // We only provide an external waf in tests
+                    if (_waf == null)
+                    {
+                        Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
+                    }
+                    else
+                    {
+                        Enabled = _settings.Enabled;
+                    }
                 }
 
                 var subscriptionsKeys = new List<string>();
@@ -127,6 +135,8 @@ namespace Datadog.Trace.AppSec
         internal bool Enabled { get; private set; }
 
         internal bool RaspEnabled => _settings.RaspEnabled && Enabled;
+
+        internal bool RaspInstrumentationRequired => _settings.RaspEnabled && (_settings.Enabled || _settings.CanBeToggled);
 
         internal string? InitializationError { get; private set; }
 
@@ -215,19 +225,22 @@ namespace Datadog.Trace.AppSec
                     // disable ASM scenario
                     if (Enabled && _configurationStatus.EnableAsm == false)
                     {
+                        Log.Debug("Disabling ASM.");
                         DisposeWafAndInstrumentations(true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
                     else if (!Enabled && _configurationStatus.EnableAsm == true)
                     {
+                        Log.Debug("Enabling ASM.");
                         _configurationStatus.ApplyStoredFiles();
                         InitWafAndInstrumentations(true);
-                        UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
                     }
+
+                    UpdateActiveAddresses();
                 } // update asm configuration
                 else if (Enabled && anyChange)
                 {
@@ -499,10 +512,10 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, RaspInstrumentationRequired && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, RaspInstrumentationRequired && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, RaspInstrumentationRequired && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, RaspInstrumentationRequired && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
@@ -652,7 +665,7 @@ namespace Datadog.Trace.AppSec
         internal void UpdateActiveAddresses()
         {
             // So far, RASP is the only one that uses this
-            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            if (RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
@@ -667,7 +680,7 @@ namespace Datadog.Trace.AppSec
         internal bool AddressEnabled(string address)
         {
             // So far, RASP is the only one that uses this
-            if (!_settings.RaspEnabled)
+            if (!RaspEnabled)
             {
                 return false;
             }

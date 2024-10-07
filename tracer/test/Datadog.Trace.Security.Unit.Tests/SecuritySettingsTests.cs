@@ -173,8 +173,9 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Theory]
-        [InlineData("true", false)]
+        [InlineData("true", true)]
         [InlineData("false", false)]
+        [InlineData(null, true)]
         public void RaspEnabledAsmDisabled(string raspEnabledValue, bool expected)
         {
             var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "false"), (ConfigurationKeys.AppSec.RaspEnabled, raspEnabledValue)]);

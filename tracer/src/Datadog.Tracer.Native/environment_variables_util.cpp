@@ -58,6 +58,11 @@ bool IsAsmSettingEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::asm_enabled), false);
 }
 
+bool AsmCouldPotentiallyBeToggledOn()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::asm_enabled), true);
+}
+
 bool IsRaspSettingEnabled()
 {
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::rasp_enabled), true);
@@ -65,7 +70,7 @@ bool IsRaspSettingEnabled()
 
 bool IsRaspEnabled()
 {
-    return IsRaspSettingEnabled() && IsAsmSettingEnabled();
+    return IsRaspSettingEnabled() && AsmCouldPotentiallyBeToggledOn();
 }
 
 bool IsEditAndContinueEnabledCore()
