@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;

@@ -52,7 +52,7 @@ public class PutEventsIntegration
             var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
             if (busName is not null)
             {
-                tags.EventBusName = busName;
+                tags.RuleName = busName;
             }
         }
 

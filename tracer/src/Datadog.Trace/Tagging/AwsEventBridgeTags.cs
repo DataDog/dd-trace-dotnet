@@ -21,8 +21,9 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [Tag(Trace.Tags.EventBusName)]
-        public string EventBusName { get; set; }
+        // TODO rename the `rulename` tag to `eventbusname` across all runtimes
+        [Tag(Trace.Tags.RuleName)]
+        public string RuleName { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
@@ -61,7 +62,7 @@ namespace Datadog.Trace.Tagging
                     return null;
                 }
 
-                return _peerServiceOverride ?? EventBusName;
+                return _peerServiceOverride ?? RuleName;
             }
             private set => _peerServiceOverride = value;
         }
@@ -78,7 +79,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.EventBusName;
+                           : Trace.Tags.RuleName;
             }
         }
     }

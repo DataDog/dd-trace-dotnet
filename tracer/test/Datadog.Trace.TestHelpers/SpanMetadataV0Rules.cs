@@ -230,7 +230,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "EventBridge")
                 .Matches("aws_service", "EventBridge")
-                .IsPresent("eventbusname")
+                .IsPresent("rulename")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")

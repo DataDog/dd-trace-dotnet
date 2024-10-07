@@ -8,12 +8,15 @@
 using System;
 using System.Text;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
     internal static class ContextPropagation
     {
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
+
         private const string DatadogKey = "_datadog";
         private const string StartTimeKey = "x-datadog-start-time";
         private const string ResourceNameKey = "x-datadog-resource-name";
@@ -33,20 +36,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 var duckEntry = entry.DuckCast<IPutEventsRequestEntry>();
                 if (duckEntry != null)
                 {
-                    InjectHeadersIntoDetail(duckEntry, context, duckEntry.EventBusName);
+                    InjectHeadersIntoDetail(duckEntry, context);
                 }
             }
         }
 
         // Tries to add Datadog trace context under the `_datadog` key at the top level of the `detail` field.
         // `detail` is a string, so we have to manually modify it using a StringBuilder.
-        private static void InjectHeadersIntoDetail(IPutEventsRequestEntry entry, SpanContext context, string? eventBusName)
+        private static void InjectHeadersIntoDetail(IPutEventsRequestEntry entry, SpanContext context)
         {
             var detail = entry.Detail?.Trim() ?? "{}";
             if (!detail.EndsWith("}"))
             {
                 // Unable to parse detail string, so just leave it unmodified. Don't inject trace context.
-                Console.WriteLine("Unable to parse detail string. Not injecting trace context.");
+                Log.Debug("Unable to parse detail string. Not injecting trace context.");
                 return;
             }
 
@@ -57,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = BuildTraceContextJson(context, eventBusName);
+            var traceContext = BuildTraceContextJson(context, entry.EventBusName);
             detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
             entry.Detail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
         }

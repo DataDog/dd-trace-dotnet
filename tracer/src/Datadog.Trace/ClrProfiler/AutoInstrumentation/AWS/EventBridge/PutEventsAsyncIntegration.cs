@@ -55,7 +55,7 @@ public class PutEventsAsyncIntegration
             var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
             if (busName is not null)
             {
-                tags.EventBusName = busName;
+                tags.RuleName = busName;
             }
         }
 

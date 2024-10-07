@@ -14,8 +14,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsEventBridgeTags
     {
-        // EventBusNameBytes = MessagePack.Serialize("eventbusname");
-        private static ReadOnlySpan<byte> EventBusNameBytes => new byte[] { 172, 101, 118, 101, 110, 116, 98, 117, 115, 110, 97, 109, 101 };
+        // RuleNameBytes = MessagePack.Serialize("rulename");
+        private static ReadOnlySpan<byte> RuleNameBytes => new byte[] { 168, 114, 117, 108, 101, 110, 97, 109, 101 };
         // SpanKindBytes = MessagePack.Serialize("span.kind");
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 
@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "eventbusname" => EventBusName,
+                "rulename" => RuleName,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -33,8 +33,8 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "eventbusname": 
-                    EventBusName = value;
+                case "rulename": 
+                    RuleName = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsEventBridgeTags));
@@ -47,9 +47,9 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (EventBusName is not null)
+            if (RuleName is not null)
             {
-                processor.Process(new TagItem<string>("eventbusname", EventBusName, EventBusNameBytes));
+                processor.Process(new TagItem<string>("rulename", RuleName, RuleNameBytes));
             }
 
             if (SpanKind is not null)
@@ -62,10 +62,10 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (EventBusName is not null)
+            if (RuleName is not null)
             {
-                sb.Append("eventbusname (tag):")
-                  .Append(EventBusName)
+                sb.Append("rulename (tag):")
+                  .Append(RuleName)
                   .Append(',');
             }
 
