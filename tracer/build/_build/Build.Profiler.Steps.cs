@@ -177,13 +177,13 @@ partial class Build
             Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
             
             // allow weak_alias resolution https://git.musl-libc.org/cgit/musl/tree/src/misc/getauxval.c
-            var nameMap = new Dictionary<string, string>{{"__getauxval", "getauxval"}};
+            // var nameMap = new Dictionary<string, string>{{"__getauxval", "getauxval"}};
             var symbols = output
                          .Select(x => x.Trim())
                          .Where(x => x.StartsWith("U "))
                          .Select(x => x.TrimStart("U "))
                          .Select(x => x.Contains('@') ? x.Substring(0, x.IndexOf('@')) : x)
-                         .Select(x => nameMap.GetValueOrDefault(x, x))
+                         // .Select(x => nameMap.GetValueOrDefault(x, x))
                          .OrderBy(x => x)
                          .ToList();
 
