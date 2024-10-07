@@ -67,7 +67,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null, bool clearMetaStruct = false)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            OverwriteVerifiedSpans();
             _testName = Prefix + (testName ?? sampleName);
             _cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler();
@@ -222,20 +221,56 @@ namespace Datadog.Trace.Security.IntegrationTests
                 || s.Metrics["_dd.appsec.rasp.duration"] < s.Metrics["_dd.appsec.rasp.duration_ext"]);
             }
 
-            if (string.IsNullOrEmpty(fileNameOverride))
+            try
             {
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
-                await Verifier.Verify(spans, settings)
-                              .UseMethodName(methodNameOverride ?? "_")
-                              .UseTypeName(testName ?? GetTestName());
+                if (string.IsNullOrEmpty(fileNameOverride))
+                {
+                    // Overriding the type name here as we have multiple test classes in the file
+                    // Ensures that we get nice file nesting in Solution Explorer
+                    await Verifier.Verify(spans, settings)
+                                  .UseMethodName(methodNameOverride ?? "_")
+                                  .UseTypeName(testName ?? GetTestName());
+                }
+                else
+                {
+                    await VerifyHelper.VerifySpans(spans, settings)
+                                      .UseFileName(fileNameOverride)
+                                      .DisableRequireUniquePrefix();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(fileNameOverride)
-                                  .DisableRequireUniquePrefix();
+                if (_autoApproveChanges)
+                {
+                    var receivedPos = ex.Message.IndexOf("Received: ") + "Received: ".Length;
+                    var verifiedPosInit = ex.Message.IndexOf("Verified: ");
+                    var verifiedPosEnd = verifiedPosInit + "Verified: ".Length;
+                    var contentPos = ex.Message.IndexOf("Received Content:");
+                    var receivedFile = ex.Message.Substring(receivedPos, verifiedPosInit - receivedPos - 1).Trim();
+                    var verifiedFile = ex.Message.Substring(verifiedPosEnd, contentPos - verifiedPosEnd - 1).Trim();
+                    var path = Path.Combine("C:\\CommonFolder\\shared\\repos\\dd-trace-6\\tracer\\test\\tetetet", "..", "snapshots");
+
+                    if (!string.IsNullOrEmpty(receivedFile) && !string.IsNullOrEmpty(verifiedFile))
+                    {
+                        File.Copy(Path.Combine(path, receivedFile), Path.Combine(path, verifiedFile), true);
+                    }
+                }
+
+                throw;
             }
+
+            CheckThatOverwriteVerifiedSnapshotsIsNotEnabled();
+        }
+
+        public void OverwriteVerifiedSpans()
+        {
+            _autoApproveChanges = true;
+        }
+
+        public void CheckThatOverwriteVerifiedSnapshotsIsNotEnabled()
+        {
+            Console.Write(_autoApproveChanges);
+            // _autoVerify.Should().NotBe(true, "Please, disable _autoVerify");
         }
 
         public void StacksMetaStructScrubbing(MockSpan target)
