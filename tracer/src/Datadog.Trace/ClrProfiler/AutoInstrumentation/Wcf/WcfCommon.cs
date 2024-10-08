@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             try
             {
-                SpanContext? propagatedContext = null;
+                PropagationContext extractedContext = default;
                 string? host = null;
                 string? userAgent = null;
                 string? httpMethod = null;
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                         try
                         {
                             headers = webHeaderCollection.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                            extractedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                         }
                         catch (Exception ex)
                         {
@@ -91,12 +91,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                if (propagatedContext == null && requestMessage.Headers != null)
+                if (extractedContext.SpanContext == null && requestMessage.Headers != null)
                 {
                     Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(requestMessage.Headers, GetHeaderValues);
+                        extractedContext = SpanContextPropagator.Instance.Extract(requestMessage.Headers, GetHeaderValues);
 
                         static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
                         {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                                 var index = headers.FindHeader(name, ns);
                                 if (index >= 0)
                                 {
-                                    return new[] { headers.GetHeader<string>(name, ns) };
+                                    return [headers.GetHeader<string>(name, ns)];
                                 }
                             }
                             catch (Exception ex)
@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                                 Log.Error(ex, "Error extracting propagated WCF headers.");
                             }
 
-                            return Enumerable.Empty<string>();
+                            return [];
                         }
                     }
                     catch (Exception ex)
@@ -122,6 +122,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                         Log.Error(ex, "Error extracting propagated WCF headers.");
                     }
                 }
+
+                Baggage.Current.Replace(extractedContext.Baggage);
 
                 string operationName = tracer.CurrentTraceSettings.Schema.Server.GetOperationNameForComponent("wcf");
                 var tags = new WcfTags();
@@ -150,7 +152,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                scope = tracer.StartActiveInternal(operationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, extractedContext.SpanContext, tags: tags);
                 var span = scope.Span;
 
                 var requestHeaders = requestMessage.Headers;

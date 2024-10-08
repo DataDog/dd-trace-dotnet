@@ -53,7 +53,9 @@ namespace Datadog.Trace
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
-            return ExtractInternal(carrier, getter);
+
+            var extractedContext = ExtractInternal(carrier, getter);
+            return extractedContext.SpanContext;
         }
 
         /// <summary>
@@ -72,15 +74,18 @@ namespace Datadog.Trace
         public ISpanContext? ExtractIncludingDsm<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string messageType, string source)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_ExtractIncludingDsm);
-            return ExtractInternal(carrier, getter, messageType, source);
+
+            var extractedContext = ExtractInternal(carrier, getter, messageType, source);
+            return extractedContext.SpanContext;
         }
 
-        internal static SpanContext? ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
+        internal static PropagationContext ExtractInternal<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string? messageType = null, string? source = null)
         {
             if (messageType != null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
+            var extractedContext = SpanContextPropagator.Instance.Extract(carrier, getter);
+            var spanContext = extractedContext.SpanContext;
 
             if (spanContext is not null
              && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
@@ -101,7 +106,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return spanContext;
+            return extractedContext;
         }
 
         private static PathwayContext? TryGetPathwayContext(string? base64PathwayContext)

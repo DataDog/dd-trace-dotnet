@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = $"{httpMethod} {controllerName}.{actionName}";
                     }
 
-                    SpanContext propagatedContext = null;
+                    PropagationContext extractedContext = default;
                     NameValueHeadersCollection? headers = null;
 
                     if (tracer.InternalActiveScope == null)
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             // extract propagated http headers
                             headers = httpContext.Request.Headers.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                            extractedContext = SpanContextPropagator.Instance.Extract(headers.Value);
                         }
                         catch (Exception ex)
                         {
@@ -145,8 +145,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         }
                     }
 
+                    Baggage.Current.Replace(extractedContext.Baggage);
+
                     var tags = new AspNetTags();
-                    scope = tracer.StartActiveInternal(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
+
+                    scope = tracer.StartActiveInternal(
+                        isChildAction ? ChildActionOperationName : OperationName,
+                        extractedContext.SpanContext,
+                        tags: tags);
+
                     span = scope.Span;
 
                     span.DecorateWebServerSpan(

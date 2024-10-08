@@ -43,7 +43,13 @@ namespace Datadog.Trace
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Inject);
-            InjectInternal(carrier, setter, context);
+
+            if (context is SpanContext spanContext)
+            {
+                // TODO: should this public api silently inject Baggage.Current?
+                var propagationContext = new PropagationContext(spanContext, baggage: null);
+                InjectInternal(carrier, setter, propagationContext);
+            }
         }
 
         /// <summary>
@@ -54,28 +60,42 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
         /// <param name="setter">Given a key name and value, sets the value in the carrier</param>
-        /// <param name="context">The context you want to inject</param>
+        /// <param name="spanContext">The context you want to inject</param>
         /// <param name="messageType">For Data Streams Monitoring: The type of messaging system where the data being injected will be sent.</param>
         /// <param name="target">For Data Streams Monitoring: The queue or topic where the data being injected will be sent.</param>
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         [PublicApi]
-        public void InjectIncludingDsm<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string messageType, string target)
+        public void InjectIncludingDsm<TCarrier>(
+            TCarrier carrier,
+            Action<TCarrier, string, string> setter,
+            ISpanContext spanContext,
+            string messageType,
+            string target)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_InjectIncludingDsm);
-            InjectInternal(carrier, setter, context, messageType, target);
+
+            if (spanContext is SpanContext sp)
+            {
+                // TODO: should this public api silently inject Baggage.Current?
+                var context = new PropagationContext(sp, baggage: null);
+                InjectInternal(carrier, setter, context, messageType, target);
+            }
         }
 
-        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string? messageType = null, string? target = null)
+        internal static void InjectInternal<TCarrier>(
+            TCarrier carrier,
+            Action<TCarrier, string, string> setter,
+            PropagationContext context,
+            string? messageType = null,
+            string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
-            else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
+            if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            SpanContextPropagator.Instance.Inject(context, carrier, setter);
 
-            if (context is SpanContext spanContext)
+            if (context.SpanContext is { } spanContext)
             {
-                SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
-
                 if (string.IsNullOrEmpty(messageType) || string.IsNullOrEmpty(target))
                 {
                     return;

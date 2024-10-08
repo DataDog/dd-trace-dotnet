@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
 
-        internal static Scope? CreateScope(Tracer tracer, out RabbitMQTags? tags, string command, string spanKind, string? host = null, ISpanContext? parentContext = null, DateTimeOffset? startTime = null, string? queue = null, string? exchange = null, string? routingKey = null)
+        internal static Scope? CreateScope(Tracer tracer, out RabbitMQTags? tags, string command, string spanKind, string? host = null, PropagationContext context = default, DateTimeOffset? startTime = null, string? queue = null, string? exchange = null, string? routingKey = null)
         {
             tags = null;
 
@@ -43,13 +43,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
 
             Scope? scope = null;
+            Baggage.Current.Replace(context.Baggage);
 
             try
             {
                 tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateRabbitMqTags(spanKind);
                 var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
                 var operation = GetOperationName(tracer, spanKind);
-                scope = tracer.StartActiveInternal(operation, parent: parentContext, tags: tags, serviceName: serviceName, startTime: startTime);
+                scope = tracer.StartActiveInternal(operation, parent: context.SpanContext, tags: tags, serviceName: serviceName, startTime: startTime);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Queue;
@@ -180,14 +181,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 queue = queueInner;
             }
 
-            SpanContext? propagatedContext = null;
+            PropagationContext extractedContext = default;
 
             // try to extract propagated context values from headers
             if (basicProperties?.Headers != null)
             {
                 try
                 {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
+                    extractedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
                 }
                 catch (Exception ex)
                 {
@@ -195,7 +196,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out var tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, exchange: exchange, routingKey: routingKey);
+            var scope = CreateScope(
+                Tracer.Instance,
+                out var tags,
+                "basic.deliver",
+                context: extractedContext,
+                spanKind: SpanKinds.Consumer,
+                queue: queue,
+                exchange: exchange,
+                routingKey: routingKey);
+
             if (scope is not null && tags != null)
             {
                 if (body.Instance is not null)
@@ -204,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
 
                 var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
-                RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
+                SetDataStreamsCheckpointOnConsume(
                     Tracer.Instance,
                     scope.Span,
                     tags,
