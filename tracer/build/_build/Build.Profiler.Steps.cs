@@ -16,14 +16,10 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using Nuke.Common.Utilities;
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using DiffMatchPatch;
-using Microsoft.Build.Tasks;
 using Logger = Serilog.Log;
 
-[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
-[SuppressMessage("ReSharper", "UnusedMember.Local")]
-[SuppressMessage("ReSharper", "TemplateIsNotCompileTimeConstantProblem")]
 partial class Build
 {
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
@@ -81,7 +77,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            NativeBuildDirectory.CreateDirectory();
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -93,7 +89,7 @@ partial class Build
             {
                 // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
-                Chmod.Value.Invoke($" -R 777 {NativeBuildDirectory}");
+                Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
         });
 
@@ -103,7 +99,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            NativeBuildDirectory.CreateDirectory();
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -115,7 +111,7 @@ partial class Build
             {
                 // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
-                Chmod.Value.Invoke($" -R 777 {NativeBuildDirectory}");
+                Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
         });
 
@@ -125,7 +121,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            NativeBuildDirectory.CreateDirectory();
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             var additionalArgs = $"-DUNIVERSAL={(AsUniversal ? "ON" : "OFF")}";
 
@@ -225,7 +221,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            NativeBuildDirectory.CreateDirectory();
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -314,14 +310,14 @@ partial class Build
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
-            (MonitoringHomeDirectory / arch).CreateDirectory();
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
             var files = new[] { "Datadog.Profiler.Native.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
                 var dest = MonitoringHomeDirectory / arch / file;
-                source.Copy(dest, ExistsPolicy.FileOverwrite);
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -333,11 +329,11 @@ partial class Build
         {
             var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
-            (MonitoringHomeDirectory / arch).CreateDirectory();
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
             var source = sourceDir / FileNames.ProfilerLinuxApiWrapper;
             var dest = MonitoringHomeDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            source.Copy(dest, ExistsPolicy.FileOverwrite);
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
             if (AsUniversal)
             {
@@ -357,11 +353,11 @@ partial class Build
                 var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
                 var source = sourceDir / "Datadog.Profiler.Native.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 source = sourceDir / "Datadog.Profiler.Native.pdb";
                 dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
-                source.Copy(dest, ExistsPolicy.FileOverwrite);
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -370,7 +366,7 @@ partial class Build
        .Unlisted()
        .Executes(() =>
        {
-           var samplesToBuild = ProfilerSamplesSolution.GetAllProjects("*");
+           var samplesToBuild = ProfilerSamplesSolution.GetProjects("*");
 
            DotNetBuild(x => x
                    .SetConfiguration(BuildConfiguration)
@@ -405,10 +401,10 @@ partial class Build
     {
         var isDebugRun = IsDebugRun();
 
-        ProfilerTestLogsDirectory.CreateDirectory();
+        EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
         var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
-                                                        .Select(x => ProfilerSolution.Project(x))
+                                                        .Select(x => ProfilerSolution.GetProject(x))
                                                         .ToList();
 
         try
@@ -437,7 +433,7 @@ partial class Build
         {
             CopyDumpsTo(ProfilerBuildDataDirectory);
             // A crashed occured on linux and the memory dump copy failed due a lack of permission.
-            Chmod.Value.Invoke($"-R 777 {ProfilerBuildDataDirectory}");
+            Chmod.Value.Invoke("-R 777 " + ProfilerBuildDataDirectory);
         }
     }
 
@@ -452,7 +448,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             NuGetTasks.NuGetRestore(s => s
                 .SetTargetPath(ProfilerMsBuildProject)
@@ -487,11 +483,11 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             void RunCppCheck(string projectName, MSBuildTargetPlatform platform)
             {
-                var project = ProfilerSolution.Project(projectName);
+                var project = ProfilerSolution.GetProject(projectName);
                 var cppCheckResultFile = ProfilerBuildDataDirectory / $"{project.Name}-cppcheck-{platform}";
                 CppCheck.Value($"--inline-suppr  --enable=all  --project={project.Path} --xml --output-file={cppCheckResultFile}.xml  --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt ");
             }
@@ -578,7 +574,7 @@ partial class Build
             foreach (var result in clangTidyResults)
             {
                 Logger.Information($"Check result file {result}");
-                using var sr = new StreamReader(result);
+                using var sr = new StreamReader(result); ;
 
                 string line;
                 var errorRegex = new Regex(" error:", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
@@ -599,9 +595,9 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(async () =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
-            var (arch, _) = GetUnixArchitectureAndExtension();
+            var (arch, ext) = GetUnixArchitectureAndExtension();
             var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-clang-tidy-{arch}.txt";
 
             CMake.Value(
@@ -626,9 +622,9 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
-            var (arch, _) = GetUnixArchitectureAndExtension();
+            var (arch, ext) = GetUnixArchitectureAndExtension();
             var outputFile = ProfilerBuildDataDirectory / $"linux-profiler-cppcheck-{arch}.xml";
 
             CMake.Value(
@@ -661,7 +657,7 @@ partial class Build
         .Triggers(RunUnitTestsWithAsanLinux)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -685,7 +681,7 @@ partial class Build
         .Triggers(RunUnitTestsWithAsanWindows)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             var testProjects = ProfilerDirectory.GlobFiles("test/**/*.vcxproj");
 
@@ -808,7 +804,7 @@ partial class Build
         .Triggers(RunUnitTestsWithUbsanLinux)
         .Executes(() =>
         {
-            ProfilerBuildDataDirectory.CreateDirectory();
+            EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_UBSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -842,7 +838,7 @@ partial class Build
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                 : new[] { MSBuildTargetPlatform.x64 };
 
-            var sampleApp = ProfilerSamplesSolution.Project("Samples.Computer01");
+            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
             foreach (var platform in platforms)
             {
@@ -902,7 +898,7 @@ partial class Build
 
     void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
     {
-        var sampleApp = ProfilerSamplesSolution.Project("Samples.Computer01");
+        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
         var envVars = new Dictionary<string, string>()
             {
@@ -950,7 +946,7 @@ partial class Build
         static IReadOnlyCollection<Output> DotNet(string arguments, MSBuildTargetPlatform platform, IReadOnlyDictionary<string, string> environmentVariables)
         {
             var dotnetPath = DotNetSettingsExtensions.GetDotNetPath(platform);
-            using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, logger: DotNetLogger);
+            using var process = ProcessTasks.StartProcess(toolPath: dotnetPath, arguments: arguments, environmentVariables: environmentVariables, customLogger: DotNetTasks.DotNetLogger);
             process.AssertZeroExitCode();
             return process.Output;
 
@@ -965,7 +961,7 @@ partial class Build
             : string.Empty;
 
         var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / testLibrary;
-        workingDirectory.CreateDirectory();
+        EnsureExistingDirectory(workingDirectory);
 
         // Nuke.Tool creates a Process and run the executable inside.
         // If not set, the process will have no environment variables.
@@ -990,7 +986,7 @@ partial class Build
 
         if (IsLinux)
         {
-            Chmod.Value.Invoke($"+x {exePath}");
+            Chmod.Value.Invoke("+x " + exePath);
 
             if (sanitizer is SanitizerKind.Asan)
             {
@@ -1005,7 +1001,7 @@ partial class Build
         AddExtraEnvVariables(envVars, additionalEnvVars);
 
         var testsResultFile = ProfilerBuildDataDirectory / "tests" / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
-        var testExe = ToolResolver.GetTool(exePath);
+        var testExe = ToolResolver.GetLocalTool(exePath);
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
     }
 }

@@ -1,15 +1,19 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Colorful;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.CompressionTasks;
+using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Logger = Serilog.Log;
 
@@ -20,9 +24,6 @@ using Logger = Serilog.Log;
 // #pragma warning disable SA1401
 
 [ShutdownDotNetAfterServerBuild, BuildFinishedNotification]
-[SuppressMessage("ReSharper", "UnusedMember.Local")]
-[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
-// ReSharper disable once RedundantExtendsListEntry
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:
@@ -140,21 +141,21 @@ partial class Build : NukeBuild
                 DeleteReparsePoints(SourceDirectory);
                 DeleteReparsePoints(TestsDirectory);
             }
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
-            TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
-            BundleHomeDirectory.GlobFiles("**").ForEach(x => x.DeleteFile());
-            BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => x.DeleteFile());
-            BuildArtifactsDirectory.CreateOrCleanDirectory();
-            MonitoringHomeDirectory.CreateOrCleanDirectory();
-            OutputDirectory.CreateOrCleanDirectory();
-            ArtifactsDirectory.CreateOrCleanDirectory();
-            (NativeTracerProject.Directory / "build").CreateOrCleanDirectory();
-            (NativeTracerProject.Directory / "deps").CreateOrCleanDirectory();
-            BuildDataDirectory.CreateOrCleanDirectory();
-            ExplorationTestsDirectory.CreateOrCleanDirectory();
-            WindowsTracerHomeZip.DeleteFile();
+            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
+            TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
+            BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            EnsureCleanDirectory(BuildArtifactsDirectory);
+            EnsureCleanDirectory(MonitoringHomeDirectory);
+            EnsureCleanDirectory(OutputDirectory);
+            EnsureCleanDirectory(ArtifactsDirectory);
+            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
+            EnsureCleanDirectory(BuildDataDirectory);
+            EnsureCleanDirectory(ExplorationTestsDirectory);
+            DeleteFile(WindowsTracerHomeZip);
 
-            ProfilerOutputDirectory.CreateOrCleanDirectory();
+            EnsureCleanDirectory(ProfilerOutputDirectory);
 
             void DeleteReparsePoints(string path)
             {
@@ -170,7 +171,7 @@ partial class Build : NukeBuild
         .Description("Cleans all test logs")
         .Executes(() =>
         {
-            TestLogsDirectory.CreateOrCleanDirectory();
+            EnsureCleanDirectory(TestLogsDirectory);
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
         });
@@ -179,9 +180,9 @@ partial class Build : NukeBuild
          .Unlisted()
          .Description("Deletes all build output files, but preserves folders to work around AzDo issues")
          .Executes(() =>
-         {
-             TestsDirectory.GlobFiles("**/bin/*", "**/obj/*").ForEach(x => x.DeleteFile());
-         });
+          {
+              TestsDirectory.GlobFiles("**/bin/*", "**/obj/*").ForEach(DeleteFile);
+          });
 
     Target BuildNativeTracerHome => _ => _
         .Unlisted()
@@ -389,7 +390,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.Project(Projects.DatadogTraceBundle))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBundle))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -405,7 +406,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.Project(Projects.DatadogTraceBenchmarkDotNet))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -420,7 +421,7 @@ partial class Build : NukeBuild
         {
             var framework = Framework ?? TargetFramework.NET8_0;
             DotNetBuild(x => x
-                .SetProjectFile(Solution.Project(Projects.DdDotnet))
+                .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(framework)
                 .SetNoWarnDotNetCore3());
@@ -447,15 +448,14 @@ partial class Build : NukeBuild
             var publishFolder = ArtifactsDirectory / "dd-dotnet" / rid;
 
             DotNetPublish(x => x
-                .SetProject(Solution.Project(Projects.DdDotnet))
+                .SetProject(Solution.GetProject(Projects.DdDotnet))
                 .SetFramework(framework)
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
 
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
-            var ddTraceFile = publishFolder / file;
-            ddTraceFile.CopyToDirectory(MonitoringHomeDirectory / rid, ExistsPolicy.FileOverwrite);
+            CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
         });
 
     Target BuildRunnerTool => _ => _
@@ -465,7 +465,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.Project(Projects.DdTrace))
+                .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -482,7 +482,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetPack(x => x
-                .SetProject(Solution.Project(Projects.DdTrace))
+                .SetProject(Solution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoDependencies()
                 .SetNoWarnDotNetCore3()
@@ -512,11 +512,11 @@ partial class Build : NukeBuild
             }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
 
-            runtimes.ForEach(runtime => runtime.output.CreateOrCleanDirectory());
-            runtimes.ForEach(runtime => runtime.archive.DeleteFile());
+            runtimes.ForEach(runtime => EnsureCleanDirectory(runtime.output));
+            runtimes.ForEach(runtime => DeleteFile(runtime.archive));
 
             DotNetPublish(x => x
-                .SetProject(Solution.Project(Projects.DdTrace))
+                .SetProject(Solution.GetProject(Projects.DdTrace))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
@@ -534,7 +534,7 @@ partial class Build : NukeBuild
                                 .SetRuntime(runtime.rid)));
 
             runtimes.ForEach(
-                x => x.output.CompressTo(x.archive));
+                x => Compress(x.output, x.archive));
         });
 
     Target RunBenchmarks => _ => _
@@ -543,9 +543,9 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            var benchmarksProject = Solution.Project(Projects.BenchmarksTrace);
-            var resultsDirectory = benchmarksProject!.Directory / "BenchmarkDotNet.Artifacts" / "results";
-            resultsDirectory.CreateOrCleanDirectory();
+            var benchmarksProject = Solution.GetProject(Projects.BenchmarksTrace);
+            var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+            EnsureCleanDirectory(resultsDirectory);
 
             try
             {
@@ -581,7 +581,8 @@ partial class Build : NukeBuild
             {
                 if (Directory.Exists(resultsDirectory))
                 {
-                    resultsDirectory.Copy(BuildDataDirectory / "benchmarks", ExistsPolicy.DirectoryMerge | ExistsPolicy.FileOverwrite);
+                    CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
+                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
 
                 CopyDumpsToBuildData();

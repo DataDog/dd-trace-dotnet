@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,9 +15,6 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using Target = Nuke.Common.Target;
 using Logger = Serilog.Log;
 
-[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
-[SuppressMessage("ReSharper", "UnusedMember.Local")]
-[SuppressMessage("ReSharper", "TemplateIsNotCompileTimeConstantProblem")]
 partial class Build
 {
     AbsolutePath ExplorationTestsDirectory => RootDirectory / "exploration-tests";
@@ -118,9 +114,9 @@ partial class Build
         var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
         var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
         var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
-        AbsolutePath target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
+        var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
-        target.CreateOrCleanDirectory();
+        FileSystemTasks.EnsureCleanDirectory(target);
 
         var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
         GitTasks.Git(cloneCommand);
@@ -401,7 +397,7 @@ partial class Build
 
                         fileProcessed = true;
                         int numberOfLines = (int)fileWeights[csFile];
-                        Parallel.For(0, numberOfLines, () => new List<string>(), (i, _, localList) =>
+                        Parallel.For(0, numberOfLines, () => new List<string>(), (i, state, localList) =>
                         {
                             int? byteCodeOffset = null;
                             // ReSharper disable once ExpressionIsAlwaysNull

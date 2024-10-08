@@ -1,6 +1,5 @@
 using System.Linq;
 using Nuke.Common;
-using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
@@ -25,15 +24,15 @@ partial class Build
     TargetFramework[] TestingFrameworksDebugger =>
         TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, TargetFramework.NETCOREAPP3_0, TargetFramework.NET5_0 });
 
-    Project DebuggerIntegrationTests => Solution.Project(Projects.DebuggerIntegrationTests);
+    Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
-    Project DebuggerSamples => Solution.Project(Projects.DebuggerSamples);
+    Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
 
-    Project ExceptionReplaySamples => Solution.Project(Projects.ExceptionReplaySamples);
+    Project ExceptionReplaySamples => Solution.GetProject(Projects.ExceptionReplaySamples);
 
-    Project DebuggerSamplesTestRuns => Solution.Project(Projects.DebuggerSamplesTestRuns);
+    Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
 
-    Project DebuggerUnreferencedExternal => Solution.Project(Projects.DebuggerUnreferencedExternal);
+    Project DebuggerUnreferencedExternal => Solution.GetProject(Projects.DebuggerUnreferencedExternal);
 
     Target BuildAndRunDebuggerIntegrationTests => _ => _
         .Description("Builds and runs the debugger integration tests")
@@ -117,7 +116,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            TestLogsDirectory.CreateOrCleanDirectory();
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
             try
