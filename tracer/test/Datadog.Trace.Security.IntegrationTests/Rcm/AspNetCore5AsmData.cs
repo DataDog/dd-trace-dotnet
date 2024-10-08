@@ -151,6 +151,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request.CachedTargetFiles.Should().HaveCount(3);
             var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
+            // we have to send first asm features = true, because asm_data won't be taken into account as rcm subscriptions to asm_data have been removed when turning off the waf. and then, later on, send, separately the asm data. That's the trade off of not subscribing to asm_data and asm when appsec is turned off
+            request = await agent.SetupRcmAndWait(
+                          Output,
+                          [
+                              (new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, RcmProducts.AsmFeatures, asmFeaturesFileId)]);
+            request.Should().NotBeNull();
+            request.CachedTargetFiles.Should().HaveCount(1);
+
             request = await agent.SetupRcmAndWait(
                           Output,
                           [
@@ -198,7 +206,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             await agent.SetupRcmAndWait(
                 Output,
-                [(new Payload { RulesData = [new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = [new Data { Expiration = 5545453532, Value = "user3" }] }] }, RcmProducts.AsmData,  fileId)]);
+                [(new Payload { RulesData = [new RuleData { Id = "blocked_users", Type = "data_with_expiration", Data = [new Data { Expiration = 5545453532, Value = "user3" }] }] }, RcmProducts.AsmData, fileId)]);
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             var spans = new List<MockSpan>();
             spans.AddRange(spanBeforeAsmData);
