@@ -63,8 +63,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 WebHeadersCollection? headers = null;
 
                 IDictionary<string, object?>? requestProperties = requestMessage.Properties;
-                if (requestProperties?.TryGetValue("httpRequest", out var httpRequestProperty) ?? false
-                    && httpRequestProperty.GetType().FullName.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
+                if (requestProperties is not null
+                 && requestProperties.TryGetValue("httpRequest", out var httpRequestProperty)
+                 && httpRequestProperty?.GetType().FullName != null
+                 && httpRequestProperty.GetType().FullName!.Equals(HttpRequestMessagePropertyTypeName, StringComparison.OrdinalIgnoreCase))
                 {
                     var httpRequestPropertyProxy = httpRequestProperty.DuckCast<HttpRequestMessagePropertyStruct>();
                     var webHeaderCollection = httpRequestPropertyProxy.Headers;
