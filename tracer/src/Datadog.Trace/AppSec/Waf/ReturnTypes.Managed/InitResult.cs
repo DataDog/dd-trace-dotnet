@@ -22,7 +22,6 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
-            EmbeddedRules = embeddedRules;
             FailedToLoadRules = failedToLoadRules;
             LoadedRules = loadedRules;
             RuleFileVersion = ruleFileVersion;
@@ -54,8 +53,6 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         internal ushort LoadedRules { get; }
 
         internal IReadOnlyDictionary<string, object> Errors { get; }
-
-        public JToken? EmbeddedRules { get; set; }
 
         internal string ErrorMessage { get; }
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="RuleSet.cs" company="Datadog">
+// <copyright file="RuleSet.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,13 +22,22 @@ internal class RuleSet
     [JsonProperty("processors")]
     internal JToken? Processors { get; set; }
 
+    [JsonProperty("actions")]
+    internal JToken? Actions { get; set; }
+
     [JsonProperty("scanners")]
     internal JToken? Scanners { get; set; }
 
-    public JToken? All { get; set; }
+    [JsonProperty("exclusions")]
+    internal JToken? Exclusions { get; set; }
+
+    [JsonProperty("custom_rules")]
+    internal JToken? CustomRules { get; set; }
 
     public static RuleSet From(JToken result)
     {
+        // can rules from rc contains exclusions and custom rules?
+
         var ruleset = new RuleSet
         {
             Version = result["version"]?.ToString(),
@@ -36,7 +45,9 @@ internal class RuleSet
             Rules = result["rules"],
             Processors = result["processors"],
             Scanners = result["scanners"],
-            All = result
+            Actions = result["actions"],
+            Exclusions = result["exclusions"],
+            CustomRules = result["custom_rules"]
         };
         return ruleset;
     }
@@ -49,27 +60,37 @@ internal class RuleSet
     {
         if (Rules != null)
         {
-            dictionary.Add("rules", Rules);
+            dictionary["rules"] = Rules;
         }
 
         if (Metadata != null)
         {
-            dictionary.Add("metadata", Metadata);
+            dictionary["metadata"] = Metadata;
         }
 
         if (Version != null)
         {
-            dictionary.Add("version", Version);
+            dictionary["version"] = Version;
         }
 
         if (Processors != null)
         {
-            dictionary.Add("processors", Processors);
+            dictionary["processors"] = Processors;
         }
 
         if (Scanners != null)
         {
-            dictionary.Add("scanners", Scanners);
+            dictionary["scanners"] = Scanners;
+        }
+
+        if (Exclusions is not null)
+        {
+            dictionary["exclusions"] = Exclusions;
+        }
+
+        if (CustomRules is not null)
+        {
+            dictionary["custom_rules"] = CustomRules;
         }
     }
 }
