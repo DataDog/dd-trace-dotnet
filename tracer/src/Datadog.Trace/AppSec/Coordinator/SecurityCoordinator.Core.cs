@@ -170,14 +170,14 @@ internal readonly partial struct SecurityCoordinator
         {
             get
             {
-                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeaders, out var value))
+                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
                 {
                     return value is bool boolValue && boolValue;
                 }
 
                 return false;
             }
-            set => Context.Items[ReportedExternalWafsRequestHeaders] = value;
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
