@@ -1160,10 +1160,9 @@ partial class Build
     Target RunManagedUnitTests => _ => _
         .Unlisted()
         .After(CompileManagedUnitTests)
+        .DependsOn(CleanTestLogs)
         .Executes(() =>
         {
-            EnsureCleanDirectory(TestLogsDirectory);
-
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
                 .ToList();
@@ -1453,6 +1452,7 @@ partial class Build
             {
                 // This does some "unnecessary" rebuilding and restoring
                 var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+                var includeInstrumentation = TracerDirectory.GlobFiles("test/test-applications/instrumentation/**/*.csproj");
                 // Don't build aspnet full framework sample in this step
                 var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
@@ -1461,6 +1461,7 @@ partial class Build
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
 
                 var projects = includeIntegration
+                    .Concat(includeInstrumentation)
                     .Concat(includeSecurity)
                     .Select(x => Solution.GetProject(x))
                     .Where(project =>
@@ -1540,15 +1541,13 @@ partial class Build
         .After(CompileSamplesWindows)
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
+        .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureCleanDirectory(TestLogsDirectory);
-            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             try
             {
@@ -1634,6 +1633,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileAzureFunctionsSamplesWindows)
         .After(BuildWindowsIntegrationTests)
+        .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1641,7 +1641,6 @@ partial class Build
         {
             var isDebugRun = IsDebugRun();
             var project = Solution.GetProject(Projects.ClrProfilerIntegrationTests);
-            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
 
             try
@@ -1677,13 +1676,12 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(BuildNativeLoader)
+        .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureCleanDirectory(TestLogsDirectory);
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             try
             {
@@ -2030,13 +2028,12 @@ partial class Build
 
     Target RunLinuxDdDotnetIntegrationTests => _ => _
         .After(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CleanTestLogs)
         .Description("Runs the linux dd-dotnet integration tests")
         .Requires(() => !IsWin)
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
-
-            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(project);
 
             try
@@ -2062,6 +2059,7 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CleanTestLogs)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
@@ -2069,9 +2067,6 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureCleanDirectory(TestLogsDirectory);
-            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             var dockerFilter = IncludeTestsRequiringDocker switch
             {
@@ -2143,6 +2138,7 @@ partial class Build
 
     Target RunOsxIntegrationTests => _ => _
         .After(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CleanTestLogs)
         .Description("Runs the osx integration tests")
         .Requires(() => Framework)
         .Requires(() => IsOsx)
@@ -2150,9 +2146,6 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            EnsureCleanDirectory(TestLogsDirectory);
-            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
-            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
             var dockerFilter = IncludeTestsRequiringDocker switch
             {
@@ -2329,6 +2322,7 @@ partial class Build
 
                DotNetTest(config => config
                        .SetProjectFile(project)
+                       .SetDotnetPath(TargetPlatform)
                        .SetConfiguration(BuildConfiguration)
                        .SetFramework(Framework)
                        .SetTestTargetPlatform(TargetPlatform)

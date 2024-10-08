@@ -103,7 +103,7 @@ public class SpanMetaStructTests
             }
        };
 
-    [MemberData(nameof(Data))]
+    [MemberData(nameof(Data), DisableDiscoveryEnumeration = true)]
     [Theory]
     public static void GivenAEncodedSpanWithMetaStruct_WhenDecoding_ThenMetaStructIsCorrectlyDecoded(List<Tuple<string, object?>> dataToEncode)
     {

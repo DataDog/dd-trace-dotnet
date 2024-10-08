@@ -10,7 +10,6 @@
 
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
-#include "Semaphore.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -76,28 +75,26 @@ public:
                                   std::uint64_t* deadlockDetectionsInAggregationPeriodCount,
                                   std::uint64_t* usedDeadlockDetectionsAggregationPeriodIndex) const;
 
-    inline Semaphore& GetStackWalkLock();
-
     inline bool IsThreadDestroyed();
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
     inline std::pair<uint64_t, shared::WSTRING> SetBlockingThread(uint64_t osThreadId, shared::WSTRING name);
 
     inline TraceContextTrackingInfo* GetTraceContextPointer();
-    inline std::uint64_t GetLocalRootSpanId() const;
-    inline std::uint64_t GetSpanId() const;
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
     inline std::string GetProfileThreadName() override;
+    inline void AcquireLock();
+    inline void ReleaseLock();
 
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
     inline void MarkAsInterrupted();
     inline int32_t SetTimerId(int32_t timerId);
     inline int32_t GetTimerId() const;
-#endif
     inline bool CanBeInterrupted() const;
+#endif
 
     inline AppDomainID GetAppDomainId();
 
@@ -131,29 +128,29 @@ private:
     std::uint64_t _deadlockInPeriodCount;
     std::uint64_t _deadlockDetectionPeriod;
 
-    Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
 
-    TraceContextTrackingInfo _traceContextTrackingInfo;
+    TraceContextTrackingInfo _traceContext;
 
     //  strings to be used by samples: avoid allocations when rebuilding them over and over again
     std::string _profileThreadId;
     std::string _profileThreadName;
 
+    ICorProfilerInfo4* _info;
+    std::shared_mutex _threadIdMutex;
+    std::shared_mutex _threadNameMutex;
+#ifdef LINUX
     // Linux only
     // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWrapper library.
     // This establishes a simple communication channel between the profiler and this library
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
-    ICorProfilerInfo4* _info;
-    std::shared_mutex _threadIdMutex;
-    std::shared_mutex _threadNameMutex;
-#ifdef LINUX
     std::int32_t _timerId;
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
+    std::mutex _objLock;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -193,6 +190,16 @@ std::string ManagedThreadInfo::GetProfileThreadName()
         _profileThreadName = std::move(s);
     }
     return _profileThreadName;
+}
+
+inline void ManagedThreadInfo::AcquireLock()
+{
+    _objLock.lock();
+}
+
+inline void ManagedThreadInfo::ReleaseLock()
+{
+    _objLock.unlock();
 }
 
 inline std::string ManagedThreadInfo::BuildProfileThreadId()
@@ -383,15 +390,10 @@ inline void ManagedThreadInfo::GetDeadlocksCount(std::uint64_t* deadlockTotalCou
     }
 }
 
-inline Semaphore& ManagedThreadInfo::GetStackWalkLock()
-{
-    return _stackWalkLock;
-}
-
 // TODO: this does not seem to be needed
 inline bool ManagedThreadInfo::IsThreadDestroyed()
 {
-    SemaphoreScope guardedLock(_stackWalkLock);
+    std::unique_lock l(_objLock);
     return _isThreadDestroyed;
 }
 
@@ -403,7 +405,7 @@ inline bool ManagedThreadInfo::IsDestroyed()
 
 inline void ManagedThreadInfo::SetThreadDestroyed()
 {
-    SemaphoreScope guardedLock(_stackWalkLock);
+    std::unique_lock l(_objLock);
     _isThreadDestroyed = true;
 }
 
@@ -416,22 +418,12 @@ inline std::pair<uint64_t, shared::WSTRING> ManagedThreadInfo::SetBlockingThread
 
 inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()
 {
-    return &_traceContextTrackingInfo;
-}
-
-inline std::uint64_t ManagedThreadInfo::GetLocalRootSpanId() const
-{
-    return _traceContextTrackingInfo._currentLocalRootSpanId;
-}
-
-inline std::uint64_t ManagedThreadInfo::GetSpanId() const
-{
-    return _traceContextTrackingInfo._currentSpanId;
+    return &_traceContext;
 }
 
 inline bool ManagedThreadInfo::CanReadTraceContext() const
 {
-    bool canReadTraceContext = _traceContextTrackingInfo._writeGuard;
+    bool canReadTraceContext = _traceContext._writeGuard;
 
     // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
     // In our case, it suffices. We have to make sure that reading this field is done
@@ -445,20 +437,20 @@ inline bool ManagedThreadInfo::HasTraceContext() const
 {
     if (CanReadTraceContext())
     {
-        std::uint64_t localRootSpanId = GetLocalRootSpanId();
-        std::uint64_t spanId = GetSpanId();
+        auto [localRootSpanId, spanId] = GetTracingContext();
 
         return localRootSpanId != 0 && spanId != 0;
     }
     return false;
 }
 
+#ifdef LINUX
+
 inline bool ManagedThreadInfo::CanBeInterrupted() const
 {
     return _sharedMemoryArea == nullptr;
 }
 
-#ifdef LINUX
 // This method is called by the signal handler, when the thread has already been interrupted.
 // There is no race and it's safe to call it there.
 inline void ManagedThreadInfo::MarkAsInterrupted()
@@ -503,8 +495,8 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
 
     if (CanReadTraceContext())
     {
-        localRootSpanId = GetLocalRootSpanId();
-        spanId = GetSpanId();
+        localRootSpanId = _traceContext._currentLocalRootSpanId;
+        spanId = _traceContext._currentSpanId;
     }
 
     return {localRootSpanId, spanId};

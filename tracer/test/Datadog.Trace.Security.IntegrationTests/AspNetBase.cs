@@ -83,6 +83,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
 
             _clearMetaStruct = clearMetaStruct;
+            SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
         }
 
         protected bool IncludeAllHttpSpans { get; set; } = false;
@@ -107,6 +108,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 _cookieContainer.Add(new Cookie(cookie.Key, cookie.Value, string.Empty, "localhost"));
             }
+        }
+
+        public void ResetDefaultUserAgent()
+        {
+            _httpClient.DefaultRequestHeaders.Remove("user-agent");
         }
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null, string methodNameOverride = null, string fileNameOverride = null)
@@ -351,9 +357,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null, string accept = null, IEnumerable<KeyValuePair<string, string>> headers = null)
         {
-            var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
+            var found = _httpClient.DefaultRequestHeaders.TryGetValues("user-agent", out var values);
 
-            if (!string.IsNullOrEmpty(userAgent) && values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0))
+            if (!string.IsNullOrEmpty(userAgent) && (!found || values.All(c => string.Compare(c, userAgent, StringComparison.Ordinal) != 0)))
             {
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
@@ -367,7 +373,15 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 foreach (var header in headers)
                 {
-                    _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    if (_httpClient.DefaultRequestHeaders.Contains(header.Key))
+                    {
+                        _httpClient.DefaultRequestHeaders.Remove(header.Key);
+                    }
+
+                    if (header.Value is not null)
+                    {
+                        _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+                    }
                 }
             }
 
@@ -404,7 +418,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
             }
 
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
+            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime, assertExpectedCount: false);
             if (spans.Count != expectedSpans)
             {
                 Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");

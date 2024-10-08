@@ -15,7 +15,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -37,7 +38,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -59,7 +61,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -81,7 +84,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -103,7 +107,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -125,7 +130,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -147,7 +153,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -169,7 +176,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -191,7 +199,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -213,7 +222,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -235,7 +245,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -257,7 +268,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -279,7 +291,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -301,7 +314,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -323,7 +337,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -345,7 +360,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -367,7 +383,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -389,7 +406,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -411,7 +429,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -433,7 +452,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -455,7 +475,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -477,7 +498,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -499,7 +521,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -521,7 +544,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -543,7 +567,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -565,7 +590,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -587,7 +613,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -609,7 +636,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -631,7 +659,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -653,7 +682,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -675,7 +705,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -697,7 +728,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -719,7 +751,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -741,7 +774,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -763,7 +797,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -785,7 +820,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -807,7 +843,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -829,7 +866,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -851,7 +889,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -873,7 +912,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -895,7 +935,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -917,7 +958,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -939,7 +981,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -961,7 +1004,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -983,7 +1027,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1005,7 +1050,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1027,7 +1073,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1049,7 +1096,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1071,7 +1119,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1093,7 +1142,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1115,7 +1165,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1137,7 +1188,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1159,7 +1211,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1181,7 +1234,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1203,7 +1257,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1225,7 +1280,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1247,7 +1303,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1269,7 +1326,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1291,7 +1349,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1313,7 +1372,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1335,7 +1395,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1357,7 +1418,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1379,7 +1441,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1401,7 +1464,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1423,7 +1487,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1445,7 +1510,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1467,7 +1533,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1489,7 +1556,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1511,7 +1579,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1533,7 +1602,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1555,7 +1625,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1577,7 +1648,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1599,7 +1671,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1621,7 +1694,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1643,7 +1717,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1665,7 +1740,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1687,7 +1763,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1709,7 +1786,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1731,7 +1809,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1753,7 +1832,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1775,7 +1855,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1797,7 +1878,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1819,7 +1901,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1841,7 +1924,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1863,7 +1947,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1885,7 +1970,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1907,7 +1993,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1929,7 +2016,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1951,7 +2039,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1973,7 +2062,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1995,7 +2085,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2017,7 +2108,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2039,7 +2131,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2061,7 +2154,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2083,7 +2177,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2105,7 +2200,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2127,7 +2223,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2149,7 +2246,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2171,7 +2269,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2193,7 +2292,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2215,7 +2315,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2237,7 +2338,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2259,7 +2361,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2281,7 +2384,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2303,7 +2407,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2325,7 +2430,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2347,7 +2453,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2369,7 +2476,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2391,7 +2499,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2413,7 +2522,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2435,7 +2545,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2457,7 +2568,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2479,7 +2591,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2501,7 +2614,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2523,7 +2637,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2545,7 +2660,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2567,7 +2683,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2589,7 +2706,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2611,7 +2729,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2633,7 +2752,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2655,7 +2775,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2677,7 +2798,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2699,7 +2821,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2721,7 +2844,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2743,7 +2867,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2765,7 +2890,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2787,7 +2913,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2809,7 +2936,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2831,7 +2959,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2853,7 +2982,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2875,7 +3005,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2897,7 +3028,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2919,7 +3051,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2941,7 +3074,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2963,7 +3097,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2985,7 +3120,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3007,7 +3143,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3029,7 +3166,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3051,7 +3189,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3073,7 +3212,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3095,7 +3235,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3117,7 +3258,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3139,7 +3281,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3161,7 +3304,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3183,7 +3327,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3205,7 +3350,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3227,7 +3373,8 @@
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.Npgsql
     },
     Metrics: {
       _dd.top_level: 1.0

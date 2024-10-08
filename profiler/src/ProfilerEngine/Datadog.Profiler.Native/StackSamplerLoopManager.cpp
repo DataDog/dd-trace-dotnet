@@ -440,12 +440,12 @@ bool StackSamplerLoopManager::AllowStackWalk(std::shared_ptr<ManagedThreadInfo> 
     // https://sourcegraph.com/github.com/dotnet/runtime/-/blob/src/coreclr/vm/proftoeeinterfaceimpl.cpp?L8479
     // we _must_ block in ICorProfilerCallback::ThreadDestroyed to prevent the thread from being destroyed
     // while walking its callstack.
-    pThreadInfo->GetStackWalkLock().Acquire();
+    pThreadInfo->AcquireLock();
 
     // We _must_ check if the thread was not destroyed while acquiring the lock
     if (pThreadInfo->IsDestroyed())
     {
-        pThreadInfo->GetStackWalkLock().Release();
+        pThreadInfo->ReleaseLock();
         return false;
     }
 
@@ -498,7 +498,7 @@ void StackSamplerLoopManager::NotifyIterationFinished()
 {
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
-    _pTargetThread->GetStackWalkLock().Release();
+    _pTargetThread->ReleaseLock();
     _pTargetThread.reset();
     _collectionStartNs = 0;
     _isTargetThreadSuspended = false;

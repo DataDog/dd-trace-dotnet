@@ -35,7 +35,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -63,7 +64,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -91,7 +93,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -119,7 +122,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -147,7 +151,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -175,7 +180,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -203,7 +209,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -231,7 +238,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      tablename: MyTableName
+      tablename: MyTableName,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -255,7 +263,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -279,7 +288,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -303,7 +313,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -327,7 +338,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -351,7 +363,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -375,7 +388,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -399,7 +413,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -423,7 +438,8 @@
       language: dotnet,
       out.host: aws_dynamodb,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.DynamoDBv2
     },
     Metrics: {
       _dd.top_level: 1.0

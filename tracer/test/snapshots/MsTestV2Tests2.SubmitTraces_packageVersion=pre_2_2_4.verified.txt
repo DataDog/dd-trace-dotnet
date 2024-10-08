@@ -55,6 +55,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -116,6 +117,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -177,6 +179,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -238,6 +241,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -304,6 +308,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -370,6 +375,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -436,6 +442,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -501,6 +508,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -563,6 +571,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -625,6 +634,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -687,6 +697,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -748,6 +759,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -811,6 +823,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -875,6 +888,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -938,6 +952,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1004,6 +1019,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1066,6 +1082,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1130,6 +1147,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1191,6 +1209,7 @@
       process_id: 0,
       test.source.end: 84.0,
       test.source.start: 42.0,
+      _dd.host.vcpu_count: 2.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

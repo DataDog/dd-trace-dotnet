@@ -1368,6 +1368,9 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("require_git")]
         public readonly bool? RequireGit;
 
+        [JsonProperty("flaky_test_retries_enabled")]
+        public readonly bool? FlakyTestRetries;
+
         [JsonProperty("early_flake_detection")]
         public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;
     }

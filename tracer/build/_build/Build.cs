@@ -166,6 +166,16 @@ partial class Build : NukeBuild
             }
         });
 
+    Target CleanTestLogs => _ => _
+        .Unlisted()
+        .Description("Cleans all test logs")
+        .Executes(() =>
+        {
+            EnsureCleanDirectory(TestLogsDirectory);
+            ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
+            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+        });
+
     Target CleanObjFiles => _ => _
          .Unlisted()
          .Description("Deletes all build output files, but preserves folders to work around AzDo issues")

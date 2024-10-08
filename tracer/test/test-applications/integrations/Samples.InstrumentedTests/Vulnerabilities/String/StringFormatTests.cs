@@ -332,7 +332,9 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenANotTaintedFormatObject_WhenCallingFormatWithObjectArray_ResultIsNotTainted2()
     {
-        AssertNotTainted(String.Format("Format{0}{1}", new object[] { "notTainted", "notTainted" }));
+        AssertUntaintedWithOriginalCallCheck("FormatnotTaintednotTainted",
+            String.Format("Format{0}{1}", new object[] { "notTainted", "notTainted" }),
+            () => String.Format("Format{0}{1}", new object[] { "notTainted", "notTainted" }));
     }
 
     [Fact]
@@ -350,6 +352,15 @@ public class StringFormatTests : InstrumentationTestsBase
             String.Format(_taintedFormat3Args, new object[] { "ww", "ww", "ww" }),
             () => String.Format(_taintedFormat3Args, new object[] { "ww", "ww", "ww" }));
     }
+
+    [Fact]
+    public void GivenANotTaintedFormatObject_WhenCallingFormatWithTaintedObjectNoReplace_ResultIsNotTainted2()
+    {
+        AssertUntaintedWithOriginalCallCheck("Format",
+            String.Format("Format", _taintedValue),
+            () => String.Format("Format", _taintedValue));
+    }
+
 
 #if NET8_0
     // System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])

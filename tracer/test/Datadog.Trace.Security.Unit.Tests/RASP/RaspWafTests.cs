@@ -64,7 +64,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
         ConfigurationStatus configurationStatus = new(string.Empty);
         var newAction = CreateNewStatusAction(action, actionType, 500);
-        configurationStatus.Actions[action] = newAction;
+        configurationStatus.ActionsByFile[action] = [newAction];
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
         var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
         res.Success.Should().BeTrue();

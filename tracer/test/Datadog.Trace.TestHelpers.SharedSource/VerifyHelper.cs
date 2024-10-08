@@ -286,6 +286,7 @@ namespace Datadog.Trace.TestHelpers
                        {
                            Trace.Ci.Tags.TestTags.SourceStart => new KeyValuePair<string, double>(kvp.Key, 42),
                            Trace.Ci.Tags.TestTags.SourceEnd => new KeyValuePair<string, double>(kvp.Key, 84),
+                           Trace.Ci.Tags.CommonTags.LogicalCpuCount => new KeyValuePair<string, double>(kvp.Key, 2),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)
