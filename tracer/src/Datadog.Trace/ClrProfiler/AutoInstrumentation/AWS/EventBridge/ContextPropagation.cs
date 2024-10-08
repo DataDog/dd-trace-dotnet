@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const string DatadogKey = "_datadog";
         private const string StartTimeKey = "x-datadog-start-time";
         private const string ResourceNameKey = "x-datadog-resource-name";
+        private const int MaxSizeBytes = 256 * 1024; // 256 KB
 
         // Loops through all entries of the EventBridge event and tries to inject Datadog context into each.
         public static void InjectTracingContext<TPutEventsRequest>(TPutEventsRequest request, SpanContext context)
@@ -49,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             if (!detail.EndsWith("}"))
             {
                 // Unable to parse detail string, so just leave it unmodified. Don't inject trace context.
-                Log.Debug("Unable to parse detail string. Not injecting trace context.");
+                Log.Information("Unable to parse detail string. Not injecting trace context.");
                 return;
             }
 
@@ -62,7 +63,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
             var traceContext = BuildTraceContextJson(context, entry.EventBusName);
             detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
-            entry.Detail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
+
+            // Check new detail size
+            var updatedDetail = Util.StringBuilderCache.GetStringAndRelease(detailBuilder);
+            var byteSize = Encoding.UTF8.GetByteCount(updatedDetail);
+            if (byteSize >= MaxSizeBytes)
+            {
+                Log.Information("Payload size too large to pass context");
+                return;
+            }
+
+            entry.Detail = updatedDetail;
         }
 
         // Builds a JSON string containing Datadog trace context

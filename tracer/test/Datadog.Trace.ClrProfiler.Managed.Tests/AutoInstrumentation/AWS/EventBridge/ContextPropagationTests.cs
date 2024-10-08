@@ -7,6 +7,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.DuckTyping;
@@ -22,6 +23,7 @@ public class ContextPropagationTests
     private const string StartTimeKey = "x-datadog-start-time";
     private const string ResourceNameKey = "x-datadog-resource-name";
     private const string EventBusName = "test-event-bus";
+    private const int MaxSizeBytes = 256 * 1024; // 256 KB
 
     private readonly SpanContext _spanContext;
 
@@ -221,6 +223,52 @@ public class ContextPropagationTests
         extractedTraceContext.Should().NotContainKey(ResourceNameKey);
         extractedTraceContext.Should().ContainKey(StartTimeKey);
         extractedTraceContext[StartTimeKey].Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void InjectTracingContext_PayloadTooLarge_DoesNotAddTraceContext()
+    {
+        var largeDetail = new string('a', MaxSizeBytes);
+        var request = GeneratePutEventsRequest([
+            new PutEventsRequestEntry { Detail = $"{{{largeDetail}}}", EventBusName = EventBusName }
+        ]);
+
+        var proxy = request.DuckCast<IPutEventsRequest>();
+
+        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+
+        var entries = (IList)proxy.Entries.Value!;
+        entries.Count.Should().Be(1);
+        var entry = (PutEventsRequestEntry)entries[0]!;
+
+        entry.Detail.Should().Be($"{{{largeDetail}}}");
+    }
+
+    [Fact]
+    public void InjectTracingContext_PayloadJustUnderLimit_AddsTraceContext()
+    {
+        var detailSize = MaxSizeBytes - 1000; // Leave some room for the trace context
+        var largeDetail = new string('a', detailSize);
+        var request = GeneratePutEventsRequest([
+            new PutEventsRequestEntry { Detail = $"{{\"large\":\"{largeDetail}\"}}", EventBusName = EventBusName }
+        ]);
+
+        var proxy = request.DuckCast<IPutEventsRequest>();
+
+        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+
+        var entries = (IList)proxy.Entries.Value!;
+        entries.Count.Should().Be(1);
+        var entry = (PutEventsRequestEntry)entries[0]!;
+
+        var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
+        detail.Should().NotBeNull();
+        detail!.Count.Should().Be(2);
+        detail.Should().ContainKey("large");
+        detail.Should().ContainKey(DatadogKey);
+
+        var byteSize = Encoding.UTF8.GetByteCount(entry.Detail);
+        byteSize.Should().BeLessThan(MaxSizeBytes);
     }
 
     private static PutEventsRequest GeneratePutEventsRequest(List<PutEventsRequestEntry> entries)
