@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Nuke.Common.ProjectModel;
 using Logger = Serilog.Log;
 
 public static class ProjectExtensions
 {
+    public static Project Project(this Solution solution, string projectName)
+        => solution.GetAllProjects("*")
+               .FirstOrDefault(x => x.Name == projectName)
+           ?? throw new ArgumentException($"Failed to get the project {projectName}");
+
     static readonly ConcurrentDictionary<string, Microsoft.Build.Evaluation.Project> MsBuildProjects = new();
     public static IReadOnlyCollection<string> TryGetTargetFrameworks(this Project project)
     {

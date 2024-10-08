@@ -32,6 +32,6 @@ public class LazyLocalExecutableAttribute : ValueInjectionAttributeBase
 
     public override object GetValue(MemberInfo member, object instance)
     {
-        return new Lazy<Tool>(() => ToolResolver.GetLocalTool(_absoluteOrRelativePath));
+        return new Lazy<Tool>(() => ToolResolver.GetTool(_absoluteOrRelativePath));
     }
 }

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -24,17 +24,17 @@ using Octokit.GraphQL;
 using Octokit.GraphQL.Model;
 using ThroughputComparison;
 using YamlDotNet.Serialization.NamingConventions;
-using static Nuke.Common.IO.CompressionTasks;
-using static Nuke.Common.IO.FileSystemTasks;
 using Issue = Octokit.Issue;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Target = Nuke.Common.Target;
-using static Octokit.GraphQL.Variable;
 using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
 
+[SuppressMessage("ReSharper", "UnusedMember.Local")]
+[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
+[SuppressMessage("ReSharper", "TemplateIsNotCompileTimeConstantProblem")]
 partial class Build
 {
     [Parameter("A GitHub token (for use in GitHub Actions)", Name = "GITHUB_TOKEN")]
@@ -88,7 +88,7 @@ partial class Build
             await client.Issue.Update(
                 owner: GitHubRepositoryOwner,
                 name: GitHubRepositoryName,
-                number: PullRequestNumber.Value,
+                issueNumber: PullRequestNumber.Value,
                 new IssueUpdate { Milestone = milestone.Number });
 
             Console.WriteLine($"PR assigned");
@@ -215,7 +215,7 @@ partial class Build
             var pr = await client.PullRequest.Get(
                 owner: GitHubRepositoryOwner,
                 name: GitHubRepositoryName,
-                number: PullRequestNumber.Value);
+                pullRequestNumber: PullRequestNumber.Value);
 
             // Fixes an issue (ambiguous argument) when we do git diff in the Action.
             GitTasks.Git("fetch origin master:master", logOutput: false);
@@ -232,7 +232,7 @@ partial class Build
                 await client.Issue.Update(
                     owner: GitHubRepositoryOwner,
                     name: GitHubRepositoryName,
-                    number: PullRequestNumber.Value,
+                    issueNumber: PullRequestNumber.Value,
                     issueUpdate);
             }
             catch(Exception ex)
@@ -315,7 +315,7 @@ partial class Build
                 await client.Issue.Milestone.Update(
                     owner: GitHubRepositoryOwner,
                     name: GitHubRepositoryName,
-                    number: milestone.Number,
+                    milestoneNumber: milestone.Number,
                     new MilestoneUpdate { State = ItemState.Closed });
             }
             catch (ApiValidationException ex)
@@ -345,7 +345,7 @@ partial class Build
                 await client.Issue.Milestone.Update(
                     owner: GitHubRepositoryOwner,
                     name: GitHubRepositoryName,
-                    number: milestone.Number,
+                    milestoneNumber: milestone.Number,
                     new MilestoneUpdate { Title = FullVersion });
             }
             catch (ApiValidationException)
@@ -371,7 +371,7 @@ partial class Build
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
             Console.WriteLine("::set-output name=lib_waf_version::" + LibDdwafVersion);
 
-            var rulesPath = Solution.GetProject(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
+            var rulesPath = Solution.Project(Projects.DatadogTrace)!.Directory / "AppSec" / "Waf" / "ConfigFiles" / "rule-set.json";
             await using var rules = File.OpenRead(rulesPath);
             using var doc = await JsonDocument.ParseAsync(rules, new JsonDocumentOptions { AllowTrailingCommas = true });
             var rulesVersion = doc.RootElement.GetProperty("metadata").GetProperty("rules_version").GetString();
@@ -528,7 +528,7 @@ partial class Build
             sb.Replace("\n","%0A");
             sb.Replace("\r","%0D");
 
-            Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
+            Console.WriteLine("::set-output name=release_notes::" + sb);
         });
 
     Target UpdateChangeLog => _ => _
@@ -550,7 +550,7 @@ partial class Build
             var changelog = File.ReadAllText(changelogPath);
 
             // find first header
-            var firstHeaderIndex = changelog.IndexOf("##");
+            var firstHeaderIndex = changelog.IndexOf("##", StringComparison.Ordinal);
 
             using (var file = new StreamWriter(changelogPath, append: false))
             {
@@ -587,7 +587,7 @@ partial class Build
             const string debugger = "Debugger";
             const string serverless = "Serverless";
 
-            var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
+            // var artifactsLink = Environment.GetEnvironmentVariable("PIPELINE_ARTIFACTS_LINK");
             var nextVersion = FullVersion;
 
             var client = GetGitHubClient();
@@ -663,7 +663,7 @@ partial class Build
             sb.Replace("\n","%0A");
             sb.Replace("\r","%0D");
 
-            Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
+            Console.WriteLine("::set-output name=release_notes::" + sb);
 
             Console.WriteLine("Release notes generated");
 
@@ -744,7 +744,7 @@ partial class Build
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId.Value, $"{FullVersion}-release-artifacts");
+            BuildArtifact artifact = await DownloadArtifactsFromConsolidatedPipelineBuild(buildHttpClient, AzureDevopsBuildId!.Value, $"{FullVersion}-release-artifacts");
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
@@ -821,8 +821,8 @@ partial class Build
               var newReportdir = OutputDirectory / "CodeCoverage" / "New";
               var oldReportdir = OutputDirectory / "CodeCoverage" / "Old";
 
-              FileSystemTasks.EnsureCleanDirectory(newReportdir);
-              FileSystemTasks.EnsureCleanDirectory(oldReportdir);
+              newReportdir.CreateOrCleanDirectory();
+              oldReportdir.CreateOrCleanDirectory();
 
               // Connect to Azure DevOps Services
               var connection = new VssConnection(
@@ -887,7 +887,7 @@ partial class Build
              var masterDir = BuildDataDirectory / "previous_benchmarks";
              var prDir = BuildDataDirectory / "benchmarks";
 
-             EnsureCleanDirectory(masterDir);
+             masterDir.CreateOrCleanDirectory();
 
              // Connect to Azure DevOps Services
              var connection = new VssConnection(
@@ -934,9 +934,9 @@ partial class Build
              var latestBenchmarksDir = throughputDir / "latest_benchmarks";
              var commitDir = throughputDir / "current";
 
-             FileSystemTasks.EnsureCleanDirectory(masterDir);
-             FileSystemTasks.EnsureCleanDirectory(oldBenchmarksDir);
-             FileSystemTasks.EnsureCleanDirectory(latestBenchmarksDir);
+             masterDir.CreateOrCleanDirectory();
+             oldBenchmarksDir.CreateOrCleanDirectory();
+             latestBenchmarksDir.CreateOrCleanDirectory();
 
              // Connect to Azure DevOps Services
              var connection = new VssConnection(
@@ -1046,7 +1046,7 @@ partial class Build
              var masterDir = executionDir / "master";
              var commitDir = executionDir / "current";
 
-             FileSystemTasks.EnsureCleanDirectory(masterDir);
+             masterDir.CreateOrCleanDirectory();
 
              // Connect to Azure DevOps Services
              var connection = new VssConnection(
@@ -1366,7 +1366,7 @@ partial class Build
 
         Console.WriteLine($"{artifact.Name} downloaded. Extracting to {outputDirectory}...");
 
-        UncompressZip(zipPath, outputDirectory);
+        zipPath.UncompressTo(outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
     }
@@ -1382,7 +1382,7 @@ partial class Build
         };
 
         var destination = outputDirectory / commitSha;
-        EnsureExistingDirectory(destination);
+        destination.CreateDirectory();
 
         using var client = new HttpClient();
         foreach (var fileToDownload in artifactsFiles)

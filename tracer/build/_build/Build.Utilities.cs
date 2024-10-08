@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -37,6 +38,8 @@ using Logger = Serilog.Log;
 // #pragma warning disable SA1400
 // #pragma warning disable SA1401
 
+[SuppressMessage("ReSharper", "UnusedMember.Local")]
+[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
 partial class Build
 {
     [Parameter("The sample name to execute when running or building sample apps")]
@@ -130,13 +133,13 @@ partial class Build
     Target BuildIisSampleApp => _ => _
         .Description("Rebuilds an IIS sample app")
         .Requires(() => SampleName)
-        .Requires(() => Solution.GetProject(SampleName) != null)
+        .Requires(() => Solution.Project(SampleName) != null)
         .Executes(() =>
         {
             MSBuild(s => s
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
-                .SetProjectFile(Solution.GetProject(SampleName)));
+                .SetProjectFile(Solution.Project(SampleName)));
         });
 
     Target RunIisSample => _ => _
@@ -168,7 +171,7 @@ partial class Build
             envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            string project = Solution.GetProject(SampleName)?.Path;
+            string project = Solution.Project(SampleName)?.Path;
             if (project is not null)
             {
                 Logger.Information($"Running sample '{SampleName}'");
@@ -222,7 +225,7 @@ partial class Build
                throw new ArgumentException("You cannot specify IncludePackages AND ExcludePackages");
            }
 
-           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           var testDir = Solution.Project(Projects.ClrProfilerIntegrationTests).Directory;
            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
            var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
@@ -256,7 +259,7 @@ partial class Build
            Logger.Information("Verifying that updated dependabot file is valid...");
 
            var tempProjectFile = TempDirectory / "dependabot_test" / "Project.csproj";
-           CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
+           dependabotProj.Copy(tempProjectFile, ExistsPolicy.FileOverwrite);
            DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
     
@@ -282,9 +285,9 @@ partial class Build
             var dependabotProj = TracerDirectory / "dependabot"  /  "Datadog.Dependabot.Vendors.csproj";
             DependabotFileManager.UpdateVendors(dependabotProj);
 
-            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+            var vendorDirectory = Solution.Project(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
-            EnsureCleanDirectory(downloadDirectory);
+            downloadDirectory.CreateOrCleanDirectory();
             await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
@@ -371,7 +374,7 @@ partial class Build
                     continue;
                 }
 
-                var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
+                AbsolutePath extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
                 var snapshotsDirectory = TestsDirectory / "snapshots";
 
                 listTasks.Add(Task.Run(async () =>
@@ -380,14 +383,10 @@ partial class Build
                     {
                         await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                        CopyDirectoryRecursively(
-                            source: extractLocation,
-                            target: snapshotsDirectory,
-                            DirectoryExistsPolicy.Merge,
-                            FileExistsPolicy.Skip,
-                            excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                        extractLocation.Copy(snapshotsDirectory, ExistsPolicy.DirectoryMerge | ExistsPolicy.FileOverwrite,
+                            excludeFile: file => !Path.GetFileNameWithoutExtension(file).EndsWith(".received"));
 
-                        DeleteDirectory(extractLocation);
+                        extractLocation.DeleteDirectory();
                     }
                     catch (Exception e)
                     {
@@ -423,7 +422,7 @@ partial class Build
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
             var dest = Path.Combine(snapshotsDirectory, $"{trimmedName}verified{Path.GetExtension(source)}");
-            MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
+            source.Move(dest, ExistsPolicy.FileOverwrite, createDirectories: true);
         }
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Nuke.Common;
 using Nuke.Common.IO;
 using System.Linq;
@@ -11,6 +12,8 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
 
+[SuppressMessage("ReSharper", "UnusedMember.Local")]
+[SuppressMessage("ReSharper", "AllUnderscoreLocalParameterName")]
 partial class Build
 {
     Target CompileNativeLoader => _ => _
@@ -80,7 +83,7 @@ partial class Build
                 var workingDirectory = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
                 var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
                 var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
-                var testExe = ToolResolver.GetLocalTool(exePath);
+                var testExe = ToolResolver.GetTool(exePath);
                 testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
             }
         });
@@ -90,7 +93,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            EnsureExistingDirectory(NativeBuildDirectory);
+            NativeBuildDirectory.CreateDirectory();
 
             var additionalArgs = $"-DUNIVERSAL={(AsUniversal ? "ON" : "OFF")}";
 
@@ -111,7 +114,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            EnsureExistingDirectory(NativeBuildDirectory);
+            NativeBuildDirectory.CreateDirectory();
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
@@ -127,14 +130,14 @@ partial class Build
         .Executes(() =>
         {
             var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin";
-            EnsureExistingDirectory(workingDirectory);
+            workingDirectory.CreateDirectory();
 
             var exePath = workingDirectory / FileNames.NativeLoaderTests;
-            Chmod.Value.Invoke("+x " + exePath);
+            Chmod.Value.Invoke("+x " + (string)exePath);
 
             var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
 
-            var testExe = ToolResolver.GetLocalTool(exePath);
+            var testExe = ToolResolver.GetTool(exePath);
             testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
         });
 
@@ -143,7 +146,7 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            DeleteDirectory(NativeLoaderProject.Directory / "bin");
+            (NativeLoaderProject.Directory / "bin").DeleteDirectory();
 
             var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
 
@@ -151,7 +154,7 @@ partial class Build
             foreach (var arch in finalArchs)
             {
                 var buildDirectory = NativeBuildDirectory + "_" + arch;
-                EnsureExistingDirectory(buildDirectory);
+                buildDirectory.CreateDirectory();
 
                 var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
 
@@ -175,9 +178,9 @@ partial class Build
                 }
 
                 // Copy binary to the temporal destination
-                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
-                DeleteFile(sourceFile);
-                DeleteFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.static.a");
+                sourceFile.Copy(destFile, ExistsPolicy.FileOverwrite);
+                sourceFile.DeleteFile();
+                (NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.static.a").DeleteFile();
 
                 // Add library to the list
                 lstNativeBinaries.Add(destFile);
@@ -185,7 +188,7 @@ partial class Build
 
             // Create universal shared library with all architectures in a single file
             var destination = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
-            DeleteFile(destination);
+            destination.DeleteFile();
             Console.WriteLine($"Creating universal binary for {destination}");
             var strNativeBinaries = string.Join(' ', lstNativeBinaries);
             Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
@@ -201,7 +204,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux || IsOsx)
         .Executes(() =>
         {
-            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var (arch, _) = GetUnixArchitectureAndExtension();
             CppCheck.Value(arguments: $"--inconclusive --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.xml --xml --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
             CppCheck.Value(arguments: $"--inconclusive --project={NativeLoaderProject.Path} --output-file={BuildDataDirectory}/{NativeLoaderProject.Name}-cppcheck-{arch}.txt --enable=all --suppress=\"noExplicitConstructor\" --suppress=\"cstyleCast\" --suppress=\"duplicateBreak\" --suppress=\"unreadVariable\" --suppress=\"functionConst\" --suppress=\"funcArgNamesDifferent\" --suppress=\"variableScope\" --suppress=\"useStlAlgorithm\" --suppress=\"functionStatic\" --suppress=\"initializerList\" --suppress=\"redundantAssignment\" --suppress=\"redundantInitialization\" --suppress=\"shadowVariable\" --suppress=\"constParameter\" --suppress=\"unusedPrivateFunction\" --suppress=\"unusedFunction\" --suppress=\"missingInclude\" --suppress=\"unmatchedSuppression\" --suppress=\"knownConditionTrueFalse\"");
         });
@@ -226,17 +229,17 @@ partial class Build
                 var source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              "loader.conf";
                 var dest = MonitoringHomeDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.dll";
                 dest = MonitoringHomeDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.pdb";
                 dest = SymbolsDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
             }
         });
 
@@ -250,11 +253,11 @@ partial class Build
             var (arch, ext) = GetUnixArchitectureAndExtension();
             var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
             var dest = MonitoringHomeDirectory / arch;
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
 
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            source.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
 
             if (AsUniversal)
             {
@@ -272,17 +275,12 @@ partial class Build
             var dest = MonitoringHomeDirectory / "osx";
 
             // Copy loader.conf
-            CopyFileToDirectory(
-                NativeLoaderProject.Directory / "bin" / "loader.conf",
-                dest,
-                FileExistsPolicy.Overwrite);
+            var loaderConf = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            loaderConf.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
 
             // Copy the universal binary to the output folder
-            CopyFileToDirectory(
-                NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib",
-                dest,
-                FileExistsPolicy.Overwrite,
-                true);
+            var nativeLoader = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+            nativeLoader.CopyToDirectory(dest, ExistsPolicy.FileOverwrite);
         });
 
     Target ValidateNativeTracerGlibcCompatibility => _ => _
@@ -357,7 +355,7 @@ partial class Build
 
         return output
               .Where(x=>x.Contains("@GLIBC_"))
-              .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_") + 7)))
+              .Select(x=> System.Version.Parse(x.Substring(x.IndexOf("@GLIBC_", StringComparison.Ordinal) + 7)))
               .OrderDescending()
               .FirstOrDefault();
     }
