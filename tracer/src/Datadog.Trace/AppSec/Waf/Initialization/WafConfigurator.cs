@@ -82,6 +82,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
+        /// <summary>
+        /// Deserialize rules for the waf as Jtoken
+        /// If null is passed, will deserialize embedded rule file in the app
+        /// If a path is given but file isn't found, it won't fallback on the embedded rule file
+        /// </summary>
+        /// <param name="rulesFilePath">if null, will fallback on embedded rules file</param>
+        /// <returns>the rules, might be null if file not found</returns>
         internal static JToken? DeserializeEmbeddedOrStaticRules(string? rulesFilePath)
         {
             JToken root;
