@@ -252,8 +252,14 @@ void StackSamplerLoop::WalltimeProfilingIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip thread if it has a trace context
-        if (_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip thread if it has a trace context
+            _targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
@@ -373,8 +379,14 @@ void StackSamplerLoop::CodeHotspotIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip if it has no trace context
-        if (!_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip if it has no trace context
+            !_targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
@@ -510,7 +522,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // ----------- ----------- ----------- ----------- ----------- -----------
         } // _pManager->AllowStackWalk(..)
 
-    } // SemaphoreScope guardedLock(pThreadInfo->GetStackWalkLock())
+    }
 
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);

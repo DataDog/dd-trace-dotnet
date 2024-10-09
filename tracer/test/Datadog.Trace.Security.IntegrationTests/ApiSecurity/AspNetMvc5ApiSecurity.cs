@@ -47,11 +47,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
     {
         SetSecurity(true);
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
-        if (enableApiSecurity)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
-        }
-
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         _iisFixture = iisIisFixture;
         _testName = "Security." + nameof(AspNetMvc5ApiSecurity) + ".enableApiSecurity=" + enableApiSecurity;

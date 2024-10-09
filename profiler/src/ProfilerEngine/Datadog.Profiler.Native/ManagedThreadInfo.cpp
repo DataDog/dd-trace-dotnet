@@ -41,10 +41,11 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _deadlockTotalCount{0},
     _deadlockInPeriodCount{0},
     _deadlockDetectionPeriod{0},
-    _stackWalkLock(1),
     _isThreadDestroyed{false},
-    _traceContextTrackingInfo{},
+    _traceContext{},
+#ifdef LINUX
     _sharedMemoryArea{nullptr},
+#endif
     _info{pCorProfilerInfo},
     _blockingThreadId{0}
 {

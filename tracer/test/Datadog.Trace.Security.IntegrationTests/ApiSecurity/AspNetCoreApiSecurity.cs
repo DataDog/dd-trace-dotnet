@@ -35,10 +35,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         // necessary as the developer middleware prevents the right blocking response
         EnvironmentHelper.CustomEnvironmentVariables.Add("ASPNETCORE_ENVIRONMENT", "Production");
         SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
-        if (enableApiSecurity)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
-        }
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
     }
 
     public override void Dispose()

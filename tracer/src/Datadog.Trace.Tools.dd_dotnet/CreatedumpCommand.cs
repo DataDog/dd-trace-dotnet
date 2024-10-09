@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -421,7 +423,10 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
-        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
+        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
+        var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
+
+        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
 
         var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
 
@@ -517,8 +522,6 @@ internal class CreatedumpCommand : Command
             var suspiciousExceptionTypes = new[]
             {
                 "System.InvalidProgramException",
-                "System.Security.VerificationException",
-                "System.MissingMethodException",
                 "System.MissingFieldException",
                 "System.MissingMemberException",
                 "System.BadImageFormatException",

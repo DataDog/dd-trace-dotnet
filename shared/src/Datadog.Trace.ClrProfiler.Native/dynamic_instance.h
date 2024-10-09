@@ -20,7 +20,7 @@ namespace datadog::shared::nativeloader
     public:
         virtual ~IDynamicInstance() = default;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
-        virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
+        virtual HRESULT LoadInstance() = 0;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
         virtual ICorProfilerCallback10* GetProfilerCallback() = 0;
         virtual std::string GetFilePath() = 0;
@@ -42,7 +42,7 @@ namespace datadog::shared::nativeloader
         DynamicInstanceImpl(const std::string& filePath, const std::string& clsid);
         ~DynamicInstanceImpl() override;
         HRESULT LoadClassFactory(REFIID riid) override;
-        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
+        HRESULT LoadInstance() override;
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
         ICorProfilerCallback10* GetProfilerCallback() override;
         std::string GetFilePath() override;

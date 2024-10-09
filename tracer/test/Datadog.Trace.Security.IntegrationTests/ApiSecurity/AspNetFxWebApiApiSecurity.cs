@@ -34,11 +34,7 @@ public abstract class AspNetFxWebApiApiSecurity : AspNetBase, IClassFixture<IisF
     {
         SetSecurity(true);
         EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.Rules, "ApiSecurity\\ruleset-with-block.json");
-
-        if (enableApiSecurity)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(ConfigurationKeys.AppSec.ApiSecurityEnabled, "true");
-        }
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, enableApiSecurity.ToString());
 
         _iisFixture = iisFixture;
         AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });

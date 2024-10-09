@@ -11,8 +11,8 @@ internal class TracerSettingKeyConstants
 {
     // These keys are used when sending from manual to automatic, but not in reverse
     public const string IsFromDefaultSourcesKey = "IsFromDefaultSources";
-    public const string HttpClientErrorCodesKey = "DD_HTTP_CLIENT_ERROR_STATUSES";
-    public const string HttpServerErrorCodesKey = "DD_HTTP_SERVER_ERROR_STATUSES";
+    public const string HttpClientErrorCodesKey = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
+    public const string HttpServerErrorCodesKey = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
     public const string ServiceNameMappingsKey = "DD_TRACE_SERVICE_MAPPING";
 
     // These keys are used when sending from automatic to manual, but not in reverse

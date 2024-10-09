@@ -23,7 +23,7 @@ services:
     - "8126:8126"
     environment:
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
 
   smoke-tests.windows:
     build:

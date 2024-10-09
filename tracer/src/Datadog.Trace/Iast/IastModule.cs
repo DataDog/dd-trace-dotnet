@@ -702,7 +702,7 @@ internal static partial class IastModule
             }
             else
             {
-                stackId = currentSpan.Context.TraceContext.GetNextVulnerabilityStackTraceId();
+                stackId = currentSpan.Context.TraceContext.IastRequestContext?.GetNextVulnerabilityStackId();
             }
         }
 

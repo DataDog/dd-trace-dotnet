@@ -102,13 +102,13 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
         // This will crashing in libunwind (accessing a memory area  which was unmapped)
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
-        pThreadInfo->GetStackWalkLock().Acquire();
+        pThreadInfo->AcquireLock();
 
         _plibrariesInfo->UpdateCache();
 
         on_leave
         {
-            pThreadInfo->GetStackWalkLock().Release();
+            pThreadInfo->ReleaseLock();
         };
 
         errorCode = CollectCallStackCurrentThread(nullptr);

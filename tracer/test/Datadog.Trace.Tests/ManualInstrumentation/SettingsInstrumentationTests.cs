@@ -293,8 +293,8 @@ public class SettingsInstrumentationTests
         => GetAllTracerSettingKeys()
           .Where(
                x => x is not "IsFromDefaultSources"
-                        and not "DD_HTTP_CLIENT_ERROR_STATUSES"
-                        and not "DD_HTTP_SERVER_ERROR_STATUSES"
+                        and not "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES"
+                        and not "DD_TRACE_HTTP_SERVER_ERROR_STATUSES"
                         and not "DD_TRACE_SERVICE_MAPPING")
           .ToArray();
 

@@ -2,9 +2,11 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -38,7 +40,7 @@ namespace Samples.Console_
                     var thread = new Thread(
                         () =>
                         {
-                            Thread.CurrentThread.Name = "DD_thread";
+                            SetCurrentThreadName("DD_thread");
                             DoCrash();
                         });
 
@@ -67,6 +69,16 @@ namespace Samples.Console_
                     Thread.Sleep(500);
                 }
             }
+        }
+
+        private static void SetCurrentThreadName(string name)
+        {
+#if NETFRAMEWORK
+            // .NET Framework doesn't set the thread name at the OS level
+            SetThreadDescription(GetCurrentThread(), name);
+#else
+            Thread.CurrentThread.Name = name;
+#endif
         }
 
         // Can't use a "real" async Main because it messes up the callstack for the crash-report tests
@@ -139,7 +151,7 @@ namespace Samples.Console_
 
         private static void Ready()
         {
-            Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id} - Profiler attached: {SampleHelpers.IsProfilerAttached()}");
+            Console.WriteLine($"Waiting - PID: {Process.GetCurrentProcess().Id} - Main thread: {GetMainThreadId()} - Profiler attached: {SampleHelpers.IsProfilerAttached()}");
         }
 
         private static unsafe void NativeCrash()
@@ -177,8 +189,14 @@ namespace Samples.Console_
             var nativeLibraryType = Type.GetType("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary, Datadog.Trace", throwOnError: true);
             var tryLoad = nativeLibraryType.GetMethod("TryLoad", BindingFlags.NonPublic | BindingFlags.Static);
             var getExport = nativeLibraryType.GetMethod("GetExport", BindingFlags.NonPublic | BindingFlags.Static);
-            
-            var folder = Path.GetDirectoryName(Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH"));
+
+#if NETFRAMEWORK
+            const string profilerPathEnvironmentVariable = "COR_PROFILER_PATH";
+#else
+            const string profilerPathEnvironmentVariable = "CORECLR_PROFILER_PATH";
+#endif
+
+            var folder = Path.GetDirectoryName(Environment.GetEnvironmentVariable(profilerPathEnvironmentVariable));
             var profilerPath = Path.Combine(folder, "Datadog.Profiler.Native" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".dll" : ".so"));
             
             var arguments = new object[] { profilerPath, null };
@@ -189,6 +207,19 @@ namespace Samples.Console_
             var createCrashReport = (IntPtr)getExport.Invoke(null, [handle, "CreateCrashReport"]);
 
             return ((delegate* unmanaged[Stdcall]<int, IntPtr>)createCrashReport)(pid);
+        }
+
+#if NETFRAMEWORK
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool SetThreadDescription(IntPtr hThread, [MarshalAs(UnmanagedType.LPWStr)] string lpThreadDescription);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern IntPtr GetCurrentThread();
+#endif
+
+        private static int GetMainThreadId()
+        {
+            return Process.GetCurrentProcess().Threads.Cast<ProcessThread>().First().Id;
         }
 
         private class DummySynchronizationContext : SynchronizationContext

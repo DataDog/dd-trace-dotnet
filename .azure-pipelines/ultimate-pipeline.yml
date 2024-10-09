@@ -395,7 +395,7 @@ stages:
       parameters:
         target: builder
         baseImage: $(managedBaseImage)
-        command: "BuildManagedTracerHome ExtractDebugInfoLinux"
+        command: "BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -533,10 +533,12 @@ stages:
       matrix:
         x64:
           baseImage: centos7
+          managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
         alpine:
           baseImage: alpine
+          managedBaseImage: alpine
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
@@ -555,9 +557,18 @@ stages:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
         # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
-        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    # We have to run these in a separate stage because the version of nm included with centos7 is insufficient to validate the glibc version
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(managedBaseImage)
+        command: "ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -705,7 +716,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux"
+        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -798,7 +809,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
@@ -6341,7 +6352,7 @@ stages:
             SNAPSHOT_DIR: $(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots
             SNAPSHOT_CI: 1
             # ignoring 'http.client_ip' and 'network.client.ip' because it's set to '::1' here instead of expected '127.0.0.1'
-            SNAPSHOT_IGNORED_ATTRS: span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.git.commit.sha,meta._dd.git.repository_url,meta.http.client_ip,meta.network.client.ip
+            SNAPSHOT_IGNORED_ATTRS: span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.git.commit.sha,meta._dd.git.repository_url,meta.http.client_ip,meta.network.client.ip,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
 
         - script: |
             # Based on variables set in smoke.dotnet-tool.nuget.dockerfile

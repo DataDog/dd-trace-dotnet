@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().NotBeNull();
 
             testSession.Should().NotBeNull();
-            testSession.Meta.Should().Contain(new KeyValuePair<string, string>(CodeCoverageTags.Enabled, "true"));
+            testSession.Meta.Should().NotContain(new KeyValuePair<string, string>(CodeCoverageTags.Enabled, "true"));
             testSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 83.33));
         }
     }

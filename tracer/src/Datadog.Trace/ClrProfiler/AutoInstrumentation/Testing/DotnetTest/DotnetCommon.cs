@@ -155,7 +155,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
                         {
-                            session.SetTag(CodeCoverageTags.Enabled, "true");
                             session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                         }
                         else

@@ -300,13 +300,27 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
-        public const string HttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_SERVER_ERROR_STATUSES`")]
+        public const string DeprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's server http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
+        public const string HttpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
-        public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_CLIENT_ERROR_STATUSES`")]
+        public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's client http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
+        public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key indicating the optional name of the custom header to take into account to report the ip address from.

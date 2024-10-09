@@ -18,13 +18,9 @@ extern "C"
 
 extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 {
-#ifdef _WIN32
-    return nullptr;
-#else
     auto instance = CrashReporting::Create(pid);
     instance->AddRef();
     return (IUnknown*)instance;
-#endif
 }
 
 CrashReporting::CrashReporting(int32_t pid)
@@ -157,11 +153,11 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
     *isSuspicious = false;
 
-    for (auto thread : threads)
+    for (auto const& [threadId, threadName] : threads)
     {
-        auto frames = GetThreadFrames(thread.first, resolveCallback, context);
+        auto frames = GetThreadFrames(threadId, resolveCallback, context);
 
-        ddog_crasht_Slice_StackFrame stackTrace;
+        ddog_crasht_Slice_StackFrame stackTrace{};
 
         auto count = frames.size();
 
@@ -173,15 +169,16 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         stackTrace.ptr = stackFrames.get();
 
+        auto currentIsCrashingThread = threadId == crashingThreadId;
         for (int i = 0; i < count; i++)
         {
-            auto frame = frames.at(i);
+            auto const& frame = frames[i];
 
-            if (thread.first == crashingThreadId)
+            if (currentIsCrashingThread)
             {
                 // Mark the callstack as suspicious if one of the frames is suspicious
                 // or the thread name begins with DD_
-                if (frame.isSuspicious || thread.second.rfind("DD_", 0) == 0)
+                if (frame.isSuspicious || threadName.rfind("DD_", 0) == 0)
                 {
                     *isSuspicious = true;
                 }
@@ -213,7 +210,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             };
         }
 
-        auto threadIdStr = std::to_string(thread.first);
+        auto threadIdStr = std::to_string(threadId);
 
         auto result = ddog_crasht_CrashInfo_set_stacktrace(&_crashInfo, { threadIdStr.c_str(), threadIdStr.length() }, stackTrace);
 
@@ -225,7 +222,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
         successfulThreads++;
 
-        if (thread.first == crashingThreadId)
+        if (currentIsCrashingThread)
         {
             // Setting the default stacktrace
             result = ddog_crasht_CrashInfo_set_stacktrace(&_crashInfo, { nullptr, 0 }, stackTrace);
@@ -300,6 +297,49 @@ int32_t CrashReporting::ExportImpl(ddog_Endpoint* endpoint)
     }
 
     return 0;
+}
+
+std::vector<StackFrame> CrashReporting::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
+{
+    std::vector<StackFrame> result;
+    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
+
+    size_t i = 0, j = 0;
+    while (i < nativeFrames.size() && j < managedFrames.size())
+    {
+        if (nativeFrames[i].sp < managedFrames[j].sp)
+        {
+            result.push_back(nativeFrames[i]);
+            ++i;
+        }
+        else if (managedFrames[j].sp < nativeFrames[i].sp)
+        {
+            result.push_back(managedFrames[j]);
+            ++j;
+        }
+        else
+        {   // frames[i].sp == managedFrames[j].sp
+            // Prefer managedFrame when sp values are the same
+            result.push_back(managedFrames[j]);
+            ++i;
+            ++j;
+        }
+    }
+
+    // Add any remaining frames that are left in either vector
+    while (i < nativeFrames.size())
+    {
+        result.push_back(nativeFrames[i]);
+        ++i;
+    }
+
+    while (j < managedFrames.size())
+    {
+        result.push_back(managedFrames[j]);
+        ++j;
+    }
+
+    return result;
 }
 
 int32_t CrashReporting::CrashProcess()

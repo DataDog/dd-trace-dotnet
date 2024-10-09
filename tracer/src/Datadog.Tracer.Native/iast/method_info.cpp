@@ -91,27 +91,19 @@ namespace iast
         return _name;
     }
 
-    WSTRING& MemberRefInfo::GetFullName()
+    WSTRING MemberRefInfo::GetFullName()
     {
-        if (_fullName.size() == 0)
+        auto fullName = GetTypeName() + WStr("::") + _name;
+        auto signature = GetSignature();
+        if (signature != nullptr)
         {
-            CSGuard lock(&_module->_cs);
-            if (_fullName.size() == 0)
-            {
-                auto fullName = GetTypeName() + WStr("::") + _name;
-                auto signature = GetSignature();
-                if (signature != nullptr)
-                {
-                    fullName = signature->CharacterizeMember(fullName);
-                }
-                _fullName = fullName;
-            }
+            fullName = signature->CharacterizeMember(fullName);
         }
-        return _fullName;
+        return fullName;
     }
-    WSTRING MemberRefInfo::GetFullNameWithReturnType()
+    WSTRING MemberRefInfo::GetFullyQualifiedName()
     {
-        auto res = GetFullName();
+        WSTRING res = GetFullName();
         auto signature = GetSignature();
         if (signature != nullptr)
         {

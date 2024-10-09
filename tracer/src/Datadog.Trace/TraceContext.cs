@@ -29,11 +29,11 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private IastRequestContext? _iastRequestContext;
-        private AppSecRequestContext? _appSecRequestContext;
-
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
+
+        private IastRequestContext? _iastRequestContext;
+        private AppSecRequestContext? _appSecRequestContext;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -98,51 +98,28 @@ namespace Datadog.Trace
         /// </summary>
         internal string? AdditionalW3CTraceState { get; set; }
 
-        /// <summary>
-        /// Gets the IAST context.
-        /// </summary>
+        /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
+
+        /// <summary> Gets the AppSec context </summary>
+        internal AppSecRequestContext AppSecRequestContext
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (Volatile.Read(ref _appSecRequestContext) is null)
+                {
+                    Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
+                }
+
+                return _appSecRequestContext!;
+            }
+        }
 
         internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
             spans.Count > 0 ?
                 spans.Array![spans.Offset].Context.TraceContext :
                 null;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private AppSecRequestContext GetRequestContext()
-        {
-            if (Volatile.Read(ref _appSecRequestContext) is null)
-            {
-                Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-            }
-
-            return _appSecRequestContext!;
-        }
-
-        internal void AddWafSecurityEvents(IReadOnlyCollection<object> events)
-        {
-            GetRequestContext().AddWafSecurityEvents(events);
-        }
-
-        internal void AddRaspStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
-        {
-            GetRequestContext().AddRaspStackTrace(stack, maxStackTraces);
-        }
-
-        internal string? GetNextVulnerabilityStackTraceId()
-        {
-            return _iastRequestContext?.GetNextVulnerabilityStackId();
-        }
-
-        internal void AddVulnerabilityStackTraceElement(Dictionary<string, object> stack, int maxStackTraces)
-        {
-            GetRequestContext().AddVulnerabilityStackTrace(stack, maxStackTraces);
-        }
-
-        internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
-        {
-            GetRequestContext().AddRaspSpanMetrics(duration, durationWithBindings, timeout);
-        }
 
         internal void EnableIastInRequest()
         {

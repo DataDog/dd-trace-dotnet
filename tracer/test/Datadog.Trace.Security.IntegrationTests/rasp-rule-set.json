@@ -16,22 +16,23 @@
   ],
   "processors": [
     {
-      "id": "processor-001",
+      "id": "http-endpoint-fingerprint",
       "generator": "http_endpoint_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -62,26 +63,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-002",
+      "id": "http-header-fingerprint",
       "generator": "http_header_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -97,26 +99,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-003",
+      "id": "http-network-fingerprint",
       "generator": "http_network_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -132,26 +135,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-004",
+      "id": "session-fingerprint",
       "generator": "session_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -177,7 +181,7 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     }
   ],
@@ -455,6 +459,35 @@
         "stack_trace",
         "block"
       ]
+    },
+    {
+      "id": "ua0-600-12x",
+      "name": "Arachni",
+      "tags": {
+        "type": "attack_tool",
+        "category": "attack_attempt",
+        "cwe": "200",
+        "capec": "1000/118/169",
+        "tool_name": "Arachni",
+        "confidence": "1"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "^Arachni\\/v"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": []
     },
     {
       "id": "rasp-932-400",

@@ -25,6 +25,7 @@ public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         Fixture = fixture;
         EnableSecurity = enableSecurity;
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
