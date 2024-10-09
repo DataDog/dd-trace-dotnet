@@ -126,6 +126,8 @@ namespace datadog::shared::nativeloader
                         // (current_path)
                         std::string absoluteFilepathValue = (configFolder / filepathValue).string();
                         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"] (", currentOsArch, ")" );
+                        
+                        ec.clear();
                         if (fs::exists(absoluteFilepathValue, ec))
                         {
                             Log::Debug("[", type, "] Creating a new DynamicInstance object");
@@ -158,8 +160,17 @@ namespace datadog::shared::nativeloader
                         }
                         else
                         {
-                            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
-                                 "' cannot be loaded, file doesn't exist.");
+                            if (ec)
+                            {
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, error code: ", ec.value(), ", message: ", ec.message());
+                            }
+                            else
+                            {
+
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, file doesn't exist.");
+                            }
                         }
                     }
                     else
