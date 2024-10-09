@@ -195,6 +195,10 @@ namespace Datadog.Trace.TestHelpers
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
 
+            // In some scenarios (.NET 6, SSI run enabled) enabling procdump makes
+            // grabbing a stack trace _crazy_ expensive (10s). Setting this "fixes" it.
+            environmentVariables["_NO_DEBUG_HEAP"] = "1";
+
             // Set a canary variable that should always be ignored
             // and check that it doesn't appear in the logs
             environmentVariables["SUPER_SECRET_CANARY"] = "MySuperSecretCanary";

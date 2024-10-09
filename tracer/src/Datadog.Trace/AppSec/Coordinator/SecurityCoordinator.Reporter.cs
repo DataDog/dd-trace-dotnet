@@ -129,7 +129,7 @@ internal readonly partial struct SecurityCoordinator
             var traceContext = _localRootSpan.Context.TraceContext;
             if (result.Data != null)
             {
-                traceContext.AddWafSecurityEvents(result.Data);
+                traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
 
             AttackerFingerprintHelper.AddSpanTags(_localRootSpan);
@@ -194,7 +194,7 @@ internal readonly partial struct SecurityCoordinator
         // We report always, even if there is no match
         if (result.AggregatedTotalRuntimeRasp > 0)
         {
-            localRootSpan.Context.TraceContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
+            localRootSpan.Context.TraceContext.AppSecRequestContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
         }
     }
 

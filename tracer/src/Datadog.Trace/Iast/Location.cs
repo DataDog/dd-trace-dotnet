@@ -83,7 +83,7 @@ internal readonly struct Location
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             if (stack is not null)
             {
-                span.Context.TraceContext?.AddVulnerabilityStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+                span.Context.TraceContext?.AppSecRequestContext.AddVulnerabilityStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
             }
         }
     }
