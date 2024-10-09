@@ -232,6 +232,11 @@ namespace Datadog.Trace
         internal const string AspNetArea = "aspnet.area";
 
         /// <summary>
+        /// The ASP.NET SessionID.
+        /// </summary>
+        internal const string AspNetSessionId = "aspnet.session.id";
+
+        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         internal const string AspNetCoreRoute = "aspnet_core.route";
