@@ -132,7 +132,7 @@ internal readonly partial struct SecurityCoordinator
                 traceContext.AddWafSecurityEvents(result.Data);
             }
 
-            AttackerFingerprintHelper.AddSpanTags(_localRootSpan);
+            AttackerFingerprintHelper.AddSpanTags(_localRootSpan, result);
 
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
