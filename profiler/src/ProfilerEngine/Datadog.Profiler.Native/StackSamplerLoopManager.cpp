@@ -91,8 +91,8 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::StartImpl()
 {
-    RunStackSampling();
-    RunWatcher();
+    InitializeSampler();
+    RunWatcherAndSampler();
 
     return true;
 }
@@ -106,7 +106,7 @@ bool StackSamplerLoopManager::StopImpl()
     return true;
 }
 
-void StackSamplerLoopManager::RunStackSampling()
+void StackSamplerLoopManager::InitializeSampler()
 {
     _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
         _pCorProfilerInfo,
@@ -119,11 +119,9 @@ void StackSamplerLoopManager::RunStackSampling()
         _pWallTimeCollector,
         _pCpuTimeCollector,
         _metricsRegistry);
-
-    _pStackSamplerLoop->Start();
 }
 
-void StackSamplerLoopManager::RunWatcher()
+void StackSamplerLoopManager::RunWatcherAndSampler()
 {
     _pWatcherThread = std::make_unique<std::thread>([this]
         {
@@ -146,6 +144,9 @@ void StackSamplerLoopManager::WatcherLoop()
 {
     Log::Info("StackSamplerLoopManager::WatcherLoop started.");
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WatcherThreadName);
+
+    // Start the sampler loop only when the watcher is ready
+    _pStackSamplerLoop->Start();
 
     while (false == _isWatcherShutdownRequested)
     {
