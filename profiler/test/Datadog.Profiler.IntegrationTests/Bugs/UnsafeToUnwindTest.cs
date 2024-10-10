@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,7 +24,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 28", enableTracer: true);
             // TODO add the env var here
-            runner.Environment.SetVariable("<ENVIRONMENT VARIABLE>", "");
+            runner.Environment.SetVariable("DD_PROFILER_SKIPPED_METHODS", "Samples.Computer01.UnsafeToUnwind[Wrap_UnSafeToUnwind];Samples.Computer01.UnsafeToUnwind[Wrap_RaiseExceptionUnsafeUnwind]");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);

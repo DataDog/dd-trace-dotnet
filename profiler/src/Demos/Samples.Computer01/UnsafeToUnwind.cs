@@ -31,15 +31,17 @@ namespace Samples.Computer01
             };
             _worker.Start();
 
-            _workerUnsafe = new Thread(UnSafeToUnwind)
+            _workerUnsafe = new Thread(Wrap_UnSafeToUnwind)
             {
                 IsBackground = false // set to false to prevent the app from shutting down. The test will fail
             };
+            _workerUnsafe.Start();
 
             _workerException = new Thread(StartException)
             {
                 IsBackground = false // set to false to prevent the app from shutting down. The test will fail
             };
+            _workerException.Start();
         }
 
         public void Run()
@@ -66,6 +68,12 @@ namespace Samples.Computer01
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void Wrap_RaiseExceptionUnsafeUnwind()
+        {
+            RaiseExceptionUnsafeUnwind();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void RaiseExceptionUnsafeUnwind()
         {
             throw new Exception("Whoops");
@@ -84,6 +92,12 @@ namespace Samples.Computer01
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private void Wrap_UnSafeToUnwind()
+        {
+            UnSafeToUnwind();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void UnSafeToUnwind()
         {
             _stopEvent.WaitOne();
@@ -98,7 +112,7 @@ namespace Samples.Computer01
                 {
                     if (i++ % 2 == 0)
                     {
-                        RaiseExceptionUnsafeUnwind();
+                        Wrap_RaiseExceptionUnsafeUnwind();
                     }
                     else
                     {
