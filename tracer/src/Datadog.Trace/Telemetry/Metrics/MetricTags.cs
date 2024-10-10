@@ -214,6 +214,7 @@ internal static class MetricTags
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
+        [Description("integration_name:awseventbridge")]AwsEventBridge,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,

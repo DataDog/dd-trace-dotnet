@@ -431,6 +431,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The rule name associated with the AWS EventBridge span.
+        /// </summary>
+        internal const string RuleName = "rulename";
+
+        /// <summary>
         /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
