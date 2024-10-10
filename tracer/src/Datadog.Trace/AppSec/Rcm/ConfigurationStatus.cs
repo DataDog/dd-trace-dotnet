@@ -13,7 +13,6 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
 using Datadog.Trace.AppSec.Waf.Initialization;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -47,8 +46,6 @@ internal record ConfigurationStatus
     private Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
 
     public ConfigurationStatus(string? embeddedRulesPath) => _embeddedRulesPath = embeddedRulesPath;
-
-    internal RuleSet? FallbackEmbeddedRuleSet { get; set; }
 
     internal bool? EnableAsm { get; set; } = null;
 
@@ -104,67 +101,73 @@ internal record ConfigurationStatus
         return finalRuleData;
     }
 
-    internal Dictionary<string, object> BuildDictionaryForWafAccordingToIncomingUpdate()
+    internal object? BuildDictionaryForWafAccordingToIncomingUpdate(string? embeddedRulesetPath)
     {
-        var dictionary = new Dictionary<string, object>();
+        var configuration = new Dictionary<string, object>();
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsKey))
         {
             var exclusions = ExclusionsByFile.SelectMany(x => x.Value).ToList();
-            dictionary.Add(WafExclusionsKey, new JArray(exclusions));
+            configuration.Add(WafExclusionsKey, new JArray(exclusions));
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesOverridesKey))
         {
             var overrides = RulesOverridesByFile.SelectMany(x => x.Value).ToList();
-            dictionary.Add(WafRulesOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
+            configuration.Add(WafRulesOverridesKey, overrides.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesDataKey))
         {
             var rulesData = MergeRuleData(RulesDataByFile.SelectMany(x => x.Value));
-            dictionary.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+            configuration.Add(WafRulesDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafExclusionsDataKey))
         {
             var rulesData = MergeRuleData(ExclusionsDataByFile.SelectMany(x => x.Value));
-            dictionary.Add(WafExclusionsDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
+            configuration.Add(WafExclusionsDataKey, rulesData.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafActionsKey))
         {
             var actions = ActionsByFile.SelectMany(x => x.Value).ToList();
-            dictionary.Add(WafActionsKey, actions.Select(r => r.ToKeyValuePair()).ToArray());
+            configuration.Add(WafActionsKey, actions.Select(r => r.ToKeyValuePair()).ToArray());
         }
 
         if (IncomingUpdateState.WafKeysToApply.Contains(WafCustomRulesKey))
         {
             var customRules = CustomRulesByFile.SelectMany(x => x.Value).ToList();
             var mergedCustomRules = new JArray(customRules);
-            dictionary.Add(WafCustomRulesKey, mergedCustomRules);
+            configuration.Add(WafCustomRulesKey, mergedCustomRules);
         }
 
-        if (IncomingUpdateState.FallbackToEmbeddedRulesetAtNextUpdate)
-        {
-            if (FallbackEmbeddedRuleSet == null)
-            {
-                var result = WafConfigurator.DeserializeEmbeddedOrStaticRules(_embeddedRulesPath);
-                if (result != null)
-                {
-                    FallbackEmbeddedRuleSet = RuleSet.From(result);
-                }
-            }
-
-            FallbackEmbeddedRuleSet?.AddToDictionaryAtRoot(dictionary);
-        }
-        else if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey))
+        // if there's incoming rules or empty rules, or if asm is to be activated, we also want the rules key in waf arguments
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey) || (IncomingUpdateState.SecurityStateChange && (EnableAsm ?? false)))
         {
             var rulesetFromRcm = RulesByFile.Values.FirstOrDefault();
-            rulesetFromRcm?.AddToDictionaryAtRoot(dictionary);
+            // should deserialize from LocalRuleFile
+            if (rulesetFromRcm is null)
+            {
+                var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath);
+                if (deserializedFromLocalRules is not null)
+                {
+                    if (configuration.Count == 0)
+                    {
+                        return deserializedFromLocalRules;
+                    }
+
+                    var ruleSet = RuleSet.From(deserializedFromLocalRules);
+                    ruleSet.AddToDictionaryAtRoot(configuration);
+                }
+            }
+            else
+            {
+                rulesetFromRcm?.AddToDictionaryAtRoot(configuration);
+            }
         }
 
-        return dictionary;
+        return configuration.Count > 0 ? configuration : null;
     }
 
     /// <summary>
@@ -247,7 +250,7 @@ internal record ConfigurationStatus
                     }
                 }
 
-                // only treat asm_features as it will decide if asm gets toggled on and if we deserialize all the others
+                // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
                 // (the enable of auto user instrumentation as added to asm_features)
                 _asmFeatureProduct.ProcessUpdates(this, asmFeaturesToUpdate);
                 _asmFeatureProduct.ProcessRemovals(this, asmFeaturesToRemove);
@@ -282,18 +285,13 @@ internal record ConfigurationStatus
     {
         internal HashSet<string> WafKeysToApply { get; } = new();
 
-        internal bool FallbackToEmbeddedRulesetAtNextUpdate { get; private set; }
-
         internal bool SecurityStateChange { get; set; }
 
         public void Reset()
         {
-            FallbackToEmbeddedRulesetAtNextUpdate = false;
             WafKeysToApply.Clear();
             SecurityStateChange = false;
         }
-
-        public void FallbackToEmbeddedRuleset() => FallbackToEmbeddedRulesetAtNextUpdate = true;
 
         public void SignalSecurityStateChange() => SecurityStateChange = true;
     }
