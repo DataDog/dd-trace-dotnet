@@ -52,6 +52,7 @@ partial class Build : NukeBuild
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
                     "tracer/build/_build/Build.Steps.Debugger.cs",
+                    "tracer/build/_build/Build.ExplorationTests.cs",
                 }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
                 {
@@ -324,11 +325,10 @@ partial class Build : NukeBuild
                     useCases.Add(global::ExplorationTestUseCase.Tracer.ToString());
                 }
 
-                // Debugger exploration tests are currently all broken, so disabling
-                // if (isDebuggerChanged)
-                // {
-                //     useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
-                // }
+                if (isDebuggerChanged)
+                {
+                    useCases.Add(global::ExplorationTestUseCase.Debugger.ToString());
+                }
 
                 if (isProfilerChanged)
                 {
@@ -348,8 +348,8 @@ partial class Build : NukeBuild
                     foreach (var testDescription in testDescriptions)
                     {
                         matrix.Add(
-                            $"{explorationTestUseCase}_{testDescription.Name}",
-                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name });
+                            $"{explorationTestUseCase}_{testDescription.Name.ToString()}",
+                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name.ToString() });
                     }
                 }
 
