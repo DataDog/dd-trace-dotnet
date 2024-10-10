@@ -8,6 +8,7 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -28,6 +29,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
