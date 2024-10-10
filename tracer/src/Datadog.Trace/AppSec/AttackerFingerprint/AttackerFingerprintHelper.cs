@@ -33,7 +33,7 @@ internal static class AttackerFingerprintHelper
         }
 
         // We need a context
-        if (!securityCoordinator.Value.IsAdditiveContextDisposed())
+        if (securityCoordinator.Value.IsAdditiveContextDisposed())
         {
             return;
         }
