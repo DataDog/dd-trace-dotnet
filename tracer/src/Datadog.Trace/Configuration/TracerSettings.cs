@@ -176,6 +176,10 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNamesInternal = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
+            var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
+
+            DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
+
             IntegrationsInternal = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
 
             ExporterInternal = new ExporterSettings(source, _telemetry);
@@ -603,6 +607,12 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_DisabledIntegrationNames_Set)]
         [ConfigKey(ConfigurationKeys.DisabledIntegrations)]
         internal HashSet<string> DisabledIntegrationNamesInternal { get; set; }
+
+        /// <summary>
+        /// Gets the names of disabled ActivitySources.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
+        internal string[] DisabledActivitySources { get; }
 
         /// <summary>
         /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
