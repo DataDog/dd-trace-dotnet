@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Datadog.Profiler.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\..\..\..\test\Datadog.Profiler.IntegrationTests\Helpers\IEventDumper.cs" Link="IEventDumper.cs" />
+    <Compile Include="..\..\..\..\..\test\Datadog.Profiler.IntegrationTests\Helpers\IRecordDumper.cs" Link="IRecordDumper.cs" />
+    <Compile Include="..\..\..\..\..\test\Datadog.Profiler.IntegrationTests\Helpers\RecordReader.cs" Link="RecordReader.cs" />
+  </ItemGroup>
+</Project>

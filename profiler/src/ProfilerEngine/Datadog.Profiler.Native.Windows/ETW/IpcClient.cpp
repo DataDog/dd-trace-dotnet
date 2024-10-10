@@ -50,6 +50,12 @@ std::unique_ptr<IpcClient> IpcClient::Connect(IIpcLogger* pLogger, const std::st
         return nullptr;
     }
 
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Pipe to  " << portName << " has been created";
+        pLogger->Info(builder.str());
+    }
     return std::make_unique<IpcClient>(pLogger, hPipe);
  }
 
@@ -61,7 +67,9 @@ uint32_t IpcClient::Send(PVOID pBuffer, uint32_t bufferSize)
         auto lastError = ShowLastError("Failed to write to pipe");
         return lastError;
     }
-    ::FlushFileBuffers(_hPipe);
+
+    // this might hang
+    //::FlushFileBuffers(_hPipe);
 
     return (bufferSize == writtenSize) ? NamedPipesCode::Success : NamedPipesCode::MissingData;
  }
@@ -99,14 +107,32 @@ uint32_t IpcClient::Read(PVOID pBuffer, uint32_t bufferSize)
 
 HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, uint16_t timeoutMS)
 {
-    bool success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Waiting for " << portName << " endpoint...";
+        pLogger->Info(builder.str());
+    }
+
+    auto success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
     if (!success)
     {
         if (pLogger != nullptr)
         {
+            auto error = ::GetLastError();
             std::ostringstream builder;
-            builder << "Timeout when trying to connect to" << portName << "...";
+            builder << "WaitNamedPipe(" << portName << ") failed with error " << error;
+            pLogger->Error(builder.str());
         }
+
+        return INVALID_HANDLE_VALUE;
+    }
+
+    if (pLogger != nullptr)
+    {
+        std::ostringstream builder;
+        builder << "Opening " << portName << " pipe...";
+        pLogger->Info(builder.str());
     }
 
     HANDLE hPipe = ::CreateFileA(
@@ -115,7 +141,7 @@ HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, 
         0,
         nullptr,
         OPEN_EXISTING,
-        0,
+        FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
         nullptr);
 
     return hPipe;

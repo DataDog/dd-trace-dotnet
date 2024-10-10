@@ -12,15 +12,14 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace BuggyBits.Controllers
 {
-
     public class NewsController : Controller
     {
         private static int _id = 0;
         private int _instanceId;
 
-//#pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
+// #pragma warning disable IDE0052 // Remove unread private members | this field is used to better show memory leaks
 //        private readonly int[] bits = new int[25000];
-//#pragma warning restore IDE0052
+// #pragma warning restore IDE0052
         private IMemoryCache cache;
         private DateTime _creationTime;
 
@@ -34,7 +33,7 @@ namespace BuggyBits.Controllers
 
         ~NewsController()
         {
-            Console.WriteLine($"{DateTime.Now.ToShortTimeString()} | {(DateTime.Now -_creationTime).TotalSeconds, 4} - ~NewsController #{_instanceId}");
+            Console.WriteLine($"{DateTime.Now.ToShortTimeString()} | {(DateTime.Now - _creationTime).TotalSeconds,4} - ~NewsController #{_instanceId}");
         }
 
         public IActionResult Index()
@@ -42,9 +41,9 @@ namespace BuggyBits.Controllers
             string key = Guid.NewGuid().ToString();
             var cachedResult = cache.GetOrCreate(key, cacheEntry =>
             {
-                ////Adding a sliding expiration will help to evict cache entries sooner
-                ////but the LOH will become fragmented
-                //cacheEntry.SlidingExpiration = TimeSpan.FromMinutes(5);
+                //// Adding a sliding expiration will help to evict cache entries sooner
+                //// but the LOH will become fragmented
+                // cacheEntry.SlidingExpiration = TimeSpan.FromMinutes(5);
 
                 cacheEntry.RegisterPostEvictionCallback(CacheRemovedCallback);
                 cacheEntry.Priority = CacheItemPriority.NeverRemove;

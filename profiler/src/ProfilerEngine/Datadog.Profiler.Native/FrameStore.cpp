@@ -29,7 +29,6 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pCon
 {
 }
 
-
 std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uintptr_t instructionPointer)
 {
     HRESULT hr;
@@ -67,6 +66,30 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     static const std::string NotResolvedModuleName("NotResolvedModule");
     static const std::string NotResolvedFrame("NotResolvedFrame");
     static const std::string UnloadedModuleName("UnloadedModule");
+    static const std::string FakeModuleName("FakeModule");
+
+    static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
+    static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
+
+
+    // check for fake IPs used in tests
+    if (instructionPointer <= MaxFakeIP)
+    {
+        // switch/case does not support compile-time constants
+        if (instructionPointer == FrameStore::FakeLockContentionIP)
+        {
+            return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
+        }
+        else
+        if (instructionPointer == FrameStore::FakeAllocationIP)
+        {
+            return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+        }
+        else
+        {
+            return { true, {FakeModuleName, UnknownManagedFrame, "", 0} };
+        }
+    }
 
     std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
 

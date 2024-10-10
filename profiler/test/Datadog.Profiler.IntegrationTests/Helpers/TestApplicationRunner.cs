@@ -18,7 +18,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly string _appName;
         private readonly string _framework;
         private readonly string _appAssembly;
-        private readonly ITestOutputHelper _output;
+        private readonly XUnitFileLogger _output;
         private readonly string _commandLine;
         private readonly string _testBaseOutputDir;
 
@@ -43,7 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             Environment = new EnvironmentHelper(framework, enableTracer, enableProfiler);
             _testBaseOutputDir = Environment.GetTestOutputPath();
             _appAssembly = appAssembly;
-            _output = output;
+            _output = new XUnitFileLogger(output, Path.Combine(Path.Combine(_testBaseOutputDir, "logs"), "xunit.txt"));
             _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
         }
@@ -57,6 +57,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public double TotalTestDurationInMilliseconds { get; set; } = 0;
 
         public string ProcessOutput { get; set; }
+
+        public ITestOutputHelper XUnitLogger => _output;
 
         public static string GetApplicationOutputFolderPath(string appName)
         {

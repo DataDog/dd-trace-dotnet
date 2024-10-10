@@ -879,6 +879,24 @@ TEST_F(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
 
+TEST_F(ConfigurationTest, CheckEtwEndpointIsEmptyIfEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    std::string expectedValue = "";
+    ASSERT_THAT(configuration.GetEtwEndpoint(), expectedValue);
+}
+
+// Windows named pipe paths are not supported on Linux
+#ifndef LINUX
+TEST_F(ConfigurationTest, CheckEtwEndpointIfEnvVarIsSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwEndpoint, WStr("\\\\.\\pipe\\DD_ETW_FOR_TEST"));
+    auto configuration = Configuration{};
+    std::string expectedValue = "\\\\.\\pipe\\DD_ETW_FOR_TEST";
+    ASSERT_THAT(configuration.GetEtwEndpoint(), expectedValue);
+}
+#endif
+
 TEST_F(ConfigurationTest, CheckSsiNotDeployedByDefault)
 {
     auto configuration = Configuration{};
