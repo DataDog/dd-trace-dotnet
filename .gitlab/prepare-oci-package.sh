@@ -38,3 +38,5 @@ mkdir -p sources
 tar --same-owner -pxvzf $SRC_TAR -C sources
 
 echo -n $VERSION > sources/version
+
+cp ../artifacts/requirements.json sources/requirements.json
