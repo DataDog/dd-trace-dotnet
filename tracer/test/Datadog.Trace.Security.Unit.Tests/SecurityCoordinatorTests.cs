@@ -5,7 +5,6 @@
 
 using Datadog.Trace.AppSec.Coordinator;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -16,7 +15,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void DefaultBehavior()
         {
             var target = new AppSec.Security();
-            var secCoord = SecurityCoordinator.TryGet(target, new Mock<Span>().Object);
+            var span = new Span(new SpanContext(1, 1), new System.DateTimeOffset());
+            var secCoord = SecurityCoordinator.TryGet(target, span);
             secCoord.Should().BeNull();
         }
     }

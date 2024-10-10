@@ -54,23 +54,22 @@ internal readonly partial struct SecurityCoordinator
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
-    internal static SecurityCoordinator? TryGet(Security security, Span span, HttpTransport? transport = null)
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
-        if (transport == null)
+        if (HttpContext.Current is null)
         {
-            if (HttpContext.Current is null)
-            {
-                Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
-                return null;
-            }
-
-            transport = new HttpTransport(HttpContext.Current);
+            Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            return null;
         }
+
+        var transport = new HttpTransport(HttpContext.Current);
 
         return new SecurityCoordinator(security, span, transport);
     }
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
