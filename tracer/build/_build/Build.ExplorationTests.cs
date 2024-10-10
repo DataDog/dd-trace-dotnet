@@ -173,7 +173,7 @@ partial class Build
                     }
 
                     GitCloneBuild();
-                    CreateSnapshotExplorationTestCsv();
+                    SetUpSnapshotExplorationTestsInternal();
                 });
 
     Target RunSnapshotExplorationTests
