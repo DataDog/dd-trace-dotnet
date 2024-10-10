@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -356,9 +357,8 @@ namespace Datadog.Trace.MSBuild
                 }
                 else
                 {
-                    var traceId = span.GetTraceIdStringForLogs();
-                    var spanId = span.SpanId.ToString(CultureInfo.InvariantCulture);
-
+                    var use128Bits = span.Context.TraceContext?.Tracer.Settings.TraceId128BitGenerationEnabled ?? false;
+                    LogContext.TryGetValues(span.Context, out var traceId, out var spanId, use128Bits);
                     _context = new Context(traceId, spanId, span.Context.Origin);
                 }
             }
