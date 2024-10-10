@@ -761,16 +761,16 @@
     "integrationName": "Log4Net",
     "assemblyName": "log4net",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
     "packages": [
       {
         "name": "log4net",
         "minVersionAvailableInclusive": "1.2.10",
         "minVersionSupportedInclusive": "1.2.10",
         "minVersionTestedInclusive": "1.2.11",
-        "maxVersionSupportedInclusive": "2.0.17",
-        "maxVersionAvailableInclusive": "3.0.1",
-        "maxVersionTestedInclusive": "2.0.17"
+        "maxVersionSupportedInclusive": "3.0.0",
+        "maxVersionAvailableInclusive": "3.0.0",
+        "maxVersionTestedInclusive": "3.0.0"
       }
     ]
   },
