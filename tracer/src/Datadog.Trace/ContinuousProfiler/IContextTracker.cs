@@ -17,7 +17,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         void Set(ulong localRootSpanId, ulong spanId);
 
-        void SetLockStatus(LockStatus status);
+        void SetThreadMetaInfo(LockStatus status);
 
         void SetEndpoint(ulong localRootSpanId, string endpoint);
 

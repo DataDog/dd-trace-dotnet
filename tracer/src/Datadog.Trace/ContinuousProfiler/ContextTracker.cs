@@ -64,7 +64,7 @@ namespace Datadog.Trace.ContinuousProfiler
             WriteToNative(new SpanContext(localRootSpanId, spanId));
         }
 
-        public void SetLockStatus(LockStatus status)
+        public void SetThreadMetaInfo(LockStatus status)
         {
             if (!_status.IsProfilerReady)
             {
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
             try
             {
-                WriteLockToNative(ctxPtr, status);
+                WriteThreadMetaInfoToNative(ctxPtr, status);
             }
             catch (Exception e)
             {
@@ -91,13 +91,13 @@ namespace Datadog.Trace.ContinuousProfiler
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private void WriteLockToNative(IntPtr ptr, LockStatus action)
+        private void WriteThreadMetaInfoToNative(IntPtr ptr, LockStatus action)
         {
             // Set the WriteGuard
             Marshal.WriteInt64(ptr, 1);
             Thread.MemoryBarrier();
 
-            // Update IsLocked field based on the status
+            // Update ThreadMetaInfo field based on the lock status
             var lockValue = action == LockStatus.Lock ? 1 : 0;
             Marshal.WriteInt64(ptr + 24, lockValue);
 
