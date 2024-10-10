@@ -5,13 +5,9 @@
 
 using System;
 using System.Net;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -46,11 +42,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Since it is possible for users to manually propagate headers (which we should
                 // overwrite), check our cache which will be populated with header objects
                 // that we have injected context into
-                SpanContext spanContext = null;
+                PropagationContext cachedContext = default;
+
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
-                    spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                    cachedContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
                 }
+
+                var spanContext = cachedContext.SpanContext;
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
                 var tracer = Tracer.Instance;
@@ -76,11 +75,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                             scope.Span.Context.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
                         }
 
+                        var baggage = cachedContext.Baggage is null ?
+                                          Baggage.Current :
+                                          Baggage.Merge(Baggage.Current, cachedContext.Baggage);
+
                         // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        var context = new PropagationContext(scope.Span.Context, baggage);
+                        SpanContextPropagator.Instance.Inject(context, request.Headers.Wrap());
 
                         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-
                         return new CallTargetState(scope);
                     }
                 }

@@ -74,7 +74,11 @@ namespace Datadog.Trace
 
             if (context is SpanContext spanContext)
             {
-                SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
+                // TODO: should this silently inject the baggage from Baggage.Current into the carrier?
+                SpanContextPropagator.Instance.Inject(
+                    new PropagationContext(spanContext, baggage: null),
+                    carrier,
+                    setter);
 
                 if (string.IsNullOrEmpty(messageType) || string.IsNullOrEmpty(target))
                 {

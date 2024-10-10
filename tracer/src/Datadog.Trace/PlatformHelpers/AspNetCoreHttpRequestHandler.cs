@@ -63,7 +63,8 @@ namespace Datadog.Trace.PlatformHelpers
 
                 if (requestHeaders != null)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                    var context = SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                    return context.SpanContext;
                 }
             }
             catch (Exception ex)
