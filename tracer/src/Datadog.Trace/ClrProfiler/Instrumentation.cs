@@ -545,34 +545,45 @@ namespace Datadog.Trace.ClrProfiler
 
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
             var serviceName = DynamicInstrumentationHelper.ServiceName;
-            var discoveryService = tracer.TracerManager.DiscoveryService;
 
-            Task.Run(
-                async () =>
-                {
-                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
-                    // to changes in ExporterSettings etc.
+            if (debuggerSettings.IsSnapshotExplorationTestEnabled)
+            {
+                var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                Log.Debug("Initializing live debugger for snapshot exploration test.");
+                liveDebugger.InitializeAsync().GetAwaiter().GetResult();
+                liveDebugger.InitializeSync().WithProbesFromFile();
+            }
+            else
+            {
+                var discoveryService = tracer.TracerManager.DiscoveryService;
 
-                    try
+                Task.Run(
+                    async () =>
                     {
-                        var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+                        // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
+                        // to changes in ExporterSettings etc.
 
-                        if (isDiscoverySuccessful)
+                        try
                         {
-                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                            var sw = Stopwatch.StartNew();
+                            var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
 
-                            Log.Debug("Initializing live debugger.");
+                            if (isDiscoverySuccessful)
+                            {
+                                var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
 
-                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                                Log.Debug("Initializing live debugger.");
+
+                                await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error initializing live debugger.");
-                    }
-                });
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing live debugger.");
+                        }
+                    });
+            }
         }
 
         // /!\ This method is called by reflection in the SampleHelpers
