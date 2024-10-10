@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         var scope = SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
                         if (scope is not null)
                         {
-                            var securityTransport = new SecurityCoordinator(security, scope.Span);
+                            var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
                             if (!securityTransport.IsBlocked)
                             {
                                 var extractedObject = ObjectExtractor.Extract(responseObject);
