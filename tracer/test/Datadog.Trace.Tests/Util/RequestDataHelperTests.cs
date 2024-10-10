@@ -80,7 +80,7 @@ public class RequestDataHelperTests
         HttpContext context = new HttpContext(request, new HttpResponse(new System.IO.StringWriter()));
         request.ValidateInput();
         HttpTransport transport = new HttpTransport(context);
-        var securityCoordinator = new SecurityCoordinator(security, scope.Span, transport);
+        var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, transport);
         // We should not launch any exception here
         var result = securityCoordinator.GetBasicRequestArgsForWaf();
         var iastContext = new IastRequestContext();
