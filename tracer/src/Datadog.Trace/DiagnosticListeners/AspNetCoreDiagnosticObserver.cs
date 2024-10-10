@@ -423,7 +423,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                HttpContext httpContext = requestStruct.HttpContext;
+                var httpContext = requestStruct.HttpContext;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
