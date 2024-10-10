@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -105,6 +106,26 @@ namespace Datadog.Trace.Security.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
             var spans = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty);
             await VerifySpans(spans, settings, testName: "AspNetCore5.SecurityEnabled.MetaStruct", forceMetaStruct: true);
+        }
+
+        [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public async Task TestSessionFP()
+        {
+            await TryStartApp();
+            Dictionary<string, string> cookies = new()
+            {
+                {  "DD-REQUEST-ID", "1234" }
+            };
+
+            AddCookies(cookies);
+            var agent = Fixture.Agent;
+            var url = "/health?q=fun";
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
+            var spans = await SendRequestsAsync(agent, url, null, 1, 1, string.Empty);
+            await VerifySpans(spans, settings, testName: "AspNetCore5.SecurityEnabled.SessionFP");
         }
     }
 

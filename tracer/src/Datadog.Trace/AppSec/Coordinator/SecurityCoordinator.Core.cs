@@ -87,7 +87,7 @@ internal readonly partial struct SecurityCoordinator
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
 
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
+        var cookiesDic = new Dictionary<string, object>(request.Cookies.Keys.Count);
         for (var i = 0; i < request.Cookies.Count; i++)
         {
             var cookie = request.Cookies.ElementAt(i);
@@ -95,11 +95,25 @@ internal readonly partial struct SecurityCoordinator
             var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
             if (!keyExists)
             {
-                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
+                cookiesDic.Add(currentKey, cookie.Value ?? string.Empty);
             }
             else
             {
-                value?.Add(cookie.Value);
+                if (value is string valueAsString)
+                {
+                    cookiesDic[currentKey] = new List<string> { valueAsString, cookie.Value ?? string.Empty };
+                }
+                else
+                {
+                    if (value is List<string> valueAsList)
+                    {
+                        valueAsList.Add(cookie.Value ?? string.Empty);
+                    }
+                    else
+                    {
+                        Log.Warning("Cookie {Key} couldn't be added as argument to the waf", currentKey);
+                    }
+                }
             }
         }
 
