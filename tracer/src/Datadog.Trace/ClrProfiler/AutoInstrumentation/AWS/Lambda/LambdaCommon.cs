@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -21,34 +22,25 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, WebHeaderCollection headers)
     {
-        Span span;
-
-        if (traceId == null)
-        {
-            Log("traceId not found");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
-        }
-        else
-        {
-            Log($"creating the placeholder traceId = {traceId}");
-            span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: (TraceId)Convert.ToUInt64(traceId), addToTraceContext: false);
-        }
-
-        if (samplingPriority == null)
-        {
-            Log("samplingPriority not found");
-            _ = span.Context.TraceContext?.GetOrMakeSamplingDecision();
-        }
-        else
-        {
-            Log($"setting the placeholder sampling priority to = {samplingPriority}");
-            span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
-        }
-
+        var spanContext = SpanContextPropagator.Instance.Extract(headers, SafeGetValues);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+
+        if (spanContext != null)
+        {
+            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
+        }
+
+        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
+    }
+
+    // parseUtility.ParseUInt64 falls over and dies when it tries to parse a null collection of values, and WebHeadersCollection.GetValues will return null if the header does not exist.
+    private static string[] SafeGetValues(WebHeaderCollection headers, string name)
+    {
+        var values = headers.GetValues(name);
+        return values ?? [];
     }
 
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
@@ -57,14 +49,15 @@ internal abstract class LambdaCommon
         WriteRequestPayload(request, data);
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
-        var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-        var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
-        if (ValidateOkStatus(response))
+
+        var headers = response.Headers;
+        if (!ValidateOkStatus(response))
         {
-            return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            return null;
         }
 
-        return null;
+        var tracer = Tracer.Instance;
+        return CreatePlaceholderScope(tracer, headers);
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
