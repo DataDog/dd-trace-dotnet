@@ -123,6 +123,10 @@ namespace Datadog.Trace.Configuration
                             },
                             validator: null);
 
+            ProfilerSkippedMethods = config
+                                    .WithKeys(ContinuousProfiler.ConfigurationKeys.SkippedMethods)
+                                    .AsString(string.Empty);
+
             EnvironmentInternal = config
                          .WithKeys(ConfigurationKeys.Environment)
                          .AsString();
@@ -593,6 +597,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ContinuousProfiler.ConfigurationKeys.ProfilingEnabled"/>
         internal bool ProfilingEnabledInternal { get; }
+
+        /// <summary>
+        /// Gets a value indicating the methods the profiler should skip in its samplings.
+        /// </summary>
+        /// <seealso cref="ContinuousProfiler.ConfigurationKeys.SkippedMethods"/>
+        internal string ProfilerSkippedMethods { get; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.

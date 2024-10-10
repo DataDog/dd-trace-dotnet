@@ -458,6 +458,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                     WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations.TraceAnnotationsIntegration"));
                 AddTraceAttributeInstrumentation(traceAnnotationIntegrationId.data(),
                                                  expected_assembly_reference.str().data(), traceAnnotationType.data());
+
+                auto skippedMethodIntegrationId = WSTRING(WStr("39C741F331E24889889EEE292DA6EEE5"));
+                auto skippedMethodIntegrationType = WSTRING(
+                    WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped.ProfilerSkippedMethodIntegration"));
+                SetProfilerSkippedMethodsIntegrationType(skippedMethodIntegrationId.data(),
+                                                  expected_assembly_reference.str().data(),
+                                                         skippedMethodIntegrationType.data());
             }
 
             if (runtime_information_.is_desktop() && corlib_module_loaded)
@@ -944,7 +951,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
             if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
             {
-                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
+                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type_in_profiler_native_module, profiler_library_path);
+                RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type_in_tracer_native_module);
             }
         }
 
@@ -2125,12 +2133,52 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                                          WCHAR* integration_type_name_ptr,
                                          WCHAR* configuration_string_ptr)
 {
+    InitializeIntegrationMethodsFromConfig(id, integration_assembly_name_ptr, integration_type_name_ptr,
+                                           configuration_string_ptr,
+                              trace_annotation_integration_type, "InitializeTraceMethods");
+}
+
+void CorProfiler::SetProfilerSkippedMethodsIntegrationType(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                                           WCHAR* integration_type_name_ptr)
+{
     shared::WSTRING definitionsId = shared::WSTRING(id);
     auto definitions = definitions_ids.Get();
 
     if (definitions->find(definitionsId) != definitions->end())
     {
-        Logger::Info("InitializeTraceMethods: Id already processed.");
+        Logger::Info("SetProfilerSkippedMethodsIntegrationType: Id already processed.");
+        return;
+    }
+
+    definitions->emplace(definitionsId);
+    shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
+    shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
+    profiler_skipped_methods_integration_type =
+        std::unique_ptr<TypeReference>(new TypeReference(integration_assembly_name, integration_type_name, {}, {}));
+
+    Logger::Info("SetProfilerSkippedMethodsIntegrationType: Initialized assembly=", integration_assembly_name,
+                 ", type=", integration_type_name);
+}
+
+void CorProfiler::InitializeProfilerSkippedMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                                   WCHAR* integration_type_name_ptr, WCHAR* configuration_string_ptr)
+{
+    InitializeIntegrationMethodsFromConfig(id, integration_assembly_name_ptr, integration_type_name_ptr,
+                                           configuration_string_ptr,
+                              profiler_skipped_methods_integration_type, "InitializeProfilerSkippedMethods");
+}
+
+void CorProfiler::InitializeIntegrationMethodsFromConfig(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                            WCHAR* integration_type_name_ptr, WCHAR* configuration_string_ptr,
+                                            const std::unique_ptr<TypeReference>& integration_type,
+                                            const std::string& function_name)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    auto definitions = definitions_ids.Get();
+
+    if (definitions->find(definitionsId) != definitions->end())
+    {
+        Logger::Info(function_name, ": Id already processed.");
         return;
     }
 
@@ -2138,58 +2186,52 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
     shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
     shared::WSTRING configuration_string = shared::WSTRING(configuration_string_ptr);
 
-    if (trace_annotation_integration_type == nullptr)
+    if (integration_type == nullptr)
     {
-        Logger::Warn("InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation "
-            "must be called first");
+        Logger::Warn(function_name, ": Integration type was not initialized.");
         return;
     }
-    else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name ||
-             trace_annotation_integration_type.get()->name != integration_type_name)
+    else if (integration_type->assembly.str() != integration_assembly_name ||
+             integration_type->name != integration_type_name)
     {
-        Logger::Warn("InitializeTraceMethods: Integration type was already initialized to assembly=",
-                     trace_annotation_integration_type.get()->assembly.str(),
-                     ", type=", trace_annotation_integration_type.get()->name,
-                     ". InitializeTraceMethods was now invoked with assembly=", integration_assembly_name,
-                     ", type=", integration_type_name, ". Exiting InitializeTraceMethods.");
+        Logger::Warn(function_name,
+                     ": Integration type was already initialized to assembly=", integration_type->assembly.str(),
+                     ", type=", integration_type->name, ". Now invoked with assembly=", integration_assembly_name,
+                     ", type=", integration_type_name, ". Exiting.");
         return;
     }
 
-    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
-    // first make sure this works
+    // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm
+    // gonna first make sure this works
     definitions->emplace(definitionsId);
     if (rejit_handler != nullptr)
     {
-        if (trace_annotation_integration_type == nullptr)
+        if (integration_type == nullptr)
         {
-            Logger::Warn(
-                "InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation must be called first");
+            Logger::Warn(function_name, ": Integration type was not initialized.");
         }
-        else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name
-                 || trace_annotation_integration_type.get()->name != integration_type_name)
+        else if (integration_type->assembly.str() != integration_assembly_name ||
+                 integration_type->name != integration_type_name)
         {
-            Logger::Warn("InitializeTraceMethods: Integration type was initialized to assembly=",
-                         trace_annotation_integration_type.get()->assembly.str(), ", type=",
-                         trace_annotation_integration_type.get()->name,
-                         ". InitializeTraceMethods was invoked with assembly=", integration_assembly_name, ", type=",
-                         integration_type_name, ". Exiting InitializeTraceMethods.");
+            Logger::Warn(function_name,
+                         ": Integration type was initialized to assembly=", integration_type->assembly.str(),
+                         ", type=", integration_type->name, ". Now invoked with assembly=", integration_assembly_name,
+                         ", type=", integration_type_name, ". Exiting.");
         }
         else if (configuration_string.size() > 0)
         {
-            std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
-                *trace_annotation_integration_type.get(), configuration_string);
+            std::vector<IntegrationDefinition> integrationDefinitions =
+                GetIntegrationsFromTraceMethodsConfiguration(*integration_type, configuration_string);
             auto modules = module_ids.Get();
 
-            Logger::Debug("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
+            Logger::Debug(function_name, ": Total number of modules to analyze: ", modules->size());
             if (rejit_handler != nullptr)
             {
                 auto promise = std::make_shared<std::promise<ULONG>>();
                 std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions,
-                    promise);
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(),
+                                                                                     integrationDefinitions, promise);
 
-                // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
                 Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
             }
@@ -2200,7 +2242,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                 integration_definitions_.push_back(integration);
             }
 
-            Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
+            Logger::Info(function_name, ": Total integrations in profiler: ", integration_definitions_.size());
         }
     }
 }

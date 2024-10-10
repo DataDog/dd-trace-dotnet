@@ -80,6 +80,17 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        internal static TraceMethodPayload GetProfilerDefinitions()
+        {
+            return new TraceMethodPayload
+            {
+                // Fixed Id for definitions payload (to avoid loading same integrations from multiple AppDomains)
+                DefinitionsId = "A11B1AD49BF341C7810983E3AA82D409",
+                AssemblyName = assemblyFullName,
+                TypeName = typeof(Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped.ProfilerSkippedMethodIntegration).FullName
+            };
+        }
+
         internal static void Dispose()
         {
             Instrumentations = null!;

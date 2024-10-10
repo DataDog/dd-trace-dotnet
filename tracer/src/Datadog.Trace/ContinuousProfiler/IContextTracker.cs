@@ -5,11 +5,19 @@
 
 namespace Datadog.Trace.ContinuousProfiler
 {
+    internal enum LockStatus
+    {
+        Lock,
+        Unlock
+    }
+
     internal interface IContextTracker
     {
         bool IsEnabled { get; }
 
         void Set(ulong localRootSpanId, ulong spanId);
+
+        void SetLockStatus(LockStatus status);
 
         void SetEndpoint(ulong localRootSpanId, string endpoint);
 
