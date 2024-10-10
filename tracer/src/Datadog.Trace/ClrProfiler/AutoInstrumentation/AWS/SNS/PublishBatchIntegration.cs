@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
@@ -54,10 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
             }
 
-            if (scope?.Span.Context is { } context)
-            {
-                ContextPropagation.InjectHeadersIntoBatch<TTarget, TPublishBatchRequest>(request, context);
-            }
+            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
+            ContextPropagation.InjectHeadersIntoBatch<TTarget, TPublishBatchRequest>(request, context);
 
             return new CallTargetState(scope);
         }
