@@ -637,6 +637,11 @@ namespace Datadog.Trace
         internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
 
         /// <summary>
+        /// Indicates if the vulnerability meta struct has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastMetaStructTagSizeExceeded = "_dd.iast.metastruct.tag.size.exceeded";
+
+        /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned
         /// </summary>
         internal const string IastEnabled = "_dd.iast.enabled";
