@@ -377,12 +377,12 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headers = RequestDataHelper.GetHeaders(request);
-        Dictionary<string, string[]>? headersDic = null;
+        Dictionary<string, object>? headersDic = null;
 
         if (headers is not null)
         {
             var headerKeys = headers.Keys;
-            headersDic = new Dictionary<string, string[]>(headerKeys.Count);
+            headersDic = new Dictionary<string, object>(headerKeys.Count);
             foreach (string originalKey in headerKeys)
             {
                 var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
@@ -390,7 +390,7 @@ internal readonly partial struct SecurityCoordinator
                 {
                     if (!headersDic.ContainsKey(keyForDictionary))
                     {
-                        headersDic.Add(keyForDictionary, headers.GetValues(originalKey));
+                        headersDic.Add(keyForDictionary, GetHeaderValueForWaf(headers.GetValues(originalKey)));
                     }
                     else
                     {
@@ -488,10 +488,15 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    public Dictionary<string, string[]> GetResponseHeadersForWaf()
+    private static object GetHeaderValueForWaf(string[] value)
+    {
+        return (value.Count() == 1 ? value[0] : value);
+    }
+
+    public Dictionary<string, object> GetResponseHeadersForWaf()
     {
         var response = _httpTransport.Context.Response;
-        var headersDic = new Dictionary<string, string[]>(response.Headers.Keys.Count);
+        var headersDic = new Dictionary<string, object>(response.Headers.Keys.Count);
         var headerKeys = response.Headers.Keys;
         foreach (string originalKey in headerKeys)
         {
@@ -501,7 +506,7 @@ internal readonly partial struct SecurityCoordinator
                 keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
-                    headersDic.Add(keyForDictionary, response.Headers.GetValues(originalKey));
+                    headersDic.Add(keyForDictionary, GetHeaderValueForWaf(response.Headers.GetValues(originalKey)));
                 }
                 else
                 {

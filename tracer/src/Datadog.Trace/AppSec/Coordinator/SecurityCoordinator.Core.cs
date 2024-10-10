@@ -14,6 +14,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Primitives;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -28,22 +29,23 @@ internal readonly partial struct SecurityCoordinator
 
     private static bool CanAccessHeaders => true;
 
-    public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
+    public static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
     {
-        var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
+        var headersDic = new Dictionary<string, object>(headers.Keys.Count);
         foreach (var k in headers.Keys)
         {
             var currentKey = k ?? string.Empty;
             if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
             {
                 currentKey = currentKey.ToLowerInvariant();
+                var value = GetHeaderValueForWaf(headers[currentKey]);
 #if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, headers[currentKey]))
+                if (!headersDic.TryAdd(currentKey, value))
                 {
 #else
                 if (!headersDic.ContainsKey(currentKey))
                 {
-                    headersDic.Add(currentKey, headers[currentKey]);
+                    headersDic.Add(currentKey, value);
                 }
                 else
                 {
@@ -54,6 +56,11 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return headersDic;
+    }
+
+    private static object GetHeaderValueForWaf(StringValues value)
+    {
+        return (value.Count == 1 ? value[0] : value);
     }
 
     internal void BlockAndReport(IResult? result)

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -169,7 +169,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"new-test-non-blocking","name":"Datadog test scanner - NON blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent","0"],"value":"dd-test-scanner-log-block"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"new-test-non-blocking","name":"Datadog test scanner - NON blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent"],"value":"dd-test-scanner-log-block"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -212,7 +212,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-56x","name":"Datadog test scanner - blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent","0"],"value":"dd-test-scanner-log-block"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-56x","name":"Datadog test scanner - blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent"],"value":"dd-test-scanner-log-block"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -255,7 +255,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-56x","name":"Datadog test scanner - blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent","0"],"value":"dd-test-scanner-log-block"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ua0-600-56x","name":"Datadog test scanner - blocking version: user-agent","tags":{"category":"attack_attempt","type":"attack_tool"}},"rule_matches":[{"operator":"match_regex","operator_value":"^dd-test-scanner-log-block(?:$|/|\\s)","parameters":[{"address":"server.request.headers.no_cookies","highlight":["dd-test-scanner-log-block"],"key_path":["user-agent"],"value":"dd-test-scanner-log-block"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
