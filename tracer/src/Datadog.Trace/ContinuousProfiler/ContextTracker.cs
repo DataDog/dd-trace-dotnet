@@ -10,6 +10,7 @@ using System.Threading;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
@@ -31,6 +32,8 @@ namespace Datadog.Trace.ContinuousProfiler
         ///   8        8       | Local Root Span Id |
         ///                    |--------------------|
         ///   16       8       |       Span Id      |
+        ///                    |--------------------|
+        ///   24       8       |   ThreadMetaInfo   |
         ///                    |--------------------|
         /// This allows us to inform the profiler sampling thread when we are writing or not the data
         /// and avoid torn read/write (Using memory barriers).
@@ -59,6 +62,47 @@ namespace Datadog.Trace.ContinuousProfiler
         public void Set(ulong localRootSpanId, ulong spanId)
         {
             WriteToNative(new SpanContext(localRootSpanId, spanId));
+        }
+
+        public void SetLockStatus(LockStatus status)
+        {
+            if (!_status.IsProfilerReady)
+            {
+                return;
+            }
+
+            EnsureIsInitialized();
+
+            var ctxPtr = _traceContextPtr.Value;
+
+            if (ctxPtr == IntPtr.Zero)
+            {
+                return;
+            }
+
+            try
+            {
+                WriteLockToNative(ctxPtr, status);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to update IsLocked field to {LockStatus} at {CtxPtr} for thread {ThreadID}", status, ctxPtr, Environment.CurrentManagedThreadId.ToString());
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteLockToNative(IntPtr ptr, LockStatus action)
+        {
+            // Set the WriteGuard
+            Marshal.WriteInt64(ptr, 1);
+            Thread.MemoryBarrier();
+
+            // Update IsLocked field based on the status
+            var lockValue = action == LockStatus.Lock ? 1 : 0;
+            Marshal.WriteInt64(ptr + 24, lockValue);
+
+            Thread.MemoryBarrier();
+            Marshal.WriteInt64(ptr, 0);  // Reset WriteGuard
         }
 
         public void SetEndpoint(ulong localRootSpanId, string endpoint)
@@ -121,12 +165,29 @@ namespace Datadog.Trace.ContinuousProfiler
 
             try
             {
-                ctx.Write(ctxPtr);
+                WriteSpanContextToNative(ctxPtr, in ctx);
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void WriteSpanContextToNative(IntPtr ptr, in SpanContext action)
+        {
+            // Set the WriteGuard
+            Marshal.WriteInt64(ptr, 1);
+            Thread.MemoryBarrier();
+
+            // Using WriteInt64 to write 2 long values is ~8x faster than using Marshal.StructureToPtr
+            // For the offset, we follow the layout depicted above
+            Marshal.WriteInt64(ptr + 8, (long)action.LocalRootSpanId);
+            Marshal.WriteInt64(ptr + 16, (long)action.SpanId);
+
+            // Reset the WriteGuard
+            Thread.MemoryBarrier();
+            Marshal.WriteInt64(ptr, 0);
         }
 
         // See the description and the layout depicted above
@@ -141,23 +202,6 @@ namespace Datadog.Trace.ContinuousProfiler
             {
                 LocalRootSpanId = localRootSpanId;
                 SpanId = spanId;
-            }
-
-            [MethodImpl(MethodImplOptions.NoInlining)]
-            public void Write(IntPtr ptr)
-            {
-                // Set the WriteGuard
-                Marshal.WriteInt64(ptr, 1);
-                Thread.MemoryBarrier();
-
-                // Using WriteInt64 to write 2 long values is ~8x faster than using Marshal.StructureToPtr
-                // For the offset, we follow the layout depicted above
-                Marshal.WriteInt64(ptr + 8, (long)LocalRootSpanId);
-                Marshal.WriteInt64(ptr + 16, (long)SpanId);
-
-                // Reset the WriteGuard
-                Thread.MemoryBarrier();
-                Marshal.WriteInt64(ptr, 0);
             }
         }
     }

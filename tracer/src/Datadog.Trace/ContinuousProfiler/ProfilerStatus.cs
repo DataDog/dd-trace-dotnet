@@ -15,7 +15,6 @@ namespace Datadog.Trace.ContinuousProfiler
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerStatus));
 
-        private readonly bool _isProfilingEnabled;
         private readonly object _lockObj;
         private bool _isInitialized;
         private IntPtr _engineStatusPtr;
@@ -27,7 +26,7 @@ namespace Datadog.Trace.ContinuousProfiler
                 (fd.OSPlatform == OSPlatformName.Windows && (fd.ProcessArchitecture == ProcessArchitecture.X64 || fd.ProcessArchitecture == ProcessArchitecture.X86)) ||
                 (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture == ProcessArchitecture.X64);
 
-            _isProfilingEnabled = false;
+            IsProfilingEnabled = false;
 
             if (isSupported)
             {
@@ -36,26 +35,28 @@ namespace Datadog.Trace.ContinuousProfiler
                 {
                     // it is possible that SSI installation script is setting the environment variable to "auto" to enable the profiler
                     // instead of "true" to avoid starting the profiler immediately after the installation
-                    _isProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
+                    IsProfilingEnabled = manualDeployement.ToBoolean() ?? (manualDeployement == "auto");
                 }
                 else
                 {
                     // the profiler is declared "enabled" just if the SSI environment variable exists to be sure that telemetry metrics
                     // will contain the right status (i.e. we need the tracer to send the spans even if the profiler is not started yet)
-                    _isProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed) != null);
+                    IsProfilingEnabled = (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed) != null);
                 }
             }
 
-            Log.Information("Continuous Profiler is {IsEnabled}.", _isProfilingEnabled ? "enabled" : "disabled");
+            Log.Information("Continuous Profiler is {IsEnabled}.", IsProfilingEnabled ? "enabled" : "disabled");
             _lockObj = new();
             _isInitialized = false;
         }
+
+        public bool IsProfilingEnabled { get; }
 
         public bool IsProfilerReady
         {
             get
             {
-                if (!_isProfilingEnabled)
+                if (!IsProfilingEnabled)
                 {
                     return false;
                 }

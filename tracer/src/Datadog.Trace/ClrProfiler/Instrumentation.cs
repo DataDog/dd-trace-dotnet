@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Helpers;
@@ -471,6 +472,22 @@ namespace Datadog.Trace.ClrProfiler
                 catch (Exception ex)
                 {
                     Log.Error(ex, "Error initializing TraceMethods instrumentation");
+                }
+
+                try
+                {
+                    if (Profiler.Instance.Status.IsProfilingEnabled)
+                    {
+                        Log.Debug("Initializing Profiler Skipped methods instrumentations.");
+                        var skippedMethodsConfiguration = tracer.Settings.ProfilerSkippedMethods;
+                        var payload = InstrumentationDefinitions.GetProfilerDefinitions();
+                        NativeInterop.InitializeProfilerSkippedMethods(payload.DefinitionsId, payload.AssemblyName, payload.TypeName, skippedMethodsConfiguration);
+                        Log.Information("Profiler Skipped methods instrumentation enabled with Assembly={AssemblyName}, Type={TypeName}, and Configuration={Configuration}.", payload.AssemblyName, payload.TypeName, skippedMethodsConfiguration);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error initializing Profiler Skipped Methods instrumentation");
                 }
 
                 TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.TraceMethodsPinvoke, sw.ElapsedMilliseconds);
