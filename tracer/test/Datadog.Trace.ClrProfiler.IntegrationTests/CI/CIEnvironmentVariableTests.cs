@@ -41,7 +41,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var name = Path.GetFileNameWithoutExtension(filePath);
                 var content = File.ReadAllText(filePath);
                 var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(content);
-                yield return new object[] { new JsonDataItem(name, jsonObject) };
+                if (jsonObject is not null)
+                {
+                    yield return [new JsonDataItem(name, jsonObject)];
+                }
             }
         }
 
