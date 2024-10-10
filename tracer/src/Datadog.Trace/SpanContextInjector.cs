@@ -65,31 +65,30 @@ namespace Datadog.Trace
             InjectInternal(carrier, setter, context, messageType, target);
         }
 
-        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context, string? messageType = null, string? target = null)
+        internal static void InjectInternal<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext? context, string? messageType = null, string? target = null)
         {
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
             else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            if (context == null!) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
+            var spanContext = context as SpanContext;
 
-            if (context is SpanContext spanContext)
+            SpanContextPropagator.Instance.Inject(
+                    new PropagationContext(spanContext, Baggage.Current),
+                    carrier,
+                    setter);
+
+            // DSM
+            if (spanContext is not null &&
+                !string.IsNullOrEmpty(messageType) &&
+                !string.IsNullOrEmpty(target) &&
+                Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
-                SpanContextPropagator.Instance.Inject(spanContext, carrier, setter);
+                var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };
+                spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);
 
-                if (string.IsNullOrEmpty(messageType) || string.IsNullOrEmpty(target))
+                if (carrier != null)
                 {
-                    return;
-                }
-
-                var dsm = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dsm != null && dsm.IsEnabled)
-                {
-                    var edgeTags = new[] { "direction:out", $"topic:{target}", $"type:{messageType}" };
-                    spanContext.SetCheckpoint(dsm, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0, parent: null);
-                    if (carrier != null)
-                    {
-                        dsm.InjectPathwayContextAsBase64String(spanContext.PathwayContext, new CarrierWithDelegate<TCarrier>(carrier, setter: setter));
-                    }
+                    dsm.InjectPathwayContextAsBase64String(spanContext.PathwayContext, new CarrierWithDelegate<TCarrier>(carrier, setter: setter));
                 }
             }
         }

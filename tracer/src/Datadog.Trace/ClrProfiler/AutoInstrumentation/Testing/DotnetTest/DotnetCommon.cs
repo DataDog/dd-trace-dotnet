@@ -53,9 +53,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Let's detect if we already have a session for this test process
-            if (SpanContextPropagator.Instance.Extract(
-                    EnvironmentHelpers.GetEnvironmentVariables(),
-                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is not null)
+            var context = SpanContextPropagator.Instance.Extract(
+                EnvironmentHelpers.GetEnvironmentVariables(),
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (context.SpanContext is not null)
             {
                 // Session found in the environment variables
                 // let's bail-out
