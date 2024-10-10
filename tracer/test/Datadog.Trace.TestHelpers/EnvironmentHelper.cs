@@ -197,7 +197,13 @@ namespace Datadog.Trace.TestHelpers
 
             // In some scenarios (.NET 6, SSI run enabled) enabling procdump makes
             // grabbing a stack trace _crazy_ expensive (10s). Setting this "fixes" it.
-            environmentVariables["_NO_DEBUG_HEAP"] = "1";
+            // But for some reason, .NET Core 2.1 gets _very_ unhappy about it -
+            // given we don't really support .NET Core 2.1 anyway, and this _only_ happens
+            // when procdump is attached, just skip in that
+            if (_major > 2)
+            {
+                environmentVariables["_NO_DEBUG_HEAP"] = "1";
+            }
 
             // Set a canary variable that should always be ignored
             // and check that it doesn't appear in the logs
