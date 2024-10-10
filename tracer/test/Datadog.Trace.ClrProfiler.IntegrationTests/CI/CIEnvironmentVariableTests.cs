@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var ciDataFolder = DataHelpers.GetCiDataDirectory();
 
             // JSON file path
-            var jsonFile = Path.Combine(ciDataFolder, "github-event.json");
+            var jsonFile = Path.Combine(ciDataFolder, "githubevent", "github-event.json");
 
             // Let's test the github-event.json load and check the values first.
             var githubEnvVars = new GithubActionsEnvironmentValues<DictionaryValuesProvider>(
