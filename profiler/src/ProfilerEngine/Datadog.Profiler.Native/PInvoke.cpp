@@ -189,3 +189,22 @@ extern "C" void __stdcall FlushProfile()
     Log::Debug("FlushProfile called by Managed code");
     profiler->GetSamplesCollector()->Export();
 }
+
+extern "C" int32_t __stdcall GetTraceContextVersion()
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("GetTraceContextVersion is called BEFORE CLR initialize");
+        return -1;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return -1;
+    }
+
+    return TraceContext::Version;
+
+}

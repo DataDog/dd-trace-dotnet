@@ -55,6 +55,7 @@ namespace Samples.Computer01
         private Obfuscation _obfuscation;
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
+        private UnsafeToUnwind _unsafeToUnwind;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -189,6 +190,9 @@ namespace Samples.Computer01
                     StartLinuxDlIteratePhdrDeadlock();
                     break;
 #endif
+                case Scenario.UnsafeToUnwind:
+                    StartUnsafeToUnwind();
+                    break;
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -326,6 +330,9 @@ namespace Samples.Computer01
                     StopLinuxDlIteratePhdrDeadlock();
                     break;
 #endif
+                case Scenario.UnsafeToUnwind:
+                    StopUnsafeToUnwind();
+                    break;
             }
         }
 
@@ -459,6 +466,10 @@ namespace Samples.Computer01
 
                     case Scenario.StringConcat:
                         RunStringConcat(parameter);
+                        break;
+
+                    case Scenario.UnsafeToUnwind:
+                        RunUnsafeToUnwind();
                         break;
 
                     default:
@@ -597,6 +608,12 @@ namespace Samples.Computer01
             _linuxDlIteratePhdrDeadlock.Start();
         }
 #endif
+
+        private void StartUnsafeToUnwind()
+        {
+            _unsafeToUnwind = new UnsafeToUnwind();
+            _unsafeToUnwind.Start();
+        }
 
         private void StartMeasureAllocations()
         {
@@ -778,6 +795,11 @@ namespace Samples.Computer01
             _linuxDlIteratePhdrDeadlock.Stop();
         }
 #endif
+
+        private void StopUnsafeToUnwind()
+        {
+            _unsafeToUnwind.Stop();
+        }
 
         private void StopMeasureAllocations()
         {
@@ -998,6 +1020,12 @@ namespace Samples.Computer01
         private void RunStringConcat(int count)
         {
             var test = new StringConcat(count);
+            test.Run();
+        }
+
+        private void RunUnsafeToUnwind()
+        {
+            var test = new UnsafeToUnwind();
             test.Run();
         }
 
