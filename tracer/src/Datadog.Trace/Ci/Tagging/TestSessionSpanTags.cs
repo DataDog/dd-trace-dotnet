@@ -119,6 +119,15 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Metric(CommonTags.LogicalCpuCount)]
     public double? LogicalCpuCount { get; }
 
+    [Tag(CommonTags.GitHeadCommit)]
+    public string GitHeadCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseCommit)]
+    public string GitPrBaseCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseBranch)]
+    public string GitPrBaseBranch { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)
@@ -144,6 +153,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
             GitCommitCommitterEmail = environmentValues.CommitterEmail;
             GitCommitMessage = environmentValues.Message;
             BuildSourceRoot = environmentValues.SourceRoot;
+            GitHeadCommit = environmentValues.HeadCommit;
+            GitPrBaseCommit = environmentValues.PrBaseCommit;
+            GitPrBaseBranch = environmentValues.PrBaseBranch;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

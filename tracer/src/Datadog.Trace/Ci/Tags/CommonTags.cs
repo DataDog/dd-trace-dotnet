@@ -189,4 +189,19 @@ internal static class CommonTags
     /// Logical CPU count
     /// </summary>
     public const string LogicalCpuCount = "_dd.host.vcpu_count";
+
+    /// <summary>
+    /// GIT Head commit hash
+    /// </summary>
+    public const string GitHeadCommit = "git.commit.head_sha";
+
+    /// <summary>
+    /// GIT PR Base commit hash
+    /// </summary>
+    public const string GitPrBaseCommit = "git.pull_request.base_branch_sha";
+
+    /// <summary>
+    /// GIT PR Base branch name
+    /// </summary>
+    public const string GitPrBaseBranch = "git.pull_request.base_branch";
 }
