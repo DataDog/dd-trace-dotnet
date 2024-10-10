@@ -10,7 +10,6 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
@@ -18,11 +17,10 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
 
-        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, IEncoder? encoder = null, bool shouldEnableWaf = true, bool incompatibleWaf = false)
+        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, IEncoder? encoder = null, bool shouldEnableWaf = true, bool incompatibleWaf = false)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
-            EmbeddedRules = embeddedRules;
             FailedToLoadRules = failedToLoadRules;
             LoadedRules = loadedRules;
             RuleFileVersion = ruleFileVersion;
@@ -54,8 +52,6 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         internal ushort LoadedRules { get; }
 
         internal IReadOnlyDictionary<string, object> Errors { get; }
-
-        public JToken? EmbeddedRules { get; set; }
 
         internal string ErrorMessage { get; }
 

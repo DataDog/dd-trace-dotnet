@@ -6,11 +6,14 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
+using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
@@ -20,6 +23,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+using static Datadog.Trace.AppSec.Rcm.ConfigurationStatus;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -54,7 +58,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="embeddedRulesetPath">can be null, means use rules embedded in the manifest </param>
-        /// <param name="configurationStatus">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
+        /// <param name="remoteConfigStatus">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <param name="useUnsafeEncoder">use legacy encoder</param>
         /// <param name="wafDebugEnabled">if debug level logs should be enabled for the WAF</param>
         /// <returns>the waf wrapper around waf native</returns>
@@ -63,7 +67,7 @@ namespace Datadog.Trace.AppSec.Waf
             string obfuscationParameterKeyRegex,
             string obfuscationParameterValueRegex,
             string? embeddedRulesetPath = null,
-            ConfigurationStatus? configurationStatus = null,
+            ConfigurationStatus? remoteConfigStatus = null,
             bool useUnsafeEncoder = false,
             bool wafDebugEnabled = false)
         {
@@ -71,18 +75,16 @@ namespace Datadog.Trace.AppSec.Waf
 
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
-
             object? configurationToEncode = null;
-            if (configurationStatus is not null)
+            if (remoteConfigStatus is not null)
             {
-                var configFromRcm = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
-                if (configFromRcm.Count > 0)
-                {
-                    configurationToEncode = configFromRcm;
-                }
+                configurationToEncode = remoteConfigStatus.BuildDictionaryForWafAccordingToIncomingUpdate(embeddedRulesetPath);
             }
-
-            configurationToEncode ??= WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+            else
+            {
+                var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath);
+                configurationToEncode = deserializedFromLocalRules;
+            }
 
             if (configurationToEncode is null)
             {
@@ -102,8 +104,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, configurationStatus == null ? embeddedRulesetPath : "RemoteConfig");
-                initResult.EmbeddedRules = initResult.EmbeddedRules;
+                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, remoteConfigStatus == null ? embeddedRulesetPath : "RemoteConfig");
                 return initResult;
             }
             finally
@@ -169,16 +170,16 @@ namespace Datadog.Trace.AppSec.Waf
             return res;
         }
 
-        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus)
+        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationStatus configurationStatus, string? rulesPath = null)
         {
-            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
-            if (dic.IsEmpty())
+            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate(rulesPath);
+            if (dic is null)
             {
                 Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
                 return UpdateResult.FromNothingToUpdate();
             }
 
-            return Update(dic);
+            return Update(dic!);
         }
 
         /// <summary>
@@ -215,7 +216,7 @@ namespace Datadog.Trace.AppSec.Waf
             return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
         }
 
-        private UpdateResult Update(IDictionary<string, object> arguments)
+        private UpdateResult Update(object arguments)
         {
             UpdateResult updated;
             try
@@ -229,7 +230,7 @@ namespace Datadog.Trace.AppSec.Waf
                 updated = UpdateWafAndDispose(encodedArgs);
 
                 // only if rules are provided will the waf give metrics
-                if (arguments.ContainsKey("rules"))
+                if (arguments is Dictionary<string, object> dic && dic.ContainsKey("rules"))
                 {
                     TelemetryFactory.Metrics.RecordCountWafUpdates();
                 }

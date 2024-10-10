@@ -105,9 +105,9 @@ private:
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
     static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
-    void RunStackSampling();
+    void InitializeSampler();
 
-    void RunWatcher();
+    void RunWatcherAndSampler();
     void ShutdownWatcher();
 
     void WatcherLoop();
