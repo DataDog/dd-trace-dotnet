@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 
@@ -61,10 +62,8 @@ public class PutEventsAsyncIntegration
             }
         }
 
-        if (scope?.Span.Context is { } context)
-        {
-            ContextPropagation.InjectTracingContext(request, context);
-        }
+        var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
+        ContextPropagation.InjectContext(request, context);
 
         return new CallTargetState(scope);
     }

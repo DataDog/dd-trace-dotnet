@@ -11,6 +11,7 @@ using System;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        internal static Scope? CreateServerScope(IMessage msg, SpanContext? spanContext)
+        internal static Scope? CreateServerScope(IMessage msg, PropagationContext context)
         {
             var tracer = Tracer.Instance;
 
@@ -43,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             try
             {
                 var tags = new RemotingServerTags();
-                scope = tracer.StartActiveInternal(ServerOperationName, parent: spanContext, tags: tags);
+                scope = tracer.StartActiveInternal(ServerOperationName, parent: context.SpanContext, tags: tags);
                 var span = scope.Span;
 
                 var methodMessage = msg as IMethodMessage;
