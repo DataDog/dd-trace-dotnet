@@ -14,41 +14,47 @@ namespace Datadog.Trace.ContinuousProfiler
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static IntPtr GetProfilerStatusPointer()
         {
-            return NativeMethods.GetProfilerStatusPointer();
+            return ProfilerNativeMethods.GetProfilerStatusPointer();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static IntPtr GetTraceContextNativePointer()
         {
-            return NativeMethods.GetTraceContextNativePointer();
+            return ProfilerNativeMethods.GetTraceContextNativePointer();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void SetApplicationInfoForAppDomain(string runtimeId, string serviceName, string environment, string version)
         {
-            NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version);
+            ProfilerNativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void SetEndpoint(string runtimeId, ulong traceId, string endpoint)
         {
-            NativeMethods.SetEndpoint(runtimeId, traceId, endpoint);
+            ProfilerNativeMethods.SetEndpoint(runtimeId, traceId, endpoint);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha)
         {
-            NativeMethods.SetGitMetadata(runtimeId, repositoryUrl, commitSha);
+            ProfilerNativeMethods.SetGitMetadata(runtimeId, repositoryUrl, commitSha);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void FlushProfile()
         {
-            NativeMethods.FlushProfile();
+            ProfilerNativeMethods.FlushProfile();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void InitializeProfilerSkippedMethods(string id, string assemblyName, string typeName, string configuration)
+        {
+            TracerNativeMethods.InitializeProfilerSkippedMethods(id, assemblyName, typeName, configuration);
         }
 
         // These methods are rewritten by the native tracer to use the correct paths
-        private static class NativeMethods
+        private static class ProfilerNativeMethods
         {
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "GetNativeProfilerIsReadyPtr")]
             public static extern IntPtr GetProfilerStatusPointer();
@@ -67,6 +73,13 @@ namespace Datadog.Trace.ContinuousProfiler
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "FlushProfile")]
             public static extern void FlushProfile();
+        }
+
+        // These methods are rewritten by the native tracer to use the correct paths
+        private static class TracerNativeMethods
+        {
+            [DllImport(dllName: "Datadog.Tracer.Native", EntryPoint = "InitializeProfilerSkippedMethods")]
+            public static extern void InitializeProfilerSkippedMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
         }
     }
 }

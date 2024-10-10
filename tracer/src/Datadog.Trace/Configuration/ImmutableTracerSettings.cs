@@ -171,6 +171,8 @@ namespace Datadog.Trace.Configuration
 
             CommandsCollectionEnabled = settings.CommandsCollectionEnabled;
 
+            ProfilerSkippedMethods = settings.ProfilerSkippedMethods;
+
             static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
@@ -637,6 +639,11 @@ namespace Datadog.Trace.Configuration
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
+
+        /// <summary>
+        /// Gets a value indicating the methods the profiler should skip in its samplings.
+        /// </summary>
+        internal string ProfilerSkippedMethods { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
