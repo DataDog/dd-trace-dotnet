@@ -5,8 +5,6 @@
 
 using Datadog.Trace.AppSec.Coordinator;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
