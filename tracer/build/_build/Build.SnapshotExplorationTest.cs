@@ -60,12 +60,28 @@ partial class Build
         }
     }
 
-    void CreateSnapshotExplorationTestCsv()
+    void SetUpSnapshotExplorationTestsInternal()
+    {
+        if (ExplorationTestName.HasValue)
+        {
+            Logger.Information($"Provided snapshot exploration test name is {ExplorationTestName}.");
+            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            CreateSnapshotExplorationTestCsv(testDescription);
+        }
+        else
+        {
+            Logger.Information("Snapshot exploration test name is not provided, running all.");
+            foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
+            {
+                CreateSnapshotExplorationTestCsv(testDescription);
+            }
+        }
+    }
+
+    void CreateSnapshotExplorationTestCsv(ExplorationTestDescription testDescription)
     {
         var csvBuilder = new StringBuilder();
         csvBuilder.AppendLine("type name (FQN),method name,method signature,probeId,is instance method");
-
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
         var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
 
         foreach (var framework in frameworks)
@@ -75,14 +91,14 @@ partial class Build
             var tracer = Assembly.LoadFile(tracerAssemblyPath);
             var extractorType = tracer.GetType("Datadog.Trace.Debugger.Symbols.SymbolExtractor");
             var createMethod = extractorType?.GetMethod("Create", BindingFlags.Static | BindingFlags.Public);
-            var getClassSymbols = extractorType?.GetMethod("GetClassSymbols", BindingFlags.Instance | BindingFlags.NonPublic);
+            var getClassSymbols = extractorType?.GetMethod("GetClassSymbols", BindingFlags.Instance | BindingFlags.NonPublic, Type.EmptyTypes);
             var testAssembliesPaths = GetAllTestAssemblies(testRootPath);
 
             foreach (var testAssemblyPath in testAssembliesPaths)
             {
                 var currentAssembly = Assembly.LoadFile(testAssemblyPath);
                 var symbolExtractor = createMethod?.Invoke(null, new object[] { currentAssembly });
-                if (getClassSymbols?.Invoke(symbolExtractor, null) is not IEnumerable<object> classSymbols)
+                if (getClassSymbols?.Invoke(symbolExtractor, null) is not IEnumerable classSymbols)
                 {
                     continue;
                 }
@@ -108,6 +124,11 @@ partial class Build
 
         void ProcessNestedScopes(List<IDictionary<string, object>> scopes, string typeName, StringBuilder csvBuilder)
         {
+            if (scopes == null)
+            {
+                return;
+            }
+
             foreach (var scope in scopes)
             {
                 if (scope["ScopeType"].ToString() == "Class")
@@ -127,15 +148,20 @@ partial class Build
                     }
 
                     var returnType = ls?.GetType().GetProperty("ReturnType")?.GetValue(ls)?.ToString();
-                    csvBuilder.AppendLine($"{typeName},{scope["Name"]},{GetMethodSignature(returnType, (object[])scope["Symbols"])},{Guid.NewGuid()},{isStatic}");
+                    csvBuilder.AppendLine($"{typeName},{scope["Name"]},{GetMethodSignature(returnType, (List<IDictionary<string, object>>)scope["Symbols"])},{Guid.NewGuid()},{isStatic}");
                 }
             }
         }
 
-        string GetMethodSignature(string returnType, object[] symbols)
+        string GetMethodSignature(string returnType, List<IDictionary<string, object>> symbols)
         {
+            if (symbols == null)
+            {
+                return string.Empty;
+            }
+
             var parameterTypes =
-                (from symbol in ReflectionHelper.ProcessIEnumerable(symbols)
+                (from symbol in symbols
                  where symbol["SymbolType"].ToString() == "Arg"
                  select symbol["Type"].ToString())
                .ToList();
@@ -260,24 +286,34 @@ partial class Build
 
     static class ReflectionHelper
     {
-        public static IEnumerable<IDictionary<string, object>> ProcessIEnumerable(IEnumerable enumerable)
+        internal static IEnumerable<IDictionary<string, object>> ProcessIEnumerable(IEnumerable enumerable)
         {
             foreach (var item in enumerable)
             {
+                if (item == null)
+                {
+                    continue;
+                }
+
                 yield return GetObjectProperties(item);
             }
         }
 
         private static IDictionary<string, object> GetObjectProperties(object obj)
         {
+            if (obj == null)
+            {
+                return null;
+            }
+
             var properties = new Dictionary<string, object>();
             var type = obj.GetType();
 
-            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var prop in type.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance))
             {
                 try
                 {
-                    if (prop.Name is "Scopes" or "Symbols" or "ScopeType" or "Name")
+                    if (prop.Name is "Scopes" or "Symbols" or "ScopeType" or "Name" or "LanguageSpecifics" or "Type" or "SymbolType")
                     {
                         var value = prop.GetValue(obj);
                         properties[prop.Name] = value;
