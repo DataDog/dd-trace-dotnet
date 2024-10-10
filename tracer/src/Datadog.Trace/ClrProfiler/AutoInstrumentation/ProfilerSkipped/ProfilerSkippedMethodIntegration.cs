@@ -6,20 +6,14 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Reflection;
-using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.TraceAnnotations;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped
 {
     /// <summary>
-    /// Calltarget instrumentation to generate a span for any arbitrary method
+    /// Calltarget instrumentation to skip profiler sampling during method execution
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -35,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle)
         {
-            Profiler.Instance.ContextTracker.SetLockStatus(LockStatus.Lock);
+            Profiler.Instance.ContextTracker.SetThreadMetaInfo(LockStatus.Lock);
             return new CallTargetState(null);
         }
 
@@ -49,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            Profiler.Instance.ContextTracker.SetLockStatus(LockStatus.Unlock);
+            Profiler.Instance.ContextTracker.SetThreadMetaInfo(LockStatus.Unlock);
             return CallTargetReturn.GetDefault();
         }
 
@@ -65,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Profiler.Instance.ContextTracker.SetLockStatus(LockStatus.Unlock);
+            Profiler.Instance.ContextTracker.SetThreadMetaInfo(LockStatus.Unlock);
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
@@ -81,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ProfilerSkipped
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Profiler.Instance.ContextTracker.SetLockStatus(LockStatus.Unlock);
+            Profiler.Instance.ContextTracker.SetThreadMetaInfo(LockStatus.Unlock);
             return returnValue;
         }
     }
