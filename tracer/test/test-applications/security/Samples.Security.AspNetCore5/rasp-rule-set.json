@@ -16,22 +16,23 @@
   ],
   "processors": [
     {
-      "id": "processor-001",
+      "id": "http-endpoint-fingerprint",
       "generator": "http_endpoint_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -62,26 +63,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-002",
+      "id": "http-header-fingerprint",
       "generator": "http_header_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -97,26 +99,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-003",
+      "id": "http-network-fingerprint",
       "generator": "http_network_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -132,26 +135,27 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     },
     {
-      "id": "processor-004",
+      "id": "session-fingerprint",
       "generator": "session_fingerprint",
       "conditions": [
         {
-          "operator": "equals",
+          "operator": "exists",
           "parameters": {
             "inputs": [
               {
-                "address": "waf.context.processor",
-                "key_path": [
-                  "fingerprint"
-                ]
+                "address": "waf.context.event"
+              },
+              {
+                "address": "server.business_logic.users.login.failure"
+              },
+              {
+                "address": "server.business_logic.users.login.success"
               }
-            ],
-            "value": true,
-            "type": "boolean"
+            ]
           }
         }
       ],
@@ -177,7 +181,7 @@
           }
         ]
       },
-      "evaluate": true,
+      "evaluate": false,
       "output": true
     }
   ],
@@ -454,6 +458,56 @@
       "on_match": [
         "stack_trace",
         "block"
+      ]
+    },
+    {
+      "id": "rasp-932-400",
+      "name": "New exploit",
+      "enabled": true,
+      "tags": {
+        "type": "new_injection",
+        "category": "vulnerability_trigger",
+        "cwe": "77",
+        "capec": "1000/152/248/88",
+        "confidence": "0",
+        "module": "rasp"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "resource": [
+              {
+                "address": "server.sys.shell.cmd"
+              }
+            ],
+            "params": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              },
+              {
+                "address": "grpc.server.request.message"
+              },
+              {
+                "address": "graphql.server.all_resolvers"
+              },
+
+              {
+                "address": "graphql.server.resolver"
+              }
+            ]
+          },
+          "operator": "new_detector"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "stack_trace"
       ]
     }
   ]
