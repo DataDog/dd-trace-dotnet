@@ -28,7 +28,6 @@ internal static class AttackerFingerprintHelper
 
         if (securityCoordinator is null)
         {
-            Log.Warning("Security coordinator could not be instantiated, probably because of httpcontext null. AttackerFingerprintHelper.AddSpanTags won't be run");
             return;
         }
 
