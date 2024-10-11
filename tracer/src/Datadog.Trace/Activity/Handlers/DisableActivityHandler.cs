@@ -57,12 +57,6 @@ namespace Datadog.Trace.Activity.Handlers
                 }
             }
 
-            var toDisable = Tracer.Instance.Settings.DisabledActivitySources;
-            if (toDisable is null || toDisable.Length == 0)
-            {
-                return false;
-            }
-
             // sources were specified to be disabled, but this sourceName didn't match any of them
             return false; // sourceName will _not_ be disabled
         }
