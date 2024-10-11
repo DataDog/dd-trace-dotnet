@@ -56,13 +56,13 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
-        if (HttpContext.Current is null)
+        if (HttpContext.Current is not { } current)
         {
             Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
             return null;
         }
 
-        var transport = new HttpTransport(HttpContext.Current);
+        var transport = new HttpTransport(current);
 
         return new SecurityCoordinator(security, span, transport);
     }
