@@ -247,7 +247,7 @@ public:
     // is only valid (different from 0) in the asynchronous scenario.
     // As of today, only the GC related events could be received asynchronously.
     //
-    // Lock contention and AllocationTick qre synchronous only here.
+    // Lock contention and AllocationTick are synchronous only here.
     //
     void ParseEvent(
         uint64_t timestamp,

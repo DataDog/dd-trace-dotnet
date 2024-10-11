@@ -158,7 +158,7 @@ void EtwEventsManager::OnEvent(
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
                     auto timestamp = TimestampToEpochNS(systemTimestamp); // systemTimestamp is in 100ns units
-                    auto duration = (systemTimestamp - pThreadInfo->ContentionStartTimestamp) * 100;
+                    double duration = static_cast<double>((systemTimestamp - pThreadInfo->ContentionStartTimestamp)) * 100;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
                     _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
@@ -202,21 +202,21 @@ void EtwEventsManager::OnEvent(
             //    <data name = "AllocationAmount64" inType = "win:UInt64"/>
             //    <data name = "TypeID" inType = "win:Pointer" />
             //    <data name = "TypeName" inType = "win:UnicodeString" />
-            //    
+            //
             // !! the following 2 fields cannot be directly accessed because
             // !! they will be stored after the string TypeName
             //    <data name = "HeapIndex" inType = "win:UInt32" />
             //    <data name = "Address" inType = "win:Pointer" />
             // but no object size...
             // Since the events are received asynchronously, it is not even possible
-            // to assume that the object that was stored at the received Adress field 
+            // to assume that the object that was stored at the received Adress field
             // is still there: it could have been moved by a garbage collection
             AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
             pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
-            
+
             // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?
             pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(&(pPayload->FirstCharInName)));
 
