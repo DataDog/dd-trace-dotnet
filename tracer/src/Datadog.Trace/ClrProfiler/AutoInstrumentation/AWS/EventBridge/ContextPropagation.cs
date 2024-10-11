@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             if (!detail.EndsWith("}"))
             {
                 // Unable to parse detail string, so just leave it unmodified. Don't inject trace context.
-                Log.Information("Unable to parse detail string. Not injecting trace context.");
+                Log.Debug("Unable to parse detail string. Not injecting trace context.");
                 return;
             }
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             var byteSize = Encoding.UTF8.GetByteCount(updatedDetail);
             if (byteSize >= MaxSizeBytes)
             {
-                Log.Information("Payload size too large to pass context");
+                Log.Debug("Payload size too large to pass context");
                 return;
             }
 

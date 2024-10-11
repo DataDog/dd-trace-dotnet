@@ -52,6 +52,8 @@ public class PutEventsIntegration
             var busName = AwsEventBridgeCommon.GetBusName(request.Entries.Value);
             if (busName is not null)
             {
+                // We use RuleName to stay consistent with other runtimes
+                // TODO rename rulename tag to busname across all runtimes
                 tags.RuleName = busName;
             }
         }
