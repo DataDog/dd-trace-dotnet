@@ -47,7 +47,14 @@ internal class DataStreamsContextPropagator
             Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
         }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
+        if (bytesWritten == base64EncodedContextBytes.Length)
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes);
+        }
+        else
+        {
+            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
+        }
 
         if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
         {
@@ -83,7 +90,14 @@ internal class DataStreamsContextPropagator
                 }
                 else
                 {
-                    return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
+                    if (bytesWritten == decodedBytes.Length)
+                    {
+                        return PathwayContextEncoder.Decode(decodedBytes);
+                    }
+                    else
+                    {
+                        return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
+                    }
                 }
             }
             catch (Exception ex)
