@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
+                    if (IsDisabledCommandType(commandTypeName))
                     {
                         integrationId = null;
                         dbType = null;
@@ -194,6 +194,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     };
                     return true;
             }
+        }
+
+        internal static bool IsDisabledCommandType(string commandTypeName)
+        {
+            if (string.IsNullOrEmpty(commandTypeName))
+            {
+                return false;
+            }
+
+            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+
+            if (disabledTypes is null || disabledTypes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var disabledType in disabledTypes)
+            {
+                if (string.Equals(disabledType, commandTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static class Cache<TCommand>
