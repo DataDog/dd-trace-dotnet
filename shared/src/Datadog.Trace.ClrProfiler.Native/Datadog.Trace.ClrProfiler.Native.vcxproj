@@ -318,6 +318,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
+    <ClInclude Include="crashhandler.h" />
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
     <ClInclude Include="EnvironmentVariables.h" />
@@ -345,6 +346,7 @@
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="cor_profiler_class_factory.cpp" />
     <ClCompile Include="cor_profiler.cpp" />
+    <ClCompile Include="crashhandler.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dynamic_instance.cpp" />
     <ClCompile Include="dynamic_dispatcher.cpp" />
