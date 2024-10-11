@@ -87,6 +87,7 @@ internal class DataStreamsContextPropagator
                 if (status != OperationStatus.Done)
                 {
                     Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    return null;
                 }
                 else
                 {
