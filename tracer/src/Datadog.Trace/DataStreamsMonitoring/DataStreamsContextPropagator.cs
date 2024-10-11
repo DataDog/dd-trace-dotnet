@@ -45,7 +45,6 @@ internal class DataStreamsContextPropagator
         if (status != OperationStatus.Done)
         {
             Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
-            throw new InvalidOperationException($"Base64 encoding failed with status: {status}");
         }
 
         headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
