@@ -24,10 +24,15 @@ internal static class AttackerFingerprintHelper
             return;
         }
 
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, span);
+        var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, span);
+
+        if (securityCoordinator is null)
+        {
+            return;
+        }
 
         // We need a context
-        if (!securityCoordinator.HasContext() || securityCoordinator.IsAdditiveContextDisposed())
+        if (securityCoordinator.Value.IsAdditiveContextDisposed())
         {
             return;
         }

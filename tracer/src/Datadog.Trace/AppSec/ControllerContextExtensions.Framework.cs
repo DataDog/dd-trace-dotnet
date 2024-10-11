@@ -9,6 +9,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Iast;
@@ -78,7 +79,7 @@ namespace Datadog.Trace.AppSec
 
             if (security.Enabled)
             {
-                var securityTransport = new Coordinator.SecurityCoordinator(security, scope.Span!);
+                var securityTransport = SecurityCoordinator.Get(security, scope.Span!, context);
                 if (!securityTransport.IsBlocked)
                 {
                     var inputData = new Dictionary<string, object>();
