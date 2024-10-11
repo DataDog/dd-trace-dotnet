@@ -177,7 +177,7 @@ internal static class RaspModule
 
         if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddRaspStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AppSecRequestContext.AddRaspStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
         }
     }
 

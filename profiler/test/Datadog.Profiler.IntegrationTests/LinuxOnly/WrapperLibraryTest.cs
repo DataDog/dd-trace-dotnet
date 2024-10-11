@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
@@ -92,7 +93,60 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var processHelper = runner.LaunchProcess();
 
-            runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000).Should().BeTrue();
+            var success = runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000);
+
+            if (!success)
+            {
+                // Note: we don't drain because the process hasn't exited, but it means the output may be incomplete
+                _output.WriteLine("Standard output:");
+                _output.WriteLine(processHelper.StandardOutput);
+
+                var pid = processHelper.Process.Id;
+
+                var status = File.ReadAllText($"/proc/{pid}/status");
+
+                _output.WriteLine("Process status:");
+                _output.WriteLine(status);
+
+                _output.WriteLine("************************");
+
+                // Enumerating status for each thread
+                var threads = Directory.GetFiles($"/proc/{pid}/task");
+
+                foreach (var thread in threads)
+                {
+                    _output.WriteLine($"**** {thread}:");
+                    try
+                    {
+                        var threadStatus = File.ReadAllText($"{thread}/status");
+                        _output.WriteLine(threadStatus);
+                    }
+                    catch (Exception ex)
+                    {
+                        _output.WriteLine(ex.Message);
+                    }
+                }
+
+                _output.WriteLine("************************");
+
+                var processes = Process.GetProcesses();
+
+                _output.WriteLine("Processes:");
+
+                foreach (var process in processes)
+                {
+                    _output.WriteLine($"Process: {process.ProcessName} ({process.Id})");
+
+                    if (process.ProcessName == "createdump")
+                    {
+                        var testBaseOutputDir = runner.Environment.GetTestOutputPath();
+                        process.GetAllThreadsStack(testBaseOutputDir, _output);
+                        process.TakeMemoryDump(testBaseOutputDir, _output);
+                    }
+                }
+            }
+
+            success.Should().BeTrue();
             processHelper.Drain();
             processHelper.ErrorOutput.Should().Contain("Unhandled exception. System.InvalidOperationException: Task failed successfully");
             processHelper.StandardOutput.Should().NotMatchRegex(@"createdump [\w\.\/]+createdump \d+")
