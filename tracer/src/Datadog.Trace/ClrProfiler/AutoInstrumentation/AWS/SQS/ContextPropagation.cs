@@ -37,8 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
                 {
-                    var binaryContext = Encoding.UTF8.GetString(encodedBytes);
-                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, binaryContext);
+                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, base64EncodedContext);
                 }
             }
 
