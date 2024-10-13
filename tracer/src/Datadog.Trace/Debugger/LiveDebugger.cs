@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#pragma warning disable SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
 #nullable disable
 
 using System;
@@ -26,12 +25,13 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
 namespace Datadog.Trace.Debugger
 {
-    internal class LiveDebugger
+    internal partial class LiveDebugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
         private static readonly object GlobalLock = new();
@@ -178,7 +178,6 @@ namespace Datadog.Trace.Debugger
             Task StartAsync()
             {
                 LifetimeManager.Instance.AddShutdownTask(ShutdownTask);
-
                 _probeStatusPoller.StartPolling();
                 _symbolsUploader.StartFlushingAsync();
                 _diagnosticsUploader.StartFlushingAsync();
@@ -219,53 +218,53 @@ namespace Datadog.Trace.Debugger
                     switch (GetProbeLocationType(probe))
                     {
                         case ProbeLocationType.Line:
-                        {
-                            var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
-                            var status = lineProbeResult.Status;
-                            var message = lineProbeResult.Message;
-
-                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status, message);
-                            switch (status)
                             {
-                                case LiveProbeResolveStatus.Bound:
-                                    lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
-                                    ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
-                                    SetRateLimit(probe);
-                                    break;
-                                case LiveProbeResolveStatus.Unbound:
-                                    Log.Information("ProbeID {ProbeID} is unbound.", probe.Id);
-                                    _unboundProbes.Add(probe);
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
-                                    break;
-                                case LiveProbeResolveStatus.Error:
-                                    fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
-                                    break;
-                            }
+                                var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
+                                var status = lineProbeResult.Status;
+                                var message = lineProbeResult.Message;
 
-                            break;
-                        }
+                                Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status, message);
+                                switch (status)
+                                {
+                                    case LiveProbeResolveStatus.Bound:
+                                        lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                                        fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
+                                        SetRateLimit(probe);
+                                        break;
+                                    case LiveProbeResolveStatus.Unbound:
+                                        Log.Information("ProbeID {ProbeID} is unbound.", probe.Id);
+                                        _unboundProbes.Add(probe);
+                                        fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.RECEIVED, errorMessage: null)));
+                                        break;
+                                    case LiveProbeResolveStatus.Error:
+                                        fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: message)));
+                                        break;
+                                }
+
+                                break;
+                            }
 
                         case ProbeLocationType.Method:
-                        {
-                            SignatureParser.TryParse(probe.Where.Signature, out var signature);
-
-                            fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
-                            if (probe is SpanProbe)
                             {
-                                var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
-                                spanProbes.Add(spanDefinition);
-                            }
-                            else
-                            {
-                                var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
-                                methodProbes.Add(nativeDefinition);
-                                ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
-                                SetRateLimit(probe);
-                            }
+                                SignatureParser.TryParse(probe.Where.Signature, out var signature);
 
-                            break;
-                        }
+                                fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0));
+                                if (probe is SpanProbe)
+                                {
+                                    var spanDefinition = new NativeSpanProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
+                                    spanProbes.Add(spanDefinition);
+                                }
+                                else
+                                {
+                                    var nativeDefinition = new NativeMethodProbeDefinition(probe.Id, probe.Where.TypeName, probe.Where.MethodName, signature);
+                                    methodProbes.Add(nativeDefinition);
+                                    ProbeExpressionsProcessor.Instance.AddProbeProcessor(probe);
+                                    SetRateLimit(probe);
+                                }
+
+                                break;
+                            }
 
                         case ProbeLocationType.Unrecognized:
                             fetchProbeStatus.Add(new FetchProbeStatus(probe.Id, probe.Version ?? 0, new ProbeStatus(probe.Id, Sink.Models.Status.ERROR, errorMessage: "Unknown probe type")));
@@ -530,91 +529,5 @@ namespace Datadog.Trace.Debugger
 
         private void DiscoveryCallback(AgentConfiguration x)
             => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
-
-        public LiveDebugger InitializeSync()
-        {
-            InitializeAsync().GetAwaiter().GetResult();
-            return this;
-        }
-
-        public void WithProbesFromFile()
-        {
-            var probes = ReadProbesFromCsv(Settings.SnapshotExplorationTestProbesPath);
-            UpdateAddedProbeInstrumentations(probes);
-        }
-
-        private List<ProbeDefinition> ReadProbesFromCsv(string filePath)
-        {
-            var probes = new List<ProbeDefinition>();
-            using var reader = new StreamReader(filePath);
-
-            // Skip header
-            reader.ReadLine();
-
-            while (reader.ReadLine() is { } line)
-            {
-                var parts = line.Split(',');
-                if (parts.Length != 5)
-                {
-                    Log.Warning("Invalid CSV line: {Line}", line);
-                    continue;
-                }
-
-                var probe = new LogProbe
-                {
-                    Id = parts[3], // probeId
-                    Where = new Where
-                    {
-                        TypeName = parts[0], // target type name (FQN)
-                        MethodName = parts[1], // target method name
-                        Signature = parts[2], // signature
-                    },
-                    EvaluateAt = EvaluateAt.Exit
-                };
-
-                // ReSharper disable once UnusedVariable
-                if (bool.TryParse(parts[4], out var isInstanceMethod) && probes.Count % 2 == 0)
-                {
-                    const string condition = """
-                                             "ne": [
-                                                 {
-                                                   "ref": "this"
-                                                 },
-                                                 null
-                                               ]
-                                             """;
-                    // Add condition for half of the instance methods
-                    probe.When = new SnapshotSegment("ref this != null", condition, string.Empty);
-                }
-
-                probes.Add(probe);
-            }
-
-            return probes;
-        }
     }
 }
-
-internal record BoundLineProbeLocation
-{
-    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
-    {
-        ProbeDefinition = probe;
-        MVID = mvid;
-        MethodToken = methodToken;
-        BytecodeOffset = bytecodeOffset;
-        LineNumber = lineNumber;
-    }
-
-    public ProbeDefinition ProbeDefinition { get; set; }
-
-    public Guid MVID { get; set; }
-
-    public int MethodToken { get; set; }
-
-    public int BytecodeOffset { get; set; }
-
-    public int LineNumber { get; set; }
-}
-
-#pragma warning restore SA1402 // FileMayOnlyContainASingleType - StyleCop did not enforce this for records initially
