@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -18,7 +17,6 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Debugger.Sink
 {
@@ -66,11 +64,16 @@ namespace Datadog.Trace.Debugger.Sink
 
             public ProbeReportWriter(string filePath, int bufferSize = 4096)
             {
-                _filePath = filePath;
+                _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
                 _bufferSize = bufferSize;
                 _writeQueue = new BlockingCollection<IdAndSnapshot>();
                 _cts = new CancellationTokenSource();
-                _writerTask = Task.Run(WriteProcess);
+                _writerTask = Task.Run(WriteProcess, _cts.Token);
+            }
+
+            ~ProbeReportWriter()
+            {
+                Dispose(false);
             }
 
             internal void Enqueue(string probeId, string snapshot)
@@ -85,36 +88,28 @@ namespace Datadog.Trace.Debugger.Sink
                 }
             }
 
-            private void WriteProcess()
+            private async Task WriteProcess()
             {
                 var failures = 0;
+                const int maxFailures = 10;
                 using var writer = new StreamWriter(_filePath, true, Encoding.UTF8, _bufferSize);
                 writer.AutoFlush = false;
-                while (!_cts.IsCancellationRequested)
+                while (!_writeQueue.IsCompleted && !_cts.IsCancellationRequested)
                 {
                     try
                     {
-                        var info = _writeQueue.Take(_cts.Token);
-                        string? methodFullName = null;
-                        if (IsValidJson(info.Snapshot, out var error))
+                        if (!_writeQueue.TryTake(out var info, 200, _cts.Token))
                         {
-                            try
-                            {
-                                var snapshot = JsonConvert.DeserializeObject<Snapshot>(info.Snapshot);
-                                methodFullName = $"{snapshot.Logger.Name}.{snapshot.Logger.Method}";
-                            }
-                            catch (Exception ex)
-                            {
-                                error = ex.Message;
-                            }
+                            continue;
                         }
 
-                        var line = $"{info.Id},{methodFullName ?? "N/A"},{string.IsNullOrEmpty(error)}";
-                        writer.WriteLine(line);
+                        var methodFullName = GetMethodFullName(info.Snapshot);
+                        var line = $"{info.Id},{methodFullName ?? "N/A"},{!string.IsNullOrEmpty(methodFullName)}";
+                        await writer.WriteLineAsync(line).ConfigureAwait(false);
 
                         if (writer.BaseStream.Position >= _bufferSize)
                         {
-                            writer.Flush();
+                            await writer.FlushAsync().ConfigureAwait(false);
                         }
                     }
                     catch (OperationCanceledException)
@@ -127,43 +122,29 @@ namespace Datadog.Trace.Debugger.Sink
                     }
                     catch (Exception e)
                     {
-                        if (failures >= 10)
+                        if (++failures >= maxFailures)
                         {
-                            Log.Error(e, "Stopping writing probe report. There was too much errors during the writing process.");
+                            Log.Error(e, "Stopping writing probe report. There were too many errors during the writing process.");
                             throw;
                         }
 
                         Log.Error(e, "Error writing to probe report file.");
-                        failures++;
                     }
                 }
 
-                writer.Flush();
+                await writer.FlushAsync().ConfigureAwait(false);
             }
 
-            private bool IsValidJson(string jsonString, [NotNullWhen(false)] out string? error)
+            private string? GetMethodFullName(string snapshot)
             {
-                if (string.IsNullOrWhiteSpace(jsonString))
-                {
-                    error = "JSON string is null or empty.";
-                    return false;
-                }
-
                 try
                 {
-                    JToken.Parse(jsonString);
-                    error = null;
-                    return true;
+                    var parsedSnapshot = JsonConvert.DeserializeObject<Snapshot>(snapshot);
+                    return $"{parsedSnapshot.Logger.Name}.{parsedSnapshot.Logger.Method}";
                 }
-                catch (JsonReaderException ex)
+                catch (Exception)
                 {
-                    error = $"Invalid JSON: {ex.Message}";
-                    return false;
-                }
-                catch (Exception ex)
-                {
-                    error = $"Unexpected error while parsing JSON: {ex.Message}";
-                    return false;
+                    return null;
                 }
             }
 

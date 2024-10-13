@@ -501,10 +501,14 @@ namespace Datadog.Trace.ClrProfiler
 
 if (debuggerSettings.IsSnapshotExplorationTestEnabled)
             {
-                var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
-                Log.Debug("Initializing live debugger for snapshot exploration test.");
-                liveDebugger.InitializeAsync().GetAwaiter().GetResult();
-                liveDebugger.InitializeSync().WithProbesFromFile();
+                Task.Run(
+                    async () =>
+                    {
+                        var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                        Log.Debug("Initializing live debugger for snapshot exploration test.");
+                        liveDebugger.WithProbesFromFile();
+                        await liveDebugger.InitializeAsync().ConfigureAwait(false);
+                    });
             }
 			
             if (!debuggerSettings.DynamicInstrumentationEnabled)
