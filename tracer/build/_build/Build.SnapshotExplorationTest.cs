@@ -160,12 +160,14 @@ partial class Build
                 return string.Empty;
             }
 
+            const char parametersSeparator = '#';
+
             var parameterTypes =
                 (from symbol in symbols
                  where symbol["SymbolType"].ToString() == "Arg"
                  select symbol["Type"].ToString())
                .ToList();
-            return $"{returnType} ({string.Join(", ", parameterTypes)})";
+            return $"{returnType} ({string.Join(parametersSeparator, parameterTypes)})";
         }
     }
 
