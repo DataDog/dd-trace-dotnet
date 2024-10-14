@@ -80,7 +80,7 @@ internal class BlockingMiddleware
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
                 if (_endPipeline && !context.Response.HasStarted)
                 {
                     context.Response.StatusCode = 404;
@@ -123,7 +123,7 @@ internal class BlockingMiddleware
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                        var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
                         if (!blockException.Reported)
                         {
                             securityCoordinator.TryReport(blockException.Result, endedResponse);

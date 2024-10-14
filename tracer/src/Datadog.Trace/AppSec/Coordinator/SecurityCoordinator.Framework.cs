@@ -45,14 +45,31 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(HttpContext.Current);
+        _httpTransport = transport;
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
+
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
+    {
+        if (HttpContext.Current is not { } current)
+        {
+            Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            return null;
+        }
+
+        var transport = new HttpTransport(current);
+
+        return new SecurityCoordinator(security, span, transport);
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
@@ -377,12 +394,12 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headers = RequestDataHelper.GetHeaders(request);
-        Dictionary<string, string[]>? headersDic = null;
+        Dictionary<string, object>? headersDic = null;
 
         if (headers is not null)
         {
             var headerKeys = headers.Keys;
-            headersDic = new Dictionary<string, string[]>(headerKeys.Count);
+            headersDic = new Dictionary<string, object>(headerKeys.Count);
             foreach (string originalKey in headerKeys)
             {
                 var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
@@ -390,7 +407,7 @@ internal readonly partial struct SecurityCoordinator
                 {
                     if (!headersDic.ContainsKey(keyForDictionary))
                     {
-                        headersDic.Add(keyForDictionary, headers.GetValues(originalKey));
+                        headersDic.Add(keyForDictionary, GetHeaderValueForWaf(headers.GetValues(originalKey)));
                     }
                     else
                     {
@@ -488,10 +505,15 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    public Dictionary<string, string[]> GetResponseHeadersForWaf()
+    private static object GetHeaderValueForWaf(string[] value)
+    {
+        return (value.Count() == 1 ? value[0] : value);
+    }
+
+    public Dictionary<string, object> GetResponseHeadersForWaf()
     {
         var response = _httpTransport.Context.Response;
-        var headersDic = new Dictionary<string, string[]>(response.Headers.Keys.Count);
+        var headersDic = new Dictionary<string, object>(response.Headers.Keys.Count);
         var headerKeys = response.Headers.Keys;
         foreach (string originalKey in headerKeys)
         {
@@ -501,7 +523,7 @@ internal readonly partial struct SecurityCoordinator
                 keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
-                    headersDic.Add(keyForDictionary, response.Headers.GetValues(originalKey));
+                    headersDic.Add(keyForDictionary, GetHeaderValueForWaf(response.Headers.GetValues(originalKey)));
                 }
                 else
                 {
@@ -536,8 +558,8 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get => Context.Items[ReportedExternalWafsRequestHeadersStr] is true;
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;
