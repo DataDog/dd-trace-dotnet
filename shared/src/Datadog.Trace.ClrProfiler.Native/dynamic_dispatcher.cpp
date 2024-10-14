@@ -80,9 +80,6 @@ namespace datadog::shared::nativeloader
         fs::path configFolder = fs::path(configFilePath).remove_filename();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
 
-        // Set the current path to the configuration folder (to allow relative paths)
-        fs::current_path(configFolder);
-
         const auto isRunningOnAlpine = IsRunningOnAlpine();
         const auto currentOsArch = GetCurrentOsArch(isRunningOnAlpine);
 
