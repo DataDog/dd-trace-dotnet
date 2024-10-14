@@ -7,10 +7,8 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System;
 
 namespace Datadog.Trace.ContinuousProfiler
 {
@@ -51,6 +49,11 @@ namespace Datadog.Trace.ContinuousProfiler
             _traceContextPtr = new ThreadLocal<IntPtr>();
         }
 
+        private interface IThreadContext
+        {
+            void Write(IntPtr ptr);
+        }
+
         public bool IsEnabled
         {
             get
@@ -66,43 +69,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         public void SetThreadMetaInfo(LockStatus status)
         {
-            if (!_status.IsProfilerReady)
-            {
-                return;
-            }
-
-            EnsureIsInitialized();
-
-            var ctxPtr = _traceContextPtr.Value;
-
-            if (ctxPtr == IntPtr.Zero)
-            {
-                return;
-            }
-
-            try
-            {
-                WriteThreadMetaInfoToNative(ctxPtr, status);
-            }
-            catch (Exception e)
-            {
-                Log.Warning(e, "Failed to update IsLocked field to {LockStatus} at {CtxPtr} for thread {ThreadID}", status, ctxPtr, Environment.CurrentManagedThreadId.ToString());
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void WriteThreadMetaInfoToNative(IntPtr ptr, LockStatus action)
-        {
-            // Set the WriteGuard
-            Marshal.WriteInt64(ptr, 1);
-            Thread.MemoryBarrier();
-
-            // Update ThreadMetaInfo field based on the lock status
-            var lockValue = action == LockStatus.Lock ? 1 : 0;
-            Marshal.WriteInt64(ptr + 24, lockValue);
-
-            Thread.MemoryBarrier();
-            Marshal.WriteInt64(ptr, 0);  // Reset WriteGuard
+            WriteToNative(new ThreadMetaInfo(status));
         }
 
         public void SetEndpoint(ulong localRootSpanId, string endpoint)
@@ -147,7 +114,8 @@ namespace Datadog.Trace.ContinuousProfiler
             }
         }
 
-        private void WriteToNative(in SpanContext ctx)
+        private void WriteToNative<T>(in T ctx)
+            where T : struct, IThreadContext
         {
             if (!IsEnabled)
             {
@@ -165,33 +133,16 @@ namespace Datadog.Trace.ContinuousProfiler
 
             try
             {
-                WriteSpanContextToNative(ctxPtr, in ctx);
+                ctx.Write(ctxPtr);
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
+                Log.Warning(e, "Failed to write {ContextInfo} at {CtxPtr} for {ThreadID}", ctx, ctxPtr, Environment.CurrentManagedThreadId.ToString());
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void WriteSpanContextToNative(IntPtr ptr, in SpanContext action)
-        {
-            // Set the WriteGuard
-            Marshal.WriteInt64(ptr, 1);
-            Thread.MemoryBarrier();
-
-            // Using WriteInt64 to write 2 long values is ~8x faster than using Marshal.StructureToPtr
-            // For the offset, we follow the layout depicted above
-            Marshal.WriteInt64(ptr + 8, (long)action.LocalRootSpanId);
-            Marshal.WriteInt64(ptr + 16, (long)action.SpanId);
-
-            // Reset the WriteGuard
-            Thread.MemoryBarrier();
-            Marshal.WriteInt64(ptr, 0);
-        }
-
         // See the description and the layout depicted above
-        private readonly struct SpanContext
+        private readonly struct SpanContext : IThreadContext
         {
             public static readonly SpanContext Zero = new(0, 0);
 
@@ -203,6 +154,53 @@ namespace Datadog.Trace.ContinuousProfiler
                 LocalRootSpanId = localRootSpanId;
                 SpanId = spanId;
             }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            public void Write(IntPtr ptr)
+            {
+                // Set the WriteGuard
+                Marshal.WriteInt64(ptr, 1);
+                Thread.MemoryBarrier();
+
+                // Using WriteInt64 to write 2 long values is ~8x faster than using Marshal.StructureToPtr
+                // For the offset, we follow the layout depicted above
+                Marshal.WriteInt64(ptr + 8, (long)LocalRootSpanId);
+                Marshal.WriteInt64(ptr + 16, (long)SpanId);
+
+                // Reset the WriteGuard
+                Thread.MemoryBarrier();
+                Marshal.WriteInt64(ptr, 0);
+            }
+
+            public override string ToString()
+            {
+                return $"tracing context [Local root spand id {LocalRootSpanId}, Span id {SpanId}]";
+            }
+        }
+
+        // See the description and the layout depicted above
+        private readonly struct ThreadMetaInfo : IThreadContext
+        {
+            // TODO Good for now it's a LockStatus, later we could have richer information
+            private readonly LockStatus _status;
+
+            public ThreadMetaInfo(LockStatus l)
+            {
+                _status = l;
+            }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            public void Write(IntPtr ptr)
+            {
+                // Update ThreadMetaInfo field based on the lock status
+                // TODO for now we write the whole 64-bit field.
+                // Later we could have more info (if the thread is doing IO....) and could use
+                // other bits of this field.
+                var infoValue = _status == LockStatus.Lock ? 1 : 0;
+                Marshal.WriteInt64(ptr + 24, infoValue);
+            }
+
+            public override string ToString() => $" Thread Meta info {_status}";
         }
     }
 }

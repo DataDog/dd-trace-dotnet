@@ -26,21 +26,13 @@ enum class ThreadMetaInfo : std::uint64_t
     UnsafeToUnwind = 1
 };
 
-struct alignas(FieldAlignRequirement) TraceContextInfo
+struct alignas(FieldAlignRequirement) TraceContext
 {
 public:
     std::uint64_t _writeGuard;
     std::uint64_t _currentLocalRootSpanId;
     std::uint64_t _currentSpanId;
     std::uint64_t _threadMetaInfo;
-};
-
-struct TraceContext
-{
-public:
-    static constexpr std::uint8_t Version = 2;
-
-    TraceContextInfo _impl;
 };
 
 struct ManagedThreadInfo : public IThreadInfo
@@ -94,7 +86,7 @@ public:
     inline void SetThreadDestroyed();
     inline std::pair<uint64_t, shared::WSTRING> SetBlockingThread(uint64_t osThreadId, shared::WSTRING name);
 
-    inline TraceContextInfo* GetTraceContextPointer();
+    inline TraceContext* GetTraceContextPointer();
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
@@ -431,14 +423,14 @@ inline std::pair<uint64_t, shared::WSTRING> ManagedThreadInfo::SetBlockingThread
     return {oldId, oldName};
 }
 
-inline TraceContextInfo* ManagedThreadInfo::GetTraceContextPointer()
+inline TraceContext* ManagedThreadInfo::GetTraceContextPointer()
 {
-    return &_traceContext._impl;
+    return &_traceContext;
 }
 
 inline bool ManagedThreadInfo::CanReadTraceContext() const
 {
-    bool canReadTraceContext = _traceContext._impl._writeGuard;
+    bool canReadTraceContext = _traceContext._writeGuard;
 
     // As said in the doc, on x86 (x86_64 including) this is a compiler fence.
     // In our case, it suffices. We have to make sure that reading this field is done
@@ -493,7 +485,7 @@ inline std::int32_t ManagedThreadInfo::GetTimerId() const
 
 inline bool ManagedThreadInfo::IsSafeToUnwind() const
 {
-    return (_traceContext._impl._threadMetaInfo & static_cast<std::uint64_t>(ThreadMetaInfo::UnsafeToUnwind)) == 0;
+    return (_traceContext._threadMetaInfo & static_cast<std::uint64_t>(ThreadMetaInfo::UnsafeToUnwind)) == 0;
 }
 
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
@@ -514,8 +506,8 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
 
     if (CanReadTraceContext())
     {
-        localRootSpanId = _traceContext._impl._currentLocalRootSpanId;
-        spanId = _traceContext._impl._currentSpanId;
+        localRootSpanId = _traceContext._currentLocalRootSpanId;
+        spanId = _traceContext._currentSpanId;
     }
 
     return {localRootSpanId, spanId};
