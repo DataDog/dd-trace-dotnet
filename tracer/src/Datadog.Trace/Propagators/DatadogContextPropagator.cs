@@ -33,7 +33,7 @@ namespace Datadog.Trace.Propagators
 
             if (!string.IsNullOrEmpty(context.Origin))
             {
-                carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
+                carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin!);
             }
 
             if (context.GetOrMakeSamplingDecision() is { } samplingPriority)

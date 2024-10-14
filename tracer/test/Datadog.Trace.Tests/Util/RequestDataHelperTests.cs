@@ -14,7 +14,6 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
-using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -79,8 +78,8 @@ public class RequestDataHelperTests
         scope.Span.ServiceName = "service";
         HttpContext context = new HttpContext(request, new HttpResponse(new System.IO.StringWriter()));
         request.ValidateInput();
-        HttpTransport transport = new HttpTransport(context);
-        var securityCoordinator = new SecurityCoordinator(security, scope.Span, transport);
+        var transport = new SecurityCoordinator.HttpTransport(context);
+        var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, transport);
         // We should not launch any exception here
         var result = securityCoordinator.GetBasicRequestArgsForWaf();
         var iastContext = new IastRequestContext();

@@ -78,6 +78,12 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestEnabledBytes => new byte[] { 184, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 101, 110, 97, 98, 108, 101, 100 };
         // EarlyFlakeDetectionTestAbortReasonBytes = MessagePack.Serialize("test.early_flake.abort_reason");
         private static ReadOnlySpan<byte> EarlyFlakeDetectionTestAbortReasonBytes => new byte[] { 189, 116, 101, 115, 116, 46, 101, 97, 114, 108, 121, 95, 102, 108, 97, 107, 101, 46, 97, 98, 111, 114, 116, 95, 114, 101, 97, 115, 111, 110 };
+        // GitHeadCommitBytes = MessagePack.Serialize("git.commit.head_sha");
+        private static ReadOnlySpan<byte> GitHeadCommitBytes => new byte[] { 179, 103, 105, 116, 46, 99, 111, 109, 109, 105, 116, 46, 104, 101, 97, 100, 95, 115, 104, 97 };
+        // GitPrBaseCommitBytes = MessagePack.Serialize("git.pull_request.base_branch_sha");
+        private static ReadOnlySpan<byte> GitPrBaseCommitBytes => new byte[] { 217, 32, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104, 95, 115, 104, 97 };
+        // GitPrBaseBranchBytes = MessagePack.Serialize("git.pull_request.base_branch");
+        private static ReadOnlySpan<byte> GitPrBaseBranchBytes => new byte[] { 188, 103, 105, 116, 46, 112, 117, 108, 108, 95, 114, 101, 113, 117, 101, 115, 116, 46, 98, 97, 115, 101, 95, 98, 114, 97, 110, 99, 104 };
 
         public override string? GetTag(string key)
         {
@@ -114,6 +120,9 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
                 "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
                 "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
+                "git.commit.head_sha" => GitHeadCommit,
+                "git.pull_request.base_branch_sha" => GitPrBaseCommit,
+                "git.pull_request.base_branch" => GitPrBaseBranch,
                 _ => base.GetTag(key),
             };
         }
@@ -211,6 +220,15 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.early_flake.abort_reason": 
                     EarlyFlakeDetectionTestAbortReason = value;
+                    break;
+                case "git.commit.head_sha": 
+                    GitHeadCommit = value;
+                    break;
+                case "git.pull_request.base_branch_sha": 
+                    GitPrBaseCommit = value;
+                    break;
+                case "git.pull_request.base_branch": 
+                    GitPrBaseBranch = value;
                     break;
                 case "library_version": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(TestSessionSpanTags));
@@ -376,6 +394,21 @@ namespace Datadog.Trace.Ci.Tagging
             if (EarlyFlakeDetectionTestAbortReason is not null)
             {
                 processor.Process(new TagItem<string>("test.early_flake.abort_reason", EarlyFlakeDetectionTestAbortReason, EarlyFlakeDetectionTestAbortReasonBytes));
+            }
+
+            if (GitHeadCommit is not null)
+            {
+                processor.Process(new TagItem<string>("git.commit.head_sha", GitHeadCommit, GitHeadCommitBytes));
+            }
+
+            if (GitPrBaseCommit is not null)
+            {
+                processor.Process(new TagItem<string>("git.pull_request.base_branch_sha", GitPrBaseCommit, GitPrBaseCommitBytes));
+            }
+
+            if (GitPrBaseBranch is not null)
+            {
+                processor.Process(new TagItem<string>("git.pull_request.base_branch", GitPrBaseBranch, GitPrBaseBranchBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -597,6 +630,27 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.early_flake.abort_reason (tag):")
                   .Append(EarlyFlakeDetectionTestAbortReason)
+                  .Append(',');
+            }
+
+            if (GitHeadCommit is not null)
+            {
+                sb.Append("git.commit.head_sha (tag):")
+                  .Append(GitHeadCommit)
+                  .Append(',');
+            }
+
+            if (GitPrBaseCommit is not null)
+            {
+                sb.Append("git.pull_request.base_branch_sha (tag):")
+                  .Append(GitPrBaseCommit)
+                  .Append(',');
+            }
+
+            if (GitPrBaseBranch is not null)
+            {
+                sb.Append("git.pull_request.base_branch (tag):")
+                  .Append(GitPrBaseBranch)
                   .Append(',');
             }
 
