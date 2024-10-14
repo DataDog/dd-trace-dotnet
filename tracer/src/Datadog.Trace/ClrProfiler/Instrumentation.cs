@@ -24,6 +24,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -548,13 +549,20 @@ namespace Datadog.Trace.ClrProfiler
 
             if (debuggerSettings.IsSnapshotExplorationTestEnabled)
             {
+                var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                Log.Debug("Initializing live debugger for snapshot exploration test.");
+                liveDebugger.WithProbesFromFile();
                 Task.Run(
                     async () =>
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
-                        Log.Debug("Initializing live debugger for snapshot exploration test.");
-                        liveDebugger.WithProbesFromFile();
-                        await liveDebugger.InitializeAsync().ConfigureAwait(false);
+                        try
+                        {
+                            await liveDebugger.InitializeAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing live debugger.");
+                        }
                     });
             }
             else
