@@ -15,6 +15,7 @@ namespace Samples.Computer01
         private Thread _worker;
         private Thread _workerUnsafe;
         private Thread _workerException;
+        private Thread _workerContention;
 
         public void Start()
         {
@@ -25,23 +26,10 @@ namespace Samples.Computer01
 
             _stopEvent = new ManualResetEvent(false);
 
-            _worker = new Thread(SafeToUnwind)
-            {
-                IsBackground = false // set to false to prevent the app from shutting down. The test will fail
-            };
-            _worker.Start();
-
-            _workerUnsafe = new Thread(Wrap_UnSafeToUnwind)
-            {
-                IsBackground = false // set to false to prevent the app from shutting down. The test will fail
-            };
-            _workerUnsafe.Start();
-
-            _workerException = new Thread(StartException)
-            {
-                IsBackground = false // set to false to prevent the app from shutting down. The test will fail
-            };
-            _workerException.Start();
+            _worker = CreateAndStartThread(SafeToUnwind);
+            _workerUnsafe = CreateAndStartThread(Wrap_UnSafeToUnwind);
+            _workerException = CreateAndStartThread(StartException);
+            _workerContention = CreateAndStartThread(StartContention);
         }
 
         public void Run()
@@ -63,8 +51,20 @@ namespace Samples.Computer01
             _worker.Join();
             _workerUnsafe.Join();
             _workerException.Join();
+            _workerContention.Join();
             _stopEvent.Dispose();
             _stopEvent = null;
+        }
+
+        private static Thread CreateAndStartThread(ThreadStart action)
+        {
+            var t = new Thread(action)
+            {
+                IsBackground = false // set to false to prevent the app from shutting down. The test will fail
+            };
+            t.Start();
+
+            return t;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -121,6 +121,51 @@ namespace Samples.Computer01
                 }
                 catch { } // do not care
 
+                Thread.Sleep(TimeSpan.FromMilliseconds(250));
+            }
+        }
+
+        private void StartContention()
+        {
+            var lockObj = new object();
+            var otherThread = CreateAndStartThread(() =>
+            {
+                while (!_stopEvent.WaitOne(0))
+                {
+                    Wrap_ContentionUnsafeToUnwind(lockObj);
+                }
+            });
+
+            while (!_stopEvent.WaitOne(0))
+            {
+                ContentionSafeToUnwind(lockObj);
+            }
+
+            otherThread.Join();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void Wrap_ContentionUnsafeToUnwind(object lockObj)
+        {
+            ContentionUnsafeToUnwind(lockObj);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ContentionUnsafeToUnwind(object lockObj)
+        {
+            LockAndSleep(lockObj);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ContentionSafeToUnwind(object lockObj)
+        {
+            LockAndSleep(lockObj);
+        }
+
+        private void LockAndSleep(object lockObj)
+        {
+            lock (lockObj)
+            {
                 Thread.Sleep(TimeSpan.FromMilliseconds(250));
             }
         }

@@ -37,7 +37,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             for (int i = 0; i < other._stackFrames.Count; i++)
             {
-                _stackFrames[i].ToString().Should().Be(other._stackFrames[i].ToString());
+                if (_stackFrames[i].ToString() != other._stackFrames[i].ToString())
+                {
+                    return false;
+                }
             }
 
             return true;
