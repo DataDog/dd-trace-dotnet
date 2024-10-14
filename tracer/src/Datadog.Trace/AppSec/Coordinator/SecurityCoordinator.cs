@@ -27,6 +27,7 @@ namespace Datadog.Trace.AppSec.Coordinator;
 /// </summary>
 internal readonly partial struct SecurityCoordinator
 {
+    private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
     private readonly Security _security;
     private readonly Span _localRootSpan;
