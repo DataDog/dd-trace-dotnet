@@ -42,8 +42,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _framework = framework;
             Environment = new EnvironmentHelper(framework, enableTracer, enableProfiler);
             _testBaseOutputDir = Environment.GetTestOutputPath();
+            var logPath = Path.Combine(_testBaseOutputDir, "logs");
+            // create the log folder now instead of waiting for the profiler to create it
+            Directory.CreateDirectory(_testBaseOutputDir);
             _appAssembly = appAssembly;
-            _output = new XUnitFileLogger(output, Path.Combine(Path.Combine(_testBaseOutputDir, "logs"), "xunit.txt"));
+            _output = new XUnitFileLogger(output, Path.Combine(logPath, "xunit.txt"));
             _commandLine = commandLine ?? string.Empty;
             ServiceName = $"IntegrationTest-{_appName}";
         }

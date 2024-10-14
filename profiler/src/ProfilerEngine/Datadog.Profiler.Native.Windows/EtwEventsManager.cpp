@@ -32,7 +32,7 @@ EtwEventsManager::EtwEventsManager(
     _pContentionListener(pContentionListener)
 {
     _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
-    _agentEndpoint = pConfiguration->GetEtwEndpoint();
+    _agentReplayEndpoint = pConfiguration->GetEtwReplayEndpoint();
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
@@ -218,7 +218,7 @@ void EtwEventsManager::OnEvent(
 
             // when events are replayed, no pointer value should be used
             // --> ClassID is invalid and should not be used
-            if (!_agentEndpoint.empty())
+            if (!_agentReplayEndpoint.empty())
             {
                 pThreadInfo->AllocationClassId = 0;
             }
@@ -310,7 +310,7 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
 // and the received IPs are not valid --> we need to use a fake one
 void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    if (_agentEndpoint.empty())
+    if (_agentReplayEndpoint.empty())
     {
         AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
     }
@@ -323,7 +323,7 @@ void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16
 
 void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    if (_agentEndpoint.empty())
+    if (_agentReplayEndpoint.empty())
     {
         AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
     }
@@ -372,7 +372,7 @@ bool EtwEventsManager::Start()
     }
 
     // create the client part to send the registration command
-    pipeName = (_agentEndpoint.empty()) ? NamedPipeAgent : _agentEndpoint;
+    pipeName = (_agentReplayEndpoint.empty()) ? NamedPipeAgent : _agentReplayEndpoint;
     Log::Info("Contacting ", pipeName, "...");
 
     _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);

@@ -93,7 +93,7 @@ Configuration::Configuration()
     _isEtwEnabled = GetEnvironmentValue(EnvironmentVariables::EtwEnabled, false);
     _deploymentMode = GetEnvironmentValue(EnvironmentVariables::SsiDeployed, DeploymentMode::Manual);
     _isEtwLoggingEnabled = GetEnvironmentValue(EnvironmentVariables::EtwLoggingEnabled, false);
-    _etwEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwEndpoint, DefaultEmptyString);
+    _etwReplayEndpoint = GetEnvironmentValue(EnvironmentVariables::EtwReplayEndpoint, DefaultEmptyString);
     _enablementStatus = ExtractEnablementStatus();
     _ssiLongLivedThreshold = ExtractSsiLongLivedThreshold();
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
@@ -566,12 +566,12 @@ bool Configuration::IsEtwLoggingEnabled() const
 #endif
 }
 
-std::string const& Configuration::GetEtwEndpoint() const
+std::string const& Configuration::GetEtwReplayEndpoint() const
 {
 #ifdef LINUX
     return DefaultEmptyString;
 #else
-    return _etwEndpoint;
+    return _etwReplayEndpoint;
 #endif
 }
 

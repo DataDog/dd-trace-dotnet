@@ -73,7 +73,7 @@ public:
     std::uint64_t GetCIVisibilitySpanId() const override;
     bool IsEtwEnabled() const override;
     bool IsEtwLoggingEnabled() const override;
-    std::string const& GetEtwEndpoint() const override;
+    std::string const& GetEtwReplayEndpoint() const override;
     EnablementStatus GetEnablementStatus() const override;
     DeploymentMode GetDeploymentMode() const override;
     std::chrono::milliseconds GetSsiLongLivedThreshold() const override;
@@ -170,7 +170,7 @@ private:
     bool _isEtwEnabled;
     DeploymentMode _deploymentMode;
     bool _isEtwLoggingEnabled;
-    std::string _etwEndpoint;
+    std::string _etwReplayEndpoint;
     EnablementStatus _enablementStatus;
     std::chrono::milliseconds _ssiLongLivedThreshold;
     bool _isTelemetryToDiskEnabled;

@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
             Guid guid = Guid.NewGuid();
-            runner.Environment.SetVariable(EnvironmentVariables.EtwEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
+            runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             if (IntPtr.Size == 4)
