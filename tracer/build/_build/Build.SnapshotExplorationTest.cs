@@ -15,6 +15,7 @@ partial class Build
     const string SnapshotExplorationEnabledKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
     const string SnapshotExplorationProbesPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_PATH";
     const string SnapshotExplorationReportPathKey = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_PATH";
+    const char SpecialSeparator = '#';
 
     void RunSnapshotExplorationTestsInternal()
     {
@@ -147,11 +148,37 @@ partial class Build
                         isStatic = (int.Parse(annotations[0], NumberStyles.HexNumber) & 0x0010) > 0;
                     }
 
-                    var returnType = ls?.GetType().GetProperty("ReturnType")?.GetValue(ls)?.ToString();
-                    csvBuilder.AppendLine($"{typeName},{scope["Name"]},{GetMethodSignature(returnType, (List<IDictionary<string, object>>)scope["Symbols"])},{Guid.NewGuid()},{isStatic}");
+                    var returnType = ls?.GetType().GetProperty("ReturnType", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ls)?.ToString();
+                    if (TryGetLine(typeName, scope["Name"].ToString(), returnType, (List<IDictionary<string, object>>)scope["Symbols"], Guid.NewGuid(), isStatic, out var line))
+                    {
+                        csvBuilder.AppendLine(line);
+                    }
+                    else
+                    {
+                        Logger.Warning($"Error to add probe info for: {line}");
+                    }
                 }
             }
         }
+    }
+
+    bool TryGetLine(string type, string method, string returnType, List<IDictionary<string, object>> methodParameters, Guid guid, bool isStatic, out string line)
+    {
+        try
+        {
+            var typeName = SanitiseName(type);
+            var methodName = SanitiseName(method);
+            var methodSignature = GetMethodSignature(returnType, methodParameters);
+            line = $"{typeName},{methodName},{SanitiseName(methodSignature)},{Guid.NewGuid()},{isStatic}";
+            return !string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName) && !string.IsNullOrEmpty(returnType);
+        }
+        catch (Exception e)
+        {
+            line = $"Type: {type}, Method: {method}";
+            return false;
+        }
+
+        string SanitiseName(string name) => name == null ? string.Empty : name.Replace(',', SpecialSeparator);
 
         string GetMethodSignature(string returnType, List<IDictionary<string, object>> symbols)
         {
@@ -160,14 +187,12 @@ partial class Build
                 return string.Empty;
             }
 
-            const char parametersSeparator = '#';
-
             var parameterTypes =
                 (from symbol in symbols
                  where symbol["SymbolType"].ToString() == "Arg"
                  select symbol["Type"].ToString())
                .ToList();
-            return $"{returnType} ({string.Join(parametersSeparator, parameterTypes)})";
+            return $"{returnType} ({string.Join(SpecialSeparator, parameterTypes)})";
         }
     }
 

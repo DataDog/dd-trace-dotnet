@@ -188,7 +188,7 @@ partial class Build
                         return;
                     }
 
-                    FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
+                    // FileSystemTasks.EnsureCleanDirectory(TestLogsDirectory);
                     try
                     {
                         RunSnapshotExplorationTestsInternal();
