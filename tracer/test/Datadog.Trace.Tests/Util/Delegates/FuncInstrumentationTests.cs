@@ -656,17 +656,17 @@ public class FuncInstrumentationTests
                                                  (target, arg1) =>
                                                  {
                                                      Interlocked.Increment(ref value);
-                                                     throw new Exception("Expected");
+                                                     throw new InvalidOperationException("Expected");
                                                  },
                                                  (target, returnValue, exception, state) =>
                                                  {
                                                      Interlocked.Increment(ref value);
-                                                     throw new Exception("Expected");
+                                                     throw new InvalidOperationException("Expected");
                                                  },
                                                  onDelegateAsyncEnd: (sender, returnValue, exception, state) =>
                                                  {
                                                      Interlocked.Increment(ref value);
-                                                     throw new Exception("Expected");
+                                                     throw new InvalidOperationException("Expected");
                                                  }));
         var result = await func("Arg01").ConfigureAwait(false);
         using var scope = new AssertionScope();
