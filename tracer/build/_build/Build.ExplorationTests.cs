@@ -686,7 +686,8 @@ class ExplorationTestDescription
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
                     "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion",
-                    // exclude those "legacy" tests because they are on manually modified code
+                    "Google.Protobuf.Test.RefStructCompatibilityTest",
+					// exclude those "legacy" tests because they are on manually modified code
                     // that throws a NotImplementedException on the `Descriptor` property that we use.
                     "Google.Protobuf.LegacyGeneratedCodeTest.IntermixingOfNewAndLegacyGeneratedCodeWorksWithCodedInputStream",
                     "Google.Protobuf.LegacyGeneratedCodeTest.IntermixingOfNewAndLegacyGeneratedCodeWorksWithCodedOutputStream",
