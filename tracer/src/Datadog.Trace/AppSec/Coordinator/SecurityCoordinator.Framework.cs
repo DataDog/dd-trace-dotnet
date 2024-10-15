@@ -45,14 +45,31 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(HttpContext.Current);
+        _httpTransport = transport;
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
+
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
+    {
+        if (HttpContext.Current is not { } current)
+        {
+            Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            return null;
+        }
+
+        var transport = new HttpTransport(current);
+
+        return new SecurityCoordinator(security, span, transport);
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
@@ -541,8 +558,8 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get => Context.Items[ReportedExternalWafsRequestHeadersStr] is true;
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;

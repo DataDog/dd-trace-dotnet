@@ -20,14 +20,30 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(CoreHttpContextStore.Instance.Get());
+        _httpTransport = transport;
     }
 
     private static bool CanAccessHeaders => true;
+
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
+    {
+        var context = CoreHttpContextStore.Instance.Get();
+        if (context is null)
+        {
+            Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            return null;
+        }
+
+        return new SecurityCoordinator(security, span, new(context));
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
     public static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
     {
@@ -162,7 +178,7 @@ internal readonly partial struct SecurityCoordinator
             {
                 if (Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out var value))
                 {
-                    return value is bool boolValue && boolValue;
+                    return value is true;
                 }
 
                 return false;
@@ -175,8 +191,16 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get
+            {
+                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
+                {
+                    return value is bool boolValue && boolValue;
+                }
+
+                return false;
+            }
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;

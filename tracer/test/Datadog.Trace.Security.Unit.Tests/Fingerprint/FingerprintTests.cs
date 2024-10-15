@@ -40,7 +40,6 @@ public class FingerprintTests : WafLibraryRequiredTest
                     { "server.response.status", "200" },
                     { "server.request.uri.raw", "/Iast/GetFileContent?file=/nonexisting.txt" },
                     { "http.client_ip", "::1" },
-                    { "server.request.body", new Dictionary<string, string>() },
                     { "server.request.query", new Dictionary<string, string[]> { { "file", new[] { "/nonexisting.txt" } } } },
                     {
                         "server.request.headers.no_cookies", new Dictionary<string, string[]>
@@ -114,8 +113,8 @@ public class FingerprintTests : WafLibraryRequiredTest
 
     [Theory]
     [InlineData(0, 4)]
-    [InlineData(1, 3)]
-    [InlineData(2, 3)]
+    [InlineData(1, 4)]
+    [InlineData(2, 4)]
     public void GivenAFingerprintRequest_WhenRunWAF_FingerprintIsGenerated(int testIndex, int resultingHeaders)
     {
         var ruleFile = "rasp-rule-set.json";
