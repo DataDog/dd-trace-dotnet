@@ -94,8 +94,6 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
                 var json = JsonConvert.SerializeObject(iastMetaStruct, Formatting.Indented);
                 target.Tags[Tags.IastJson] = json;
 
-                target.MetaStruct.Remove("iast");
-
                 // Let the snapshot know that the data comes from the meta struct
                 if (forceMetaStruct)
                 {
