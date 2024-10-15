@@ -20,6 +20,13 @@ internal static class ContextPropagationHeaderStyle
     public const string W3CTraceContext = "tracecontext";
 
     /// <summary>
+    /// The W3C baggage propagator.
+    /// Uses headers: baggage.
+    /// </summary>
+    /// <seealso cref="W3CBaggagePropagator"/>
+    public const string W3CBaggage = "baggage";
+
+    /// <summary>
     /// The original Datadog propagator.
     /// Uses headers: x-datadog-trace-id, x-datadog-parent-id, x-datadog-sampling-priority,
     /// x-datadog-origin, x-datadog-tags.
