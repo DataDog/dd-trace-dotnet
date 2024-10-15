@@ -116,6 +116,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsSnsRequestV0(),
             };
 
+        public static Result IsAwsStepFunctionsRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsStepFunctionsRequestV1(),
+                _ => span.IsAwsStepFunctionsRequestV0(),
+            };
+
         public static Result IsAzureServiceBusInbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {

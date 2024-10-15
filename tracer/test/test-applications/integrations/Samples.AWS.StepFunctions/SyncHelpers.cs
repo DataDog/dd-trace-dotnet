@@ -32,16 +32,16 @@ namespace Samples.AWS.StepFunctions
                 };
 
                 await stepFunctionsClient.StartSyncExecution(executionRequest);
-                await DeleteStateMachineSync(stepFunctionsClient, stepFunctionName);
+                await DeleteStateMachineSync(stepFunctionsClient, stepFunctionArn);
 
                 // Needed in order to allow resource to be deleted
                 Thread.Sleep(1000);
             }
         }
 
-        private static async Task DeleteStateMachineSync(AmazonStepFunctionsClient stepFunctionsClient, string stepFunctionName)
+        private static async Task DeleteStateMachineSync(AmazonStepFunctionsClient stepFunctionsClient, string stepFunctionArn)
         {
-            var deleteStateMachineRequest = new DeleteStateMachineRequest { Name = stepFunctionName };
+            var deleteStateMachineRequest = new DeleteStateMachineRequest { StateMachineArn = stepFunctionArn };
 
             var response = await stepFunctionsClient.DeleteStateMachine(deleteStateMachineRequest);
 
