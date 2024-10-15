@@ -1643,7 +1643,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             mdTypeDef mainTypeDef;
             hr = metadataImport->FindTypeDefByName(caller.type.name.c_str(), mdTokenNil, &mainTypeDef);
-            if (FAILED(hr) || !mainTypeDef)
+            if (FAILED(hr))
             {
                 Logger::Warn("JITCompilationStarted: Checking for .cctor in ", caller.type.name, " failed at FindTypeDefByName");
             }
@@ -1651,7 +1651,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             {
                 mdMethodDef memberDef;
                 hr = metadataImport->FindMethod(mainTypeDef, WStr(".cctor"), 0, 0, &memberDef);
-                if (FAILED(hr) || !memberDef)
+                if (FAILED(hr))
                 {
                     Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
                 }
