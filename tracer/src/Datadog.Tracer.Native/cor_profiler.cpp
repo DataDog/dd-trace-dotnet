@@ -1567,11 +1567,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // Note: This check must only run on desktop because it is possible (and the default) to host
     // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
     auto valid_startup_hook_callsite = true;
+    // In some cases we may choose to defer instrumenting a valid startup hook callsite.
+    // For example, if we're instrumenting the entrypoint, but the Program.Main() implementing type
+    // has a static constructor, then the JIT inserts a call to the static constructor at the start of the method.
+    // If we insert the startup hook at the start of the method, we'll miss the static constructor call. This is
+    // particularly problematic if there's any "one time setup" happening in that constructor, e.g. usages of
+    // Datadog.Trace.Manual instrumentation. This behaviour only occurs on .NET Core, so limit the behaviour to there.
+    auto can_skip_startup_hook_callsite = runtime_information_.is_core();
     if (is_desktop_iis)
     {
         valid_startup_hook_callsite = module_metadata->assemblyName == WStr("System.Web") &&
                                       caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
                                       caller.name == WStr("InvokePreStartInitMethods");
+        can_skip_startup_hook_callsite = false;
     }
     else if (module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http") ||
@@ -1626,6 +1634,45 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
             return S_OK;
+        }
+
+        // *********************************************************************
+        // Checking if the caller has an explicit static constructor.
+        // If it does, we delay instrumenting this and let the static constructor get instrumented instead.
+        // Bypassing for calls that we explicitly want to instrument (e.g. IIS startup hook)
+        // *********************************************************************
+        if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
+        {
+            mdMethodDef memberDef;
+            hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
+            if (FAILED(hr))
+            {
+                Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+            }
+            else
+            {
+                // we found a static constructor, so now we need to work out if it's an explicit or implicit
+                // constructor, because we won't be able to inject into an implicit static constructor, so
+                // would inject too late
+                DWORD typeDefFlags;
+                hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
+                if (FAILED(hr))
+                {
+                    Logger::Debug("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name,
+                        ", allowing injection into ", caller.name, "()");
+                }
+                else if(typeDefFlags & tdBeforeFieldInit)
+                {
+                    Logger::Debug("JITCompilationStarted: Found .cctor for type ", caller.type.name,
+                        " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
+                }
+                else
+                {
+                    Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".",
+                        caller.name, "() as found .cctor");
+                    return S_OK;
+                }
+            }
         }
 
         // *********************************************************************
