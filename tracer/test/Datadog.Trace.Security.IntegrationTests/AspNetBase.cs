@@ -228,7 +228,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
             // But that's hard to debug if we only see the binary data
-            // So move the meta struct appsec data to a fake tag to validate it in snapshots
+            // So copy the meta struct appsec data to a fake tag to validate it in snapshots
             if (target.MetaStruct.TryGetValue("appsec", out var appsec))
             {
                 var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
@@ -236,8 +236,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
                 var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
                 target.Tags[Tags.AppSecJson] = orderedJson;
-
-                target.MetaStruct.Remove("appsec");
 
                 // Let the snapshot know that the data comes from the meta struct
                 if (forceMetaStruct) { target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true"; }
