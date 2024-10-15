@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget;
@@ -66,7 +67,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget? instance)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget>.Invoke(instance);
@@ -87,7 +88,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget? instance, TArg1? arg1)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, ref arg1);
@@ -110,7 +111,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget? instance, TArg1? arg1, TArg2? arg2)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, ref arg1, ref arg2);
@@ -135,7 +136,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, ref arg1, ref arg2, ref arg3);
@@ -162,7 +163,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3, TArg4? arg4)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4);
@@ -191,7 +192,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3, TArg4? arg4, TArg5? arg5)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
@@ -222,7 +223,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3, TArg4? arg4, TArg5? arg5, TArg6? arg6)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
@@ -255,7 +256,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3, TArg4? arg4, TArg5? arg5, TArg6? arg6, TArg7? arg7)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
@@ -290,7 +291,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget? instance, TArg1? arg1, TArg2? arg2, TArg3? arg3, TArg4? arg4, TArg5? arg5, TArg6? arg6, TArg7? arg7, TArg8? arg8)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
@@ -311,7 +312,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget? instance, ref TArg1? arg1)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, ref arg1);
@@ -334,7 +335,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, ref arg1, ref arg2);
@@ -359,7 +360,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, ref arg1, ref arg2, ref arg3);
@@ -386,7 +387,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3, ref TArg4? arg4)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4);
@@ -415,7 +416,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3, ref TArg4? arg4, ref TArg5? arg5)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
@@ -446,7 +447,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3, ref TArg4? arg4, ref TArg5? arg5, ref TArg6? arg6)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
@@ -479,7 +480,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3, ref TArg4? arg4, ref TArg5? arg5, ref TArg6? arg6, ref TArg7? arg7)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
@@ -514,7 +515,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget? instance, ref TArg1? arg1, ref TArg2? arg2, ref TArg3? arg3, ref TArg4? arg4, ref TArg5? arg5, ref TArg6? arg6, ref TArg7? arg7, ref TArg8? arg8)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
@@ -534,7 +535,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetState BeginMethod<TIntegration, TTarget>(TTarget? instance, object[] arguments)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return BeginMethodSlowHandler<TIntegration, TTarget>.Invoke(instance, arguments);
@@ -555,7 +556,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget? instance, Exception? exception, CallTargetState state)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
@@ -578,7 +579,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget? instance, TReturn? returnValue, Exception? exception, CallTargetState state)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             var result = EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
@@ -600,7 +601,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget? instance, Exception? exception, in CallTargetState state)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
@@ -623,7 +624,7 @@ public static class CallTargetInvoker
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        if (IsIisPreStartComplete() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        if (IsIisPreStartComplete<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
         {
             IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
             return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
@@ -665,7 +666,7 @@ public static class CallTargetInvoker
     }
 
 #if NETFRAMEWORK
-    private static bool IsIisPreStartComplete()
+    private static bool IsIisPreStartComplete<TIntegration>()
     {
         if (_isIisPreStartInitComplete)
         {
@@ -673,12 +674,17 @@ public static class CallTargetInvoker
         }
 
         _isIisPreStartInitComplete = AppDomain.CurrentDomain.GetData(NamedSlotName) is false;
-        return _isIisPreStartInitComplete;
+
+        // We _have_ to allow the HttpModule_Integration inocation through, even if we're in the Iis PreStart phase
+        // that integration is specifically designed to run in this phase. We considered other options
+        // such as moving it to Instrumentation.Initialise, or rewriting directly with the profiling API
+        // but this was the simplest, easiest, and safest approach we could see generally.
+        return _isIisPreStartInitComplete || typeof(TIntegration) == typeof(HttpModule_Integration);
     }
 
 #else
     // Compiler should inline this out of the condition checks completely
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool IsIisPreStartComplete() => true;
+    private static bool IsIisPreStartComplete<TIntegration>() => true;
 #endif
 }
