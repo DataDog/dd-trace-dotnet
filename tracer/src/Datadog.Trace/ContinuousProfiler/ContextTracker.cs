@@ -198,6 +198,7 @@ namespace Datadog.Trace.ContinuousProfiler
                 // other bits of this field.
                 var infoValue = _status == LockStatus.Lock ? 1 : 0;
                 Marshal.WriteInt64(ptr + 24, infoValue);
+                Thread.MemoryBarrier();
             }
 
             public override string ToString() => $" Thread Meta info {_status}";
