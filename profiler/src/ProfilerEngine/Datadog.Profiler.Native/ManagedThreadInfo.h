@@ -485,6 +485,7 @@ inline std::int32_t ManagedThreadInfo::GetTimerId() const
 
 inline bool ManagedThreadInfo::IsSafeToUnwind() const
 {
+    std::atomic_thread_fence(std::memory_order_acquire);
     return (_traceContext._threadMetaInfo & static_cast<std::uint64_t>(ThreadMetaInfo::UnsafeToUnwind)) == 0;
 }
 
