@@ -59,10 +59,7 @@ namespace Datadog.Profiler.IntegrationTests
             _etwProxy.EventsSent += (sender, e) => EventsSent?.Invoke(this, e);
             _etwProxy.ProfilerUnregistered += (sender, e) => ProfilerUnregistered?.Invoke(this, e);
 
-            Task.Run(() => _etwProxy.StartServerAsync());
-
-            // let the time for the server to start
-            Thread.Sleep(200);
+            _etwProxy.StartServer();
         }
 
         public virtual void Dispose()

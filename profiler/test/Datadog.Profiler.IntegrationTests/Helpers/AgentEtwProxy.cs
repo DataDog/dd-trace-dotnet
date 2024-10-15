@@ -27,6 +27,7 @@ namespace Datadog.Profiler.IntegrationTests
         private bool _eventsHaveBeenSent;
         private int _pid;
         private NamedPipeClientStream _pipeClient;
+        private ManualResetEvent _serverStarted;
 
         public AgentEtwProxy(ITestOutputHelper output, string agentEndPoint, string eventsFilename)
         {
@@ -37,6 +38,7 @@ namespace Datadog.Profiler.IntegrationTests
             _eventsHaveBeenSent = false;
             _pipeClient = null;
             _output = output;
+            _serverStarted = new ManualResetEvent(false);
         }
 
         // ---------------------------------PID
@@ -68,6 +70,16 @@ namespace Datadog.Profiler.IntegrationTests
             // NOTE: this is a fire and forget call: no answer is expected from the profiler
         }
 
+        public void StartServer()
+        {
+            Task.Run(() => StartServerAsync());
+
+            _serverStarted.WaitOne();
+
+            // let the time for WaitForConnectionAsync to start
+            Thread.Sleep(300);
+        }
+
         public async Task StartServerAsync()
         {
             Thread.CurrentThread.Name = "AgentProxy";
@@ -83,6 +95,7 @@ namespace Datadog.Profiler.IntegrationTests
                                             PipeOptions.WriteThrough))
                 {
                     WriteLine($"NamedPipeServer is waiting for a connection on {_agentEndPoint}...");
+                    _serverStarted.Set();
 
                     await server.WaitForConnectionAsync();
 
