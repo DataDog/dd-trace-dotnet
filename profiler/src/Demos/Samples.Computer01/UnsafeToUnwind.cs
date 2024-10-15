@@ -60,7 +60,7 @@ namespace Samples.Computer01
         {
             var t = new Thread(action)
             {
-                IsBackground = false // set to false to prevent the app from shutting down. The test will fail
+                IsBackground = false // set to false allows the app to shutdown; otherwise, the test would fail
             };
             t.Start();
 

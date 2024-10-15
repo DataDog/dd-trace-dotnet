@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
+using System.Collections.Generic;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -12,6 +12,14 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
 {
     public class UnsafeToUnwindTest
     {
+        private static readonly StackFrame UnsafeFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:UnSafeToUnwind |fg: |sg:()");
+        private static readonly StackFrame UnsafeExceptionFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionUnsafeUnwind |fg: |sg:()");
+        private static readonly StackFrame UnsafeContentionFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionUnsafeToUnwind |fg: |sg:(object lockObj)");
+
+        private static readonly StackFrame SafeFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:SafeToUnwind |fg: |sg:()");
+        private static readonly StackFrame SafeExceptionFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionSafeUnwind |fg: |sg:()");
+        private static readonly StackFrame SafeContentionFrame = new("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionSafeToUnwind |fg: |sg:(object lockObj)");
+
         private readonly ITestOutputHelper _output;
 
         public UnsafeToUnwindTest(ITestOutputHelper output)
@@ -28,37 +36,35 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
-            var toSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:UnSafeToUnwind |fg: |sg:()"));
+            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
 
-            var exceptionToSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionUnsafeUnwind |fg: |sg:()"));
+            samples.Should().NotBeNullOrEmpty("Not samples found");
 
-            var exceptionToKeepStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionSafeUnwind |fg: |sg:()"));
+            var uniqueFrames = GetFrames(samples);
 
-            // Event based profiler
-            var contentionToSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionUnsafeToUnwind |fg: |sg:()"));
+            AssertNoUnsafeFramesInSamples(uniqueFrames, framework);
 
-            var contentionToKeepStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionSafeToUnwind |fg: |sg:()"));
+            AssertSafeFramesInSamples(uniqueFrames, framework);
+        }
 
-            // Safe to unwind frame
-            var safeToUnwind = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:SafeToUnwind |fg: |sg:()"));
+        [TestAppFact("Samples.Computer01")]
+        public void AvoidUnwindingUnsafeExecution2(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 28", enableTracer: true);
+            runner.Environment.SetVariable(EnvironmentVariables.SkippedMethods, "Samples.Computer01.UnsafeToUnwind[Wrap_UnSafeToUnwind,Wrap_RaiseExceptionUnsafeUnwind,Wrap_ContentionUnsafeToUnwind]");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
 
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
 
             samples.Should().NotBeNullOrEmpty("Not samples found");
 
-            samples.Where(s => s.StackTrace.EndWith(toSkipStack)).Should().BeNullOrEmpty();
-            samples.Where(s => s.StackTrace.EndWith(exceptionToSkipStack)).Should().BeNullOrEmpty();
-            samples.Where(s => s.StackTrace.EndWith(contentionToSkipStack)).Should().BeNullOrEmpty();
+            var uniqueFrames = GetFrames(samples);
 
-            samples.Any(s => s.StackTrace.EndWith(safeToUnwind)).Should().BeTrue();
-            samples.Any(s => s.StackTrace.EndWith(exceptionToKeepStack)).Should().BeTrue();
-            samples.Any(s => s.StackTrace.EndWith(contentionToKeepStack)).Should().BeTrue();
+            AssertNoUnsafeFramesInSamples(uniqueFrames, framework);
+
+            AssertSafeFramesInSamples(uniqueFrames, framework);
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -69,35 +75,54 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
-            var toSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:UnSafeToUnwind |fg: |sg:()"));
-
-            var exceptionToSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionUnsafeUnwind |fg: |sg:()"));
-
-            var exceptionToKeepStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:RaiseExceptionSafeUnwind |fg: |sg:()"));
-
-            // Event based profiler
-            var contentionToSkipStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionUnsafeToUnwind |fg: |sg:()"));
-
-            var contentionToKeepStack = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:ContentionSafeToUnwind |fg: |sg:()"));
-
-            // Safe to unwind frame
-            var safeToUnwind = new StackTrace(
-                new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:UnsafeToUnwind |cg: |fn:SafeToUnwind |fg: |sg:()"));
-
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
 
-            samples.Where(s => s.StackTrace.EndWith(toSkipStack)).Should().NotBeNullOrEmpty("DD_PROFILER_SKIPPED_METHODS is not set and no CPU/Walltime samples contain the problematic function (UnSafeToUnwind).");
-            samples.Where(s => s.StackTrace.EndWith(exceptionToSkipStack)).Should().NotBeNullOrEmpty("DD_PROFILER_SKIPPED_METHODS is not set and no Exception samples contain the problematic function (RaiseExceptionUnsafeUnwind).");
-            samples.Where(s => s.StackTrace.EndWith(contentionToSkipStack)).Should().NotBeNullOrEmpty("DD_PROFILER_SKIPPED_METHODS is not set and no Contention samples contain the problematic function (ContentionSafeToUnwind).");
+            samples.Should().NotBeNullOrEmpty();
 
-            samples.Any(s => s.StackTrace.EndWith(safeToUnwind)).Should().BeTrue();
-            samples.Any(s => s.StackTrace.EndWith(exceptionToKeepStack)).Should().BeTrue();
-            samples.Any(s => s.StackTrace.EndWith(contentionToKeepStack)).Should().BeTrue();
+            var uniqueFrames = GetFrames(samples);
+
+            uniqueFrames.Should().Contain(UnsafeFrame);
+            uniqueFrames.Should().Contain(UnsafeExceptionFrame);
+            if (framework == "net8.0")
+            {
+                uniqueFrames.Should().Contain(UnsafeContentionFrame);
+            }
+        }
+
+        private static void AssertSafeFramesInSamples(HashSet<StackFrame> frames, string framework)
+        {
+            // Safe frames can appear in callstacks
+            frames.Should().Contain(SafeFrame);
+            frames.Should().Contain(SafeExceptionFrame);
+            if (framework == "net8.0")
+            {
+                frames.Should().Contain(SafeContentionFrame);
+            }
+        }
+
+        private static void AssertNoUnsafeFramesInSamples(HashSet<StackFrame> frames, string framework)
+        {
+            frames.Should().NotContain(UnsafeFrame);
+            frames.Should().NotContain(UnsafeExceptionFrame);
+            if (framework == "net8.0")
+            {
+                frames.Should().NotContain(UnsafeContentionFrame);
+            }
+        }
+
+        private static HashSet<StackFrame> GetFrames(IEnumerable<Sample> samples)
+        {
+            HashSet<StackFrame> uniqueFrames = [];
+
+            foreach (var sample in samples)
+            {
+                foreach (var frame in sample.StackTrace)
+                {
+                    uniqueFrames.Add(frame);
+                }
+            }
+
+            return uniqueFrames;
         }
     }
 }
