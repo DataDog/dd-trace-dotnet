@@ -4,13 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    internal class StackTrace : IComparable<StackTrace>
+    internal class StackTrace : IComparable<StackTrace>, IEnumerable<StackFrame>
     {
         private readonly IReadOnlyList<StackFrame> _stackFrames;
 
@@ -95,6 +96,34 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        public bool Contains(StackFrame otherFrame)
+        {
+            if (_stackFrames.Count < 0)
+            {
+                return false;
+            }
+
+            foreach (var frame in _stackFrames)
+            {
+                if (frame.Equals(otherFrame))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public IEnumerator<StackFrame> GetEnumerator()
+        {
+            return _stackFrames.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
