@@ -576,6 +576,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetricsShutdown", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Debugger.AspNetCore5", "tracer\test\test-applications\debugger\Samples.Debugger.AspNetCore5\Samples.Debugger.AspNetCore5.csproj", "{3978A7D5-7B6E-4152-9C3A-5852F1F6E223}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.StepFunctions", "tracer\test\test-applications\integrations\Samples.AWS.StepFunctions\Samples.AWS.StepFunctions.csproj", "{882A255B-94EC-4947-96F1-F565EBD8F8FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1384,6 +1386,10 @@ Global
 		{3978A7D5-7B6E-4152-9C3A-5852F1F6E223}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3978A7D5-7B6E-4152-9C3A-5852F1F6E223}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3978A7D5-7B6E-4152-9C3A-5852F1F6E223}.Release|Any CPU.Build.0 = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
