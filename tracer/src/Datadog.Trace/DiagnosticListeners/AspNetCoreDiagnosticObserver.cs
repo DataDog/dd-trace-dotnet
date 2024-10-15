@@ -671,7 +671,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             CoreHttpContextStore.Instance.Remove();
-
             // If we don't have a scope, no need to call Stop pipeline
         }
 
@@ -690,8 +689,6 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 AspNetCoreRequestHandler.HandleAspNetCoreException(tracer, CurrentSecurity, rootSpan, httpContext, unhandledStruct.Exception);
             }
-
-            CoreHttpContextStore.Instance.Remove();
 
             // If we don't have a span, no need to call Handle exception
         }

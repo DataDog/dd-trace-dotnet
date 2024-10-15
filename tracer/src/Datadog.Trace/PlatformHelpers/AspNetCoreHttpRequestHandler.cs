@@ -178,6 +178,7 @@ namespace Datadog.Trace.PlatformHelpers
                     new SecurityCoordinator.HttpTransport(httpContext).DisposeAdditiveContext();
                 }
 
+                CoreHttpContextStore.Instance.Remove();
                 rootScope.Dispose();
             }
         }
