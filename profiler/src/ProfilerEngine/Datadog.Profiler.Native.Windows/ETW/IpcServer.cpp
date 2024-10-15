@@ -43,7 +43,7 @@ void IpcServer::Stop()
             0,
             nullptr,
             OPEN_EXISTING,
-            0,
+            FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
             nullptr);
         if (hPipe != INVALID_HANDLE_VALUE)
         {

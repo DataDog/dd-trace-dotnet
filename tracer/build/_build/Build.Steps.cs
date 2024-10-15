@@ -669,12 +669,12 @@ partial class Build
                 .SetOutput(MonitoringHomeDirectory / targetFramework)
             );
         });
-    
+
     Target PublishNativeSymbolsWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
         .After(CompileTracerNativeSrc, PublishManagedTracer)
-        .Executes(() => 
+        .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
@@ -757,7 +757,7 @@ partial class Build
         {
             // We don't produce an x86-only MSI any more
             var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
-            
+
             MSBuild(s => s
                     .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
@@ -985,7 +985,7 @@ partial class Build
                          homepage: "https://github.com/DataDog/dd-trace-dotnet"
                          # We were previously using "Apache License 2.0" but that's not technically correct
                          # As needs to be one of the standard fedora licences here: https://docs.fedoraproject.org/en-US/legal/allowed-licenses/
-                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html 
+                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html
                          license: "Apache-2.0"
                          priority: extra
                          section: default
@@ -995,8 +995,8 @@ partial class Build
                          rpm:
                              # The package group. This option is deprecated by most distros
                              # but we added it with fpm, so keeping it here for consistency
-                             group: default  
-                             prefixes: 
+                             group: default
+                             prefixes:
                              - /opt/datadog
                          contents:
                          - src: {assetsDirectory}/
@@ -2615,10 +2615,10 @@ partial class Build
            // This one is caused by the intentional crash in the crash tracking smoke test
            knownPatterns.Add(new("Application threw an unhandled exception: System.BadImageFormatException: Expected", RegexOptions.Compiled));
 
-           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12 
+           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
-           
+
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
@@ -2670,7 +2670,7 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac 
+                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
                              && nativeLoaderFiles.Count > 0);
 
         if (hasRequiredFiles
@@ -2989,7 +2989,7 @@ partial class Build
             {
                 Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
-                MoveFileToDirectory(dump, dumpFolder, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(dump, dumpFolder, FileExistsPolicy.OverwriteIfNewer);
             }
         }
 
@@ -3030,7 +3030,7 @@ partial class Build
                 Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
-        
+
         // set variables for subsequent tests
         var isSsiRun = Environment.GetEnvironmentVariable("IS_SSI_RUN");
         if (!string.IsNullOrEmpty(isSsiRun) && string.Equals(isSsiRun, "true", StringComparison.OrdinalIgnoreCase))

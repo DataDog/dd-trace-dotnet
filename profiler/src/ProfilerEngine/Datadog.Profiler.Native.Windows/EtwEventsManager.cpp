@@ -3,6 +3,7 @@
 
 
 #include "EtwEventsManager.h"
+#include "FrameStore.h"
 #include "IContentionListener.h"
 #include "IAllocationsListener.h"
 #include "IGCSuspensionsListener.h"
@@ -31,7 +32,7 @@ EtwEventsManager::EtwEventsManager(
     _pContentionListener(pContentionListener)
 {
     _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
-
+    _agentReplayEndpoint = pConfiguration->GetEtwReplayEndpoint();
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
@@ -202,21 +203,32 @@ void EtwEventsManager::OnEvent(
             //    <data name = "AllocationAmount64" inType = "win:UInt64"/>
             //    <data name = "TypeID" inType = "win:Pointer" />
             //    <data name = "TypeName" inType = "win:UnicodeString" />
-            //    
+            //
             // !! the following 2 fields cannot be directly accessed because
             // !! they will be stored after the string TypeName
             //    <data name = "HeapIndex" inType = "win:UInt32" />
             //    <data name = "Address" inType = "win:Pointer" />
             // but no object size...
             // Since the events are received asynchronously, it is not even possible
-            // to assume that the object that was stored at the received Adress field 
+            // to assume that the object that was stored at the received Adress field
             // is still there: it could have been moved by a garbage collection
             AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
-            pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+
+            // when events are replayed, no pointer value should be used
+            // --> ClassID is invalid and should not be used
+            if (!_agentReplayEndpoint.empty())
+            {
+                pThreadInfo->AllocationClassId = 0;
+            }
+            else
+            {
+                pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+            }
+
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
-            
+
             // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?
             pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(&(pPayload->FirstCharInName)));
 
@@ -294,14 +306,32 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
     }
 }
 
+// In case of tests, a custom endpoint can be used to avoid the need of the Datadog Agent
+// and the received IPs are not valid --> we need to use a fake one
 void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    if (_agentReplayEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->ContentionCallStack.clear();
+        pThreadInfo->ContentionCallStack.push_back(FrameStore::FakeLockContentionIP);
+    }
 }
 
 void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    if (_agentReplayEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->AllocationCallStack.clear();
+        pThreadInfo->AllocationCallStack.push_back(FrameStore::FakeAllocationIP);
+    }
 }
 
 void EtwEventsManager::OnStop()
@@ -323,9 +353,10 @@ bool EtwEventsManager::Start()
     buffer << NamedPipePrefix;
     buffer << pid;
     std::string pipeName = buffer.str();
+
     Log::Info("Exposing ", pipeName);
 
-    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
+    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this, nullptr);
     _IpcServer = IpcServer::StartAsync(
         _logger.get(),
         pipeName,
@@ -341,7 +372,7 @@ bool EtwEventsManager::Start()
     }
 
     // create the client part to send the registration command
-    pipeName = NamedPipeAgent;
+    pipeName = (_agentReplayEndpoint.empty()) ? NamedPipeAgent : _agentReplayEndpoint;
     Log::Info("Contacting ", pipeName, "...");
 
     _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);
@@ -410,12 +441,14 @@ bool EtwEventsManager::SendRegistrationCommand(bool add)
         SetupUnregisterCommand(message, pid);
     }
 
+    Log::Info("Sending command to the Datadog Agent...");
     auto code = pClient->Send(&message, sizeof(message));
     if (code != NamedPipesCode::Success)
     {
         LogLastError("Failed to write to pipe", code);
         return false;
     }
+    Log::Info("Command sent to the Datadog Agent");
 
     IpcHeader response;
     code = pClient->Read(&response, sizeof(response));
