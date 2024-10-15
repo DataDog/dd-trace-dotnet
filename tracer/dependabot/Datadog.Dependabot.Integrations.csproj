@@ -26,6 +26,11 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.401.8 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.401.8" />
 
+    <!-- Integration: AWSSDK.EventBridge -->
+    <!--    Assembly: AWSSDK.EventBridge -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.EventBridge/3.7.401.25 -->
+    <PackageReference Include="AWSSDK.EventBridge" Version="3.7.401.25" />
+
     <!-- Integration: AWSSDK.Kinesis -->
     <!--    Assembly: AWSSDK.Kinesis -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.402.7 -->
