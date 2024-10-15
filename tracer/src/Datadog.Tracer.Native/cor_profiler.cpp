@@ -1641,23 +1641,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         // *********************************************************************
         if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
         {
-            mdTypeDef mainTypeDef;
-            hr = metadataImport->FindTypeDefByName(caller.type.name.c_str(), mdTokenNil, &mainTypeDef);
+            mdMethodDef memberDef;
+            hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
             if (FAILED(hr))
             {
-                Logger::Warn("JITCompilationStarted: Checking for .cctor in ", caller.type.name, " failed at FindTypeDefByName");
+                Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
             }
             else
             {
-                mdMethodDef memberDef;
-                hr = metadataImport->FindMethod(mainTypeDef, WStr(".cctor"), 0, 0, &memberDef);
+                // we found a static constructor, so now we need to work out if it's an explicit or implicit
+                // constructor, because we won't be able to inject into an implicit static constructor, so
+                // would inject too late
+                DWORD typeDefFlags;
+                hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
                 if (FAILED(hr))
                 {
-                    Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+                    Logger::Debug("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name,
+                        ", allowing injection into ", caller.name, "()");
+                }
+                else if(typeDefFlags & tdBeforeFieldInit)
+                {
+                    Logger::Debug("JITCompilationStarted: Found .cctor for type ", caller.type.name,
+                        " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
                 }
                 else
                 {
-                    Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "() as found .cctor");
+                    Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".",
+                        caller.name, "() as found .cctor");
                     return S_OK;
                 }
             }
