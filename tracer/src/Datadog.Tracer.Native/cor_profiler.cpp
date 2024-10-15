@@ -1570,8 +1570,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // has a static constructor, then the JIT inserts a call to the static constructor at the start of the method.
     // If we insert the startup hook at the start of the method, we'll miss the static constructor call. This is
     // particularly problematic if there's any "one time setup" happening in that constructor, e.g. usages of
-    // Datadog.Trace.Manual instrumentation.
-    auto can_skip_startup_hook_callsite = true;
+    // Datadog.Trace.Manual instrumentation. This behaviour only occurs on .NET Core, so limit the behaviour to there.
+    auto can_skip_startup_hook_callsite = runtime_information_.is_core();
     if (is_desktop_iis)
     {
         valid_startup_hook_callsite = module_metadata->assemblyName == WStr("System.Web") &&
@@ -1639,13 +1639,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         // If it does, we delay instrumenting this and let the static constructor get instrumented instead.
         // Bypassing for calls that we explicitly want to instrument (e.g. IIS startup hook)
         // *********************************************************************
-        if (caller.name == WStr(".cctor"))
-        {
-            // Injecting into the static constructor is generally what we want to do
-            can_skip_startup_hook_callsite = false;
-        }
-
-        if (can_skip_startup_hook_callsite)
+        if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
         {
             mdTypeDef mainTypeDef;
             hr = metadataImport->FindTypeDefByName(caller.type.name.c_str(), mdTokenNil, &mainTypeDef);
