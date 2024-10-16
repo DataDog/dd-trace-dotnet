@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
                 if (tags != null)
                 {
-                    Console.WriteLine("============ Setting tags for StepFunctions");
                     tags.Service = StepFunctionsServiceName;
                     tags.Operation = operation;
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
