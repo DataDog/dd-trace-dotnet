@@ -58,6 +58,7 @@ internal abstract class LambdaCommon
 
         var tracer = Tracer.Instance;
         return CreatePlaceholderScope(tracer, headers);
+
     }
 
     internal static void SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
