@@ -11,8 +11,6 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using FluentAssertions;
-using FluentAssertions.Collections;
-using FluentAssertions.Common;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
@@ -35,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
                 ServiceName = null
             };
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             var infos = new List<(string ServiceName, string Environment, string Version)>();
 
@@ -62,7 +60,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             var infos = new List<JsonNode>();
 

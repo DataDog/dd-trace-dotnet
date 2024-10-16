@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             bool hasMetrics = false;
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
             {
