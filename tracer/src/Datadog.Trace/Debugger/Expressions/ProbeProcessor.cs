@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -22,11 +23,11 @@ namespace Datadog.Trace.Debugger.Expressions
         private const string DynamicPrefix = "_dd.di.";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
-        private ProbeExpressionEvaluator _evaluator;
-        private DebuggerExpression[] _templates;
+        private ProbeExpressionEvaluator? _evaluator;
+        private DebuggerExpression?[]? _templates;
         private DebuggerExpression? _condition;
         private DebuggerExpression? _metric;
-        private KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] _spanDecorations;
+        private KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? _spanDecorations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void InitializeProbeProcessor(ProbeDefinition probe)
         {
-            _evaluator = default;
+            _evaluator = null;
             var location = probe.Where.MethodName != null
                                ? ProbeLocation.Method
                                : ProbeLocation.Line;
@@ -98,7 +99,7 @@ namespace Datadog.Trace.Debugger.Expressions
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
 
-        private DebuggerExpression? ToDebuggerExpression(SnapshotSegment segment)
+        private DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
             return segment == null ? null : new DebuggerExpression(segment.Dsl, segment.Json?.ToString(), segment.Str);
         }
@@ -124,7 +125,7 @@ namespace Datadog.Trace.Debugger.Expressions
             switch (probe)
             {
                 case LogProbe logProbe:
-                    _templates = logProbe.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray();
+                    _templates = logProbe.Segments?.Select(ToDebuggerExpression).ToArray();
                     _condition = ToDebuggerExpression(logProbe.When);
                     break;
                 case MetricProbe metricProbe:
@@ -139,12 +140,12 @@ namespace Datadog.Trace.Debugger.Expressions
                             {
                                 var whenExpression = ToDebuggerExpression(dec.When);
                                 var keyValuePairs = dec.Tags?.Select(
-                                                            tag => new KeyValuePair<string, DebuggerExpression[]>(
+                                                            tag => new KeyValuePair<string?, DebuggerExpression?[]>(
                                                                 tag.Name,
-                                                                tag.Value?.Segments?.Select(seg => ToDebuggerExpression(seg).Value).ToArray()))
+                                                                tag.Value?.Segments?.Select(ToDebuggerExpression).ToArray() ?? []))
                                                        .ToArray();
 
-                                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>(whenExpression, keyValuePairs);
+                                return new KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>(whenExpression, keyValuePairs ?? []);
                             })
                        .ToArray();
 
@@ -344,7 +345,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             CheckSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
-            if (evaluationResult.Metric.HasValue)
+            if (evaluationResult.Metric.HasValue && ProbeInfo.MetricKind.HasValue)
             {
                 LiveDebugger.Instance.SendMetrics(ProbeInfo, ProbeInfo.MetricKind.Value, ProbeInfo.MetricName, evaluationResult.Metric.Value, ProbeInfo.ProbeId);
                 // snapshot creator is created for all probes in the method invokers,
@@ -372,7 +373,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private void CheckSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
-            if (evaluationResult.Decorations == null)
+            if (evaluationResult.Decorations == null || Tracer.Instance?.ScopeManager?.Active == null)
             {
                 return;
             }
@@ -384,41 +385,35 @@ namespace Datadog.Trace.Debugger.Expressions
                 var decoration = evaluationResult.Decorations[i];
                 var evaluationErrorTag = $"{DynamicPrefix}{decoration.TagName}.evaluation_error";
                 var probeIdTag = $"{DynamicPrefix}{decoration.TagName}.probe_id";
+                Span? targetSpan = null;
+
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
-                        }
-
-                        attachedTags = true;
-
+                        targetSpan = Tracer.Instance.ScopeManager.Active.Root?.Span;
                         break;
                     case TargetSpan.Active:
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
-                        }
-
-                        attachedTags = true;
-
+                        targetSpan = Tracer.Instance.ScopeManager.Active.Span;
                         break;
                     default:
                         Log.Error("Invalid target span. Probe: {ProbeId}", ProbeInfo.ProbeId);
                         break;
+                }
+
+                if (targetSpan != null)
+                {
+                    targetSpan.SetTag(decoration.TagName, decoration.Value);
+                    targetSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                    if (decoration.Errors?.Length > 0)
+                    {
+                        targetSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                    }
+                    else if (targetSpan.GetTag(evaluationErrorTag) != null)
+                    {
+                        targetSpan.SetTag(evaluationErrorTag, null);
+                    }
+
+                    attachedTags = true;
                 }
             }
 
@@ -524,7 +519,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     snapshotCreator.ProcessDelayedSnapshot(ref info, HasCondition());
-                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument.Value);
+                    snapshotCreator.CaptureEntryMethodEndMarker(info.Value, info.Type, info.HasLocalOrArgument ?? false);
 
                     break;
                 case MethodState.ExitStart:

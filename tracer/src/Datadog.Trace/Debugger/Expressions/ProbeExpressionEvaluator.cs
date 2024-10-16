@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -19,21 +20,21 @@ internal class ProbeExpressionEvaluator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
 
-    private Lazy<CompiledExpression<string>[]> _compiledTemplates;
+    private Lazy<CompiledExpression<string>[]?>? _compiledTemplates;
 
-    private Lazy<CompiledExpression<bool>?> _compiledCondition;
+    private Lazy<CompiledExpression<bool>?>? _compiledCondition;
 
-    private Lazy<CompiledExpression<double>?> _compiledMetric;
+    private Lazy<CompiledExpression<double>?>? _compiledMetric;
 
-    private Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[]> _compiledDecorations;
+    private Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>? _compiledDecorations;
 
     private int _expressionsCompiled;
 
     internal ProbeExpressionEvaluator(
-        DebuggerExpression[] templates,
+        DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
-        KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations)
+        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations)
     {
         Templates = templates;
         Condition = condition;
@@ -44,11 +45,11 @@ internal class ProbeExpressionEvaluator
     /// <summary>
     /// Gets CompiledTemplates, for use in "DebuggerExpressionLanguageTests"
     /// </summary>
-    internal CompiledExpression<string>[] CompiledTemplates
+    internal CompiledExpression<string>[]? CompiledTemplates
     {
         get
         {
-            return _compiledTemplates.Value;
+            return _compiledTemplates?.Value;
         }
     }
 
@@ -59,7 +60,7 @@ internal class ProbeExpressionEvaluator
     {
         get
         {
-            return _compiledCondition.Value;
+            return _compiledCondition?.Value;
         }
     }
 
@@ -67,34 +68,34 @@ internal class ProbeExpressionEvaluator
     {
         get
         {
-            return _compiledMetric.Value;
+            return _compiledMetric?.Value;
         }
     }
 
-    internal KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[] CompiledDecorations
+    internal KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompiledDecorations
     {
         get
         {
-            return _compiledDecorations.Value;
+            return _compiledDecorations?.Value;
         }
     }
 
-    internal DebuggerExpression[] Templates { get; }
+    internal DebuggerExpression?[]? Templates { get; }
 
     internal DebuggerExpression? Condition { get; }
 
     internal DebuggerExpression? Metric { get; }
 
-    internal KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] SpanDecorations { get; }
+    internal KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? SpanDecorations { get; }
 
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
         if (Interlocked.CompareExchange(ref _expressionsCompiled, 1, 0) == 0)
         {
-            Interlocked.CompareExchange(ref _compiledTemplates, new Lazy<CompiledExpression<string>[]>(() => CompileTemplates(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledTemplates, new Lazy<CompiledExpression<string>[]?>(() => CompileTemplates(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledCondition, new Lazy<CompiledExpression<bool>?>(() => CompileCondition(scopeMembers)), null);
             Interlocked.CompareExchange(ref _compiledMetric, new Lazy<CompiledExpression<double>?>(() => CompileMetric(scopeMembers)), null);
-            Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[]>(() => CompileDecorations(scopeMembers)), null);
+            Interlocked.CompareExchange(ref _compiledDecorations, new Lazy<KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]?>(() => CompileDecorations(scopeMembers)), null);
         }
 
         ExpressionEvaluationResult result = default;
@@ -112,8 +113,8 @@ internal class ProbeExpressionEvaluator
         {
             EnsureNotNull(_compiledTemplates);
 
-            var compiledExpressions = _compiledTemplates.Value;
-            if (compiledExpressions == null)
+            var compiledExpressions = _compiledTemplates?.Value;
+            if (compiledExpressions == null || Templates == null)
             {
                 return;
             }
@@ -122,11 +123,17 @@ internal class ProbeExpressionEvaluator
             {
                 try
                 {
-                    if (IsLiteral(Templates[i]) == true)
+                    var template = Templates[i];
+                    if (template == null)
                     {
-                        resultBuilder.Append(Templates[i].Str);
+                        continue;
                     }
-                    else if (IsExpression(Templates[i]) == true)
+
+                    if (IsLiteral(template) == true)
+                    {
+                        resultBuilder.Append(template.Value.Str);
+                    }
+                    else if (IsExpression(template) == true)
                     {
                         resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members));
                         if (compiledExpressions[i].Errors != null)
@@ -165,7 +172,7 @@ internal class ProbeExpressionEvaluator
         {
             EnsureNotNull(_compiledCondition);
 
-            if (!_compiledCondition.Value.HasValue)
+            if (_compiledCondition?.Value == null)
             {
                 return;
             }
@@ -192,7 +199,7 @@ internal class ProbeExpressionEvaluator
         {
             EnsureNotNull(_compiledMetric);
 
-            if (!_compiledMetric.Value.HasValue)
+            if (_compiledMetric?.Value == null)
             {
                 return;
             }
@@ -218,7 +225,7 @@ internal class ProbeExpressionEvaluator
         {
             EnsureNotNull(_compiledDecorations);
 
-            var compiledDecorations = _compiledDecorations.Value;
+            var compiledDecorations = _compiledDecorations?.Value;
             if (compiledDecorations == null)
             {
                 Log.Debug($"{nameof(ProbeExpressionEvaluator)}.{nameof(EvaluateSpanDecorations)}: {nameof(_compiledDecorations.Value)} is null");
@@ -265,7 +272,7 @@ internal class ProbeExpressionEvaluator
 
                 var tagsAndValues = current.Value;
 
-                List<EvaluationError> errors = null;
+                List<EvaluationError>? errors = null;
                 var resultBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
                 for (int j = 0; j < tagsAndValues.Length; j++)
@@ -335,7 +342,7 @@ internal class ProbeExpressionEvaluator
         }
     }
 
-    private CompiledExpression<string>[] CompileTemplates(MethodScopeMembers scopeMembers)
+    private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
     {
         if (Templates == null)
         {
@@ -346,13 +353,18 @@ internal class ProbeExpressionEvaluator
         for (int i = 0; i < Templates.Length; i++)
         {
             var current = Templates[i];
-            if (current.Json != null)
+            if (current == null)
             {
-                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Json, scopeMembers);
+                continue;
+            }
+
+            if (current.Value.Json != null)
+            {
+                compiledExpressions[i] = ProbeExpressionParser<string>.ParseExpression(current.Value.Json, scopeMembers);
             }
             else
             {
-                compiledExpressions[i] = new CompiledExpression<string>(null, null, current.Str, null);
+                compiledExpressions[i] = new CompiledExpression<string>(null, null, current.Value.Str, null);
             }
         }
 
@@ -379,7 +391,7 @@ internal class ProbeExpressionEvaluator
         return ProbeExpressionParser<double>.ParseExpression(Metric?.Json, scopeMembers);
     }
 
-    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[] CompileDecorations(MethodScopeMembers scopeMembers)
+    private KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? CompileDecorations(MethodScopeMembers scopeMembers)
     {
         if (SpanDecorations == null)
         {
@@ -391,7 +403,7 @@ internal class ProbeExpressionEvaluator
             return null;
         }
 
-        var compiledExpressions = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>[SpanDecorations.Length];
+        var compiledExpressions = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[SpanDecorations.Length];
         for (int i = 0; i < SpanDecorations.Length; i++)
         {
             var current = SpanDecorations[i];
@@ -411,7 +423,7 @@ internal class ProbeExpressionEvaluator
                            : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
             }
 
-            var compiledTagsJ = new KeyValuePair<string, CompiledExpression<string>[]>[current.Value.Length];
+            var compiledTagsJ = new KeyValuePair<string?, CompiledExpression<string>[]>[current.Value.Length];
             for (int j = 0; j < current.Value.Length; j++)
             {
                 var tagName = current.Value[j].Key;
@@ -419,20 +431,25 @@ internal class ProbeExpressionEvaluator
                 for (int k = 0; k < current.Value[j].Value.Length; k++)
                 {
                     var tag = current.Value[j].Value[k];
-                    if (tag.Json != null)
+                    if (tag == null)
                     {
-                        compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Json, scopeMembers);
+                        continue;
+                    }
+
+                    if (tag.Value.Json != null)
+                    {
+                        compiledTagsK[k] = ProbeExpressionParser<string>.ParseExpression(tag.Value.Json, scopeMembers);
                     }
                     else
                     {
-                        compiledTagsK[k] = new CompiledExpression<string>(null, null, tag.Str, null);
+                        compiledTagsK[k] = new CompiledExpression<string>(null, null, tag.Value.Str, null);
                     }
                 }
 
-                compiledTagsJ[j] = new KeyValuePair<string, CompiledExpression<string>[]>(tagName, compiledTagsK);
+                compiledTagsJ[j] = new KeyValuePair<string?, CompiledExpression<string>[]>(tagName, compiledTagsK);
             }
 
-            compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string, CompiledExpression<string>[]>[]>(when, compiledTagsJ);
+            compiledExpressions[i] = new KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>(when, compiledTagsJ);
         }
 
         if (Log.IsEnabled(LogEventLevel.Debug))
@@ -443,7 +460,7 @@ internal class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
-    private void EnsureNotNull<T>(T value)
+    private void EnsureNotNull<T>(T? value)
         where T : class
     {
         if (value != null)
@@ -503,7 +520,7 @@ internal class ProbeExpressionEvaluator
     private string GetRelevantExpression<T>(CompiledExpression<T> compiledExpression)
     {
         const string resultAssignment = "$dd_el_result = ";
-        string relevant = null;
+        string? relevant = null;
         switch (compiledExpression.ParsedExpression)
         {
             case null:
