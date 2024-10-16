@@ -159,6 +159,7 @@ namespace datadog::shared::nativeloader
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+            // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
            const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
             Log::Info("Process CommandLine: ", process_command_line);
 
