@@ -23,7 +23,7 @@ namespace Datadog.Trace.AppSec
 
         public static readonly CoreHttpContextStore Instance = new();
 
-        private readonly AsyncLocal<HttpContext> _localStore = new();
+        private readonly AsyncLocal<HttpContext?> _localStore = new();
 
         public HttpContext? Get()
         {
@@ -36,6 +36,8 @@ namespace Datadog.Trace.AppSec
         }
 
         public void Set(HttpContext context) => _localStore.Value = context;
+
+        public void Remove() => _localStore.Value = null;
     }
 }
 
