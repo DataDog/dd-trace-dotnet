@@ -19,6 +19,8 @@ namespace Datadog.Trace.Propagators
         {
         }
 
+        public PropagatorType PropagatorType => PropagatorType.TraceContext;
+
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
