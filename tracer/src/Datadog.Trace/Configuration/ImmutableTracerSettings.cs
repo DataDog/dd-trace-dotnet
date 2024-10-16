@@ -185,6 +185,7 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationMode = settings.DbmPropagationMode;
+            DisabledAdoNetCommandTypes = settings.DisabledAdoNetCommandTypes;
 
             // We need to take a snapshot of the config telemetry for the tracer settings,
             // but we can't send it to the static collector, as this settings object may never be "activated"
@@ -637,6 +638,11 @@ namespace Datadog.Trace.Configuration
            || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
+
+        /// <summary>
+        /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
+        /// </summary>
+        internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
