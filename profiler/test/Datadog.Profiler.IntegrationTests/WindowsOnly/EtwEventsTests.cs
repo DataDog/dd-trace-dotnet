@@ -31,7 +31,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

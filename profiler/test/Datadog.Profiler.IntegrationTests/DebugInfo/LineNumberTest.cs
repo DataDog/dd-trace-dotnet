@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "1";
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
             var expectedStack = new StackTrace(
@@ -91,7 +91,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
             runner.Environment.CustomEnvironmentVariables[EnvironmentVariables.DebugInfoEnabled] = "0";
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 18");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
