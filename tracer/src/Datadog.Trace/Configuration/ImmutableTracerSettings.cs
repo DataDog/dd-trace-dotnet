@@ -107,6 +107,7 @@ namespace Datadog.Trace.Configuration
             SpanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
+            DisabledActivitySources = settings.DisabledActivitySources;
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
             GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
@@ -337,6 +338,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Integrations_Get)]
         internal ImmutableIntegrationSettingsCollection IntegrationsInternal { get; }
+
+        /// <summary>
+        /// Gets the comma separated string of disabled ActivitySources that will not be handled at all.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DisabledActivitySources"/>
+        internal string[] DisabledActivitySources { get; }
 
         /// <summary>
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
