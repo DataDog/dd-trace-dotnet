@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 

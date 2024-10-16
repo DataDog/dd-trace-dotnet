@@ -192,7 +192,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 
         private (HashSet<GitMetadata> ProfilerGitMetadata, HashSet<GitMetadata> TracerGitMetdata) RunTest(TestApplicationRunner runner)
         {
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             var profilerGitMetadata = new HashSet<GitMetadata>();
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
