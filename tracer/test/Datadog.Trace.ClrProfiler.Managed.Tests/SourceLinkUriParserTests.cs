@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 yield return new object[] { "https://api.bitbucket.org/2.0/repositories/test-org/test-repo/src/dd35903c688a74b62d1c6a9e4f41371c65704db8/*", "dd35903c688a74b62d1c6a9e4f41371c65704db8", "https://bitbucket.org/test-org/test-repo", typeof(BitBucketSourceLinkUrlParser) };
                 yield return new object[] { "https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&versionType=commit&version=dd35903c688a74b62d1c6a9e4f41371c65704db8&path=/*", "dd35903c688a74b62d1c6a9e4f41371c65704db8", "https://test.visualstudio.com/test-org/_git/my-repo", typeof(AzureDevOpsSourceLinkUrlParser) };
                 yield return new object[] { "https://test-gitlab-domain.com/test-org/test-repo/raw/dd35903c688a74b62d1c6a9e4f41371c65704db8/*", "dd35903c688a74b62d1c6a9e4f41371c65704db8", "https://test-gitlab-domain.com/test-org/test-repo", typeof(GitLabSourceLinkUrlParser) };
+                yield return new object[] { "https://dev.azure.com/organisation/project/_apis/git/repositories/example.shopping.api/items?api-version=1.0&versionType=commit&version=0e4d29442102e6cef1c271025d513c8b2187bcd6&path=/*", "0e4d29442102e6cef1c271025d513c8b2187bcd6", "https://dev.azure.com/organisation/project/_git/example.shopping.api", typeof(AzureDevOpsSourceLinkUrlParser) };
             }
         }
 

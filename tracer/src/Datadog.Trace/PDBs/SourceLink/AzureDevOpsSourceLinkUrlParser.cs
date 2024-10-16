@@ -21,6 +21,12 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
     /// It will return:
     ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
     ///     - repository URL: https://test.visualstudio.com/test-org/_git/my-repo
+    /// 
+	/// Likewise, for the following SourceLink mapping string:
+    ///     https://dev.azure.com/organisation/project/_apis/git/repositories/example.shopping.api/items?api-version=1.0&amp;versionType=commit&amp;version=0e4d29442102e6cef1c271025d513c8b2187bcd6&amp;path=/*
+    /// It will return:
+    ///     - commit sha: 0e4d29442102e6cef1c271025d513c8b2187bcd6
+    ///     - repository URL: https://dev.azure.com/organisation/project/_git/example.shopping.api
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -52,9 +58,9 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
+            repositoryUrl = BuildRepositoryUrl(uri);
 
-            return true;
+            return repositoryUrl != null;
         }
         catch (Exception ex)
         {
@@ -62,6 +68,35 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         return false;
+    }
+
+    private static string? BuildRepositoryUrl(Uri uri)
+    {
+        var segments = uri.AbsolutePath.Split(['/'], StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 5)
+        {
+            return null;
+        }
+
+        if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
+        {
+            // Legacy format: https://{organization}.visualstudio.com
+            var project = segments[0];
+            var repoName = segments[4];
+            return $"https://{uri.Host}/{project}/_git/{repoName}";
+        }
+        else if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
+        {
+            // New format: https://dev.azure.com/{organization}
+            var organization = segments[0];
+            var project = segments[1];
+            var repoName = segments[5];
+            return $"https://{uri.Host}/{organization}/{project}/_git/{repoName}";
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported Azure DevOps host: {uri.Host}");
+        }
     }
 
     private static NameValueCollection ParseQueryString(string queryString)
