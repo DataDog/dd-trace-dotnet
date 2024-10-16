@@ -9,9 +9,9 @@ using System.Globalization;
 using System.IO;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Writers;
+using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
+using Datadog.Trace.Vendors.Microsoft.OpenApi.Models;
+using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;
 

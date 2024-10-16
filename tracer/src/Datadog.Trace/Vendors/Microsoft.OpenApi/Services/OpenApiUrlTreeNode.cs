@@ -273,11 +273,15 @@ namespace Datadog.Trace.Vendors.Microsoft.OpenApi.Services
         {
             var path = string.IsNullOrEmpty(node.Path) ? "/" : SanitizeMermaidNode(node.Path);
             var methods = GetMethods(node);
-            var (startChar, endChar) = GetShapeDelimiters(methods);
+            var tuple = GetShapeDelimiters(methods);
+            var startChar = tuple.Item1;
+            var endChar = tuple.Item2;
             foreach (var child in node.Children)
             {
                 var childMethods = GetMethods(child.Value);
-                var (childStartChar, childEndChar) = GetShapeDelimiters(childMethods);
+                tuple = GetShapeDelimiters(childMethods);
+                var childStartChar = tuple.Item1;
+                var childEndChar = tuple.Item2;
                 writer.WriteLine($"{path}{startChar}\"{node.Segment}\"{endChar} --> {SanitizeMermaidNode(child.Value.Path)}{childStartChar}\"{child.Key}\"{childEndChar}");
                 ProcessNode(child.Value, writer);
             }
@@ -294,7 +298,7 @@ namespace Datadog.Trace.Vendors.Microsoft.OpenApi.Services
                 .ToList());
         }
 
-        private static (string, string) GetShapeDelimiters(string methods)
+        private static Tuple<string, string> GetShapeDelimiters(string methods)
         {
             if (MermaidNodeStyles.TryGetValue(methods, out var style))
             {
@@ -302,22 +306,22 @@ namespace Datadog.Trace.Vendors.Microsoft.OpenApi.Services
                 switch (style.Shape)
                 {
                     case MermaidNodeShape.Circle:
-                        return ("((", "))");
+                        return Tuple.Create("((", "))");
                     case MermaidNodeShape.RoundedCornerRectangle:
-                        return ("(", ")");
+                        return Tuple.Create("(", ")");
                     case MermaidNodeShape.Rhombus:
-                        return ("{", "}");
+                        return Tuple.Create("{", "}");
                     case MermaidNodeShape.SquareCornerRectangle:
-                        return ("[", "]");
+                        return Tuple.Create("[", "]");
                     case MermaidNodeShape.OddShape:
-                        return (">", "]");
+                        return Tuple.Create(">", "]");
                     default:
-                        return ("[", "]");
+                        return Tuple.Create("[", "]");
                 }
             }
             else
             {
-                return ("[", "]");
+                return Tuple.Create("[", "]");
             }
         }
         private static string SanitizeMermaidNode(string token)

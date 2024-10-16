@@ -5,11 +5,7 @@
 
 #nullable enable
 
-using System;
 using System.Collections;
-using System.IO;
-using System.Threading;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;

@@ -86,54 +86,5 @@ namespace Datadog.Trace.Vendors.Microsoft.OpenApi.Extensions
                 ? result()
                 : new() { Type = "string" };
         }
-
-        /// <summary>
-        /// Maps an OpenAPI data type and format to a simple type.
-        /// </summary>
-        /// <param name="schema">The OpenApi data type</param>
-        /// <returns>The simple type</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static Type MapOpenApiPrimitiveTypeToSimpleType(this OpenApiSchema schema)
-        {
-            if (schema == null)
-            {
-                throw new ArgumentNullException(nameof(schema));
-            }
-
-            var type = (schema.Type?.ToLowerInvariant(), schema.Format?.ToLowerInvariant(), schema.Nullable) switch
-            {
-                ("boolean", null, false) => typeof(bool),
-                ("integer", "int32", false) => typeof(int),
-                ("integer", "int64", false) => typeof(long),
-                ("integer", null, false) => typeof(int),
-                ("number", "float", false) => typeof(float),
-                ("number", "double", false) => typeof(double),
-                ("number", "decimal", false) => typeof(decimal),
-                ("number", null, false) => typeof(double),
-                ("string", "byte", false) => typeof(byte),
-                ("string", "date-time", false) => typeof(DateTimeOffset),
-                ("string", "uuid", false) => typeof(Guid),
-                ("string", "duration", false) => typeof(TimeSpan),
-                ("string", "char", false) => typeof(char),
-                ("string", null, false) => typeof(string),
-                ("object", null, false) => typeof(object),
-                ("string", "uri", false) => typeof(Uri),
-                ("integer", "int32", true) => typeof(int?),
-                ("integer", "int64", true) => typeof(long?),
-                ("integer", null, true) => typeof(int?),
-                ("number", "float", true) => typeof(float?),
-                ("number", "double", true) => typeof(double?),
-                ("number", null, true) => typeof(double?),
-                ("number", "decimal", true) => typeof(decimal?),
-                ("string", "byte", true) => typeof(byte?),
-                ("string", "date-time", true) => typeof(DateTimeOffset?),
-                ("string", "uuid", true) => typeof(Guid?),
-                ("string", "char", true) => typeof(char?),
-                ("boolean", null, true) => typeof(bool?),
-                _ => typeof(string),
-            };
-
-            return type;
-        }
     }
 }

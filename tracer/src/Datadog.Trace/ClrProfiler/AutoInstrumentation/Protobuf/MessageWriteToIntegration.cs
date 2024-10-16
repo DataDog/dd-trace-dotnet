@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "IMessage")]
+    IntegrationName = "Protobuf")]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageWriteToIntegration
