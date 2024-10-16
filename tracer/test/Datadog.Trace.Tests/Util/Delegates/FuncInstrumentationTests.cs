@@ -1,4 +1,4 @@
-﻿// <copyright file="FuncInstrumentationTests.cs" company="Datadog">
+// <copyright file="FuncInstrumentationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -62,6 +62,31 @@ public class FuncInstrumentationTests
                                                  }));
         using var scope = new AssertionScope();
         func2().Should().Be(43);
+        value.Should().Be(3);
+    }
+
+    [Fact]
+    public void Func0CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<int> func = () =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc0Callbacks(
+                                                 target =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func().Should().Be(42);
         value.Should().Be(3);
     }
 
@@ -142,6 +167,31 @@ public class FuncInstrumentationTests
         value.Should().Be(3);
     }
 
+    [Fact]
+    public void Func1CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<string, int> func = _ =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc1Callbacks(
+                                                 (target, _) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func(default).Should().Be(42);
+        value.Should().Be(3);
+    }
+
     public readonly struct Func1Callbacks : IBegin1Callbacks, IReturnCallback
     {
         public Func1Callbacks()
@@ -203,6 +253,31 @@ public class FuncInstrumentationTests
                                                  }));
         using var scope = new AssertionScope();
         func2("Arg01", "Arg02").Should().Be(43);
+        value.Should().Be(3);
+    }
+
+    [Fact]
+    public void Func2CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<string, string, int> func = (_, _) =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc2Callbacks(
+                                                 (target, _, _) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func(default, default).Should().Be(42);
         value.Should().Be(3);
     }
 
@@ -272,6 +347,31 @@ public class FuncInstrumentationTests
         value.Should().Be(3);
     }
 
+    [Fact]
+    public void Func3CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<string, string, string, int> func = (_, _, _) =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc3Callbacks(
+                                                 (target, _, _, _) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func(default, default, default).Should().Be(42);
+        value.Should().Be(3);
+    }
+
     public readonly struct Func3Callbacks : IBegin3Callbacks, IReturnCallback
     {
         public Func3Callbacks()
@@ -337,6 +437,31 @@ public class FuncInstrumentationTests
                                                  }));
         using var scope = new AssertionScope();
         func2("Arg01", "Arg02", "Arg03", "Arg04").Should().Be(43);
+        value.Should().Be(3);
+    }
+
+    [Fact]
+    public void Func4CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<string, string, string, string, int> func = (_, _, _, _) =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc4Callbacks(
+                                                 (target, _, _, _, _) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func(default, default, default, default).Should().Be(42);
         value.Should().Be(3);
     }
 
@@ -410,6 +535,31 @@ public class FuncInstrumentationTests
         value.Should().Be(3);
     }
 
+    [Fact]
+    public void Func5CallbackFailureTest()
+    {
+        var value = 0;
+        CustomFunc<string, string, string, string, string, int> func = (_, _, _, _, _) =>
+        {
+            Interlocked.Increment(ref value);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc5Callbacks(
+                                                 (target, _, _, _, _, _) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        using var scope = new AssertionScope();
+        func(default, default, default, default, default).Should().Be(42);
+        value.Should().Be(3);
+    }
+
     public readonly struct Func5Callbacks : IBegin5Callbacks, IReturnCallback
     {
         public Func5Callbacks()
@@ -473,12 +623,14 @@ public class FuncInstrumentationTests
                                                  },
                                                  (target, returnValue, exception, state) =>
                                                  {
-                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     // 3 or 4 because we can't predict if onDelegateEnd or onDelegateAsyncEnd will be called first
+                                                     Interlocked.Increment(ref value).Should().BeOneOf(3, 4);
                                                      return returnValue;
                                                  },
                                                  onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
                                                  {
-                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     // 3 or 4 because we can't predict if onDelegateEnd or onDelegateAsyncEnd will be called first
+                                                     Interlocked.Increment(ref value).Should().BeOneOf(3, 4);
                                                      await Task.Delay(100).ConfigureAwait(false);
                                                      return ((int)returnValue) + 1;
                                                  }));
@@ -486,6 +638,40 @@ public class FuncInstrumentationTests
         using var scope = new AssertionScope();
         result.Should().Be(43);
         value.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task Async1CallbackFailureTest()
+    {
+        int value = 0;
+
+        CustomFunc<string, Task<int>> func = async (arg1) =>
+        {
+            Interlocked.Increment(ref value);
+            await Task.Delay(100).ConfigureAwait(false);
+            return 42;
+        };
+
+        func = DelegateInstrumentation.Wrap(func, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 },
+                                                 onDelegateAsyncEnd: (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value);
+                                                     throw new InvalidOperationException("Expected");
+                                                 }));
+        var result = await func("Arg01").ConfigureAwait(false);
+        using var scope = new AssertionScope();
+        value.Should().Be(4);
+        result.Should().Be(42);
     }
 
     [Fact]
