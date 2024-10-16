@@ -294,7 +294,7 @@ bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) co
     // on OSX, processId can be equal to 0. https://sourcegraph.com/github.com/dotnet/runtime/-/blob/src/coreclr/pal/src/exception/signal.cpp?L818:5&subtree=true
     // Since the profiler does not run on OSX, we leave it like this.
     auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
-    return currentThreadInfo != nullptr && currentThreadInfo->GetOsThreadId() == threadId && processId == _processId;
+    return currentThreadInfo != nullptr && currentThreadInfo->GetOsThreadId() == threadId && processId == _processId && currentThreadInfo->IsSafeToUnwind();
 }
 
 void LinuxStackFramesCollector::MarkAsInterrupted()
