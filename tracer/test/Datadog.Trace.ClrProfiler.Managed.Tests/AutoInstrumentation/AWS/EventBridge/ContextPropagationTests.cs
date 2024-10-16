@@ -11,6 +11,7 @@ using System.Text;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -46,7 +47,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -79,7 +80,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -113,7 +114,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -146,7 +147,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -165,7 +166,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(2);
@@ -201,7 +202,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -235,7 +236,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
@@ -255,7 +256,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutEventsRequest>();
 
-        ContextPropagation.InjectTracingContext(proxy, _spanContext);
+        ContextPropagation.InjectContext(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var entries = (IList)proxy.Entries.Value!;
         entries.Count.Should().Be(1);
