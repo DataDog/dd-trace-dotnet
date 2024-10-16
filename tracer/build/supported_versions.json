@@ -351,6 +351,23 @@
     ]
   },
   {
+    "integrationName": "AwsStepFunctions",
+    "assemblyName": "AWSSDK.StepFunctions",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.StepFunctions",
+        "minVersionAvailableInclusive": "3.3.0",
+        "minVersionSupportedInclusive": "3.3.0",
+        "minVersionTestedInclusive": "3.3.104.87",
+        "maxVersionSupportedInclusive": "3.7.402.23",
+        "maxVersionAvailableInclusive": "3.7.402.23",
+        "maxVersionTestedInclusive": "3.7.402.23"
+      }
+    ]
+  },
+  {
     "integrationName": "AzureFunctions",
     "assemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "minAssemblyVersionInclusive": "1.4.0",
