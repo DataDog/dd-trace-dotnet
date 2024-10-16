@@ -412,14 +412,32 @@ namespace Datadog.Trace.Debugger.Snapshots
                             if (field.FieldType.ContainsGenericParameters ||
                                 field.DeclaringType?.ContainsGenericParameters == true ||
                                 field.ReflectedType?.ContainsGenericParameters == true ||
+                                field.FieldType.IsGenericTypeDefinition ||
                                 field is System.Reflection.Emit.FieldBuilder)
                             {
                                 return false;
                             }
 
-                            if (source != null || field.IsStatic)
+                            if (field.IsStatic && field.DeclaringType is { IsGenericType: true, IsConstructedGenericType: false })
                             {
-                                type = field.FieldType;
+                                return false;
+                            }
+
+                            type = field.FieldType;
+
+                            if (field.IsStatic)
+                            {
+                                value = field.GetValue(null);
+                                return true;
+                            }
+
+                            if (field.DeclaringType == null || (source != null && !field.DeclaringType.IsInstanceOfType(source)))
+                            {
+                                return false;
+                            }
+
+                            if (source != null)
+                            {
                                 value = field.GetValue(source);
                                 return true;
                             }
@@ -431,21 +449,34 @@ namespace Datadog.Trace.Debugger.Snapshots
                         {
                             if (property.PropertyType.ContainsGenericParameters ||
                                 property.DeclaringType?.ContainsGenericParameters == true ||
-                                property.ReflectedType?.ContainsGenericParameters == true)
+                                property.ReflectedType?.ContainsGenericParameters == true ||
+                                property.PropertyType.IsGenericTypeDefinition)
                             {
                                 return false;
                             }
 
-                            if (source != null || property.GetMethod?.IsStatic == true)
+                            var getMethod = property.GetGetMethod(true);
+                            if (getMethod == null || getMethod is System.Reflection.Emit.MethodBuilder)
                             {
-                                var getMethod = property.GetGetMethod(true);
-                                if (getMethod == null || getMethod is System.Reflection.Emit.MethodBuilder)
-                                {
-                                    return false;
-                                }
+                                return false;
+                            }
 
-                                type = property.PropertyType;
-                                value = property.GetMethod?.Invoke(source, Array.Empty<object>());
+                            type = property.PropertyType;
+
+                            if (getMethod.IsStatic)
+                            {
+                                value = property.GetValue(null);
+                                return true;
+                            }
+
+                            if (property.DeclaringType == null || (source != null && !property.DeclaringType.IsInstanceOfType(source)))
+                            {
+                                return false;
+                            }
+
+                            if (source != null)
+                            {
+                                value = property.GetValue(source);
                                 return true;
                             }
 
