@@ -135,7 +135,7 @@ namespace Datadog.Trace.AppSec
 
             // For now, RASP is enabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                .AsBool(true) && Enabled;
+                                .AsBool(true);
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);
