@@ -38,7 +38,7 @@
     "MinVersion": "1.4.0",
     "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
-      "1.10.*"
+      "1.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "1.4.0",
@@ -71,6 +71,24 @@
       "3.1.*",
       "3.3.*",
       "3.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MaxVersionExclusive": "3.3.0",
+        "IncludeOnlyTargetFrameworks": ["net462"]
+      }
+    ]
+  },
+  {
+    "IntegrationName": "AwsEventBridge",
+    "SampleProjectName": "Samples.AWS.EventBridge",
+    "NugetPackageSearchName": "AWSSDK.EventBridge",
+    "MinVersion": "3.3.100",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.3.*",
+      "3.5.*",
+      "3.7.*"
     ],
     "VersionConditions": [
       {
@@ -377,8 +395,46 @@
     ]
   },
   {
+    "IntegrationName": "XUnitRetries",
+    "SampleProjectName": "Samples.XUnitTestsRetries",
+    "NugetPackageSearchName": "xunit",
+    "MinVersion": "2.2.0",
+    "MaxVersionExclusive": "3.0.0",
+    "SpecificVersions": [
+      "2.2.*",
+      "2.4.3",
+      "2.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "2.4.5",
+        "MaxVersionExclusive": "3.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
     "IntegrationName": "NUnit",
     "SampleProjectName": "Samples.NUnitTests",
+    "NugetPackageSearchName": "NUnit",
+    "MinVersion": "3.6.0",
+    "MaxVersionExclusive": "5.0.0",
+    "SpecificVersions": [
+      "3.6.*",
+      "3.10.*",
+      "3.*.*",
+      "4.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "4.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
+    ]
+  },
+  {
+    "IntegrationName": "NUnitRetries",
+    "SampleProjectName": "Samples.NUnitTestsRetries",
     "NugetPackageSearchName": "NUnit",
     "MinVersion": "3.6.0",
     "MaxVersionExclusive": "5.0.0",
@@ -410,6 +466,18 @@
   {
     "IntegrationName": "MSTest2",
     "SampleProjectName": "Samples.MSTestTests2",
+    "NugetPackageSearchName": "MSTest.TestFramework",
+    "MinVersion": "2.0.0",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "2.0.*",
+      "2.*.*",
+      "3.*.*"
+    ]
+  },
+  {
+    "IntegrationName": "MSTest2Retries",
+    "SampleProjectName": "Samples.MSTestTestsRetries",
     "NugetPackageSearchName": "MSTest.TestFramework",
     "MinVersion": "2.0.0",
     "MaxVersionExclusive": "4.0.0",
@@ -490,10 +558,11 @@
     "SampleProjectName": "LogsInjection.Log4Net",
     "NugetPackageSearchName": "log4net",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "1.*.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",

@@ -96,12 +96,14 @@ protected:
     int32_t _pid;
     int32_t _signal;
     std::optional<ddog_Error> _error;
-    ddog_prof_CrashInfo _crashInfo;
+    ddog_crasht_CrashInfo _crashInfo;
     void SetLastError(ddog_Error error);
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
     virtual std::string GetSignalInfo(int32_t signal) = 0;
 
+    static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
+    int32_t ExportImpl(ddog_Endpoint* endpoint);
     int32_t _refCount;
 };

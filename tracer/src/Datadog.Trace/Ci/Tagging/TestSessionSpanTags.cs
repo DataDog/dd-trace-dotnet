@@ -16,6 +16,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     public TestSessionSpanTags()
     {
         LibraryVersion = TracerConstants.AssemblyVersion;
+
+        // https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/6.0/environment-processorcount-on-windows#change-description
+        LogicalCpuCount = Environment.ProcessorCount;
     }
 
     public ulong SessionId { get; set; }
@@ -113,6 +116,18 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Tag(EarlyFlakeDetectionTags.AbortReason)]
     public string EarlyFlakeDetectionTestAbortReason { get; set; }
 
+    [Metric(CommonTags.LogicalCpuCount)]
+    public double? LogicalCpuCount { get; }
+
+    [Tag(CommonTags.GitHeadCommit)]
+    public string GitHeadCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseCommit)]
+    public string GitPrBaseCommit { get; set; }
+
+    [Tag(CommonTags.GitPrBaseBranch)]
+    public string GitPrBaseBranch { get; set; }
+
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {
         if (environmentValues is not null)
@@ -138,6 +153,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
             GitCommitCommitterEmail = environmentValues.CommitterEmail;
             GitCommitMessage = environmentValues.Message;
             BuildSourceRoot = environmentValues.SourceRoot;
+            GitHeadCommit = environmentValues.HeadCommit;
+            GitPrBaseCommit = environmentValues.PrBaseCommit;
+            GitPrBaseBranch = environmentValues.PrBaseBranch;
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {

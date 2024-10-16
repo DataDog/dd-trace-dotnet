@@ -14,36 +14,54 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Primitives;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(CoreHttpContextStore.Instance.Get());
+        _httpTransport = transport;
     }
 
     private static bool CanAccessHeaders => true;
 
-    public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
-        var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
+        var context = CoreHttpContextStore.Instance.Get();
+        if (context is null)
+        {
+            Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            return null;
+        }
+
+        return new SecurityCoordinator(security, span, new(context));
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
+
+    public static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
+    {
+        var headersDic = new Dictionary<string, object>(headers.Keys.Count);
         foreach (var k in headers.Keys)
         {
             var currentKey = k ?? string.Empty;
             if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
             {
                 currentKey = currentKey.ToLowerInvariant();
+                var value = GetHeaderValueForWaf(headers[currentKey]);
 #if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, headers[currentKey]))
+                if (!headersDic.TryAdd(currentKey, value))
                 {
 #else
                 if (!headersDic.ContainsKey(currentKey))
                 {
-                    headersDic.Add(currentKey, headers[currentKey]);
+                    headersDic.Add(currentKey, value);
                 }
                 else
                 {
@@ -54,6 +72,11 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return headersDic;
+    }
+
+    private static object GetHeaderValueForWaf(StringValues value)
+    {
+        return (value.Count == 1 ? value[0] : value);
     }
 
     internal void BlockAndReport(IResult? result)
@@ -155,7 +178,7 @@ internal readonly partial struct SecurityCoordinator
             {
                 if (Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out var value))
                 {
-                    return value is bool boolValue && boolValue;
+                    return value is true;
                 }
 
                 return false;
@@ -168,8 +191,16 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get
+            {
+                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
+                {
+                    return value is bool boolValue && boolValue;
+                }
+
+                return false;
+            }
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;

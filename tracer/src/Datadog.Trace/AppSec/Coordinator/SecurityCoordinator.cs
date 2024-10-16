@@ -27,6 +27,7 @@ namespace Datadog.Trace.AppSec.Coordinator;
 /// </summary>
 internal readonly partial struct SecurityCoordinator
 {
+    private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
     private readonly Security _security;
     private readonly Span _localRootSpan;
@@ -67,23 +68,10 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public bool HasContext()
-    {
-        return _httpTransport.Context is not null;
-    }
-
-    public bool IsAdditiveContextDisposed()
-    {
-        return _httpTransport.IsAdditiveContextDisposed();
-    }
+    public bool IsAdditiveContextDisposed() => _httpTransport.IsAdditiveContextDisposed();
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
-        if (!HasContext())
-        {
-            return null;
-        }
-
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try
@@ -98,6 +86,11 @@ internal readonly partial struct SecurityCoordinator
                 {
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }
+            }
+            else if (_httpTransport.IsAdditiveContextDisposed())
+            {
+                Log.Warning("Waf could not run as waf additive context is disposed");
+                return null;
             }
 
             _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);

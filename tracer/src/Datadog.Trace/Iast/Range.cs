@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Iast;
 
@@ -56,9 +57,27 @@ internal readonly struct Range : IComparable<Range>
         return this.Start.CompareTo(other.Start);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsSecure(SecureMarks marks, SourceType[]? safeSources)
+    {
+        return IsMarked(marks) || IsSafeSource(safeSources);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsMarked(SecureMarks marks)
     {
         return (SecureMarks & marks) != NotMarked;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsSafeSource(SourceType[]? safeSources)
+    {
+        if (safeSources is null || Source is null)
+        {
+            return false;
+        }
+
+        return safeSources.Contains(Source.Origin);
     }
 
     internal bool IsBefore(Range? range)

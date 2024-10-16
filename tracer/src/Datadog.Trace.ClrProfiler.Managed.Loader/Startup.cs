@@ -59,6 +59,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                     StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
                 }
 
+#if NETCOREAPP
+                try
+                {
+                    System.Runtime.Loader.AssemblyLoadContext.Default.Resolving += (_, assemblyName) => ResolveAssembly(assemblyName.Name);
+                }
+                catch (Exception ex)
+                {
+                    StartupLogger.Log(ex, "Unable to register a callback to the AssemblyLoadContext.Default.Resolving event.");
+                }
+#endif
+
                 var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
                 if (runInAas)
                 {

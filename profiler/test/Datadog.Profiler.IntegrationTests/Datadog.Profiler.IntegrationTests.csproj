@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>latest</LangVersion>
     <Platforms>AnyCPU;x64;x86</Platforms>
@@ -20,7 +20,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Allocations\allocations-32.bevents" />
+    <None Remove="Allocations\allocations-64.bevents" />
+    <None Remove="Contention\lockContention-32.bevents" />
+    <None Remove="Contention\lockContention-64.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-32.bevents" />
+    <None Remove="GarbageCollections\3x3GCs-64.bevents" />
     <None Remove="xunit.runner.json" />
+    <Content Include="Allocations\allocations-32.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Allocations\allocations-64.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Contention\lockContention-32.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Contention\lockContention-64.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-32.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GarbageCollections\3x3GCs-64.bevents">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 

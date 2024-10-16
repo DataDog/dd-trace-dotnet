@@ -110,7 +110,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var integrationId = IntegrationId.Npgsql;
             var samplingPriority = SamplingPriority.AutoReject;
             var dbServiceName = "Test.Service-postgres";
-            var expectedComment = "/*dddbs='dbname',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
+            var expectedComment = $"/*dddbs='{dbServiceName}',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
             var traceParentInjected = false;
             var dbName = "dbname";
 
@@ -169,6 +169,28 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
                     context.Should().BeNull();
                 }
             }
+        }
+
+        [Theory]
+        [InlineData(SchemaVersion.V0)]
+        [InlineData(SchemaVersion.V1)]
+        internal void PeerServiceInjected(SchemaVersion version)
+        {
+            var dbmPropagationLevel = DbmPropagationLevel.Service;
+            var traceParentInjected = false;
+            var peerService = "myPeerService";
+
+            var sqlTags = version == SchemaVersion.V1 ? new SqlV1Tags() : new SqlTags();
+            sqlTags.SetTag(Tags.PeerServiceRemappedFrom, "old_value");
+            sqlTags.SetTag(Tags.PeerService, peerService);
+
+            var tracer = version == SchemaVersion.V1 ? _v1Tracer : _v0Tracer;
+            var span = tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
+
+            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.Npgsql, out var traceParentInjectedValue);
+
+            traceParentInjectedValue.Should().Be(traceParentInjected);
+            returnedComment.Should().Be("/*dddbs='myServiceName',ddprs='myPeerService',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");
         }
     }
 }

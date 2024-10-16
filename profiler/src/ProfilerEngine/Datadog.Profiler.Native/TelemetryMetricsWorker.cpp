@@ -93,10 +93,10 @@ bool TelemetryMetricsWorker::Start(
     }
 
     ddog_TelemetryWorkerBuilder* builder;
-    auto service = FfiHelper::StringToCharSlice(serviceName);
-    auto lang = FfiHelper::StringToCharSlice(language);
-    auto lang_version = FfiHelper::StringToCharSlice(languageVersion);
-    auto tracer_version = FfiHelper::StringToCharSlice(libraryVersion);
+    auto service = to_char_slice(serviceName);
+    auto lang = to_char_slice(language);
+    auto lang_version = to_char_slice(languageVersion);
+    auto tracer_version = to_char_slice(libraryVersion);
 
     auto result = ddog_telemetry_builder_instantiate(&builder, service, lang, lang_version, tracer_version);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
@@ -118,12 +118,12 @@ bool TelemetryMetricsWorker::Start(
 #endif
         std::string pathname = FileHelper::GenerateFilename("telemetry", ".json", serviceName, runtimeId);
         endpointUrl = "file://" + outputDirectory.generic_string() + separator + pathname;
-        endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
+        endpoint_char = to_char_slice(endpointUrl);
     }
     else
     {
         endpointUrl = agentUrl + TelemetryMetricsEndPoint;
-        endpoint_char = FfiHelper::StringToCharSlice(endpointUrl);
+        endpoint_char = to_char_slice(endpointUrl);
     }
 
     auto* endpoint = ddog_endpoint_from_url(endpoint_char);
@@ -138,7 +138,7 @@ bool TelemetryMetricsWorker::Start(
     }
 
     // other builder configuration
-    auto runtime_id = FfiHelper::StringToCharSlice(runtimeId);
+    auto runtime_id = to_char_slice(runtimeId);
     result = ddog_telemetry_builder_with_str_runtime_id(builder, runtime_id);
     if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
     {
@@ -150,7 +150,7 @@ bool TelemetryMetricsWorker::Start(
     // these are optional
     if (!serviceVersion.empty())
     {
-        auto service_version = FfiHelper::StringToCharSlice(serviceVersion);
+        auto service_version = to_char_slice(serviceVersion);
         result = ddog_telemetry_builder_with_str_application_service_version(builder, service_version);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
@@ -162,7 +162,7 @@ bool TelemetryMetricsWorker::Start(
 
     if (!environment.empty())
     {
-        auto env = FfiHelper::StringToCharSlice(environment);
+        auto env = to_char_slice(environment);
         result = ddog_telemetry_builder_with_str_application_env(builder, env);
         if (result.tag == DDOG_OPTION_ERROR_SOME_ERROR)
         {
@@ -205,7 +205,7 @@ bool TelemetryMetricsWorker::Start(
                                   {"enablement_choice", enablementTagValue}},
                                  false);
 
-    auto numberOfProfilesMetricName = FfiHelper::StringToCharSlice("ssi_heuristic.number_of_profiles");
+    auto numberOfProfilesMetricName = to_char_slice("ssi_heuristic.number_of_profiles");
 
     _impl->_numberOfProfilesKey = ddog_telemetry_handle_register_metric_context(
         _impl->_pHandle, numberOfProfilesMetricName, DDOG_METRIC_TYPE_COUNT, *static_cast<ddog_Vec_Tag const*>(*tags._impl), true, DDOG_METRIC_NAMESPACE_PROFILERS);
@@ -214,7 +214,7 @@ bool TelemetryMetricsWorker::Start(
                              {"enablement_choice", enablementTagValue}},
                             false);
 
-    auto numberOfRuntimeIdMetricName = FfiHelper::StringToCharSlice("ssi_heuristic.number_of_runtime_id");
+    auto numberOfRuntimeIdMetricName = to_char_slice("ssi_heuristic.number_of_runtime_id");
 
     _impl->_numberOfRuntimeIdKey = ddog_telemetry_handle_register_metric_context(
         _impl->_pHandle, numberOfRuntimeIdMetricName, DDOG_METRIC_TYPE_COUNT, *static_cast<ddog_Vec_Tag const*>(*tags._impl), true, DDOG_METRIC_NAMESPACE_PROFILERS);

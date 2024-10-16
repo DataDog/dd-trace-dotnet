@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework Condition="$(USE_NATIVE_SDK_VERSION) == 'true'">net7.0</TargetFramework>
     <TargetFramework Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(TargetFramework)-windows10.0.19041</TargetFramework>
     <DefineConstants Condition="$(OS.StartsWith('Windows')) AND '$(NUKE_NOTIFY)' != ''">$(DefineConstants);NUKE_NOTIFY</DefineConstants>
-    <RollForward>LatestMajor</RollForward>
     <RootNamespace></RootNamespace>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>CS0649;CS0169;SA1652;NU1901;NU1902;NU1903;NU1904</NoWarn>

@@ -33,25 +33,16 @@ internal class AsmDdProduct : IAsmConfigUpdater
                 ruleSet = RuleSet.From(result.TypedFile);
             }
 
-            configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
+            configurationStatus.RulesByFile[firstFile.Path.Path] = ruleSet;
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
         }
     }
 
     public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var oneRemoved = false;
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
-            oneRemoved |= configurationStatus.RulesByFile.Remove(removedConfig.Path);
-        }
-
-        if (configurationStatus.RulesByFile.Count == 0)
-        {
-            configurationStatus.IncomingUpdateState.FallbackToEmbeddedRuleset();
-        }
-        else if (oneRemoved)
-        {
+            configurationStatus.RulesByFile.Remove(removedConfig.Path);
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
         }
     }

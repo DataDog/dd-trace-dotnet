@@ -41,6 +41,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AwsSdk => MetricTags.IntegrationName.AwsSdk,
             IntegrationId.AwsSns => MetricTags.IntegrationName.AwsSns,
             IntegrationId.AwsSqs => MetricTags.IntegrationName.AwsSqs,
+            IntegrationId.AwsEventBridge => MetricTags.IntegrationName.AwsEventBridge,
             IntegrationId.AwsStepFunctions => MetricTags.IntegrationName.AwsStepFunctions,
             IntegrationId.AwsLambda => MetricTags.IntegrationName.AwsLambda,
             IntegrationId.ILogger => MetricTags.IntegrationName.ILogger,

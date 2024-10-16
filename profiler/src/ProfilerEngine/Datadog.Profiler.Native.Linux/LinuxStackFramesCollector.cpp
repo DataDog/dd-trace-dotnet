@@ -13,7 +13,6 @@
 #include <unordered_map>
 
 #include "CallstackProvider.h"
-#include "CpuProfilerDisableScope.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -103,13 +102,13 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
         // This will crashing in libunwind (accessing a memory area  which was unmapped)
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
-        pThreadInfo->GetStackWalkLock().Acquire();
+        pThreadInfo->AcquireLock();
 
         _plibrariesInfo->UpdateCache();
 
         on_leave
         {
-            pThreadInfo->GetStackWalkLock().Release();
+            pThreadInfo->ReleaseLock();
         };
 
         errorCode = CollectCallStackCurrentThread(nullptr);
@@ -121,11 +120,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             *pHR = E_FAIL;
             return GetStackSnapshotResult();
         }
-
-        // Disable timer_create-based CPU profiler if needed
-        // When scope goes out of scope, the CPU profiler will be reenabled for
-        // pThreadInfo thread
-        auto scope = CpuProfilerDisableScope(pThreadInfo);
 
         _plibrariesInfo->UpdateCache();
 

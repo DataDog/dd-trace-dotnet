@@ -19,12 +19,12 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 public class WebUtilityAspect
 {
     /// <summary>
-    /// Launches a SSRF vulnerability if the url is tainted
+    /// Escapes the HTML string making it safe for XSS
     /// </summary>
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
     [AspectMethodReplace("System.Net.WebUtility::HtmlEncode(System.String)")]
-    public static string? Review(string? parameter)
+    public static string? XssEscape(string? parameter)
     {
         var result = WebUtility.HtmlEncode(parameter);
         try
@@ -36,7 +36,31 @@ public class WebUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(Review)}");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(XssEscape)}");
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Escapes the URL string making it safe for SSRF
+    /// </summary>
+    /// <param name="parameter">the sensitive parameter of the method</param>
+    /// <returns>the parameter</returns>
+    [AspectMethodReplace("System.Net.WebUtility::UrlEncode(System.String)")]
+    public static string? SsrfEscape(string? parameter)
+    {
+        var result = WebUtility.UrlEncode(parameter);
+        try
+        {
+            if (parameter is not null && result is not null)
+            {
+                return IastModule.OnSsrfEscape(parameter, result);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(SsrfEscape)}");
         }
 
         return result;

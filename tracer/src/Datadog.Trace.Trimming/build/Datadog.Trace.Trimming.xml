@@ -4,6 +4,7 @@
    <assembly fullname="amqmdnetstd" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
+   <assembly fullname="AWSSDK.EventBridge" />
    <assembly fullname="AWSSDK.Kinesis" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
@@ -120,6 +121,7 @@
    <assembly fullname="Oracle.DataAccess" />
    <assembly fullname="Oracle.ManagedDataAccess" />
    <assembly fullname="RabbitMQ.Client" />
+   <assembly fullname="RestSharp" />
    <assembly fullname="Serilog" />
    <assembly fullname="ServiceStack.Redis" />
    <assembly fullname="StackExchange.Redis" />

@@ -142,11 +142,11 @@ namespace Datadog.Trace.Tests.Agent
 
             var traceContext = new TraceContext(tracer);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-            var rootSpanContext = new SpanContext(null, traceContext, "service");
+            var rootSpanContext = new SpanContext(null, traceContext, "testhost");
             var rootSpan = new Span(rootSpanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
-            var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
-            var droppedChildSpan2 = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "drop_me_also" };
-            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "service"), DateTimeOffset.UtcNow) { OperationName = "operation" };
+            var droppedChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "testhost"), DateTimeOffset.UtcNow) { OperationName = "drop_me" };
+            var droppedChildSpan2 = new Span(new SpanContext(rootSpanContext, traceContext, "testhost"), DateTimeOffset.UtcNow) { OperationName = "drop_me_also" };
+            var keptChildSpan = new Span(new SpanContext(rootSpanContext, traceContext, "testhost"), DateTimeOffset.UtcNow) { OperationName = "operation" };
             traceContext.AddSpan(rootSpan); // IS single span sampled
             traceContext.AddSpan(droppedChildSpan); // is NOT single span sampled
             traceContext.AddSpan(droppedChildSpan2); // is NOT single span sampled

@@ -195,6 +195,16 @@ namespace Datadog.Trace.TestHelpers
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
 
+            // In some scenarios (.NET 6, SSI run enabled) enabling procdump makes
+            // grabbing a stack trace _crazy_ expensive (10s). Setting this "fixes" it.
+            // But for some reason, .NET Core 2.1 gets _very_ unhappy about it -
+            // given we don't really support .NET Core 2.1 anyway, and this _only_ happens
+            // when procdump is attached, just skip in that
+            if (_major > 2)
+            {
+                environmentVariables["_NO_DEBUG_HEAP"] = "1";
+            }
+
             // Set a canary variable that should always be ignored
             // and check that it doesn't appear in the logs
             environmentVariables["SUPER_SECRET_CANARY"] = "MySuperSecretCanary";
@@ -285,13 +295,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
             }
-
-            // Don't attach the profiler to these processes
-            environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
-                "devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;" +
-                "ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;" +
-                "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
-                "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe";
 
             ConfigureTransportVariables(environmentVariables, agent);
 

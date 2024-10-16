@@ -27,9 +27,6 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
-#ifdef LINUX
-#include "CpuProfilerDisableScope.h"
-#endif
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -1814,14 +1811,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
-#ifdef LINUX
-        // Disable timer_create-based CPU profiler if needed
-        // When scope goes out of scope, the CPU profiler will be reenabled for
-        // pThreadInfo thread
-
-        auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-        auto scope = CpuProfilerDisableScope(pThreadInfo.get());
-#endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 

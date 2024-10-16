@@ -382,3 +382,8 @@ cmake-build-debug/
 
 #datadog coverage
 datadog-coverage-*
+
+.localstack/*
+
+# nuke
+.nuke/build.schema.json

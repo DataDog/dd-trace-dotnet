@@ -7,9 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef LINUX
-#include "CpuProfilerDisableScope.h"
-#endif
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
@@ -67,15 +64,6 @@ void ClrEventsParser::ParseEvent(
     LPCBYTE eventData
     )
 {
-#ifdef LINUX
-    auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-
-    // Disable timer_create-based CPU profiler if needed
-    // When scope goes out of scope, the CPU profiler will be reenabled for
-    // pThreadInfo thread
-    auto scope = CpuProfilerDisableScope(pThreadInfo.get());
-#endif
-
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(timestamp, id, version, cbEventData, eventData);
@@ -331,6 +319,10 @@ void ClrEventsParser::NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionStart: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
 }
@@ -351,6 +343,10 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionEnd: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
             generation,

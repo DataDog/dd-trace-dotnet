@@ -153,5 +153,20 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsSnsTags("spanKind").Should().BeOfType(expectedType);
         }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAwsEventBridgeTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsEventBridgeTags),
+                _ => typeof(AwsEventBridgeV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateAwsEventBridgeTags("spanKind").Should().BeOfType(expectedType);
+        }
     }
 }

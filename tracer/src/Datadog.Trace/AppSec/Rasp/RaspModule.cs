@@ -107,15 +107,16 @@ internal static class RaspModule
 
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
+        var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
 
         // We need a context for RASP
-        if (!securityCoordinator.HasContext() || securityCoordinator.IsAdditiveContextDisposed())
+        if (securityCoordinator is null)
         {
+            Log.Warning("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
             return;
         }
 
-        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
         {
@@ -139,7 +140,7 @@ internal static class RaspModule
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Error(ex, "RASP: Error while sending stack.");
         }
@@ -148,7 +149,7 @@ internal static class RaspModule
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
-        securityCoordinator.ReportAndBlock(result);
+        securityCoordinator.Value.ReportAndBlock(result);
     }
 
     private static void AddSpanId(IResult? result)
@@ -177,7 +178,7 @@ internal static class RaspModule
 
         if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddRaspStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AppSecRequestContext.AddRaspStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
         }
     }
 

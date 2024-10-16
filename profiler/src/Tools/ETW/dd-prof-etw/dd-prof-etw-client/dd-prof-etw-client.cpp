@@ -3,12 +3,13 @@
 
 // Inspired by https://github.com/zodiacon/Win10SysProgBookSamples/blob/master/Chapter18/CalculatorSvr/CalculatorSvr.cpp
 // Another implementation without using ThreadPool API - https://learn.microsoft.com/en-us/windows/win32/ipc/multithreaded-pipe-server
-#include <windows.h>
 
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include "stdio.h"
 #include <string>
+#include <windows.h>
 
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
@@ -17,17 +18,22 @@
 #include "EtwEventDumper.h"
 #include "..\ConsoleLogger.h"
 
+
+// This application should be used in conjunction with a profiled .NET application that is emitting ETW events
+// for a certain scenario and serializes them into a .bevents file that can be replayed by dd-prof-etw-replay but
+// also during integration tests via the AgentEtwProxy integrated in the MockDatadogAgent.
+// NOTE: no 32/64 bit difference because the events are serialized as received
 void ShowHelp()
 {
     printf("\nDatadog CLR Events Client v1.1\n");
     printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
     printf("\n");
-    printf("Usage: -pid <pid of a .NET process emitting events>\n");
-    printf("   Ex: -pid 1234\n");
+    printf("Usage: -pid <pid of a .NET process emitting events> -r <filename containing the recorded events>\n");
+    printf("   Ex: -pid 1234 -r gc.bevents\n");
     printf("\n");
 }
 
-bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
+bool ParseCommandLine(int argc, char* argv[], int& pid, std::string& eventsFilename, bool& needHelp)
 {
     bool success = false;
 
@@ -50,6 +56,16 @@ bool ParseCommandLine(int argc, char* argv[], int& pid, bool& needHelp)
             // atoi is fine because we don't expect 0 to be a valid pid
             pid = atoi(argv[i+1]);
             success = (pid != 0);
+        }
+        else
+        if (strcmp(argv[i], "-r") == 0)
+        {
+            if (i == argc - 1)
+            {
+                return false;
+            }
+
+            eventsFilename = argv[i+1];
         }
         else
         if (strcmp(argv[i], "-help") == 0)
@@ -154,7 +170,8 @@ int main(int argc, char* argv[])
     int pid = -1;
     const char* pipe = "DD_ETW_DISPATCHER";
     bool needHelp = false;
-    if (!ParseCommandLine(argc, argv, pid, needHelp))
+    std::string eventsFilename;
+    if (!ParseCommandLine(argc, argv, pid, eventsFilename, needHelp))
     {
         if (pid == -1)
         {
@@ -170,6 +187,18 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    FILE* pEventsFile = nullptr;
+    if (!eventsFilename.empty())
+    {
+        pEventsFile = fopen(eventsFilename.c_str(), "wb");
+        if (pEventsFile == nullptr)
+        {
+            std::cout << "Impossible to create the events file " << eventsFilename << "...\n";
+            return -1;
+        }
+        std::cout << "Events will be saved into the file " << eventsFilename << "\n";
+    }
+
     std::cout << "\n";
 
     // start the server part to receive proxied ETW events
@@ -181,7 +210,7 @@ int main(int argc, char* argv[])
 
     EtwEventDumper eventDumper;
     std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
-    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper);
+    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper, pEventsFile);
     auto server = IpcServer::StartAsync(
         logger.get(),
         pipeName,
@@ -218,7 +247,7 @@ int main(int argc, char* argv[])
     SendRegistrationCommand(client.get(), pid, false);
 
     client->Disconnect();
-    handler->Stop();
+    handler->Cleanup();
     server->Stop();
 
     return 0;
