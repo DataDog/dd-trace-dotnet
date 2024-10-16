@@ -116,15 +116,21 @@ namespace Datadog.Trace.Propagators
 
         public PropagatorType PropagatorType => PropagatorType.TraceContext;
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            if (context.SpanContext is not { } spanContext)
+            {
+                // nothing to inject
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
 
-            var traceparent = CreateTraceParentHeader(context);
+            var traceparent = CreateTraceParentHeader(spanContext);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
 
-            var tracestate = CreateTraceStateHeader(context);
+            var tracestate = CreateTraceStateHeader(spanContext);
 
             if (!string.IsNullOrWhiteSpace(tracestate))
             {
@@ -203,7 +209,7 @@ namespace Datadog.Trace.Propagators
                     sb.Append(additionalState);
                 }
 
-                return sb.ToString();
+                return StringBuilderCache.GetStringAndRelease(sb);
             }
             finally
             {
@@ -594,10 +600,10 @@ namespace Datadog.Trace.Propagators
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
             TCarrierGetter carrierGetter,
-            [NotNullWhen(true)] out SpanContext? spanContext)
+            out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            spanContext = null;
+            context = default;
 
             // get the "traceparent" header
             var traceParentHeaders = carrierGetter.Get(carrier, TraceParentHeaderName);
@@ -637,7 +643,7 @@ namespace Datadog.Trace.Propagators
                 traceTags.RemoveTag(Tags.Propagated.DecisionMaker);
             }
 
-            spanContext = new SpanContext(
+            var spanContext = new SpanContext(
                 traceId: traceParent.TraceId,
                 spanId: traceParent.ParentId,
                 samplingPriority: samplingPriority,
@@ -650,6 +656,10 @@ namespace Datadog.Trace.Propagators
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
             spanContext.LastParentId = traceState.LastParent;
+
+            context = new PropagationContext(spanContext, baggage: null);
+
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.TraceContext);
             return true;
         }
 
