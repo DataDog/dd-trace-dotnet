@@ -8,6 +8,7 @@
     Type: web,
     Tags: {
       aspnet.route: api/absolute-route,
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,

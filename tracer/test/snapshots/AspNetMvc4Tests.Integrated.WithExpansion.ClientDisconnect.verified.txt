@@ -7,6 +7,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,

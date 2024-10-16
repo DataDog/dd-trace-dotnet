@@ -7,6 +7,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 86.242.244.246,
       http.method: GET,
@@ -42,6 +43,7 @@
       actor.ip: 86.242.244.246,
       appsec.blocked: true,
       appsec.event: true,
+      component: aspnet,
       env: integration_tests,
       http.client_ip: 86.242.244.246,
       http.method: GET,
