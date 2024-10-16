@@ -92,6 +92,17 @@ Alternatively, on Windows:
 
 You can use Rider and CLion to develop on macOS. Building and testing can be done through the following Nuke targets:
 
+### Setup
+
+- Install [.NET SDK](https://dotnet.microsoft.com/en-us/download/dotnet)
+
+```bash
+# Install cmake
+brew install cmake
+```
+
+### Running tests
+
 ```bash
 # Clean and build the main tracer project
 ./build.sh Clean BuildTracerHome
@@ -101,6 +112,9 @@ You can use Rider and CLion to develop on macOS. Building and testing can be don
 
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
 ./build.sh PackageTracerHome
+
+# Start IntergrationTests dependencies, but only for a specific test
+docker-compose up rabbitmq_osx_arm64
 
 # Start IntegrationTests dependencies.
 docker-compose up StartDependencies.OSXARM64
