@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         private const string DatadogAwsStepFunctionsServiceName = "aws-stepfunctions";
         private const string StepFunctionsServiceName = "StepFunctions";
         private const string StepFunctionsOperationName = "aws.stepfunctions";
+        private const string StepFunctionsRequestOperationName = "stepfunctions.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
         public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSdkTags? tags, ISpanContext? parentContext = null)
@@ -35,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             try
             {
+                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
@@ -58,14 +60,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 Log.Error(ex, "Error creating or populating scope.");
             }
 
-            // always returns the scope, even if it's null because we couldn't create it,
-            // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
         }
 
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
-            return StepFunctionsOperationName;
+            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            {
+                return StepFunctionsRequestOperationName;
+            }
+
+            return $"{StepFunctionsOperationName}.request";
         }
     }
 }
