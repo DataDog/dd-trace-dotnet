@@ -32,9 +32,9 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             _diagnosticsSink = diagnosticsSink;
         }
 
-        internal static ProbeStatusPoller Create(DiagnosticsSink diagnosticsSink, DebuggerSettings settings)
+        internal static IProbeStatusPoller Create(DiagnosticsSink diagnosticsSink, DebuggerSettings settings)
         {
-            return new ProbeStatusPoller(diagnosticsSink);
+            return settings.IsSnapshotExplorationTestEnabled ? NoOpProbeStatusPoller.Instance : new ProbeStatusPoller(diagnosticsSink);
         }
 
         private void PollerCallback(object state)
