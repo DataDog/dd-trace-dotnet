@@ -502,6 +502,16 @@ internal readonly partial struct SecurityCoordinator
             dict.Add(AddressesConstants.UserId, userIdTag);
         }
 
+        if (_localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack)?.Equals("true", System.StringComparison.OrdinalIgnoreCase) is true)
+        {
+            dict.Add(AddressesConstants.LoginSucces, string.Empty);
+        }
+
+        if (_localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack)?.Equals("true", System.StringComparison.OrdinalIgnoreCase) is true)
+        {
+            dict.Add(AddressesConstants.LoginFailure, string.Empty);
+        }
+
         return dict;
     }
 

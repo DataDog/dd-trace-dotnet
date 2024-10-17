@@ -34,5 +34,7 @@ namespace Datadog.Trace.AppSec
         public const string UserId = "usr.id";
         public const string UserSessionId = "usr.session_id";
         public const string WafContextProcessor = "waf.context.processor";
+        public const string LoginSucces = "server.business_logic.users.login.success";
+        public const string LoginFailure = "server.business_logic.users.login.failure";
     }
 }

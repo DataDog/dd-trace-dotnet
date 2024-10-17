@@ -108,6 +108,17 @@ public class FingerprintTests : WafLibraryRequiredTest
                     { AddressesConstants.RequestCookies, new Dictionary<string, string> { { "Expires ", "tomorrow" }, { "SessionToken", "12asd8ahjsd91j289" } } },
                     { AddressesConstants.UserId, "non-admin" }
                 }
+            },
+            new List<Dictionary<string, object>>()
+            {
+                new Dictionary<string, object>()
+                {
+                    { AddressesConstants.RequestUriRaw, "/path/to/login.php" },
+                    { AddressesConstants.RequestMethod, "GET" },
+                    { AddressesConstants.RequestQuery, new Dictionary<string, string>() },
+                    { AddressesConstants.UserId, "admin" },
+                    { AddressesConstants.LoginSucces, string.Empty }
+                }
             }
         };
 
@@ -115,6 +126,7 @@ public class FingerprintTests : WafLibraryRequiredTest
     [InlineData(0, 4)]
     [InlineData(1, 4)]
     [InlineData(2, 4)]
+    [InlineData(3, 2)]
     public void GivenAFingerprintRequest_WhenRunWAF_FingerprintIsGenerated(int testIndex, int resultingHeaders)
     {
         var ruleFile = "rasp-rule-set.json";

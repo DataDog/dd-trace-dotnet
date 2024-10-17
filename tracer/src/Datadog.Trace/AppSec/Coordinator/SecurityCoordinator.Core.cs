@@ -151,6 +151,16 @@ internal readonly partial struct SecurityCoordinator
             addressesDictionary.Add(AddressesConstants.UserId, userId!);
         }
 
+        if (_localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack)?.Equals("true", System.StringComparison.OrdinalIgnoreCase) is true)
+        {
+            addressesDictionary.Add(AddressesConstants.LoginSucces, string.Empty);
+        }
+
+        if (_localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack)?.Equals("true", System.StringComparison.OrdinalIgnoreCase) is true)
+        {
+            addressesDictionary.Add(AddressesConstants.LoginFailure, string.Empty);
+        }
+
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
