@@ -110,6 +110,10 @@ internal sealed class DebuggerFactory
 
     internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+		if (settings.IsSnapshotExplorationTestEnabled)
+        {
+            return NoOpSymbolUploader.Instance;
+        }
         var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceNameProvider, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
