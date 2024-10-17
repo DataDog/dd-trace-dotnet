@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -92,7 +93,10 @@ namespace Datadog.Trace.Debugger.Sink
             {
                 var failures = 0;
                 const int maxFailures = 10;
-                using var writer = new StreamWriter(_filePath, true, Encoding.UTF8, _bufferSize);
+                var fileName = Path.GetFileName(this._filePath);
+                fileName = Process.GetCurrentProcess().Id + "_" + fileName;
+                var fullPath = Path.Combine(new FileInfo(this._filePath).Directory!.FullName, fileName);
+                using var writer = new StreamWriter(fullPath, true, Encoding.UTF8, _bufferSize);
                 writer.AutoFlush = false;
                 while (!_writeQueue.IsCompleted && !_cts.IsCancellationRequested)
                 {
