@@ -486,6 +486,9 @@
     <ClInclude Include="DotnetEventsProvider.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="ActivityIdHelpers.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

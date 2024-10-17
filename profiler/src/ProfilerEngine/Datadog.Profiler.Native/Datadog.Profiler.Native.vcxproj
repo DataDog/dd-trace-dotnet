@@ -233,6 +233,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActivityIdHelpers.h" />
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
     <ClInclude Include="BclEventsParser.h" />
