@@ -6,6 +6,8 @@
 using System;
 using Datadog.Trace.Debugger.Configurations.Models;
 
+#nullable enable
+
 namespace Datadog.Trace.Debugger;
 
 internal record BoundLineProbeLocation
