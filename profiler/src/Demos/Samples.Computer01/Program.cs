@@ -37,7 +37,7 @@ namespace Samples.Computer01
         OpenLdapCrash,
         SocketTimeout,
         ForceSigSegvHandler,
-        Obfuscation,
+        Obfuscation,  // not used any more but keep the value in the enum to avoid breaking the existing tests
         ThreadSpikes,
         StringConcat, // parameter = number of strings to concatenate
         LinuxDlIteratePhdrDeadlock,
@@ -74,7 +74,7 @@ namespace Samples.Computer01
             // 21: validate fix for OpenLDAP
             // 22: check socket timeout (linux)
             // 23: sigsegv handling validation
-            // 24: use an obfuscated library
+            // 24: use an obfuscated library - no more used; to avoid referencing non Open Source libraries
             // 25: create thread spikes
             // 26: string concatenation
             // 27: custom dl_iterate_phdr deadlock
