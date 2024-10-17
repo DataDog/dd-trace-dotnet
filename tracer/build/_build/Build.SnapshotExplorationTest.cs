@@ -97,8 +97,15 @@ partial class Build
 
             foreach (var testAssemblyPath in testAssembliesPaths)
             {
-                var currentAssembly = Assembly.LoadFile(testAssemblyPath);
-                var symbolExtractor = createMethod?.Invoke(null, new object[] { currentAssembly });
+                var assembly = Assembly.LoadFile(testAssemblyPath);
+                if (assembly.IsDynamic
+                 || assembly.ManifestModule.IsResource()
+                 || new[] { "mscorlib", "system", "microsoft", "nunit", "xunit", "datadog", "_build" }.Any(name => assembly.ManifestModule.Name.ToLower().StartsWith(name)))
+                {
+                    continue;
+                }
+
+                var symbolExtractor = createMethod?.Invoke(null, new object[] { assembly });
                 if (getClassSymbols?.Invoke(symbolExtractor, null) is not IEnumerable classSymbols)
                 {
                     continue;
