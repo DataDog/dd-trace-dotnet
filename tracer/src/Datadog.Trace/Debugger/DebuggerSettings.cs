@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionIncludes = new HashSet<string>([..symDb3rdPartyIncludeLibraries, ..ThirdPartyDetectionIncludes]).ToImmutableHashSet();
+            SymDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]).ToImmutableHashSet();
 
             var symDb3rdPartyExcludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionExcludes = new HashSet<string>([..symDb3rdPartyExcludeLibraries, ..ThirdPartyDetectionExcludes]).ToImmutableHashSet();
+            SymDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]).ToImmutableHashSet();
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -115,6 +115,10 @@ namespace Datadog.Trace.Debugger
                                       Enumerable.Empty<string>();
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
+
+            IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+            SnapshotExplorationTestProbesPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesPath).AsString(string.Empty);
+            SnapshotExplorationTestReportPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportPath).AsString(string.Empty);
         }
 
         public bool Enabled { get; }
@@ -144,6 +148,12 @@ namespace Datadog.Trace.Debugger
         public HashSet<string> RedactedIdentifiers { get; }
 
         public HashSet<string> RedactedTypes { get; }
+
+        public bool IsSnapshotExplorationTestEnabled { get; set; }
+
+        public string SnapshotExplorationTestProbesPath { get; set; }
+
+        public string SnapshotExplorationTestReportPath { get; set; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
