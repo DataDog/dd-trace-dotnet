@@ -9,9 +9,11 @@
 #ifdef _WIN32
 #define WStr(value) L##value
 #define WStrLen(value) (size_t) wcslen(value)
+#define WStrCmp(value1, value2) wcscmp(value1, value2)
 #else
 #define WStr(value) u##value
 #define WStrLen(value) (size_t) std::char_traits<WCHAR>::length(value)
+#define WStrCmp(value1, value2) std::char_traits<WCHAR>::compare(value1, value2, WStrLen(value1))
 #endif
 
 namespace shared

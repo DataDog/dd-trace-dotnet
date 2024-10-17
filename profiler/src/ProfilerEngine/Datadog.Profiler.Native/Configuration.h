@@ -81,6 +81,8 @@ public:
     bool IsSsiTelemetryEnabled() const override;
     CpuProfilerType GetCpuProfilerType() const override;
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
+    bool IsHttpProfilingEnabled() const override;
+    std::chrono::milliseconds GetHttpRequestDurationThreshold() const override;
 
 private:
     static tags ExtractUserTags();
@@ -105,6 +107,7 @@ private:
     static bool GetContention();
     EnablementStatus ExtractEnablementStatus();
     std::chrono::milliseconds ExtractSsiLongLivedThreshold() const;
+    std::chrono::milliseconds ExtractHttpRequestDurationThreshold() const;
 
 private:
     static std::string const DefaultProdSite;
@@ -175,6 +178,8 @@ private:
     std::chrono::milliseconds _ssiLongLivedThreshold;
     bool _isTelemetryToDiskEnabled;
     bool _isSsiTelemetryEnabled;
+    bool _isHttpProfilingEnabled;
+    std::chrono::milliseconds _httpRequestDurationThreshold;
 
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
