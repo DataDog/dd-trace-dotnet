@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Models;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 internal static class SchemaExtractor
 {

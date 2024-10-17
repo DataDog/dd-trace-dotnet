@@ -9,7 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 /// <summary>
 /// System.Void Google.Protobuf.IMessage::MergeFrom(Google.Protobuf.CodedInputStream) calltarget instrumentation

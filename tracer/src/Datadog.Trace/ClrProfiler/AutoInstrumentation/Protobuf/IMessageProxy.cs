@@ -8,7 +8,7 @@
 using System.Collections;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Google_Protobuf;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.IMessage
