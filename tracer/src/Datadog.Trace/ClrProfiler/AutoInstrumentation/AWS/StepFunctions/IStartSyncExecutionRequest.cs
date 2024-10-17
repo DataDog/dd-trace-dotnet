@@ -10,11 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     /// <summary>
     /// StartSyncExecutionRequest interface for ducktyping
     /// </summary>
-    internal interface IStartSyncExecutionRequest : IAmazonStepFunctionsRequestWithStateMachineArn, IContainsInput
+    internal interface IStartSyncExecutionRequest : IAmazonStepFunctionsRequest, IContainsInput
     {
-        /// <summary>
-        /// Gets the name of the execution. This name must be unique for your AWS account, region, and state machine for 90 days.
-        /// </summary>
-        string? Name { get; }
     }
 }
