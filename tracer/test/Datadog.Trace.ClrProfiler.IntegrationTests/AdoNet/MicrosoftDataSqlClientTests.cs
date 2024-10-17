@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             => from packageVersionArray in PackageVersions.MicrosoftDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
                from propagation in new[] { "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, dbmEnabled, propagation };
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
