@@ -125,13 +125,13 @@ namespace Datadog.Trace.Debugger.Symbols
             if (!settings.SymbolDatabaseUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-                return new NoOpSymbolUploader();
+                return NoOpSymbolUploader.Instance;
             }
 
             if (!ThirdPartyModules.IsValid)
             {
                 Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
-                return new NoOpSymbolUploader();
+                return NoOpSymbolUploader.Instance;
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
