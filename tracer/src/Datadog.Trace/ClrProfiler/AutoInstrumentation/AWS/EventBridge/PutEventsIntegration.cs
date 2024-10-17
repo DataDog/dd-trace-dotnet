@@ -58,10 +58,8 @@ public class PutEventsIntegration
             }
         }
 
-        if (scope?.Span.Context is { } context)
-        {
-            ContextPropagation.InjectTracingContext(request, context);
-        }
+        var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
+        ContextPropagation.InjectContext(request, context);
 
         return new CallTargetState(scope);
     }
