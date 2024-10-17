@@ -29,7 +29,9 @@ namespace Samples.AWS.StepFunctions
                     StateMachineArn = stepFunctionArn
                 };
 
-                await stepFunctionsClient.StartExecutionAsync(executionRequest);
+                var response = await stepFunctionsClient.StartExecutionAsync(executionRequest);
+                Console.WriteLine($"StartExecutionAsync(StartExecutionAsync) HTTP status code: {response.HttpStatusCode}");
+                
                 await DeleteStateMachineAsync(stepFunctionsClient, stepFunctionArn);
 
                 // Needed in order to allow resource to be deleted
@@ -48,7 +50,8 @@ namespace Samples.AWS.StepFunctions
 
         private static async Task<string> CreateStateMachineAsync(AmazonStepFunctionsClient stepFunctionsClient, string stepFunctionName)
         {
-            var createStateMachineRequest = new CreateStateMachineRequest { Name = stepFunctionName };
+            var def = "{\"Comment\":\"Hello.\",\"StartAt\":\"FirstState\",\"States\":{\"FirstState\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-east-1:123456789012:function:FUNCTION_NAME\",\"Next\":\"ChoiceState\"},\"ChoiceState\":{\"Type\":\"Choice\",\"Choices\":[{\"Variable\":\"$.foo\",\"NumericEquals\":1,\"Next\":\"FirstMatchState\"},{\"Variable\":\"$.foo\",\"NumericEquals\":2,\"Next\":\"SecondMatchState\"}],\"Default\":\"DefaultState\"},\"FirstMatchState\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-east-1:123456789012:function:OnFirstMatch\",\"Next\":\"NextState\"},\"SecondMatchState\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-east-1:123456789012:function:OnSecondMatch\",\"Next\":\"NextState\"},\"DefaultState\":{\"Type\":\"Fail\",\"Error\":\"DefaultStateError\",\"Cause\":\"No Matches!\"},\"NextState\":{\"Type\":\"Task\",\"Resource\":\"arn:aws:lambda:us-east-1:123456789012:function:FUNCTION_NAME\",\"End\":true}}}";
+            var createStateMachineRequest = new CreateStateMachineRequest { Name = stepFunctionName, Definition = def };
 
             var response = await stepFunctionsClient.CreateStateMachineAsync(createStateMachineRequest);
 
