@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using System.IO;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -101,17 +102,28 @@ internal static class DatadogLoggingFactory
 
         if (config.File is { } fileConfig)
         {
-            // Ends in a dash because of the date postfix
-            var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
+            var managedLogPath = Path.Combine(fileConfig.LogDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-{domainMetadata.ProcessId.ToString(CultureInfo.InvariantCulture)}.log");
+
+#if NETFRAMEWORK
+            // In IIS, the log file is shared between all app domains, so we need this setup
+            var shared = true;
+            var buffered = false;
+#else
+            // In .NET Core, we always have one tracer per process, so we can yolo this a bit more
+            var shared = false;
+            var buffered = true;
+#endif
 
             loggerConfiguration
                .WriteTo.File(
                     managedLogPath,
                     outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
-                    rollingInterval: RollingInterval.Day,
+                    rollingInterval: RollingInterval.Infinite, // don't do daily rolling, rely on the file size limit for rolling instead
                     rollOnFileSizeLimit: true,
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true);
+                    shared: shared,
+                    buffered: buffered,
+                    flushToDiskInterval: buffered ? TimeSpan.FromSeconds(1) : null); // make sure we still flush to disk if we're buffered
         }
 
         try
