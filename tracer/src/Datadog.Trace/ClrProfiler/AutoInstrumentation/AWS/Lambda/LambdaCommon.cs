@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -22,9 +23,9 @@ internal abstract class LambdaCommon
     private const double ServerlessMaxWaitingFlushTime = 3;
     private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-    internal static Scope CreatePlaceholderScope(Tracer tracer, WebHeaderCollection headers)
+    internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
-        var spanContext = SpanContextPropagator.Instance.Extract(headers, SafeGetValues);
+        var spanContext = SpanContextPropagator.Instance.Extract(headers);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
 
         if (spanContext != null)
@@ -36,13 +37,6 @@ internal abstract class LambdaCommon
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
-    // parseUtility.ParseUInt64 falls over and dies when it tries to parse a null collection of values, and WebHeadersCollection.GetValues will return null if the header does not exist.
-    private static string[] SafeGetValues(WebHeaderCollection headers, string name)
-    {
-        var values = headers.GetValues(name);
-        return values ?? [];
-    }
-
     internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
     {
         var request = requestBuilder.GetStartInvocationRequest();
@@ -50,7 +44,7 @@ internal abstract class LambdaCommon
         WriteRequestHeaders(request, context);
         var response = (HttpWebResponse)request.GetResponse();
 
-        var headers = response.Headers;
+        var headers = response.Headers.Wrap();
         if (!ValidateOkStatus(response))
         {
             return null;
