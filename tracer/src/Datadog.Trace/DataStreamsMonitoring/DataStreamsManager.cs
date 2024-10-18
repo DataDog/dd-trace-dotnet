@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -25,6 +26,7 @@ internal class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
+    private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
     private IDataStreamsWriter? _writer;
@@ -222,5 +224,26 @@ internal class DataStreamsManager
             Volatile.Write(ref _isEnabled, false);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Make sure we only extract the schema (a costly operation) on select occasions
+    /// </summary>
+    public bool ShouldExtractSchema(Span span, string operation, out int weight)
+    {
+        var limiter = _schemaRateLimiters.GetOrAdd(operation, _ => new RateLimiter());
+        if (limiter.PeekDecision())
+        {
+            // we only want to "consume" a decision to extract the schema for a span that we are going to keep
+            // && we don't want to make the sampling decision if we know we have no chance of getting selected by the rate limiter
+            var spanSamplingDecision = span.Context.GetOrMakeSamplingDecision();
+            if (spanSamplingDecision != null && SamplingPriorityValues.IsKeep(spanSamplingDecision.Value))
+            {
+                return limiter.GetDecision(out weight);
+            }
+        }
+
+        weight = 0;
+        return false;
     }
 }

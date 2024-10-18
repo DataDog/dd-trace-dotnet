@@ -4,10 +4,12 @@
 // </copyright>
 
 #nullable enable
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Models;
@@ -15,58 +17,67 @@ using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
-internal static class SchemaExtractor
+internal class SchemaExtractor
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SchemaExtractor>();
+
+    private static readonly ConcurrentDictionary<string, Schema> SchemaCache = new();
+
     /// <summary>
-    /// Get the current span, perform a few checks,
-    /// then add as a tag on this span the full protobuf schema
-    /// plus some extra bonus tags
+    /// Get the current span, add some tags about the schema,
+    /// and once in a while, tag it with the whole protobuf schema used
     /// </summary>
-    /// <returns>true if the span was enriched</returns>
-    internal static bool EnrichActiveSpanWith(IMessageDescriptorProxy? descriptor, string operationName)
+    internal static void EnrichActiveSpanWith(IMessageDescriptorProxy? descriptor, string operationName)
     {
         var activeSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
         if (activeSpan == null || descriptor == null)
         {
-            return false;
+            return;
         }
 
         if (activeSpan.GetTag(Tags.SchemaType) == "protobuf")
         {
             // we already instrumented this, we are most likely in a recursive call due to nested schemas.
-            return false;
+            return;
         }
 
         activeSpan.SetTag(Tags.SchemaType, "protobuf");
         activeSpan.SetTag(Tags.SchemaName, descriptor.Name);
         activeSpan.SetTag(Tags.SchemaOperation, operationName);
 
+        // check rate limit
         var dsm = Tracer.Instance.TracerManager.DataStreamsManager;
-        // check with DSM
-        // check sampling
-
-        var schema = ExtractSchema(descriptor);
-        string schemaDefinition;
-        using (var writer = new StringWriter())
+        if (!dsm.ShouldExtractSchema(activeSpan, operationName, out var weight))
         {
-            schema.SerializeAsV3WithoutReference(new OpenApiJsonWriter(writer));
-            schemaDefinition = writer.ToString();
+            return;
         }
 
-        activeSpan.SetTag(Tags.SchemaDefinition, schemaDefinition);
-        var schemaID = FnvHash64.GenerateHash(schemaDefinition, FnvHash64.Version.V1A);
-        activeSpan.SetTag(Tags.SchemaId, schemaID.ToString(CultureInfo.InvariantCulture));
-        // span.SetTag( Tags.SchemaWeight, weight);
+        // check cache
+        var schema = SchemaCache.GetOrAdd(
+            descriptor.Name,
+            _ =>
+            {
+                var openApiSchema = ExtractSchema(descriptor);
+                var schema = new Schema(openApiSchema);
+                Log.Information(
+                    "Extracted and cached new protobuf schema with name '{Name}' of size {Size} characters. Number of schemas now in cache: {CacheSize}.",
+                    descriptor.Name,
+                    schema.JsonDefinition.Length,
+                    property2: SchemaCache.Count);
+                return schema;
+            });
 
-        return true;
+        activeSpan.SetTag(Tags.SchemaDefinition, schema.JsonDefinition);
+        activeSpan.SetTag(Tags.SchemaId, schema.Hash.ToString(CultureInfo.InvariantCulture));
+        activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
-    internal static OpenApiSchema ExtractSchema(IMessageDescriptorProxy descriptor)
+    private static OpenApiSchema ExtractSchema(IMessageDescriptorProxy descriptor)
     {
         return new OpenApiSchema { Type = "object", Properties = ExtractFields(descriptor) };
     }
 
-    internal static IDictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor)
+    private static IDictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor)
     {
         var properties = new Dictionary<string, OpenApiSchema>();
         foreach (var o in descriptor.Fields.InDeclarationOrder())
@@ -182,5 +193,22 @@ internal static class SchemaExtractor
         }
 
         return properties;
+    }
+
+    private class Schema
+    {
+        public readonly string JsonDefinition;
+        public readonly ulong Hash;
+
+        public Schema(OpenApiSchema openApiSchema)
+        {
+            using (var writer = new StringWriter())
+            {
+                openApiSchema.SerializeAsV3WithoutReference(new OpenApiJsonWriter(writer));
+                JsonDefinition = writer.ToString();
+            }
+
+            Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
+        }
     }
 }
