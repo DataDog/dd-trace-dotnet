@@ -31,7 +31,11 @@ public class GetDefaultServiceNameIntegration
         where TTarget : ITracerProxy
     {
         // TODO: Add telemetry?
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
-        return new CallTargetReturn<string>(tracer.DefaultServiceName);
+        if (instance.AutomaticTracer is Datadog.Trace.Tracer tracer)
+        {
+            return new CallTargetReturn<string>(tracer.DefaultServiceName);
+        }
+
+        return new CallTargetReturn<string>(returnValue);
     }
 }
