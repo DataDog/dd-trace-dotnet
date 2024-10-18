@@ -11,7 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 /// <summary>
-/// System.Void Google.Protobuf.IBufferMessage::InternalWriteTo(Google.Protobuf.WriteContext&) calltarget instrumentation
+/// System.Void Google.Protobuf.IBufferMessage::InternalWriteTo(Google.Protobuf.WriteContext) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Google.Protobuf",
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     ParameterTypeNames = ["Google.Protobuf.WriteContext&"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "IBufferMessage")]
+    IntegrationName = "Protobuf")]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class BufferMessageInternalWriteToIntegration

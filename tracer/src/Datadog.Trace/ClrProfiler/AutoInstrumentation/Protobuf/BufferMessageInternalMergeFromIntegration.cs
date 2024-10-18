@@ -12,7 +12,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 /// <summary>
-/// System.Void Google.Protobuf.IBufferMessage::InternalMergeFrom(Google.Protobuf.ParseContext&) calltarget instrumentation
+/// System.Void Google.Protobuf.IBufferMessage::InternalMergeFrom(Google.Protobuf.ParseContext) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Google.Protobuf",
