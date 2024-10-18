@@ -144,6 +144,11 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
 }
 
 template <class RejitRequestDefinition>
+std::vector<ModuleID> RejitPreprocessor<RejitRequestDefinition>::GetAllNGenInlinerModules() {
+    return m_ngenInlinersModules;
+}
+
+template <class RejitRequestDefinition>
 HRESULT RejitPreprocessor<RejitRequestDefinition>::RejitMethod(FunctionControlWrapper& functionControl)
 {
     auto moduleId = functionControl.GetModuleId();

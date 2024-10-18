@@ -46,7 +46,7 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
 
 
 bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId,
-                         std::vector<ModuleID>& modules, std::vector<mdMethodDef>& methods)
+                         std::vector<ModuleID>& modules, std::vector<mdMethodDef>& methods, std::vector<ModuleID>& allModules)
 {
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
@@ -88,20 +88,19 @@ bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, Mo
         {
             ModuleID currentCascadeModuleId = modules[i];
             mdMethodDef currentCascadeMethodId = methods[i];
-            GetInlinersInModule(pInfo, inlinersModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods);
-            auto totalWithInlinersModuleId = modules.size();
-            auto diffByInlinersModuleId = totalWithInlinersModuleId - total;
-            if (diffByInlinersModuleId > 0)
+
+            for (ModuleID cascadeInlinerModuleId : allModules)
             {
-                Logger::Info("GetInlinersInModule:: Added ", diffByInlinersModuleId, " rewrites on cascade by the inliner moduleID: ", inlinersModuleId);
-            }
-            if (inlinersModuleId != inlineeModuleId)
-            {
-                GetInlinersInModule(pInfo, inlineeModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods);
-                auto diffByInlineeModuleId = modules.size() - totalWithInlinersModuleId;
-                if (diffByInlineeModuleId > 0)
+                if (cascadeInlinerModuleId != inlinersModuleId)
                 {
-                    Logger::Info("GetInlinersInModule:: Added ", diffByInlineeModuleId, " rewrites on cascade by the inlinee moduleID: ", inlineeModuleId);
+                    GetInlinersInModule(pInfo, cascadeInlinerModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods, allModules);
+                    auto newTotal = modules.size();
+                    auto diff = newTotal - total;
+                    if (diff > 0)
+                    {
+                        Logger::Info("GetInlinersInModule:: Added ", diff, " rewrites on cascade by the inliner moduleID: ", cascadeInlinerModuleId);
+                        total = newTotal;
+                    }
                 }
             }
         }
@@ -134,18 +133,20 @@ bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, Mo
 
 bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
+    // m_module->GetHandler()
     // Enumerate all inliners and request rejit
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
     RejitHandler* handler = m_module->GetHandler();
     ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
+    std::vector<ModuleID> allModules = handler->GetAllNGenInlinerModules();
     if (pInfo != nullptr)
     {
         // Now we enumerate all methods that inline the current methodDef
         std::vector<ModuleID> modules;
         std::vector<mdMethodDef> methods;
 
-        auto result = GetInlinersInModule(pInfo, moduleId, currentModuleId, currentMethodDef, modules, methods);
+        auto result = GetInlinersInModule(pInfo, moduleId, currentModuleId, currentMethodDef, modules, methods, allModules);
         if (result)
         {
             auto total = modules.size();
@@ -528,6 +529,25 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     {
         rejitter->AddNGenInlinerModule(moduleId);
     }
+}
+
+std::vector<ModuleID> RejitHandler::GetAllNGenInlinerModules() {
+    std::vector<ModuleID> modules;
+
+    if (IsShutdownRequested())
+    {
+        return modules;
+    }
+
+    for (auto rejitter : m_rejitters)
+    {
+        for (auto module : rejitter->GetAllNGenInlinerModules())
+        {
+            modules.push_back(module);
+        }
+    }
+
+    return modules;
 }
 
 } // namespace trace
