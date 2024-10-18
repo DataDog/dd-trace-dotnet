@@ -44,83 +44,120 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
+
+bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId,
+                         std::vector<ModuleID>& modules, std::vector<mdMethodDef>& methods)
+{
+#if DEBUG
+    // We generate this log hundreds of times, and isn't typically useful in escalations
+    Logger::Debug("GetInlinersInModule for ", "[ModuleInliner=", inlinersModuleId,
+                  ", ModuleId=", inlineeModuleId, ", MethodDef=", inlineeMethodDef, "]");
+#endif
+
+    // If we don't have the profiler info interface we bailout
+    if (pInfo == nullptr)
+    {
+        return false;
+    }
+
+    // Now we enumerate all methods that inline the inlinee methodDef
+    BOOL incompleteData = false;
+    ICorProfilerMethodEnum* methodEnum;
+
+    HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(inlinersModuleId, inlineeModuleId, inlineeMethodId,
+                                                                &incompleteData, &methodEnum);
+    std::ostringstream hexValue;
+    hexValue << std::hex << hr;
+
+    if (SUCCEEDED(hr))
+    {
+        COR_PRF_METHOD method;
+        unsigned int total = 0;
+        while (methodEnum->Next(1, &method, nullptr) == S_OK)
+        {
+            Logger::Debug("GetInlinersInModule:: Asking rewrite for inliner [ModuleId=", method.moduleId,
+                          ",MethodDef=", method.methodId, "]");
+            modules.push_back(method.moduleId);
+            methods.push_back(method.methodId);
+            total++;
+        }
+        methodEnum->Release();
+        methodEnum = nullptr;
+
+        for (unsigned int i=0; i < total; i++)
+        {
+            ModuleID currentCascadeModuleId = modules[i];
+            mdMethodDef currentCascadeMethodId = methods[i];
+            GetInlinersInModule(pInfo, inlinersModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods);
+            auto totalWithInlinersModuleId = modules.size();
+            auto diffByInlinersModuleId = totalWithInlinersModuleId - total;
+            if (diffByInlinersModuleId > 0)
+            {
+                Logger::Info("GetInlinersInModule:: Added ", diffByInlinersModuleId, " rewrites on cascade by the inliner moduleID: ", inlinersModuleId);
+            }
+            if (inlinersModuleId != inlineeModuleId)
+            {
+                GetInlinersInModule(pInfo, inlineeModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods);
+                auto diffByInlineeModuleId = modules.size() - totalWithInlinersModuleId;
+                if (diffByInlineeModuleId > 0)
+                {
+                    Logger::Info("GetInlinersInModule:: Added ", diffByInlineeModuleId, " rewrites on cascade by the inlinee moduleID: ", inlineeModuleId);
+                }
+            }
+        }
+    }
+    else if (hr == E_INVALIDARG)
+    {
+        Logger::Info("GetInlinersInModule:: Error Invalid arguments in [ModuleId=", inlineeModuleId,
+                     ",MethodDef=", inlineeMethodId, ", HR=", hexValue.str(), "]");
+    }
+    else if (hr == CORPROF_E_DATAINCOMPLETE)
+    {
+        Logger::Info("GetInlinersInModule:: Error Incomplete data in [ModuleId=", inlineeModuleId, ",MethodDef=", inlineeMethodId,
+                     ", HR=", hexValue.str(), "]");
+
+        return false;
+    }
+    else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
+    {
+        Logger::Info("GetInlinersInModule:: Unsupported call sequence error in [ModuleId=", inlineeModuleId,
+                     ",MethodDef=", inlineeMethodId, ", HR=", hexValue.str(), "]");
+    }
+    else
+    {
+        Logger::Info("GetInlinersInModule:: Error in [ModuleId=", inlineeModuleId, ",MethodDef=", inlineeMethodId,
+                     ", HR=", hexValue.str(), "]");
+    }
+
+    return true;
+}
+
 bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
     // Enumerate all inliners and request rejit
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
-
-#if DEBUG
-    // We generate this log hundreds of times, and isn't typically useful in escalations
-    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,
-                  ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
-#endif
-
     RejitHandler* handler = m_module->GetHandler();
     ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
     if (pInfo != nullptr)
     {
         // Now we enumerate all methods that inline the current methodDef
-        BOOL incompleteData = false;
-        ICorProfilerMethodEnum* methodEnum;
+        std::vector<ModuleID> modules;
+        std::vector<mdMethodDef> methods;
 
-        HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, &methodEnum);
-        std::ostringstream hexValue;
-        hexValue << std::hex << hr;
-        if (SUCCEEDED(hr))
+        auto result = GetInlinersInModule(pInfo, moduleId, currentModuleId, currentMethodDef, modules, methods);
+        if (result)
         {
-            COR_PRF_METHOD method;
-            unsigned int total = 0;
-            std::vector<ModuleID> modules;
-            std::vector<mdMethodDef> methods;
-            while (methodEnum->Next(1, &method, nullptr) == S_OK)
-            {
-                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                              ",MethodDef=", method.methodId, "]");
-                modules.push_back(method.moduleId);
-                methods.push_back(method.methodId);
-                total++;
-            }
-            methodEnum->Release();
-            methodEnum = nullptr;
+            auto total = modules.size();
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
                 Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
                              ",MethodDef=", currentMethodDef, "]");
             }
-
-            if (incompleteData)
-            {
-                Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
-                return false;
-            }
-        }
-        else if (hr == E_INVALIDARG)
-        {
-            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
-        }
-        else if (hr == CORPROF_E_DATAINCOMPLETE)
-        {
-            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
-
-            return false;
-        }
-        else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
-        {
-            Logger::Info("NGEN:: Unsupported call sequence error in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
-        }
-        else
-        {
-            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
         }
 
-        return true;
+        return result;
     }
 
     return false;
