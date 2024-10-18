@@ -24,6 +24,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -545,34 +546,56 @@ namespace Datadog.Trace.ClrProfiler
 
             // Service Name must be lowercase, otherwise the agent will not be able to find the service
             var serviceName = DynamicInstrumentationHelper.ServiceName;
-            var discoveryService = tracer.TracerManager.DiscoveryService;
 
-            Task.Run(
-                async () =>
-                {
-                    // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
-                    // to changes in ExporterSettings etc.
-
-                    try
+            if (debuggerSettings.IsSnapshotExplorationTestEnabled)
+            {
+                var liveDebugger = LiveDebuggerFactory.Create(new DiscoveryServiceMock(), RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                Log.Debug("Initializing live debugger for snapshot exploration test.");
+                liveDebugger.WithProbesFromFile();
+                Task.Run(
+                    async () =>
                     {
-                        var sw = Stopwatch.StartNew();
-                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                        if (isDiscoverySuccessful)
+                        try
                         {
-                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
-
-                            Log.Debug("Initializing live debugger.");
-
-                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            await liveDebugger.InitializeAsync().ConfigureAwait(false);
                         }
-                    }
-                    catch (Exception ex)
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing live debugger.");
+                        }
+                    });
+            }
+            else
+            {
+                var discoveryService = tracer.TracerManager.DiscoveryService;
+
+                Task.Run(
+                    async () =>
                     {
-                        Log.Error(ex, "Error initializing live debugger.");
-                    }
-                });
+                        // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
+                        // to changes in ExporterSettings etc.
+
+                        try
+                        {
+                            var sw = Stopwatch.StartNew();
+                            var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
+
+                            if (isDiscoverySuccessful)
+                            {
+                                var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+
+                                Log.Debug("Initializing live debugger.");
+
+                                await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error initializing live debugger.");
+                        }
+                    });
+            }
         }
 
         // /!\ This method is called by reflection in the SampleHelpers

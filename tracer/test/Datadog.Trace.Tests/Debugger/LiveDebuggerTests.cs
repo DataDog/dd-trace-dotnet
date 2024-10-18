@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
@@ -75,36 +76,6 @@ public class LiveDebuggerTests
         diagnosticsUploader.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
         rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
-    }
-
-    private class DiscoveryServiceMock : IDiscoveryService
-    {
-        internal bool Called { get; private set; }
-
-        public void SubscribeToChanges(Action<AgentConfiguration> callback)
-        {
-            Called = true;
-            callback(
-                new AgentConfiguration(
-                    configurationEndpoint: "configurationEndpoint",
-                    debuggerEndpoint: "debuggerEndpoint",
-                    diagnosticsEndpoint: "diagnosticsEndpoint",
-                    symbolDbEndpoint: "symbolDbEndpoint",
-                    agentVersion: "agentVersion",
-                    statsEndpoint: "traceStatsEndpoint",
-                    dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
-                    eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
-                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
-                    tracerFlareEndpoint: "tracerFlareEndpoint",
-                    clientDropP0: false,
-                    spanMetaStructs: true));
-        }
-
-        public void RemoveSubscription(Action<AgentConfiguration> callback)
-        {
-        }
-
-        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     private class RcmSubscriptionManagerMock : IRcmSubscriptionManager
