@@ -37,7 +37,7 @@ internal class Baggage
         }
     }
 
-    private OrderedKeyValuePairList<string, string>? Items { get; set; }
+    internal OrderedKeyValuePairList<string, string>? Items { get; private set; }
 
     /// <summary>
     /// Gets or sets the baggage collection for the current execution context.
