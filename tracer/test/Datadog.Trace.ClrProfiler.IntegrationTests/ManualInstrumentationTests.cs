@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -23,22 +24,17 @@ public class ManualInstrumentationTests : TestHelper
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task ManualAndAutomatic()
+    public async Task ManualAndAutomatic() => await RunTest(usePublishWithRID: false);
+
+#if !NETFRAMEWORK
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task ReadyToRunManualAndAutomatic()
     {
-        SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "1");
-        const int expectedSpans = 36;
-        using var telemetry = this.ConfigureTelemetry();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using var assert = new AssertionScope();
-        using var process = await RunSampleAndWaitForExit(agent);
-
-        var spans = agent.WaitForSpans(expectedSpans);
-        spans.Should().HaveCount(expectedSpans);
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-
-        await VerifyHelper.VerifySpans(spans, settings);
+        SetEnvironmentVariable("READY2RUN_ENABLED", "1");
+        await RunTest(usePublishWithRID: true);
     }
+#endif
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
@@ -54,5 +50,24 @@ public class ManualInstrumentationTests : TestHelper
 
         var spans = agent.WaitForSpans(0, timeoutInMilliseconds: 500);
         spans.Should().BeEmpty();
+    }
+
+    private async Task RunTest(bool usePublishWithRID = false)
+    {
+        SetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED", "1");
+        const int expectedSpans = 37;
+        using var telemetry = this.ConfigureTelemetry();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var assert = new AssertionScope();
+        using var process = await RunSampleAndWaitForExit(agent, usePublishWithRID: usePublishWithRID);
+
+        var spans = agent.WaitForSpans(expectedSpans);
+        spans.Should().HaveCount(expectedSpans);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseMethodName(nameof(ManualAndAutomatic)); // they should be identical, so share
+        settings.DisableRequireUniquePrefix();
+
+        await VerifyHelper.VerifySpans(spans, settings);
     }
 }
