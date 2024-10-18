@@ -34,7 +34,7 @@ internal class Baggage
         Items = new ConcurrentDictionary<string, string>(items);
     }
 
-    private ConcurrentDictionary<string, string>? Items { get; set; }
+    internal ConcurrentDictionary<string, string>? Items { get; private set; }
 
     /// <summary>
     /// Gets the baggage collection for the current execution context.
