@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -19,9 +18,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 internal class SchemaExtractor
 {
+    internal const int MaxProtobufSchemas = 100;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SchemaExtractor>();
 
-    private static readonly ConcurrentDictionary<string, Schema> SchemaCache = new();
+    private static readonly SmallCacheOrNoCache<string, Schema> SchemaCache = new(MaxProtobufSchemas, "protobuf schema names");
 
     /// <summary>
     /// Get the current span, add some tags about the schema,
@@ -52,18 +53,14 @@ internal class SchemaExtractor
             return;
         }
 
-        // check cache
+        // check cache (it will be disabled if too many schemas)
         var schema = SchemaCache.GetOrAdd(
             descriptor.Name,
             _ =>
             {
                 var openApiSchema = ExtractSchema(descriptor);
                 var schema = new Schema(openApiSchema);
-                Log.Information(
-                    "Extracted and cached new protobuf schema with name '{Name}' of size {Size} characters. Number of schemas now in cache: {CacheSize}.",
-                    descriptor.Name,
-                    schema.JsonDefinition.Length,
-                    property2: SchemaCache.Count);
+                Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Name, schema.JsonDefinition.Length);
                 return schema;
             });
 
@@ -197,9 +194,6 @@ internal class SchemaExtractor
 
     private class Schema
     {
-        public readonly string JsonDefinition;
-        public readonly ulong Hash;
-
         public Schema(OpenApiSchema openApiSchema)
         {
             using (var writer = new StringWriter())
@@ -210,5 +204,9 @@ internal class SchemaExtractor
 
             Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
         }
+
+        internal string JsonDefinition { get; }
+
+        internal ulong Hash { get; }
     }
 }
