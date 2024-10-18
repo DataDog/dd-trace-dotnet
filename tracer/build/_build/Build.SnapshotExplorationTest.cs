@@ -82,7 +82,7 @@ partial class Build
     void CreateSnapshotExplorationTestCsv(ExplorationTestDescription testDescription)
     {
         var csvBuilder = new StringBuilder();
-        csvBuilder.AppendLine("type name (FQN),method name,method signature,probeId,is instance method");
+        csvBuilder.AppendLine("Probe ID,Type,Method,Signature,Is instance method");
         var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
 
         foreach (var framework in frameworks)
