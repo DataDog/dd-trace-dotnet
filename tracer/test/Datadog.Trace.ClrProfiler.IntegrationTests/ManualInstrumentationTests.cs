@@ -61,6 +61,8 @@ public class ManualInstrumentationTests : TestHelper
         spans.Should().HaveCount(expectedSpans);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseMethodName(nameof(ManualAndAutomatic)); // they should be identical, so share
+        settings.DisableRequireUniquePrefix();
 
         await VerifyHelper.VerifySpans(spans, settings);
     }
