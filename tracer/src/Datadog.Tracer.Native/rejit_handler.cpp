@@ -60,6 +60,42 @@ bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, Mo
         return false;
     }
 
+    auto inlinerModuleInfo = GetModuleInfo(pInfo, inlinersModuleId);
+    auto inlineeModuleInfo = GetModuleInfo(pInfo, inlineeModuleId);
+    ComPtr<IUnknown> inlinee_metadata_interfaces;
+    HRESULT hrmodmetadata = pInfo->GetModuleMetaData(inlineeModuleId, ofRead, IID_IMetaDataImport2,
+                                          inlinee_metadata_interfaces.GetAddressOf());
+    if (Logger::IsDebugEnabled())
+    {
+        if (hrmodmetadata == S_OK)
+        {
+            const auto& metadata_import = inlinee_metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            auto functionInfo = GetFunctionInfo(metadata_import, inlineeMethodId);
+            Logger::Debug("GetInlinersInModule:: Analizing module ",
+                         inlinersModuleId,
+                         " (",
+                         inlinerModuleInfo.assembly.name,
+                         ") as inliner for ",
+                         "inlinee [",
+                         "ModuleId=",
+                         inlineeModuleId, ", ", "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                         "NGEN=", inlineeModuleInfo.IsNGEN(), ", ", "MethodDef=", inlineeMethodId, ", ",
+                         "MethodName=", functionInfo.type.name, ".", functionInfo.name, "()]");
+        }
+        else
+        {
+            Logger::Debug("GetInlinersInModule:: Analizing module ",
+                         inlinersModuleId,
+                         " (",
+                         inlinerModuleInfo.assembly.name,
+                         ") as inliner for ",
+                         "inlinee [",
+                         "ModuleId=",
+                         inlineeModuleId, ", ", "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                         "NGEN=", inlineeModuleInfo.IsNGEN(), ", ", "MethodDef=", inlineeMethodId, "]");
+        }
+    }
+
     // Now we enumerate all methods that inline the inlinee methodDef
     BOOL incompleteData = false;
     ICorProfilerMethodEnum* methodEnum;
@@ -75,11 +111,46 @@ bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, Mo
         unsigned int total = 0;
         while (methodEnum->Next(1, &method, nullptr) == S_OK)
         {
-            Logger::Debug("GetInlinersInModule:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                          ",MethodDef=", method.methodId, "]");
             modules.push_back(method.moduleId);
             methods.push_back(method.methodId);
             total++;
+
+            // if (Logger::IsDebugEnabled())
+            {
+                auto moduleInfo = GetModuleInfo(pInfo, method.moduleId);
+                ComPtr<IUnknown> metadata_interfaces;
+                HRESULT hr = pInfo->GetModuleMetaData(method.moduleId, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+                if (hr == S_OK && hrmodmetadata == S_OK)
+                {
+                    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                    auto functionInfo = GetFunctionInfo(metadata_import, method.methodId);
+                    const auto& inlinee_metadata_import = inlinee_metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                    auto inlineeFunctionInfo = GetFunctionInfo(inlinee_metadata_import, inlineeMethodId);
+
+                    Logger::Info("GetInlinersInModule:: Asking rewrite for inliner ["
+                                  "ModuleId=", method.moduleId, ", ",
+                                  "ModuleName=", moduleInfo.assembly.name, ", ",
+                                  "NGEN=", moduleInfo.IsNGEN(), ", ",
+                                  "MethodDef=", method.methodId, ", ",
+                                  "MethodName=", functionInfo.type.name, ".", functionInfo.name,
+                                  "()] inlining: ["
+                                 "ModuleId=", inlineeModuleId, ", ",
+                                 "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                                 "NGEN=", inlineeModuleInfo.IsNGEN(), ", ",
+                                 "MethodDef=", inlineeMethodId, ", ",
+                                 "MethodName=", inlineeFunctionInfo.type.name, ".", inlineeFunctionInfo.name,
+                                 "()]");
+                }
+                else {
+                    Logger::Info("GetInlinersInModule:: Asking rewrite for inliner ["
+                                  "ModuleId=", method.moduleId, ", ",
+                                  "ModuleName=", moduleInfo.assembly.name, ", ",
+                                  "NGEN=", moduleInfo.IsNGEN(), ", ",
+                                  "MethodDef=", method.methodId, "]");
+                }
+
+
+            }
         }
         methodEnum->Release();
         methodEnum = nullptr;
@@ -91,16 +162,13 @@ bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, Mo
 
             for (ModuleID cascadeInlinerModuleId : allModules)
             {
-                if (cascadeInlinerModuleId != inlinersModuleId)
+                GetInlinersInModule(pInfo, cascadeInlinerModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods, allModules);
+                auto newTotal = modules.size();
+                auto diff = newTotal - total;
+                if (diff > 0)
                 {
-                    GetInlinersInModule(pInfo, cascadeInlinerModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods, allModules);
-                    auto newTotal = modules.size();
-                    auto diff = newTotal - total;
-                    if (diff > 0)
-                    {
-                        Logger::Info("GetInlinersInModule:: Added ", diff, " rewrites on cascade by the inliner moduleID: ", cascadeInlinerModuleId);
-                        total = newTotal;
-                    }
+                    Logger::Info("GetInlinersInModule:: Added ", diff, " rewrites on cascade by the inliner moduleID: ", cascadeInlinerModuleId);
+                    total = newTotal;
                 }
             }
         }
@@ -153,8 +221,21 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
+                auto currentModuleInfo = GetModuleInfo(pInfo, currentModuleId);
+                auto fInfo = GetFunctionInfo();
+                if (fInfo != nullptr)
+                {
+                    Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                                 ", ModuleName=", currentModuleInfo.assembly.name,
+                                 ", MethodDef=", currentMethodDef, ", MethodName=",
+                                 fInfo->type.name, ".", fInfo->name, "()]");
+                }
+                else
+                {
+                    Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                                 ", ModuleName=", currentModuleInfo.assembly.name,
+                                 ", MethodDef=", currentMethodDef, "]");
+                }
             }
         }
 

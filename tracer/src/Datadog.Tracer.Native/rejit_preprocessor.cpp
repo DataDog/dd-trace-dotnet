@@ -395,7 +395,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         }
 
         Logger::Info("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
-                  "(", caller.method_signature.NumberOfArguments(), " params).");
+                  "(", caller.method_signature.NumberOfArguments(), " params). [", moduleInfo.id, " (", moduleInfo.assembly.name, ", NGEN=", moduleInfo.IsNGEN(), ")", " method: ", methodDef, "]");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 
