@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Tagging;
 
@@ -100,6 +101,12 @@ namespace Datadog.Trace.Configuration.Schema
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),
             _ => new AwsKinesisV1Tags(spanKind),
+        };
+
+        public AwsStepFunctionsTags CreateAwsStepFunctionsTags(string spanKind) => _version switch
+        {
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsStepFunctionsTags(spanKind),
+            _ => new AwsStepFunctionsV1Tags(spanKind)
         };
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)

@@ -46,4 +46,8 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="AutoInstrumentation\AWS\StepFunctions\" />
+  </ItemGroup>
+
 </Project>

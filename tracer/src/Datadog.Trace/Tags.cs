@@ -446,6 +446,11 @@ namespace Datadog.Trace
         internal const string TableName = "tablename";
 
         /// <summary>
+        /// The stream name associated with the AWS SDK Step Functions span.
+        /// </summary>
+        internal const string StateMachineName = "statemachinename";
+
+        /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";
