@@ -194,9 +194,6 @@ internal class SchemaExtractor
 
     private class Schema
     {
-        public readonly string JsonDefinition;
-        public readonly ulong Hash;
-
         public Schema(OpenApiSchema openApiSchema)
         {
             using (var writer = new StringWriter())
@@ -207,5 +204,9 @@ internal class SchemaExtractor
 
             Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
         }
+
+        internal string JsonDefinition { get; }
+
+        internal ulong Hash { get; }
     }
 }

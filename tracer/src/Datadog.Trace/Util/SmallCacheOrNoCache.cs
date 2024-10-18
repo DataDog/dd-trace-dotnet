@@ -34,7 +34,7 @@ internal class SmallCacheOrNoCache<TKey, TValue>
     }
 
     /// <summary>
-    /// Can be used to check if the cache has been disabled after receiving too many entries
+    /// Gets a value indicating whether the cache has been disabled after receiving too many entries
     /// </summary>
     public bool IsCaching => _cache != null;
 
