@@ -98,6 +98,8 @@ namespace Datadog.Trace.Debugger.Sink
                 var fullPath = Path.Combine(new FileInfo(this._filePath).Directory!.FullName, fileName);
                 using var writer = new StreamWriter(fullPath, true, Encoding.UTF8, _bufferSize);
                 writer.AutoFlush = false;
+                await writer.WriteLineAsync("Probe ID,Type,Method,Is valid").ConfigureAwait(false);
+
                 while (!_writeQueue.IsCompleted && !_cts.IsCancellationRequested)
                 {
                     try
@@ -144,7 +146,7 @@ namespace Datadog.Trace.Debugger.Sink
                 try
                 {
                     var parsedSnapshot = JsonConvert.DeserializeObject<Snapshot>(snapshot);
-                    return $"{parsedSnapshot.Logger.Name}.{parsedSnapshot.Logger.Method}";
+                    return $"{parsedSnapshot.Logger.Name},{parsedSnapshot.Logger.Method}";
                 }
                 catch (Exception)
                 {
