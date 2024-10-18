@@ -167,14 +167,13 @@ internal readonly partial struct SecurityCoordinator
         _httpTransport.DisposeAdditiveContext();
     }
 
-    internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
+    internal static Dictionary<string, object> ExtractCookiesFromRequest(HttpRequest request)
     {
         var cookies = RequestDataHelper.GetCookies(request);
-        Dictionary<string, object>? cookiesDic = null;
+        var cookiesDic = new Dictionary<string, object>();
 
         if (cookies != null)
         {
-            cookiesDic = new(cookies.Keys.Count);
             for (var i = 0; i < cookies.Count; i++)
             {
 #if NETCOREAPP || NETSTANDARD
@@ -184,28 +183,23 @@ internal readonly partial struct SecurityCoordinator
                 var cookie = cookies[i];
                 var keyForDictionary = cookie.Name ?? string.Empty;
 #endif
-                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-
-                if (!keyExists)
+                if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
                 {
                     cookiesDic.Add(keyForDictionary, cookie.Value ?? string.Empty);
                 }
                 else
                 {
-                    if (value is string)
+                    if (value is string stringValue)
                     {
-                        cookiesDic[keyForDictionary] = new List<string> { (string)value, cookie.Value ?? string.Empty };
+                        cookiesDic[keyForDictionary] = new List<string> { stringValue, cookie.Value ?? string.Empty };
+                    }
+                    else if (value is List<string> valueList)
+                    {
+                        valueList.Add(cookie.Value ?? string.Empty);
                     }
                     else
                     {
-                        if (value is List<string> valueList)
-                        {
-                            valueList.Add(cookie.Value ?? string.Empty);
-                        }
-                        else
-                        {
-                            Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
-                        }
+                        Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
                     }
                 }
             }
