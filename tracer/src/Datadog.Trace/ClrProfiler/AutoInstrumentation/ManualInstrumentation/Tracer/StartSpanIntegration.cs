@@ -32,11 +32,14 @@ public class StartSpanIntegration
         where TTarget : ITracerProxy
     {
         // This is only used by the OpenTracing public API
+        if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
+        {
+            return CallTargetState.GetDefault();
+        }
 
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
         var span = ((IDatadogOpenTracingTracer)tracer).StartSpan(operationName, parentContext, serviceName, startTime, ignoreActiveScope);
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
 
@@ -45,7 +48,10 @@ public class StartSpanIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // Duck cast Span as an ISpan (DataDog.Trace.Manual) and return it
-        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
+        // Duck cast Scope as an ISpan (DataDog.Trace.Manual) and return it
+        var duck = state.State is { } span
+                            ? span.DuckCast<TReturn>()
+                            : returnValue;
+        return new CallTargetReturn<TReturn>(duck);
     }
 }
