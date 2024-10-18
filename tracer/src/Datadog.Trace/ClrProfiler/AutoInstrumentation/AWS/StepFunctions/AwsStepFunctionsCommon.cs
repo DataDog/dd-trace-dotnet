@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         private const string StepFunctionsRequestOperationName = "stepfunctions.request";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsStepFunctionsCommon));
 
-        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsSdkTags? tags, ISpanContext? parentContext = null)
+        public static Scope? CreateScope(Tracer tracer, string operation, string spanKind, out AwsStepFunctionsTags? tags, ISpanContext? parentContext = null)
         {
             tags = null;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(AwsConstants.IntegrationId))
@@ -36,22 +36,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
             try
             {
+                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsStepFunctionsTags(spanKind);
                 var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsStepFunctionsServiceName);
                 var operationName = GetOperationName(tracer, spanKind);
                 scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
-                tags = span.Tags as AwsSdkTags;
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{StepFunctionsServiceName}.{operation}";
 
-                if (tags != null)
-                {
-                    tags.Service = StepFunctionsServiceName;
-                    tags.Operation = operation;
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                }
-
+                tags.Service = StepFunctionsServiceName;
+                tags.Operation = operation;
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

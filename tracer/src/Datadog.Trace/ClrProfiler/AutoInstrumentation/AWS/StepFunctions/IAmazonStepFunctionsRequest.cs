@@ -12,5 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     /// </summary>
     internal interface IAmazonStepFunctionsRequest
     {
+        /// <summary>
+        /// Gets the name of the state machine
+        /// </summary>
+        string? Name { get; }
     }
 }
