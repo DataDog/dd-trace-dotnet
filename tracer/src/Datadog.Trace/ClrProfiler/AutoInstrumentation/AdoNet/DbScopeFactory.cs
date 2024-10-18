@@ -100,15 +100,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
                         var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
                         if (!string.IsNullOrEmpty(propagatedCommand))
                         {
                             command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjectedInComment || traceParentInjectedInContext)
-                            {
-                                tags.DbmTraceInjected = "true";
-                            }
+                        }
+
+                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
+                        {
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }
