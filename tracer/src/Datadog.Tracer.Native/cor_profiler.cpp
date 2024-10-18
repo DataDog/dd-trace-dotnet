@@ -4231,6 +4231,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
 
     Logger::Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", Hex(methodId), "]");
 
+    auto moduleInfo = GetModuleInfo(this->info_, moduleId);
+    ComPtr<IUnknown> metadata_interfaces;
+    HRESULT hr = this->info_->GetModuleMetaData(moduleId, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+    if (hr == S_OK)
+    {
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        auto functionInfo = GetFunctionInfo(metadata_import, methodId);
+
+        Logger::Info(" #### Rejitting: Module=",
+                     moduleInfo.assembly.name,
+                     ", Method=",
+                     functionInfo.type.name, ".", functionInfo.name,
+                     "()");
+    }
+
     // we notify the reJIT handler of this event and pass the module_metadata.
     return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl);
 }
@@ -4312,6 +4327,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // Verify that we have the metadata for this module
     if (!shared::Contains(modules.Ref(), module_id))
     {
+        ComPtr<IUnknown> metadata_interfaces;
+        hr = this->info_->GetModuleMetaData(module_id, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        if (hr == S_OK)
+        {
+            auto moduleInfo = GetModuleInfo(this->info_, module_id);
+            const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+            Logger::Info("NGEN Image: Accepted for Module [We haven't stored a ModuleMetadata for this module]: ",
+                         moduleInfo.assembly.name,
+                         ", Method:",
+                         functionInfo.type.name, ".", functionInfo.name,
+                         "()");
+        }
+
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
         *pbUseCachedFunction = true;
@@ -4331,6 +4361,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // it.
         *pbUseCachedFunction = false;
         return S_OK;
+    }
+
+    ComPtr<IUnknown> metadata_interfaces;
+    hr = this->info_->GetModuleMetaData(module_id, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+    if (hr == S_OK)
+    {
+        auto moduleInfo = GetModuleInfo(this->info_, module_id);
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+        Logger::Info("NGEN Image: Accepted for Module: ",
+                     moduleInfo.assembly.name,
+                     ", Method:",
+                     functionInfo.type.name, ".", functionInfo.name,
+                     "()");
     }
 
     *pbUseCachedFunction = true;

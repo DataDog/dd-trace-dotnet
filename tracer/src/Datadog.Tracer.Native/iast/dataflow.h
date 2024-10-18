@@ -132,6 +132,7 @@ namespace iast
         bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
         void RemoveModule(ModuleID moduleId) override;
         void AddNGenInlinerModule(ModuleID moduleId) override;
+        std::vector<ModuleID> GetAllNGenInlinerModules() override;
 
         HRESULT RejitMethod(trace::FunctionControlWrapper& functionControl) override;
     };

@@ -144,6 +144,11 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
 }
 
 template <class RejitRequestDefinition>
+std::vector<ModuleID> RejitPreprocessor<RejitRequestDefinition>::GetAllNGenInlinerModules() {
+    return m_ngenInlinersModules;
+}
+
+template <class RejitRequestDefinition>
 HRESULT RejitPreprocessor<RejitRequestDefinition>::RejitMethod(FunctionControlWrapper& functionControl)
 {
     auto moduleId = functionControl.GetModuleId();
@@ -390,7 +395,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
         }
 
         Logger::Info("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name,
-                  "(", caller.method_signature.NumberOfArguments(), " params).");
+                  "(", caller.method_signature.NumberOfArguments(), " params). [", moduleInfo.id, " (", moduleInfo.assembly.name, ", NGEN=", moduleInfo.IsNGEN(), ")", " method: ", methodDef, "]");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 

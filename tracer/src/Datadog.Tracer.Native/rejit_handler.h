@@ -143,6 +143,7 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);
     void AddNGenInlinerModule(ModuleID moduleId);
+    std::vector<ModuleID> GetAllNGenInlinerModules();
 };
 
 } // namespace trace
