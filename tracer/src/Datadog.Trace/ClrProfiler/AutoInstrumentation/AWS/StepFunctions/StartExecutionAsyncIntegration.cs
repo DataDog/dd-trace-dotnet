@@ -49,9 +49,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             }
 
             var scope = AwsStepFunctionsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out var tags);
-            if (tags is not null && request.Name is not null)
+            if (tags is not null && request.StateMachineArn is not null)
             {
-                tags.StateMachineName = request.Name;
+                tags.StateMachineName = AwsStepFunctionsCommon.GetStateMachineName(request.StateMachineArn);
             }
 
             if (request.Input is not null && scope?.Span.Context is { } context)

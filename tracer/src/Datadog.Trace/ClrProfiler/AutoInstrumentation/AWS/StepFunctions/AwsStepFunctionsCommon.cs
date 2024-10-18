@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -58,6 +59,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             return scope;
         }
 
+        [return: NotNullIfNotNull(nameof(stateMachineArn))]
+        public static string? GetStateMachineName(string? stateMachineArn)
+        {
+            if (stateMachineArn is null)
+            {
+                return stateMachineArn;
+            }
+
+            var lastSeparationIndex = stateMachineArn.LastIndexOf(':') + 1;
+            return stateMachineArn.Substring(lastSeparationIndex);
+        }
+
         internal static string GetOperationName(Tracer tracer, string spanKind)
         {
             if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
@@ -65,7 +78,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 return StepFunctionsRequestOperationName;
             }
 
-            return $"{StepFunctionsOperationName}.request";
+            return spanKind switch
+            {
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(StepFunctionsOperationName),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(StepFunctionsOperationName),
+                _ => $"{StepFunctionsOperationName}.request"
+            };
         }
     }
 }

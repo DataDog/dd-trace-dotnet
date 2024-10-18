@@ -255,7 +255,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusInboundV0(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s

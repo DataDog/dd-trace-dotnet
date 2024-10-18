@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -33,6 +32,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
+            SpanKinds.Consumer => span.IsAwsStepFunctionsInbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsStepFunctionsOutbound(metadataSchemaVersion),
             SpanKinds.Client => span.IsAwsStepFunctionsRequest(metadataSchemaVersion),
             _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS Step Functions integration: {span.Tags["span.kind"]}", nameof(span)),
         };
@@ -51,10 +52,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 1;
+                var expectedCount = 8;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 1;
+                var expectedCount = 4;
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
@@ -66,9 +67,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                var suffix = GetSnapshotSuffix(packageVersion);
 
-                settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
+                settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_stepfunctions");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_stepfunctions");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_stepfunctions");
@@ -85,14 +85,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsStepFunctions);
+            }
+        }
 
-                static string GetSnapshotSuffix(string packageVersion)
-                    => packageVersion switch
-                    {
-                        null or "" => ".pre3.7.101.88",
-                        { } v when new Version(v) < new Version("3.7.101.88") => ".pre3.7.101.88",
-                        _ => string.Empty
-                    };
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public async Task IntegrationDisabled()
+        {
+            const string expectedOperationName = "aws.stepfunctions.request";
+
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.AwsStepFunctions)}_ENABLED", "false");
+
+            using var telemetry = this.ConfigureTelemetry();
+            var packageVersion = PackageVersions.AwsStepFunctions.First()[0] as string;
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = agent.WaitForSpans(1, returnAllOperations: true);
+
+                Assert.NotEmpty(spans);
+                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+                telemetry.AssertIntegrationDisabled(IntegrationId.AwsStepFunctions);
             }
         }
     }

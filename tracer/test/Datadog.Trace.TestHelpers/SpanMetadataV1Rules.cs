@@ -392,6 +392,46 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
+        public static Result IsAwsStepFunctionsInboundV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.stepfunctions.process")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "StepFunctions")
+                .Matches("aws_service", "StepFunctions")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsAwsStepFunctionsOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.stepfunctions.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsOptional("region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "StepFunctions")
+                .Matches("aws_service", "StepFunctions")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "statemachinename", "peer.service")
+                .Matches("component", "aws-sdk")
+                .IsOptional("_dd.base_service")
+                .Matches("span.kind", "producer"));
+
         public static Result IsAwsStepFunctionsRequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aws.stepfunctions.request")
@@ -407,7 +447,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "statemachinename", "peer.service")
                 .Matches("component", "aws-sdk")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
         public static Result IsAzureServiceBusInboundV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
