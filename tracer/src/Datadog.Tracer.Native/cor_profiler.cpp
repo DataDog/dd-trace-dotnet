@@ -4309,6 +4309,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    const auto& module_info = GetModuleInfo(this->info_, module_id);
+    // if this is Datadog.Trace.Manual, don't allow inlining as it causes... issues
+    if(module_info.assembly.name == manual_instrumentation_name)
+    {
+        Logger::Debug("Disabling NGEN for Datadog.Trace.Manual");
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+
     // Verify that we have the metadata for this module
     if (!shared::Contains(modules.Ref(), module_id))
     {
@@ -4318,7 +4327,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    const auto& module_info = GetModuleInfo(this->info_, module_id);
     const auto& appDomainId = module_info.assembly.app_domain_id;
 
     const bool has_loader_injected_in_appdomain =
