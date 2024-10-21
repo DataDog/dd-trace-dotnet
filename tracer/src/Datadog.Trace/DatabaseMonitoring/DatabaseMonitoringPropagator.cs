@@ -139,7 +139,15 @@ namespace Datadog.Trace.DatabaseMonitoring
                     Log.Debug("Propagating span data for DBM for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
                 }
 
-                injectionCommand.ExecuteNonQuery();
+                try
+                {
+                    injectionCommand.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces.", HexConverter.ToString(contextValue));
+                    return false;
+                }
             }
 
             // Since sending the query to the DB can be a bit long, we register the time it took for transparency.
