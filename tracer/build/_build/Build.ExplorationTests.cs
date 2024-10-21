@@ -657,7 +657,9 @@ class ExplorationTestDescription
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
                     "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
                     "Google.Protobuf.JsonParserTest.MaliciousRecursion",
-                    "Google.Protobuf.Test.RefStructCompatibilityTest"
+                    "Google.Protobuf.Test.RefStructCompatibilityTest",
+                    "Google.Protobuf.RefStructCompatibilityTest.GeneratedCodeCompilesWithOldCsharpCompiler",
+                    "Google.Protobuf.RefStructCompatibilityTest.RunOldCsharpCompilerAndCheckSuccess"
                 },
                 LineProbesEnabled = true
             },
