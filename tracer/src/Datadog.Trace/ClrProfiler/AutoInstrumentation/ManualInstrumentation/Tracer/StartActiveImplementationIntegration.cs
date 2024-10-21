@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -29,13 +30,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class StartActiveImplementationIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StartActiveImplementationIntegration>();
+
     internal static CallTargetState OnMethodBegin<TTarget, TSpanContext>(TTarget instance, string operationName, TSpanContext? parent, string? serviceName, DateTimeOffset? startTime, bool? finishOnClose)
         where TTarget : ITracerProxy
     {
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
+        if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
+        {
+            Log.Error(
+                "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
+                instance.AutomaticTracer?.GetType());
+            return CallTargetState.GetDefault();
+        }
+
         var scope = tracer.StartActiveInternal(
             operationName,
             parent: parentContext,
@@ -50,6 +60,9 @@ public class StartActiveImplementationIntegration
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
     {
         // Duck cast Scope as an IScope (DataDog.Trace.Manual) and return it
-        return new CallTargetReturn<TReturn>(state.Scope.DuckCast<TReturn>());
+        var duckScope = state.Scope is { } scope
+                            ? scope.DuckCast<TReturn>()
+                            : returnValue;
+        return new CallTargetReturn<TReturn>(duckScope);
     }
 }
