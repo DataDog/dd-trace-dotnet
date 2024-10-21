@@ -53,8 +53,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetMvcV1(this MockSpan span) => Result.FromSpan(span)
@@ -72,8 +71,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetWebApi2V1(this MockSpan span) => Result.FromSpan(span)
@@ -100,8 +98,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 .IsOptional("_dd.base_service")
-                // BUG: component tag is not set
-                // .Matches("component", "aspnet")
+                .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetCoreV1(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)

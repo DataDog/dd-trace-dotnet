@@ -12,6 +12,7 @@
       aspnet.action: index,
       aspnet.controller: error,
       aspnet.route: {controller}/{action}/{id},
+      component: aspnet,
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
       http.method: GET,
@@ -34,6 +35,7 @@
     ParentId: Id_4,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
       http.method: GET,
@@ -55,6 +57,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 503,
       error.stack:
@@ -92,6 +95,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       aspnet.action: badrequestwithstatuscode,
       aspnet.controller: home,
       aspnet.route: BadRequestWithStatusCode/{statuscode},
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 503,
       error.stack:
