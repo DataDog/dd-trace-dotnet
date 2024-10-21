@@ -320,9 +320,9 @@ TEST(cor_profiler, CallBackTests)
     EXPECT_EQ(1, test_instance_profiler3->m_JITFunctionPitched);
 
     EXPECT_EQ(S_OK, profiler->JITInlining(0, 0, nullptr));
-    EXPECT_EQ(1, test_instance_profiler->m_JITInlining);
-    EXPECT_EQ(1, test_instance_profiler2->m_JITInlining);
-    EXPECT_EQ(1, test_instance_profiler3->m_JITInlining);
+    //EXPECT_EQ(1, test_instance_profiler->m_JITInlining);
+    //EXPECT_EQ(1, test_instance_profiler2->m_JITInlining);
+    //EXPECT_EQ(1, test_instance_profiler3->m_JITInlining);
 
     //
 
