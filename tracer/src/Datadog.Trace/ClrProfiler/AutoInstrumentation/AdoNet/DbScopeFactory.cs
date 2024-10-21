@@ -100,10 +100,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
-                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        var propagationComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
+                        if (!string.IsNullOrEmpty(propagationComment))
                         {
-                            command.CommandText = $"{propagatedCommand} {commandText}";
+                            command.CommandText = $"{propagationComment} {commandText}";
                         }
 
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
