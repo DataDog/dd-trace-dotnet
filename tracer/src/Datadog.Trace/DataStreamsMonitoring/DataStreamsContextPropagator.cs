@@ -38,6 +38,9 @@ internal class DataStreamsContextPropagator
 
         var encodedBytes = PathwayContextEncoder.Encode(context);
 
+        // Calculate the maximum length of the base64 encoded data
+        // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
+        // So the maximum length is ceil(encodedBytes.Length / 3) * 4 and using integer arithmetic it's ((encodedBytes.Length + 2) / 3) * 4
         int base64Length = ((encodedBytes.Length + 2) / 3) * 4;
         byte[] base64EncodedContextBytes = new byte[base64Length];
         var status = Base64.EncodeToUtf8(encodedBytes, base64EncodedContextBytes, out _, out int bytesWritten);
@@ -45,6 +48,7 @@ internal class DataStreamsContextPropagator
         if (status != OperationStatus.Done)
         {
             Log.Error("Failed to encode Data Streams context to Base64. OperationStatus: {Status}", status);
+            return;
         }
 
         if (bytesWritten == base64EncodedContextBytes.Length)
@@ -79,6 +83,9 @@ internal class DataStreamsContextPropagator
         {
             try
             {
+                // Calculate the maximum decoded length
+                // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
+                // So the maximum decoded length is (base64Bytes.Length * 3) / 4
                 int decodedLength = (base64Bytes.Length * 3) / 4;
                 byte[] decodedBytes = new byte[decodedLength];
 
