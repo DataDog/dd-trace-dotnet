@@ -178,28 +178,31 @@ internal readonly partial struct SecurityCoordinator
             {
 #if NETCOREAPP || NETSTANDARD
                 var cookie = cookies.ElementAt(i);
-                var keyForDictionary = cookie.Key ?? string.Empty;
+                var keyForDictionary = cookie.Key;
 #else
                 var cookie = cookies[i];
-                var keyForDictionary = cookie.Name ?? string.Empty;
+                var keyForDictionary = cookie.Name;
 #endif
-                if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
+                if (cookie.Value is not null && keyForDictionary is not null)
                 {
-                    cookiesDic.Add(keyForDictionary, cookie.Value ?? string.Empty);
-                }
-                else
-                {
-                    if (value is string stringValue)
+                    if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
                     {
-                        cookiesDic[keyForDictionary] = new List<string> { stringValue, cookie.Value ?? string.Empty };
-                    }
-                    else if (value is List<string> valueList)
-                    {
-                        valueList.Add(cookie.Value ?? string.Empty);
+                        cookiesDic.Add(keyForDictionary, cookie.Value);
                     }
                     else
                     {
-                        Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
+                        if (value is string stringValue)
+                        {
+                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookie.Value };
+                        }
+                        else if (value is List<string> valueList)
+                        {
+                            valueList.Add(cookie.Value);
+                        }
+                        else
+                        {
+                            Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
+                        }
                     }
                 }
             }
