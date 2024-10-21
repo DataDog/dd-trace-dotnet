@@ -9,6 +9,10 @@
 #include <shared/src/native-src/util.h>
 #include <thread>
 
+#ifdef _WIN32
+#include "Windows.h"
+#endif
+
 extern "C"
 {
 #include "datadog/common.h"
@@ -24,7 +28,11 @@ extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 }
 
 CrashReporting::CrashReporting(int32_t pid)
-    : _pid(pid)
+    : _pid(pid),
+    _signal(0),
+    _error{ std::nullopt },
+    _crashInfo{ nullptr },
+    _refCount(0)
 {
 }
 
@@ -34,8 +42,11 @@ CrashReporting::~CrashReporting()
     {
         ddog_Error_drop(&_error.value());
     }
-
-    ddog_crasht_CrashInfo_drop(&_crashInfo);
+    
+    if (_crashInfo.inner != NULL)
+    {
+        ddog_crasht_CrashInfo_drop(&_crashInfo);
+    }
 }
 
 int32_t CrashReporting::Initialize()
@@ -208,6 +219,13 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 .sp = sp,
                 .symbol_address = symbolAddress,
             };
+
+            if (frame.hasPdbInfo)
+            {
+                stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_PDB;
+                stackFrames[i].normalized_ip.age = frame.pdbAge;
+                stackFrames[i].normalized_ip.build_id = { (byte*)&frame.pdbSig, 16 };
+            }
         }
 
         auto threadIdStr = std::to_string(threadId);
