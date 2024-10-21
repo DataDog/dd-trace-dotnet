@@ -149,6 +149,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Theory]
@@ -182,6 +184,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -204,6 +208,8 @@ namespace Datadog.Trace.Tests.Propagators
             spanContext.TraceId.Should().Be(traceId.Lower);
             spanContext.SpanId.Should().Be(expectedSpanId);
 
+            result.Baggage.Should().BeNull();
+
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
             headersForInjection.Setup(h => h.Set("b3", expectedTraceParent));
@@ -224,6 +230,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             headers.Verify(h => h.GetValues("b3"), Times.Once());
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -233,10 +240,11 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("b3"))
                    .Returns(new[] { "00000000075bcd15=000000003ade68b1=1" });
 
-            var context = B3Propagator.Extract(headers.Object);
+            var result = B3Propagator.Extract(headers.Object);
 
             headers.Verify(h => h.GetValues("b3"), Times.Once());
-            context.SpanContext.Should().BeNull();
+            result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -250,6 +258,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             headers.Verify(h => h.GetValues("b3"), Times.Once());
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
     }
 }

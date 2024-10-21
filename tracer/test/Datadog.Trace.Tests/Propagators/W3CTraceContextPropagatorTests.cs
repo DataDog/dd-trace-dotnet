@@ -459,6 +459,8 @@ namespace Datadog.Trace.Tests.Propagators
                           ParentId = null,
                           LastParentId = ZeroLastParentId
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]

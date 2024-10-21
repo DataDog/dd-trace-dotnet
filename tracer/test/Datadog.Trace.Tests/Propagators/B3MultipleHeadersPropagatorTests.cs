@@ -186,6 +186,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Theory]
@@ -234,6 +236,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = samplingPriority,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -255,12 +259,14 @@ namespace Datadog.Trace.Tests.Propagators
             const ulong expectedSpanId = 0x00f067aa0ba902b7UL;
 
             var context = B3Propagator.Extract(headers.Object);
-            var spanContext = context.SpanContext!;
+            var result = context.SpanContext!;
 
-            spanContext.Should().NotBeNull();
-            spanContext.TraceId128.Should().Be(expectedTraceId);
-            spanContext.TraceId.Should().Be(expectedTraceId.Lower);
-            spanContext.SpanId.Should().Be(expectedSpanId);
+            result.Should().NotBeNull();
+            result.TraceId128.Should().Be(expectedTraceId);
+            result.TraceId.Should().Be(expectedTraceId.Lower);
+            result.SpanId.Should().Be(expectedSpanId);
+
+            context.Baggage.Should().BeNull();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>(MockBehavior.Strict);
@@ -294,6 +300,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -314,6 +321,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -334,6 +342,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -355,6 +364,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -375,6 +385,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never()); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -395,6 +406,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-b3-sampled"), Times.Never); // extractor doesn't get this far
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
     }
 }
