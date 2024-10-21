@@ -40,7 +40,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.waf.version: 1.20.0,
+      _dd.appsec.waf.version: 1.20.1,
       _dd.runtime_family: dotnet
     },
     Metrics: {
