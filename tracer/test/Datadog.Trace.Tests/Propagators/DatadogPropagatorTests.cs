@@ -232,6 +232,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -260,6 +262,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -296,6 +300,7 @@ namespace Datadog.Trace.Tests.Propagators
             var result = Propagator.Extract(headers.Object);
 
             result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -321,6 +326,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = EmptyPropagatedTags,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -340,10 +347,12 @@ namespace Datadog.Trace.Tests.Propagators
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
             Propagator.Inject(new PropagationContext(spanContext, TestBaggage), headers);
-            var extractedContext = Propagator.Extract(headers);
+            var result = Propagator.Extract(headers);
 
-            extractedContext.SpanContext.Should().NotBeSameAs(spanContext);
-            extractedContext.SpanContext.Should().BeEquivalentTo(spanContext);
+            result.SpanContext.Should().NotBeSameAs(spanContext);
+            result.SpanContext.Should().BeEquivalentTo(spanContext);
+
+            result.Baggage.Should().BeNull();
         }
 
         [Theory]
@@ -389,6 +398,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Theory]
@@ -427,6 +438,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         private static Mock<IHeadersCollection> SetupMockHeadersCollection()
