@@ -15,8 +15,6 @@ using LambdaCommon = Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda.La
 
 namespace Datadog.Trace.Tests
 {
-    extern alias DatadogTraceManual;
-
     [Collection(nameof(WebRequestCollection))]
     public class LambdaRequestBuilderTests
     {

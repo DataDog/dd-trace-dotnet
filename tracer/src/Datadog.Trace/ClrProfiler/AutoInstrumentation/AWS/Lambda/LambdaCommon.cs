@@ -28,12 +28,9 @@ internal abstract class LambdaCommon
         var spanContext = SpanContextPropagator.Instance.Extract(headers);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
 
-        if (spanContext != null)
-        {
-            return tracer.StartActiveInternal(operationName: PlaceholderOperationName, parent: spanContext, serviceName: PlaceholderServiceName);
-        }
+        var span = spanContext != null ? tracer.StartSpan(PlaceholderOperationName, tags: null, parent: spanContext, serviceName: PlaceholderServiceName, addToTraceContext: false) : tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
 
-        var span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
         return tracer.TracerManager.ScopeManager.Activate(span, false);
     }
 
