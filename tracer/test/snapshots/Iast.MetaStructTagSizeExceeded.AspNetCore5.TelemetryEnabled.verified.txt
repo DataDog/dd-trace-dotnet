@@ -26,427 +26,428 @@
   "vulnerabilities": [
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     },
     {
       "type": "COMMAND_INJECTION",
-      "evidence": {
-        "value": "MAX SIZE EXCEEDED"
-      },
       "hash": -430498668,
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
+      },
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
       }
     }
   ]
 },
-      _dd.iast.json.tag.size.exceeded: 1
+      _dd.iast.json.metastruct.test: true,
+      _dd.iast.metastruct.tag.size.exceeded: 1
     },
     Metrics: {
       process_id: 0,

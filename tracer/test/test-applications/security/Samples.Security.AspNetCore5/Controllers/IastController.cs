@@ -1051,10 +1051,28 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("TestJsonTagSizeExceeded")]
         public IActionResult TestJsonTagSizeExceeded(string tainted)
         {
+            const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
             // Generate manually a lot of different vulnerabilities
-            for (var i = 0; i < 30; i++)
+            for (var i = 0; i < 35; i++)
             {
-                ExecuteCommandInternal(i.ToString() + "-" + tainted, i.ToString() + "-" + tainted);
+                const int length = 250;
+                var randomBytes = new byte[length];
+                var chars = new char[length];
+                
+                using (var rng = RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(randomBytes);
+                }
+                
+                for (var j = 0; j < length; j++)
+                {
+                    chars[j] = allowedChars[randomBytes[j] % allowedChars.Length];
+                }
+                
+                var randomString = new string(chars);
+                
+                ExecuteCommandInternal(i.ToString() + "-" + tainted + "-" + randomString, i.ToString() + "-" + tainted + "-" + randomString);
             }
             
             return Content("TestJsonTagSizeExceeded");
