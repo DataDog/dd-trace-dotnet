@@ -37,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
                 if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
                 {
+                    // Both PropagationKeyBase64 and PropagationKey use the Base64 encoded context
                     sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, base64EncodedContext);
                 }
             }
