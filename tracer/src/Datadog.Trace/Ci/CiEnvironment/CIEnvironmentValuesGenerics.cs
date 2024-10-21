@@ -259,7 +259,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
 
-        Message = Message?.Trim(' ', '\n', '\r');
+        Message = Message?.Trim();
     }
 
     protected string? GetVariableIfIsNotEmpty(string key, string? defaultValue, Func<string?, string?, bool>? validator = null)
