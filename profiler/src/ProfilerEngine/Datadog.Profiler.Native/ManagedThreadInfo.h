@@ -21,12 +21,18 @@
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
-struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
+enum class ThreadMetaInfo : std::uint64_t
+{
+    UnsafeToUnwind = 1
+};
+
+struct alignas(FieldAlignRequirement) TraceContext
 {
 public:
     std::uint64_t _writeGuard;
     std::uint64_t _currentLocalRootSpanId;
     std::uint64_t _currentSpanId;
+    std::uint64_t _threadMetaInfo;
 };
 
 struct ManagedThreadInfo : public IThreadInfo
@@ -80,7 +86,7 @@ public:
     inline void SetThreadDestroyed();
     inline std::pair<uint64_t, shared::WSTRING> SetBlockingThread(uint64_t osThreadId, shared::WSTRING name);
 
-    inline TraceContextTrackingInfo* GetTraceContextPointer();
+    inline TraceContext* GetTraceContextPointer();
     inline bool HasTraceContext() const;
 
     inline std::string GetProfileThreadId() override;
@@ -95,6 +101,7 @@ public:
     inline int32_t GetTimerId() const;
     inline bool CanBeInterrupted() const;
 #endif
+    inline bool IsSafeToUnwind() const;
 
     inline AppDomainID GetAppDomainId();
 
@@ -130,7 +137,7 @@ private:
 
     bool _isThreadDestroyed;
 
-    TraceContextTrackingInfo _traceContext;
+    TraceContext _traceContext;
 
     //  strings to be used by samples: avoid allocations when rebuilding them over and over again
     std::string _profileThreadId;
@@ -416,7 +423,7 @@ inline std::pair<uint64_t, shared::WSTRING> ManagedThreadInfo::SetBlockingThread
     return {oldId, oldName};
 }
 
-inline TraceContextTrackingInfo* ManagedThreadInfo::GetTraceContextPointer()
+inline TraceContext* ManagedThreadInfo::GetTraceContextPointer()
 {
     return &_traceContext;
 }
@@ -445,7 +452,6 @@ inline bool ManagedThreadInfo::HasTraceContext() const
 }
 
 #ifdef LINUX
-
 inline bool ManagedThreadInfo::CanBeInterrupted() const
 {
     return _sharedMemoryArea == nullptr;
@@ -476,6 +482,12 @@ inline std::int32_t ManagedThreadInfo::GetTimerId() const
     return _timerId;
 }
 #endif
+
+inline bool ManagedThreadInfo::IsSafeToUnwind() const
+{
+    std::atomic_thread_fence(std::memory_order_acquire);
+    return (_traceContext._threadMetaInfo & static_cast<std::uint64_t>(ThreadMetaInfo::UnsafeToUnwind)) == 0;
+}
 
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
 {

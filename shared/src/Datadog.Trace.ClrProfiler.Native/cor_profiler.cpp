@@ -689,7 +689,12 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
     {
-        RunInAllProfilers(JITInlining(callerId, calleeId, pfShouldInline));
+        if (pfShouldInline != nullptr)
+        {
+            pfShouldInline = FALSE;
+        }
+        return S_OK;
+        //RunInAllProfilers(JITInlining(callerId, calleeId, pfShouldInline));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadCreated(ThreadID threadId)

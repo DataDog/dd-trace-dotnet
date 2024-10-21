@@ -12,6 +12,8 @@ using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 using Xunit;
 
+using PprofSample = Perftools.Profiles.Sample;
+
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     public static class SamplesHelper
@@ -133,7 +135,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return true;
         }
 
-        internal static IEnumerable<(StackTrace StackTrace, PprofHelper.Label[] Labels, long[] Values)> GetSamples(string directory, string sampleTypeFilter = null)
+        internal static IEnumerable<Sample> GetSamples(string directory, string sampleTypeFilter = null)
         {
             foreach (var profile in GetProfiles(directory))
             {
@@ -149,7 +151,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                     var values = sample.Value.ToArray();
                     if (sampleTypeFilter == null || (sampleTypeIdx != -1 && values[sampleTypeIdx] != 0))
                     {
-                        yield return (sample.StackTrace(profile), GetLabels(profile, sample).ToArray(), values);
+                        yield return new Sample(sample.StackTrace(profile), GetLabels(profile, sample).ToArray(), values);
                     }
                 }
             }
@@ -185,7 +187,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
         }
 
-        private static IEnumerable<PprofHelper.Label> GetLabels(Profile profile, Sample sample)
+        private static IEnumerable<PprofHelper.Label> GetLabels(Profile profile, PprofSample sample)
         {
             return sample.Labels(profile);
         }

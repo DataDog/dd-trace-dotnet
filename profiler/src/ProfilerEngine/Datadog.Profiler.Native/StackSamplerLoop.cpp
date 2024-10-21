@@ -18,8 +18,8 @@
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "ManagedThreadList.h"
-#include "OsSpecificApi.h"
 #include "OpSysTools.h"
+#include "OsSpecificApi.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
 #include "ScopeFinalizer.h"
@@ -43,8 +43,7 @@ StackSamplerLoop::StackSamplerLoop(
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
     ICollector<RawCpuSample>* pCpuTimeCollector,
-    MetricsRegistry& metricsRegistry)
-    :
+    MetricsRegistry& metricsRegistry) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pStackFramesCollector{pStackFramesCollector},
     _pManager{pManager},
@@ -84,7 +83,7 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    if(_areInternalMetricsEnabled)
+    if (_areInternalMetricsEnabled)
     {
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
         _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
@@ -110,11 +109,10 @@ const char* StackSamplerLoop::GetName()
 
 bool StackSamplerLoop::StartImpl()
 {
-    _pLoopThread = std::make_unique<std::thread>([this]
-        {
-            OpSysTools::SetNativeThreadName(ThreadName);
-            MainLoop();
-        });
+    _pLoopThread = std::make_unique<std::thread>([this] {
+        OpSysTools::SetNativeThreadName(ThreadName);
+        MainLoop();
+    });
 
     return true;
 }
@@ -275,7 +273,6 @@ void StackSamplerLoop::WalltimeProfilingIteration()
         i++;
 
     } while (i < sampledThreadsCount && !_shutdownRequested);
-
 }
 
 void StackSamplerLoop::CpuProfilingIteration()
@@ -299,15 +296,15 @@ void StackSamplerLoop::CpuProfilingIteration()
             // Note: it is not possible to get this information on Windows 32-bit or in some cases in 64-bit
             //       so isRunning should be true if this thread consumed some CPU since the last iteration
 #if _WINDOWS
-    #if BIT64  // Windows 64-bit
+    #if BIT64 // Windows 64-bit
             if (failure)
             {
                 isRunning = (lastConsumption < currentConsumption);
             }
-    #else  // Windows 32-bit
+    #else // Windows 32-bit
             isRunning = (lastConsumption < currentConsumption);
     #endif
-#else  // nothing to do for Linux
+#else // nothing to do for Linux
 #endif
 
             if (isRunning)
@@ -440,7 +437,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         // malloc() uses a lock and so if we susped a thread that was alocating, we will deadlock.
         _pStackFramesCollector->PrepareForNextCollection();
 
-
         // block used to ensure that NotifyIterationFinished gets called
         {
             // Get the timestamp of the current collection
@@ -521,7 +517,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // WE ARE NOW FREE TO CALL NORMAL APIS THAT ARE GENERALLY SAFE TO CALL FROM A PROFILER.
             // ----------- ----------- ----------- ----------- ----------- -----------
         } // _pManager->AllowStackWalk(..)
-
     }
 
     // Store stack-walk results into the results buffer:
@@ -595,8 +590,7 @@ void StackSamplerLoop::PersistStackSnapshotResults(
         rawSample.Duration = pSnapshotResult->GetRepresentedDurationNanoseconds();
         _pWallTimeCollector->Add(std::move(rawSample));
     }
-    else
-    if (profilingType == PROFILING_TYPE::CpuTime)
+    else if (profilingType == PROFILING_TYPE::CpuTime)
     {
         // add the CPU sample to the lipddprof pipeline if needed
         RawCpuSample rawCpuSample;

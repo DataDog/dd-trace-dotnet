@@ -79,6 +79,11 @@ private:
     bool call_target_bubble_up_exception_function_available = false;
 
     //
+    // Profiler Members
+    //
+    std::unique_ptr<TypeReference> profiler_skipped_methods_integration_type = nullptr;
+
+    //
     // Debugger Members
     //
     std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
@@ -214,16 +219,31 @@ public:
     int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
 
 
+    void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                WCHAR* configuration_string_ptr);
+
+    void InitializeIntegrationMethodsFromConfig(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                                WCHAR* integration_type_name_ptr,
+                              WCHAR* configuration_string_ptr, const std::unique_ptr<TypeReference>& integration_type,
+                              const std::string& function_name);
+
     //
     // Live Debugger Integration methods
     //
-    void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
-                                WCHAR* configuration_string_ptr);
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
+
+    //
+    // Profiler methods
+    //
+    void InitializeProfilerSkippedMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                            WCHAR* integration_type_name_ptr,
+                                WCHAR* configuration_string_ptr);
+    void SetProfilerSkippedMethodsIntegrationType(WCHAR* id, WCHAR* integration_assembly_name_ptr,
+                                          WCHAR* integration_type_name_ptr);
 
     //
     // Fault-Tolerant Instrumentation methods

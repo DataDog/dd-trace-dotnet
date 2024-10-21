@@ -121,7 +121,10 @@ const shared::WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfil
 
 const shared::WSTRING appsec_nonwindows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
 const shared::WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+Windows");
-const shared::WSTRING profiler_nativemethods_type = WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+NativeMethods");
+const shared::WSTRING profiler_nativemethods_type_in_profiler_native_module =
+    WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+ProfilerNativeMethods");
+const shared::WSTRING profiler_nativemethods_type_in_tracer_native_module =
+    WStr("Datadog.Trace.ContinuousProfiler.NativeInterop+TracerNativeMethods");
 const shared::WSTRING native_loader_nativemethods_type = WStr("Datadog.Trace.NativeLoader+NativeMethods");
 
 const shared::WSTRING debugger_nonwindows_nativemethods_type = WStr("Datadog.Trace.Debugger.PInvoke.DebuggerNativeMethods+NonWindows");

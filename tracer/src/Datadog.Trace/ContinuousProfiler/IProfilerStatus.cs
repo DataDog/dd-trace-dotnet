@@ -7,6 +7,8 @@ namespace Datadog.Trace.ContinuousProfiler
 {
     internal interface IProfilerStatus
     {
+        bool IsProfilingEnabled { get; }
+
         bool IsProfilerReady { get; }
     }
 }

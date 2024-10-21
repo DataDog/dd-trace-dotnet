@@ -194,6 +194,12 @@ extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak)
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
+    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
+    if (currentThreadInfo  != nullptr && !currentThreadInfo->IsSafeToUnwind())
+    {
+        return E_ABORT;
+    }
+
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
         return E_ABORT;

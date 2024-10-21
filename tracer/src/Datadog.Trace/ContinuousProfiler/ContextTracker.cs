@@ -7,7 +7,6 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -32,6 +31,8 @@ namespace Datadog.Trace.ContinuousProfiler
         ///                    |--------------------|
         ///   16       8       |       Span Id      |
         ///                    |--------------------|
+        ///   24       8       |   ThreadMetaInfo   |
+        ///                    |--------------------|
         /// This allows us to inform the profiler sampling thread when we are writing or not the data
         /// and avoid torn read/write (Using memory barriers).
         /// We take advantage of this layout in SpanContext.Write
@@ -48,6 +49,11 @@ namespace Datadog.Trace.ContinuousProfiler
             _traceContextPtr = new ThreadLocal<IntPtr>();
         }
 
+        private interface IThreadContext
+        {
+            void Write(IntPtr ptr);
+        }
+
         public bool IsEnabled
         {
             get
@@ -59,6 +65,11 @@ namespace Datadog.Trace.ContinuousProfiler
         public void Set(ulong localRootSpanId, ulong spanId)
         {
             WriteToNative(new SpanContext(localRootSpanId, spanId));
+        }
+
+        public void SetThreadMetaInfo(LockStatus status)
+        {
+            WriteToNative(new ThreadMetaInfo(status));
         }
 
         public void SetEndpoint(ulong localRootSpanId, string endpoint)
@@ -103,7 +114,8 @@ namespace Datadog.Trace.ContinuousProfiler
             }
         }
 
-        private void WriteToNative(in SpanContext ctx)
+        private void WriteToNative<T>(in T ctx)
+            where T : struct, IThreadContext
         {
             if (!IsEnabled)
             {
@@ -125,12 +137,12 @@ namespace Datadog.Trace.ContinuousProfiler
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Failed to write tracing context at {CtxPtr} for {ThreadID}", ctxPtr, Environment.CurrentManagedThreadId.ToString());
+                Log.Warning(e, "Failed to write {ContextInfo} at {CtxPtr} for {ThreadID}", ctx, ctxPtr, Environment.CurrentManagedThreadId.ToString());
             }
         }
 
         // See the description and the layout depicted above
-        private readonly struct SpanContext
+        private readonly struct SpanContext : IThreadContext
         {
             public static readonly SpanContext Zero = new(0, 0);
 
@@ -159,6 +171,37 @@ namespace Datadog.Trace.ContinuousProfiler
                 Thread.MemoryBarrier();
                 Marshal.WriteInt64(ptr, 0);
             }
+
+            public override string ToString()
+            {
+                return $"tracing context [Local root spand id {LocalRootSpanId}, Span id {SpanId}]";
+            }
+        }
+
+        // See the description and the layout depicted above
+        private readonly struct ThreadMetaInfo : IThreadContext
+        {
+            // TODO Good for now it's a LockStatus, later we could have richer information
+            private readonly LockStatus _status;
+
+            public ThreadMetaInfo(LockStatus l)
+            {
+                _status = l;
+            }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            public void Write(IntPtr ptr)
+            {
+                // Update ThreadMetaInfo field based on the lock status
+                // TODO for now we write the whole 64-bit field.
+                // Later we could have more info (if the thread is doing IO....) and could use
+                // other bits of this field.
+                var infoValue = _status == LockStatus.Lock ? 1 : 0;
+                Marshal.WriteInt64(ptr + 24, infoValue);
+                Thread.MemoryBarrier();
+            }
+
+            public override string ToString() => $" Thread Meta info {_status}";
         }
     }
 }
