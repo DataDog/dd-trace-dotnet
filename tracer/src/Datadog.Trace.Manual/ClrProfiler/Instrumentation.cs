@@ -13,6 +13,6 @@ internal class Instrumentation
     /// Gets whether automatic instrumentation is attached.
     /// Rewritten by the tracer to return false if automatic instrumentation is enabled.
     /// </summary>
-    // [Instrumented] This is auto-rewritten, not instrumented with calltarget
+    [Instrumented]
     public static bool IsManualInstrumentationOnly() => true;
 }
