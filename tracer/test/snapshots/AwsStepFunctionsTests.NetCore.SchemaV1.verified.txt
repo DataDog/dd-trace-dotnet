@@ -42,7 +42,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: aws.stepfunctions.request,
+    Name: aws.stepfunctions.send,
     Resource: StepFunctions.StartExecutionAsync,
     Service: Samples.AWS.StepFunctions,
     Type: http,
@@ -59,7 +59,9 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
+      peer.service: StepFunction,
       span.kind: producer,
+      statemachinename: StepFunction,
       _dd.peer.service.source: statemachinename
     }
   },

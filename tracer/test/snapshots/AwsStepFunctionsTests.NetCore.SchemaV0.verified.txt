@@ -64,6 +64,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: producer,
+      statemachinename: StepFunction,
       _dd.base_service: Samples.AWS.StepFunctions
     },
     Metrics: {
