@@ -1,0 +1,34 @@
+﻿using System;
+using Google.Protobuf;
+using Sample;
+using static Sample.Person.Types;
+
+namespace Samples.GoogleProtobuf;
+
+internal class Program
+{
+    private static void Main(string[] args)
+    {
+        // sample data
+        var john = new Person { Id = 1234, Name = "John Doe", Email = "john@doe.com", Phones = { new PhoneNumber { Number = "12345", Type = PhoneType.Home } } };
+        var jane = new Person { Id = 1234, Name = "Jane Doe", Email = "jane@doe.com", Phones = { new PhoneNumber { Number = "67890", Type = PhoneType.Work }, new PhoneNumber { Number = "54321", Type = PhoneType.Mobile } } };
+        var addressBook = new AddressBook { People = { john, jane } };
+
+        // serialization
+
+        byte[] serialized;
+        using (Datadog.Trace.Tracer.Instance.StartActive("Ser"))
+        {
+            serialized = addressBook.ToByteArray();
+        }
+
+        // deserialization
+        var deserialized = new AddressBook();
+        using (Datadog.Trace.Tracer.Instance.StartActive("Deser"))
+        {
+            deserialized.MergeFrom(serialized);
+        }
+
+        Console.WriteLine(deserialized.People.Count);
+    }
+}
