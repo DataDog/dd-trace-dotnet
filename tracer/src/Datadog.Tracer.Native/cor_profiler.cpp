@@ -981,44 +981,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
     }
     else
     {
-        // Datadog.Trace.Manual is _mostly_ treated as a third-party assembly,
-        // but we do some rewriting to support manual-only scenarios
-        // If/when we go with v3 part deux, we will need to update this to
-        // also rewrite to support version mismatch via IDistributedTracer
-        if (module_info.assembly.name == manual_instrumentation_name)
-        {
-            // Rewrite key methods for version mismatch + 
-            ComPtr<IUnknown> metadata_interfaces;
-            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                     metadata_interfaces.GetAddressOf());
-
-            if (hr != S_OK)
-            {
-                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                             module_info.assembly.name);
-                return S_OK;
-            }
-
-            const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-            const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-            const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-            const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-            // NOTE: I'm not entirely comfortable that we're passing corAssemblyProperty in here...
-            // but I don't know if I _should_ worry, or if we can avoid it 
-            const auto& module_metadata =
-                ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
-                               module_info.assembly.app_domain_id, &corAssemblyProperty, false, false);
-            const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
-
-            const auto& assemblyVersion = assemblyImport.version.str();
-
-            Logger::Info("ModuleLoadFinished: ", manual_instrumentation_name, " v", assemblyVersion, " - RewriteIsManualInstrumentationOnly");
-
-            // Rewrite Instrumentation.IsManualInstrumentationOnly()
-            RewriteIsManualInstrumentationOnly(module_metadata, module_id);
-        }
-
         modules.push_back(module_id);
 
         bool searchForTraceAttribute = trace_annotations_enabled;
@@ -2706,68 +2668,6 @@ HRESULT CorProfiler::RewriteForTelemetry(const ModuleMetadata& module_metadata, 
     {
         Logger::Info(GetILCodes("After -> Instrumentation.GetNativeTracerVersion(). ", &methodRewriter,
                                 GetFunctionInfo(module_metadata.metadata_import, getNativeTracerVersionMethodDef),
-                                module_metadata.metadata_import));
-    }
-
-    return hr;
-}
-
-HRESULT CorProfiler::RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id)
-{
-    //
-    // *** Get Instrumentation TypeDef
-    //
-    mdTypeDef instrumentationTypeDef;
-    HRESULT hr = module_metadata.metadata_import->FindTypeDefByName(instrumentation_type_name.c_str(),
-                                                                    mdTokenNil, &instrumentationTypeDef);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error rewriting IsManualInstrumentationOnly on getting Instrumentation TypeDef");
-        return hr;
-    }
-
-    //
-    // *** IsManualInstrumentationOnly MethodDef ***
-    //
-    constexpr COR_SIGNATURE isAutoEnabledSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_BOOLEAN};
-    mdMethodDef isAutoEnabledMethodDef;
-    hr = module_metadata.metadata_import->FindMethod(instrumentationTypeDef, WStr("IsManualInstrumentationOnly"),
-                                                     isAutoEnabledSignature, 3, &isAutoEnabledMethodDef);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error rewriting IsManualInstrumentationOnly on getting IsManualInstrumentationOnly MethodDef");
-        return hr;
-    }
-
-    ILRewriter methodRewriter(this->info_, nullptr, module_id, isAutoEnabledMethodDef);
-    methodRewriter.InitializeTiny();
-
-    // Modify method from this:
-    // IL_0000: ldc.i4.1
-    // IL_0001: ret
-    //
-    // to this:
-    // IL_0000: ldc.i4.0
-    // IL_0001: ret
-    ILRewriterWrapper wrapper(&methodRewriter);
-    wrapper.SetILPosition(methodRewriter.GetILList()->m_pNext);
-    wrapper.LoadInt32(0);
-    wrapper.Return();
-
-    hr = methodRewriter.Export();
-
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error rewriting Instrumentation.IsManualInstrumentationOnly() => false");
-        return hr;
-    }
-
-    Logger::Info("Rewriting Instrumentation.IsManualInstrumentationOnly() => false");
-
-    if (IsDumpILRewriteEnabled())
-    {
-        Logger::Info(GetILCodes("After -> Instrumentation.IsManualInstrumentationOnly(). ", &methodRewriter,
-                                GetFunctionInfo(module_metadata.metadata_import, isAutoEnabledMethodDef),
                                 module_metadata.metadata_import));
     }
 
