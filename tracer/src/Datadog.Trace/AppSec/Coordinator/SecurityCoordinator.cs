@@ -167,13 +167,13 @@ internal readonly partial struct SecurityCoordinator
         _httpTransport.DisposeAdditiveContext();
     }
 
-    internal static Dictionary<string, object> ExtractCookiesFromRequest(HttpRequest request)
+    internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
     {
         var cookies = RequestDataHelper.GetCookies(request);
-        var cookiesDic = new Dictionary<string, object>();
 
         if (cookies != null)
         {
+            var cookiesDic = new Dictionary<string, object>();
             for (var i = 0; i < cookies.Count; i++)
             {
 #if NETCOREAPP || NETSTANDARD
@@ -208,7 +208,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        return cookiesDic;
+        return null;
     }
 
 #if NETFRAMEWORK
