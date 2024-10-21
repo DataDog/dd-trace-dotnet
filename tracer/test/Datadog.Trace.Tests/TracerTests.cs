@@ -501,13 +501,14 @@ namespace Datadog.Trace.Tests
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
-            SpanContextPropagator.Instance.Inject(secondSpan.Context, headers);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            SpanContextPropagator.Instance.Inject(new PropagationContext(secondSpan.Context, baggage: null), headers);
+            var context = SpanContextPropagator.Instance.Extract(headers);
+            var spanContext = context.SpanContext!;
 
-            Assert.NotNull(resultContext);
-            Assert.Equal(firstSpan.Context.Origin, resultContext.Origin);
-            Assert.Equal(secondSpan.Context.Origin, resultContext.Origin);
-            Assert.Equal(origin, resultContext.Origin);
+            spanContext.Should().NotBeNull();
+            spanContext.Origin.Should().Be(firstSpan.Context.Origin);
+            spanContext.Origin.Should().Be(secondSpan.Context.Origin);
+            spanContext.Origin.Should().Be(origin);
         }
 
         [Fact]

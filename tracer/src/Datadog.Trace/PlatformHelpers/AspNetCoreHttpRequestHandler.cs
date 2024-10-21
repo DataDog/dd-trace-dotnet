@@ -54,7 +54,7 @@ namespace Datadog.Trace.PlatformHelpers
             return $"{httpMethod} {resourceUrl}";
         }
 
-        private SpanContext ExtractPropagatedContext(HttpRequest request)
+        private PropagationContext ExtractPropagatedContext(HttpRequest request)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace Datadog.Trace.PlatformHelpers
                 _log.Error(ex, "Error extracting propagated HTTP headers.");
             }
 
-            return null;
+            return default;
         }
 
         private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
@@ -106,12 +106,13 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            SpanContext propagatedContext = ExtractPropagatedContext(request);
+            var extractedContext = ExtractPropagatedContext(request);
+            Baggage.Current.Merge(extractedContext.Baggage);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
 
-            var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             AddHeaderTagsToSpan(scope.Span, request, tracer);
 

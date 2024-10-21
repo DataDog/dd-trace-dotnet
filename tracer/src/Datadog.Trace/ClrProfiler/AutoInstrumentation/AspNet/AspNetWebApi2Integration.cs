@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
-                SpanContext propagatedContext = null;
+                PropagationContext extractedContext = default;
                 HttpHeadersCollection? headersCollection = null;
                 tags = new AspNetTags();
 
@@ -59,7 +59,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         // extract propagated http headers
                         var headers = request.Headers;
                         headersCollection = new HttpHeadersCollection(headers);
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
+                        extractedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
+
+                        Baggage.Current.Merge(extractedContext.Baggage);
                     }
                     catch (Exception ex)
                     {
@@ -82,9 +84,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                     tags);
                             }
                         }
-                        else if (request.Properties.ContainsKey(httpContextKey))
+                        else if (request.Properties.TryGetValue(httpContextKey, out var property))
                         {
-                            if (request.Properties[httpContextKey] is HttpContextWrapper objectCtx)
+                            if (property is HttpContextWrapper objectCtx)
                             {
                                 Headers.Ip.RequestIpExtractor.AddIpToTags(
                                     objectCtx.Request.UserHostAddress,
@@ -97,8 +99,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags);
                 UpdateSpan(controllerContext, scope.Span, tags);
+
                 if (headersCollection is not null)
                 {
                     SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headersCollection.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix, request.Headers.UserAgent.ToString());

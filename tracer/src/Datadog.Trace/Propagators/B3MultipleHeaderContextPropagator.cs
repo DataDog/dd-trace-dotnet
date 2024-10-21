@@ -35,21 +35,30 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public void Inject<TCarrier, TCarrierSetter>(SpanContext context, TCarrier carrier, TCarrierSetter carrierSetter)
+        public PropagatorType PropagatorType => PropagatorType.TraceContext;
+
+        public void Inject<TCarrier, TCarrierSetter>(PropagationContext context, TCarrier carrier, TCarrierSetter carrierSetter)
             where TCarrierSetter : struct, ICarrierSetter<TCarrier>
         {
+            if (context.SpanContext is not { } spanContext)
+            {
+                // nothing to inject
+                return;
+            }
+
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3Multi);
-            CreateHeaders(context, out var traceId, out var spanId, out var sampled);
+
+            CreateHeaders(spanContext, out var traceId, out var spanId, out var sampled);
 
             carrierSetter.Set(carrier, TraceId, traceId);
             carrierSetter.Set(carrier, SpanId, spanId);
             carrierSetter.Set(carrier, Sampled, sampled);
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            spanContext = null;
+            context = default;
 
             var rawTraceId = ParseUtility.ParseString(carrier, carrierGetter, TraceId)?.Trim();
 
@@ -65,9 +74,11 @@ namespace Datadog.Trace.Propagators
                 return false;
             }
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3Multi);
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, Sampled);
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+            var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
+            context = new PropagationContext(spanContext, baggage: null);
+
+            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3Multi);
             return true;
         }
 
