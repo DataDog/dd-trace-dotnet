@@ -577,7 +577,10 @@
       runtime-id: Guid_10
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -592,7 +595,10 @@
       runtime-id: Guid_11
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -607,7 +613,10 @@
       runtime-id: Guid_12
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -658,7 +667,10 @@
       runtime-id: Guid_15
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -871,7 +883,10 @@
       runtime-id: Guid_27
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -886,7 +901,10 @@
       runtime-id: Guid_28
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -901,7 +919,10 @@
       runtime-id: Guid_29
     },
     Metrics: {
-      _dd.top_level: 1.0
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
@@ -1956,144 +1977,6 @@
     },
     Metrics: {
       _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_20,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_10,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_21,
-    SpanId: Id_22,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_11,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_23,
-    SpanId: Id_24,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_12,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_29,
-    SpanId: Id_30,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_15,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_53,
-    SpanId: Id_54,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Error: 1,
-    Tags: {
-      error.msg: Cannot assign requested address,
-      error.stack: Cannot assign requested address (SocketException),
-      error.type: System.Net.WebException,
-      language: dotnet,
-      runtime-id: Guid_27,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_55,
-    SpanId: Id_56,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Error: 1,
-    Tags: {
-      error.msg: Cannot assign requested address,
-      error.stack: Cannot assign requested address (SocketException),
-      error.type: System.Net.WebException,
-      language: dotnet,
-      runtime-id: Guid_28,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_57,
-    SpanId: Id_58,
-    Name: placeholder-operation,
-    Resource: placeholder-operation,
-    Service: placeholder-service,
-    Error: 1,
-    Tags: {
-      error.msg: Cannot assign requested address,
-      error.stack: Cannot assign requested address (SocketException),
-      error.type: System.Net.WebException,
-      language: dotnet,
-      runtime-id: Guid_29,
-      _dd.base_service: Samples.AWS.Lambda
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
     }
   }
 ]
