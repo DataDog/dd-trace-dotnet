@@ -176,10 +176,10 @@ partial class Build
             var typeName = SanitiseName(type);
             var methodName = SanitiseName(method);
             var methodSignature = GetMethodSignature(returnType, methodParameters);
-            line = $"{typeName},{methodName},{SanitiseName(methodSignature)},{Guid.NewGuid()},{isStatic}";
+            line = $"{Guid.NewGuid()},{typeName},{methodName},{SanitiseName(methodSignature)},{isStatic}";
             return !string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(methodName) && !string.IsNullOrEmpty(returnType);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             line = $"Type: {type}, Method: {method}";
             return false;
@@ -265,10 +265,10 @@ partial class Build
         return File.ReadLines(probesPath)
                    .Skip(1) // Skip the header row
                    .Select(line => line.Split(','))
-                   .Where(parts => parts.Length >= 5)
+                   .Where(parts => parts.Length == 5)
                    .ToDictionary(
-                        parts => parts[3].Trim(), // probe_id as key
-                        parts => $"{parts[1].Trim()} {parts[2].Trim()}" // method_name + signature as value
+                        parts => parts[0].Trim(), // Probe ID as key
+                        parts => $"{parts[2].Trim()} {parts[3].Trim()}" // method name + signature as value
                     );
     }
 
@@ -294,15 +294,16 @@ partial class Build
     {
         var parts = line.Split(',');
 
-        if (parts.Length != 3 || parts.Any(string.IsNullOrWhiteSpace))
+        if (parts.Length != 4 || parts.Any(string.IsNullOrWhiteSpace))
         {
             var probeId = parts.Length > 0 ? parts[0].Trim() : "missing id";
-            var name = parts.Length > 1 ? parts[1].Trim() : "missing name";
-            return new ProbeReportInfo(probeId, name, false, true);
+            var type = parts.Length > 1 ? parts[1].Trim() : "missing type";
+            var method = parts.Length > 1 ? parts[2].Trim() : "missing method";
+            return new ProbeReportInfo(probeId, type + "." + method, false, true);
         }
 
-        var isValid = bool.TryParse(parts[2].Trim(), out var parsedIsValid) && parsedIsValid;
-        return new ProbeReportInfo(parts[0].Trim(), parts[1].Trim(), isValid, false);
+        var isValid = bool.TryParse(parts[3].Trim(), out var parsedIsValid) && parsedIsValid;
+        return new ProbeReportInfo(parts[0].Trim(), parts[1].Trim() + "." + parts[2].Trim(), isValid, false);
     }
 
     Dictionary<string, string> ReadInstalledProbeIdsFromNativeLogs()
