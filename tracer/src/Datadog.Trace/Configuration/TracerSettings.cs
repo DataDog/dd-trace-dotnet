@@ -454,6 +454,10 @@ namespace Datadog.Trace.Configuration
                                             .WithKeys(ConfigurationKeys.DataStreamsMonitoring.Enabled)
                                             .AsBool(false);
 
+            IsDataStreamsLegacyHeadersEnabled = config
+                                               .WithKeys(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled)
+                                               .AsBool(true);
+
             IsRareSamplerEnabled = config
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
@@ -964,6 +968,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to inject legacy binary headers for Data Streams.
+        /// </summary>
+        internal bool IsDataStreamsLegacyHeadersEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the rare sampler is enabled or not.
