@@ -348,6 +348,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -378,6 +380,8 @@ namespace Datadog.Trace.Tests.Propagators
                           SamplingPriority = SamplingPriorityValues.AutoKeep,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -411,6 +415,8 @@ namespace Datadog.Trace.Tests.Propagators
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -450,6 +456,8 @@ namespace Datadog.Trace.Tests.Propagators
                           IsRemote = true,
                           LastParentId = ZeroLastParentId,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -493,6 +501,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
@@ -515,6 +525,8 @@ namespace Datadog.Trace.Tests.Propagators
             result.TraceId128.Should().Be(expectedTraceId);
             result.TraceId.Should().Be(expectedTraceId.Lower);
             result.SpanId.Should().Be(expectedSpanId);
+
+            context.Baggage.Should().BeNull();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -550,6 +562,8 @@ namespace Datadog.Trace.Tests.Propagators
             result.TraceId.Should().Be(expectedTraceId.Lower);
             result.SpanId.Should().Be(expectedSpanId);
 
+            context.Baggage.Should().BeNull();
+
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
             headersForInjection.Setup(h => h.Set("x-b3-traceid", traceId));
@@ -581,6 +595,8 @@ namespace Datadog.Trace.Tests.Propagators
 
             result.TraceId128.Should().Be(expectedTraceId);
             result.SpanId.Should().Be(expectedSpanId);
+
+            context.Baggage.Should().BeNull();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
