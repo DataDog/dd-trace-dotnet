@@ -38,7 +38,6 @@ public class SmtpClientAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SmtpClientAspect)}.{nameof(Send)}");
             return message;
         }
     }
