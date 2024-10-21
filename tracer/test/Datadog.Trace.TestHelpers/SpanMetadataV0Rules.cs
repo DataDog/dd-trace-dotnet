@@ -250,6 +250,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "StepFunctions")
                 .Matches("aws_service", "StepFunctions")
+                .IsPresent("statemachinename")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
