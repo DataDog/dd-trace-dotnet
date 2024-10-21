@@ -684,16 +684,17 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var argsSymbol = CreateArgSymbolArray(method, parameters);
-            int index = 0;
+            int argsIndex = 0;
+            int paramIndex = 0;
             var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
             var paramTypesMatchArgSymbols = methodSig.ParameterTypes.Length == argsSymbol.Length || methodSig.ParameterTypes.Length == argsSymbol.Length - 1;
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
-                if (index == 0 && !method.IsStaticMethod())
+                if (argsIndex == 0 && !method.IsStaticMethod())
                 {
-                    argsSymbol[index] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
-                    index++;
+                    argsSymbol[argsIndex] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
+                    argsIndex++;
 
                     if (parameterDef.IsHiddenThis())
                     {
@@ -701,14 +702,15 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
                 }
 
-                argsSymbol[index] = new Symbol
+                argsSymbol[argsIndex] = new Symbol
                 {
                     Name = MetadataReader.GetString(parameterDef.Name),
                     SymbolType = SymbolType.Arg,
                     Line = UnknownFieldAndArgLine,
-                    Type = paramTypesMatchArgSymbols ? methodSig.ParameterTypes[parameterDef.IsHiddenThis() ? index : index - 1] : "Unknown"
+                    Type = paramTypesMatchArgSymbols ? methodSig.ParameterTypes[paramIndex] : "Unknown"
                 };
-                index++;
+                argsIndex++;
+                paramIndex++;
             }
 
             return argsSymbol;

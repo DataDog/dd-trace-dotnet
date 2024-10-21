@@ -15,8 +15,16 @@ partial class Build
 
         envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
         envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        // envVars.Add("DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH", "1");
 
-        if (description.LineProbesEnabled)
+        if (description.IsSnapshotScenario)
+        {
+            envVars.Add(SnapshotExplorationEnabledKey, "1");
+            var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+            envVars.Add(SnapshotExplorationProbesPathKey, Path.Combine(testRootPath, SnapshotExplorationTestProbesFileName));
+            envVars.Add(SnapshotExplorationReportPathKey, Path.Combine(testRootPath, SnapshotExplorationTestReportFileName));
+        }
+        else if (description.LineProbesEnabled)
         {
             envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES", "1");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
