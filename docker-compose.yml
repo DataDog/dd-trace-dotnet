@@ -351,6 +351,7 @@ services:
     ports:
     - "8080:80"
     environment:
+      - TF_BUILD
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
@@ -399,6 +400,7 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -478,6 +480,7 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -549,6 +552,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -605,6 +609,7 @@ services:
       - DiffEngine_Disabled=true
       - CONTAINER_HOSTNAME=http://integrationtests
       - IncludeAllTestFrameworks
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -655,6 +660,7 @@ services:
       - baseImage=${baseImage:-default}
       - IncludeAllTestFrameworks
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -748,6 +754,7 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -826,6 +833,7 @@ services:
       - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - TF_BUILD
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
