@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Propagators
             W3CPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 [ContextPropagationHeaderStyle.W3CTraceContext],
                 [ContextPropagationHeaderStyle.W3CTraceContext],
-                false);
+                propagationExtractFirst: false);
 
             var baggageItems = new KeyValuePair<string, string>[]
             {
