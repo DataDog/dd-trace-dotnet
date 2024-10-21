@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 565;
+    private const int CountLength = 567;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -60,6 +60,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
             new(new[] { "integration_name:awseventbridge" }),
+            new(new[] { "integration_name:awsstepfunctions" }),
             new(new[] { "integration_name:ilogger" }),
             new(new[] { "integration_name:aerospike" }),
             new(new[] { "integration_name:azurefunctions" }),
@@ -102,35 +103,35 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:sessiontimeout" }),
             new(new[] { "integration_name:datadogtracemanual" }),
             new(new[] { "integration_name:emailhtmlinjection" }),
-            // spans_finished, index = 81
+            // spans_finished, index = 82
             new(null),
-            // spans_enqueued_for_serialization, index = 82
+            // spans_enqueued_for_serialization, index = 83
             new(new[] { "reason:p0_keep" }),
             new(new[] { "reason:single_span_sampling" }),
             new(new[] { "reason:default" }),
-            // spans_dropped, index = 85
+            // spans_dropped, index = 86
             new(new[] { "reason:p0_drop" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
-            // trace_segments_created, index = 89
+            // trace_segments_created, index = 90
             new(new[] { "new_continued:new" }),
             new(new[] { "new_continued:continued" }),
-            // trace_chunks_enqueued_for_serialization, index = 91
+            // trace_chunks_enqueued_for_serialization, index = 92
             new(new[] { "reason:p0_keep" }),
             new(new[] { "reason:default" }),
-            // trace_chunks_dropped, index = 93
+            // trace_chunks_dropped, index = 94
             new(new[] { "reason:p0_drop" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
-            // trace_chunks_sent, index = 97
+            // trace_chunks_sent, index = 98
             new(null),
-            // trace_segments_closed, index = 98
+            // trace_segments_closed, index = 99
             new(null),
-            // trace_api.requests, index = 99
+            // trace_api.requests, index = 100
             new(null),
-            // trace_api.responses, index = 100
+            // trace_api.responses, index = 101
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -153,26 +154,26 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // trace_api.errors, index = 122
+            // trace_api.errors, index = 123
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // trace_partial_flush.count, index = 125
+            // trace_partial_flush.count, index = 126
             new(new[] { "reason:large_trace" }),
             new(new[] { "reason:single_span_ingestion" }),
-            // context_header_style.injected, index = 127
+            // context_header_style.injected, index = 128
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
-            // context_header_style.extracted, index = 131
+            // context_header_style.extracted, index = 132
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
-            // stats_api.requests, index = 135
+            // stats_api.requests, index = 136
             new(null),
-            // stats_api.responses, index = 136
+            // stats_api.responses, index = 137
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -195,11 +196,11 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // stats_api.errors, index = 158
+            // stats_api.errors, index = 159
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // otel.env.hiding, index = 161
+            // otel.env.hiding, index = 162
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
@@ -290,7 +291,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
-            // otel.env.invalid, index = 251
+            // otel.env.invalid, index = 252
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
             new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
@@ -381,10 +382,10 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
             new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
-            // telemetry_api.requests, index = 341
+            // telemetry_api.requests, index = 342
             new(new[] { "endpoint:agent" }),
             new(new[] { "endpoint:agentless" }),
-            // telemetry_api.responses, index = 343
+            // telemetry_api.responses, index = 344
             new(new[] { "endpoint:agent", "status_code:200" }),
             new(new[] { "endpoint:agent", "status_code:201" }),
             new(new[] { "endpoint:agent", "status_code:202" }),
@@ -429,18 +430,18 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "endpoint:agentless", "status_code:503" }),
             new(new[] { "endpoint:agentless", "status_code:504" }),
             new(new[] { "endpoint:agentless", "status_code:5xx" }),
-            // telemetry_api.errors, index = 387
+            // telemetry_api.errors, index = 388
             new(new[] { "endpoint:agent", "type:timeout" }),
             new(new[] { "endpoint:agent", "type:network" }),
             new(new[] { "endpoint:agent", "type:status_code" }),
             new(new[] { "endpoint:agentless", "type:timeout" }),
             new(new[] { "endpoint:agentless", "type:network" }),
             new(new[] { "endpoint:agentless", "type:status_code" }),
-            // version_conflict_tracers_created, index = 393
+            // version_conflict_tracers_created, index = 394
             new(null),
-            // unsupported_custom_instrumentation_services, index = 394
+            // unsupported_custom_instrumentation_services, index = 395
             new(null),
-            // direct_log_logs, index = 395
+            // direct_log_logs, index = 396
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
             new(new[] { "integration_name:ciapp" }),
@@ -476,6 +477,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
             new(new[] { "integration_name:awseventbridge" }),
+            new(new[] { "integration_name:awsstepfunctions" }),
             new(new[] { "integration_name:ilogger" }),
             new(new[] { "integration_name:aerospike" }),
             new(new[] { "integration_name:azurefunctions" }),
@@ -518,9 +520,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:sessiontimeout" }),
             new(new[] { "integration_name:datadogtracemanual" }),
             new(new[] { "integration_name:emailhtmlinjection" }),
-            // direct_log_api.requests, index = 472
+            // direct_log_api.requests, index = 474
             new(null),
-            // direct_log_api.responses, index = 473
+            // direct_log_api.responses, index = 475
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -543,43 +545,43 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // direct_log_api.errors, index = 495
+            // direct_log_api.errors, index = 497
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // waf.init, index = 498
+            // waf.init, index = 500
             new(null),
-            // waf.updates, index = 499
+            // waf.updates, index = 501
             new(null),
-            // waf.requests, index = 500
+            // waf.requests, index = 502
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
-            // waf.input_truncated, index = 505
+            // waf.input_truncated, index = 507
             new(new[] { "truncation_reason:string_too_long" }),
             new(new[] { "truncation_reason:list_or_map_too_large" }),
             new(new[] { "truncation_reason:object_too_deep" }),
-            // rasp.rule.eval, index = 508
+            // rasp.rule.eval, index = 510
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection" }),
-            // rasp.rule.match, index = 512
+            // rasp.rule.match, index = 514
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection" }),
-            // rasp.timeout, index = 516
+            // rasp.timeout, index = 518
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
             new(new[] { "waf_version", "rule_type:sql_injection" }),
             new(new[] { "waf_version", "rule_type:command_injection" }),
-            // instrum.user_auth.missing_user_id, index = 520
+            // instrum.user_auth.missing_user_id, index = 522
             new(new[] { "framework:aspnetcore_identity" }),
             new(new[] { "framework:unknown" }),
-            // executed.source, index = 522
+            // executed.source, index = 524
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -594,9 +596,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
             new(new[] { "source_type:sql.row.value" }),
-            // executed.propagation, index = 536
+            // executed.propagation, index = 538
             new(null),
-            // executed.sink, index = 537
+            // executed.sink, index = 539
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -624,7 +626,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
-            // request.tainted, index = 564
+            // request.tainted, index = 566
             new(null),
         };
 
@@ -634,7 +636,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 4, 4, 4, 2, 14, 1, 27, 1, };
+        = new int[]{ 4, 78, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 78, 1, 22, 3, 1, 1, 5, 3, 4, 4, 4, 2, 14, 1, 27, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -650,229 +652,229 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountSpanFinished(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[81], increment);
+        Interlocked.Add(ref _buffer.Count[82], increment);
     }
 
     public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1)
     {
-        var index = 82 + (int)tag;
+        var index = 83 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
-        var index = 85 + (int)tag;
+        var index = 86 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceSegmentCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1)
     {
-        var index = 89 + (int)tag;
+        var index = 90 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkEnqueued(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1)
     {
-        var index = 91 + (int)tag;
+        var index = 92 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
-        var index = 93 + (int)tag;
+        var index = 94 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkSent(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[97], increment);
+        Interlocked.Add(ref _buffer.Count[98], increment);
     }
 
     public void RecordCountTraceSegmentsClosed(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[98], increment);
+        Interlocked.Add(ref _buffer.Count[99], increment);
     }
 
     public void RecordCountTraceApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[99], increment);
+        Interlocked.Add(ref _buffer.Count[100], increment);
     }
 
     public void RecordCountTraceApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 100 + (int)tag;
+        var index = 101 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 122 + (int)tag;
+        var index = 123 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTracePartialFlush(Datadog.Trace.Telemetry.Metrics.MetricTags.PartialFlushReason tag, int increment = 1)
     {
-        var index = 125 + (int)tag;
+        var index = 126 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountContextHeaderStyleInjected(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
-        var index = 127 + (int)tag;
+        var index = 128 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
-        var index = 131 + (int)tag;
+        var index = 132 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[135], increment);
+        Interlocked.Add(ref _buffer.Count[136], increment);
     }
 
     public void RecordCountStatsApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 136 + (int)tag;
+        var index = 137 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 158 + (int)tag;
+        var index = 159 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
-        var index = 161 + ((int)tag1 * 10) + (int)tag2;
+        var index = 162 + ((int)tag1 * 10) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
-        var index = 251 + ((int)tag1 * 10) + (int)tag2;
+        var index = 252 + ((int)tag1 * 10) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
-        var index = 341 + (int)tag;
+        var index = 342 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
     {
-        var index = 343 + ((int)tag1 * 22) + (int)tag2;
+        var index = 344 + ((int)tag1 * 22) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
     {
-        var index = 387 + ((int)tag1 * 3) + (int)tag2;
+        var index = 388 + ((int)tag1 * 3) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountVersionConflictTracerCreated(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[393], increment);
+        Interlocked.Add(ref _buffer.Count[394], increment);
     }
 
     public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[394], increment);
+        Interlocked.Add(ref _buffer.Count[395], increment);
     }
 
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
-        var index = 395 + (int)tag;
+        var index = 396 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountDirectLogApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[472], increment);
+        Interlocked.Add(ref _buffer.Count[474], increment);
     }
 
     public void RecordCountDirectLogApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 473 + (int)tag;
+        var index = 475 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountDirectLogApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 495 + (int)tag;
+        var index = 497 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountWafInit(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[498], increment);
+        Interlocked.Add(ref _buffer.Count[500], increment);
     }
 
     public void RecordCountWafUpdates(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[499], increment);
+        Interlocked.Add(ref _buffer.Count[501], increment);
     }
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
-        var index = 500 + (int)tag;
+        var index = 502 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
     {
-        var index = 505 + (int)tag;
+        var index = 507 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 508 + (int)tag;
+        var index = 510 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 512 + (int)tag;
+        var index = 514 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 516 + (int)tag;
+        var index = 518 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
     {
-        var index = 520 + (int)tag;
+        var index = 522 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
-        var index = 522 + (int)tag;
+        var index = 524 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[536], increment);
+        Interlocked.Add(ref _buffer.Count[538], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        var index = 537 + (int)tag;
+        var index = 539 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[564], increment);
+        Interlocked.Add(ref _buffer.Count[566], increment);
     }
 }
