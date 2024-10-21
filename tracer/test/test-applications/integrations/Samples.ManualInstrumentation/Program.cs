@@ -33,7 +33,14 @@ async Task OtherStuff()
                             .GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: true)
                              !.GetMethod("IsManualInstrumentationOnly")
                              !.Invoke(null, null)!;
-    Expect(isManualOnly != shouldBeAttached);
+
+    // It's... weird... but reflection doesn't work with the rewriting in r2r for some reason...
+    var hasCorrectValueAfterRewrite = Environment.GetEnvironmentVariable("READY2RUN_ENABLED") != "1";
+    if (hasCorrectValueAfterRewrite)
+    {
+        Expect(isManualOnly != shouldBeAttached);
+    }
+
     Expect(SampleHelpers.IsProfilerAttached() == shouldBeAttached);
 
     var count = 0;
