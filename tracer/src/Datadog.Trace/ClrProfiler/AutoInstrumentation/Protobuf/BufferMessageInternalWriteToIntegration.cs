@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     ParameterTypeNames = ["Google.Protobuf.WriteContext&"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "Protobuf")]
+    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
+    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class BufferMessageInternalWriteToIntegration
@@ -29,7 +30,11 @@ public class BufferMessageInternalWriteToIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TCtx>(TTarget instance, ref TCtx ctx)
         where TTarget : IMessageProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        if (instance.Instance is not null)
+        {
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        }
+
         return CallTargetState.GetDefault();
     }
 }

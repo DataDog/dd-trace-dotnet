@@ -18,14 +18,19 @@ internal interface IMessageProxy : IDuckType
     IMessageDescriptorProxy Descriptor { get; }
 }
 
+internal interface IDescriptorProxy : IDuckType
+{
+    string Name { get; }
+}
+
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.MessageDescriptor
 /// </summary>
-internal interface IMessageDescriptorProxy : IDuckType
+internal interface IMessageDescriptorProxy : IDescriptorProxy
 {
-    string Name { get; }
-
     IFieldCollectionProxy Fields { get; }
+
+    IDescriptorProxy File { get; }
 }
 
 /// <summary>
@@ -34,20 +39,18 @@ internal interface IMessageDescriptorProxy : IDuckType
 internal interface IFieldCollectionProxy : IDuckType
 {
     IList InDeclarationOrder(); // <IFieldDescriptorProxy>
+
+    IList InFieldNumberOrder(); // <IFieldDescriptorProxy>
 }
 
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.FieldDescriptor
 /// </summary>
-internal interface IFieldDescriptorProxy : IDuckType
+internal interface IFieldDescriptorProxy : IDescriptorProxy
 {
-    string Name { get; }
-
     bool IsRepeated { get; }
 
     bool IsMap { get; }
-
-    bool IsPacked { get; }
 
     int FieldType { get; } // actually an enum
 
@@ -61,14 +64,7 @@ internal interface IFieldDescriptorProxy : IDuckType
 /// <summary>
 /// DuckTyping interface for Google.Protobuf.Reflection.EnumDescriptor
 /// </summary>
-internal interface IEnumDescriptorProxy : IDuckType
+internal interface IEnumDescriptorProxy : IDescriptorProxy
 {
-    string Name { get; }
-
     IList Values { get; } // <EnumValueDescriptor>
-}
-
-internal interface IEnumValueDescriptorProxy : IDuckType
-{
-    string Name { get; }
 }

@@ -606,6 +606,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.SdkV1", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.SdkV1\Samples.AzureFunctions.V4Isolated.SdkV1.csproj", "{18767A3E-9ADC-485C-A8C7-50660D5B579D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.GoogleProtobuf", "tracer\test\test-applications\integrations\Samples.GoogleProtobuf\Samples.GoogleProtobuf.csproj", "{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1442,6 +1444,10 @@ Global
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1678,6 +1684,7 @@ Global
 		{F8C637E1-1F4F-4E3B-9E34-AAD61097C3F8} = {07D12F26-2583-4C6F-AFBB-AA30FF339FC6}
 		{FE9F14E0-8DFF-413B-BB9E-49CEA4115A5D} = {F8C637E1-1F4F-4E3B-9E34-AAD61097C3F8}
 		{18767A3E-9ADC-485C-A8C7-50660D5B579D} = {FE9F14E0-8DFF-413B-BB9E-49CEA4115A5D}
+		{EF8C4CCE-E79C-4D78-BF31-222A11E198B9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

@@ -18,9 +18,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     TypeName = "Google.Protobuf.IMessage",
     MethodName = "WriteTo",
     ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "Protobuf")]
+    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
+    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageWriteToIntegration
@@ -28,7 +30,11 @@ public class MessageWriteToIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
         where TTarget : IMessageProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
+        if (instance.Instance is not null)
+        {
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
+        }
+
         return CallTargetState.GetDefault();
     }
 }

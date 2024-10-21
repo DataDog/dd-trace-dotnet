@@ -4,13 +4,16 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
+using Datadog.Trace.Vendors.Microsoft.OpenApi.Interfaces;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Models;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
@@ -18,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 
 internal class SchemaExtractor
 {
-    internal const int MaxProtobufSchemas = 100;
+    private const int MaxProtobufSchemas = 100;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SchemaExtractor>();
 
@@ -30,9 +33,24 @@ internal class SchemaExtractor
     /// </summary>
     internal static void EnrichActiveSpanWith(IMessageDescriptorProxy? descriptor, string operationName)
     {
-        var activeSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var tracer = Tracer.Instance;
+
+        var settings = tracer.Settings;
+        if (!settings.IsIntegrationEnabled(IntegrationId.Protobuf))
+        {
+            return;
+        }
+
+        var activeSpan = (tracer.ActiveScope as Scope)?.Span;
         if (activeSpan == null || descriptor == null)
         {
+            return;
+        }
+
+        if (descriptor.File.Name.StartsWith("google/protobuf/"))
+        {
+            // it's a protobuf operation internal to the protobuf library, not the one we want
+            Log.Debug("Skipping instrumentation for internal protobuf schema {Schema}", descriptor.File.Name);
             return;
         }
 
@@ -47,7 +65,7 @@ internal class SchemaExtractor
         activeSpan.SetTag(Tags.SchemaOperation, operationName);
 
         // check rate limit
-        var dsm = Tracer.Instance.TracerManager.DataStreamsManager;
+        var dsm = tracer.TracerManager.DataStreamsManager;
         if (!dsm.ShouldExtractSchema(activeSpan, operationName, out var weight))
         {
             return;
@@ -58,8 +76,7 @@ internal class SchemaExtractor
             descriptor.Name,
             _ =>
             {
-                var openApiSchema = ExtractSchema(descriptor);
-                var schema = new Schema(openApiSchema);
+                var schema = new Schema(Extractor.ExtractSchemas(descriptor));
                 Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Name, schema.JsonDefinition.Length);
                 return schema;
             });
@@ -69,140 +86,191 @@ internal class SchemaExtractor
         activeSpan.SetTag(Tags.SchemaWeight, weight.ToString(CultureInfo.InvariantCulture));
     }
 
-    private static OpenApiSchema ExtractSchema(IMessageDescriptorProxy descriptor)
+    private class Extractor
     {
-        return new OpenApiSchema { Type = "object", Properties = ExtractFields(descriptor) };
-    }
+        private const int MaxExtractionDepth = 10;
+        private const int MaxProperties = 1000;
+        private readonly IDictionary<string, OpenApiSchema> _schemas;
+        private int _propertiesCount;
+        private bool _maxPropsLogged;
 
-    private static IDictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor)
-    {
-        var properties = new Dictionary<string, OpenApiSchema>();
-        foreach (var o in descriptor.Fields.InDeclarationOrder())
+        /// <param name="componentsSchemas">The Dictionary that will be filled when extraction is performed</param>
+        private Extractor(IDictionary<string, OpenApiSchema> componentsSchemas)
         {
-            var field = o.DuckCast<IFieldDescriptorProxy>()!;
-            var fieldName = field.Name; // use JsonName ?
-            string? type = null, format = null, description = null;
-            OpenApiReference? reference = null;
-            IList<IOpenApiAny>? enumValues = null;
-            IDictionary<string, OpenApiSchema>? subProperties = null;
-            switch (field.FieldType)
-            {
-                case 0:
-                    type = "number";
-                    format = "double";
-                    break;
-                case 1:
-                    type = "number";
-                    format = "float";
-                    break;
-                case 2:
-                    type = "integer";
-                    format = "int64";
-                    break;
-                case 3:
-                case 16: // sint64
-                    // OpenAPI does not directly support unsigned integers, treated as integers
-                    type = "integer";
-                    format = "uint64";
-                    break;
-                case 4:
-                case 15: // sint32
-                    type = "integer";
-                    format = "int32";
-                    break;
-                case 5:
-                    // Treated as an integer because OpenAPI does not have a fixed64 format.
-                    type = "integer";
-                    format = "fixed64";
-                    break;
-                case 6:
-                    type = "integer";
-                    format = "fixed32";
-                    break;
-                case 7:
-                    type = "boolean";
-                    break;
-                case 8:
-                    type = "string";
-                    break;
-                case 9: // group
-                    // Groups are deprecated and usually represented as nested messages in OpenAPI
-                    type = "object";
-                    description = "Group type";
-                    break;
-                case 10: // message
-                    reference = new OpenApiReference { Id = "#/components/schemas/" + field.MessageType.Name };
-                    // Recursively add nested message schemas
-                    subProperties = ExtractFields(field.MessageType);
-                    break;
-                case 11:
-                    type = "string";
-                    format = "byte";
-                    break;
-                case 12:
-                    // As with UINT64, treated as integers or strings because OpenAPI does not directly
-                    // support unsigned integers
-                    type = "integer";
-                    format = "uint32";
-                    break;
-                case 13:
-                    type = "integer";
-                    format = "sfixed32";
-                    break;
-                case 14:
-                    type = "integer";
-                    format = "sfixed64";
-                    break;
-                // cases 15 and 16 are above
-                case 17: // enum
-                    type = "string";
-                    enumValues = new List<IOpenApiAny>(field.EnumType.Values.Count);
-                    foreach (var e in field.EnumType.Values)
-                    {
-                        var enumVal = e.DuckCast<IEnumValueDescriptorProxy>()!;
-                        enumValues.Add(new OpenApiString(enumVal.Name));
-                    }
-
-                    break;
-                default:
-                    // OpenAPI does not have a direct mapping for unknown types, usually treated as strings or
-                    // omitted
-                    type = "string";
-                    description = "Unknown type";
-                    break;
-            }
-
-            var property = new OpenApiSchema
-            {
-                Type = type,
-                Description = description,
-                Reference = reference,
-                Format = format,
-                Enum = enumValues,
-                Properties = subProperties
-            };
-            if (field.IsRepeated)
-            {
-                property = new OpenApiSchema { Type = "array", Items = property };
-            }
-
-            properties.Add(fieldName, property);
+            _schemas = componentsSchemas;
         }
 
-        return properties;
+        public static OpenApiDocument ExtractSchemas(IMessageDescriptorProxy descriptor)
+        {
+            var components = new OpenApiComponents();
+            new Extractor(components.Schemas).ExtractSchema(descriptor); // fill the component's schemas
+            return new OpenApiDocument { Components = components };
+        }
+
+        /// <summary>
+        /// Add the given message's schema and all its sub-messages schemas to the Dictionary that was given to the ctor.
+        /// </summary>
+        private void ExtractSchema(IMessageDescriptorProxy descriptor, int depth = 0)
+        {
+            if (depth > MaxExtractionDepth)
+            {
+                Log.Debug("Reached max depth of {MaxDepth} when extracting protobuf schema for field {Field} of schema {SchemaName}, will not extract further.", MaxExtractionDepth, descriptor.Name, descriptor.File.Name);
+                return;
+            }
+
+            if (!_schemas.ContainsKey(descriptor.Name))
+            {
+                _schemas.Add(descriptor.Name, new OpenApiSchema { Type = "object", Properties = ExtractFields(descriptor, depth) });
+            }
+        }
+
+        private Dictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor, int depth)
+        {
+            var properties = new Dictionary<string, OpenApiSchema>();
+
+            foreach (var o in descriptor.Fields.InFieldNumberOrder())
+            {
+                if (_propertiesCount >= MaxProperties)
+                {
+                    if (!_maxPropsLogged)
+                    {
+                        Log.Debug("Reached max properties count of {MaxProperties} while extracting protobuf schema {SchemaName}, will stop extracting the schema now", MaxProperties, property1: descriptor.File.Name);
+                        _maxPropsLogged = true;
+                    }
+
+                    return properties;
+                }
+
+                var field = o.DuckCast<IFieldDescriptorProxy>()!;
+                var fieldName = field.Name;
+                string? type = null, format = null, description = null;
+                OpenApiReference? reference = null;
+                IList<IOpenApiAny>? enumValues = null;
+                switch (field.FieldType)
+                {
+                    case 0:
+                        type = "number";
+                        format = "double";
+                        break;
+                    case 1:
+                        type = "number";
+                        format = "float";
+                        break;
+                    case 2:
+                        type = "integer";
+                        format = "int64";
+                        break;
+                    case 3:
+                    case 16: // sint64
+                        // OpenAPI does not directly support unsigned integers, treated as integers
+                        type = "integer";
+                        format = "uint64";
+                        break;
+                    case 4:
+                    case 15: // sint32
+                        type = "integer";
+                        format = "int32";
+                        break;
+                    case 5:
+                        // Treated as an integer because OpenAPI does not have a fixed64 format.
+                        type = "integer";
+                        format = "fixed64";
+                        break;
+                    case 6:
+                        type = "integer";
+                        format = "fixed32";
+                        break;
+                    case 7:
+                        type = "boolean";
+                        break;
+                    case 8:
+                        type = "string";
+                        break;
+                    case 9: // group
+                        // Groups are deprecated and usually represented as nested messages in OpenAPI
+                        type = "object";
+                        description = "Group type";
+                        break;
+                    case 10: // message
+                        ExtractSchema(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
+                        reference = new OpenApiReference { Id = field.MessageType.Name, Type = ReferenceType.Schema };
+                        break;
+                    case 11:
+                        type = "string";
+                        format = "byte";
+                        break;
+                    case 12:
+                        // As with UINT64, treated as integers or strings because OpenAPI does not directly
+                        // support unsigned integers
+                        type = "integer";
+                        format = "uint32";
+                        break;
+                    case 13:
+                        type = "integer";
+                        format = "sfixed32";
+                        break;
+                    case 14:
+                        type = "integer";
+                        format = "sfixed64";
+                        break;
+                    // cases 15 and 16 are above
+                    case 17: // enum
+                        type = "string";
+                        enumValues = new List<IOpenApiAny>(field.EnumType.Values.Count);
+                        foreach (var e in field.EnumType.Values)
+                        {
+                            var enumVal = e.DuckCast<IDescriptorProxy>()!;
+                            enumValues.Add(new OpenApiString(enumVal.Name));
+                        }
+
+                        break;
+                    default:
+                        // OpenAPI does not have a direct mapping for unknown types, usually treated as strings or
+                        // omitted
+                        type = "string";
+                        description = "Unknown type";
+                        break;
+                }
+
+                var property = new OpenApiSchema
+                {
+                    Type = type,
+                    Description = description,
+                    Reference = reference,
+                    Format = format,
+                    Enum = enumValues,
+                    Extensions = new Dictionary<string, IOpenApiExtension> { { "x-protobuf-number", new OpenApiInteger(field.FieldNumber) } }
+                };
+                if (field.IsRepeated)
+                {
+                    property = new OpenApiSchema { Type = "array", Items = property };
+                }
+
+                properties.Add(fieldName, property);
+                _propertiesCount++;
+            }
+
+            return properties;
+        }
     }
 
     private class Schema
     {
-        public Schema(OpenApiSchema openApiSchema)
+        public Schema(OpenApiDocument openApiDoc)
         {
-            using (var writer = new StringWriter())
+            using var writer = new StringWriter();
+            try
             {
-                openApiSchema.SerializeAsV3WithoutReference(new OpenApiJsonWriter(writer));
+                openApiDoc.SerializeAsV3(new OpenApiJsonWriter(writer, new OpenApiJsonWriterSettings { Terse = true /* no pretty print */ }));
                 JsonDefinition = writer.ToString();
+                Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
             }
-
-            Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
+            catch (Exception e)
+            {
+                // Happens if some mandatory elements of the OpenAPI definition are missing for instance
+                JsonDefinition = string.Empty;
+                Log.Warning(e, "Error while writing protobuf schema to JSON, stopped after {PartialJson}", writer.ToString());
+            }
         }
 
         internal string JsonDefinition { get; }
