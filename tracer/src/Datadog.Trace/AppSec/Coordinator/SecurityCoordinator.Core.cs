@@ -8,6 +8,7 @@
 #if !NETFRAMEWORK
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
@@ -47,6 +48,18 @@ internal readonly partial struct SecurityCoordinator
     private static object GetHeaderValueForWaf(StringValues value)
     {
         return (value.Count == 1 ? value[0] : value);
+    }
+
+    private static object GetHeaderValueForWaf(IHeaderDictionary headers, string currentKey)
+    {
+        return GetHeaderValueForWaf(headers[currentKey]);
+    }
+
+    private static void GetCookieKeyValueFromIndex(IRequestCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies.ElementAt(i);
+        key = cookie.Key;
+        value = cookie.Value;
     }
 
     internal void BlockAndReport(IResult? result)

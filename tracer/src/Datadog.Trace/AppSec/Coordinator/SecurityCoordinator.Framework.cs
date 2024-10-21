@@ -469,6 +469,18 @@ internal readonly partial struct SecurityCoordinator
         return (value.Count() == 1 ? value[0] : value);
     }
 
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey)
+    {
+        return GetHeaderValueForWaf(headers.GetValues(currentKey));
+    }
+
+    private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies[i];
+        key = cookie.Name;
+        value = cookie.Value;
+    }
+
     public Dictionary<string, object> GetResponseHeadersForWaf()
     {
         var response = _httpTransport.Context.Response;

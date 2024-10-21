@@ -15,7 +15,6 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 #if !NETFRAMEWORK
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 #else
 using System.Collections.Specialized;
@@ -171,33 +170,28 @@ internal readonly partial struct SecurityCoordinator
     {
         var cookies = RequestDataHelper.GetCookies(request);
 
-        if (cookies != null)
+        if (cookies is not null)
         {
             var cookiesDic = new Dictionary<string, object>();
             for (var i = 0; i < cookies.Count; i++)
             {
-#if NETCOREAPP || NETSTANDARD
-                var cookie = cookies.ElementAt(i);
-                var keyForDictionary = cookie.Key;
-#else
-                var cookie = cookies[i];
-                var keyForDictionary = cookie.Name;
-#endif
-                if (cookie.Value is not null && keyForDictionary is not null)
+                GetCookieKeyValueFromIndex(cookies, i, out var keyForDictionary, out var cookieValue);
+
+                if (cookieValue is not null && keyForDictionary is not null)
                 {
                     if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
                     {
-                        cookiesDic.Add(keyForDictionary, cookie.Value);
+                        cookiesDic.Add(keyForDictionary, cookieValue);
                     }
                     else
                     {
                         if (value is string stringValue)
                         {
-                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookie.Value };
+                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookieValue };
                         }
                         else if (value is List<string> valueList)
                         {
-                            valueList.Add(cookie.Value);
+                            valueList.Add(cookieValue);
                         }
                         else
                         {
@@ -206,6 +200,8 @@ internal readonly partial struct SecurityCoordinator
                     }
                 }
             }
+
+            return cookiesDic;
         }
 
         return null;
@@ -224,23 +220,14 @@ internal readonly partial struct SecurityCoordinator
             if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
             {
                 currentKey = currentKey.ToLowerInvariant();
+                var value = GetHeaderValueForWaf(headers, currentKey);
 
-#if NETCOREAPP || NETSTANDARD
-                var value = GetHeaderValueForWaf(headers[currentKey]);
-#else
-                var value = GetHeaderValueForWaf(headers.GetValues(currentKey));
-#endif
-#if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, value))
-                {
-#else
                 if (!headersDic.ContainsKey(currentKey))
                 {
                     headersDic.Add(currentKey, value);
                 }
                 else
                 {
-#endif
                     Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
                 }
             }
