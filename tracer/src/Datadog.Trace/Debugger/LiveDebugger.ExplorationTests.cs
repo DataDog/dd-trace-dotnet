@@ -46,12 +46,12 @@ namespace Datadog.Trace.Debugger
 
                 var probe = new LogProbe
                 {
-                    Id = parts[3], // probeId
+                    Id = parts[0], // probeId
                     Where = new Where
                     {
-                        TypeName = parts[0], // target type name (FQN)
-                        MethodName = parts[1], // target method name
-                        Signature = parts[2].Replace(parametersSeparator, ','), // signature
+                        TypeName = parts[1], // target type name (FQN)
+                        MethodName = parts[2], // target method name
+                        Signature = parts[3].Replace(parametersSeparator, ','), // signature
                     },
                     EvaluateAt = EvaluateAt.Exit
                 };
