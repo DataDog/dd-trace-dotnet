@@ -1,0 +1,187 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DataDog/auto_inject/refs/heads/main/preload_go/cmd/library_requirements_tester/testdata/requirements_schema.json",
+  "version": 1,
+  "native_deps": {
+    "glibc": [{
+      "arch": "x64",
+      "supported": true,
+      "description": "From centOS 7",
+      "min": "2.17"
+    },
+    {
+      "arch": "arm64",
+      "supported": true,
+      "description": "From debian buster (10), which is 2.28, but we verify we don't exceed 2.23",
+      "min": "2.23"
+    }],
+    "musl": [{
+      "arch": "x64",
+      "supported": true,
+      "description": "From alpine 3.14"
+    },{
+      "arch": "arm64",
+      "supported": true,
+      "description": "From alpine 3.18"
+    }]
+  },
+  "deny": [
+    {
+      "id": "dotnet_core_uninstall",
+      "description": "Ignore dotnet-core-uninstall which is self-contained app",
+      "os": null,
+      "cmds": [
+        "**/dotnet-core-uninstall"
+      ],
+      "args": [],
+      "envars": null
+    },
+    {
+      "id": "vsdbg",
+      "description": "Ignore vsdbg Visual Studio debug bridge",
+      "os": null,
+      "cmds": [
+        "**/vsdbg"
+      ],
+      "args": [],
+      "envars": null
+    },
+    {
+      "id": "dd_trace",
+      "description": "Ignore our own dd-trace runner",
+      "os": null,
+      "cmds": [
+        "**/dd-trace"
+      ],
+      "args": [],
+      "envars": null
+    },
+    {
+      "id": "dd_dotnet",
+      "description": "Ignore our own dd-dotnet runner",
+      "os": null,
+      "cmds": [
+        "**/dd-dotnet"
+      ],
+      "args": [],
+      "envars": null
+    },
+    {
+      "id": "dotnet_build",
+      "description": "Ignore dotnet build",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["build"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_build_server",
+      "description": "Ignore dotnet build-server",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["build-server"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_clean",
+      "description": "Ignore dotnet clean",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["clean"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_msbuild",
+      "description": "Ignore dotnet msbuild",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["msbuild"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_new",
+      "description": "Ignore dotnet new",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["new"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_nuget",
+      "description": "Ignore dotnet nuget",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["nuget"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_pack",
+      "description": "Ignore dotnet pack",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["pack"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_publish",
+      "description": "Ignore dotnet publish",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["publish"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_restore",
+      "description": "Ignore dotnet restore",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["restore"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_tool",
+      "description": "Ignore dotnet tool",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["tool"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_workload",
+      "description": "Ignore dotnet workload",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [{ "args":  ["workload"], "position": 1}],
+      "envars": null
+    },
+    {
+      "id": "dotnet_exec_csc",
+      "description": "Ignore dotnet exec **/csc.dll",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [
+        { "args":  ["exec"], "position": 1},
+        { "args":  ["*csc.dll"], "position": null}
+      ],
+      "envars": null
+    },
+    {
+      "id": "dotnet_exec_vbcscompiler",
+      "description": "Ignore dotnet exec **/VBCSCompiler.dll",
+      "os": null,
+      "cmds": [ "**/dotnet"],
+      "args": [
+        { "args":  ["exec"], "position": 1},
+        { "args":  ["*VBCSCompiler.dll"], "position": null}
+      ],
+      "envars": null
+    },
+    {
+      "id": "already_instrumented",
+      "description": "Ignore if the process is already has automatic instrumentation",
+      "os": null,
+      "cmds": [ ],
+      "args": [],
+      "envars": { "CORECLR_PROFILER_PATH*":  null, "CORECLR_ENABLE_PROFILING": "1" }
+    }
+  ]
+}
