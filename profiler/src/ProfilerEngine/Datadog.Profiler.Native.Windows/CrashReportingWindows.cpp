@@ -251,7 +251,7 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
     return modules;
 }
 
-ModuleInfo const* CrashReportingWindows::FindModule(uintptr_t ip)
+const ModuleInfo* CrashReportingWindows::FindModule(uintptr_t ip)
 {
     for (auto const& module : _modules)
     {
