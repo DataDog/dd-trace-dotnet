@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Configuration
@@ -25,6 +28,24 @@ namespace Datadog.Trace.Tests.Configuration
 
             var settings = new IntegrationSettings("FOO", source);
             Assert.Equal(expected, settings.Enabled);
+        }
+
+        [Theory]
+        [InlineData("false", "true", true)]
+        [InlineData("true", null, true)]
+        [InlineData(null, "false", false)]
+        public void CaseInsenstiveIntegrationEnabled(string sensitiveCaseValue, string upperCasedValue, bool expected)
+        {
+            var dict = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                { "DD_TRACE_MYSQL_ENABLED", upperCasedValue },
+                { "DD_TRACE_MySql_ENABLED", sensitiveCaseValue }
+            };
+            var src = new DictionaryConfigurationSource(dict);
+
+            var settings = new IntegrationSettings(nameof(IntegrationId.MySql), src);
+
+            settings.EnabledInternal.Should().Be(expected);
         }
 
         [Theory]
