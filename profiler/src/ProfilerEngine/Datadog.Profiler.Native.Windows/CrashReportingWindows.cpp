@@ -385,6 +385,10 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
 
             if (pdbInfo->Signature == PDB70_SIGNATURE)
             {
+                if (moduleInfo.pdbSig != GUID_NULL)
+                {
+
+                }
                 moduleInfo.pdbAge = pdbInfo->Age;
                 moduleInfo.pdbSig = pdbInfo->Guid;
                 moduleInfo.hasPdbInfo = true;

@@ -69,8 +69,12 @@ std::vector<BYTE> LoadEmbeddedDll(int resourceId)
     // Allocate memory for the relocated image
     std::vector<BYTE> relocatedImage(size);
 
-    // Copy the DOS and NT headers
-    memcpy(relocatedImage.data(), data, dosHeader->e_lfanew + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + ntHeaders->FileHeader.SizeOfOptionalHeader);
+    // Copy the DOS and NT headers, and the section headers
+    auto sizeToCopy = dosHeader->e_lfanew // Offset to the NT headers
+        + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + ntHeaders->FileHeader.SizeOfOptionalHeader // Optional header
+        + ntHeaders->FileHeader.NumberOfSections * sizeof(IMAGE_SECTION_HEADER); // Section headers
+
+    memcpy(relocatedImage.data(), data, sizeToCopy);
 
     // Copy the relocated sections
     for (int i = 0; i < ntHeaders->FileHeader.NumberOfSections; i++)
