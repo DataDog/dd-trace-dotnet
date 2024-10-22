@@ -1508,7 +1508,14 @@ partial class Build
                         _ => true,
                     });
 
-                var rid = IsArm64 ? "win-arm64" : "win-x64";
+                var rid = TargetPlatform.ToString() switch
+                {
+                    "x64" => "win-x64",
+                    "x86" => "win-x86",
+                    "ARM64" or "ARM64EC" => "win-arm64",
+                    _ => throw new InvalidOperationException("Unsupported architecture " + RuntimeInformation.ProcessArchitecture),
+                };
+
                 DotNetPublish(config => config
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
