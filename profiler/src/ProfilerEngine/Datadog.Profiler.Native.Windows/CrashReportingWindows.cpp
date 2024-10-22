@@ -251,13 +251,13 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
     return modules;
 }
 
-ModuleInfo* CrashReportingWindows::FindModule(uintptr_t ip)
+ModuleInfo const* CrashReportingWindows::FindModule(uintptr_t ip)
 {
     for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {
-            return (ModuleInfo*)&module;
+            return &module;
         }
     }
 

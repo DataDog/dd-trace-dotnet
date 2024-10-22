@@ -41,7 +41,7 @@ private:
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
     std::string GetSignalInfo(int32_t signal) override;
     std::vector<ModuleInfo> GetModules();
-    ModuleInfo* FindModule(uintptr_t ip);
+    ModuleInfo const* FindModule(uintptr_t ip);
 
     static std::vector<BYTE> ReadRemoteMemory(HANDLE process, uintptr_t address, SIZE_T size);
 
