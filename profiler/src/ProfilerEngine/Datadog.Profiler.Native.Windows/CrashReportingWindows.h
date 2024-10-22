@@ -16,7 +16,10 @@ struct ModuleInfo
     GUID pdbSig;
 };
 
-struct IMAGE_NT_HEADERS_GENERIC {
+// PE32 and PE64 have different optional headers, which complexify the logic to fetch them
+// This struct contains the common fields between the two types of headers
+struct IMAGE_NT_HEADERS_GENERIC
+{
     DWORD Signature;
     IMAGE_FILE_HEADER FileHeader;
     WORD    Magic;

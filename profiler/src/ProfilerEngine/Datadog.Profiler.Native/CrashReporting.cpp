@@ -197,7 +197,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
             strings[i] = frame.method;
 
-            stackFrameNames[i] = ddog_crasht_StackFrameNames{
+            stackFrameNames[i] = ddog_crasht_StackFrameNames
+            {
                 .colno = { DDOG_OPTION_U32_NONE_U32, 0},
                 .filename = {nullptr, 0},
                 .lineno = { DDOG_OPTION_U32_NONE_U32, 0},
@@ -209,7 +210,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
-            stackFrames[i] = ddog_crasht_StackFrame{
+            stackFrames[i] = ddog_crasht_StackFrame
+            {
                 .ip = ip,
                 .module_base_address = moduleAddress,
                 .names{

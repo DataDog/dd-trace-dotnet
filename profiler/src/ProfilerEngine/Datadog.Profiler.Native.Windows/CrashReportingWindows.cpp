@@ -317,19 +317,6 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
         return false;
     }
 
-    // Read the section headers (will be needed to resolve RVAs)
-    auto imageSectionHeaderAddress = ntHeadersAddress + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) + ntHeaders->FileHeader.SizeOfOptionalHeader;
-    auto numberOfSections = ntHeaders->FileHeader.NumberOfSections;
-
-    auto imageSectionHeaderBuffer = _readMemory(imageSectionHeaderAddress, sizeof(IMAGE_SECTION_HEADER) * ntHeaders->FileHeader.NumberOfSections);
-
-    if (imageSectionHeaderBuffer.empty())
-    {
-        return 0;
-    }
-
-    auto sectionHeaders = reinterpret_cast<IMAGE_SECTION_HEADER*>(imageSectionHeaderBuffer.data());
-
     // Read the debug directory according to the PE type
     IMAGE_DATA_DIRECTORY debugDataDir;
 
@@ -375,13 +362,15 @@ bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& modul
     {
         if (debugDirectory[i].Type == IMAGE_DEBUG_TYPE_CODEVIEW)
         {
-            struct CV_INFO_PDB70 {
+            struct CV_INFO_PDB70
+            {
                 DWORD Signature;
                 GUID Guid;
                 DWORD Age;
                 char PdbFileName[];
             };
 
+            // Extract the PDB info from the codeview entry
             auto pdbInfoAddress = baseAddress + debugDirectory[i].AddressOfRawData;
             auto pdbInfoBuffer = _readMemory(pdbInfoAddress, sizeof(CV_INFO_PDB70));
             

@@ -42,6 +42,10 @@ std::vector<BYTE> LoadEmbeddedDll(int resourceId)
     // Get a pointer to the resource data
     auto data = LockResource(hResData);
 
+    // We can't just directly return a pointer to the binary data.
+    // When a DLL is loaded, its sections are relocated at different addresses.
+    // Because the code to parse the PE header expects those sections to be properly relocated,
+    // we need to simulate the work of the loader.
     auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(data);
     uintptr_t ntHeadersAddress = (uintptr_t)data + dosHeader->e_lfanew;
     auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS_GENERIC*>(ntHeadersAddress);
