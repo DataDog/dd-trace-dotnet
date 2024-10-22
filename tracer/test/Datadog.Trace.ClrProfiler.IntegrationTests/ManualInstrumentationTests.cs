@@ -29,7 +29,11 @@ public class ManualInstrumentationTests : TestHelper
 #if !NETFRAMEWORK
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
-    public async Task ReadyToRunManualAndAutomatic() => await RunTest(usePublishWithRID: true);
+    public async Task ReadyToRunManualAndAutomatic()
+    {
+        SetEnvironmentVariable("READY2RUN_ENABLED", "1");
+        await RunTest(usePublishWithRID: true);
+    }
 #endif
 
     [SkippableFact]
