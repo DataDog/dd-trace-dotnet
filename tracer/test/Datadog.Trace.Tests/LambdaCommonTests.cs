@@ -18,8 +18,6 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    extern alias DatadogTraceManual;
-
     public class LambdaCommonTests
     {
         private readonly Mock<ILambdaExtensionRequest> _lambdaRequestMock = new();
