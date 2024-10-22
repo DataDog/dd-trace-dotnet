@@ -186,7 +186,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private string GetSuffix(string packageVersion)
             => packageVersion switch
             {
-                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
+                not (null or "") when new Version(packageVersion) >= new Version("14.0.0") => string.Empty,
+                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => ".Pre_14_0_0",
                 _ => ".Pre_13_1_0",
             };
     }
