@@ -34,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class Instrumentation
     {
+        private const string Path = @"C:\ProgramData\Datadog .NET Tracer\logs\CallTargetInvoker.log";
+
         /// <summary>
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
@@ -86,8 +88,11 @@ namespace Datadog.Trace.ClrProfiler
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
+                System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} Instrumentation.Initialize() with Stack {new StackTrace()}: Previously called, skipping for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
                 return;
             }
+
+            System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} Instrumentation.Initialize() with Stack {new StackTrace()}: First invocation for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
 
             try
             {
@@ -180,6 +185,8 @@ namespace Datadog.Trace.ClrProfiler
                 // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
                 try
                 {
+                    System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} Error in Initialize {ex} for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
+
                     Log.Error(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
                     return;
                 }

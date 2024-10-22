@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget;
 public static class CallTargetInvoker
 {
 #if NETFRAMEWORK
+    private const string Path = @"C:\ProgramData\Datadog .NET Tracer\logs\CallTargetInvoker.log";
     private const string NamedSlotName = "Datadog_IISPreInitStart";
-    private static bool _isIisPreStartInitComplete = false;
-#endif
+    private static bool _isIisPreStartInitComplete;
 
     static CallTargetInvoker()
     {
@@ -36,26 +36,66 @@ public static class CallTargetInvoker
         // (during IIS pre-init)
         // Instrumentation.InitializeNoNativeParts();
 
-#if NETFRAMEWORK
         // Check if IIS automatic instrumentation has set the AppDomain property to indicate the PreStartInit state
         // If the property is not set, we should rely on other heuristics
         var state = AppDomain.CurrentDomain.GetData(NamedSlotName);
         if (state is bool boolState)
         {
+            // we know we must be in IIS, so we need to check the app domain state
             _isIisPreStartInitComplete = !boolState;
+            System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} CallTargetInvoker..ctor(): {NamedSlotName} was {boolState} for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
         }
         else
         {
+            try
+            {
+                System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} CallTargetInvoker..ctor(): {NamedSlotName} was not found so fetching process name. Stack trace {new StackTrace()}, for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
+
+                // We need to check if we're running in IIS, so that we know whether to _expect_
+                // the IIS PreStartInit AppDomain property to be set. Outside of IIS, it will never be set.
+                // We can't use ProcessHelpers here, because that could cause premature initialization of the
+                // tracer, which could cause recursion issues with IIS PreStartInit code execution
+                var processName = Process.GetCurrentProcess().ProcessName;
+
+                if (processName.Equals("w3wp", StringComparison.OrdinalIgnoreCase) ||
+                    processName.Equals("iisexpress", StringComparison.OrdinalIgnoreCase))
+                {
+                    // We're in IIS, so we know we need to check the AppDomain property
+                    _isIisPreStartInitComplete = false;
+                }
+                else
+                {
+                    // If we're not in IIS, we don't need to run these checks
+                    _isIisPreStartInitComplete = true;
+                }
+            }
+            catch (Exception)
+            {
+                // Error getting process name, have to assume we _aren't_ in IIS, and that we don't need to wait for the app domain
+                _isIisPreStartInitComplete = true;
+            }
+
+            // This is invoked if the CallTargetInvoker is invoked _prior_ to our startup hook.
+            // This can happen in scenarios where there are two applications running in an app domain.
+
             // This _theoretically_ is a problem. In previous workarounds
             // (e.g. https://github.com/DataDog/dd-trace-dotnet/pull/1157) we resorted to
             // checking the process name, and checking the callstack to see if it contained
             // System.Web.Hosting.HostingEnvironment.Initialize(). However, that case should
             // only be hit in manual-only instrumentation scenarios, which by definition are
             // not a problem here because this type is only used by automatic instrumentation
-            _isIisPreStartInitComplete = true;
         }
-#endif
     }
+
+    /// <summary>
+    /// Mark tracer initialization as complete, and so we can start running CallTarget integrations
+    /// </summary>
+    public static void SetIisPreStartInitComplete()
+    {
+        System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} Setting CallTargetInvoker.IsIisPreStartComplete: from stack {new StackTrace()} for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
+        _isIisPreStartInitComplete = true;
+    }
+#endif
 
     /// <summary>
     /// Begin Method Invoker
@@ -666,20 +706,25 @@ public static class CallTargetInvoker
     }
 
 #if NETFRAMEWORK
-    private static bool IsIisPreStartComplete<TIntegration>()
+    private static bool IsIisPreStartComplete<TIntegration>([CallerMemberName] string callerName = null!)
     {
         if (_isIisPreStartInitComplete)
         {
+            System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} CallTargetInvoker.IsIisPreStartComplete<{typeof(TIntegration).Name}>({callerName}): was already true  for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
             return true;
         }
 
-        _isIisPreStartInitComplete = AppDomain.CurrentDomain.GetData(NamedSlotName) is false;
+        var boolState = AppDomain.CurrentDomain.GetData(NamedSlotName);
+        System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} CallTargetInvoker.IsIisPreStartComplete<{typeof(TIntegration).Name}>({callerName}): checked pre-start complete and got {boolState} for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
+        _isIisPreStartInitComplete = boolState is false;
 
-        // We _have_ to allow the HttpModule_Integration inocation through, even if we're in the Iis PreStart phase
-        // that integration is specifically designed to run in this phase. We considered other options
+        // We _have_ to allow the HttpModule_Integration invocation through, even if we're in the Iis PreStart phase.
+        // That integration is specifically designed to run in this phase. We considered other options
         // such as moving it to Instrumentation.Initialise, or rewriting directly with the profiling API
         // but this was the simplest, easiest, and safest approach we could see generally.
-        return _isIisPreStartInitComplete || typeof(TIntegration) == typeof(HttpModule_Integration);
+        var returnValue = _isIisPreStartInitComplete || typeof(TIntegration) == typeof(HttpModule_Integration);
+        System.IO.File.AppendAllText(Path, $"{DateTime.UtcNow:T} CallTargetInvoker.IsIisPreStartComplete<{typeof(TIntegration).Name}>({callerName}): returned {returnValue} for app domain {AppDomain.CurrentDomain.Id}{Environment.NewLine}");
+        return returnValue;
     }
 
 #else
