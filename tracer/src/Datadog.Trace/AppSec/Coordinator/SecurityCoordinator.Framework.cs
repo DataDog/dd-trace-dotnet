@@ -395,7 +395,6 @@ internal readonly partial struct SecurityCoordinator
         var request = _httpTransport.Context.Request;
         var headers = RequestDataHelper.GetHeaders(request);
         var headersDic = ExtractHeadersFromRequest(request.Headers);
-
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
@@ -406,24 +405,27 @@ internal readonly partial struct SecurityCoordinator
             queryDic = new Dictionary<string, string[]>(queryString.AllKeys.Length);
             foreach (var originalKey in queryString.AllKeys)
             {
-                var values = queryString.GetValues(originalKey);
-                if (string.IsNullOrEmpty(originalKey))
+                RequestDataHelper.GetNameValueCollectionValues(queryString, originalKey);
+                if (values is not null)
                 {
-                    foreach (var v in values)
+                    if (string.IsNullOrEmpty(originalKey))
                     {
-                        if (!queryDic.ContainsKey(v))
+                        foreach (var value in values)
                         {
-                            queryDic.Add(v, []);
+                            if (!queryDic.ContainsKey(value))
+                            {
+                                queryDic.Add(value, []);
+                            }
                         }
                     }
-                }
-                else if (!queryDic.ContainsKey(originalKey))
-                {
-                    queryDic.Add(originalKey, values);
-                }
-                else
-                {
-                    Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    else if (!queryDic.ContainsKey(originalKey))
+                    {
+                        queryDic.Add(originalKey, values);
+                    }
+                    else
+                    {
+                        Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    }
                 }
             }
         }
@@ -468,7 +470,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
 
-    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(headers.GetValues(currentKey) ?? []);
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(RequestDataHelper.GetNameValueCollectionValues(headers, currentKey) ?? []);
 
     private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
     {
