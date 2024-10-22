@@ -30,9 +30,10 @@ namespace Datadog.Trace.DatabaseMonitoring
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
         private const string ContextInfoParameterName = "@dd_trace_context";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
-        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
+
+        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
 
         internal static string PropagateDataViaComment(DbmPropagationLevel propagationStyle, string configuredServiceName, string? dbName, string? outhost, Span span, IntegrationId integrationId, out bool traceParentInjected)
         {
