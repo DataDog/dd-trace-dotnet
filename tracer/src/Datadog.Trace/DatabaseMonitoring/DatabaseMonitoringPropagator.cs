@@ -5,6 +5,7 @@
 
 using System;
 using System.Data;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -29,6 +30,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
         private const string ContextInfoParameterName = "@dd_trace_context";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
+        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
@@ -145,7 +147,21 @@ namespace Datadog.Trace.DatabaseMonitoring
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces.", HexConverter.ToString(contextValue));
+                    if (_remainingErrorLogs > 0) // stop logging the error after a while
+                    {
+                        var actualRemaining = Interlocked.Decrement(ref _remainingErrorLogs);
+                        if (actualRemaining >= 0)
+                        {
+                            var message = "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces.";
+                            if (actualRemaining == 0)
+                            {
+                                message += " Will stop logging this error now.";
+                            }
+
+                            Log.Error(e, message, HexConverter.ToString(contextValue));
+                        }
+                    }
+
                     return false;
                 }
             }
