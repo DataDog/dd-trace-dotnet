@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
@@ -46,7 +47,26 @@ internal sealed class TraceClock
     public static TraceClock Instance
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _instance;
+        get
+        {
+            var distributedTracer = DistributedTracer.Instance;
+
+            // In case we are in the manual instrumentation scenario (ChildTracer) we fallback to a TraceClock instance per Trace
+            if (distributedTracer.IsChildTracer)
+            {
+                return new TraceClock();
+            }
+
+            // In case we are in the automatic instrumentation side but we have a registered child (manual instrumentation)
+            // then we also fallback
+            if (distributedTracer is AutomaticTracer { HasChild: true })
+            {
+                return new TraceClock();
+            }
+
+            // If we are in a non manual instrumentation scenario we share the clock instance across multiple traces.
+            return _instance;
+        }
     }
 
     public DateTimeOffset UtcNow
