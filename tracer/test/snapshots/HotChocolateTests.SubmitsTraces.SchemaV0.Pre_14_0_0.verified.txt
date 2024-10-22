@@ -302,7 +302,7 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "Unexpected Execution Error",
+"message": "The specified root type `Subscription` is not supported by this server.",
 "locations": [
 ]
 },

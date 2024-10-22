@@ -45,6 +45,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
+        internal static Scope CreateScopeFromExecute14Async<T>(Tracer tracer, in T request)
+            where T : IOperationRequest
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+            try
+            {
+                var queryOperationName = request.OperationName;
+                var source = request.Document?.ToString();
+                var operationType = "Uncompleted";
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
         internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
