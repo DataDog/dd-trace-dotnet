@@ -53,12 +53,6 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            var segments = uri.AbsolutePath.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length < 5)
-            {
-                return false;
-            }
-
             repositoryUrl = BuildRepositoryUrl(uri);
 
             return repositoryUrl != null;
