@@ -224,7 +224,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             {
                 stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_PDB;
                 stackFrames[i].normalized_ip.age = frame.pdbAge;
-                stackFrames[i].normalized_ip.build_id = { (byte*)&frame.pdbSig, 16 };
+                stackFrames[i].normalized_ip.build_id = { (uint8_t*)&frame.pdbSig, 16 };
             }
         }
 
