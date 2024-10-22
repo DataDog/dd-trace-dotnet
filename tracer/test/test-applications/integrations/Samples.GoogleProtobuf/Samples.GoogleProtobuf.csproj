@@ -1,6 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <ItemGroup>
-      <PackageReference Include="Google.Protobuf" Version="3.28.2" />
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.28.2</ApiVersion>
+
+    <!-- 👇Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="$(ApiVersion)"/>
       <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
     </ItemGroup>
 </Project>

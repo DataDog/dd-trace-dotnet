@@ -1,4 +1,5 @@
 ﻿using System;
+using Datadog.Trace;
 using Google.Protobuf;
 using Sample;
 using static Sample.Person.Types;
@@ -17,14 +18,14 @@ internal class Program
         // serialization
 
         byte[] serialized;
-        using (Datadog.Trace.Tracer.Instance.StartActive("Ser"))
+        using (Tracer.Instance.StartActive("Ser"))
         {
             serialized = addressBook.ToByteArray();
         }
 
         // deserialization
         var deserialized = new AddressBook();
-        using (Datadog.Trace.Tracer.Instance.StartActive("Deser"))
+        using (Tracer.Instance.StartActive("Deser"))
         {
             deserialized.MergeFrom(serialized);
         }
