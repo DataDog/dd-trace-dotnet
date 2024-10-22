@@ -148,7 +148,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                 }
                 catch (Exception e)
                 {
-                    if (_remainingErrorLogs > 0) // stop logging the error after a while
+                    // stop logging the error after a while
+                    if (_remainingErrorLogs > 0)
                     {
                         var actualRemaining = Interlocked.Decrement(ref _remainingErrorLogs);
                         if (actualRemaining >= 0)
