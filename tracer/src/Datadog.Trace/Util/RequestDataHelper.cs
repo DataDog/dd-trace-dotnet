@@ -7,6 +7,7 @@ using System;
 #if NETFRAMEWORK
 using System.Collections.Specialized;
 using System.Web;
+using System.Web.ModelBinding;
 using Datadog.Trace.Logging;
 #else
 using Microsoft.AspNetCore.Http;
@@ -38,6 +39,22 @@ internal static class RequestDataHelper
     internal static QueryString GetQueryString(HttpRequest request)
     {
         return request.QueryString;
+    }
+#endif
+
+#if NETFRAMEWORK
+    // Get the querystring values from a querystring
+    internal static string[]? GetNameValueCollectionValues(NameValueCollection queryString, string key)
+    {
+        try
+        {
+            return queryString.GetValues(key);
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading QueryString from the request.");
+            return null;
+        }
     }
 #endif
 
