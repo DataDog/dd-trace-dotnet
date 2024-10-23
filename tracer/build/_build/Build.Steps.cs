@@ -1917,7 +1917,27 @@ partial class Build
 
             // do the build and publish separately to avoid dependency issues
 
-            DotnetBuild(projectsToBuild, framework: Framework, noRestore: false);
+            var rid = (IsLinux, IsArm64) switch
+            {
+                (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
+                (false, false) => "osx-x64",
+                (false, true) => "osx-arm64",
+            };
+
+            DotNetBuild(s => s
+                            .SetConfiguration(BuildConfiguration)
+                            .SetTargetPlatformAnyCPU()
+                            .EnableNoDependencies()
+                            .SetFramework(Framework)
+                            .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
+                            .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
+                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                            .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                            .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                            .SetNoWarnDotNetCore3()
+                            .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+                            .CombineWith(projectsToBuild, (settings, projPath) => settings.SetProjectFile(projPath)));
 
             DotNetPublish(x => x
                     .EnableNoRestore()
@@ -1926,6 +1946,8 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetFramework(Framework)
                     .SetNoWarnDotNetCore3()
+                    .SetRuntime(rid)
+                    .SetPublishReadyToRun(true)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
@@ -1955,13 +1977,6 @@ partial class Build
                     (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
-            var rid = (IsLinux, IsArm64) switch
-            {
-                (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
-                (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
-                (false, false) => "osx-x64",
-                (false, true) => "osx-arm64",
-            };
             DotNetPublish(config => config
                .SetConfiguration(BuildConfiguration)
                .SetFramework(Framework)

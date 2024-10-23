@@ -187,7 +187,7 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = true)
         {
             var process = await StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework, usePublishWithRID: usePublishWithRID);
             using var helper = new ProcessHelper(process);
