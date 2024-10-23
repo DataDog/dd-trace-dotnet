@@ -4363,6 +4363,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // Check if this method has been rejitted, if that's the case we don't accept the image
+    bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
+
     ComPtr<IUnknown> metadata_interfaces;
     hr = this->info_->GetModuleMetaData(module_id, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
     if (hr == S_OK)
@@ -4371,14 +4374,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
         auto functionInfo = GetFunctionInfo(metadata_import, function_token);
 
-        Logger::Info("NGEN Image: Accepted for Module: ",
-                     moduleInfo.assembly.name,
-                     ", Method:",
-                     functionInfo.type.name, ".", functionInfo.name,
-                     "()");
+        if (hasBeenRejitted)
+        {
+            Logger::Info("NGEN Image: Rejected (because rejitted) for Module: ",
+                         moduleInfo.assembly.name,
+                         ", Method:",
+                         functionInfo.type.name, ".", functionInfo.name,
+                         "()");
+        }
+        else
+        {
+            Logger::Info("NGEN Image: Accepted for Module: ",
+                         moduleInfo.assembly.name,
+                         ", Method:",
+                         functionInfo.type.name, ".", functionInfo.name,
+                         "()");
+        }
     }
 
-    *pbUseCachedFunction = true;
+    *pbUseCachedFunction = !hasBeenRejitted;
     return S_OK;
 }
 
