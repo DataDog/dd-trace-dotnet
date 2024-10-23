@@ -1925,29 +1925,21 @@ partial class Build
                 (false, true) => "osx-arm64",
             };
 
-            DotNetBuild(s => s
-                            .SetConfiguration(BuildConfiguration)
-                            .SetTargetPlatformAnyCPU()
-                            .EnableNoDependencies()
-                            .SetFramework(Framework)
-                            .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
-                            .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
-                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                            .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
-                            .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
-                            .SetNoWarnDotNetCore3()
-                            .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
-                            .CombineWith(projectsToBuild, (settings, projPath) => settings.SetProjectFile(projPath)));
-
             DotNetPublish(x => x
-                    .EnableNoRestore()
-                    .EnableNoBuild()
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatformAnyCPU()
                     .SetFramework(Framework)
                     .SetNoWarnDotNetCore3()
                     .SetRuntime(rid)
                     .SetPublishReadyToRun(true)
+                    .When(DebugType is not null, settings => settings.SetProperty(nameof(DebugType), DebugType))
+                    .When(Optimize is not null, settings => settings.SetProperty(nameof(Optimize), Optimize))
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
+                    .SetNoWarnDotNetCore3()
+                    .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701")) //nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
