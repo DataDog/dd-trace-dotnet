@@ -7,7 +7,6 @@
 
 using System.Web;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -20,7 +19,7 @@ namespace Datadog.Trace.Util.Http
             => HttpRequestUtils.GetUrl(request.Url, queryStringManager);
 
         internal static string GetUrlForSpan(this HttpRequest request, QueryStringManager queryStringManager)
-            => HttpRequestUtils.GetUrl(request.Url, queryStringManager);
+            => HttpRequestUtils.GetUrl(RequestDataHelper.GetUrl(request), queryStringManager);
     }
 }
 #endif
