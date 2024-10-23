@@ -4333,7 +4333,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    *pbUseCachedFunction = true;
+    // Check if this method has been rejitted, if that's the case we don't accept the image
+    bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
+    *pbUseCachedFunction = !hasBeenRejitted;
     return S_OK;
 }
 
