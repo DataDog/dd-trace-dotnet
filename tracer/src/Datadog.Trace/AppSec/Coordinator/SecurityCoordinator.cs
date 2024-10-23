@@ -125,6 +125,7 @@ internal readonly partial struct SecurityCoordinator
         {
             // annotate span
             _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
+            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
         }
 
