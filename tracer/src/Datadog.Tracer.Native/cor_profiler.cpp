@@ -4336,6 +4336,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // Check if this method has been rejitted, if that's the case we don't accept the image
     bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
     *pbUseCachedFunction = !hasBeenRejitted;
+
+    // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
+    if (Logger::IsDebugEnabled() && hasBeenRejitted)
+    {
+        ComPtr<IUnknown> metadata_interfaces;
+        hr = this->info_->GetModuleMetaData(module_id, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        if (hr == S_OK)
+        {
+            const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+            Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ",
+                         module_info.assembly.name,
+                         ", Method:",
+                         functionInfo.type.name, ".", functionInfo.name,
+                         "()");
+        }
+    }
+
     return S_OK;
 }
 
