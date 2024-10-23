@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <cassert>
+#include "Log.h"
 
 using namespace std::chrono_literals;
 
@@ -61,7 +62,11 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
             auto res = pthread_cond_timedwait(&_impl->_cond, &_impl->_mutex, &ts);
             if (res == ETIMEDOUT)
             {
-                assert(_impl->_isSet == false);
+                // We have a race when the timeout occurs but the lock was taken
+                // before pthread_cond_timedwait acquires the lock on returned.
+                // mark it as not set
+                _impl->_isSet = false;
+                pthread_mutex_unlock(&_impl->_mutex);
                 return false;
             }
         }

@@ -47,6 +47,7 @@ bool LibrariesInfoCache::StopImpl()
     s_instance = nullptr;
 
     _stopRequested = true;
+    Log::Info("Stopping Libraries cache");
     NotifyCacheUpdateImpl();
     _worker.join();
     return true;
@@ -81,6 +82,7 @@ void LibrariesInfoCache::Work()
         // Otherwise, we reload the cache no matter on a regular basis (defaultTimeout)
         _event.Wait(timeout);
 
+        Log::Info("Event received. _stopRequested ? ", std::boolalpha, _stopRequested);
         if (_stopRequested)
         {
             break;
@@ -97,23 +99,25 @@ void LibrariesInfoCache::Work()
 
 void LibrariesInfoCache::UpdateCache()
 {
+    Log::Info("Updating cache");
     IterationData data = {.Index = 0, .Cache = this, .LockTaken = false};
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            // make sure we lock only after we acquired the dl_iterate_phdr shared lock
+            Log::Info("Inside dl_iterate_phdr callback");
             auto* iterationData = static_cast<IterationData*>(data);
             auto* cache = iterationData->Cache;
-            if (!iterationData->LockTaken)
+            // make sure we lock only after we acquired the dl_iterate_phdr shared lock
+            auto lockTaken = std::exchange(iterationData->LockTaken, true);
+            if (!lockTaken)
             {
-                iterationData->LockTaken = true;
                 cache->_cacheLock.lock();
             }
-
 
             if (cache->LibrariesInfo.size() <= iterationData->Index)
             {
                 cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
                 iterationData->Index++;
+                Log::Info("Exiting dl_iterate_phdr callback 1");
                 return 0;
             }
 
@@ -121,12 +125,14 @@ void LibrariesInfoCache::UpdateCache()
             if (current.IsSame(info))
             {
                 iterationData->Index++;
+                Log::Info("Exiting dl_iterate_phdr callback 2");
                 return 0;
             }
 
             DlPhdrInfoWrapper wrappedInfo(info, size);
             cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
             iterationData->Index++;
+            Log::Info("Exiting dl_iterate_phdr callback 3");
             return 0;
         },
         &data);
@@ -136,6 +142,8 @@ void LibrariesInfoCache::UpdateCache()
     {
         _cacheLock.unlock();
     }
+    
+    Log::Info("End of updating cache");
 }
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
@@ -179,5 +187,6 @@ void LibrariesInfoCache::NotifyCacheUpdate()
 
 void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
+    Log::Info("Notify cache update or stop");
     _event.Set();
 }
