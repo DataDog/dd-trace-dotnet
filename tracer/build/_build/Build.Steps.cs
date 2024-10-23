@@ -1494,7 +1494,7 @@ partial class Build
                         return project?.Name switch
                         {
                             "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
-                            "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: false),
+                            "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
                             _ => (project, include: false, r2r: false),
                         };
                     })
@@ -1940,7 +1940,7 @@ partial class Build
                     return project?.Name switch
                     {
                         "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
-                        "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: false),
+                        "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
                         _ => (project, include: false, r2r: false),
                     };
                 })
