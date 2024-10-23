@@ -4333,7 +4333,44 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
+    // On .NET Framework when we reject bcl images the rejit calls of the integrations for those bcl assemblies
+    // are not resolved (is not clear why, maybe a bug). So we end up missing spans.
+    // Also in .NET Framework  we don't need to reject the ngen image, the rejit will always do the right job.
+    // In .NET Core if we don't reject the image, the image will be used and the rejit callback will never get called
+    // (this was confirmed on issue-6124).
+    // The following code handle both scenarios.
     *pbUseCachedFunction = true;
+    if (runtime_information_.is_core())
+    {
+        // Check if this method has been rejitted, if that's the case we don't accept the image
+        bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
+        *pbUseCachedFunction = !hasBeenRejitted;
+
+        // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
+        if (Logger::IsDebugEnabled() && hasBeenRejitted)
+        {
+            ComPtr<IUnknown> metadata_interfaces;
+            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf()) == S_OK)
+            {
+                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                              "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                              ", methodDef=", HexStr(function_token), "]");
+            }
+            else
+            {
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                              ", Function: ", HexStr(function_token),
+                              " previous value = ", *pbUseCachedFunction ? "true" : "false");
+            }          
+        }
+    }
+
     return S_OK;
 }
 
