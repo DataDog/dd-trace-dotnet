@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     TypeName = "Google.Protobuf.IMessage",
     MethodName = "WriteTo",
     ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
     IntegrationName = "Protobuf")]

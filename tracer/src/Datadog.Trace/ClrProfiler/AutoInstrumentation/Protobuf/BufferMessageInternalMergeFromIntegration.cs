@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     AssemblyName = "Google.Protobuf",
     TypeName = "Google.Protobuf.IBufferMessage",
     MethodName = "InternalMergeFrom",
+    ParameterTypeNames = ["Google.Protobuf.ParseContext&"],
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
