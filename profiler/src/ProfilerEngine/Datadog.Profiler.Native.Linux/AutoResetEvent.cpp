@@ -64,10 +64,8 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
             {
                 // We have a race when the timeout occurs but the lock was taken
                 // before pthread_cond_timedwait acquires the lock on returned.
-                // mark it as not set
-                _impl->_isSet = false;
-                pthread_mutex_unlock(&_impl->_mutex);
-                return false;
+                isSignaled = _impl->_isSet;
+                break;
             }
         }
         else
@@ -76,7 +74,6 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
         }
     }
 
-    assert(_impl->_isSet == true);
     _impl->_isSet = false;
     pthread_mutex_unlock(&_impl->_mutex);
 
