@@ -3,17 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
+[UsesVerify]
 public class GoogleProtobufTests : TracingIntegrationTest
 {
     public GoogleProtobufTests(ITestOutputHelper output)
@@ -46,13 +43,13 @@ public class GoogleProtobufTests : TracingIntegrationTest
     public async Task TagTraces(string metadataSchemaVersion)
     {
         using var telemetry = this.ConfigureTelemetry();
-        using (var agent = EnvironmentHelper.GetMockAgent())
+        using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, $"{TestPrefix}"))
         {
             using var assertionScope = new AssertionScope();
             var spans = agent.WaitForSpans(2);
 
-            ValidateIntegrationSpans(spans, metadataSchemaVersion, "test", isExternalSpan: true);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, "Samples.GoogleProtobuf", isExternalSpan: true);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var filename = $"{nameof(GoogleProtobufTests)}";
@@ -71,7 +68,5 @@ public class GoogleProtobufTests : TracingIntegrationTest
                               .UseFileName(filename + $".Schema{metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix();
         }
-
-        telemetry.AssertIntegrationEnabled(IntegrationId.Protobuf);
     }
 }
