@@ -20,8 +20,8 @@
       "description": "From alpine 3.14"
     },{
       "arch": "arm64",
-      "supported": true,
-      "description": "From alpine 3.18"
+      "supported": false,
+      "description": "Not supported in v2"
     }]
   },
   "deny": [

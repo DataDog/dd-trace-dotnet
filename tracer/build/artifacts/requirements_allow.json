@@ -5,7 +5,6 @@
   {"name": "musl x64", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "x64", "libc":  "musl:1.2.2"}},
   {"name": "min glibc arm64", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "arm64", "libc":  "glibc:2.23"}},
   {"name": "ok glibc arm64", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "arm64", "libc":  "glibc:2.27"}},
-  {"name": "musl arm64", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "x64", "libc":  "musl:1.2.2"}},
   {"name": "windows", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "windows", "arch": "x64"}},
   {"name": "dotnet run", "filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "run", "myproj.csproj"], "envars":  [], "host": {"os": "windows", "arch": "x64"}},
   {"name": "dotnet test", "filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "test", "myproj.csproj"], "envars":  [], "host": {"os": "windows", "arch": "x64"}},

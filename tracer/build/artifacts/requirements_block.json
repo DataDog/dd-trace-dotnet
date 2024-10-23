@@ -6,6 +6,7 @@
   {"name": "unsupported 2.x.x glibc x64","filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "arm64", "libc":  "glibc:2.22.9"}},
   {"name": "glibx x86","filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "x86", "libc":  "glibc:2.23"}},
   {"name": "musl x86","filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "x86", "libc":  "musl:1.2.2"}},
+  {"name": "musl arm64", "filepath":  "/some/path", "args": [], "envars":  [], "host": {"os": "linux", "arch": "x64", "libc":  "musl:1.2.2"}},
   {"name": "dotnet-core-uninstall","filepath":  "/some/path/to/dotnet-core-uninstall", "args": ["/some/path/to/dotnet-core-uninstall"], "envars":  [], "host": {"os": "windows", "arch": "x64"}},
   {"name": "dotnet-core-uninstall with flags","filepath":  "/some/path/to/dotnet-core-uninstall", "args": ["/some/path/to/dotnet-core-uninstall", "-a", "--force"], "envars":  [], "host": {"os": "windows", "arch": "x64"}},
   {"name": "dotnet msbuild","filepath":  "/pathto/dotnet", "args": ["/pathto/dotnet", "msbuild", "myproj.csproj"], "envars":  [], "host": {"os": "windows", "arch": "x64"}},
