@@ -43,7 +43,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the querystring values from a querystring
+    // Get the values from a request NameValueCollection
     internal static string[]? GetNameValueCollectionValues(NameValueCollection queryString, string key)
     {
         try
@@ -57,7 +57,7 @@ internal static class RequestDataHelper
         }
     }
 
-    // Get the querystring values from a querystring
+    // Get form from a request
     internal static NameValueCollection? GetForm(HttpRequest request)
     {
         try
@@ -94,7 +94,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the headers from a HttpRequest
     internal static NameValueCollection? GetHeaders(HttpRequest request)
     {
         try
@@ -115,7 +115,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the path from a HttpRequest
     internal static string? GetPath(HttpRequest request)
     {
         try
@@ -136,7 +136,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the url from a HttpRequest
     internal static Uri? GetUrl(HttpRequest request)
     {
         try
