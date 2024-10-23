@@ -65,7 +65,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
     {
         var baggage = context.Baggage;
 
-        if (baggage?.Items is null or { IsEmpty: true })
+        if (baggage is null or { Count: 0 })
         {
             // nothing to inject
             return;
@@ -113,7 +113,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         context = new PropagationContext(spanContext: null, baggage);
         TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
 
-        return baggage is { IsEmpty: false };
+        return baggage is { Count: > 0 };
     }
 
     internal static string Encode(string value, HashSet<char> charsToEncode)
@@ -162,7 +162,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         int maxBaggageItems,
         int maxBaggageLength)
     {
-        if (baggage is null or { IsEmpty: true })
+        if (baggage is null or { Count: 0 })
         {
             return string.Empty;
         }
