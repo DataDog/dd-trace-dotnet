@@ -6,6 +6,10 @@
 #include <chrono>
 #include <memory>
 
+using namespace std::chrono_literals;
+
+constexpr auto InfiniteTimeout = -1ms;
+
 class AutoResetEvent
 {
 public:
@@ -13,7 +17,7 @@ public:
     ~AutoResetEvent();
 
     void Set();
-    bool Wait(std::chrono::milliseconds timeout);
+    bool Wait(std::chrono::milliseconds timeout = InfiniteTimeout);
 
 private:
     struct EventImpl;
