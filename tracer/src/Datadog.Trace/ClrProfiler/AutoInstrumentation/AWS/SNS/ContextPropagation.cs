@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
-        public static void InjectHeadersIntoBatch<TClientMarker, TBatchRequest>(TBatchRequest request, SpanContext context)
+        public static void InjectHeadersIntoBatch<TBatchRequest>(TBatchRequest request, SpanContext context)
             where TBatchRequest : IPublishBatchRequest
         {
             // Skip adding Trace Context if entries don't exist or empty.
@@ -50,25 +50,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
                 if (entry != null)
                 {
-                    InjectHeadersIntoMessage<TClientMarker, IContainsMessageAttributes>(entry, context);
+                    InjectHeadersIntoMessage<TBatchRequest>(entry, context);
                 }
             }
         }
 
-        public static void InjectHeadersIntoMessage<TClientMarker, TMessageRequest>(TMessageRequest carrier, SpanContext context)
-            where TMessageRequest : IContainsMessageAttributes
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext context)
         {
-            // Skip adding Trace Context if there is no more space left to inject.
-            // AWS SNS Message Attributes limit is 10.
-            if (carrier.MessageAttributes is { Count: >= 10 })
-            {
-                return;
-            }
-
             // Add distributed tracing headers to the message.
             if (carrier.MessageAttributes == null)
             {
-                carrier.MessageAttributes = CachedMessageHeadersHelper<TClientMarker>.CreateMessageAttributes();
+                carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
             }
             else
             {
@@ -103,8 +95,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 #endif
             }
 
-            // Inject the tracing headers
-            Inject<TClientMarker>(context, carrier.MessageAttributes);
+            // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
+            // Only inject if there's room
+            if (carrier.MessageAttributes.Count < 10)
+            {
+                Inject<TMessageRequest>(context, carrier.MessageAttributes);
+            }
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>

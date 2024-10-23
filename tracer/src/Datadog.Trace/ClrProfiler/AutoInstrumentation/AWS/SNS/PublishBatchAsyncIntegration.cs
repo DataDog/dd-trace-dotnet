@@ -32,15 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     {
         private const string Operation = "PublishBatch";
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TPublishBatchRequest">Type of the request object</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the SNS operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishBatchRequest>(TTarget instance, TPublishBatchRequest request, CancellationToken cancellationToken)
             where TPublishBatchRequest : IPublishBatchRequest, IDuckType
         {
@@ -58,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             if (scope?.Span.Context is { } context)
             {
-                ContextPropagation.InjectHeadersIntoBatch<TTarget, TPublishBatchRequest>(request, context);
+                ContextPropagation.InjectHeadersIntoBatch(request, context);
             }
 
             return new CallTargetState(scope);

@@ -32,15 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     {
         private const string Operation = "Publish";
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TPublishRequest">Type of the request object</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the SNS operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishRequest>(TTarget instance, TPublishRequest request, CancellationToken cancellationToken)
             where TPublishRequest : IPublishRequest, IDuckType
         {
@@ -58,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             if (scope?.Span.Context is { } context)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TTarget, TPublishRequest>(request, context);
+                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(request, context);
             }
 
             return new CallTargetState(scope);
