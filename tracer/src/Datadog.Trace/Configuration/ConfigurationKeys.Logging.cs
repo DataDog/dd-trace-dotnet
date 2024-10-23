@@ -52,7 +52,7 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for locations to write internal diagnostic logs.
-        /// Currently only <c>file</c> is supported
+        /// Currently only <c>file</c> and <c>stdout</c> is supported
         /// Defaults to <c>file</c>
         /// </summary>
         public const string LogSinks = "DD_TRACE_LOG_SINKS";

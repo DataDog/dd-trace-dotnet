@@ -114,6 +114,12 @@ internal static class DatadogLoggingFactory
                     shared: true);
         }
 
+        if (config.File is { } consoleConfig)
+        {
+            loggerConfiguration
+                .WriteTo.Console();
+        }
+
         try
         {
             loggerConfiguration.Enrich.WithProperty("MachineName", domainMetadata.MachineName);
