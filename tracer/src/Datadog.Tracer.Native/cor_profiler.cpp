@@ -4352,6 +4352,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
                          functionInfo.type.name, ".", functionInfo.name,
                          "()");
         }
+        else
+        {
+            Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ",
+                          module_info.assembly.name,
+                          ", Function: ",
+                          HexStr(function_token));
+        }
     }
 
     return S_OK;
