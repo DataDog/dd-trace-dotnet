@@ -64,6 +64,7 @@ const shared::WSTRING include_assemblies[]{
 };
 
 // Note that this list should be kept in sync with the values in shared/src/Datadog.Trace.ClrProfiler.Native/util.h
+// Note that you also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("dd-trace"),
     WStr("dd-trace.exe"),

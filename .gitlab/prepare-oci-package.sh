@@ -50,3 +50,5 @@ else
 fi
 
 echo -n $VERSION > sources/version
+
+cp ../artifacts/requirements.json sources/requirements.json

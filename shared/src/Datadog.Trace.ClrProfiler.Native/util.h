@@ -22,6 +22,7 @@ const ::shared::WSTRING cfg_copying_originals_modules_env = WStr("DD_COPY_ORIGIN
 const ::shared::WSTRING cfg_log_directory_env = WStr("DD_TRACE_LOG_DIRECTORY");
 
 // Note that this list should be kept in sync with the values in tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
+// Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
 const shared::WSTRING default_exclude_assemblies[]{
     WStr("dd-trace"),
     WStr("dd-trace.exe"),
