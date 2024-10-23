@@ -57,6 +57,7 @@ struct IterationData
 public:
     std::size_t Index;
     LibrariesInfoCache* Cache;
+    bool LockTaken;
 };
 
 void LibrariesInfoCache::Work()
@@ -96,13 +97,18 @@ void LibrariesInfoCache::Work()
 
 void LibrariesInfoCache::UpdateCache()
 {
-    std::unique_lock l(_cacheLock);
-
-    IterationData data = {.Index = 0, .Cache = this};
+    IterationData data = {.Index = 0, .Cache = this, .LockTaken = false};
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
+            // make sure we lock only after we acquired the dl_iterate_phdr shared lock
             auto* iterationData = static_cast<IterationData*>(data);
             auto* cache = iterationData->Cache;
+            if (!iterationData->LockTaken)
+            {
+                iterationData->LockTaken = true;
+                cache->_cacheLock.lock();
+            }
+
 
             if (cache->LibrariesInfo.size() <= iterationData->Index)
             {
@@ -126,6 +132,10 @@ void LibrariesInfoCache::UpdateCache()
         &data);
 
     LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
+    if (data.LockTaken) [[likely]]
+    {
+        _cacheLock.unlock();
+    }
 }
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)

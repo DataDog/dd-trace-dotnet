@@ -117,8 +117,6 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             return GetStackSnapshotResult();
         }
 
-        _plibrariesInfo->UpdateCache();
-
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
         const auto threadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
