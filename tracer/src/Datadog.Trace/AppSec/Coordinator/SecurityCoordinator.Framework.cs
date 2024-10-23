@@ -249,22 +249,26 @@ internal readonly partial struct SecurityCoordinator
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool TryGetUsingIntegratedPipelineBool() => HttpRuntime.UsingIntegratedPipeline;
 
-    internal Dictionary<string, object> GetBodyFromRequest()
+    internal Dictionary<string, object>? GetBodyFromRequest()
     {
-        var formData = new Dictionary<string, object>(_httpTransport.Context.Request.Form.Keys.Count);
-        foreach (string key in _httpTransport.Context.Request.Form.Keys)
+        var form = RequestDataHelper.GetForm(_httpTransport.Context.Request);
+
+        if (form is null)
+        {
+            return null;
+        }
+
+        var formData = new Dictionary<string, object>(form.Keys.Count);
+        foreach (string key in form.Keys)
         {
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            try
+            var values = RequestDataHelper.GetNameValueCollectionValues(form, key);
+
+            if (values is not null)
             {
-                formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
-            }
-            catch (HttpRequestValidationException)
-            {
-                // We cannot retrieve the value of Form[key] because it triggers a validation exception,
-                // which happens when a dangerous value is detected in the request and validation is enabled.
+                formData[key ?? string.Empty] = values;
             }
         }
 

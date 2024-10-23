@@ -52,7 +52,21 @@ internal static class RequestDataHelper
         }
         catch (HttpRequestValidationException)
         {
-            Log.Debug("Error reading QueryString from the request.");
+            Log.Debug("Error reading QueryString values from the request.");
+            return null;
+        }
+    }
+
+    // Get the querystring values from a querystring
+    internal static NameValueCollection? GetForm(HttpRequest request)
+    {
+        try
+        {
+            return request.Form;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading Form (body) from the request.");
             return null;
         }
     }
