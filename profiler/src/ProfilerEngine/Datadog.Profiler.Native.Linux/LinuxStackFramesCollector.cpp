@@ -13,9 +13,11 @@
 #include <unordered_map>
 
 #include "CallstackProvider.h"
+#include "CounterMetric.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
+#include "MetricBase.h"
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
@@ -26,11 +28,62 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
+enum class DiscardType
+{
+    InSegvHandler
+};
+
+std::string to_string(DiscardType type)
+{
+    switch (type)
+    {
+        case IsInSigSegvHandler: return "in_sigsegv_handler";
+        default: return "unknown_discard_type";
+    }
+}
+
+class StackSamplingDiscardMetrics : public MetricBase
+{
+public:
+    void Incr(DiscardType type)
+    {
+        std::unique_lock lock(_mutex);
+        _foo[type]++;
+    }
+
+    std::list<Metric> GetMetrics() override
+    {
+        std::unordered_map<DiscarType, std::uint32_t> values;
+
+        {
+            std::unique_lock lock(_mutex);
+            _foo.swap(values);
+        }
+
+        std::list<Metric> result;
+
+        foreach (auto const &[ k, v] : _values)
+        {
+            result.emplace_back({_baseName + to_string(k), v});
+        }
+
+        return result;
+    }
+
+private:
+    constexpr std::string _baseName = "dotnet_stacksampling_discard_";
+    std::unordered_map<DiscarType, std::uint32_t> _foo;
+    std::mutex _mutex;
+};
+
+
+
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
     CallstackProvider* callstackProvider,
-    LibrariesInfoCache* librariesCacheInfo) :
+    LibrariesInfoCache* librariesCacheInfo,
+    MetricsRegistry& metricsRegistry) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
@@ -44,6 +97,9 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     {
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
     }
+
+    _possibleDuplicateUnwinding = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_stacksampling_duplicate_unwiding");
+    _samplingDiscardMetrics = metricsRegistry.GetOrRegister<StackSamplingDiscardMetrics>();
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -196,6 +252,11 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
+        auto discardType = dd_inside_wrapped_functions == nullptr
+         ? DiscardType::RiskyFunctionsNotWrapped
+         : DiscardType::InRiskyFunction;
+
+        _samplingDiscardMetrics->Incr(discardType);
         return E_ABORT;
     }
 
@@ -323,6 +384,7 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
     // Current crash occurs in libcoreclr.so, while reading the Elf header.
     if (IsInSigSegvHandler(context))
     {
+        _samplingDiscardMetrics->Incr(DiscardType::InSegvHandler);
         return false;
     }
 

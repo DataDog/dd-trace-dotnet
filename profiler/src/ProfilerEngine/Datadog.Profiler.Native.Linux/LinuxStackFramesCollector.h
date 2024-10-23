@@ -9,6 +9,7 @@
 // end
 
 #include "LibrariesInfoCache.h"
+#include "MetricsRegistry.h"
 #include "StackFramesCollectorBase.h"
 
 #include <atomic>
@@ -24,11 +25,25 @@ class ProfilerSignalManager;
 class IConfiguration;
 class CallstackProvider;
 class LibrariesInfoCache;
+class StackSamplingDiscardMetrics;
+
+enum class DiscardType
+{
+    InSegvHandler,
+    InRiskyFunction,
+    RiskyFunctionsNotWrapped
+};
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, CallstackProvider* callstackProvider, LibrariesInfoCache* librariesCacheInfo);
+    explicit LinuxStackFramesCollector(
+        ProfilerSignalManager* signalManager, 
+        IConfiguration const* configuration, 
+        CallstackProvider* callstackProvider, 
+        LibrariesInfoCache* librariesCacheInfo,
+        MetricsRegistry& registry);
+
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -74,7 +89,8 @@ private:
     std::atomic<bool> _stackWalkFinished;
     pid_t _processId;
     ProfilerSignalManager* _signalManager;
-
+    std::shared_ptr<CounterMetric> _possibleDuplicateUnwinding;
+    std::shared_ptr<StackSamplingDiscardMetrics> _samplingDiscardMetrics;
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
