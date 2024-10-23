@@ -243,7 +243,7 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
 
                 FillPdbInfo((uintptr_t)moduleInfo.lpBaseOfDll, module);
 
-                modules.push_back(module);
+                modules.push_back(std::move(module));
             }
         }
     }
