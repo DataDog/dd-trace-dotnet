@@ -9,38 +9,34 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
     internal static class ContextPropagation
     {
-        internal const string SqsKey = "_datadog";
+        internal const string InjectionKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
+        private static void Inject(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
+            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
+            messageAttributes[InjectionKey] = messageHeadersHelper.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager)
+        public static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
             {
-                carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
+                carrier.MessageAttributes = messageHeadersHelper.CreateMessageAttributes();
             }
             else
             {
@@ -75,11 +71,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 #endif
             }
 
-            // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
+            // SNS/SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes, dataStreamsManager);
+                Inject(spanContext, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
             }
         }
 

@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             if (scope?.Span.Context is { } context)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(request, context);
+                Shared.ContextPropagation.InjectHeadersIntoMessage(request, context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
             }
 
             return new CallTargetState(scope);

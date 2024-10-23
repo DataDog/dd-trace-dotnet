@@ -9,16 +9,24 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
-    internal static class CachedMessageHeadersHelper<TMarkerType>
+    internal class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
         private const string StringDataType = "Binary";
 
         private static readonly Func<MemoryStream, object> _createMessageAttributeValue;
         private static readonly Func<IDictionary> _createDict;
+
+        public static readonly CachedMessageHeadersHelper<TMarkerType> Instance = new();
+
+        private CachedMessageHeadersHelper()
+        {
+        }
 
         static CachedMessageHeadersHelper()
         {
@@ -67,14 +75,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             _createDict = (Func<IDictionary>)createDictMethod.CreateDelegate(typeof(Func<IDictionary>));
         }
 
-        public static IDictionary CreateMessageAttributes()
+        public IDictionary CreateMessageAttributes()
         {
             return _createDict();
         }
 
-        public static object CreateMessageAttributeValue(MemoryStream value)
+        public object CreateMessageAttributeValue(string value)
         {
-            return _createMessageAttributeValue(value);
+            var bytes = Encoding.UTF8.GetBytes(value);
+            var stream = new MemoryStream(bytes);
+            return _createMessageAttributeValue(stream);
         }
     }
 }

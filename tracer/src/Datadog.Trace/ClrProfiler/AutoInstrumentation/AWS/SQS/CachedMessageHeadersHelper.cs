@@ -8,17 +8,24 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
-    internal static class CachedMessageHeadersHelper<TMarkerType>
+    internal class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
         private const string StringDataType = "String";
 
         private static readonly Func<string, object> _createMessageAttributeValue;
         private static readonly ActivatorHelper DictionaryActivator;
+
+        public static readonly CachedMessageHeadersHelper<TMarkerType> Instance = new();
+
+        private CachedMessageHeadersHelper()
+        {
+        }
 
         static CachedMessageHeadersHelper()
         {
@@ -52,12 +59,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
         }
 
-        public static IDictionary CreateMessageAttributes()
+        public IDictionary CreateMessageAttributes()
         {
             return (IDictionary)DictionaryActivator.CreateInstance();
         }
 
-        public static object CreateMessageAttributeValue(string value)
+        public object CreateMessageAttributeValue(string value)
         {
             return _createMessageAttributeValue(value);
         }

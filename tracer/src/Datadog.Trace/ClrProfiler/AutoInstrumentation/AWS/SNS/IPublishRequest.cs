@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
     /// <summary>
