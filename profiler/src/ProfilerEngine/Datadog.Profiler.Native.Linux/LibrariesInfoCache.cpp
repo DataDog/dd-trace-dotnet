@@ -14,8 +14,6 @@
 
 using namespace std::chrono_literals;
 
-constexpr auto InfiniteTimeout = -1ms;
-
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
