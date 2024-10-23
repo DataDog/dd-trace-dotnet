@@ -716,7 +716,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("cmd.component", "process")
                 .Matches("span.kind", "internal"));
 
-        public static Result IsProtobufV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsProtobufV1(this MockSpan span) => Result.FromSpan(span)
             .Tags(s => s
                 .Matches(Tags.SchemaType, "protobuf")
                 .IsPresent(Tags.SchemaName)
