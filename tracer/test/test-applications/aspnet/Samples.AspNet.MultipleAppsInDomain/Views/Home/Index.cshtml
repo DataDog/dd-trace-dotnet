@@ -1,0 +1,14 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<main>
+    <section class="row" aria-labelledby="aspnetTitle">
+        <h1 id="aspnetTitle">app config</h1>
+        <ul>
+            @foreach (var key in System.Configuration.ConfigurationManager.AppSettings.AllKeys)
+            {
+                <li>@key:@System.Configuration.ConfigurationManager.AppSettings[key]</li>
+            }
+        </ul>
+    </section>
+</main>
