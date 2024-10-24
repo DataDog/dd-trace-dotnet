@@ -2,6 +2,34 @@
 
 
 
+
+## [Release 2.60.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.60.0)
+
+## Summary
+
+- [Tracing] Add ability to disable additional ADO.NET Command Types using `DD_TRACE_DISABLED_ADONET_COMMAND_TYPES `  (#6054)
+- [Serverless] Add support for 128-bit trace IDs for Lambda step functions (#6181)
+
+## Changes
+
+### Tracer
+* Add ability to disable additional ADO.NET Command Types (#6054)
+* [Tracer] Set _dd.base_service tag whenever a span's service name is different than the default value (DD_SERVICE) (#6122)
+* Add support for the "new" dev.azure.com style URLs in SourceLink URL parsing logic (#6178)
+
+### Continuous Profiler
+* [Profiler] Make sure Watcher thread is started before Sampler thread (#6128)
+
+### Serverless
+* Extract Upper64 bit trace ID from extension response (#6181)
+
+### Build / Test
+* Trigger consolidated pipeline on tags(#6053)
+* Add SSI denylist and tests (#6182)
+* Fix requirements.json test (#6186)
+
+[Changes since 2.59.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.5.9.0...v2.60.0)
+
 ## [Release 2.59.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.59.0)
 
 ## Summary
