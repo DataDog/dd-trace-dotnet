@@ -27,6 +27,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultSymbolBatchSizeInBytes = 100000;
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
+        public const int DefaultCodeOriginExitSpanFrames = 8;
 
         public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionIncludes = new HashSet<string>([..symDb3rdPartyIncludeLibraries, ..ThirdPartyDetectionIncludes]).ToImmutableHashSet();
+            SymDbThirdPartyDetectionIncludes = new HashSet<string>([.. symDb3rdPartyIncludeLibraries, .. ThirdPartyDetectionIncludes]).ToImmutableHashSet();
 
             var symDb3rdPartyExcludeLibraries = config
                                                .WithKeys(ConfigurationKeys.Debugger.SymDbThirdPartyDetectionExcludes)
@@ -88,7 +89,7 @@ namespace Datadog.Trace.Debugger
                                                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
                                                 Enumerable.Empty<string>();
 
-            SymDbThirdPartyDetectionExcludes = new HashSet<string>([..symDb3rdPartyExcludeLibraries, ..ThirdPartyDetectionExcludes]).ToImmutableHashSet();
+            SymDbThirdPartyDetectionExcludes = new HashSet<string>([.. symDb3rdPartyExcludeLibraries, .. ThirdPartyDetectionExcludes]).ToImmutableHashSet();
 
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
@@ -115,6 +116,13 @@ namespace Datadog.Trace.Debugger
                                       Enumerable.Empty<string>();
 
             RedactedTypes = new HashSet<string>(redactedTypes, StringComparer.OrdinalIgnoreCase);
+
+            CodeOriginForSpansEnabled = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBool(false);
+
+            CodeOriginMaxUserFrames = config
+                                         .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
+                                         .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
+                                         .Value;
         }
 
         public bool Enabled { get; }
@@ -144,6 +152,10 @@ namespace Datadog.Trace.Debugger
         public HashSet<string> RedactedIdentifiers { get; }
 
         public HashSet<string> RedactedTypes { get; }
+
+        public bool CodeOriginForSpansEnabled { get; }
+
+        public int CodeOriginMaxUserFrames { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

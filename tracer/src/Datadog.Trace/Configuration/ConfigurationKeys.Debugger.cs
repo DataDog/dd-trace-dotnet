@@ -146,6 +146,20 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ExceptionReplaySettings.MaxExceptionAnalysisLimit"/>
             public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT";
+
+            /// <summary>
+            /// Configuration key to enable tag code origin for span.
+            /// Default value is false.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.CodeOriginForSpansEnabled"/>
+            public const string CodeOriginForSpansEnabled = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
+            
+            /// <summary>
+            /// Configuration key for setting the number of frames to be tagged in exit span code origin.
+            /// Default value is <c>8</c>.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
+            public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_MAX_USER_FRAMES";
         }
     }
 }
