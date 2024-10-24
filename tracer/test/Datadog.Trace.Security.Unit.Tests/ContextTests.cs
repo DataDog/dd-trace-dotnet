@@ -150,7 +150,7 @@ public class ContextTests : WafLibraryRequiredTest
                     () =>
                     {
                         var configurationState = UpdateConfigurationState(ruleSet: new() { { "test", ruleSet! } });
-                        var res = waf!.UpdateWafFromConfigurationStatus(configurationState);
+                        var res = waf!.Update(configurationState);
                         res.Success.Should().BeTrue();
                     });
                     threadsUpdate[t] = threadUpdate;

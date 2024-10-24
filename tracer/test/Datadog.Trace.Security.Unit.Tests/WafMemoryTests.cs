@@ -85,7 +85,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var ruleOverride = new RuleOverride { Enabled = enabled, Id = "crs-913-120" };
                 ruleOverrides.Add(ruleOverride);
                 var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides] });
-                var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+                var result = waf!.Update(configurationStatus);
                 result.Success.Should().BeTrue();
                 result.HasErrors.Should().BeFalse();
 

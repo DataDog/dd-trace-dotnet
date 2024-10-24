@@ -157,7 +157,7 @@ namespace Datadog.Trace.AppSec.Waf
             return res;
         }
 
-        public UpdateResult UpdateWafFromConfigurationStatus(ConfigurationState configurationStatus, string? rulesPath = null)
+        public UpdateResult Update(ConfigurationState configurationStatus, string? rulesPath = null)
         {
             var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
             if (dic is null)

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.ToArray() });
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
-            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();
             using var context = waf.CreateContext()!;

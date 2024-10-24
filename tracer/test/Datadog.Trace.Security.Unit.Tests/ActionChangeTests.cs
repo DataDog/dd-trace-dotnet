@@ -78,7 +78,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
     {
         var configurationStatus = UpdateConfigurationState(actions: new() { ["file"] = actions });
         configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
+        var res = waf.Update(configurationStatus);
         res.Success.Should().BeTrue();
     }
 

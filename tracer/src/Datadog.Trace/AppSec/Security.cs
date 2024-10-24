@@ -53,17 +53,17 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
         /// </summary>
-        public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null)
+        public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
-                _configurationState = new ConfigurationState(_settings, _waf is null);
+                _configurationState = configurationState ?? new ConfigurationState(_settings, _waf is null);
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-                if (_configurationState.IncomingUpdateState.ShouldEnableAppsec)
+                if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                 {
                     InitWafAndInstrumentations();
                 }
@@ -88,7 +88,7 @@ namespace Datadog.Trace.AppSec
             {
                 _settings ??= new(source: null, TelemetryFactory.Config);
                 ApiSecurity = new(_settings);
-                _configurationState?.ResetUpdateMarkers();
+                _configurationState?.IncomingUpdateState.Dispose();
             }
         }
 
@@ -109,7 +109,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal bool AppsecEnabled { get; private set; }
+        internal bool AppsecEnabled => _configurationState.AppsecEnabled;
 
         internal bool RaspEnabled => _settings.RaspEnabled && AppsecEnabled;
 
@@ -163,6 +163,10 @@ namespace Datadog.Trace.AppSec
             return local == SecuritySettings.UserTrackingAnonMode;
         }
 
+        /// <summary>
+        /// This is cumulative, if a subscription already existed with other product names,  the new ones will be unioned
+        /// </summary>
+        /// <param name="productNames"></param>
         internal void SubscribeToChanges(params string[] productNames)
         {
             if (_rcmSubscription is not null)
@@ -173,7 +177,7 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
-                _rcmSubscription = new Subscription(UpdateFromRcm, productNames.ToArray());
+                _rcmSubscription = new Subscription(UpdateFromRcm, [.. productNames]);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
             }
         }
@@ -183,22 +187,19 @@ namespace Datadog.Trace.AppSec
         {
             string? rcmUpdateError = null;
             UpdateResult? updateResult = null;
-
-            try
+            using (_configurationState.IncomingUpdateState)
             {
-                // store the last config state, clearing any previous state, without deserializing any payloads yet.
-                var anyChange = _configurationState.StoreLastConfigState(configsByProduct, removedConfigs);
-                if (anyChange)
+                try
                 {
-                    _configurationState.ApplyAsmFeatures(AppsecEnabled);
+                    // store the last config state, clearing any previous state, without deserializing any payloads yet.
+                    _configurationState.ReceivedNewConfig(configsByProduct, removedConfigs);
                     if (_configurationState.IncomingUpdateState.ShouldDisableAppsec)
                     {
                         // disable ASM scenario
                         DisposeWafAndInstrumentations(true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
-                    else if (_configurationState.IncomingUpdateState.ShouldEnableAppsec)
+                    else if (_configurationState.IncomingUpdateState.ShouldInitAppsec)
                     {
-                        _configurationState.ApplyStoredFiles();
                         InitWafAndInstrumentations();
                         UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
@@ -207,10 +208,9 @@ namespace Datadog.Trace.AppSec
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
                     } // update asm configuration
-                    else if (AppsecEnabled)
+                    else if (_configurationState.IncomingUpdateState.ShouldUpdateAppsec)
                     {
-                        _configurationState.ApplyStoredFiles();
-                        updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationState);
+                        updateResult = _waf?.Update(_configurationState);
                         if (updateResult?.Success ?? false)
                         {
                             if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))
@@ -222,44 +222,42 @@ namespace Datadog.Trace.AppSec
                         }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                rcmUpdateError = e.Message;
-                Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
-                _configurationState.ResetUpdateMarkers();
-            }
-
-            var productsCount = 0;
-
-            foreach (var config in configsByProduct)
-            {
-                productsCount += config.Value.Count;
-            }
-
-            var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
-            var applyDetails = new ApplyDetails[productsCount];
-            var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
-
-            int index = 0;
-
-            if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
-            {
-                foreach (var config in configsByProduct.Values.SelectMany(v => v))
+                catch (Exception e)
                 {
-                    applyDetails[index++] = ApplyDetails.FromOk(config.Path.Path);
+                    rcmUpdateError = e.Message;
+                    Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
                 }
-            }
-            else
-            {
-                foreach (var config in configsByProduct.Values.SelectMany(v => v))
-                {
-                    applyDetails[index++] = ApplyDetails.FromError(config.Path.Path, finalError);
-                }
-            }
 
-            _configurationState.ResetUpdateMarkers();
-            return applyDetails;
+                var productsCount = 0;
+
+                foreach (var config in configsByProduct)
+                {
+                    productsCount += config.Value.Count;
+                }
+
+                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
+                var applyDetails = new ApplyDetails[productsCount];
+                var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
+
+                int index = 0;
+
+                if (string.IsNullOrEmpty(finalError) || onlyUnknownMatcherErrors)
+                {
+                    foreach (var config in configsByProduct.Values.SelectMany(v => v))
+                    {
+                        applyDetails[index++] = ApplyDetails.FromOk(config.Path.Path);
+                    }
+                }
+                else
+                {
+                    foreach (var config in configsByProduct.Values.SelectMany(v => v))
+                    {
+                        applyDetails[index++] = ApplyDetails.FromError(config.Path.Path, finalError);
+                    }
+                }
+
+                return applyDetails;
+            }
         }
 
         internal static bool HasOnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object>? errors)
@@ -506,7 +504,7 @@ namespace Datadog.Trace.AppSec
                 _libraryInitializationResult = WafLibraryInvoker.Initialize();
                 if (!_libraryInitializationResult.Success)
                 {
-                    AppsecEnabled = false;
+                    _configurationState.AppsecEnabled = false;
                     InitializationError = "Error initializing native library";
                     // logs happened during the process of initializing
                     return;
@@ -533,7 +531,7 @@ namespace Datadog.Trace.AppSec
                 SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
                 Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
-                AppsecEnabled = true;
+                _configurationState.AppsecEnabled = true;
                 InitializationError = null;
                 Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, _configurationState.RuleSetTitle);
 
@@ -547,7 +545,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 _wafInitResult.Waf?.Dispose();
-                AppsecEnabled = false;
+                _configurationState.AppsecEnabled = false;
                 InitializationError = "Error initializing waf";
             }
         }
@@ -580,7 +578,7 @@ namespace Datadog.Trace.AppSec
                 }
 
                 Instrumentation.DisableTracerInstrumentations(InstrumentationCategory.AppSec);
-                AppsecEnabled = false;
+                _configurationState.AppsecEnabled = false;
                 InitializationError = null;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, fromRemoteConfig);
             }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -53,11 +54,10 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]);
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
-        var security = new AppSec.Security(settings);
-        // Set it to true with reflection to avoid all the initialization
-        var propInfo = typeof(AppSec.Security).GetProperty(nameof(AppSec.Security.AppsecEnabled), BindingFlags.NonPublic | BindingFlags.Instance);
-        propInfo.SetValue(security, true);
-        security.AppsecEnabled.Should().BeTrue();
+        var confState = new ConfigurationState(settings, true);
+        //// Set it to false to avoid all the initialization
+        var security = new AppSec.Security(settings, configurationState: confState);
+        confState.AppsecEnabled = true;
         return security;
     }
 

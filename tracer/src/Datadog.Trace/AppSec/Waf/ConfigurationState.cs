@@ -58,7 +58,7 @@ internal record ConfigurationState
         _canBeToggled = settings.CanBeToggled;
         if (settings.AppsecEnabled && wafIsNull)
         {
-            IncomingUpdateState.ShouldEnableAppsec = true;
+            IncomingUpdateState.ShouldInitAppsec = true;
         }
     }
 
@@ -89,6 +89,8 @@ internal record ConfigurationState
             IncomingUpdateState.WafKeysToApply.Add(WafActionsKey);
         }
     }
+
+    public bool AppsecEnabled { get; set; }
 
     internal string? AutoUserInstrumMode { get; set; } = null;
 
@@ -121,17 +123,23 @@ internal record ConfigurationState
     internal string[] WhatProductsAreRelevant(SecuritySettings settings)
     {
         var subscriptionsKeys = new List<string>();
-        if (settings.CanBeToggled || settings.AppsecEnabled)
+        var canBeToggledOrAppSecEnabled = settings.CanBeToggled || settings.AppsecEnabled;
+        if (canBeToggledOrAppSecEnabled)
         {
             subscriptionsKeys.Add(RcmProducts.AsmFeatures);
+
+            if (settings.NoCustomLocalRules)
+            {
+                subscriptionsKeys.Add(RcmProducts.AsmDd);
+            }
+
+            if (AppsecEnabled)
+            {
+                subscriptionsKeys.AddRange([RcmProducts.Asm, RcmProducts.AsmData]);
+            }
         }
 
-        if ((settings.AppsecEnabled || settings.CanBeToggled) && settings.NoCustomLocalRules)
-        {
-            subscriptionsKeys.Add(RcmProducts.AsmDd);
-        }
-
-        return subscriptionsKeys.ToArray();
+        return [.. subscriptionsKeys];
     }
 
     internal static List<RuleData> MergeRuleData(IEnumerable<RuleData> res)
@@ -206,7 +214,7 @@ internal record ConfigurationState
         }
 
         // if there's incoming rules or empty rules, or if asm is to be activated, we also want the rules key in waf arguments
-        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey) || IncomingUpdateState.ShouldEnableAppsec)
+        if (IncomingUpdateState.WafKeysToApply.Contains(WafRulesKey) || IncomingUpdateState.ShouldInitAppsec)
         {
             var rulesetFromRcm = RulesByFile.Values.FirstOrDefault();
             // should deserialize from LocalRuleFile
@@ -263,16 +271,21 @@ internal record ConfigurationState
     /// </summary>
     /// <param name="configsByProduct">configsByProduct</param>
     /// <param name="removedConfigs">removedConfigs</param>
-    /// <returns>whether or not there is any change, i.e any update/removal</returns>
-    public bool StoreLastConfigState(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
+    public void ReceivedNewConfig(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
     {
         _fileUpdates.Clear();
         _fileRemoves.Clear();
+        var hasUpdateConfigurations = false;
         var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
         if (anyChange)
         {
             foreach (var configByProduct in configsByProduct)
             {
+                if (configByProduct.Key != RcmProducts.AsmFeatures)
+                {
+                    hasUpdateConfigurations = true;
+                }
+
                 if (_fileUpdates.ContainsKey(configByProduct.Key))
                 {
                     _fileUpdates[configByProduct.Key].AddRange(configByProduct.Value);
@@ -287,6 +300,11 @@ internal record ConfigurationState
             {
                 foreach (var configByProductToRemove in removedConfigs)
                 {
+                    if (configByProductToRemove.Key != RcmProducts.AsmFeatures)
+                    {
+                        hasUpdateConfigurations = true;
+                    }
+
                     if (_fileRemoves.ContainsKey(configByProductToRemove.Key))
                     {
                         _fileRemoves[configByProductToRemove.Key].AddRange(configByProductToRemove.Value);
@@ -297,12 +315,18 @@ internal record ConfigurationState
                     }
                 }
             }
-        }
 
-        return anyChange;
+            ApplyAsmFeatures(AppsecEnabled);
+            IncomingUpdateState.ShouldUpdateAppsec = !IncomingUpdateState.ShouldInitAppsec && AppsecEnabled && hasUpdateConfigurations;
+
+            if (IncomingUpdateState.ShouldUpdateAppsec || IncomingUpdateState.ShouldInitAppsec)
+            {
+                ApplyStoredFiles();
+            }
+        }
     }
 
-    public void ApplyAsmFeatures(bool appsecCurrentlyEnabled)
+    private void ApplyAsmFeatures(bool appsecCurrentlyEnabled)
     {
         var change = false;
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
@@ -327,7 +351,7 @@ internal record ConfigurationState
             var rcmEnable = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value?.Enabled is null or true);
             if (!appsecCurrentlyEnabled)
             {
-                IncomingUpdateState.ShouldEnableAppsec = rcmEnable;
+                IncomingUpdateState.ShouldInitAppsec = rcmEnable;
             }
             else if (!rcmEnable)
             {
@@ -350,21 +374,24 @@ internal record ConfigurationState
         }
     }
 
-    public void ResetUpdateMarkers() => IncomingUpdateState.Reset();
-
-    internal record IncomingUpdateStatus
+    internal record IncomingUpdateStatus : IDisposable
     {
-        internal bool ShouldEnableAppsec { get; set; } = false;
+        internal bool ShouldInitAppsec { get; set; } = false;
+
+        internal bool ShouldUpdateAppsec { get; set; } = false;
 
         internal bool ShouldDisableAppsec { get; set; } = false;
 
         internal HashSet<string> WafKeysToApply { get; } = new();
 
+        public void Dispose() => Reset();
+
         public void Reset()
         {
             WafKeysToApply.Clear();
             ShouldDisableAppsec = false;
-            ShouldEnableAppsec = false;
+            ShouldInitAppsec = false;
+            ShouldUpdateAppsec = false;
         }
     }
 }
