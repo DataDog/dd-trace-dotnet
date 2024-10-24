@@ -7,9 +7,8 @@
 
 #include <string.h>
 
-
-#include <linux/futex.h>      /* Definition of FUTEX_* constants */
-#include <sys/syscall.h>      /* Definition of SYS_* constants */
+#include <linux/futex.h> /* Definition of FUTEX_* constants */
+#include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <unistd.h>
 
 using namespace std::chrono_literals;
@@ -18,8 +17,8 @@ LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
-LibrariesInfoCache::LibrariesInfoCache()
-    : _stopRequested{false}, _event(true)
+LibrariesInfoCache::LibrariesInfoCache() :
+    _stopRequested{false}, _event(true)
 {
 }
 
@@ -32,7 +31,7 @@ const char* LibrariesInfoCache::GetName()
 
 bool LibrariesInfoCache::StartImpl()
 {
-    LibrariesInfo.reserve(100);
+    _librariesInfo.reserve(100);
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
     _worker = std::thread(&LibrariesInfoCache::Work, this);
@@ -97,43 +96,28 @@ void LibrariesInfoCache::Work()
 
 void LibrariesInfoCache::UpdateCache()
 {
-    IterationData data = {.Index = 0, .Cache = this, .LockTaken = false};
+    // We *MUST* not allocate while holding the _cacheLock
+    // We may end up in a deadlock situtation
+    // Example:
+    // T1 tries to allocate and interrupted by the sampler
+    // Cache Thread, update the cache and allocates while holding cache lock.
+    // But the Cache Thread is blocked (T1 owns the malloc lock)
+    // T1 is blocked when libwunding calls DlIteratePhdr.
+
+    std::vector<DlPhdrInfoWrapper> newCache;
+    newCache.reserve(_librariesInfo.size());
+
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* iterationData = static_cast<IterationData*>(data);
-            auto* cache = iterationData->Cache;
-            // make sure we lock only after we acquired the dl_iterate_phdr shared lock
-            auto lockTaken = std::exchange(iterationData->LockTaken, true);
-            if (!lockTaken)
-            {
-                cache->_cacheLock.lock();
-            }
-
-            if (cache->LibrariesInfo.size() <= iterationData->Index)
-            {
-                cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
-                iterationData->Index++;
-                return 0;
-            }
-
-            auto& current = cache->LibrariesInfo[iterationData->Index];
-            if (current.IsSame(info))
-            {
-                iterationData->Index++;
-                return 0;
-            }
-
-            DlPhdrInfoWrapper wrappedInfo(info, size);
-            cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
-            iterationData->Index++;
+            auto* newCache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
+            newCache->emplace_back(info, size);
             return 0;
         },
-        &data);
+        &newCache);
 
-    LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
-    if (data.LockTaken) [[likely]]
     {
-        _cacheLock.unlock();
+        std::unique_lock l{_cacheLock};
+        _librariesInfo.swap(newCache);
     }
 }
 
@@ -154,7 +138,7 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
     std::shared_lock l(_cacheLock);
 
     int rc = 0;
-    for (auto& wrappedInfo : LibrariesInfo)
+    for (auto& wrappedInfo : _librariesInfo)
     {
         auto [info, size] = wrappedInfo.Get();
         rc = callback(info, size, data);

@@ -20,7 +20,7 @@ public:
     LibrariesInfoCache();
     ~LibrariesInfoCache();
 
-    LibrariesInfoCache(LibrariesInfoCache const &) = delete;
+    LibrariesInfoCache(LibrariesInfoCache const&) = delete;
     LibrariesInfoCache& operator=(LibrariesInfoCache const&) = delete;
 
     LibrariesInfoCache(LibrariesInfoCache&&) = delete;
@@ -41,10 +41,11 @@ private:
     void NotifyCacheUpdateImpl();
     void Work();
 
-    std::shared_mutex _cacheLock;
-    std::vector<DlPhdrInfoWrapper> LibrariesInfo;
-
     static LibrariesInfoCache* s_instance;
+
+    std::shared_mutex _cacheLock;
+    std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;

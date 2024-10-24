@@ -9,13 +9,12 @@
 
 #include "gtest/gtest.h"
 
-#include <iostream>
-
 #define ASSERT_DURATION_LE(timeout, stmt) \
     ASSERT_TRUE(RunInThread([=] { stmt; })->WaitForCompletion(timeout));
 
 #define ASSERT_DURATION_GE(timeout, stmt) \
     ASSERT_FALSE(RunInThread([=] { stmt; })->WaitForCompletion(timeout));
+
 
 struct ThreadInfo
 {
