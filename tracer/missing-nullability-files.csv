@@ -638,8 +638,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/CachedMessageHeadersHe
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IAmazonSQSRequestWithQueueUrl.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueResponse.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageBatchRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutionReason.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutorTryExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/FunctionInvocationMiddlewareInvokeIntegration.cs

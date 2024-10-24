@@ -27,7 +27,7 @@ internal static class AwsSqsHandlerCommon
         }
 
         // we can't use generic constraints for this duck typing, because we need the original type
-        // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
+        // for the Inject call below
         var requestProxy = request.DuckCast<IAmazonSQSRequestWithQueueUrl>();
 
         var scope = AwsSqsCommon.CreateScope(Tracer.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
@@ -58,7 +58,7 @@ internal static class AwsSqsHandlerCommon
 
     private static void InjectForSingleMessage<TSendMessageRequest>(DataStreamsManager? dataStreamsManager, TSendMessageRequest request, Scope scope, string queueName)
     {
-        var requestProxy = request.DuckCast<ISendMessageRequest>();
+        var requestProxy = request.DuckCast<IContainsMessageAttributes>();
         if (requestProxy == null)
         {
             return;
@@ -76,7 +76,7 @@ internal static class AwsSqsHandlerCommon
     private static void InjectForBatch<TSendMessageBatchRequest>(DataStreamsManager? dataStreamsManager, TSendMessageBatchRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
-        if (requestProxy == null)
+        if (requestProxy == null || requestProxy.Entries == null)
         {
             return;
         }
