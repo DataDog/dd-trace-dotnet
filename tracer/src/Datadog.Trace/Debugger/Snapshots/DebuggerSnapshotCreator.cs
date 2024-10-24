@@ -40,6 +40,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string _message;
         private List<EvaluationError> _errors;
         private string _snapshotId;
+        private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo)
         {
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             Tags = tags;
             _limitInfo = limitInfo;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
+            _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
@@ -182,11 +184,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             if (info.IsAsyncCapture())
             {
-                MethodScopeMembers = new MethodScopeMembers(info.AsyncCaptureInfo.HoistedLocals.Length + (info.LocalsCount ?? 0), info.AsyncCaptureInfo.HoistedArguments.Length + (info.ArgumentsCount ?? 0));
+                MethodScopeMembers = _scopeMembersPool.Get(
+                    new MethodScopeMembersParameters(
+                        info.AsyncCaptureInfo.HoistedLocals.Length + (info.LocalsCount ?? 0),
+                        info.AsyncCaptureInfo.HoistedArguments.Length + (info.ArgumentsCount ?? 0)));
             }
             else
             {
-                MethodScopeMembers = new MethodScopeMembers(info.LocalsCount.Value, info.ArgumentsCount.Value);
+                MethodScopeMembers = _scopeMembersPool.Get(new MethodScopeMembersParameters(info.LocalsCount.Value, info.ArgumentsCount.Value));
             }
         }
 
@@ -901,8 +906,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             try
             {
                 Stop();
-                MethodScopeMembers?.Dispose();
-                MethodScopeMembers = null;
+                _scopeMembersPool.Return(MethodScopeMembers);
                 _jsonWriter?.Close();
             }
             catch

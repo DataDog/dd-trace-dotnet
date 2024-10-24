@@ -160,7 +160,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         public bool ShouldProcess(in ProbeData probeData)
         {
-            return HasCondition() || probeData.Sampler.Sample();
+            return HasCondition() || (probeData.Sampler.Sample() && GlobalMemoryCircuitBreaker.Instance.CanAllocate(1024));
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
