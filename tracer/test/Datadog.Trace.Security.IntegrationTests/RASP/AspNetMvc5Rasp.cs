@@ -82,7 +82,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
     }
 
     [SkippableTheory]
