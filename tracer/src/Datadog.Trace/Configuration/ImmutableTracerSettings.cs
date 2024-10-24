@@ -530,6 +530,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether data streams monitoring legacy headers are enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsLegacyHeadersEnabled { get; }
+
+        /// <summary>
         /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
         /// when injecting it into downstream service calls.
         /// </summary>
