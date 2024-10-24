@@ -10,7 +10,8 @@ internal enum ProbeType
     Log = 0,
     Snapshot = 1,
     Metric = 2,
-    SpanDecoration = 3
+    SpanDecoration = 3,
+    SpanOrigin = 4
 }
 
 internal enum ProbeLocation

@@ -15,6 +15,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -135,6 +136,10 @@ namespace Datadog.Trace
             if (Interlocked.CompareExchange(ref _rootSpan, span, null) == null)
             {
                 span.MarkSpanForExceptionDebugging();
+            }
+            else
+            {
+                SpanCodeOriginManager.SetCodeOrigin(span, _rootSpan);
             }
 
             lock (_rootSpan)

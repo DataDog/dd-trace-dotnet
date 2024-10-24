@@ -56,6 +56,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
                 SpanDecorationProbe => ProbeType.SpanDecoration,
+                SpanOriginProbe => ProbeType.SpanOrigin,
                 _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
             };
 
@@ -342,7 +343,9 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            CheckSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            SetCodeOrigin();
+
+            SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
             if (evaluationResult.Metric.HasValue)
             {
@@ -370,7 +373,17 @@ namespace Datadog.Trace.Debugger.Expressions
             return evaluationResult;
         }
 
-        private void CheckSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
+        private void SetCodeOrigin(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture)
+        {
+            var probeTag = Tracer.Instance.ScopeManager.Active.Root.Span.GetTag(ProbeInfo.ProbeId);
+            if (probeTag == null)
+            {
+                snapshotCreator.Dispose();
+                shouldStopCapture = true;
+            }
+        }
+
+        private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
             if (evaluationResult.Decorations == null)
             {
@@ -393,7 +406,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
                         }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                        else if (Tracer.Instance.ScopeManager.Active.Root.Span.GetTag(evaluationErrorTag) != null)
                         {
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
                         }
