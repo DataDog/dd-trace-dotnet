@@ -839,6 +839,14 @@
       "description": "Number of times that _dd.iast.json tag exceeds the maximum span tag size",
       "send_to_user": false,
       "user_tags": []
+    },
+    "metastruct.tag.size.exceeded": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of times that iast data in meta struct tag exceeds the maximum span tag size",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "sidecar": {
