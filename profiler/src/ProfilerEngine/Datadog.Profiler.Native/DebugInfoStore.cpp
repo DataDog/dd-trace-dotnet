@@ -60,15 +60,16 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     }
 
     auto pdbFile = filePath.parent_path() / filePath.filename().replace_extension(".pdb");
-    Log::Debug("Parsing ", pdbFile, " pdb file.");
 
     std::error_code ec;
     if (!fs::exists(pdbFile, ec))
     {
         // TODO: we may supply other path to search for the pdb file
-        Log::Info("No PDB file `", pdbFile.filename(), "` was found in ", filePath.parent_path());
+        Log::Info("No PDB file (associated to module id ", moduleId, ")`", pdbFile.filename(), "` was found in ", filePath.parent_path());
         return;
     }
+
+    Log::Debug("Parsing ", pdbFile, " pdb file. (module id ", moduleId,")");
 
     try
     {
@@ -120,16 +121,16 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
             moduleInfo.SymbolsDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
         }
         moduleInfo.IsValid = true;
-        Log::Debug("PDB file ", pdbFile, " parsed successfully");
+        Log::Debug("PDB file ", pdbFile, " parsed successfully (module id", moduleId,")");
     }
     catch (PPDB::Exception const& ec)
     {
         Log::Warn("Failed to parse debug info from ", pdbFile,
-                  ".(Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
+                  ".(Module id: ", moduleId, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {
-        Log::Warn("Unexpected error happened while parsing the pdb file: ", pdbFile);
+        Log::Warn("Unexpected error happened while parsing the pdb file (Module id: ", moduleId, "): ", pdbFile);
     }
 }
 
