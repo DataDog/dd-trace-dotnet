@@ -2,8 +2,9 @@
 FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as base
 ARG DOTNETSDK_VERSION
 
-# Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
-# and https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/src/sdk/5.0/buster-slim/amd64/Dockerfile
+# Based on
+# - https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/project/sdk/6.0/bullseye-slim/amd64/Dockerfile
+# - https://github.com/dotnet/dotnet-docker/blob/1eab4cad6e2d42308bd93d3f0cc1f7511ac75882/project/sdk/5.0/buster-slim/amd64/Dockerfile
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image
     ASPNETCORE_URLS= \
@@ -38,7 +39,7 @@ RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/s
         liblzma-dev \
         gdb \
         cppcheck \
-		zlib1g-dev \
+        zlib1g-dev \
         \
         # required to install clang
         lsb-release \
@@ -61,7 +62,7 @@ COPY ./bootstrap/dotnet-install.sh .
 RUN ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
-# Trigger first run experience by running arbitrary cmd
+    # Trigger first run experience by running arbitrary cmd
     && dotnet help
 
 ENV \
@@ -69,9 +70,11 @@ ENV \
     CXX=clang++ \
     CC=clang
 
+##################################################
+
 FROM base as builder
 
-# Copy the build project in and build it
+# Copy the Nuke build project in and build it
 COPY *.csproj *.props *.targets /build/
 RUN dotnet restore /build
 COPY . /build
@@ -79,7 +82,9 @@ RUN dotnet build /build --no-restore
 
 WORKDIR /project
 
-FROM base as tester
+##################################################
+
+FROM builder as tester
 
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
@@ -97,10 +102,16 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+##################################################
+# Used from "build_in_docker.ps1" for local builds, not in CI.
+# Keep this stage last to avoid running it on legacy builders which don't skip unreferenced stages.
 
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build --no-restore
+FROM base as local-builder
+
+# Copy the Nuke project and pre-build it for later
+COPY tracer/build/_build/ /project/tracer/build/_build/
+RUN dotnet build /project/tracer/build/_build/
+
+# Copy the rest of the files
+COPY . /project
 WORKDIR /project
