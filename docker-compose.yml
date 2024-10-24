@@ -350,6 +350,8 @@ services:
     image: datadog-iis-loaderoptimizationregkey
     ports:
     - "8080:80"
+    - "8081:8081"
+    - "8082:8082"
     environment:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY

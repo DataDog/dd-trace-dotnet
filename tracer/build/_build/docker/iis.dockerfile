@@ -3,14 +3,22 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 # Copy IIS websites
 ADD tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/publish LoaderOptimizationRegKey
+ADD tracer/test/test-applications/aspnet/Samples.AspNet472.MultipleAppsInDomain/bin/Release/publish MultipleAppsInDomain
 
-# Set up IIS websites
+# Set up LoaderOptimization IIS websites
 ARG ENABLE_32_BIT
 ENV ENABLE_32_BIT=${ENABLE_32_BIT:-false}
 RUN Remove-WebSite -Name 'Default Web Site'; \
     Write-Host "Creating website with 32 bit reg key: $env:ENABLE_32_BIT"; \
     New-Website -Name 'LoaderOptimizationRegKey' -Port 80 -PhysicalPath 'c:\LoaderOptimizationRegKey'
 RUN c:\Windows\System32\inetsrv\appcmd set apppool /apppool.name:DefaultAppPool /enable32bitapponwin64:$env:ENABLE_32_BIT
+
+# Set up multiple apps in single domain with custom config IIS websites
+RUN c:\Windows\System32\inetsrv\appcmd add apppool /name:mutliAppPool /managedRuntimeVersion:"v4.0" /managedPipelineMode:"Integrated"
+
+RUN Write-Host "Creating multi app domain sites"; \
+    New-Website -Name 'MultiAppPoolWithCustomConfig1' -Port 8081 -PhysicalPath 'c:\MultipleAppsInDomain'; \
+    New-Website -Name 'MultiAppPoolWithCustomConfig2' -Port 8082 -PhysicalPath 'c:\MultipleAppsInDomain'; \
 
 # Set LoaderOptimization flag to recreate crash condition (both 64-bit and 32-bit)
 RUN New-ItemProperty -Path "HKLM:\Software\Microsoft\.NETFramework" -Name "LoaderOptimization" -Value 1
