@@ -3,6 +3,7 @@ Datadog.Trace,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 201
 Datadog.Trace,https://github.com/serilog/serilog,Apache-2.0,Copyright (c) 2013-2018 Serilog Contributors
 Datadog.Trace,https://github.com/serilog/serilog-sinks-file,Apache-2.0,Copyright (c) 2016 Serilog Contributors
 Datadog.Trace,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King
+Datadog.Trace,https://github.com/icsharpcode/SharpZipLib,MIT,Copyright (c) 2000-2018 SharpZipLib Contributors
 Datadog.Tracer.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Tracer.Native,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Tracer.Native,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.

@@ -269,9 +269,6 @@
       <type fullname="System.IO.Compression.CompressionMode" />
       <type fullname="System.IO.Compression.DeflateStream" />
       <type fullname="System.IO.Compression.GZipStream" />
-      <type fullname="System.IO.Compression.ZipArchive" />
-      <type fullname="System.IO.Compression.ZipArchiveEntry" />
-      <type fullname="System.IO.Compression.ZipArchiveMode" />
    </assembly>
    <assembly fullname="System.IO.FileSystem">
       <type fullname="System.IO.Directory" />
@@ -416,6 +413,9 @@
    </assembly>
    <assembly fullname="System.Net.WebProxy">
       <type fullname="System.Net.WebProxy" />
+   </assembly>
+   <assembly fullname="System.Numerics.Vectors">
+      <type fullname="System.Numerics.Vector`1" />
    </assembly>
    <assembly fullname="System.ObjectModel">
       <type fullname="System.Collections.ObjectModel.KeyedCollection`2" />
@@ -613,6 +613,7 @@
       <type fullname="System.IO.EndOfStreamException" />
       <type fullname="System.IO.File" />
       <type fullname="System.IO.FileAccess" />
+      <type fullname="System.IO.FileAttributes" />
       <type fullname="System.IO.FileInfo" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
@@ -623,6 +624,7 @@
       <type fullname="System.IO.IOException" />
       <type fullname="System.IO.MemoryStream" />
       <type fullname="System.IO.Path" />
+      <type fullname="System.IO.PathTooLongException" />
       <type fullname="System.IO.SearchOption" />
       <type fullname="System.IO.SeekOrigin" />
       <type fullname="System.IO.Stream" />
@@ -785,6 +787,7 @@
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
       <type fullname="System.SByte" />
+      <type fullname="System.Security.Cryptography.CryptographicException" />
       <type fullname="System.Security.SecurityCriticalAttribute" />
       <type fullname="System.Security.SecurityException" />
       <type fullname="System.Security.SecurityRuleSet" />
@@ -958,8 +961,13 @@
    </assembly>
    <assembly fullname="System.Security.Cryptography" />
    <assembly fullname="System.Security.Cryptography.Algorithms">
+      <type fullname="System.Security.Cryptography.Aes" />
       <type fullname="System.Security.Cryptography.AsymmetricSignatureFormatter" />
+      <type fullname="System.Security.Cryptography.DeriveBytes" />
+      <type fullname="System.Security.Cryptography.IncrementalHash" />
       <type fullname="System.Security.Cryptography.MD5" />
+      <type fullname="System.Security.Cryptography.RandomNumberGenerator" />
+      <type fullname="System.Security.Cryptography.Rfc2898DeriveBytes" />
       <type fullname="System.Security.Cryptography.RSA" />
       <type fullname="System.Security.Cryptography.RSAParameters" />
       <type fullname="System.Security.Cryptography.RSAPKCS1SignatureFormatter" />
@@ -968,9 +976,19 @@
       <type fullname="System.Security.Cryptography.SHA384" />
       <type fullname="System.Security.Cryptography.SHA512" />
    </assembly>
+   <assembly fullname="System.Security.Cryptography.Csp">
+      <type fullname="System.Security.Cryptography.RNGCryptoServiceProvider" />
+   </assembly>
    <assembly fullname="System.Security.Cryptography.Primitives">
       <type fullname="System.Security.Cryptography.AsymmetricAlgorithm" />
+      <type fullname="System.Security.Cryptography.CipherMode" />
+      <type fullname="System.Security.Cryptography.CryptoStream" />
+      <type fullname="System.Security.Cryptography.CryptoStreamMode" />
       <type fullname="System.Security.Cryptography.HashAlgorithm" />
+      <type fullname="System.Security.Cryptography.HashAlgorithmName" />
+      <type fullname="System.Security.Cryptography.ICryptoTransform" />
+      <type fullname="System.Security.Cryptography.KeySizes" />
+      <type fullname="System.Security.Cryptography.SymmetricAlgorithm" />
    </assembly>
    <assembly fullname="System.Text.Encoding.Extensions">
       <type fullname="System.Text.UnicodeEncoding" />

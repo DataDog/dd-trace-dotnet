@@ -1,4 +1,4 @@
-﻿// <copyright file="DebugLogReader.cs" company="Datadog">
+// <copyright file="DebugLogReader.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,8 @@ using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Util.Streams;
+using Datadog.Trace.Vendors.ICSharpCode.SharpZipLib;
+using Datadog.Trace.Vendors.ICSharpCode.SharpZipLib.Core;
 
 namespace Datadog.Trace.Logging.TracerFlare;
 
@@ -65,7 +67,12 @@ internal static class DebugLogReader
         try
         {
             using var monitoringStream = new WriteCountingStream(writeTo);
-            using var archive = new ZipArchive(monitoringStream, ZipArchiveMode.Create, true);
+            using var archive = new Vendors.ICSharpCode.SharpZipLib.Zip.ZipOutputStream(monitoringStream);
+            archive.IsStreamOwner = false; // Do not close the underlying stream when closing the archive
+            archive.SetLevel(9); // Set to optimal compression
+
+            // Create a fixed-size buffer to bound memory operations
+            byte[] buffer = new byte[4096];
 
             // Only sending .log files to avoid the risk of sending files we don't want.
             // Also not recurrsing, in-case they have a weird log setup
@@ -121,13 +128,23 @@ internal static class DebugLogReader
                 {
                     // There's a SmallestSize for .NET 5+ but it doesn't give much benefit
                     // and we would rather not add the extra memory pressure for little gain
-                    var entry = archive.CreateEntry(fileDetails.Name, CompressionLevel.Optimal);
-                    using var entryStream = entry.Open();
+                    var entry = new Vendors.ICSharpCode.SharpZipLib.Zip.ZipEntry(Path.GetFileName(fileDetails.FullName));
+                    // archive.PutNextEntry(entry);
+                    archive.PutNextEntry(entry);
+
                     // Have to allow FileShare.ReadWrite as the logger will already have it open for writing
                     using var file = File.Open(fileDetails.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    // StreamUtils.Copy(file, archive, buffer);
 
-                    await file.CopyToAsync(entryStream).ConfigureAwait(false);
-                    await entryStream.FlushAsync().ConfigureAwait(false);
+                    // Using a fixed size buffer here makes no noticeable difference for output
+                    // but keeps a lid on memory usage.
+                    int sourceBytes;
+                    do
+                    {
+                        sourceBytes = await file.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                        await archive.WriteAsync(buffer, 0, sourceBytes).ConfigureAwait(false);
+                    }
+                    while (sourceBytes > 0);
                 }
                 catch (Exception ex)
                 {
