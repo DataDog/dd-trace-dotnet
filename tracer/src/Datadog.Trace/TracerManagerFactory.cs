@@ -140,7 +140,7 @@ namespace Datadog.Trace
                 gitMetadataTagsProvider);
 
             telemetry.RecordTracerSettings(settings, defaultServiceName);
-            TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
+            TelemetryFactory.Metrics.SetWafAndRulesVersion(Security.Instance.DdlibWafVersion, Security.Instance.WafRuleFileVersion);
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
                                        : null;

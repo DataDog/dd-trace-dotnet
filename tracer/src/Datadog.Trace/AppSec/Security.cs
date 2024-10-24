@@ -560,7 +560,7 @@ namespace Datadog.Trace.AppSec
                 if (!configurationFromRcm)
                 {
                     // occurs the first time we initialize the WAF
-                    TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
+                    TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
                     TelemetryFactory.Metrics.RecordCountWafInit();
                 }
             }
