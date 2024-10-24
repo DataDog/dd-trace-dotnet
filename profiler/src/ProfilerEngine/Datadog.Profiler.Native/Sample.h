@@ -170,6 +170,8 @@ public:
     static const std::string ObjectLifetimeLabel;
     static const std::string ObjectIdLabel;
     static const std::string ObjectGenerationLabel;
+    static const std::string RequestUrlLabel;
+    static const std::string RequestTimeStampLabel;
 
 private:
     uint64_t _timestamp;
