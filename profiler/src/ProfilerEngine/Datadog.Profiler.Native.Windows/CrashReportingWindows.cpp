@@ -22,6 +22,7 @@ CrashReporting* CrashReporting::Create(int32_t pid)
 CrashReportingWindows::CrashReportingWindows(int32_t pid)
     : CrashReporting(pid)
     , _process(NULL)
+    , _readMemory(nullptr)
 {
 }
 
@@ -39,6 +40,8 @@ int32_t CrashReportingWindows::Initialize()
         {
             return 1;
         }
+
+        SetMemoryReader([this](uintptr_t address, SIZE_T size) { return ReadRemoteMemory(_process, address, size); });
 
         SymInitialize(_process, nullptr, TRUE);
 
@@ -74,14 +77,14 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
                 {
                     std::string threadName;
                     PWSTR description;
-                    
+
                     if (SUCCEEDED(GetThreadDescription(thread, &description)))
                     {
                         threadName = shared::ToString(description);
                     }
 
                     threads.push_back({ threadEntry.th32ThreadID, std::move(threadName) });
-                }                
+                }
             }
         } while (Thread32Next(threadSnapshot, &threadEntry));
     }
@@ -109,7 +112,7 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
         {
             auto const& managedFrame = managedCallstack[i];
 
-            StackFrame stackFrame;
+            StackFrame stackFrame{};
             stackFrame.ip = managedFrame.ip;
             stackFrame.sp = managedFrame.sp;
             stackFrame.method = std::string(managedFrame.symbolName);
@@ -163,33 +166,44 @@ std::vector<StackFrame> CrashReportingWindows::GetThreadFrames(int32_t tid, Reso
             nullptr,
             SYM_STKWALK_DEFAULT))
         {
-            auto [moduleName, moduleAddress] = FindModule(nativeStackFrame.AddrPC.Offset);
+            auto module = FindModule(nativeStackFrame.AddrPC.Offset);
 
-            StackFrame stackFrame;
+            StackFrame stackFrame{};
             stackFrame.ip = nativeStackFrame.AddrPC.Offset;
             stackFrame.sp = nativeStackFrame.AddrStack.Offset;
             stackFrame.isSuspicious = false;
-            stackFrame.moduleAddress = moduleAddress;
             stackFrame.symbolAddress = nativeStackFrame.AddrPC.Offset;
 
-            std::ostringstream methodName;
-            methodName << moduleName << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - moduleAddress);
-            stackFrame.method = methodName.str();
-
-            fs::path modulePath(moduleName);
-
-            if (modulePath.has_filename())
+            if (module != nullptr)
             {
-                const auto moduleFilename = modulePath.stem().string();
+                stackFrame.moduleAddress = module->startAddress;
+                stackFrame.hasPdbInfo = module->hasPdbInfo;
+                stackFrame.pdbAge = module->pdbAge;
+                stackFrame.pdbSig = module->pdbSig;
 
-                if (moduleFilename.rfind("Datadog", 0) == 0
-                    || moduleFilename == "libdatadog"
-                    || moduleFilename == "datadog"
-                    || moduleFilename == "libddwaf"
-                    || moduleFilename == "ddwaf")
+                std::ostringstream methodName;
+                methodName << module->path << "!<unknown>+" << std::hex << (nativeStackFrame.AddrPC.Offset - module->startAddress);
+                stackFrame.method = methodName.str();
+
+                fs::path modulePath(module->path);
+
+                if (modulePath.has_filename())
                 {
-                    stackFrame.isSuspicious = true;
+                    const auto moduleFilename = modulePath.stem().string();
+
+                    if (moduleFilename.rfind("Datadog", 0) == 0
+                        || moduleFilename == "libdatadog"
+                        || moduleFilename == "datadog"
+                        || moduleFilename == "libddwaf"
+                        || moduleFilename == "ddwaf")
+                    {
+                        stackFrame.isSuspicious = true;
+                    }
                 }
+            }
+            else
+            {
+                stackFrame.method = "<unknown>";
             }
 
             frames.push_back(std::move(stackFrame));
@@ -225,7 +239,11 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
                     resolvedModuleName = moduleName;
                 }
 
-                modules.push_back({ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName) });
+                ModuleInfo module{ (uintptr_t)moduleInfo.lpBaseOfDll, (uintptr_t)moduleInfo.lpBaseOfDll + moduleInfo.SizeOfImage, std::move(resolvedModuleName), false, 0, 0 };
+
+                FillPdbInfo((uintptr_t)moduleInfo.lpBaseOfDll, module);
+
+                modules.push_back(std::move(module));
             }
         }
     }
@@ -233,15 +251,153 @@ std::vector<ModuleInfo> CrashReportingWindows::GetModules()
     return modules;
 }
 
-std::pair<std::string_view, uintptr_t> CrashReportingWindows::FindModule(uintptr_t ip)
+const ModuleInfo* CrashReportingWindows::FindModule(uintptr_t ip)
 {
     for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {
-            return std::make_pair(module.path, module.startAddress);
+            return &module;
         }
     }
 
-    return std::make_pair("", 0);
+    return nullptr;
+}
+
+std::vector<BYTE> CrashReportingWindows::ReadRemoteMemory(HANDLE process, uintptr_t address, SIZE_T size)
+{
+    std::vector<BYTE> buffer(size);
+    SIZE_T bytesRead = 0;
+
+    if (ReadProcessMemory(process, reinterpret_cast<LPCVOID>(address), buffer.data(), size, &bytesRead) && bytesRead == size)
+    {
+        return buffer;
+    }
+
+    return {};
+}
+
+bool CrashReportingWindows::FillPdbInfo(uintptr_t baseAddress, ModuleInfo& moduleInfo)
+{
+    // Read the DOS header
+    auto dosHeaderBuffer = _readMemory(baseAddress, sizeof(IMAGE_DOS_HEADER));
+    if (dosHeaderBuffer.empty())
+    {
+        return false;
+    }
+
+    auto dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(dosHeaderBuffer.data());
+
+    if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
+    {
+        return false;
+    }
+
+    // Read the NT headers
+    uintptr_t ntHeadersAddress = baseAddress + dosHeader->e_lfanew;
+    auto ntHeadersBuffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS_GENERIC));
+    if (ntHeadersBuffer.empty())
+    {
+        return false;
+    }
+
+    auto ntHeaders = reinterpret_cast<IMAGE_NT_HEADERS_GENERIC*>(ntHeadersBuffer.data());
+
+    if (ntHeaders->Signature != IMAGE_NT_SIGNATURE)
+    {
+        return false;
+    }
+
+    // Check the PE type
+    bool isPE32 = (ntHeaders->Magic == IMAGE_NT_OPTIONAL_HDR32_MAGIC);
+    bool isPE64 = (ntHeaders->Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC);
+
+    if (!isPE32 && !isPE64)
+    {
+        return false;
+    }
+
+    // Read the debug directory according to the PE type
+    IMAGE_DATA_DIRECTORY debugDataDir;
+
+    if (isPE32)
+    {
+        auto header32Buffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS32));
+        if (header32Buffer.empty())
+        {
+            return false;
+        }
+
+        auto header32 = reinterpret_cast<IMAGE_NT_HEADERS32*>(header32Buffer.data());
+        debugDataDir = header32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    }
+    else
+    {
+        auto header64Buffer = _readMemory(ntHeadersAddress, sizeof(IMAGE_NT_HEADERS64));
+        if (header64Buffer.empty())
+        {
+            return false;
+        }
+
+        auto header64 = reinterpret_cast<IMAGE_NT_HEADERS64*>(header64Buffer.data());
+        debugDataDir = header64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    }
+
+    uintptr_t debugDirectoryAddress = baseAddress + debugDataDir.VirtualAddress;
+    if (debugDirectoryAddress == 0)
+    {
+        return false;
+    }
+
+    auto debugDirectoryBuffer = _readMemory(debugDirectoryAddress, debugDataDir.Size);
+    if (debugDirectoryBuffer.empty())
+    {
+        return false;
+    }
+
+    auto debugDirectory = reinterpret_cast<PIMAGE_DEBUG_DIRECTORY>(debugDirectoryBuffer.data());
+
+    // Iterate over the debug directory entries and look for IMAGE_DEBUG_TYPE_CODEVIEW entries
+    for (size_t i = 0; i < debugDataDir.Size / sizeof(IMAGE_DEBUG_DIRECTORY); i++)
+    {
+        if (debugDirectory[i].Type == IMAGE_DEBUG_TYPE_CODEVIEW)
+        {
+            struct CV_INFO_PDB70
+            {
+                DWORD Signature;
+                GUID Guid;
+                DWORD Age;
+                char PdbFileName[];
+            };
+
+            // Extract the PDB info from the codeview entry
+            auto pdbInfoAddress = baseAddress + debugDirectory[i].AddressOfRawData;
+            auto pdbInfoBuffer = _readMemory(pdbInfoAddress, sizeof(CV_INFO_PDB70));
+            
+            if (pdbInfoBuffer.empty())
+            {
+                return false;
+            }
+
+            auto pdbInfo = reinterpret_cast<CV_INFO_PDB70*>(pdbInfoBuffer.data());
+
+            constexpr DWORD PDB70_SIGNATURE = 0x53445352; // "SDSR"
+
+            if (pdbInfo->Signature == PDB70_SIGNATURE)
+            {
+                moduleInfo.pdbAge = pdbInfo->Age;
+                moduleInfo.pdbSig = pdbInfo->Guid;
+                moduleInfo.hasPdbInfo = true;
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void CrashReportingWindows::SetMemoryReader(std::function<std::vector<BYTE>(uintptr_t, SIZE_T)> readMemory)
+{
+    _readMemory = readMemory;
 }
