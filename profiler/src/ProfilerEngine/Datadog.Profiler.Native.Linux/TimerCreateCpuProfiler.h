@@ -43,7 +43,9 @@ private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
     static TimerCreateCpuProfiler* Instance;
 
-    bool Collect(void* ucontext);
+    bool CanCollect(std::shared_ptr<ManagedThreadInfo>& threadInfo, siginfo_t* info, void* ucontext);
+
+    bool Collect(siginfo_t* info, void* ucontext);
     void RegisterThreadImpl(ManagedThreadInfo* thread);
 
     bool StartImpl() override;
@@ -55,4 +57,5 @@ private:
     CallstackProvider _callstackProvider;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
+    pid_t _processId;
 };

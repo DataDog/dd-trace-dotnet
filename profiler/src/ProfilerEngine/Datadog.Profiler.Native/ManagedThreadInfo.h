@@ -86,6 +86,7 @@ public:
     inline std::string GetProfileThreadId() override;
     inline std::string GetProfileThreadName() override;
     inline void AcquireLock();
+    inline bool TryAcquireLock();
     inline void ReleaseLock();
 
 #ifdef LINUX
@@ -195,6 +196,11 @@ std::string ManagedThreadInfo::GetProfileThreadName()
 inline void ManagedThreadInfo::AcquireLock()
 {
     _objLock.lock();
+}
+
+inline bool ManagedThreadInfo::TryAcquireLock()
+{
+    return _objLock.try_lock();
 }
 
 inline void ManagedThreadInfo::ReleaseLock()

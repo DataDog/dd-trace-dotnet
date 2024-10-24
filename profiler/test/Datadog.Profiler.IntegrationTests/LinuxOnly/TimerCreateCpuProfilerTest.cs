@@ -67,5 +67,28 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 values.Should().OnlyContain(x => x == expectedInterval);
             }
         }
+
+        [TestAppFact("Samples.Computer01")]
+        public void Check(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            var samplingInterval = "9"; // ms (default)
+            // disable default profilers except CPU
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var expectedInterval = long.Parse(samplingInterval) * 1_000_000;
+            // only cpu  profiler enabled so should see 1 value per sample and
+            foreach (var (_, _, values) in SamplesHelper.GetSamples(runner.Environment.PprofDir))
+            {
+                values.Length.Should().Be(1);
+                values.Should().OnlyContain(x => x == expectedInterval);
+            }
+        }
     }
 }

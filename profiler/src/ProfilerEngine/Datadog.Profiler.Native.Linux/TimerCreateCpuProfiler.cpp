@@ -28,7 +28,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _callstackProvider{std::move(callstackProvider)},
-    _samplingInterval{pConfiguration->GetCpuProfilingInterval()}
+    _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
+    _processId{OpSysTools::GetProcId()}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -109,15 +110,99 @@ bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t*
         return false;
     }
 
-    return instance->Collect(ucontext);
+    return instance->Collect(info, ucontext);
 }
 
-bool TimerCreateCpuProfiler::Collect(void* ctx)
+struct ErrnoSaveAndRestore
+{
+public:
+    ErrnoSaveAndRestore() :
+        _oldErrno{errno}
+    {
+    }
+    ~ErrnoSaveAndRestore()
+    {
+        errno = _oldErrno;
+    }
+
+private:
+    int _oldErrno;
+};
+
+struct StackWalkLock
+{
+public:
+    StackWalkLock(std::shared_ptr<ManagedThreadInfo>& threadInfo) :
+        _threadInfo{threadInfo}
+    {
+        _lockTaken = _threadInfo->TryAcquireLock();
+    }
+    ~StackWalkLock()
+    {
+        if (_lockTaken)
+        {
+            _threadInfo->ReleaseLock();
+        }
+    }
+
+    bool IsLockAcquired() const
+    {
+        return _lockTaken;
+    }
+
+private:
+    std::shared_ptr<ManagedThreadInfo>& _threadInfo;
+    bool _lockTaken;
+};
+
+
+bool TimerCreateCpuProfiler::CanCollect(std::shared_ptr<ManagedThreadInfo>& threadInfo, siginfo_t* info, void* ctx)
+{
+    // TODO (in another PR): add metrics about reasons we could not collect
+    auto* context = reinterpret_cast<ucontext_t*>(ctx);
+
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    if (sigismember(&(context->uc_sigmask), SIGSEGV) == 1)
+    {
+        return false;
+    }
+
+    // if signal is not coming from another process
+    if (info->si_pid != _processId)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool TimerCreateCpuProfiler::Collect(siginfo_t* info, void* ctx)
 {
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
         // Ooops should never happen
+        return false;
+    }
+
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    ErrnoSaveAndRestore errnoScope;
+
+    // Avoid calling libunwind if the thread is already being unwound.
+    // This is already done for the other profilers, but they wait for the lock to be released before
+    // collecting its callstack.
+    // In this specific case, there is no signal-safe (yet) way to collect. So for now we bail
+    // TODO add a metric if it's a long term solution
+    StackWalkLock l(threadInfo);
+    if (!l.IsLockAcquired())
+    {
+        return false;
+    }
+
+    if (!CanCollect(threadInfo, info, ctx))
+    {
         return false;
     }
 
