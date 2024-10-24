@@ -18,7 +18,7 @@ RUN c:\Windows\System32\inetsrv\appcmd add apppool /name:mutliAppPool /managedRu
 
 RUN Write-Host "Creating multi app domain sites"; \
     New-Website -Name 'MultiAppPoolWithCustomConfig1' -Port 8081 -PhysicalPath 'c:\MultipleAppsInDomain'; \
-    New-Website -Name 'MultiAppPoolWithCustomConfig2' -Port 8082 -PhysicalPath 'c:\MultipleAppsInDomain'; \
+    New-Website -Name 'MultiAppPoolWithCustomConfig2' -Port 8082 -PhysicalPath 'c:\MultipleAppsInDomain';
 
 # Set LoaderOptimization flag to recreate crash condition (both 64-bit and 32-bit)
 RUN New-ItemProperty -Path "HKLM:\Software\Microsoft\.NETFramework" -Name "LoaderOptimization" -Value 1
