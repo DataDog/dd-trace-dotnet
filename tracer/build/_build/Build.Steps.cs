@@ -1488,19 +1488,41 @@ partial class Build
                         .SetProjectFile(project)));
 
                 var projectsToPublish = includeIntegration
-                   .Select(x => Solution.GetProject(x))
-                   .Where(x => x.Name switch
+                   .Select(x =>
                     {
-                        "Samples.Trimming" => Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
-                        _ => false,
+                        var project = Solution.GetProject(x);
+                        return project?.Name switch
+                        {
+                            "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
+                            "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                            _ => (project, include: false, r2r: false),
+                        };
+                    })
+                   .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
+                    {
+                        ({include: false }, _, _) => false,
+                        _ when exclude.Contains(x.project.Path) => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
+                        (_, { } targets, _) => targets.Contains(Framework),
+                        _ => true,
                     });
 
-                var rid = IsArm64 ? "win-arm64" : "win-x64";
+                var rid = TargetPlatform.ToString() switch
+                {
+                    "x64" => "win-x64",
+                    "x86" => "win-x86",
+                    "ARM64" or "ARM64EC" => "win-arm64",
+                    _ => throw new InvalidOperationException("Unsupported architecture " + RuntimeInformation.ProcessArchitecture),
+                };
+
                 DotNetPublish(config => config
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
                    .SetRuntime(rid)
-                   .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
+                   .CombineWith(projectsToPublish, (s, project) => s
+                      .SetProject(project.project)
+                      .When(project.r2r, x => x.SetPublishReadyToRun(true))));
             }
         });
 
@@ -1912,20 +1934,25 @@ partial class Build
 
             // We have to explicitly publish the trimming sample separately (written so we can add to this later if needs be)
             var projectsToPublish = sampleProjects
-               .Select(x => Solution.GetProject(x))
-               .Where(x => x?.Name switch
+               .Select(x =>
                 {
-                    "Samples.Trimming" => x.TryGetTargetFrameworks().Contains(Framework),
-                    _ => false,
+                    var project = Solution.GetProject(x);
+                    return project?.Name switch
+                    {
+                        "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
+                        "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                        _ => (project, include: false, r2r: false),
+                    };
                 })
                .Where(x => (IncludeTestsRequiringDocker, x) switch
                 {
                     // filter out or to integration tests that have docker dependencies
+                    (_, {include: false }) => false,
                     (null, _) => true,
-                    (_, null) => true,
-                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
-                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
+                    (_, { project: null}) => true,
+                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.project.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
             var rid = (IsLinux, IsArm64) switch
@@ -1939,7 +1966,9 @@ partial class Build
                .SetConfiguration(BuildConfiguration)
                .SetFramework(Framework)
                .SetRuntime(rid)
-               .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
+               .CombineWith(projectsToPublish, (s, project) => s
+                  .SetProject(project.project)
+                  .When(project.r2r, x => x.SetPublishReadyToRun(true))));
         });
 
     Target CompileMultiApiPackageVersionSamples => _ => _
