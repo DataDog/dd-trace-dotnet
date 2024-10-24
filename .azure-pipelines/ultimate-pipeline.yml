@@ -6212,7 +6212,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml
