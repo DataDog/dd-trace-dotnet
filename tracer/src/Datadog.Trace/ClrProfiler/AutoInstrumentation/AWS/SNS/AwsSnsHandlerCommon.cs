@@ -33,7 +33,7 @@ internal static class AwsSnsHandlerCommon
         {
             if (sendType == SendType.SingleMessage)
             {
-                Shared.ContextPropagation.InjectHeadersIntoMessage(request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                ContextPropagation.InjectHeadersIntoMessage(request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
             }
             else if (sendType == SendType.Batch)
             {
@@ -47,7 +47,7 @@ internal static class AwsSnsHandlerCommon
 
                         if (entry != null)
                         {
-                            Shared.ContextPropagation.InjectHeadersIntoMessage(entry, context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                            ContextPropagation.InjectHeadersIntoMessage(entry, context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
                         }
                     }
                 }
