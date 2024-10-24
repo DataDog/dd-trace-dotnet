@@ -111,7 +111,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 _output.WriteLine("************************");
 
                 // Enumerating status for each thread
-                var threads = Directory.GetFiles($"/proc/{pid}/task");
+                var threads = Directory.GetDirectories($"/proc/{pid}/task");
 
                 foreach (var thread in threads)
                 {
