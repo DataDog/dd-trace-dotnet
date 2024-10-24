@@ -97,7 +97,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var versionSuffix = usingWebsockets ? string.Empty : GetSuffix(packageVersion);
+            var versionSuffix = GetSuffix(packageVersion);
+
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{_testName}{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
@@ -184,11 +185,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         private string GetSuffix(string packageVersion)
-            => packageVersion switch
+        {
+            // An empty package version means we're in the sample,
+            // which targets the latest version of the package.
+            if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("14.0.0"))
             {
-                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
-                _ => ".Pre_13_1_0",
-            };
+                return string.Empty;
+            }
+
+            if (new Version(packageVersion) >= new Version("13.1.0"))
+            {
+                return ".Pre_14_0_0";
+            }
+
+            return ".Pre_13_1_0";
+        }
     }
 }
 
