@@ -45,15 +45,11 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
-    private static object GetHeaderValueForWaf(StringValues value)
-    {
-        return (value.Count == 1 ? value[0] : value);
-    }
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
 
-    private static object GetHeaderValueForWaf(IHeaderDictionary headers, string currentKey)
-    {
-        return GetHeaderValueForWaf(headers[currentKey]);
-    }
+    private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(IHeaderDictionary headers, string currentKey) => GetHeaderAsArray(headers[currentKey]);
 
     private static void GetCookieKeyValueFromIndex(IRequestCookieCollection cookies, int i, out string key, out string value)
     {
