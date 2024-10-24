@@ -129,7 +129,7 @@ namespace UpdateVendors
                 version: "1.3.3",
                 downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
                 pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -168,6 +168,11 @@ namespace UpdateVendors
         private static string AddIfNetcoreapp31OrGreater(string filePath, string content)
         {
             return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
+        }
+
+        private static string AddIfNetFramework(string filePath, string content)
+        {
+            return "#if NETFRAMEWORK" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
 
         private static string AddNullableDirectiveTransform(string filePath, string content)
