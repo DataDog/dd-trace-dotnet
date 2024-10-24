@@ -73,7 +73,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var source = CreateConfigurationSource((ConfigurationKeys.AppSec.Enabled, value));
             var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.Enabled.Should().Be(expected);
+            settings.AppsecEnabled.Should().Be(expected);
         }
 
         [Theory]

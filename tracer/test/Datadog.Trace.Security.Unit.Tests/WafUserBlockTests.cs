@@ -23,13 +23,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf!;
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+            var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.ToArray() });
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();
