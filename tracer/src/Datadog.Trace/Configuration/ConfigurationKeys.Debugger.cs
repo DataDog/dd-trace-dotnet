@@ -146,6 +146,27 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ExceptionReplaySettings.MaxExceptionAnalysisLimit"/>
             public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling snapshot exploration test.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.IsSnapshotExplorationTestEnabled"/>
+            public const string IsSnapshotExplorationTestEnabled = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ENABLED";
+
+            /// <summary>
+            /// Configuration key for snapshot exploration test probe path.
+            /// Default value is empty.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestProbesPath"/>
+            public const string SnapshotExplorationTestProbesPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_PROBES_PATH";
+
+            /// <summary>
+            /// Configuration key for snapshot exploration test report path.
+            /// Default value is empty.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SnapshotExplorationTestReportPath"/>
+            public const string SnapshotExplorationTestReportPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_REPORT_PATH";
         }
     }
 }
