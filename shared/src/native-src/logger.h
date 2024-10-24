@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <regex>
 #include <sstream>
@@ -188,6 +189,8 @@ concept same_as = detail::SameHelper<T, U> && detail::SameHelper<U, T>;
 
 #endif
 
+#include <chrono>
+
 template <class T>
 concept IsWstring = same_as<T, ::shared::WSTRING> ||
                     // check if it's WCHAR[N] or WCHAR*
@@ -207,6 +210,35 @@ void WriteToStream(std::ostringstream& oss, T const& x)
     {
         oss << ::shared::ToString(x);
     }
+}
+
+template <class Period>
+const char* time_unit_str()
+{
+    if constexpr(std::is_same_v<Period, std::nano>)
+    {
+        return "ns";
+    }
+    else if constexpr(std::is_same_v<Period, std::micro>)
+    {
+        return "us";
+    }
+    else if constexpr(std::is_same_v<Period, std::milli>)
+    {
+        return "ms";
+    }
+    else if constexpr(std::is_same_v<Period, std::ratio<1>>)
+    {
+        return "s";
+    }
+
+    return "<unknown unit of time>";
+}
+
+template <class Rep, class Period>
+void WriteToStream(std::ostringstream& oss, std::chrono::duration<Rep, Period> const& x)
+{
+    oss << x.count() << time_unit_str<Period>();
 }
 
 template <class T>

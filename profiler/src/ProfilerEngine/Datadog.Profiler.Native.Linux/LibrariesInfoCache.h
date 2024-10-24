@@ -4,34 +4,61 @@
 
 #include "DlPhdrInfoWrapper.h"
 
+#include "AutoResetEvent.h"
+#include "ServiceBase.h"
+
+#include <atomic>
+#ifdef DD_TEST
+#include <future>
+#endif
 #include <libunwind.h>
 #include <link.h>
 #include <shared_mutex>
+#include <thread>
 #include <vector>
 
-class LibrariesInfoCache
+class LibrariesInfoCache : public ServiceBase
 {
 public:
-    static LibrariesInfoCache* Get();
+    LibrariesInfoCache();
     ~LibrariesInfoCache();
 
-    LibrariesInfoCache(LibrariesInfoCache const &) = delete;
+    LibrariesInfoCache(LibrariesInfoCache const&) = delete;
     LibrariesInfoCache& operator=(LibrariesInfoCache const&) = delete;
 
     LibrariesInfoCache(LibrariesInfoCache&&) = delete;
     LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
 
-    void UpdateCache();
+    const char* GetName() final override;
+
+#ifdef DD_TEST
+    void WaitForCacheToBeReady();
+#endif
+
+protected:
+    bool StartImpl() final override;
+    bool StopImpl() final override;
 
 private:
-    LibrariesInfoCache();
-
     static int DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data);
-    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+    static void NotifyCacheUpdate();
 
-    std::shared_mutex _cacheLock;
-    std::vector<DlPhdrInfoWrapper> LibrariesInfo;
+    void UpdateCache();
+    int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+    void NotifyCacheUpdateImpl();
+    void Work();
 
     static LibrariesInfoCache* s_instance;
-    unsigned long long NbCallsToDlopenDlclose;
+
+    std::shared_mutex _cacheLock;
+    std::vector<DlPhdrInfoWrapper> _librariesInfo;
+
+    std::thread _worker;
+    std::atomic<bool> _stopRequested;
+    AutoResetEvent _event;
+#ifdef DD_TEST
+    // this is to make sure cache is ready when unit tests runs.
+    // Otherwise the tests might be flacky
+    std::promise<void> _cacheReady;
+#endif
 };

@@ -207,6 +207,8 @@ partial class Build
             }
 
             PrintDiff(diff);
+	Logger.Information($"<{verified}>");
+	Logger.Information($"<{received}>");
 
             throw new Exception($"Found differences in undefined symbols ({string.Join(",", changedSymbols)}) in the Native Wrapper library. " +
                                 "Verify that these changes are expected, and will not cause problems. " +
