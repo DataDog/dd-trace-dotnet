@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricsTelemetryCollectorBase.cs" company="Datadog">
+// <copyright file="MetricsTelemetryCollectorBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
-    private string[]? _wafVersionTags;
+    private string[]? _wafAndRulesVersionTags;
 
     protected MetricsTelemetryCollectorBase()
         : this(TimeSpan.FromSeconds(10))
@@ -53,10 +53,12 @@ internal abstract partial class MetricsTelemetryCollectorBase
         return _aggregateTask;
     }
 
-    public void SetWafVersion(string wafVersion)
+    public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {
         // Setting this an array so we can reuse it for multiple metrics
-        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
+        _wafAndRulesVersionTags = string.IsNullOrEmpty(eventRulesVersion) ?
+            new[] { $"waf_version:{wafVersion}" } :
+            new[] { $"waf_version:{wafVersion};event_rules_version:{eventRulesVersion}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
@@ -220,10 +222,10 @@ internal abstract partial class MetricsTelemetryCollectorBase
 
         if (metricKeyTags is null)
         {
-            return _wafVersionTags ?? _unknownWafVersionTags;
+            return _wafAndRulesVersionTags ?? _unknownWafVersionTags;
         }
 
-        var wafVersionTag = (_wafVersionTags ?? _unknownWafVersionTags)[0];
+        var wafVersionTag = (_wafAndRulesVersionTags ?? _unknownWafVersionTags)[0];
 
         metricKeyTags[0] = wafVersionTag;
         return metricKeyTags;

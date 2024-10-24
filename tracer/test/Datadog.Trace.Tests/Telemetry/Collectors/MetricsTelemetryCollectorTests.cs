@@ -83,9 +83,10 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.3", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion, string rulesVersion)
     {
         static void IncrementOpenTelemetryConfigMetrics(MetricsTelemetryCollector collector, string openTelemetryKey)
         {
@@ -148,9 +149,14 @@ public class MetricsTelemetryCollectorTests
 
         var expectedWafTag = "waf_version:unknown";
 
-        if (wafVersion is not null)
+        if (wafVersion is not null && rulesVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
+            expectedWafTag = $"waf_version:{wafVersion};event_rules_version:{rulesVersion}";
+        }
+        else if (wafVersion is not null)
+        {
+            collector.SetWafAndRulesVersion(wafVersion, null);
             expectedWafTag = $"waf_version:{wafVersion}";
         }
 
@@ -504,9 +510,10 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.3", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion, string rulesVersion)
     {
         var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -553,9 +560,14 @@ public class MetricsTelemetryCollectorTests
 
         var expectedWafTag = "waf_version:unknown";
 
-        if (wafVersion is not null)
+        if (wafVersion is not null && rulesVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
+            expectedWafTag = $"waf_version:{wafVersion};event_rules_version:{rulesVersion}";
+        }
+        else if (wafVersion is not null)
+        {
+            collector.SetWafAndRulesVersion(wafVersion, null);
             expectedWafTag = $"waf_version:{wafVersion}";
         }
 
