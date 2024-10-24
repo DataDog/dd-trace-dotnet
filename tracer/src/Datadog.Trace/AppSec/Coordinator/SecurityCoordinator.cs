@@ -208,20 +208,16 @@ internal readonly partial struct SecurityCoordinator
         return null;
     }
 
-#if NETFRAMEWORK
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers)
-#else
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
-#endif
+    private static Dictionary<string, object> ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
     {
-        var headersDic = new Dictionary<string, object>(headers.Keys.Count);
-        foreach (string key in headers.Keys)
+        var headersDic = new Dictionary<string, object>(keys.Count);
+        foreach (var key in keys)
         {
             var currentKey = key ?? string.Empty;
-            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
             {
                 currentKey = currentKey.ToLowerInvariant();
-                var value = GetHeaderValueForWaf(headers, currentKey);
+                var value = getHeaderValue(currentKey);
 
                 if (!headersDic.ContainsKey(currentKey))
                 {

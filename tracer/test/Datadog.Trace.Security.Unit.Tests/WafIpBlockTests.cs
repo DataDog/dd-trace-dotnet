@@ -15,6 +15,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -25,18 +26,17 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             initResult.Waf.Should().NotBeNull();
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var configurationStatus = UpdateConfigurationState(rulesData: new() { ["test"] = [.. rulesData!] });
+            var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();
             using var context = initResult.Waf.CreateContext();
-            var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
+            var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, TimeoutMicroSeconds);
             result!.Timeout.Should().BeFalse("Timeout should be false");
             result.Should().NotBeNull();
             result!.ReturnCode.Should().Be(WafReturnCode.Match);
@@ -55,13 +55,13 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithoutWaf()
         {
             var result = Waf.MergeRuleData(
-                new RuleData[] { new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" } } } });
+                [new() { Id = "id1", Type = "type1", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id3", Type = "type3", Data = [new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 30, Value = "1" }, new Data { Expiration = 30, Value = "2" }, new Data { Expiration = 30, Value = "3" }] }]);
 
             result.Should().NotBeEmpty();
             result.Should().ContainItemsAssignableTo<RuleData>();
             result.Should().HaveCount(3);
 
-            var expectedResult = new RuleData[] { new() { Id = "id1", Type = "type1", Data = new[] { new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" } } }, new() { Id = "id2", Type = "type2", Data = new[] { new Data { Expiration = 30, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 30, Value = "3" } } }, new() { Id = "id3", Type = "type3", Data = new[] { new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" } } } };
+            var expectedResult = new RuleData[] { new() { Id = "id1", Type = "type1", Data = [new Data { Expiration = 10, Value = "1" }, new Data { Expiration = 10, Value = "2" }, new Data { Expiration = 10, Value = "3" }] }, new() { Id = "id2", Type = "type2", Data = [new Data { Expiration = 30, Value = "1" }, new Data { Expiration = null, Value = "2" }, new Data { Expiration = 30, Value = "3" }] }, new() { Id = "id3", Type = "type3", Data = [new Data { Expiration = 55, Value = "1" }, new Data { Expiration = 55, Value = "2" }, new Data { Expiration = 10, Value = "3" }] } };
 
             result.Should().BeEquivalentTo(expectedResult);
         }
@@ -70,19 +70,18 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
 
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
             using var sr = new StreamReader("rule-data1.json");
             using var sr2 = new StreamReader("rule-data2.json");
             using var jsonTextReader = new JsonTextReader(sr);
             using var jsonTextReader2 = new JsonTextReader(sr2);
             var rulesData = js.Deserialize<List<RuleData>>(jsonTextReader);
             var rulesData2 = js.Deserialize<List<RuleData>>(jsonTextReader2);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.Concat(rulesData2!).ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var secSettings = new Mock<SecuritySettings>();
+            var configurationStatus =  UpdateConfigurationState(rulesData: new() { ["test"] = rulesData!.Concat(rulesData2!).ToArray() });
+            var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasErrors.Should().BeFalse();
             using var context = waf!.CreateContext();

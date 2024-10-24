@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {
                         const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))

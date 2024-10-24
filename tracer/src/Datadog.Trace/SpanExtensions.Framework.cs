@@ -24,7 +24,7 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
 
-            if (security.Enabled)
+            if (security.AppsecEnabled)
             {
                 var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, span);
                 if (securityCoordinator is null)

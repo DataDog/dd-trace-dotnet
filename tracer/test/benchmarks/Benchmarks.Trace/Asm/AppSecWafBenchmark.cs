@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using BenchmarkDotNet.Attributes;
@@ -13,6 +14,8 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.BenchmarkDotNet;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Benchmarks.Trace.Asm;
 
@@ -37,7 +40,14 @@ public class AppSecWafBenchmark
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
 
         var rulesPath = Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.10.0.json");
-        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath:rulesPath);
+        var config = new NameValueCollection
+        {
+            { ConfigurationKeys.AppSec.Rules, rulesPath },
+            { ConfigurationKeys.AppSec.Enabled, "1" }
+        };
+        var configSource = new NameValueConfigurationSource(config);
+        var settings = new SecuritySettings(configSource, NullConfigurationTelemetry.Instance);
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, new Datadog.Trace.AppSec.Rcm.ConfigurationState(settings, true));
         if (!initResult.Success || initResult.HasErrors)
         {
             throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
@@ -60,7 +70,7 @@ public class AppSecWafBenchmark
 
         if (withAttack)
         {
-            cookiesDic.Add("user-agent", new List<string>() { "Arachni/v1" } );
+            cookiesDic.Add("user-agent", new List<string>() { "Arachni/v1" });
         }
 
         var queryStringDic = new Dictionary<string, List<string>>

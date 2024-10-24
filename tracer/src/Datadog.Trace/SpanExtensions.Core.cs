@@ -19,7 +19,7 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
 
-            if (security.Enabled && AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+            if (security.AppsecEnabled && AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
             {
                 RunBlockingCheckUnsafe(security, span, userId);
             }
