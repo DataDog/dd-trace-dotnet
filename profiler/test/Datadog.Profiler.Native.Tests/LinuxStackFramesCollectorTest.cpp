@@ -165,6 +165,7 @@ public:
 
         _librariesInfoCache = std::make_unique<LibrariesInfoCache>();
         _librariesInfoCache->Start();
+        _librariesInfoCache->WaitForCacheToBeReady();
     }
 
     void TearDown() override

@@ -50,14 +50,6 @@ bool LibrariesInfoCache::StopImpl()
     return true;
 }
 
-struct IterationData
-{
-public:
-    std::size_t Index;
-    LibrariesInfoCache* Cache;
-    bool LockTaken;
-};
-
 void LibrariesInfoCache::Work()
 {
     auto timeout = InfiniteTimeout;
@@ -73,6 +65,10 @@ void LibrariesInfoCache::Work()
         timeout = defaultTimeout;
     }
 
+#ifdef DD_TEST
+    bool firstUpdate = true;
+#endif
+
     while (!_stopRequested)
     {
         // in the default case, notification mechanism in place, we will block until notification
@@ -86,6 +82,13 @@ void LibrariesInfoCache::Work()
         }
 
         UpdateCache();
+#ifdef DD_TEST
+        firstUpdate = std::exchange(firstUpdate, false);
+        if (firstUpdate)
+        {
+            _cacheReady.set_value();
+        }
+#endif
     }
 
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
@@ -105,7 +108,7 @@ void LibrariesInfoCache::UpdateCache()
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
     std::vector<DlPhdrInfoWrapper> newCache;
-    newCache.reserve(_librariesInfo.size());
+    newCache.reserve(_librariesInfo.capacity());
 
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
@@ -164,3 +167,11 @@ void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
     _event.Set();
 }
+
+#ifdef DD_TEST
+void LibrariesInfoCache::WaitForCacheToBeReady()
+{
+    auto ready = _cacheReady.get_future();
+    ready.wait();
+}
+#endif

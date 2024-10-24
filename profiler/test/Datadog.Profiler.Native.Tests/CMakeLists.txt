@@ -73,6 +73,7 @@ if (RUN_UBSAN)
     target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
 endif()
 
+target_compile_options(Datadog.Profiler.Native.static PRIVATE -DDD_TEST)
 target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.Profiler.Native.static
   gtest_main

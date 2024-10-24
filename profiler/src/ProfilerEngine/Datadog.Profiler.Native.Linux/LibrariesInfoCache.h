@@ -8,6 +8,9 @@
 #include "ServiceBase.h"
 
 #include <atomic>
+#ifdef DD_TEST
+#include <future>
+#endif
 #include <libunwind.h>
 #include <link.h>
 #include <shared_mutex>
@@ -27,6 +30,10 @@ public:
     LibrariesInfoCache& operator=(LibrariesInfoCache&&) = delete;
 
     const char* GetName() final override;
+
+#ifdef DD_TEST
+    void WaitForCacheToBeReady();
+#endif
 
 protected:
     bool StartImpl() final override;
@@ -49,4 +56,9 @@ private:
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
+#ifdef DD_TEST
+    // this is to make sure cache is ready when unit tests runs.
+    // Otherwise the tests might be flacky
+    std::promise<void> _cacheReady;
+#endif
 };
