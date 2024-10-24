@@ -11,9 +11,7 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -21,12 +19,10 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
-using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
 namespace Datadog.Trace.AppSec
 {
@@ -40,8 +36,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly ConfigurationStatus _configurationStatus;
-        private readonly bool _noLocalRules;
+        private readonly ConfigurationState _configurationState;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
@@ -65,31 +60,20 @@ namespace Datadog.Trace.AppSec
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _waf = waf;
-                _noLocalRules = _settings.Rules == null;
-                _configurationStatus = new ConfigurationStatus(_settings.Rules);
+                _configurationState = new ConfigurationState(_settings, _waf is null);
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-                if (_settings.Enabled && _waf == null)
+                if (_configurationState.IncomingUpdateState.ShouldEnableAppsec)
                 {
                     InitWafAndInstrumentations();
                 }
                 else
                 {
-                    Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
+                    Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", AppsecEnabled, _settings.CanBeToggled);
                 }
 
-                var subscriptionsKeys = new List<string>();
-                if (_settings.CanBeToggled || _settings.Enabled)
-                {
-                    subscriptionsKeys.Add(RcmProducts.AsmFeatures);
-                }
-
-                if ((_settings.Enabled || _settings.CanBeToggled) && _noLocalRules)
-                {
-                    subscriptionsKeys.Add(RcmProducts.AsmDd);
-                }
-
-                SubscribeToChanges(subscriptionsKeys.ToArray());
+                var subscriptionKeys = _configurationState.WhatProductsAreRelevant(_settings);
+                SubscribeToChanges(subscriptionKeys);
 
                 SetRemoteConfigCapabilites();
                 UpdateActiveAddresses();
@@ -97,13 +81,14 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 _settings ??= new(source: null, TelemetryFactory.Config);
-                _configurationStatus ??= new ConfigurationStatus(string.Empty);
+                _configurationState ??= new ConfigurationState(_settings, true);
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
             finally
             {
                 _settings ??= new(source: null, TelemetryFactory.Config);
                 ApiSecurity = new(_settings);
+                _configurationState?.ResetUpdateMarkers();
             }
         }
 
@@ -124,9 +109,9 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal bool Enabled { get; private set; }
+        internal bool AppsecEnabled { get; private set; }
 
-        internal bool RaspEnabled => _settings.RaspEnabled && Enabled;
+        internal bool RaspEnabled => _settings.RaspEnabled && AppsecEnabled;
 
         internal string? InitializationError { get; private set; }
 
@@ -146,9 +131,9 @@ namespace Datadog.Trace.AppSec
         internal string? DdlibWafVersion => _waf?.Version;
 
         internal bool IsTrackUserEventsEnabled =>
-            Enabled && CalculateIsTrackUserEventsEnabled(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
+            AppsecEnabled && CalculateIsTrackUserEventsEnabled(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
-        internal bool IsAnonUserTrackingMode => CalculateIsAnonUserTrackingMode(_configurationStatus.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
+        internal bool IsAnonUserTrackingMode => CalculateIsAnonUserTrackingMode(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
 
         internal ApiSecurity ApiSecurity { get; }
 
@@ -193,11 +178,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal ApplyDetails[] UpdateFromRcmForTest(Dictionary<string, List<RemoteConfiguration>> configsByProduct)
-        {
-            return UpdateFromRcm(configsByProduct, null);
-        }
-
+        // check TODO
         private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;
@@ -206,41 +187,39 @@ namespace Datadog.Trace.AppSec
             try
             {
                 // store the last config state, clearing any previous state, without deserializing any payloads yet.
-                var anyChange = _configurationStatus.StoreLastConfigState(configsByProduct, removedConfigs);
-                var securityStateChange = Enabled != _configurationStatus.EnableAsm;
-                // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
-                if (securityStateChange && _settings.CanBeToggled)
+                var anyChange = _configurationState.StoreLastConfigState(configsByProduct, removedConfigs);
+                if (anyChange)
                 {
-                    // disable ASM scenario
-                    if (Enabled && _configurationStatus.EnableAsm == false)
+                    _configurationState.ApplyAsmFeatures(AppsecEnabled);
+                    if (_configurationState.IncomingUpdateState.ShouldDisableAppsec)
                     {
+                        // disable ASM scenario
                         DisposeWafAndInstrumentations(true);
                     } // enable ASM scenario taking into account rcm changes for other products/data
-                    else if (!Enabled && _configurationStatus.EnableAsm == true)
+                    else if (_configurationState.IncomingUpdateState.ShouldEnableAppsec)
                     {
-                        _configurationStatus.ApplyStoredFiles();
-                        InitWafAndInstrumentations(true);
+                        _configurationState.ApplyStoredFiles();
+                        InitWafAndInstrumentations();
                         UpdateActiveAddresses();
                         rcmUpdateError = _wafInitResult?.ErrorMessage;
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
-                    }
-                } // update asm configuration
-                else if (Enabled && anyChange)
-                {
-                    _configurationStatus.ApplyStoredFiles();
-                    updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationStatus, _settings.Rules);
-                    if (updateResult?.Success ?? false)
+                    } // update asm configuration
+                    else if (AppsecEnabled)
                     {
-                        if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))
+                        _configurationState.ApplyStoredFiles();
+                        updateResult = _waf?.UpdateWafFromConfigurationStatus(_configurationState);
+                        if (updateResult?.Success ?? false)
                         {
-                            WafRuleFileVersion = updateResult.RuleFileVersion;
-                        }
+                            if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))
+                            {
+                                WafRuleFileVersion = updateResult.RuleFileVersion;
+                            }
 
-                        _configurationStatus.ResetUpdateMarkers();
-                        UpdateActiveAddresses();
+                            UpdateActiveAddresses();
+                        }
                     }
                 }
             }
@@ -248,16 +227,17 @@ namespace Datadog.Trace.AppSec
             {
                 rcmUpdateError = e.Message;
                 Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
+                _configurationState.ResetUpdateMarkers();
             }
 
-            int productsCount = 0;
+            var productsCount = 0;
 
             foreach (var config in configsByProduct)
             {
                 productsCount += config.Value.Count;
             }
 
-            bool onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
+            var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
             var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
@@ -278,6 +258,7 @@ namespace Datadog.Trace.AppSec
                 }
             }
 
+            _configurationState.ResetUpdateMarkers();
             return applyDetails;
         }
 
@@ -489,24 +470,24 @@ namespace Datadog.Trace.AppSec
             var rcm = RcmSubscriptionManager.Instance;
 
             rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmUserBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmUserBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
@@ -517,7 +498,7 @@ namespace Datadog.Trace.AppSec
             return RCMCapabilitiesHelper.WafSupportsCapability(capability, _waf?.Version);
         }
 
-        private void InitWafAndInstrumentations(bool configurationFromRcm = false)
+        private void InitWafAndInstrumentations()
         {
             // initialization of WafLibraryInvoker
             if (_libraryInitializationResult == null)
@@ -525,7 +506,7 @@ namespace Datadog.Trace.AppSec
                 _libraryInitializationResult = WafLibraryInvoker.Initialize();
                 if (!_libraryInitializationResult.Success)
                 {
-                    Enabled = false;
+                    AppsecEnabled = false;
                     InitializationError = "Error initializing native library";
                     // logs happened during the process of initializing
                     return;
@@ -538,8 +519,7 @@ namespace Datadog.Trace.AppSec
                 _wafLibraryInvoker!,
                 _settings.ObfuscationParameterKeyRegex,
                 _settings.ObfuscationParameterValueRegex,
-                embeddedRulesetPath: _settings.Rules,
-                configurationFromRcm ? _configurationStatus : null,
+                _configurationState,
                 _settings.UseUnsafeEncoder,
                 GlobalSettings.Instance.DebugEnabledInternal && _settings.WafDebugEnabled);
             if (_wafInitResult.Success)
@@ -553,11 +533,11 @@ namespace Datadog.Trace.AppSec
                 SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
                 Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
-                Enabled = true;
+                AppsecEnabled = true;
                 InitializationError = null;
-                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, configurationFromRcm);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, _configurationState.RuleSetTitle);
 
-                if (!configurationFromRcm)
+                if (oldWaf is null)
                 {
                     // occurs the first time we initialize the WAF
                     TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
@@ -567,7 +547,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 _wafInitResult.Waf?.Dispose();
-                Enabled = false;
+                AppsecEnabled = false;
                 InitializationError = "Error initializing waf";
             }
         }
@@ -581,7 +561,7 @@ namespace Datadog.Trace.AppSec
 
         private void RemoveInstrumentationsAndProducts(bool fromRemoteConfig)
         {
-            if (Enabled)
+            if (AppsecEnabled)
             {
                 if (_rcmSubscription != null)
                 {
@@ -600,9 +580,9 @@ namespace Datadog.Trace.AppSec
                 }
 
                 Instrumentation.DisableTracerInstrumentations(InstrumentationCategory.AppSec);
-                Enabled = false;
+                AppsecEnabled = false;
                 InitializationError = null;
-                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, fromRemoteConfig);
             }
         }
 

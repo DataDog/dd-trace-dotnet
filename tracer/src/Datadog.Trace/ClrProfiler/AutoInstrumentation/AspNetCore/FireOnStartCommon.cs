@@ -62,7 +62,7 @@ public static class FireOnStartCommon
         var security = Security.Instance;
         var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
 
-        if (security.Enabled || iastEnabled)
+        if (security.AppsecEnabled || iastEnabled)
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
             var requestHeaders = instance.DuckCast<HttpProtocolStruct>().RequestHeaders;
@@ -70,7 +70,7 @@ public static class FireOnStartCommon
 
             if (responseHeaders is not null)
             {
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     if (span is not null)
                     {
