@@ -3,7 +3,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 # Copy IIS websites
 ADD tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/publish LoaderOptimizationRegKey
-ADD tracer/test/test-applications/aspnet/Samples.AspNet472.MultipleAppsInDomain/bin/Release/publish MultipleAppsInDomain
+ADD tracer/test/test-applications/aspnet/Samples.AspNet.MultipleAppsInDomain/bin/Release/publish MultipleAppsInDomain
 
 # Set up LoaderOptimization IIS websites
 ARG ENABLE_32_BIT
