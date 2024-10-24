@@ -50,14 +50,6 @@ bool LibrariesInfoCache::StopImpl()
     return true;
 }
 
-struct IterationData
-{
-public:
-    std::size_t Index;
-    LibrariesInfoCache* Cache;
-    bool LockTaken;
-};
-
 void LibrariesInfoCache::Work()
 {
     auto timeout = InfiniteTimeout;
@@ -105,7 +97,7 @@ void LibrariesInfoCache::UpdateCache()
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
     std::vector<DlPhdrInfoWrapper> newCache;
-    newCache.reserve(_librariesInfo.size());
+    newCache.reserve(_librariesInfo.capacity());
 
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
