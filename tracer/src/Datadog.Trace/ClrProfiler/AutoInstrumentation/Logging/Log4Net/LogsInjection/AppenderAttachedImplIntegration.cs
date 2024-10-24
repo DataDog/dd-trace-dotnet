@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
@@ -45,20 +46,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersionInternal ?? string.Empty;
                 loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.EnvironmentInternal ?? string.Empty;
 
-                var spanContext = tracer.DistributedSpanContext;
-                if (spanContext is not null)
+                if (tracer.DistributedSpanContext is { } context &&
+                    LogContext.TryGetValues(context, out var traceId, out var spanId, tracer.Settings.TraceId128BitLoggingEnabled))
                 {
-                    // For mismatch version support we need to keep requesting old keys.
-                    var hasTraceId = spanContext.TryGetValue(SpanContext.Keys.TraceId, out string traceId) ||
-                                     spanContext.TryGetValue(HttpHeaderNames.TraceId, out traceId);
-                    var hasSpanId = spanContext.TryGetValue(SpanContext.Keys.ParentId, out string spanId) ||
-                                    spanContext.TryGetValue(HttpHeaderNames.ParentId, out spanId);
-
-                    if (hasTraceId && hasSpanId)
-                    {
-                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
-                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
-                    }
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
                 }
             }
 
