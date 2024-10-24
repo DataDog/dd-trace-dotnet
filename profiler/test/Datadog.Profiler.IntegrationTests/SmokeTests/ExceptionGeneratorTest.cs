@@ -30,7 +30,8 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
-            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.RunAndCheck();
         }
     }
