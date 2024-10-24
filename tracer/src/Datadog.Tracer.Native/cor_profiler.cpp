@@ -4338,7 +4338,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // are not resolved (is not clear why, maybe a bug). So we end up missing spans.
     // Also in .NET Framework  we don't need to reject the ngen image, the rejit will always do the right job.
     // In .NET Core if we don't reject the image, the image will be used and the rejit callback will never get called
-    // (this was confirmed in issue-6124).
+    // (this was confirmed on issue-6124).
     // The following code handle both scenarios.
     if (runtime_information_.is_core()) 
     {
