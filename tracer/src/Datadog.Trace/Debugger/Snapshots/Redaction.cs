@@ -12,6 +12,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
+using Datadog.Trace.Debugger.Caching;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Helpers;
 
@@ -168,6 +169,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             "xsrftoken"
         };
 
+        private static ConcurrentAdaptiveCache<Type, bool> _redactedTypesCache = new(evictionPolicyKind:EvictionPolicy.LFU);
+
+        private static ConcurrentAdaptiveCache<string, bool> _redactedKeywordsCache = new(evictionPolicyKind: EvictionPolicy.LFU);
+
         internal static bool IsSafeToCallToString(Type type)
         {
             return TypeExtensions.IsSimple(type) ||
@@ -242,7 +247,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return RedactedTypes.Contains(typeFullName);
         }
 
-        public static bool IsRedactedKeyword(string name)
+        internal static bool IsRedactedKeyword(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -255,13 +260,15 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public static bool ShouldRedact(string name, Type type, out RedactionReason redactionReason)
         {
-            if (IsRedactedKeyword(name))
+            var redactedKeyword = _redactedKeywordsCache.GetOrAdd(name, IsRedactedKeyword);
+            if (redactedKeyword)
             {
                 redactionReason = RedactionReason.Identifier;
                 return true;
             }
 
-            if (IsRedactedType(type))
+            var redactedType = _redactedTypesCache.GetOrAdd(type, IsRedactedType);
+            if (redactedType)
             {
                 redactionReason = RedactionReason.Type;
                 return true;
