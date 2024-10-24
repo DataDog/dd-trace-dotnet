@@ -12,7 +12,6 @@ using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -275,6 +274,7 @@ internal record ConfigurationState
     {
         _fileUpdates.Clear();
         _fileRemoves.Clear();
+        // if we just have asm features, it might only be to toggle appsec. Other products bring actual configurations to the waf.
         var hasUpdateConfigurations = false;
         var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
         if (anyChange)

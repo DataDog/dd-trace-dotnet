@@ -72,9 +72,7 @@ namespace Datadog.Trace.AppSec
                     Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", AppsecEnabled, _settings.CanBeToggled);
                 }
 
-                var subscriptionKeys = _configurationState.WhatProductsAreRelevant(_settings);
-                SubscribeToChanges(subscriptionKeys);
-
+                RefreshRcmSubscriptions();
                 SetRemoteConfigCapabilites();
                 UpdateActiveAddresses();
             }
@@ -166,12 +164,11 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// This is cumulative, if a subscription already existed with other product names,  the new ones will be unioned
         /// </summary>
-        /// <param name="productNames"></param>
         internal void SubscribeToChanges(params string[] productNames)
         {
             if (_rcmSubscription is not null)
             {
-                var newSubscription = new Subscription(UpdateFromRcm, _rcmSubscription.ProductKeys.Union(productNames).ToArray());
+                var newSubscription = new Subscription(UpdateFromRcm, [.. productNames]);
                 _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
                 _rcmSubscription = newSubscription;
             }
@@ -207,6 +204,8 @@ namespace Datadog.Trace.AppSec
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
                         }
+
+                        RefreshRcmSubscriptions();
                     } // update asm configuration
                     else if (_configurationState.IncomingUpdateState.ShouldUpdateAppsec)
                     {
@@ -258,6 +257,12 @@ namespace Datadog.Trace.AppSec
 
                 return applyDetails;
             }
+        }
+
+        private void RefreshRcmSubscriptions()
+        {
+            var subscriptionKeys = _configurationState.WhatProductsAreRelevant(_settings);
+            SubscribeToChanges(subscriptionKeys);
         }
 
         internal static bool HasOnlyUnknownMatcherErrors(IReadOnlyDictionary<string, object>? errors)
@@ -528,7 +533,7 @@ namespace Datadog.Trace.AppSec
                 _waf = _wafInitResult.Waf;
                 oldWaf?.Dispose();
                 Log.Debug("Disposed old waf and affected new waf");
-                SubscribeToChanges(RcmProducts.AsmData, RcmProducts.Asm);
+
                 Instrumentation.EnableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _rateLimiter ??= new(_settings.TraceRateLimit);
                 _configurationState.AppsecEnabled = true;
@@ -561,24 +566,9 @@ namespace Datadog.Trace.AppSec
         {
             if (AppsecEnabled)
             {
-                if (_rcmSubscription != null)
-                {
-                    var newKeys = _rcmSubscription.ProductKeys.Except([RcmProducts.AsmData, RcmProducts.Asm]).ToArray();
-                    if (newKeys.Length > 0)
-                    {
-                        var newSubscription = new Subscription(UpdateFromRcm, newKeys);
-                        _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
-                        _rcmSubscription = newSubscription;
-                    }
-                    else
-                    {
-                        _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
-                        _rcmSubscription = null;
-                    }
-                }
-
                 Instrumentation.DisableTracerInstrumentations(InstrumentationCategory.AppSec);
                 _configurationState.AppsecEnabled = false;
+                RefreshRcmSubscriptions();
                 InitializationError = null;
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {EnableFromRemoteConfig}", _settings.AppsecEnabled, fromRemoteConfig);
             }
