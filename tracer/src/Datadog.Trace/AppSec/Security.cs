@@ -40,8 +40,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
         private readonly SecuritySettings _settings;
-        private readonly ConfigurationStatus _configurationStatus;
-        private readonly bool _noLocalRules;
+        private readonly ConfigurationState _configurationState;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
@@ -126,7 +125,7 @@ namespace Datadog.Trace.AppSec
 
         internal bool Enabled { get; private set; }
 
-        internal bool RaspEnabled => _settings.RaspEnabled && Enabled;
+        internal bool RaspEnabled => _settings.RaspEnabled && AppsecEnabled;
 
         internal string? InitializationError { get; private set; }
 
@@ -250,14 +249,14 @@ namespace Datadog.Trace.AppSec
                 Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
             }
 
-            int productsCount = 0;
+                var productsCount = 0;
 
             foreach (var config in configsByProduct)
             {
                 productsCount += config.Value.Count;
             }
 
-            bool onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
+                var onlyUnknownMatcherErrors = string.IsNullOrEmpty(rcmUpdateError) && HasOnlyUnknownMatcherErrors(updateResult?.Errors);
             var applyDetails = new ApplyDetails[productsCount];
             var finalError = rcmUpdateError ?? updateResult?.ErrorMessage;
 
@@ -489,24 +488,24 @@ namespace Datadog.Trace.AppSec
             var rcm = RcmSubscriptionManager.Instance;
 
             rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmUserBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
-            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _noLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmUserBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _settings.NoCustomLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspLfi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspLfi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSsrf, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSsrf));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspShi, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspShi));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmRaspSqli, _settings.RaspEnabled && _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmRaspSqli));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusionData, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmExclusionData));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmEnpointFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmHeaderFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmNetworkFingerprint));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);
@@ -525,7 +524,7 @@ namespace Datadog.Trace.AppSec
                 _libraryInitializationResult = WafLibraryInvoker.Initialize();
                 if (!_libraryInitializationResult.Success)
                 {
-                    Enabled = false;
+                    _configurationState.AppsecEnabled = false;
                     InitializationError = "Error initializing native library";
                     // logs happened during the process of initializing
                     return;
@@ -567,7 +566,7 @@ namespace Datadog.Trace.AppSec
             else
             {
                 _wafInitResult.Waf?.Dispose();
-                Enabled = false;
+                _configurationState.AppsecEnabled = false;
                 InitializationError = "Error initializing waf";
             }
         }
@@ -581,18 +580,7 @@ namespace Datadog.Trace.AppSec
 
         private void RemoveInstrumentationsAndProducts(bool fromRemoteConfig)
         {
-            if (Enabled)
-            {
-                if (_rcmSubscription != null)
-                {
-                    var newKeys = _rcmSubscription.ProductKeys.Except([RcmProducts.AsmData, RcmProducts.Asm]).ToArray();
-                    if (newKeys.Length > 0)
-                    {
-                        var newSubscription = new Subscription(UpdateFromRcm, newKeys);
-                        _rcmSubscriptionManager.Replace(_rcmSubscription, newSubscription);
-                        _rcmSubscription = newSubscription;
-                    }
-                    else
+            if (AppsecEnabled)
                     {
                         _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
                         _rcmSubscription = null;

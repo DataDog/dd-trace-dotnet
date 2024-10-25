@@ -23,7 +23,7 @@ internal class ActionResponseFilter : IActionFilter
     public void OnActionExecuted(ActionExecutedContext context)
     {
         var security = Security.Instance;
-        if (security.Enabled
+        if (security.AppsecEnabled
             && context.Result.TryDuckCast<ObjectResult>(out var result)
             && result.Value is not null
             && Tracer.Instance.ActiveScope?.Span is Span currentSpan)
