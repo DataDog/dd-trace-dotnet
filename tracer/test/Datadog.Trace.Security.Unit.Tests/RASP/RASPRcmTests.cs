@@ -63,8 +63,10 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var content = Encoding.UTF8.GetBytes(rules);
         RemoteConfiguration config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("employee/john/doe/smith"), content, content.Length, new Dictionary<string, string>(), 33);
-        var dic = new Dictionary<string, List<RemoteConfiguration>>();
-        dic["ASM_DD"] = (new List<RemoteConfiguration> { config });
+        var dic = new Dictionary<string, List<RemoteConfiguration>>
+        {
+            ["ASM_DD"] = [config]
+        };
         return dic;
     }
 

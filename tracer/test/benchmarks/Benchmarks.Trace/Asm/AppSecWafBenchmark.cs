@@ -60,7 +60,7 @@ public class AppSecWafBenchmark
 
         if (withAttack)
         {
-            cookiesDic.Add("user-agent", new List<string>() { "Arachni/v1" } );
+            cookiesDic.Add("user-agent", new List<string>() { "Arachni/v1" });
         }
 
         var queryStringDic = new Dictionary<string, List<string>>
