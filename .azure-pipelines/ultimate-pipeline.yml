@@ -1821,7 +1821,8 @@ stages:
         
     - template: steps/install-msi.yml
       parameters:
-        # Pin to a specific version of Azure Functions, as beyond this requires Azurite 
+        # Pin to a specific version of Azure Functions, as beyond this requires Azurite
+        # TODO: Make this floating and use azurite if necessary down the line
         url: "https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi"
         filename: "func-cli-4.0.6280-x64.msi"
         addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
