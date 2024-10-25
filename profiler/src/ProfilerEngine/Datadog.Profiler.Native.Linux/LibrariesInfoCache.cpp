@@ -23,7 +23,7 @@ LibrariesInfoCache::LibrariesInfoCache(MemoryResourceManager& resourceManager) :
     _event(true),
     // We use a 100 blocks of 1Kib for now.
     // TODO check that is good enough
-    _wrappersAllocator{resourceManager.GetSynchronizedPool(1024, 100)}
+    _wrappersAllocator{resourceManager.GetSynchronizedPool(100, 1024)}
 {
 }
 

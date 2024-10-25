@@ -12,7 +12,7 @@
 // dlclose is happening when libunwind is calling our custom dl_iterate_phdr.
 // The pointers will be invalidated and a crash can happen.
 DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size, shared::pmr::memory_resource* allocator) :
-    _info{0}, _phdr{nullptr}, _name{nullptr, &std::free}, _size(size), _allocator{allocator}
+    _info{0}, _phdr{nullptr}, _name{nullptr}, _size(size), _allocator{allocator}
 {
     DeepCopy(_info, info);
 }
@@ -22,29 +22,32 @@ std::pair<struct dl_phdr_info*, std::size_t> DlPhdrInfoWrapper::Get()
     return {&_info, _size};
 }
 
+using custom_deleter = std::function<void(void*)>;
+template <class T, typename _Naked_T = std::remove_cv_t<T>>
+std::unique_ptr<_Naked_T, custom_deleter> Duplicate(shared::pmr::memory_resource* allocator, T* src, std::size_t count)
+{
+    if (src == nullptr)
+    {
+        return {nullptr};
+    }
+
+    const std::size_t size = sizeof(T) * count;
+    auto* newPtr = static_cast<_Naked_T*>(allocator->allocate(size, alignof(T)));
+    memcpy(newPtr, src, size);
+    return {static_cast<_Naked_T*>(newPtr), [allocator, size](void* ptr) { allocator->deallocate(ptr, size, alignof(T)); }};
+}
+
 void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info const* source)
 {
     // first copy all fields
     destination = *source;
     // then update the pointer-ones
-    if (source->dlpi_name != nullptr)
-    {
-        auto const nameLen = strlen(source->dlpi_name) + 1;
-        auto* name = static_cast<char*>(_allocator->allocate(nameLen));
-        _name = {strncpy(name, source->dlpi_name, strlen(source->dlpi_name)),
-             [this, nameLen](void* ptr) { _allocator->deallocate(ptr, nameLen); }};
-        destination.dlpi_name = _name.get();
-    }
+    _name = Duplicate(_allocator, source->dlpi_name, strlen(source->dlpi_name) + 1);
+    destination.dlpi_name = _name.get();
 
     // copy header
-    if (source->dlpi_phdr != nullptr)
-    {
-        auto phdrSize = sizeof(ElfW(Phdr)) * source->dlpi_phnum;
-        auto* newPhdr = static_cast<ElfW(Phdr)*>(_allocator->allocate(phdrSize));
-        memcpy(newPhdr, source->dlpi_phdr, phdrSize);
-        _phdr = {newPhdr, [this, phdrSize](void* ptr) { _allocator->deallocate(ptr, phdrSize); }};
-        destination.dlpi_phdr = _phdr.get();
-    }
+    _phdr = Duplicate(_allocator, source->dlpi_phdr, source->dlpi_phnum);
+    destination.dlpi_phdr = _phdr.get();
 
     // Those fields appeared in glibc 2.4 (with two others).
     // Since we compile with glibc 2.17, those fields are present (size of struct dl_phdr_info contains those fields),
