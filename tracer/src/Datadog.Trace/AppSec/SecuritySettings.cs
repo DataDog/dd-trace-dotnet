@@ -13,7 +13,6 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
 {
@@ -162,6 +161,8 @@ namespace Datadog.Trace.AppSec
             ScaEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
                              .AsBool();
+
+            NoCustomLocalRules = Rules == null;
         }
 
         public double ApiSecuritySampleDelay { get; set; }
@@ -257,6 +258,8 @@ namespace Datadog.Trace.AppSec
         /// It is not use locally, but ready by the backend.
         /// </summary>
         public bool? ScaEnabled { get; }
+
+        public bool NoCustomLocalRules { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

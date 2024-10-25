@@ -72,17 +72,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
-            object? configurationToEncode = null;
-            if (remoteConfigStatus is not null)
-            {
-                configurationToEncode = remoteConfigStatus.BuildDictionaryForWafAccordingToIncomingUpdate(embeddedRulesetPath);
-            }
-            else
-            {
-                var deserializedFromLocalRules = WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath);
-                configurationToEncode = deserializedFromLocalRules;
-            }
-
+            var configurationToEncode = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
             if (configurationToEncode is null)
             {
                 return InitResult.FromUnusableRuleFile();
@@ -101,7 +91,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             try
             {
-                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, remoteConfigStatus == null ? embeddedRulesetPath : "RemoteConfig");
+                var initResult = wafConfigurator.Configure(ref rulesObj, encoder, configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
                 return initResult;
             }
             finally
@@ -169,7 +159,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public UpdateResult Update(ConfigurationState configurationStatus, string? rulesPath = null)
         {
-            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate(rulesPath);
+            var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
             if (dic is null)
             {
                 Log.Warning("A waf update came from remote configuration but final merged dictionary for waf is empty, no update will be performed.");
