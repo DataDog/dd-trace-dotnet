@@ -31,6 +31,7 @@ private:
     struct ModuleDebugInfo
     {
     public:
+        std::string ModulePath;
         std::vector<std::string> Files;
         std::vector<SymbolDebugInfo> SymbolsDebugInfo;
         bool IsValid = false;
@@ -50,8 +51,15 @@ private:
             auto alreadyLogged = std::exchange(info.ErrorLogged, true);
             if (!alreadyLogged)
             {
-                Log::Info("The debug info for the module `", moduleId, "` seems to be invalid (is valid? '", info.IsValid, "') or the RID is out of the symbols array bounds (RID: ",
-                      rid, "). Number of debug info: ", info.SymbolsDebugInfo.size());
+                if (!info.IsValid)
+                {
+                    Log::Info("The debug info for the module `", info.ModulePath, "` seems to be invalid");
+                }
+                if (rid >= info.SymbolsDebugInfo.size())
+                {
+                    Log::Info("The RID is out of the symbols array bounds (RID: ", rid, "). Number of debug info: ", info.SymbolsDebugInfo.size(),
+                              ", module path: ", info.ModulePath);
+                }
             }
             return SymbolDebugInfo{NoFileFound, NoStartLine};
         }

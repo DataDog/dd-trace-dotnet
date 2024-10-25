@@ -52,6 +52,8 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     auto& moduleInfo = _modulesInfo[moduleId];
 
     fs::path filePath = GetModuleFilePath(moduleId);
+    moduleInfo.ModulePath = filePath.string();
+
     if (!filePath.has_extension() || (filePath.extension() != ".dll" && filePath.extension() != ".exe"))
     {
         // An invalid entry has been created for this file
@@ -65,11 +67,11 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     if (!fs::exists(pdbFile, ec))
     {
         // TODO: we may supply other path to search for the pdb file
-        Log::Info("No PDB file (associated to module id ", moduleId, ")`", pdbFile.filename(), "` was found in ", filePath.parent_path());
+        Log::Info("No PDB file (associated to module ", filePath, ")`", pdbFile.filename(), "` was found in ", filePath.parent_path());
         return;
     }
 
-    Log::Debug("Parsing ", pdbFile, " pdb file. (module id ", moduleId,")");
+    Log::Debug("Parsing ", pdbFile, " pdb file. (for module ", filePath,")");
 
     try
     {
@@ -121,16 +123,16 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
             moduleInfo.SymbolsDebugInfo.emplace_back() = {moduleInfo.Files[row.InitialDocument], startLine};
         }
         moduleInfo.IsValid = true;
-        Log::Debug("PDB file ", pdbFile, " parsed successfully (module id", moduleId,")");
+        Log::Debug("PDB file ", pdbFile, " parsed successfully (for module ", filePath,")");
     }
     catch (PPDB::Exception const& ec)
     {
         Log::Warn("Failed to parse debug info from ", pdbFile,
-                  ".(Module id: ", moduleId, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
+                  ".(Module: ", modulfilePathId, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {
-        Log::Warn("Unexpected error happened while parsing the pdb file (Module id: ", moduleId, "): ", pdbFile);
+        Log::Warn("Unexpected error happened while parsing the pdb file (Module: ", filePath, "): ", pdbFile);
     }
 }
 
