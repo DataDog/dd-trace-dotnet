@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -26,7 +27,24 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ManualAndAutomatic() => await RunTest(usePublishWithRID: false);
 
-#if !NETFRAMEWORK
+#if NETFRAMEWORK
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task NGenRunManualAndAutomatic()
+    {
+        SetEnvironmentVariable("READY2RUN_ENABLED", "1");
+        var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath();
+        NgenHelper.InstallToNativeImageCache(Output, sampleAppPath);
+        try
+        {
+            await RunTest(usePublishWithRID: false);
+        }
+        finally
+        {
+            NgenHelper.UninstallFromNativeImageCache(Output, sampleAppPath);
+        }
+    }
+#else
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task ReadyToRunManualAndAutomatic()
