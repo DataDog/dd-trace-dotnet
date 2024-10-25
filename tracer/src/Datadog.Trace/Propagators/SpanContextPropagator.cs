@@ -201,14 +201,14 @@ namespace Datadog.Trace.Propagators
                 }
                 else if (extractor is W3CTraceContextPropagator && currentExtractedContext.SpanContext is { } extractedSpanContext)
                 {
-                    FixUpSpanContext(cumulativeSpanContext, extractedSpanContext);
+                    MergeExtractedW3CSpanContext(cumulativeSpanContext, extractedSpanContext);
                 }
             }
 
             return new PropagationContext(cumulativeSpanContext, cumulativeBaggage);
         }
 
-        private static void FixUpSpanContext(SpanContext cumulativeSpanContext, SpanContext extractedSpanContext)
+        private static void MergeExtractedW3CSpanContext(SpanContext cumulativeSpanContext, SpanContext extractedSpanContext)
         {
             if (cumulativeSpanContext.RawTraceId == extractedSpanContext.RawTraceId)
             {
