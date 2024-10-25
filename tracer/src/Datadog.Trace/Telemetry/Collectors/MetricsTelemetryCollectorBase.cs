@@ -16,7 +16,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
 {
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
-    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
+    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private string[]? _wafAndRulesVersionTags;
@@ -56,9 +56,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {
         // Setting this an array so we can reuse it for multiple metrics
-        _wafAndRulesVersionTags = string.IsNullOrEmpty(eventRulesVersion) ?
-            new[] { $"waf_version:{wafVersion}" } :
-            new[] { $"waf_version:{wafVersion};event_rules_version:{eventRulesVersion}" };
+        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
@@ -226,8 +224,10 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
 
         var wafVersionTag = (_wafAndRulesVersionTags ?? _unknownWafVersionTags)[0];
+        var rulesVersionTag = (_wafAndRulesVersionTags ?? _unknownWafVersionTags)[1];
 
         metricKeyTags[0] = wafVersionTag;
+        metricKeyTags[1] = rulesVersionTag;
         return metricKeyTags;
     }
 
