@@ -340,13 +340,16 @@ internal class Baggage : IDictionary<string, string>
         if (baggage?.Count > 0)
         {
             var thisItems = EnsureListInitialized();
-            var otherItems = baggage._items!;
+            var newItems = baggage._items!;
 
             lock (thisItems)
             {
-                lock (otherItems)
+                lock (newItems)
                 {
-                    thisItems.AddRange(otherItems);
+                    foreach (var newItem in newItems)
+                    {
+                        AddOrReplace(newItem.Key, newItem.Value);
+                    }
                 }
             }
         }

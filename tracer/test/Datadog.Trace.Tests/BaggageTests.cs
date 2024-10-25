@@ -98,12 +98,21 @@ public class BaggageTests
     [Fact]
     public void Merge_AddsItemsToExistingBaggage()
     {
-        var baggage1 = new Baggage(new Dictionary<string, string> { { "key1", "value1" } });
-        var baggage2 = new Baggage(new Dictionary<string, string> { { "key2", "value2" } });
+        var baggage1 = new Baggage(new Dictionary<string, string>
+        {
+            { "key1", "value1" }
+        });
+
+        // replace "key1" and add "key2"
+        var baggage2 = new Baggage(new Dictionary<string, string>
+        {
+            { "key1", "new value" },
+            { "key2", "value2" }
+        });
 
         baggage1.Merge(baggage2);
 
-        baggage1.GetValueOrDefault("key1").Should().Be("value1");
+        baggage1.GetValueOrDefault("key1").Should().Be("new value");
         baggage1.GetValueOrDefault("key2").Should().Be("value2");
     }
 }
