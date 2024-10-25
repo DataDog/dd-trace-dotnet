@@ -1809,7 +1809,7 @@ stages:
     pool:
       # We're not using our _usual_ VMSS scale set because
       # couldn't work out how to get Azure Functions working with Azurite...
-      name: windows-latest
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
