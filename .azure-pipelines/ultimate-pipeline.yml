@@ -1807,8 +1807,6 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      # We're not using our _usual_ VMSS scale set because
-      # couldn't work out how to get Azure 
       name: azure-windows-scale-set-2
 
     steps:
