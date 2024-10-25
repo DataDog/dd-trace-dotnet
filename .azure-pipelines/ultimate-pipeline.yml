@@ -3179,11 +3179,11 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
-    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: RunExplorationTest
+    - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
+      displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
