@@ -4,6 +4,7 @@
 #include "LibrariesInfoCache.h"
 
 #include "Log.h"
+#include "OpSysTools.h"
 
 #include <string.h>
 
@@ -17,8 +18,12 @@ LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
-LibrariesInfoCache::LibrariesInfoCache() :
-    _stopRequested{false}, _event(true)
+LibrariesInfoCache::LibrariesInfoCache(MemoryResourceManager& resourceManager) :
+    _stopRequested{false},
+    _event(true),
+    // We use a 100 blocks of 1Kib for now.
+    // TODO check that is good enough
+    _wrappersAllocator{resourceManager.GetSynchronizedPool(1024, 100)}
 {
 }
 
@@ -47,11 +52,15 @@ bool LibrariesInfoCache::StopImpl()
     NotifyCacheUpdateImpl();
     Log::Debug("Notification to stopped the worker has been sent.");
     _worker.join();
+    _librariesInfo.clear();
+
     return true;
 }
 
 void LibrariesInfoCache::Work()
 {
+    OpSysTools::SetNativeThreadName(WStr("DD_LibsCache"));
+
     auto timeout = InfiniteTimeout;
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
     {
@@ -96,21 +105,34 @@ void LibrariesInfoCache::UpdateCache()
     // But the Cache Thread is blocked (T1 owns the malloc lock)
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
-    std::vector<DlPhdrInfoWrapper> newCache;
+    // OPTIM: make it static to reuse buffer overtime
+    // Safe to make it static to the function, this variable is accessed only by one thread.
+    static std::vector<DlPhdrInfoWrapper> newCache;
     newCache.reserve(_librariesInfo.capacity());
+
+    struct Data
+    {
+    public:
+        std::vector<DlPhdrInfoWrapper>* Cache;
+        shared::pmr::memory_resource* Allocator;
+    };
+
+    auto data = Data{.Cache = &newCache, .Allocator = _wrappersAllocator};
 
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* newCache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
-            newCache->emplace_back(info, size);
+            auto* impl = static_cast<Data*>(data);
+            impl->Cache->emplace_back(info, size, impl->Allocator);
             return 0;
         },
-        &newCache);
+        &data);
 
     {
         std::unique_lock l{_cacheLock};
         _librariesInfo.swap(newCache);
     }
+
+    newCache.clear();
 }
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)

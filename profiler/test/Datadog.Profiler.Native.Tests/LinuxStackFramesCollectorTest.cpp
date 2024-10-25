@@ -163,7 +163,7 @@ public:
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
         inside_wrapped_functions = 0;
 
-        _librariesInfoCache = std::make_unique<LibrariesInfoCache>();
+        _librariesInfoCache = std::make_unique<LibrariesInfoCache>(_memoryManager);
         _librariesInfoCache->Start();
     }
 
@@ -315,6 +315,7 @@ private:
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
     std::unique_ptr<LibrariesInfoCache> _librariesInfoCache;
+    MemoryResourceManager _memoryManager;
 };
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)

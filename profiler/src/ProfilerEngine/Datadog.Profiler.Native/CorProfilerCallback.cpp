@@ -124,7 +124,7 @@ void CorProfilerCallback::InitializeServices()
     }
     
     // Like the SystemCallsShield, this service must be started before any profiler.
-    RegisterService<LibrariesInfoCache>();
+    RegisterService<LibrariesInfoCache>(_memoryResourceManager);
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());

@@ -11,8 +11,8 @@
 // So we have to deep-copy them to avoid a potential crash:
 // dlclose is happening when libunwind is calling our custom dl_iterate_phdr.
 // The pointers will be invalidated and a crash can happen.
-DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size) :
-    _info{0}, _phdr{nullptr}, _name{nullptr, &std::free}, _size(size)
+DlPhdrInfoWrapper::DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size, shared::pmr::memory_resource* allocator) :
+    _info{0}, _phdr{nullptr}, _name{nullptr, &std::free}, _size(size), _allocator{allocator}
 {
     DeepCopy(_info, info);
 }
@@ -27,12 +27,24 @@ void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phd
     // first copy all fields
     destination = *source;
     // then update the pointer-ones
-    _name = {strdup(source->dlpi_name), &std::free};
-    destination.dlpi_name = _name.get();
+    if (source->dlpi_name != nullptr)
+    {
+        auto const nameLen = strlen(source->dlpi_name) + 1;
+        auto* name = static_cast<char*>(_allocator->allocate(nameLen));
+        _name = {strncpy(name, source->dlpi_name, strlen(source->dlpi_name)),
+             [this, nameLen](void* ptr) { _allocator->deallocate(ptr, nameLen); }};
+        destination.dlpi_name = _name.get();
+    }
 
-    _phdr = std::make_unique<ElfW(Phdr)[]>(source->dlpi_phnum);
-    memcpy(_phdr.get(), source->dlpi_phdr, sizeof(ElfW(Phdr)) * source->dlpi_phnum);
-    destination.dlpi_phdr = _phdr.get();
+    // copy header
+    if (source->dlpi_phdr != nullptr)
+    {
+        auto phdrSize = sizeof(ElfW(Phdr)) * source->dlpi_phnum;
+        auto* newPhdr = static_cast<ElfW(Phdr)*>(_allocator->allocate(phdrSize));
+        memcpy(newPhdr, source->dlpi_phdr, phdrSize);
+        _phdr = {newPhdr, [this, phdrSize](void* ptr) { _allocator->deallocate(ptr, phdrSize); }};
+        destination.dlpi_phdr = _phdr.get();
+    }
 
     // Those fields appeared in glibc 2.4 (with two others).
     // Since we compile with glibc 2.17, those fields are present (size of struct dl_phdr_info contains those fields),
@@ -42,7 +54,7 @@ void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phd
     destination.dlpi_tls_data = nullptr;
 }
 
-bool DlPhdrInfoWrapper::IsSame(struct dl_phdr_info const * other) const
+bool DlPhdrInfoWrapper::IsSame(struct dl_phdr_info const* other) const
 {
     return strcmp(_info.dlpi_name, other->dlpi_name) == 0 &&
            _info.dlpi_addr == other->dlpi_addr;

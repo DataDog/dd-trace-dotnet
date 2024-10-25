@@ -5,7 +5,10 @@
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
+#include "MemoryResourceManager.h"
 #include "ServiceBase.h"
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
 #include <libunwind.h>
@@ -17,7 +20,7 @@
 class LibrariesInfoCache : public ServiceBase
 {
 public:
-    LibrariesInfoCache();
+    LibrariesInfoCache(MemoryResourceManager& resourceManager);
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const&) = delete;
@@ -38,7 +41,13 @@ private:
 
     void UpdateCache();
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
+#ifdef DD_TEST
+public:
+#endif
     void NotifyCacheUpdateImpl();
+#ifdef DD_TEST
+private:
+#endif
     void Work();
 
     static LibrariesInfoCache* s_instance;
@@ -49,4 +58,5 @@ private:
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
+    shared::pmr::memory_resource* _wrappersAllocator;
 };
