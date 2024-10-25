@@ -4340,7 +4340,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     // In .NET Core if we don't reject the image, the image will be used and the rejit callback will never get called
     // (this was confirmed on issue-6124).
     // The following code handle both scenarios.
-    if (runtime_information_.is_core()) 
+    *pbUseCachedFunction = true;
+    if (runtime_information_.is_core())
     {
         // Check if this method has been rejitted, if that's the case we don't accept the image
         bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
