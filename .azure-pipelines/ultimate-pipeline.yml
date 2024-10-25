@@ -1808,8 +1808,8 @@ stages:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
       # We're not using our _usual_ VMSS scale set because
-      # couldn't work out how to get Azure Functions working with Azurite...
-      vmImage: windows-2022
+      # couldn't work out how to get Azure 
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1819,14 +1819,20 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
         
+    - template: steps/install-msi.yml
+      parameters:
+        # Pin to a specific version of Azure Functions, as beyond this requires Azurite 
+        url: "https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi"
+        filename: "func-cli-4.0.6280-x64.msi"
+        addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
+
     - script: func
       displayName: 'Display Azure Functions core tools'
       workingDirectory: $(Pipeline.Workspace)
 
     - script: |
-        npx --yes --loglevel info azurite --version
-        npx --yes azurite --silent --inMemoryPersistence &
-      displayName: 'Install and start Azurite Emulator'
+        "%ProgramFiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
+      displayName: 'Start Azure Storage Emulator'
       workingDirectory: $(Pipeline.Workspace)
       retryCountOnTaskFailure: 5
 
