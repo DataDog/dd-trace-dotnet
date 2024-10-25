@@ -281,10 +281,13 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         {
             Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
 
-            WriteLock wlock(m_rejit_history_lock);
-            for (auto i = 0; i < modulesVector.size(); i++)
+            if (enable_rejit_tracking)
             {
-                m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
+                WriteLock wlock(m_rejit_history_lock);
+                for (auto i = 0; i < modulesVector.size(); i++)
+                {
+                    m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
+                }
             }
         }
         else
@@ -499,8 +502,22 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     }
 }
 
+void RejitHandler::SetRejitTracking(bool enabled) {
+    if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    enable_rejit_tracking = enabled;
+}
+
 bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
     if (IsShutdownRequested())
+    {
+        return false;
+    }
+
+    if (!enable_rejit_tracking)
     {
         return false;
     }
