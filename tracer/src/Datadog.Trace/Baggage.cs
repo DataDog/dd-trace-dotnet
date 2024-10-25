@@ -112,7 +112,7 @@ internal class Baggage : IDictionary<string, string>
 
         set
         {
-            Set(key, value);
+            AddOrReplace(key, value);
         }
     }
 
@@ -159,7 +159,7 @@ internal class Baggage : IDictionary<string, string>
     /// </summary>
     /// <param name="key">The baggage item name.</param>
     /// <param name="value">The baggage item value.</param>
-    public void Set(string key, string value)
+    public void AddOrReplace(string key, string value)
     {
         var list = EnsureListInitialized();
 
@@ -220,7 +220,7 @@ internal class Baggage : IDictionary<string, string>
         return false;
     }
 
-    public void Add(string key, string value)
+    void IDictionary<string, string>.Add(string key, string value)
     {
         var items = EnsureListInitialized();
 
@@ -240,7 +240,7 @@ internal class Baggage : IDictionary<string, string>
 
     void ICollection<KeyValuePair<string, string>>.Add(KeyValuePair<string, string> item)
     {
-        Add(item.Key, item.Value);
+        ((IDictionary<string, string>)this).Add(item.Key, item.Value);
     }
 
     /// <summary>
@@ -288,7 +288,7 @@ internal class Baggage : IDictionary<string, string>
     /// </summary>
     /// <param name="name">The baggage item name.</param>
     /// <returns>Returns the baggage item value, or <c>null</c> if not found.</returns>
-    public string? Get(string name)
+    public string? GetValueOrDefault(string name)
     {
         if (name == null!)
         {
@@ -302,7 +302,7 @@ internal class Baggage : IDictionary<string, string>
     /// Gets all baggage values.
     /// </summary>
     /// <returns>A new array that contains all baggage values.</returns>
-    public KeyValuePair<string, string>[] GetAll()
+    public KeyValuePair<string, string>[] GetAllItems()
     {
         if (_items is { } list)
         {

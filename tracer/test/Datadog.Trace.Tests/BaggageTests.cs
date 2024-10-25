@@ -24,7 +24,7 @@ public class BaggageTests
         var baggage = new Baggage(new Dictionary<string, string> { { "key1", "value1" } });
         baggage.Count.Should().Be(1);
 
-        baggage.Set("key2", "value2");
+        baggage.AddOrReplace("key2", "value2");
         baggage.Count.Should().Be(2);
     }
 
@@ -32,7 +32,7 @@ public class BaggageTests
     public void Get_ReturnsNull_WhenItemDoesNotExist()
     {
         var baggage = new Baggage();
-        var value = baggage.Get("nonexistent");
+        var value = baggage.GetValueOrDefault("nonexistent");
         value.Should().BeNull();
     }
 
@@ -40,7 +40,7 @@ public class BaggageTests
     public void Get_ReturnsValue_WhenItemExists()
     {
         var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
-        var value = baggage.Get("key");
+        var value = baggage.GetValueOrDefault("key");
         value.Should().Be("value");
     }
 
@@ -48,9 +48,9 @@ public class BaggageTests
     public void Set_AddsNewItem_WhenItemDoesNotExist()
     {
         var baggage = new Baggage();
-        baggage.Set("key", "value");
+        baggage.AddOrReplace("key", "value");
 
-        var value = baggage.Get("key");
+        var value = baggage.GetValueOrDefault("key");
         value.Should().Be("value");
     }
 
@@ -58,9 +58,9 @@ public class BaggageTests
     public void Set_UpdatesItem_WhenItemExists()
     {
         var baggage = new Baggage(new Dictionary<string, string> { { "key", "value1" } });
-        baggage.Set("key", "value2");
+        baggage.AddOrReplace("key", "value2");
 
-        var value = baggage.Get("key");
+        var value = baggage.GetValueOrDefault("key");
         value.Should().Be("value2");
     }
 
@@ -76,19 +76,19 @@ public class BaggageTests
     public void Remove_ReturnsTrue_WhenItemExists()
     {
         var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
-        baggage.Get("key").Should().Be("value");
+        baggage.GetValueOrDefault("key").Should().Be("value");
 
         var result = baggage.Remove("key");
 
         result.Should().BeTrue();
-        baggage.Get("key").Should().BeNull();
+        baggage.GetValueOrDefault("key").Should().BeNull();
     }
 
     [Fact]
     public void Clear_RemovesAllItems()
     {
         var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
-        baggage.Get("key").Should().Be("value");
+        baggage.GetValueOrDefault("key").Should().Be("value");
         baggage.Count.Should().Be(1);
 
         baggage.Clear();
@@ -103,7 +103,7 @@ public class BaggageTests
 
         baggage1.Merge(baggage2);
 
-        baggage1.Get("key1").Should().Be("value1");
-        baggage1.Get("key2").Should().Be("value2");
+        baggage1.GetValueOrDefault("key1").Should().Be("value1");
+        baggage1.GetValueOrDefault("key2").Should().Be("value2");
     }
 }
