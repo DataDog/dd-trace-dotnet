@@ -1828,14 +1828,14 @@ stages:
       displayName: 'Display Azure Functions core tools'
       workingDirectory: $(Pipeline.Workspace)
 
+    # For some ridiculous reason, Azure won't let you run it in the background,
+    # so we have to run it in the same step and kill it with fire
+    # https://github.com/Azure/Azurite/issues/589
     - script: |
-        "%ProgramFiles(x86)%\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe" start
-      displayName: 'Start Azure Storage Emulator'
-      workingDirectory: $(Pipeline.Workspace)
-      retryCountOnTaskFailure: 5
-
-    - script: tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: Run Azure Functions tests
+        start /B "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\Microsoft\Azure Storage Emulator\azurite.exe"
+        tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
+        taskkill /f /im azurite.exe
+      displayName: Start Azurite and Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
