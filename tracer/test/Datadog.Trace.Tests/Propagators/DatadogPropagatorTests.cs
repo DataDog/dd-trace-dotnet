@@ -291,6 +291,8 @@ namespace Datadog.Trace.Tests.Propagators
                           PropagatedTags = PropagatedTagsCollection,
                           IsRemote = true,
                       });
+
+            result.Baggage.Should().BeNull();
         }
 
         [Fact]
