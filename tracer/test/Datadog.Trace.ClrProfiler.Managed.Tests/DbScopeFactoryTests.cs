@@ -201,6 +201,38 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             command.CommandText.Should().Be(injectedTest);
         }
 
+        [Fact]
+        public async Task CreateDbCommandScope_DetectsCommandIsReusedOnAppend()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            // adding a query plan hint to trigger
+            command.CommandText = "/*+ IndexScan(a) */ " + DbmCommandText;
+
+            IConfigurationSource source = new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } });
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            // Should have injected the data once, not prepended
+            var injectedTest = command.CommandText.Should()
+                                      .NotBe(DbmCommandText)
+                                      .And.NotEndWith(DbmCommandText)
+                                      .And.Contain(DbmCommandText)
+                                      .And.Subject;
+
+            // second attempt should still have the same data
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            command.CommandText.Should().Be(injectedTest);
+        }
+
         [Theory]
         [MemberData(nameof(GetEnabledDbmData))]
         public async Task CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(Type commandType, string dbmMode)
