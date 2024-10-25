@@ -101,6 +101,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                    operationName?.StartsWith("rabbitmq.client.", StringComparison.OrdinalIgnoreCase) == true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetCodeOrigin(ISpan? span, ISpan rootSpan)
         {
             if (span == null || !Settings.CodeOriginForSpansEnabled)
@@ -110,28 +111,142 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
             if (IsExitSpan(span))
             {
-                CaptureExitSpanLocation(span, rootSpan);
+                AddExitSpanTag(span);
             }
         }
 
-        private static void CaptureExitSpanLocation(ISpan span, ISpan rootSpan)
+        private static void AddExitSpanTag(ISpan span)
         {
             var frames = ArrayPool<StackFrame>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
-            var probes = ArrayPool<SpanOriginProbe>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
+            try
+            {
+                var framesLength = PopulateUserFrames(frames);
+                if (framesLength == 0)
+                {
+                    Log.Warning("No user frames has founded");
+                    return;
+                }
+
+                var tagValue = CreateExitTagValue(frames);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    Log.Error("Failed to create tag for {CodeOriginTag}", CodeOriginTag);
+                    return;
+                }
+
+                span.SetTag(CodeOriginTag, tagValue);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to create exit span tag for {Span}", span.SpanId);
+            }
+            finally
+            {
+                if (frames != null)
+                {
+                    ArrayPool<StackFrame>.Shared.Return(frames, true);
+                }
+            }
+        }
+
+        private static int PopulateUserFrames(StackFrame[] frames)
+        {
+            var stackTrace = new StackTrace(true);
+            var stackFrames = stackTrace.GetFrames();
+
+            if (stackFrames == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+            for (var i = 3; i < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; i++)
+            {
+                var frame = stackFrames[i];
+
+                var assembly = frame.GetMethod()?.DeclaringType?.Module.Assembly;
+                if (assembly == null)
+                {
+                    continue;
+                }
+
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes))
+                {
+                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
+                    continue;
+                }
+
+                frames[count++] = frame;
+            }
+
+            return count;
+        }
+
+        private static string CreateExitTagValue(StackFrame[] frames)
+        {
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
             try
             {
-                CaptureUserFrames(frames);
                 sb.Append("{\"type\":\"").Append("exit").Append("\",\"frames\":[");
-
-                for (int i = 0; i < frames.Length; i++)
+                for (var i = 0; i < frames.Length; i++)
                 {
                     if (i > 0)
                     {
                         sb.Append(',');
                     }
 
-                    AppendFrame(sb, frames[i]);
+                    AppendFrame(frames[i]);
+                }
+                sb.Append("]}");
+            }
+            catch (Exception)
+            {
+                StringBuilderCache.Release(sb);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+
+            void AppendFrame(StackFrame frame)
+            {
+                sb.Append('{');
+
+                var fileName = frame.GetFileName();
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    sb.Append("\"file\":\"").Append(fileName.Replace("\\", "\\\\")).Append("\",");
+                    sb.Append("\"line\":").Append(frame.GetFileLineNumber());
+
+                    int column = frame.GetFileColumnNumber();
+                    if (column > 0)
+                    {
+                        sb.Append(",\"column\":").Append(column);
+                    }
+                }
+
+                var method = frame.GetMethod();
+                if (method != null)
+                {
+                    sb.Append(",\"method\":\"").Append(method.Name).Append("\"");
+
+                    if (method.DeclaringType != null)
+                    {
+                        sb.Append(",\"type\":\"").Append(method.DeclaringType.FullName).Append("\"");
+                    }
+                }
+
+                sb.Append(",\"snapshot_id\":\"").Append("snapshot_id_placeholder").Append("\"");
+
+                sb.Append('}');
+            }
+        }
+
+        private static void InstrumentSpanOriginProbes(StackFrame[] frames, ISpan rootSpan)
+        {
+            var probes = ArrayPool<SpanOriginProbe>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
+            try
+            {
+                for (var i = 0; i < frames.Length; i++)
+                {
                     var probe = CreateSpanOriginProbe(frames[i]);
                     if (probe != null)
                     {
@@ -139,34 +254,16 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                         rootSpan.SetTag(probe.Id, string.Empty);
                     }
                 }
-
-                sb.Append("]}");
-
-                span.SetTag(CodeOriginTag, sb.ToString());
-
-                LiveDebugger.Instance.UpdateAddedProbeInstrumentations(probes);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "");
             }
             finally
             {
-                if (sb != null)
-                {
-                    StringBuilderCache.Release(sb);
-                }
-
-                if (frames != null)
-                {
-                    ArrayPool<StackFrame>.Shared.Return(frames, true);
-                }
-
                 if (probes != null)
                 {
                     ArrayPool<SpanOriginProbe>.Shared.Return(probes, true);
                 }
             }
+
+            LiveDebugger.Instance.UpdateAddedProbeInstrumentations(probes);
         }
 
         private static SpanOriginProbe? CreateSpanOriginProbe(StackFrame frame)
@@ -188,68 +285,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     TypeName = type.FullName ?? type.Name,
                 },
             };
-        }
-
-        private static void CaptureUserFrames(StackFrame[] frames)
-        {
-            var stackTrace = new StackTrace(true);
-            var stackFrames = stackTrace.GetFrames();
-
-            if (stackFrames == null)
-            {
-                return;
-            }
-
-            int count = 0;
-            for (int i = 3; i < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; i++)
-            {
-                var frame = stackFrames[i];
-
-                var assembly = frame.GetMethod()?.DeclaringType?.Module.Assembly;
-                if (assembly == null)
-                {
-                    continue;
-                }
-
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes))
-                {
-                    // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
-                    continue;
-                }
-
-                frames[count++] = frame;
-            }
-        }
-
-        private static void AppendFrame(StringBuilder sb, StackFrame frame)
-        {
-            sb.Append('{');
-
-            var fileName = frame.GetFileName();
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                sb.Append("\"file\":\"").Append(fileName.Replace("\\", "\\\\")).Append("\",");
-                sb.Append("\"line\":").Append(frame.GetFileLineNumber());
-
-                int column = frame.GetFileColumnNumber();
-                if (column > 0)
-                {
-                    sb.Append(",\"column\":").Append(column);
-                }
-            }
-
-            var method = frame.GetMethod();
-            if (method != null)
-            {
-                sb.Append(",\"method\":\"").Append(method.Name).Append("\"");
-
-                if (method.DeclaringType != null)
-                {
-                    sb.Append(",\"type\":\"").Append(method.DeclaringType.FullName).Append("\"");
-                }
-            }
-
-            sb.Append('}');
         }
     }
 }

@@ -343,7 +343,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            SetCodeOrigin();
+            SetCodeOrigin(snapshotCreator, ref shouldStopCapture);
 
             SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
