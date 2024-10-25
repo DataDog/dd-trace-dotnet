@@ -179,7 +179,14 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        // check TODO
+        /// <summary>
+        /// This method handles new config files sent from RCM. First we notify configuration state class that a new config is received (files are going to be stored without deserialization first to reduce memory footprint)
+        /// Configuration state, given its state and the contents of asm features file (toggling appsec) will take its decision. And we react accordingly, following what it says to do: turning on / off / update the waf
+        /// After all treatment, incoming update state is reset
+        /// </summary>
+        /// <param name="configsByProduct">new configs or updates</param>
+        /// <param name="removedConfigs">removed files</param>
+        /// <returns>apply details to be sent back to rcm</returns>
         private ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
         {
             string? rcmUpdateError = null;

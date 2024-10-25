@@ -348,7 +348,7 @@ internal record ConfigurationState
         // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
         if (_canBeToggled)
         {
-            var rcmEnable = !AsmFeaturesByFile.IsEmpty() && AsmFeaturesByFile.All(a => a.Value?.Enabled is null or true);
+            var rcmEnable = !AsmFeaturesByFile.Any(a => a.Value?.Enabled is false);
             if (!appsecCurrentlyEnabled)
             {
                 IncomingUpdateState.ShouldInitAppsec = rcmEnable;
@@ -361,7 +361,7 @@ internal record ConfigurationState
 
         // empty, one value, or all values the same are valid states, anything else is an error
         var autoUserInstrumMode = AutoUserInstrumByFile.Values.FirstOrDefault(x => x?.Mode is not null);
-        if (autoUserInstrumMode != null && !AutoUserInstrumByFile.All(x => x.Value?.Mode is null || x.Value?.Mode == autoUserInstrumMode?.Mode))
+        if (autoUserInstrumMode is not null && AutoUserInstrumByFile.Any(x => x.Value?.Mode is not null && x.Value.Mode != autoUserInstrumMode.Mode))
         {
             AutoUserInstrumMode = "unknown value";
             Log.Error(
