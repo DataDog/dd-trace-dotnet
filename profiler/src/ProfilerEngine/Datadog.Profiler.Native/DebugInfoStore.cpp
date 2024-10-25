@@ -128,7 +128,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     catch (PPDB::Exception const& ec)
     {
         Log::Warn("Failed to parse debug info from ", pdbFile,
-                  ".(Module: ", modulfilePathId, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
+                  ".(Module: ", filePath, "Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {
