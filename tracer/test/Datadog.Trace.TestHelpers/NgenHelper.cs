@@ -21,6 +21,9 @@ public static class NgenHelper
 
         var install = $"install \"{appFilename}\"";
         RunNgen(output, workingDirectory, install);
+
+        // display NGEN'd assemblies
+        RunNgen(output, workingDirectory, "display");
     }
 
     public static void UninstallFromNativeImageCache(ITestOutputHelper output, string applicationPath)
@@ -28,8 +31,11 @@ public static class NgenHelper
         var appFilename = Path.GetFileName(applicationPath);
         var workingDirectory = Path.GetDirectoryName(applicationPath);
 
-        var install = $"install \"{appFilename}\"";
+        var install = $"uninstall \"{appFilename}\"";
         RunNgen(output, workingDirectory, install);
+
+        // display NGEN'd assemblies
+        RunNgen(output, workingDirectory, "display");
     }
 
     private static void RunNgen(ITestOutputHelper output, string workingDirectory, string arguments)
