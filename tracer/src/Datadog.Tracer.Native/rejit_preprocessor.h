@@ -41,6 +41,7 @@ public:
     virtual bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) = 0;
     virtual void RemoveModule(ModuleID moduleId) = 0;
     virtual void AddNGenInlinerModule(ModuleID moduleId) = 0;
+    virtual std::vector<ModuleID> GetAllNGenInlinerModules() = 0;
 
     virtual HRESULT RejitMethod(FunctionControlWrapper& functionControl) = 0;
 };
@@ -110,6 +111,8 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
     void RemoveModule(ModuleID moduleId) override;
     void AddNGenInlinerModule(ModuleID moduleId) override;
+    std::vector<ModuleID> GetAllNGenInlinerModules() override;
+
     HRESULT RejitMethod(FunctionControlWrapper& functionControl) override;
 
     void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,

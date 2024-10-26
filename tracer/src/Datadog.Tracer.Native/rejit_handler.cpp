@@ -44,83 +44,202 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
-{
-    // Enumerate all inliners and request rejit
-    ModuleID currentModuleId = m_module->GetModuleId();
-    mdMethodDef currentMethodDef = m_methodDef;
 
+bool GetInlinersInModule(ICorProfilerInfo7* pInfo, ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId,
+                         std::vector<ModuleID>& modules, std::vector<mdMethodDef>& methods, std::vector<ModuleID>& allModules)
+{
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
-    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,
-                  ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
+    Logger::Debug("GetInlinersInModule for ", "[ModuleInliner=", inlinersModuleId,
+                  ", ModuleId=", inlineeModuleId, ", MethodDef=", inlineeMethodDef, "]");
 #endif
 
-    RejitHandler* handler = m_module->GetHandler();
-    ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
-    if (pInfo != nullptr)
+    // If we don't have the profiler info interface we bailout
+    if (pInfo == nullptr)
     {
-        // Now we enumerate all methods that inline the current methodDef
-        BOOL incompleteData = false;
-        ICorProfilerMethodEnum* methodEnum;
+        return false;
+    }
 
-        HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, &methodEnum);
-        std::ostringstream hexValue;
-        hexValue << std::hex << hr;
-        if (SUCCEEDED(hr))
+    auto inlinerModuleInfo = GetModuleInfo(pInfo, inlinersModuleId);
+    auto inlineeModuleInfo = GetModuleInfo(pInfo, inlineeModuleId);
+    ComPtr<IUnknown> inlinee_metadata_interfaces;
+    HRESULT hrmodmetadata = pInfo->GetModuleMetaData(inlineeModuleId, ofRead, IID_IMetaDataImport2,
+                                          inlinee_metadata_interfaces.GetAddressOf());
+    if (Logger::IsDebugEnabled())
+    {
+        if (hrmodmetadata == S_OK)
         {
-            COR_PRF_METHOD method;
-            unsigned int total = 0;
-            std::vector<ModuleID> modules;
-            std::vector<mdMethodDef> methods;
-            while (methodEnum->Next(1, &method, nullptr) == S_OK)
-            {
-                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                              ",MethodDef=", method.methodId, "]");
-                modules.push_back(method.moduleId);
-                methods.push_back(method.methodId);
-                total++;
-            }
-            methodEnum->Release();
-            methodEnum = nullptr;
-            if (total > 0)
-            {
-                handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
-            }
-
-            if (incompleteData)
-            {
-                Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
-                return false;
-            }
-        }
-        else if (hr == E_INVALIDARG)
-        {
-            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
-        }
-        else if (hr == CORPROF_E_DATAINCOMPLETE)
-        {
-            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
-
-            return false;
-        }
-        else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
-        {
-            Logger::Info("NGEN:: Unsupported call sequence error in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
+            const auto& metadata_import = inlinee_metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            auto functionInfo = GetFunctionInfo(metadata_import, inlineeMethodId);
+            Logger::Debug("GetInlinersInModule:: Analizing module ",
+                         inlinersModuleId,
+                         " (",
+                         inlinerModuleInfo.assembly.name,
+                         ") as inliner for ",
+                         "inlinee [",
+                         "ModuleId=",
+                         inlineeModuleId, ", ", "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                         "NGEN=", inlineeModuleInfo.IsNGEN(), ", ", "MethodDef=", inlineeMethodId, ", ",
+                         "MethodName=", functionInfo.type.name, ".", functionInfo.name, "()]");
         }
         else
         {
-            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                         ", HR=", hexValue.str(), "]");
+            Logger::Debug("GetInlinersInModule:: Analizing module ",
+                         inlinersModuleId,
+                         " (",
+                         inlinerModuleInfo.assembly.name,
+                         ") as inliner for ",
+                         "inlinee [",
+                         "ModuleId=",
+                         inlineeModuleId, ", ", "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                         "NGEN=", inlineeModuleInfo.IsNGEN(), ", ", "MethodDef=", inlineeMethodId, "]");
+        }
+    }
+
+    // Now we enumerate all methods that inline the inlinee methodDef
+    BOOL incompleteData = false;
+    ICorProfilerMethodEnum* methodEnum;
+
+    HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(inlinersModuleId, inlineeModuleId, inlineeMethodId,
+                                                                &incompleteData, &methodEnum);
+    std::ostringstream hexValue;
+    hexValue << std::hex << hr;
+
+    if (SUCCEEDED(hr))
+    {
+        COR_PRF_METHOD method;
+        unsigned int total = 0;
+        while (methodEnum->Next(1, &method, nullptr) == S_OK)
+        {
+            modules.push_back(method.moduleId);
+            methods.push_back(method.methodId);
+            total++;
+
+            // if (Logger::IsDebugEnabled())
+            {
+                auto moduleInfo = GetModuleInfo(pInfo, method.moduleId);
+                ComPtr<IUnknown> metadata_interfaces;
+                HRESULT hr = pInfo->GetModuleMetaData(method.moduleId, ofRead,IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+                if (hr == S_OK && hrmodmetadata == S_OK)
+                {
+                    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                    auto functionInfo = GetFunctionInfo(metadata_import, method.methodId);
+                    const auto& inlinee_metadata_import = inlinee_metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                    auto inlineeFunctionInfo = GetFunctionInfo(inlinee_metadata_import, inlineeMethodId);
+
+                    Logger::Info("GetInlinersInModule:: Asking rewrite for inliner ["
+                                  "ModuleId=", method.moduleId, ", ",
+                                  "ModuleName=", moduleInfo.assembly.name, ", ",
+                                  "NGEN=", moduleInfo.IsNGEN(), ", ",
+                                  "MethodDef=", method.methodId, ", ",
+                                  "MethodName=", functionInfo.type.name, ".", functionInfo.name,
+                                  "()] inlining: ["
+                                 "ModuleId=", inlineeModuleId, ", ",
+                                 "ModuleName=", inlineeModuleInfo.assembly.name, ", ",
+                                 "NGEN=", inlineeModuleInfo.IsNGEN(), ", ",
+                                 "MethodDef=", inlineeMethodId, ", ",
+                                 "MethodName=", inlineeFunctionInfo.type.name, ".", inlineeFunctionInfo.name,
+                                 "()]");
+                }
+                else {
+                    Logger::Info("GetInlinersInModule:: Asking rewrite for inliner ["
+                                  "ModuleId=", method.moduleId, ", ",
+                                  "ModuleName=", moduleInfo.assembly.name, ", ",
+                                  "NGEN=", moduleInfo.IsNGEN(), ", ",
+                                  "MethodDef=", method.methodId, "]");
+                }
+
+
+            }
+        }
+        methodEnum->Release();
+        methodEnum = nullptr;
+
+        for (unsigned int i=0; i < total; i++)
+        {
+            ModuleID currentCascadeModuleId = modules[i];
+            mdMethodDef currentCascadeMethodId = methods[i];
+
+            for (ModuleID cascadeInlinerModuleId : allModules)
+            {
+                GetInlinersInModule(pInfo, cascadeInlinerModuleId, currentCascadeModuleId, currentCascadeMethodId, modules, methods, allModules);
+                auto newTotal = modules.size();
+                auto diff = newTotal - total;
+                if (diff > 0)
+                {
+                    Logger::Info("GetInlinersInModule:: Added ", diff, " rewrites on cascade by the inliner moduleID: ", cascadeInlinerModuleId);
+                    total = newTotal;
+                }
+            }
+        }
+    }
+    else if (hr == E_INVALIDARG)
+    {
+        Logger::Info("GetInlinersInModule:: Error Invalid arguments in [ModuleId=", inlineeModuleId,
+                     ",MethodDef=", inlineeMethodId, ", HR=", hexValue.str(), "]");
+    }
+    else if (hr == CORPROF_E_DATAINCOMPLETE)
+    {
+        Logger::Info("GetInlinersInModule:: Error Incomplete data in [ModuleId=", inlineeModuleId, ",MethodDef=", inlineeMethodId,
+                     ", HR=", hexValue.str(), "]");
+
+        return false;
+    }
+    else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
+    {
+        Logger::Info("GetInlinersInModule:: Unsupported call sequence error in [ModuleId=", inlineeModuleId,
+                     ",MethodDef=", inlineeMethodId, ", HR=", hexValue.str(), "]");
+    }
+    else
+    {
+        Logger::Info("GetInlinersInModule:: Error in [ModuleId=", inlineeModuleId, ",MethodDef=", inlineeMethodId,
+                     ", HR=", hexValue.str(), "]");
+    }
+
+    return true;
+}
+
+bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
+{
+    // m_module->GetHandler()
+    // Enumerate all inliners and request rejit
+    ModuleID currentModuleId = m_module->GetModuleId();
+    mdMethodDef currentMethodDef = m_methodDef;
+    RejitHandler* handler = m_module->GetHandler();
+    ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
+    std::vector<ModuleID> allModules = handler->GetAllNGenInlinerModules();
+    if (pInfo != nullptr)
+    {
+        // Now we enumerate all methods that inline the current methodDef
+        std::vector<ModuleID> modules;
+        std::vector<mdMethodDef> methods;
+
+        auto result = GetInlinersInModule(pInfo, moduleId, currentModuleId, currentMethodDef, modules, methods, allModules);
+        if (result)
+        {
+            auto total = modules.size();
+            if (total > 0)
+            {
+                handler->EnqueueForRejit(modules, methods);
+                auto currentModuleInfo = GetModuleInfo(pInfo, currentModuleId);
+                auto fInfo = GetFunctionInfo();
+                if (fInfo != nullptr)
+                {
+                    Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                                 ", ModuleName=", currentModuleInfo.assembly.name,
+                                 ", MethodDef=", currentMethodDef, ", MethodName=",
+                                 fInfo->type.name, ".", fInfo->name, "()]");
+                }
+                else
+                {
+                    Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                                 ", ModuleName=", currentModuleInfo.assembly.name,
+                                 ", MethodDef=", currentMethodDef, "]");
+                }
+            }
         }
 
-        return true;
+        return result;
     }
 
     return false;
@@ -280,6 +399,12 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         if (SUCCEEDED(hr))
         {
             Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
+            WriteLock wlock(m_rejit_history_lock);
+            for (auto i = 0; i < modulesVector.size(); i++)
+            {
+                // std::tuple<ModuleID, mdMethodDef>(modulesVector[i], modulesMethodDef[i])
+                m_rejit_history.push_back({modulesVector[i], modulesMethodDef[i]});
+            }
         }
         else
         {
@@ -491,6 +616,44 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     {
         rejitter->AddNGenInlinerModule(moduleId);
     }
+}
+
+std::vector<ModuleID> RejitHandler::GetAllNGenInlinerModules() {
+    std::vector<ModuleID> modules;
+
+    if (IsShutdownRequested())
+    {
+        return modules;
+    }
+
+    for (auto rejitter : m_rejitters)
+    {
+        for (auto module : rejitter->GetAllNGenInlinerModules())
+        {
+            modules.push_back(module);
+        }
+    }
+
+    return modules;
+}
+
+bool RejitHandler::HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef) {
+    if (IsShutdownRequested())
+    {
+        return false;
+    }
+
+    ReadLock rlock(m_rejit_history_lock);
+    for (auto i = 0; i < m_rejit_history.size(); i++)
+    {
+        auto mod_met_pair = m_rejit_history[i];
+        if (get<0>(mod_met_pair) == moduleId && get<1>(mod_met_pair) == methodDef)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace trace
