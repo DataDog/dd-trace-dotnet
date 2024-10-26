@@ -20,7 +20,7 @@
 class LibrariesInfoCache : public ServiceBase
 {
 public:
-    LibrariesInfoCache(MemoryResourceManager& resourceManager);
+    LibrariesInfoCache(shared::pmr::memory_resource* resource);
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const&) = delete;

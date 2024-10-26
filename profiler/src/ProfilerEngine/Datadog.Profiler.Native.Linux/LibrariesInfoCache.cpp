@@ -18,12 +18,10 @@ LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
-LibrariesInfoCache::LibrariesInfoCache(MemoryResourceManager& resourceManager) :
+LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
     _event(true),
-    // We use a 100 blocks of 1Kib for now.
-    // TODO check that is good enough
-    _wrappersAllocator{resourceManager.GetSynchronizedPool(100, 1024)}
+    _wrappersAllocator{resource}
 {
 }
 
