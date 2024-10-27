@@ -334,6 +334,11 @@ namespace Datadog.Trace.Configuration
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
 
+            SingleWebSpanEnabled = RouteTemplateResourceNamesEnabled // always disabled if route template resources names disabled
+                                && config
+                                  .WithKeys(ConfigurationKeys.FeatureFlags.SingleWebSpanEnabled)
+                                  .AsBool(defaultValue: false);
+
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                          .AsBool(defaultValue: !RouteTemplateResourceNamesEnabled); // disabled by default if route template resource names enabled
@@ -949,6 +954,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the feature flag to enable single-web spans is enabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleWebSpanEnabled"/>
+        internal bool SingleWebSpanEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether resource names for ASP.NET and ASP.NET Core spans should be expanded. Only applies
