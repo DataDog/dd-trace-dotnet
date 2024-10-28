@@ -105,17 +105,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     {
                         var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
 
-                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        // This only works for Microsoft SQL Server
-                        // FIXME: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
-                        //        Since the feature isn't available for Npgsql, just skipping over it for now.
+                        var traceParentInjectedInContext = false;
                         if (propagationMode == DbmPropagationLevel.Full && integrationId == IntegrationId.SqlClient)
                         {
-                            var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(propagationMode, integrationId, command.Connection, scope.Span);
-                            if (traceParentInjectedInComment || traceParentInjectedInContext)
-                            {
-                                tags.DbmTraceInjected = "true";
-                            }
+                            // FIXME: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
+                            //        Since the feature isn't available for Npgsql, just skipping over it for now.
+                            // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                            // This only works for Microsoft SQL Server
+                            traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(propagationMode, integrationId, command.Connection, scope.Span);
+                        }
+
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
+                        {
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }
