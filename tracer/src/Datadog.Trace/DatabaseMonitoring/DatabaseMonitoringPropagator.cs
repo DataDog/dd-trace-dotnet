@@ -31,6 +31,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string ContextInfoParameterName = "@dd_trace_context";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
 
+        private static readonly char[] PgHintPrefix = ['/', '*', '+']; // the characters that identify a pg_hint_plan
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
 
         private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
@@ -128,36 +129,11 @@ namespace Datadog.Trace.DatabaseMonitoring
 
         /// <summary>
         /// Detect if a command contains a pg_hint_plan.
-        /// Basically equivalent to `commandText.TrimStart().StartsWith("/*+")` except it avoids the new string allocation that Trim does.
         /// </summary>
         private static bool StartsWithHint(string commandText)
         {
-            var commandIndex = 0;
-            // skip leading whitespace
-            while (commandIndex < commandText.Length && char.IsWhiteSpace(commandText[commandIndex]))
-            {
-                commandIndex++;
-            }
-
-            // the pattern we are looking for
-            var pattern = "/*+";
-            for (var patternIndex = 0; patternIndex < pattern.Length; patternIndex++, commandIndex++)
-            {
-                if (commandIndex >= commandText.Length)
-                {
-                    // we reached the end of the command before reaching the end of the pattern
-                    return false;
-                }
-
-                if (commandText[commandIndex] != pattern[patternIndex])
-                {
-                    // pattern does not match
-                    return false;
-                }
-            }
-
-            // if we reach here, it means we were able to validate all chars of the pattern
-            return true;
+            // using .AsSpan() prevents from allocating a new string when we use TrimStart
+            return commandText.AsSpan().TrimStart().StartsWith(PgHintPrefix);
         }
 
         /// <summary>
