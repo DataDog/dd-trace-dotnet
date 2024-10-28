@@ -6,10 +6,6 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
-#include <string.h>
-
-#include <linux/futex.h> /* Definition of FUTEX_* constants */
-#include <sys/syscall.h> /* Definition of SYS_* constants */
 #include <unistd.h>
 
 using namespace std::chrono_literals;

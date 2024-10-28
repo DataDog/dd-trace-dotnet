@@ -7,7 +7,6 @@
 #include <memory>
 #include <stdlib.h>
 #include <string.h>
-#include <tuple>
 #include <functional>
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
