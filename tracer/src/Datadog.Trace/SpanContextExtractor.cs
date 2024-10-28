@@ -81,7 +81,6 @@ namespace Datadog.Trace
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
             var context = SpanContextPropagator.Instance.Extract(carrier, getter);
-            Baggage.Current.Merge(context.Baggage);
 
             // DSM
             if (context.SpanContext is { } spanContext

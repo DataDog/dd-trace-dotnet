@@ -70,16 +70,18 @@ namespace Datadog.Trace
             if (messageType != null && target == null) { ThrowHelper.ThrowArgumentNullException(nameof(target)); }
             else if (messageType == null && target != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            var spanContext = context as SpanContext;
+            if (context is not SpanContext spanContext)
+            {
+                return;
+            }
 
             SpanContextPropagator.Instance.Inject(
-                    new PropagationContext(spanContext, Baggage.Current),
-                    carrier,
-                    setter);
+                new PropagationContext(spanContext, baggage: null),
+                carrier,
+                setter);
 
             // DSM
-            if (spanContext is not null &&
-                !string.IsNullOrEmpty(messageType) &&
+            if (!string.IsNullOrEmpty(messageType) &&
                 !string.IsNullOrEmpty(target) &&
                 Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
