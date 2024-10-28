@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
     internal class SpanCodeOriginManager
     {
-        private const string CodeOriginTag = "_dd.code_origin_";
+        private const string CodeOriginTag = "_dd.code_origin";
         private static readonly DebuggerSettings Settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return;
                 }
 
-                span.Tags.SetTag($"{CodeOriginTag}.Type", "exit");
+                span.Tags.SetTag($"{CodeOriginTag}.type", "exit");
 
                 for (int i = 0; i < framesLength; i++)
                 {
