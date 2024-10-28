@@ -340,14 +340,16 @@ services:
 
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
-  IntegrationTests.IIS:
+  IntegrationTests.IIS.LoaderOptimizationStartup:
     build:
       context: ./
       args:
         - ENABLE_32_BIT
         - DOTNET_TRACER_MSI
-      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
+      dockerfile: ./tracer/build/_build/docker/iis.loaderoptimization.dockerfile
     image: datadog-iis-loaderoptimizationregkey
+    volumes:
+    - ./artifacts/build_data/logs/LoaderOptimizationStartup:c:/ProgramData/Datadog .NET Tracer/logs
     ports:
     - "8080:80"
     environment:

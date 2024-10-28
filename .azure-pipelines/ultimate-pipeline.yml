@@ -2012,7 +2012,7 @@ stages:
     pool:
       name: azure-windows-scale-set-2
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
     steps:
     - template: steps/clone-repo.yml
@@ -2029,14 +2029,15 @@ stages:
       inputs:
         artifact: windows-msi-$(targetPlatform)
         patterns: '**/*-$(targetPlatform).msi'
-        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+        path: $(System.DefaultWorkingDirectory)$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - script: |
-        docker compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker compose up -d IntegrationTests.IIS
+    - powershell: |
+        mkdir -Force "./artifacts/build_data/logs/LoaderOptimizationStartup"
+        docker compose build --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationStartup
+        docker compose up -d IntegrationTests.IIS.LoaderOptimizationStartup
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
