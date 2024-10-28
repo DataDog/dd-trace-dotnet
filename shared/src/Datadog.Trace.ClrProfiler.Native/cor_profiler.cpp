@@ -159,6 +159,7 @@ namespace datadog::shared::nativeloader
             // We don't want to instrument _build_ processes in dotnet by default, as they generally
             // don't give useful information, add latency, and risk triggering bugs in the runtime,
             // particularly around shutdown, like this one: https://github.com/dotnet/runtime/issues/55441
+            // Note that you should also consider adding to the SSI tracer/build/artifacts/requirements.json file
            const auto [process_command_line , tokenized_command_line]  = GetCurrentProcessCommandLine();
             Log::Info("Process CommandLine: ", process_command_line);
 
@@ -256,25 +257,13 @@ namespace datadog::shared::nativeloader
         }
 
         //
-        // Initialize the dispatcher
+        // Get and set profiler pointers
         //
         if (m_dispatcher == nullptr)
         {
-            Log::Error("Dispatcher is not set.");
             single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
-
-        if (FAILED(m_dispatcher->Initialize()))
-        {
-            Log::Error("Error initializing the dispatcher.");
-            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
-        }
-
-        //
-        // Get and set profiler pointers
-        //
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
         if (cpInstance != nullptr)
         {

@@ -171,7 +171,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.4.0
+  ToolVersion: 3.5.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -978,7 +978,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -998,7 +998,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1023,7 +1023,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - checkout: none
 
@@ -1325,7 +1325,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1392,7 +1392,7 @@ stages:
   - job: managed
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1817,11 +1817,12 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
         
-    # Not using chocolatey as we're getting 429 Too Many Requests
     - template: steps/install-msi.yml
       parameters:
-        url: "https://functionscdn.azureedge.net/public/artifacts/v4/latest/func-cli-x64.msi"
-        filename: "func-cli-x64.msi"
+        # Pin to a specific version of Azure Functions, as beyond this requires Azurite
+        # TODO: Make this floating and use azurite if necessary down the line
+        url: "https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi"
+        filename: "func-cli-4.0.6280-x64.msi"
         addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
 
     - script: func
@@ -1897,7 +1898,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -3179,11 +3180,11 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
-    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: RunExplorationTest
+    - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
+      displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -6212,7 +6213,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml

@@ -394,50 +394,9 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headers = RequestDataHelper.GetHeaders(request);
-        Dictionary<string, object>? headersDic = null;
+        var headersDic = ExtractHeadersFromRequest(request.Headers);
 
-        if (headers is not null)
-        {
-            var headerKeys = headers.Keys;
-            headersDic = new Dictionary<string, object>(headerKeys.Count);
-            foreach (string originalKey in headerKeys)
-            {
-                var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
-                if (keyForDictionary != "cookie")
-                {
-                    if (!headersDic.ContainsKey(keyForDictionary))
-                    {
-                        headersDic.Add(keyForDictionary, GetHeaderValueForWaf(headers.GetValues(originalKey)));
-                    }
-                    else
-                    {
-                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
-                    }
-                }
-            }
-        }
-
-        var cookies = RequestDataHelper.GetCookies(request);
-        Dictionary<string, List<string>>? cookiesDic = null;
-
-        if (cookies != null)
-        {
-            cookiesDic = new(cookies.AllKeys.Length);
-            for (var i = 0; i < cookies.Count; i++)
-            {
-                var cookie = cookies[i];
-                var keyForDictionary = cookie.Name ?? string.Empty;
-                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-                if (!keyExists)
-                {
-                    cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
-                }
-                else
-                {
-                    value.Add(cookie.Value);
-                }
-            }
-        }
+        var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
         Dictionary<string, string[]>? queryDic = null;
@@ -508,6 +467,18 @@ internal readonly partial struct SecurityCoordinator
     private static object GetHeaderValueForWaf(string[] value)
     {
         return (value.Count() == 1 ? value[0] : value);
+    }
+
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey)
+    {
+        return GetHeaderValueForWaf(headers.GetValues(currentKey));
+    }
+
+    private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies[i];
+        key = cookie.Name;
+        value = cookie.Value;
     }
 
     public Dictionary<string, object> GetResponseHeadersForWaf()

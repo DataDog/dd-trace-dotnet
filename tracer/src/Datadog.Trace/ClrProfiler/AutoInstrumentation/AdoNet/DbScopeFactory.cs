@@ -100,15 +100,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
-                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        var propagationComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
+                        if (!string.IsNullOrEmpty(propagationComment))
                         {
-                            command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjectedInComment || traceParentInjectedInContext)
-                            {
-                                tags.DbmTraceInjected = "true";
-                            }
+                            command.CommandText = $"{propagationComment} {commandText}";
+                        }
+
+                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
+                        {
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }
@@ -170,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
+                    if (IsDisabledCommandType(commandTypeName))
                     {
                         integrationId = null;
                         dbType = null;
@@ -196,6 +198,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     };
                     return true;
             }
+        }
+
+        internal static bool IsDisabledCommandType(string commandTypeName)
+        {
+            if (string.IsNullOrEmpty(commandTypeName))
+            {
+                return false;
+            }
+
+            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+
+            if (disabledTypes is null || disabledTypes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var disabledType in disabledTypes)
+            {
+                if (string.Equals(disabledType, commandTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static class Cache<TCommand>

@@ -5,6 +5,7 @@
 
 using System;
 using System.Data;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -31,6 +32,8 @@ namespace Datadog.Trace.DatabaseMonitoring
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DatabaseMonitoringPropagator));
+
+        private static int _remainingErrorLogs = 100; // to prevent too many similar errors in the logs. We assume that after 100 logs, the incremental value of more logs is negligible.
 
         internal static string PropagateDataViaComment(DbmPropagationLevel propagationStyle, string configuredServiceName, string? dbName, string? outhost, Span span, IntegrationId integrationId, out bool traceParentInjected)
         {
@@ -133,12 +136,29 @@ namespace Datadog.Trace.DatabaseMonitoring
                 parameter.DbType = DbType.Binary;
                 injectionCommand.Parameters.Add(parameter);
 
-                injectionCommand.ExecuteNonQuery();
-
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
                     // avoid building the string representation in the general case where debug is disabled
-                    Log.Debug("Span data for DBM propagated for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
+                    Log.Debug("Propagating span data for DBM for {Integration} via context_info with value {ContextValue} (propagation level: {PropagationLevel}", integrationId, HexConverter.ToString(contextValue), propagationLevel);
+                }
+
+                try
+                {
+                    injectionCommand.ExecuteNonQuery();
+                }
+                catch (Exception e)
+                {
+                    // stop logging the error after a while
+                    if (_remainingErrorLogs > 0)
+                    {
+                        var actualRemaining = Interlocked.Decrement(ref _remainingErrorLogs);
+                        if (actualRemaining >= 0)
+                        {
+                            Log.Error<string, int>(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces. (will log this error {N} more time and then stop)", HexConverter.ToString(contextValue), actualRemaining);
+                        }
+                    }
+
+                    return false;
                 }
             }
 
