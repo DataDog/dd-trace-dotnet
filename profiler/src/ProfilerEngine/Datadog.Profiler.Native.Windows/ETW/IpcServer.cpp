@@ -32,11 +32,11 @@ IpcServer::~IpcServer()
 void IpcServer::Stop()
 {
     // Stop could be called when error and in the destructor
-    if (_stopRequested.load())
+    auto alreadyStopped = _stopRequested.exchange(true);
+    if (alreadyStopped)
     {
         return;
     }
-    _stopRequested.store(true);
 
     // we also need to close the handle to the named pipe the server is listing to in order to unblock the ConnectNamedPipe() call
     // and allow the server to really stop
