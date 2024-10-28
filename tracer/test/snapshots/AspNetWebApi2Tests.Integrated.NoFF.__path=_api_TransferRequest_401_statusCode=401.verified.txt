@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/statuscode/{value},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -29,6 +30,7 @@
     Type: web,
     ParentId: Id_4,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -49,6 +51,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
@@ -84,6 +87,7 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
     Error: 1,
     Tags: {
       aspnet.route: api/TransferRequest/{statuscode},
+      component: aspnet,
       env: integration_tests,
       error.msg: Oops, it broke. Specified status code was: 401,
       error.stack:
