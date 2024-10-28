@@ -11,10 +11,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -35,10 +36,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -59,10 +61,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -83,10 +86,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -108,10 +112,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -133,10 +138,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -158,10 +164,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -183,10 +190,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -206,10 +214,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -229,10 +238,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -252,10 +262,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -275,10 +286,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -299,10 +311,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
@@ -323,10 +336,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
-      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,
