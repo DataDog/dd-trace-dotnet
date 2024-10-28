@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
     {
         private SpanOriginKind Kind { get; set; }
 
-        public bool Equals(SpanOriginProbe other)
+        public bool Equals(SpanOriginProbe? other)
         {
             if (ReferenceEquals(null, other))
             {

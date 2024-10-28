@@ -153,7 +153,7 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginForSpansEnabled"/>
             public const string CodeOriginForSpansEnabled = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
-            
+
             /// <summary>
             /// Configuration key for setting the number of frames to be tagged in exit span code origin.
             /// Default value is <c>8</c>.

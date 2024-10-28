@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Symbols;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SetCodeOrigin(ISpan? span)
+        internal static void SetCodeOrigin(Span? span)
         {
             if (span == null || !Settings.CodeOriginForSpansEnabled)
             {
@@ -31,7 +32,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             AddExitSpanTag(span);
         }
 
-        private static void AddExitSpanTag(ISpan span)
+        private static void AddExitSpanTag(Span span)
         {
             var frames = ArrayPool<StackFrame>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
             try
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return;
                 }
 
-                span.SetTag($"{CodeOriginTag}.Type", "exit");
+                span.Tags.SetTag($"{CodeOriginTag}.Type", "exit");
 
                 for (int i = 0; i < framesLength; i++)
                 {
@@ -51,27 +52,28 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     var fileName = frame.GetFileName(); // todo: should we normalize?
                     if (!string.IsNullOrEmpty(fileName))
                     {
-                        span.SetTag($"{CodeOriginTag}.frame.{i}.file", fileName);
+                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.file", fileName);
                     }
 
                     var line = frame.GetFileLineNumber();
                     if (line > 0)
                     {
-                        span.SetTag($"{CodeOriginTag}.frame.{i}.line", line);
+                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.line", line.ToString());
                     }
 
                     int column = frame.GetFileColumnNumber();
                     if (column > 0)
                     {
-                        span.SetTag($"{CodeOriginTag}.frame.{i}.column", column);
+                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.column", column.ToString());
                     }
 
-                    var method = frame.GetMethod();
+                    // PopulateUserFrames returns only frames that have method
+                    var method = frame.GetMethod()!;
                     var type = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
                     if (!string.IsNullOrEmpty(type))
                     {
-                        span.SetTag($"{CodeOriginTag}.frame.{i}.method", method.Name);
-                        span.SetTag($"{CodeOriginTag}.frame.{i}.type", type);
+                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.method", method.Name);
+                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.type", type);
                     }
                 }
             }
@@ -103,7 +105,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             {
                 var frame = stackFrames[walkIndex];
 
-                var assembly = frame.GetMethod()?.DeclaringType?.Module.Assembly;
+                var assembly = frame?.GetMethod()?.DeclaringType?.Module.Assembly;
                 if (assembly == null)
                 {
                     continue;
@@ -115,7 +117,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                frames[count++] = frame;
+                frames[count++] = frame!;
             }
 
             return count;
@@ -128,7 +130,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             {
                 for (var i = 0; i < frames.Length; i++)
                 {
-                    var probe = CreateSpanOriginProbe(frames[i]);
+                    var probe = CreateSpanOriginProbe(frames[i].GetMethod());
                     if (probe != null)
                     {
                         probes[i] = probe;
@@ -147,9 +149,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             LiveDebugger.Instance.UpdateAddedProbeInstrumentations(probes);
         }
 
-        private static SpanOriginProbe? CreateSpanOriginProbe(StackFrame frame)
+        private static SpanOriginProbe? CreateSpanOriginProbe(MethodBase? method)
         {
-            var method = frame.GetMethod();
+            if (method == null)
+            {
+                return null;
+            }
+
             var type = method.DeclaringType;
             if (type == null)
             {
