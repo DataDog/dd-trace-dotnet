@@ -7,7 +7,7 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LibrariesInfoCache.h"
 
 // This test is mainly for ASAN & UBSAN.
-// I want to be check if we leak memory or we failed at implemented it correctly
+// I want to be checked if we leak memory or we failed at implemented it correctly
 // For that we need to use the default memory resource (new/delete)
 TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
 {

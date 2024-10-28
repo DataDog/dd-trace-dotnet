@@ -44,7 +44,7 @@ bool LibrariesInfoCache::StopImpl()
 
     _stopRequested = true;
     NotifyCacheUpdateImpl();
-    Log::Debug("Notification to stopped the worker has been sent.");
+    Log::Debug("Notification to stop the worker has been sent.");
     _worker.join();
     _librariesInfo.clear();
 
@@ -92,10 +92,10 @@ void LibrariesInfoCache::Work()
 void LibrariesInfoCache::UpdateCache()
 {
     // We *MUST* not allocate while holding the _cacheLock
-    // We may end up in a deadlock situtation
+    // We may end up in a deadlock situation
     // Example:
-    // T1 tries to allocate and interrupted by the sampler
-    // Cache Thread, update the cache and allocates while holding cache lock.
+    // T1 tries to allocate and is interrupted by the sampler
+    // Cache Thread, updates the cache and allocates while holding the cache lock.
     // But the Cache Thread is blocked (T1 owns the malloc lock)
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
