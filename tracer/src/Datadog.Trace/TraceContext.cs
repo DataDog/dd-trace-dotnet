@@ -137,10 +137,6 @@ namespace Datadog.Trace
             {
                 span.MarkSpanForExceptionDebugging();
             }
-            else
-            {
-                SpanCodeOriginManager.SetCodeOrigin(span, _rootSpan);
-            }
 
             lock (_rootSpan)
             {

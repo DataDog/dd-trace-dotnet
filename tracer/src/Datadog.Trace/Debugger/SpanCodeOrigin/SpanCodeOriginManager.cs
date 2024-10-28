@@ -5,114 +5,30 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
     internal class SpanCodeOriginManager
     {
-        private const string CodeOriginTag = "_dd.code_origin";
+        private const string CodeOriginTag = "_dd.code_origin_";
         private static readonly DebuggerSettings Settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
-        private static readonly HashSet<string> ExitSpanTypes =
-        [
-            SpanTypes.Http,
-            SpanTypes.Sql,
-            SpanTypes.Redis,
-            SpanTypes.MongoDb,
-            SpanTypes.DynamoDb,
-            SpanTypes.Db
-        ];
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsEntrySpan(ISpan? span)
-        {
-            if (span == null)
-            {
-                return false;
-            }
-
-            if (span.Type == SpanTypes.Web)
-            {
-                return true;
-            }
-
-            if (IsEntryOperation(span.OperationName))
-            {
-                return true;
-            }
-
-            var kind = span?.GetTag(Tags.SpanKind);
-            return kind is SpanKinds.Server or SpanKinds.Consumer;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsExitSpan(ISpan span)
-        {
-            if (span.Type != null && ExitSpanTypes.Contains(span.Type))
-            {
-                return true;
-            }
-
-            if (IsExitOperation(span.OperationName))
-            {
-                return true;
-            }
-
-            var kind = span?.GetTag(Tags.SpanKind);
-            return kind is SpanKinds.Client or SpanKinds.Producer;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsEntryOperation(string? operationName)
-        {
-            if (string.IsNullOrEmpty(operationName))
-            {
-                return false;
-            }
-
-            return operationName?.StartsWith("aspnet.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("aspnetcore.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("grpc.server.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("webapi.", StringComparison.OrdinalIgnoreCase) == true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsExitOperation(string? operationName)
-        {
-            if (string.IsNullOrEmpty(operationName))
-            {
-                return false;
-            }
-
-            return operationName?.StartsWith("http.client.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("sql.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("redis.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("mongodb.", StringComparison.OrdinalIgnoreCase) == true ||
-                   operationName?.StartsWith("rabbitmq.client.", StringComparison.OrdinalIgnoreCase) == true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SetCodeOrigin(ISpan? span, ISpan rootSpan)
+        internal static void SetCodeOrigin(ISpan? span)
         {
             if (span == null || !Settings.CodeOriginForSpansEnabled)
             {
                 return;
             }
 
-            if (IsExitSpan(span))
-            {
-                AddExitSpanTag(span);
-            }
+            AddExitSpanTag(span);
         }
 
         private static void AddExitSpanTag(ISpan span)
@@ -127,14 +43,37 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     return;
                 }
 
-                var tagValue = CreateExitTagValue(frames);
-                if (string.IsNullOrEmpty(tagValue))
-                {
-                    Log.Error("Failed to create tag for {CodeOriginTag}", CodeOriginTag);
-                    return;
-                }
+                span.SetTag($"{CodeOriginTag}.Type", "exit");
 
-                span.SetTag(CodeOriginTag, tagValue);
+                for (int i = 0; i < framesLength; i++)
+                {
+                    var frame = frames[i];
+                    var fileName = frame.GetFileName(); // todo: should we normalize?
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        span.SetTag($"{CodeOriginTag}.frame.{i}.file", fileName);
+                    }
+
+                    var line = frame.GetFileLineNumber();
+                    if (line > 0)
+                    {
+                        span.SetTag($"{CodeOriginTag}.frame.{i}.line", line);
+                    }
+
+                    int column = frame.GetFileColumnNumber();
+                    if (column > 0)
+                    {
+                        span.SetTag($"{CodeOriginTag}.frame.{i}.column", column);
+                    }
+
+                    var method = frame.GetMethod();
+                    var type = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
+                    if (!string.IsNullOrEmpty(type))
+                    {
+                        span.SetTag($"{CodeOriginTag}.frame.{i}.method", method.Name);
+                        span.SetTag($"{CodeOriginTag}.frame.{i}.type", type);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -160,9 +99,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var i = 3; i < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; i++)
+            for (int walkIndex = 2; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
             {
-                var frame = stackFrames[i];
+                var frame = stackFrames[walkIndex];
 
                 var assembly = frame.GetMethod()?.DeclaringType?.Module.Assembly;
                 if (assembly == null)
@@ -180,64 +119,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             return count;
-        }
-
-        private static string CreateExitTagValue(StackFrame[] frames)
-        {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            try
-            {
-                sb.Append("{\"type\":\"").Append("exit").Append("\",\"frames\":[");
-                for (var i = 0; i < frames.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        sb.Append(',');
-                    }
-
-                    AppendFrame(frames[i]);
-                }
-                sb.Append("]}");
-            }
-            catch (Exception)
-            {
-                StringBuilderCache.Release(sb);
-            }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
-
-            void AppendFrame(StackFrame frame)
-            {
-                sb.Append('{');
-
-                var fileName = frame.GetFileName();
-                if (!string.IsNullOrEmpty(fileName))
-                {
-                    sb.Append("\"file\":\"").Append(fileName.Replace("\\", "\\\\")).Append("\",");
-                    sb.Append("\"line\":").Append(frame.GetFileLineNumber());
-
-                    int column = frame.GetFileColumnNumber();
-                    if (column > 0)
-                    {
-                        sb.Append(",\"column\":").Append(column);
-                    }
-                }
-
-                var method = frame.GetMethod();
-                if (method != null)
-                {
-                    sb.Append(",\"method\":\"").Append(method.Name).Append("\"");
-
-                    if (method.DeclaringType != null)
-                    {
-                        sb.Append(",\"type\":\"").Append(method.DeclaringType.FullName).Append("\"");
-                    }
-                }
-
-                sb.Append(",\"snapshot_id\":\"").Append("snapshot_id_placeholder").Append("\"");
-
-                sb.Append('}');
-            }
         }
 
         private static void InstrumentSpanOriginProbes(StackFrame[] frames, ISpan rootSpan)
