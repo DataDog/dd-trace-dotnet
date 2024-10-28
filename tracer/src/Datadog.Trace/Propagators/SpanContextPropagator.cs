@@ -208,6 +208,21 @@ namespace Datadog.Trace.Propagators
             return new PropagationContext(cumulativeSpanContext, cumulativeBaggage);
         }
 
+        /// <summary>
+        /// Extracts a <see cref="PropagationContext"/> from its serialized dictionary.
+        /// </summary>
+        /// <param name="serializedSpanContext">The serialized dictionary.</param>
+        /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from the serialized dictionary.</returns>
+        internal PropagationContext Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
+        {
+            if (serializedSpanContext is { Count: > 0 })
+            {
+                return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
+            }
+
+            return default;
+        }
+
         private static void MergeExtractedW3CSpanContext(SpanContext cumulativeSpanContext, SpanContext extractedSpanContext)
         {
             if (cumulativeSpanContext.RawTraceId == extractedSpanContext.RawTraceId)
@@ -229,21 +244,6 @@ namespace Datadog.Trace.Propagators
                     cumulativeSpanContext.RawSpanId = extractedSpanContext.RawSpanId;
                 }
             }
-        }
-
-        /// <summary>
-        /// Extracts a <see cref="PropagationContext"/> from its serialized dictionary.
-        /// </summary>
-        /// <param name="serializedSpanContext">The serialized dictionary.</param>
-        /// <returns>A new <see cref="PropagationContext"/> that contains the values obtained from the serialized dictionary.</returns>
-        internal PropagationContext Extract(IReadOnlyDictionary<string, string?>? serializedSpanContext)
-        {
-            if (serializedSpanContext is { Count: > 0 })
-            {
-                return Extract(serializedSpanContext, default(ReadOnlyDictionaryGetter));
-            }
-
-            return default;
         }
 
         public void AddHeadersToSpanAsTags<THeaders>(ISpan span, THeaders headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
