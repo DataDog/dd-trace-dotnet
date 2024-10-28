@@ -487,12 +487,10 @@ namespace Datadog.Trace.TestHelpers
 
             string GetPivot()
             {
-                var rid = (usePublishWithRID, IsAlpine()) switch
-                {
-                    (false, _) => string.Empty,
-                    (true, false) => $"_{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}",
-                    (true, true) => $"_{EnvironmentTools.GetOS()}-musl-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}",
-                };
+                var rid = usePublishWithRID
+                              ? $"_{EnvironmentTools.GetOS()}{(IsAlpine() ? "-musl" : string.Empty)}-{EnvironmentTools.GetPlatform().ToLowerInvariant()}"
+                              : string.Empty;
+
                 var config = EnvironmentTools.GetBuildConfiguration().ToLowerInvariant();
                 var packageVersionPivot = string.IsNullOrEmpty(packageVersion) ? string.Empty : $"_{packageVersion}";
                 return $"{config}_{targetFramework}{packageVersionPivot}{rid}";
