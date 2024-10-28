@@ -468,7 +468,7 @@ internal readonly partial struct SecurityCoordinator
 
     private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
 
-    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(headers.GetValues(currentKey) ?? [string.Empty]);
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(headers.GetValues(currentKey) ?? []);
 
     private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
     {
