@@ -21,7 +21,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public AspNetCore5AsmRemoteRules(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base(fixture, outputHelper, enableSecurity: true, testName: nameof(AspNetCore5AsmRemoteRules))
         {
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         [SkippableFact]

@@ -218,16 +218,15 @@ internal abstract partial class MetricsTelemetryCollectorBase
             return metricKeyTags;
         }
 
+        var currentTags = _wafAndRulesVersionTags ?? _unknownWafVersionTags;
+
         if (metricKeyTags is null)
         {
-            return _wafAndRulesVersionTags ?? _unknownWafVersionTags;
+            return currentTags;
         }
 
-        var wafVersionTag = (_wafAndRulesVersionTags ?? _unknownWafVersionTags)[0];
-        var rulesVersionTag = (_wafAndRulesVersionTags ?? _unknownWafVersionTags)[1];
-
-        metricKeyTags[0] = wafVersionTag;
-        metricKeyTags[1] = rulesVersionTag;
+        metricKeyTags[0] = currentTags[0];
+        metricKeyTags[1] = currentTags[1];
         return metricKeyTags;
     }
 
