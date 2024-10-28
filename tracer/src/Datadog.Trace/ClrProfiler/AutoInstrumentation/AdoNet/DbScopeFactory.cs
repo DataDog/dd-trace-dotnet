@@ -76,7 +76,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
+                var propagationMode = tracer.Settings.DbmPropagationMode;
+                if (propagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
                     var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
@@ -89,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         // There's not a lot we can do about it (we don't want to start parsing commandText), so just
                         // report it for now
                         if (!Volatile.Read(ref _dbCommandCachingLogged)
-                            && tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Service)
+                            && propagationMode != DbmPropagationLevel.Service)
                         {
                             _dbCommandCachingLogged = true;
                             var spanContext = scope.Span.Context;
@@ -105,10 +106,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
 
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
-                        if (traceParentInjectedInComment || traceParentInjectedInContext)
+                        // This only works for Microsoft SQL Server
+                        // FIXME: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
+                        //        Since the feature isn't available for Npgsql, just skipping over it for now.
+                        if (propagationMode == DbmPropagationLevel.Full && integrationId == IntegrationId.SqlClient)
                         {
-                            tags.DbmTraceInjected = "true";
+                            var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(propagationMode, integrationId, command.Connection, scope.Span);
+                            if (traceParentInjectedInComment || traceParentInjectedInContext)
+                            {
+                                tags.DbmTraceInjected = "true";
+                            }
                         }
                     }
                 }
