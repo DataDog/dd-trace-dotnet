@@ -348,7 +348,7 @@ internal record ConfigurationState
         // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
         if (_canBeToggled)
         {
-            var rcmEnable = !AsmFeaturesByFile.Any(a => a.Value?.Enabled is false);
+            var rcmEnable = !AsmFeaturesByFile.IsEmpty() && !AsmFeaturesByFile.Any(a => a.Value?.Enabled is false);
             if (!appsecCurrentlyEnabled)
             {
                 IncomingUpdateState.ShouldInitAppsec = rcmEnable;
