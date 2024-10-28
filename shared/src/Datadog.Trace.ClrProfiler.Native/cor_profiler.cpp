@@ -257,25 +257,13 @@ namespace datadog::shared::nativeloader
         }
 
         //
-        // Initialize the dispatcher
+        // Get and set profiler pointers
         //
         if (m_dispatcher == nullptr)
         {
-            Log::Error("Dispatcher is not set.");
             single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
             return E_FAIL;
         }
-
-        if (FAILED(m_dispatcher->Initialize()))
-        {
-            Log::Error("Error initializing the dispatcher.");
-            single_step_guard_rails.RecordBootstrapError(runtimeInformation, "initialization_error");
-            return E_FAIL;
-        }
-
-        //
-        // Get and set profiler pointers
-        //
         IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
         if (cpInstance != nullptr)
         {
