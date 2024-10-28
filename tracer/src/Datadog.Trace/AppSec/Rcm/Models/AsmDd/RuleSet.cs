@@ -92,5 +92,10 @@ internal class RuleSet
         {
             dictionary["custom_rules"] = CustomRules;
         }
+
+        if (Actions is not null)
+        {
+            dictionary["actions"] = Actions;
+        }
     }
 }

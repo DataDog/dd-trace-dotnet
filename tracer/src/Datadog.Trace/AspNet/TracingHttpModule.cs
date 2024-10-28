@@ -160,7 +160,7 @@ namespace Datadog.Trace.AspNet
                     SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
@@ -181,7 +181,7 @@ namespace Datadog.Trace.AspNet
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var security = Security.Instance;
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
@@ -243,7 +243,7 @@ namespace Datadog.Trace.AspNet
                         // the security needs to come before collecting the response code,
                         // since blocking will change the response code
                         var security = Security.Instance;
-                        if (security.Enabled)
+                        if (security.AppsecEnabled)
                         {
                             var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();
