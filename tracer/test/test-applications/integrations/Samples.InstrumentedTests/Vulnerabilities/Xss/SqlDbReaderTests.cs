@@ -26,7 +26,7 @@ public class SqlDbReaderTests : InstrumentationTestsBase, IDisposable
         {
             databaseConnection.Close();
             databaseConnection.Dispose();
-            databaseConnection = null;
+            databaseConnection = null!;
         }
         base.Dispose();
     }
