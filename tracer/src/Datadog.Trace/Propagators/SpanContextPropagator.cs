@@ -170,7 +170,7 @@ namespace Datadog.Trace.Propagators
             // as we extract values from the carrier using multiple extractors,
             // we will accumulate them in this context
             SpanContext? cumulativeSpanContext = null;
-            Baggage cumulativeBaggage = new();
+            Baggage? cumulativeBaggage = null;
 
             foreach (var extractor in _extractors)
             {
@@ -191,10 +191,18 @@ namespace Datadog.Trace.Propagators
                     continue;
                 }
 
-                // in practice, there should only ever be zero or one baggage extractors, but since we're treating this as
-                // a list of generic extractors, we handle the possibility of multiple baggage extractors by merging all baggage
-                currentExtractedContext.Baggage?.MergeInto(cumulativeBaggage);
+                // handle extracted baggage (PropagationContext.Baggage)
+                if (currentExtractedContext.Baggage?.Count > 0)
+                {
+                    cumulativeBaggage ??= new Baggage();
 
+                    // in practice, there should only ever be zero or one baggage extractors, but since we're
+                    // treating this as a list of generic extractors, we handle the possibility of multiple
+                    // baggage extractors by merging all extracted baggage items into `cumulativeBaggage`
+                    currentExtractedContext.Baggage?.MergeInto(cumulativeBaggage);
+                }
+
+                // handle extracted trace context (PropagationContext.SpanContext)
                 if (cumulativeSpanContext == null)
                 {
                     cumulativeSpanContext = currentExtractedContext.SpanContext;
