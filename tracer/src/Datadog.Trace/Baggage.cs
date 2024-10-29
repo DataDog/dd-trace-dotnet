@@ -116,8 +116,6 @@ internal class Baggage : IDictionary<string, string>
         }
     }
 
-    private static List<KeyValuePair<string, string>>.Enumerator GetEmptyEnumerator() => EmptyList.GetEnumerator();
-
     private List<KeyValuePair<string, string>> EnsureListInitialized()
     {
         if (_items == null)
@@ -368,7 +366,7 @@ internal class Baggage : IDictionary<string, string>
         }
     }
 
-    public List<KeyValuePair<string, string>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? GetEmptyEnumerator();
+    public List<KeyValuePair<string, string>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
 
     IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator() => GetEnumerator();
 
