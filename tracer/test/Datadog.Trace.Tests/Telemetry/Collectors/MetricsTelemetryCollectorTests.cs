@@ -553,17 +553,9 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
-        if (wafVersion is not null && rulesVersion is not null)
+        if (wafVersion is not null)
         {
             collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
-            expectedWafTag = $"waf_version:{wafVersion};event_rules_version:{rulesVersion}";
-        }
-        else if (wafVersion is not null)
-        {
-            collector.SetWafAndRulesVersion(wafVersion, null);
-            expectedWafTag = $"waf_version:{wafVersion}";
         }
 
         using var scope = new AssertionScope();
