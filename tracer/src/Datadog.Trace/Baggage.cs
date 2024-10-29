@@ -225,7 +225,7 @@ internal class Baggage : IDictionary<string, string>
         return false;
     }
 
-    void IDictionary<string, string>.Add(string key, string value)
+    public void Add(string key, string value)
     {
         var items = EnsureListInitialized();
 
@@ -245,7 +245,7 @@ internal class Baggage : IDictionary<string, string>
 
     void ICollection<KeyValuePair<string, string>>.Add(KeyValuePair<string, string> item)
     {
-        ((IDictionary<string, string>)this).Add(item.Key, item.Value);
+        Add(item.Key, item.Value);
     }
 
     /// <summary>
