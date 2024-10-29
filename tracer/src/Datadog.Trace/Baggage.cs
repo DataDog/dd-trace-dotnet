@@ -302,26 +302,6 @@ internal class Baggage : IDictionary<string, string>
     }
 
     /// <summary>
-    /// Gets all baggage values.
-    /// </summary>
-    /// <returns>A new array that contains all baggage values.</returns>
-    public KeyValuePair<string, string>[] GetAllItems()
-    {
-        if (_items is { } list)
-        {
-            lock (list)
-            {
-                if (list.Count > 0)
-                {
-                    return _items.ToArray();
-                }
-            }
-        }
-
-        return [];
-    }
-
-    /// <summary>
     /// Removes all baggage items.
     /// </summary>
     public void Clear()
