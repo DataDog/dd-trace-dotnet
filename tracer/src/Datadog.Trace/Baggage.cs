@@ -338,29 +338,6 @@ internal class Baggage : IDictionary<string, string>
     }
 
     /// <summary>
-    /// Adds the baggage items from <paramref name="baggage"/> to this baggage.
-    /// </summary>
-    public void Merge(Baggage? baggage)
-    {
-        if (baggage?.Count > 0)
-        {
-            var thisItems = EnsureListInitialized();
-            var newItems = baggage._items!;
-
-            lock (thisItems)
-            {
-                lock (newItems)
-                {
-                    foreach (var newItem in newItems)
-                    {
-                        AddOrReplace(newItem.Key, newItem.Value);
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// Adds the baggage items from this baggage instance into <paramref name="destination"/>.
     /// </summary>
     public void MergeInto(Baggage destination)

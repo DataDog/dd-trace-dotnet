@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Xunit;
@@ -21,7 +22,7 @@ public class BaggageTests
     [Fact]
     public void Count_ReturnsCount_WhenBaggageHasItems()
     {
-        var baggage = new Baggage(new Dictionary<string, string> { { "key1", "value1" } });
+        var baggage = new Baggage { { "key1", "value1" } };
         baggage.Count.Should().Be(1);
 
         baggage.AddOrReplace("key2", "value2");
@@ -29,7 +30,27 @@ public class BaggageTests
     }
 
     [Fact]
-    public void Get_ReturnsNull_WhenItemDoesNotExist()
+    public void TryGetValue_ReturnsTrue_WhenItemExists()
+    {
+        var baggage = new Baggage { { "key", "value" } };
+        var exists = baggage.TryGetValue("key", out var value);
+
+        exists.Should().BeTrue();
+        value.Should().Be("value");
+    }
+
+    [Fact]
+    public void TryGetValue_ReturnsFalse_WhenItemDoesNotExist()
+    {
+        var baggage = new Baggage { { "key", "value" } };
+        var exists = baggage.TryGetValue("nonexistent", out var value);
+
+        exists.Should().BeFalse();
+        value.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetValueOrDefault_ReturnsNull_WhenItemDoesNotExist()
     {
         var baggage = new Baggage();
         var value = baggage.GetValueOrDefault("nonexistent");
@@ -37,15 +58,32 @@ public class BaggageTests
     }
 
     [Fact]
-    public void Get_ReturnsValue_WhenItemExists()
+    public void GetValueOrDefault_ReturnsValue_WhenItemExists()
     {
-        var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
+        var baggage = new Baggage { { "key", "value" } };
         var value = baggage.GetValueOrDefault("key");
         value.Should().Be("value");
     }
 
     [Fact]
-    public void Set_AddsNewItem_WhenItemDoesNotExist()
+    public void Indexer_ReturnsValue_WhenItemExists()
+    {
+        var baggage = new Baggage { { "key", "value" } };
+        var value = baggage["key"];
+        value.Should().Be("value");
+    }
+
+    [Fact]
+    public void Indexer_Throws_WhenItemDoesNotExist()
+    {
+        var baggage = new Baggage { { "key", "value" } };
+
+        FluentActions.Invoking(() => baggage["nonexistent"])
+                     .Should().Throw<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public void Add_AddsNewItem_WhenItemDoesNotExist()
     {
         var baggage = new Baggage();
         baggage.AddOrReplace("key", "value");
@@ -55,9 +93,28 @@ public class BaggageTests
     }
 
     [Fact]
-    public void Set_UpdatesItem_WhenItemExists()
+    public void Add_Throws_WhenItemExists()
     {
-        var baggage = new Baggage(new Dictionary<string, string> { { "key", "value1" } });
+        var baggage = new Baggage { { "key", "value1" } };
+
+        FluentActions.Invoking(() => baggage.Add("key", "value2"))
+                     .Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void AddOrReplace_AddsNewItem_WhenItemDoesNotExist()
+    {
+        var baggage = new Baggage();
+        baggage.AddOrReplace("key", "value");
+
+        var value = baggage.GetValueOrDefault("key");
+        value.Should().Be("value");
+    }
+
+    [Fact]
+    public void AddOrReplace_UpdatesItem_WhenItemExists()
+    {
+        var baggage = new Baggage { { "key", "value1" } };
         baggage.AddOrReplace("key", "value2");
 
         var value = baggage.GetValueOrDefault("key");
@@ -67,7 +124,7 @@ public class BaggageTests
     [Fact]
     public void Remove_ReturnsFalse_WhenItemDoesNotExist()
     {
-        var baggage = new Baggage();
+        var baggage = new Baggage { { "key", "value" } };
         var result = baggage.Remove("nonexistent");
         result.Should().BeFalse();
     }
@@ -75,7 +132,7 @@ public class BaggageTests
     [Fact]
     public void Remove_ReturnsTrue_WhenItemExists()
     {
-        var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
+        var baggage = new Baggage { { "key", "value" } };
         baggage.GetValueOrDefault("key").Should().Be("value");
 
         var result = baggage.Remove("key");
@@ -87,7 +144,7 @@ public class BaggageTests
     [Fact]
     public void Clear_RemovesAllItems()
     {
-        var baggage = new Baggage(new Dictionary<string, string> { { "key", "value" } });
+        var baggage = new Baggage { { "key", "value" } };
         baggage.GetValueOrDefault("key").Should().Be("value");
         baggage.Count.Should().Be(1);
 
@@ -96,21 +153,17 @@ public class BaggageTests
     }
 
     [Fact]
-    public void Merge_AddsItemsToExistingBaggage()
+    public void MergeInto_AddsAndReplacesItems()
     {
-        var baggage1 = new Baggage(new Dictionary<string, string>
-        {
-            { "key1", "value1" }
-        });
+        var baggage1 = new Baggage { { "key1", "value1" } };
 
-        // replace "key1" and add "key2"
-        var baggage2 = new Baggage(new Dictionary<string, string>
+        var baggage2 = new Baggage
         {
-            { "key1", "new value" },
-            { "key2", "value2" }
-        });
+            { "key1", "new value" }, // replace "key1"
+            { "key2", "value2" }     // add "key2"
+        };
 
-        baggage1.Merge(baggage2);
+        baggage2.MergeInto(baggage1);
 
         baggage1.GetValueOrDefault("key1").Should().Be("new value");
         baggage1.GetValueOrDefault("key2").Should().Be("value2");
