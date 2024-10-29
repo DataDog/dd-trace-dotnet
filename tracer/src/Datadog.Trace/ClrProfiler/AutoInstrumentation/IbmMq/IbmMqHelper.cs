@@ -16,15 +16,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 internal static class IbmMqHelper
 {
     private const string MessagingType = "ibmmq";
-    private static readonly IbmMqHeadersAdapterNoop NoopAdapter = new();
 
-    internal static IHeadersCollection GetHeadersAdapter(IMqMessage message)
+    internal static IbmMqHeadersAdapterNoop GetHeadersAdapter(IMqMessage message)
     {
-        // we temporary switch to noop adapter, since
+        // we temporarily switch to noop adapter, since
         // multiple customers reported issues with context propagation.
         // The goal is to allow context injection only when we have a way of configuring
         // this on per-instrumentation basis.
-        return NoopAdapter;
+        return new IbmMqHeadersAdapterNoop();
     }
 
     internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)
@@ -97,8 +96,8 @@ internal static class IbmMqHelper
 
             try
             {
-                extractedContext = SpanContextPropagator.Instance.Extract(GetHeadersAdapter(message));
-                Baggage.Current.Merge(extractedContext.Baggage);
+                var headers = GetHeadersAdapter(message);
+                extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
             }
             catch (Exception ex)
             {
