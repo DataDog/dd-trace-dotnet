@@ -71,8 +71,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 PropagationContext existingContext = default;
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
-                    existingContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
-                    Baggage.Current.Merge(existingContext.Baggage);
+                    var headers = request.Headers.Wrap();
+                    existingContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
                 }
 
                 var existingSpanContext = existingContext.SpanContext;

@@ -79,8 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     {
                         basicProperties = basicGetResult.BasicProperties;
 
-                        extractedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, default(ContextPropagation));
-                        Baggage.Current.Merge(extractedContext.Baggage);
+                        extractedContext = SpanContextPropagator.Instance.Extract(basicPropertiesHeaders, default(ContextPropagation)).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {

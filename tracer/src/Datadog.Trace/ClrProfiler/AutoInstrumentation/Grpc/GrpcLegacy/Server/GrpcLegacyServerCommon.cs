@@ -35,10 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
 
                 if (spanContext is null)
                 {
-                    var extractedContext = ExtractPropagatedContext(metadata);
+                    var extractedContext = ExtractPropagatedContext(metadata).MergeBaggageInto(Baggage.Current);
                     spanContext = extractedContext.SpanContext;
-
-                    Baggage.Current.Merge(extractedContext.Baggage);
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";

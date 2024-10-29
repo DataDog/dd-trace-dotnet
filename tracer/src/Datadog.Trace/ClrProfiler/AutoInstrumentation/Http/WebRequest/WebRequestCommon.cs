@@ -46,8 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
-                    cachedContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
-                    Baggage.Current.Merge(cachedContext.Baggage);
+                    var headers = request.Headers.Wrap();
+                    cachedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
                 }
 
                 var cachedSpanContext = cachedContext.SpanContext;
@@ -82,7 +82,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                         // add propagation headers to the HTTP request
                         var context = new PropagationContext(scope.Span.Context, Baggage.Current);
-                        SpanContextPropagator.Instance.Inject(context, request.Headers.Wrap());
+                        var headers = request.Headers.Wrap();
+                        SpanContextPropagator.Instance.Inject(context, headers);
 
                         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                         return new CallTargetState(scope);

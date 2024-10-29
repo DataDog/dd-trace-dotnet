@@ -231,8 +231,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string);
-                        Baggage.Current.Merge(extractedContext.Baggage);
+                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
 
                     break;

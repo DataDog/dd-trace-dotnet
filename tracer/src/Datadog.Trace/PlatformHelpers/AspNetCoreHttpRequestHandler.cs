@@ -106,8 +106,7 @@ namespace Datadog.Trace.PlatformHelpers
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
-            var extractedContext = ExtractPropagatedContext(request);
-            Baggage.Current.Merge(extractedContext.Baggage);
+            var extractedContext = ExtractPropagatedContext(request).MergeBaggageInto(Baggage.Current);
 
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
             var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();

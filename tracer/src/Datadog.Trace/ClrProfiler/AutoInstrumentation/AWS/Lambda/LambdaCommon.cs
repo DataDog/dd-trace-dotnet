@@ -25,8 +25,7 @@ internal abstract class LambdaCommon
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
-        var context = SpanContextPropagator.Instance.Extract(headers);
-        Baggage.Current.Merge(context.Baggage);
+        var context = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
 
         var span = tracer.StartSpan(
             PlaceholderOperationName,

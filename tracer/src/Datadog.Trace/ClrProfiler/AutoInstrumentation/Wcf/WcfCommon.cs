@@ -82,8 +82,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                         try
                         {
                             headers = webHeaderCollection.Wrap();
-                            extractedContext = SpanContextPropagator.Instance.Extract(headers.Value);
-                            Baggage.Current.Merge(extractedContext.Baggage);
+
+                            extractedContext = SpanContextPropagator.Instance
+                                                                    .Extract(headers.Value)
+                                                                    .MergeBaggageInto(Baggage.Current);
                         }
                         catch (Exception ex)
                         {
@@ -97,8 +99,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     Log.Debug("Extracting from WCF headers if any as http headers hadn't been found.");
                     try
                     {
-                        extractedContext = SpanContextPropagator.Instance.Extract(messageHeaders, GetHeaderValues);
-                        Baggage.Current.Merge(extractedContext.Baggage);
+                        extractedContext = SpanContextPropagator.Instance
+                                                                .Extract(messageHeaders, GetHeaderValues)
+                                                                .MergeBaggageInto(Baggage.Current);
 
                         static IEnumerable<string?> GetHeaderValues(IMessageHeaders headers, string name)
                         {

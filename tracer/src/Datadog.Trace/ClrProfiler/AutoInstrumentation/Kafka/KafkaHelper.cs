@@ -165,8 +165,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     try
                     {
-                        extractedContext = SpanContextPropagator.Instance.Extract(headers);
-                        Baggage.Current.Merge(extractedContext.Baggage);
+                        extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {

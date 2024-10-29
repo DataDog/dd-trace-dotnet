@@ -57,11 +57,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     try
                     {
                         // extract propagated http headers
-                        var headers = request.Headers;
-                        headersCollection = new HttpHeadersCollection(headers);
-                        extractedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value);
-
-                        Baggage.Current.Merge(extractedContext.Baggage);
+                        headersCollection = new HttpHeadersCollection(request.Headers);
+                        extractedContext = SpanContextPropagator.Instance.Extract(headersCollection.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
