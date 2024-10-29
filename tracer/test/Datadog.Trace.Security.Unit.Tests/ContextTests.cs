@@ -19,6 +19,7 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
@@ -38,10 +39,9 @@ public class ContextTests : WafLibraryRequiredTest
             AppSec.WafEncoding.Encoder.SetPoolSize(0);
         }
 
-        var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, useUnsafeEncoder: useUnsafeEncoder);
-        using var waf = initResult.Waf;
-        waf.Should().NotBeNull();
+        var initResult = CreateWaf(useUnsafeEncoder);
 
+        using var waf = initResult.Waf;
         var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
         result.Should().NotBeNull();
         var ruleSet = RuleSet.From(result!);
@@ -149,9 +149,8 @@ public class ContextTests : WafLibraryRequiredTest
                     var threadUpdate = new Thread(
                     () =>
                     {
-                        var configurationStatus = new ConfigurationStatus(string.Empty) { RulesByFile = { ["test"] = ruleSet! } };
-                        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-                        var res = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+                        var configurationState = UpdateConfigurationState(ruleSet: new() { { "test", ruleSet! } });
+                        var res = waf!.Update(configurationState);
                         res.Success.Should().BeTrue();
                     });
                     threadsUpdate[t] = threadUpdate;

@@ -464,15 +464,11 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    private static object GetHeaderValueForWaf(string[] value)
-    {
-        return (value.Count() == 1 ? value[0] : value);
-    }
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers) => ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
 
-    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey)
-    {
-        return GetHeaderValueForWaf(headers.GetValues(currentKey));
-    }
+    private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(headers.GetValues(currentKey));
 
     private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
     {
@@ -494,7 +490,7 @@ internal readonly partial struct SecurityCoordinator
                 keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
-                    headersDic.Add(keyForDictionary, GetHeaderValueForWaf(response.Headers.GetValues(originalKey)));
+                    headersDic.Add(keyForDictionary, GetHeaderAsArray(response.Headers.GetValues(originalKey)));
                 }
                 else
                 {
