@@ -2039,12 +2039,12 @@ stages:
         mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
         docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
 
-        docker compose -f docker-compose.yml -f docker-compose.windows.yml build `
+        docker compose -f docker-compose.windows.yml build `
             --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
             --build-arg ENABLE_32_BIT=$(enable32bit) `
             IntegrationTests.IIS.LoaderOptimizationStartup
 
-        docker compose up -f docker-compose.yml -f docker-compose.windows.yml -d IntegrationTests.IIS.LoaderOptimizationStartup
+        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
@@ -2062,7 +2062,7 @@ stages:
         testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - script: docker compose down
+    - script: docker compose  -f docker-compose.windows.yml down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
