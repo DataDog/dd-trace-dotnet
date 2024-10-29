@@ -84,7 +84,7 @@ public class MetricsTelemetryCollectorTests
 
     [Theory]
     [InlineData(null, null)]
-    [InlineData("1.2.3", null)]
+    [InlineData("1.2.4", null)]
     [InlineData("1.2.3", "10.2")]
     public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion, string rulesVersion)
     {
@@ -147,18 +147,13 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
-        if (wafVersion is not null && rulesVersion is not null)
+        if (wafVersion is not null)
         {
             collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
-            expectedWafTag = $"waf_version:{wafVersion};event_rules_version:{rulesVersion}";
         }
-        else if (wafVersion is not null)
-        {
-            collector.SetWafAndRulesVersion(wafVersion, null);
-            expectedWafTag = $"waf_version:{wafVersion}";
-        }
+
+        var expectedWafTag = $"waf_version:{wafVersion ?? "unknown"}";
+        var expectedRulesetTag = $"event_rules_version:{rulesVersion ?? "unknown"}";
 
         using var scope = new AssertionScope();
         scope.FormattingOptions.MaxLines = 1000;
@@ -248,7 +243,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafInit.GetName(),
                 Points = new[] { new { Value = 4 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag },
+                Tags = new[] { expectedWafTag, expectedRulesetTag },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -257,7 +252,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -266,7 +261,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleEval.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -275,7 +270,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspRuleMatch.GetName(),
                 Points = new[] { new { Value = 3 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -284,7 +279,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.RaspTimeout.GetName(),
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_type:lfi" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },

@@ -14,9 +14,9 @@ namespace Datadog.Trace.Telemetry;
 
 internal abstract partial class MetricsTelemetryCollectorBase
 {
+    private static readonly string[] _unknownWafVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
-    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private string[]? _wafAndRulesVersionTags;
@@ -56,7 +56,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {
         // Setting this an array so we can reuse it for multiple metrics
-        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion}" };
+        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion ?? "unknown"}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
