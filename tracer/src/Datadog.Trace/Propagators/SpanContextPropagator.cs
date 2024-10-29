@@ -193,7 +193,7 @@ namespace Datadog.Trace.Propagators
 
                 // in practice, there should only ever be zero or one baggage extractors, but since we're treating this as
                 // a list of generic extractors, we handle the possibility of multiple baggage extractors by merging all baggage
-                cumulativeBaggage.Merge(currentExtractedContext.Baggage);
+                currentExtractedContext.Baggage?.MergeInto(cumulativeBaggage);
 
                 if (cumulativeSpanContext == null)
                 {
