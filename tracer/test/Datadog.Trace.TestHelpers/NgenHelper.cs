@@ -21,9 +21,6 @@ public static class NgenHelper
 
         var install = $"install \"{appFilename}\"";
         RunNgen(output, workingDirectory, install);
-
-        // display NGEN'd assemblies
-        RunNgen(output, workingDirectory, "display");
     }
 
     public static void UninstallFromNativeImageCache(ITestOutputHelper output, string applicationPath)
@@ -33,9 +30,6 @@ public static class NgenHelper
 
         var install = $"uninstall \"{appFilename}\"";
         RunNgen(output, workingDirectory, install);
-
-        // display NGEN'd assemblies
-        RunNgen(output, workingDirectory, "display");
     }
 
     private static void RunNgen(ITestOutputHelper output, string workingDirectory, string arguments)
@@ -56,7 +50,7 @@ public static class NgenHelper
         var process = Process.Start(startInfo);
 
         using var helper = new ProcessHelper(process);
-        var timeoutMs = 30_000;
+        var timeoutMs = 60_000;
 
         var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
         var standardOutput = helper.StandardOutput;
