@@ -352,7 +352,10 @@ services:
     - ./artifacts/build_data/logs/LoaderOptimizationStartup:c:/ProgramData/Datadog .NET Tracer/logs
     ports:
     - "8080:80"
+    depends_on:
+    - test-agent.windows
     environment:
+      - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
