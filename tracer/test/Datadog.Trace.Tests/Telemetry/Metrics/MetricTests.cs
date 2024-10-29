@@ -23,9 +23,6 @@ public class MetricTests
 {
     private static readonly Dictionary<string, string[]> IgnoredTagsByMetricName = new()
     {
-        { "waf.init", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
         { "trace_chunks_dropped", ["src_library"] }, // this is optional, only added by the rust library
         { "trace_chunks_sent", ["src_library"] }, // this is optional, only added by the rust library
@@ -194,11 +191,16 @@ public class MetricTests
                 var attributeType = attr.AttributeType;
                 if (attributeType == typeof(TelemetryMetricAttribute))
                 {
-                    // no tags unless this is an ASM metric, in which case we include waf_version
+                    // no tags unless this is an ASM metric, in which case we include waf_version and event_rules_version
                     // see src\Datadog.Trace\Telemetry\Collectors\MetricsTelemetryCollector.GetTags(string? ns, string[]? metricKeyTags)
                     if (ns == MetricNamespaceConstants.ASM)
                     {
-                        return new() { new[] { "waf_version:unknown" } };
+                        bool isRasp = member.Name.StartsWith("rasp", StringComparison.Ordinal);
+                        return new()
+                        {
+                            isRasp ? new[] { "waf_version:unknown" } :
+                            new[] { "waf_version:unknown", "event_rules_version:unknown" }
+                        };
                     }
 
                     return new List<string[]>();

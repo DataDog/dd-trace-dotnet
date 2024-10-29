@@ -14,12 +14,14 @@ namespace Datadog.Trace.Telemetry;
 
 internal abstract partial class MetricsTelemetryCollectorBase
 {
-    private static readonly string[] _unknownWafVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
+    private static readonly string[] _unknownWafAndRulesVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
+    private static readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private string[]? _wafAndRulesVersionTags;
+    private string[]? _wafVersionTags;
 
     protected MetricsTelemetryCollectorBase()
         : this(TimeSpan.FromSeconds(10))
@@ -57,6 +59,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     {
         // Setting this an array so we can reuse it for multiple metrics
         _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion ?? "unknown"}" };
+        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
@@ -149,7 +152,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
                             type: metricType)
                         {
                             Namespace = metric.NameSpace,
-                            Tags = GetTags(metric.NameSpace, metricValues.Tags)
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags, metric.Name)
                         });
                 }
 
@@ -182,7 +185,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
                             common: metric.IsCommon)
                         {
                             Namespace = metric.NameSpace,
-                            Tags = GetTags(metric.NameSpace, metricValues.Tags),
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags, metric.Name),
                         });
                 }
 
@@ -211,22 +214,29 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private string[]? GetTags(string? ns, string[]? metricKeyTags)
+    private string[]? GetTags(string? ns, string[]? metricKeyTags, string name)
     {
         if (ns != MetricNamespaceConstants.ASM)
         {
             return metricKeyTags;
         }
 
-        var currentTags = _wafAndRulesVersionTags ?? _unknownWafVersionTags;
+        bool isRasp = name.StartsWith("rasp", StringComparison.OrdinalIgnoreCase);
 
         if (metricKeyTags is null)
         {
-            return currentTags;
+            return (isRasp ?
+                _wafVersionTags ?? _unknownWafVersionTags :
+                _wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags);
         }
 
-        metricKeyTags[0] = currentTags[0];
-        metricKeyTags[1] = currentTags[1];
+        metricKeyTags[0] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[0];
+
+        if (!isRasp)
+        {
+            metricKeyTags[1] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[1];
+        }
+
         return metricKeyTags;
     }
 
