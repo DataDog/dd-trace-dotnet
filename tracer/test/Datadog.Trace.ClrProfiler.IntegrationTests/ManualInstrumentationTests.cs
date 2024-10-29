@@ -15,6 +15,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
+#if NETFRAMEWORK
+// The .NET Framework tests use NGEN which is a global thing, so make sure we don't parallelize
+[CollectionDefinition(nameof(ManualInstrumentationTests), DisableParallelization = true)]
+[Collection(nameof(ManualInstrumentationTests))]
+#endif
 [UsesVerify]
 public class ManualInstrumentationTests : TestHelper
 {
