@@ -167,7 +167,7 @@ internal class Baggage : IDictionary<string, string>
         }
     }
 
-    internal static void AddOrReplace(List<KeyValuePair<string, string>> list, string key, string value)
+    private static void AddOrReplace(List<KeyValuePair<string, string>> list, string key, string value)
     {
         for (int i = 0; i < list.Count; i++)
         {
@@ -366,7 +366,7 @@ internal class Baggage : IDictionary<string, string>
         }
     }
 
-    public List<KeyValuePair<string, string>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
+    private List<KeyValuePair<string, string>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
 
     IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator() => GetEnumerator();
 
