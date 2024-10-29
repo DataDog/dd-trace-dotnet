@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -412,6 +414,28 @@ internal sealed class Baggage : IDictionary<string, string>
                 {
                     AddOrReplaceInternal(destinationItems, sourceItem.Key, sourceItem.Value);
                 }
+            }
+        }
+    }
+
+    public void ForEach<T>(T processor)
+        where T : struct, ICancellableObserver<KeyValuePair<string, string>>
+    {
+        if (_items is { } list)
+        {
+            lock (list)
+            {
+                foreach (var item in list)
+                {
+                    if (processor.CancellationRequested)
+                    {
+                        break;
+                    }
+
+                    processor.OnNext(item);
+                }
+
+                processor.OnCompleted();
             }
         }
     }
