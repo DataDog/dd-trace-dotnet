@@ -43,6 +43,9 @@ void AutoResetEvent::Set()
 
 bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
 {
+    // in the timeout=0ms case, we still go through the whole code
+    // and pthread_cond_timedwait will return immediatly
+    // And we will return the value from _isSet
     pthread_mutex_lock(&_impl->_mutex);
  
     bool isSignaled = true;

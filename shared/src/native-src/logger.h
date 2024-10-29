@@ -189,8 +189,6 @@ concept same_as = detail::SameHelper<T, U> && detail::SameHelper<U, T>;
 
 #endif
 
-#include <chrono>
-
 template <class T>
 concept IsWstring = same_as<T, ::shared::WSTRING> ||
                     // check if it's WCHAR[N] or WCHAR*

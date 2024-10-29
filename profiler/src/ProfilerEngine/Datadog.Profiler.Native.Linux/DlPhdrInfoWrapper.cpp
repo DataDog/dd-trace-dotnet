@@ -26,6 +26,12 @@ using custom_deleter = std::function<void(void*)>;
 template <class T, typename _Naked_T = std::remove_cv_t<T>>
 std::unique_ptr<_Naked_T, custom_deleter> Duplicate(shared::pmr::memory_resource* allocator, T* src, std::size_t count)
 {
+    // Static assertions to that T does not need special treatment (ex:. calling ctor or dtor)
+    static_assert(std::is_trivially_copyable_v<T>, 
+        "T must be trivially copyable");
+    static_assert(std::is_trivially_destructible_v<T>, 
+        "T must be trivially destructible");
+
     if (src == nullptr)
     {
         return {nullptr};

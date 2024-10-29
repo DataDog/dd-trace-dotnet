@@ -102,6 +102,13 @@ TEST(AutoResetEventTest, EnsureWaitInstantlyReturnTrueIfInitialValueIsTrue)
     ASSERT_TRUE(event->Wait());
 }
 
+TEST(AutoResetEventTest, EnsureWaitInstantlyReturnTrueIfEventIsSetBeforWaitingFor0ms)
+{
+    auto event = CreateEvent(false);
+    event->Set();
+    ASSERT_TRUE(event->Wait(0ms));
+}
+
 TEST(AutoResetEventTest, EnsureEventIsSignaledIfSetCalled)
 {
     auto event = CreateEvent(false);

@@ -10,6 +10,10 @@ using namespace std::chrono_literals;
 
 constexpr auto InfiniteTimeout = -1ms;
 
+/// This is synchronization class between 1 or multiple producer threads (calling Set)
+/// and only one consumer thread (calling Wait)
+/// For now this is the scenario we need. In the future, if we want it to be more like
+/// .NET AutoReset and handling more consumers, we will have to rewrite it.
 class AutoResetEvent
 {
 public:

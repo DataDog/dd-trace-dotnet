@@ -16,7 +16,7 @@ extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((we
 
 LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
     _stopRequested{false},
-    _event(true),
+    _event(true), // set the event to force updating the cache the first time Wait is called
     _wrappersAllocator{resource}
 {
 }
@@ -76,12 +76,13 @@ void LibrariesInfoCache::Work()
 
         if (_stopRequested)
         {
-            Log::Debug("Stopping worker: stop request received.");
             break;
         }
 
         UpdateCache();
     }
+
+    Log::Debug("Stopping worker: stop request received.");
 
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
     {
