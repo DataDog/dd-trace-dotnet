@@ -165,19 +165,24 @@ internal class Baggage : IDictionary<string, string>
 
         lock (list)
         {
-            for (int i = 0; i < list.Count; i++)
-            {
-                if (list[i].Key == key)
-                {
-                    // key found, replace with new value
-                    list[i] = new KeyValuePair<string, string>(key, value);
-                    return;
-                }
-            }
-
-            // key not found, add new entry
-            list.Add(new KeyValuePair<string, string>(key, value));
+            AddOrReplace(list, key, value);
         }
+    }
+
+    internal static void AddOrReplace(List<KeyValuePair<string, string>> list, string key, string value)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].Key == key)
+            {
+                // key found, replace with new value
+                list[i] = new KeyValuePair<string, string>(key, value);
+                return;
+            }
+        }
+
+        // key not found, add new entry
+        list.Add(new KeyValuePair<string, string>(key, value));
     }
 
     public bool TryGetValue(string key, out string value)
@@ -350,6 +355,37 @@ internal class Baggage : IDictionary<string, string>
                     {
                         AddOrReplace(newItem.Key, newItem.Value);
                     }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds the baggage items from this baggage instance into <paramref name="destination"/>.
+    /// </summary>
+    public void MergeInto(Baggage destination)
+    {
+        if (destination == null!)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(destination));
+        }
+
+        if (Count == 0)
+        {
+            // nothing to merge
+            return;
+        }
+
+        var sourceItems = _items!; // if count > 0, then _items is not null
+        var destinationItems = destination.EnsureListInitialized();
+
+        lock (sourceItems)
+        {
+            lock (destinationItems)
+            {
+                foreach (var sourceItem in sourceItems)
+                {
+                    AddOrReplace(destinationItems, sourceItem.Key, sourceItem.Value);
                 }
             }
         }
