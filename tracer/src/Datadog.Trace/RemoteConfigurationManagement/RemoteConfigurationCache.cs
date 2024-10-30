@@ -26,7 +26,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public long Version { get; }
 
-        public uint ApplyState { get; private set; } = ApplyStates.UNACKNOWLEDGED;
+        public ulong ApplyState { get; private set; } = ApplyStates.UNACKNOWLEDGED;
 
         public string Error { get; private set; }
 
