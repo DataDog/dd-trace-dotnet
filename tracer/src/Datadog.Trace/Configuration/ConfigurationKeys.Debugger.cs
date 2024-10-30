@@ -159,7 +159,7 @@ namespace Datadog.Trace.Configuration
             /// Default value is <c>8</c>.
             /// </summary>
             /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
-            public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_MAX_USER_FRAMES";
+            public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
         }
     }
 }

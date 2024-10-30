@@ -7,33 +7,52 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
     internal class SpanCodeOriginManager
     {
         private const string CodeOriginTag = "_dd.code_origin";
+
         private const string FramesPrefix = "frames";
-        private static readonly DebuggerSettings Settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
+        private static object _globalInstanceLock = new();
+
+        private static bool _globalInstanceInitialized;
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private static SpanCodeOriginManager _instance;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+
+        private readonly DebuggerSettings _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
+
+        internal static SpanCodeOriginManager Instance =>
+            LazyInitializer.EnsureInitialized(
+                ref _instance,
+                ref _globalInstanceInitialized,
+                ref _globalInstanceLock);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SetCodeOrigin(Span? span)
+        internal void SetCodeOrigin(Span? span)
         {
-            if (span == null || !Settings.CodeOriginForSpansEnabled)
+            if (span == null || !this._settings.CodeOriginForSpansEnabled)
             {
                 return;
             }
 
-            AddExitSpanTag(span);
+            Instance.AddExitSpanTag(span);
         }
 
-        private static void AddExitSpanTag(Span span)
+        private void AddExitSpanTag(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(this._settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -94,7 +113,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
         }
 
-        private static int PopulateUserFrames(FrameInfo[] frames)
+        private int PopulateUserFrames(FrameInfo[] frames)
         {
             var stackTrace = new StackTrace(true);
             var stackFrames = stackTrace.GetFrames();
@@ -106,7 +125,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < this._settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -116,7 +135,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (AssemblyFilter.ShouldSkipAssembly(assembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes))
+                if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.ThirdPartyDetectionExcludes, _settings.ThirdPartyDetectionIncludes))
                 {
                     // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
                     continue;
