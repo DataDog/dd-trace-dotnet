@@ -34,7 +34,7 @@ public class StreamWriterAspect
     {
         try
         {
-            VulnerabilitiesModule.OnPathTraversal(path);
+            IastModule.OnPathTraversal(path);
             return path;
         }
         catch (global::System.Exception ex)
