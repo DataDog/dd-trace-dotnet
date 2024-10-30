@@ -197,6 +197,25 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
+    bool ICollection<KeyValuePair<string, string>>.Contains(KeyValuePair<string, string> item)
+    {
+        if (_items is { Count: > 0 } items)
+        {
+            lock (items)
+            {
+                foreach (var existingItem in items)
+                {
+                    if (existingItem.Key == item.Key && existingItem.Value == item.Value)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void Add(string key, string value)
     {
         var items = EnsureListInitialized();
@@ -274,11 +293,6 @@ internal sealed class Baggage : IDictionary<string, string>
         }
 
         return false;
-    }
-
-    public bool Contains(KeyValuePair<string, string> item)
-    {
-        throw new System.NotImplementedException();
     }
 
     public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
