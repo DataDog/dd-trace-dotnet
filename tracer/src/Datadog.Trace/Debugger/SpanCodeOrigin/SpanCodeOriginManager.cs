@@ -5,15 +5,11 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -37,7 +33,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private static void AddExitSpanTag(Span span)
         {
-            var frames = ArrayPool<StackFrame>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -48,35 +44,39 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
 
                 span.Tags.SetTag($"{CodeOriginTag}.type", "exit");
-
-                for (int i = 0; i < framesLength; i++)
+                for (var i = 0; i < framesLength; i++)
                 {
-                    var frame = frames[i];
-                    var fileName = frame.GetFileName(); // todo: should we normalize?
+                    ref var info = ref frames[i];
+
+                    // PopulateUserFrames returns only frames that have method
+                    var method = info.Frame.GetMethod()!;
+                    var type = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
+                    if (string.IsNullOrEmpty(type))
+                    {
+                        continue;
+                    }
+
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.index", info.FrameIndex.ToString());
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.method", method.Name);
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.type", type);
+
+                    var fileName = info.Frame.GetFileName();
                     if (!string.IsNullOrEmpty(fileName))
                     {
+                        // todo: should we normalize?
                         span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.file", fileName);
                     }
 
-                    var line = frame.GetFileLineNumber();
+                    var line = info.Frame.GetFileLineNumber();
                     if (line > 0)
                     {
                         span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.line", line.ToString());
                     }
 
-                    int column = frame.GetFileColumnNumber();
+                    var column = info.Frame.GetFileColumnNumber();
                     if (column > 0)
                     {
                         span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.column", column.ToString());
-                    }
-
-                    // PopulateUserFrames returns only frames that have method
-                    var method = frame.GetMethod()!;
-                    var type = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
-                    if (!string.IsNullOrEmpty(type))
-                    {
-                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.method", method.Name);
-                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.type", type);
                     }
                 }
             }
@@ -86,25 +86,27 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
+                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (frames != null)
                 {
-                    ArrayPool<StackFrame>.Shared.Return(frames, true);
+                    ArrayPool<FrameInfo>.Shared.Return(frames, true);
                 }
             }
         }
 
-        private static int PopulateUserFrames(StackFrame[] frames)
+        private static int PopulateUserFrames(FrameInfo[] frames)
         {
             var stackTrace = new StackTrace(true);
             var stackFrames = stackTrace.GetFrames();
 
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (stackFrames == null)
             {
                 return 0;
             }
 
             var count = 0;
-            for (int walkIndex = 2; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 2; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -120,61 +122,22 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                frames[count++] = frame!;
+                frames[count++] = new FrameInfo(walkIndex, frame!);
             }
 
             return count;
         }
 
-        private static void InstrumentSpanOriginProbes(StackFrame[] frames, ISpan rootSpan)
+        private struct FrameInfo
         {
-            var probes = ArrayPool<SpanOriginProbe>.Shared.Rent(Settings.CodeOriginMaxUserFrames);
-            try
-            {
-                for (var i = 0; i < frames.Length; i++)
-                {
-                    var probe = CreateSpanOriginProbe(frames[i].GetMethod());
-                    if (probe != null)
-                    {
-                        probes[i] = probe;
-                        rootSpan.SetTag(probe.Id, string.Empty);
-                    }
-                }
-            }
-            finally
-            {
-                if (probes != null)
-                {
-                    ArrayPool<SpanOriginProbe>.Shared.Return(probes, true);
-                }
-            }
+            internal readonly int FrameIndex;
+            internal readonly StackFrame Frame;
 
-            LiveDebugger.Instance.UpdateAddedProbeInstrumentations(probes);
-        }
-
-        private static SpanOriginProbe? CreateSpanOriginProbe(MethodBase? method)
-        {
-            if (method == null)
+            internal FrameInfo(int frameIndex, StackFrame frame)
             {
-                return null;
+                FrameIndex = frameIndex;
+                Frame = frame;
             }
-
-            var type = method.DeclaringType;
-            if (type == null)
-            {
-                return null;
-            }
-
-            return new SpanOriginProbe
-            {
-                Id = Guid.NewGuid().ToString(),
-                EvaluateAt = EvaluateAt.Exit,
-                Where = new Where
-                {
-                    MethodName = method.Name,
-                    TypeName = type.FullName ?? type.Name,
-                },
-            };
         }
     }
 }

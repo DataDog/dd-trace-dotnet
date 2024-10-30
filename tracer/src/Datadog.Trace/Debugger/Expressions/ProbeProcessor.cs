@@ -343,8 +343,6 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            SetCodeOrigin(snapshotCreator, ref shouldStopCapture);
-
             SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
             if (evaluationResult.Metric.HasValue)
@@ -371,16 +369,6 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             return evaluationResult;
-        }
-
-        private void SetCodeOrigin(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture)
-        {
-            var probeTag = Tracer.Instance.ScopeManager.Active.Root.Span.GetTag(ProbeInfo.ProbeId);
-            if (probeTag == null)
-            {
-                snapshotCreator.Dispose();
-                shouldStopCapture = true;
-            }
         }
 
         private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
