@@ -128,16 +128,6 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             return count;
         }
 
-        private record struct FrameInfo
-        {
-            internal readonly int FrameIndex;
-            internal readonly StackFrame Frame;
-
-            internal FrameInfo(int frameIndex, StackFrame frame)
-            {
-                FrameIndex = frameIndex;
-                Frame = frame;
-            }
-        }
+        private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
     }
 }
