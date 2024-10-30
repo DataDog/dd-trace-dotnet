@@ -89,7 +89,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
                 if (frames != null)
                 {
-                    ArrayPool<FrameInfo>.Shared.Return(frames, true);
+                    ArrayPool<FrameInfo>.Shared.Return(frames);
                 }
             }
         }
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 2; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < Settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             return count;
         }
 
-        private struct FrameInfo
+        private record struct FrameInfo
         {
             internal readonly int FrameIndex;
             internal readonly StackFrame Frame;
