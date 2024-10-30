@@ -141,6 +141,38 @@ public class MetricTests
         }
     }
 
+    /*
+        if a metric uses waf_version then it's always the first element
+        if a metric uses event_rules_version then it's always the second element
+        if a metric uses event_rules_version then we always have a waf_version
+    */
+
+    [Fact]
+    public void CheckASMTags()
+    {
+        var actual = GetImplementedMetricsAndTags();
+
+        foreach (var metric in actual)
+        {
+            foreach (var permutation in metric.TagPermutations)
+            {
+                for (int i = 0; i < permutation.Length; i++)
+                {
+                    if (permutation[i].StartsWith("waf_version"))
+                    {
+                        i.Should().Be(0, $"waf_version should always be the first tag for {metric.Metric}");
+                    }
+
+                    if (permutation[i].StartsWith("event_rules_version"))
+                    {
+                        i.Should().Be(1, $"event_rules_version should always be the second tag for {metric.Metric}");
+                        permutation[0].Should().StartWith("waf_version", $"event_rules_version should always be accompanied by waf_version for {metric.Metric}");
+                    }
+                }
+            }
+        }
+    }
+
     private static List<ImplementedMetricAndTags> GetImplementedMetricsAndTags()
     {
         var results = new List<ImplementedMetricAndTags>();

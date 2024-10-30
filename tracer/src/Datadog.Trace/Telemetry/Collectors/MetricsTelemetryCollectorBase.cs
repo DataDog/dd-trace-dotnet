@@ -15,13 +15,11 @@ namespace Datadog.Trace.Telemetry;
 internal abstract partial class MetricsTelemetryCollectorBase
 {
     private static readonly string[] _unknownWafAndRulesVersionTags = { "waf_version:unknown", "event_rules_version:unknown" };
-    private static readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private string[]? _wafAndRulesVersionTags;
-    private string[]? _wafVersionTags;
 
     protected MetricsTelemetryCollectorBase()
         : this(TimeSpan.FromSeconds(10))
@@ -59,7 +57,6 @@ internal abstract partial class MetricsTelemetryCollectorBase
     {
         // Setting this an array so we can reuse it for multiple metrics
         _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion ?? "unknown"}" };
-        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()
@@ -152,7 +149,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
                             type: metricType)
                         {
                             Namespace = metric.NameSpace,
-                            Tags = GetTags(metric.NameSpace, metricValues.Tags, metric.Name)
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags)
                         });
                 }
 
@@ -185,7 +182,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
                             common: metric.IsCommon)
                         {
                             Namespace = metric.NameSpace,
-                            Tags = GetTags(metric.NameSpace, metricValues.Tags, metric.Name),
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags),
                         });
                 }
 
@@ -214,25 +211,24 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private string[]? GetTags(string? ns, string[]? metricKeyTags, string name)
+    private string[]? GetTags(string? ns, string[]? metricKeyTags)
     {
         if (ns != MetricNamespaceConstants.ASM)
         {
             return metricKeyTags;
         }
 
-        bool isRasp = name.StartsWith("rasp", StringComparison.OrdinalIgnoreCase);
-
         if (metricKeyTags is null)
         {
-            return (isRasp ?
-                _wafVersionTags ?? _unknownWafVersionTags :
-                _wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags);
+            return _wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags;
         }
 
-        metricKeyTags[0] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[0];
+        if (string.Equals(metricKeyTags[0], "waf_version"))
+        {
+            metricKeyTags[0] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[0];
+        }
 
-        if (!isRasp)
+        if (metricKeyTags.Length > 1 && string.Equals(metricKeyTags[1], "event_rules_version"))
         {
             metricKeyTags[1] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[1];
         }
