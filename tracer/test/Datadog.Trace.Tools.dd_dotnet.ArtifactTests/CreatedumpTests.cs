@@ -36,11 +36,6 @@ public class CreatedumpTests : ConsoleTestHelper
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
         SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            SetEnvironmentVariable("DD_CRASHTRACKING_ENABLED", "1");
-        }
     }
 
     private static (string Key, string Value) LdPreloadConfig
