@@ -59,13 +59,11 @@ namespace Datadog.Trace.Tests.Propagators
                 [ContextPropagationHeaderStyle.Datadog],
                 false);
 
-            var baggageItems = new KeyValuePair<string, string>[]
+            TestBaggage = new Baggage
             {
-                new("key1", "value1"),
-                new("key2", "value2")
+                { "key1", "value1" },
+                { "key2", "value2" },
             };
-
-            TestBaggage = new Baggage(baggageItems);
         }
 
         public static TheoryData<string> GetInvalidIds() => new()
