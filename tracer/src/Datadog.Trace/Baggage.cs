@@ -14,7 +14,7 @@ namespace Datadog.Trace;
 /// <summary>
 /// Baggage is a collection of name-value pairs that are propagated to downstream services.
 /// </summary>
-internal class Baggage : IDictionary<string, string>
+internal sealed class Baggage : IDictionary<string, string>
 {
     private static readonly AsyncLocal<Baggage> AsyncStorage = new();
 
@@ -33,7 +33,7 @@ internal class Baggage : IDictionary<string, string>
     /// Initializes a new instance of the <see cref="Baggage"/> class using the specified items.
     /// </summary>
     /// <param name="items">The baggage items.</param>
-    public Baggage(IEnumerable<KeyValuePair<string, string>> items)
+    public Baggage(IEnumerable<KeyValuePair<string, string>>? items)
     {
         if (items != null!)
         {
