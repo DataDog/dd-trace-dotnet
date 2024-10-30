@@ -126,32 +126,6 @@ internal sealed class Baggage : IDictionary<string, string>
         return _items;
     }
 
-    bool ICollection<KeyValuePair<string, string>>.Remove(KeyValuePair<string, string> item)
-    {
-        if (item.Key == null!)
-        {
-            ThrowHelper.ThrowArgumentException("The key cannot be null.", nameof(item));
-        }
-
-        if (_items is { Count: > 0 } list)
-        {
-            lock (list)
-            {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    // match both key and value
-                    if (list[i].Key == item.Key && list[i].Value == item.Value)
-                    {
-                        list.RemoveAt(i);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     /// <summary>
     /// Sets the baggage value associated with the specified name.
     /// </summary>
@@ -265,6 +239,32 @@ internal sealed class Baggage : IDictionary<string, string>
                 for (int i = 0; i < list.Count; i++)
                 {
                     if (list[i].Key == name)
+                    {
+                        list.RemoveAt(i);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool ICollection<KeyValuePair<string, string>>.Remove(KeyValuePair<string, string> item)
+    {
+        if (item.Key == null!)
+        {
+            ThrowHelper.ThrowArgumentException("The key cannot be null.", nameof(item));
+        }
+
+        if (_items is { Count: > 0 } list)
+        {
+            lock (list)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    // match both key and value
+                    if (list[i].Key == item.Key && list[i].Value == item.Value)
                     {
                         list.RemoveAt(i);
                         return true;
