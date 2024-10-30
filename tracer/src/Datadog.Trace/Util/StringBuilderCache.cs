@@ -52,7 +52,7 @@ namespace Datadog.Trace.Util
             return result;
         }
 
-        public static void Release(StringBuilder? sb)
+        public static void Release(StringBuilder sb)
         {
             if (sb?.Capacity <= MaxBuilderSize)
             {

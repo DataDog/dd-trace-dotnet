@@ -56,7 +56,6 @@ namespace Datadog.Trace.Debugger.Expressions
                 LogProbe { CaptureSnapshot: false } => ProbeType.Log,
                 MetricProbe => ProbeType.Metric,
                 SpanDecorationProbe => ProbeType.SpanDecoration,
-                SpanOriginProbe => ProbeType.SpanOrigin,
                 _ => throw new ArgumentOutOfRangeException(nameof(probe), probe, "Unsupported probe type")
             };
 
