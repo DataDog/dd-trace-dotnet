@@ -295,9 +295,39 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
+    void ICollection<KeyValuePair<string, string>>.CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
     {
-        throw new System.NotImplementedException();
+        if (array == null!)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(array));
+        }
+
+        if (arrayIndex < 0 || arrayIndex >= array.Length)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(arrayIndex));
+        }
+
+        // check if items fit into the array
+        if (array.Length - arrayIndex < Count)
+        {
+            ThrowHelper.ThrowArgumentException(
+                """
+                The number of elements in the source collection is greater than 
+                the available space from arrayIndex to the end of the destination array.
+                """);
+        }
+
+        if (_items is { Count: > 0 } list)
+        {
+            lock (list)
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var item = list[i];
+                    array[arrayIndex + i] = item;
+                }
+            }
+        }
     }
 
     /// <summary>
