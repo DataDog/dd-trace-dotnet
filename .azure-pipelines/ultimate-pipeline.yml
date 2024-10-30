@@ -2891,8 +2891,7 @@ stages:
         jobs: [Test, DockerTest]
 
     - job: Test
-      timeoutInMinutes: 60 #default value
-      # TODO: move this to GenerateVariables stage
+      timeoutInMinutes: 90 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
