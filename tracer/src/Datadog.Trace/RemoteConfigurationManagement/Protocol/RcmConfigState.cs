@@ -9,7 +9,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmConfigState
     {
-        public RcmConfigState(string id, int version, string product, uint applyState, string applyError = null)
+        public RcmConfigState(string id, long version, string product, uint applyState, string applyError = null)
         {
             Id = id;
             Version = version;
@@ -22,7 +22,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string Id { get; }
 
         [JsonProperty("version")]
-        public int Version { get; }
+        public long Version { get; }
 
         [JsonProperty("product")]
         public string Product { get; }
