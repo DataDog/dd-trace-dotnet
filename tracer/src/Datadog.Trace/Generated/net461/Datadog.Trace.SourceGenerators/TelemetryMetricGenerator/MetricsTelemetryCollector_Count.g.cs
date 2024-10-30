@@ -552,11 +552,11 @@ internal partial class MetricsTelemetryCollector
             // waf.updates, index = 499
             new(null),
             // waf.requests, index = 500
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
             // waf.input_truncated, index = 505
             new(new[] { "truncation_reason:string_too_long" }),
             new(new[] { "truncation_reason:list_or_map_too_large" }),

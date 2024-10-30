@@ -128,7 +128,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -209,9 +209,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
+
+            if (!showRulesVersion && !testInit)
+            {
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
             }
 
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
