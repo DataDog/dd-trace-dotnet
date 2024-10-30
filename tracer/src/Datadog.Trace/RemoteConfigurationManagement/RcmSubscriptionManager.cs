@@ -227,7 +227,9 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
             var request = BuildRequest(rcmClientTracer, _lastPollError);
             _lastPollError = null;
 
-            return await func(request).ConfigureAwait(false);
+            var x = await func(request).ConfigureAwait(false);
+            Log.Information("Processed remote config request succesfully");
+            return x;
         }
         catch (RemoteConfigurationDeserializationException e)
         {

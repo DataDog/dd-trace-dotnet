@@ -62,6 +62,27 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             allSpans.AddRange(spans2);
             await VerifySpans(allSpans.ToImmutableList(), settings, testName: $"{GetTestName()}_{nameof(TestExtraServiceField)}");
         }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestVersionFieldFailure()
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            var request0 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            request0.Should().NotBeNull();
+            request0.Client.ClientTracer.ExtraServices.Should().BeNull();
+
+            var spans1 = await SendRequestsAsync(agent, 2, "/health");
+
+            var request1 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout, version: "1730229025973");
+
+            var spans2 = await SendRequestsAsync(agent, 2, "/health");
+
+            var request3 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+        }
     }
 }
 #endif

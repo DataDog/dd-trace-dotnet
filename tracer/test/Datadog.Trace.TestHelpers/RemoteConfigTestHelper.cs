@@ -12,6 +12,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -28,10 +29,28 @@ namespace Datadog.Trace.TestHelpers
             return response;
         }
 
-        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout)
+        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string ProductName, string Id)> configurations, int timeoutInMilliseconds = WaitForAcknowledgmentTimeout, string version = null)
         {
             var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.ProductName, c.Id)));
-            agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            if (version != null)
+            {
+                // this doesn't seem like a good idea to me either ...
+                var jtoken = (JObject)JToken.FromObject(response);
+                var tufRootValue = (JValue)jtoken["targets"];
+                output.WriteLine($"{DateTime.UtcNow}: tufRootValue.Value: {tufRootValue.Value}");
+                var tufRoot = JToken.Parse(Encoding.UTF8.GetString(Convert.FromBase64String((string)tufRootValue.Value)));
+                var signed = (JObject)tufRoot["signed"];
+                signed["version"] = version;
+                var tufRootString = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(tufRoot)));
+                tufRootValue.Value = tufRootString;
+
+                agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(jtoken));
+            }
+            else
+            {
+                agent.CustomResponses[MockTracerResponseType.RemoteConfig] = new(JsonConvert.SerializeObject(response));
+            }
+
             output.WriteLine($"{DateTime.UtcNow}: Using RCM response: {response} with custom opaque state {response.Targets.Signed.Custom.OpaqueBackendState}");
             var res = await agent.WaitRcmRequestAndReturnMatchingRequest(response, timeoutInMilliseconds: timeoutInMilliseconds);
             return res;
