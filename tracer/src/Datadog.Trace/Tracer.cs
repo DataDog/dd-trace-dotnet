@@ -149,7 +149,7 @@ namespace Datadog.Trace
                     _instance = instance;
                     _globalInstanceInitialized = true;
 
-                    // ensure Baggage's AsyncLocal<T> has a value if the user can't user it yet,
+                    // ensure Baggage's AsyncLocal<T> has a value as soon as we can,
                     // since it can only flow down the async call chain, not up
                     _ = Baggage.Current;
                 }
