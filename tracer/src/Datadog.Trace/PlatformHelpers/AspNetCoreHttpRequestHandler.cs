@@ -59,11 +59,9 @@ namespace Datadog.Trace.PlatformHelpers
             try
             {
                 // extract propagation details from http headers
-                var requestHeaders = request.Headers;
-
-                if (requestHeaders != null)
+                if (request.Headers is { } headers)
                 {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
+                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(headers));
                 }
             }
             catch (Exception ex)
@@ -76,17 +74,20 @@ namespace Datadog.Trace.PlatformHelpers
 
         private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
-            var settings = tracer.Settings;
+            var headerTagsInternal = tracer.Settings.HeaderTagsInternal;
 
-            if (!settings.HeaderTagsInternal.IsNullOrEmpty())
+            if (!headerTagsInternal.IsNullOrEmpty())
             {
                 try
                 {
                     // extract propagation details from http headers
-                    var requestHeaders = request.Headers;
-                    if (requestHeaders != null)
+                    if (request.Headers is { } requestHeaders)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, new HeadersCollectionAdapter(requestHeaders), settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(
+                            span,
+                            new HeadersCollectionAdapter(requestHeaders),
+                            headerTagsInternal,
+                            defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
                 }
                 catch (Exception ex)
