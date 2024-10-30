@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -12,12 +13,14 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
     internal class SpanCodeOriginManager
     {
         private const string CodeOriginTag = "_dd.code_origin";
+        private const string FramesPrefix = "frames";
         private static readonly DebuggerSettings Settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
@@ -52,19 +55,19 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     var fileName = frame.GetFileName(); // todo: should we normalize?
                     if (!string.IsNullOrEmpty(fileName))
                     {
-                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.file", fileName);
+                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.file", fileName);
                     }
 
                     var line = frame.GetFileLineNumber();
                     if (line > 0)
                     {
-                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.line", line.ToString());
+                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.line", line.ToString());
                     }
 
                     int column = frame.GetFileColumnNumber();
                     if (column > 0)
                     {
-                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.column", column.ToString());
+                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.column", column.ToString());
                     }
 
                     // PopulateUserFrames returns only frames that have method
@@ -72,8 +75,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     var type = method.DeclaringType?.FullName ?? method.DeclaringType?.Name;
                     if (!string.IsNullOrEmpty(type))
                     {
-                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.method", method.Name);
-                        span.Tags.SetTag($"{CodeOriginTag}.frame.{i}.type", type);
+                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.method", method.Name);
+                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.type", type);
                     }
                 }
             }
