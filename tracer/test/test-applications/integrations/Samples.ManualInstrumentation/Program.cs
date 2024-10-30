@@ -70,6 +70,10 @@ internal class Program
             // verify instrumentation
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
 
+            // baggage works without an active span
+            Baggage.Current["key1"] = "value1";
+            Expect(Baggage.Current["key1"] == "value1");
+
             // Manual + automatic before reconfiguration
             var firstOperationName = $"Manual-{++count}.Initial";
             using (var scope = _initialTracer.StartActive(firstOperationName))
@@ -83,7 +87,10 @@ internal class Program
                 Expect(scope.Span.GetTag("Temp") == "TempTest");
                 scope.Span.SetTag("Temp", null);
 
-                await SendHttpRequest("Initial");
+                var responseMessage = await SendHttpRequest("Initial");
+
+                // verify baggage in the request headers
+                Expect(responseMessage.RequestMessage.Headers.GetValues("baggage").FirstOrDefault() == "key1=value1");
             }
 
             await _initialTracer.ForceFlushAsync();
@@ -207,12 +214,15 @@ internal class Program
             Environment.Exit(0);
             return;
 
-            async Task SendHttpRequest(string name)
+            async Task<HttpResponseMessage> SendHttpRequest(string name)
             {
                 var q = $"{count}.{name}";
                 using var scope = Tracer.Instance.StartActive($"Manual-{q}.HttpClient");
-                await client.GetAsync(url + $"?q={q}");
+                var responseMessage = await client.GetAsync(url + $"?q={q}");
+
                 Console.WriteLine("Received response for client.GetAsync(String)");
+
+                return responseMessage;
             }
 
             void HandleHttpRequests(HttpListenerContext context)
