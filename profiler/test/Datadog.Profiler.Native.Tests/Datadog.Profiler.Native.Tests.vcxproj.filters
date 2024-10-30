@@ -19,6 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="..\..\..\..\..\Temp\Datadog.Trace.Manual.dll" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp">
@@ -172,6 +173,12 @@
     <ClCompile Include="SsiManagerTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CrashReportingTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
@@ -202,5 +209,9 @@
     <ClInclude Include="FakeSamples.h">
       <Filter>Helpers</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
 </Project>
