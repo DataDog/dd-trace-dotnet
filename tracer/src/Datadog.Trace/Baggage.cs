@@ -61,16 +61,22 @@ internal sealed class Baggage : IDictionary<string, string>
     {
         get
         {
-            if (_items is { Count: > 0 } items)
+            if (_items is { } items)
             {
-                var keys = new string[items.Count];
-
-                for (int i = 0; i < items.Count; i++)
+                lock (items)
                 {
-                    keys[i] = items[i].Key;
-                }
+                    if (items.Count > 0)
+                    {
+                        var keys = new string[items.Count];
 
-                return keys;
+                        for (int i = 0; i < items.Count; i++)
+                        {
+                            keys[i] = items[i].Key;
+                        }
+
+                        return keys;
+                    }
+                }
             }
 
             return [];
@@ -81,16 +87,22 @@ internal sealed class Baggage : IDictionary<string, string>
     {
         get
         {
-            if (_items is { Count: > 0 } items)
+            if (_items is { } items)
             {
-                var values = new string[items.Count];
-
-                for (int i = 0; i < items.Count; i++)
+                lock (items)
                 {
-                    values[i] = items[i].Value;
-                }
+                    if (items.Count > 0)
+                    {
+                        var values = new string[items.Count];
 
-                return values;
+                        for (int i = 0; i < items.Count; i++)
+                        {
+                            values[i] = items[i].Value;
+                        }
+
+                        return values;
+                    }
+                }
             }
 
             return [];
@@ -133,37 +145,37 @@ internal sealed class Baggage : IDictionary<string, string>
     /// <param name="value">The baggage item value.</param>
     public void AddOrReplace(string key, string value)
     {
-        var list = EnsureListInitialized();
+        var items = EnsureListInitialized();
 
-        lock (list)
+        lock (items)
         {
-            AddOrReplace(list, key, value);
+            AddOrReplace(items, key, value);
         }
     }
 
-    private static void AddOrReplace(List<KeyValuePair<string, string>> list, string key, string value)
+    private static void AddOrReplace(List<KeyValuePair<string, string>> items, string key, string value)
     {
-        for (int i = 0; i < list.Count; i++)
+        for (int i = 0; i < items.Count; i++)
         {
-            if (list[i].Key == key)
+            if (items[i].Key == key)
             {
                 // key found, replace with new value
-                list[i] = new KeyValuePair<string, string>(key, value);
+                items[i] = new KeyValuePair<string, string>(key, value);
                 return;
             }
         }
 
         // key not found, add new entry
-        list.Add(new KeyValuePair<string, string>(key, value));
+        items.Add(new KeyValuePair<string, string>(key, value));
     }
 
     public bool TryGetValue(string key, out string value)
     {
-        if (_items is { Count: > 0 } list)
+        if (_items is { } items)
         {
-            lock (list)
+            lock (items)
             {
-                foreach (var pair in list)
+                foreach (var pair in items)
                 {
                     if (pair.Key == key)
                     {
@@ -180,7 +192,7 @@ internal sealed class Baggage : IDictionary<string, string>
 
     bool IDictionary<string, string>.ContainsKey(string key)
     {
-        if (_items is { Count: > 0 } items)
+        if (_items is { } items)
         {
             lock (items)
             {
@@ -199,7 +211,7 @@ internal sealed class Baggage : IDictionary<string, string>
 
     bool ICollection<KeyValuePair<string, string>>.Contains(KeyValuePair<string, string> item)
     {
-        if (_items is { Count: > 0 } items)
+        if (_items is { } items)
         {
             lock (items)
             {
@@ -251,15 +263,15 @@ internal sealed class Baggage : IDictionary<string, string>
             ThrowHelper.ThrowArgumentNullException(nameof(name));
         }
 
-        if (_items is { Count: > 0 } list)
+        if (_items is { } items)
         {
-            lock (list)
+            lock (items)
             {
-                for (int i = 0; i < list.Count; i++)
+                for (int i = 0; i < items.Count; i++)
                 {
-                    if (list[i].Key == name)
+                    if (items[i].Key == name)
                     {
-                        list.RemoveAt(i);
+                        items.RemoveAt(i);
                         return true;
                     }
                 }
@@ -271,21 +283,15 @@ internal sealed class Baggage : IDictionary<string, string>
 
     bool ICollection<KeyValuePair<string, string>>.Remove(KeyValuePair<string, string> item)
     {
-        if (item.Key == null!)
+        if (_items is { } items)
         {
-            ThrowHelper.ThrowArgumentException("The key cannot be null.", nameof(item));
-        }
-
-        if (_items is { Count: > 0 } list)
-        {
-            lock (list)
+            lock (items)
             {
-                for (int i = 0; i < list.Count; i++)
+                for (int i = 0; i < items.Count; i++)
                 {
-                    // match both key and value
-                    if (list[i].Key == item.Key && list[i].Value == item.Value)
+                    if (items[i].Key == item.Key && items[i].Value == item.Value)
                     {
-                        list.RemoveAt(i);
+                        items.RemoveAt(i);
                         return true;
                     }
                 }
@@ -307,23 +313,23 @@ internal sealed class Baggage : IDictionary<string, string>
             ThrowHelper.ThrowArgumentOutOfRangeException(nameof(arrayIndex));
         }
 
-        // check if items fit into the array
-        if (array.Length - arrayIndex < Count)
+        if (_items is { } items)
         {
-            ThrowHelper.ThrowArgumentException(
-                """
-                The number of elements in the source collection is greater than 
-                the available space from arrayIndex to the end of the destination array.
-                """);
-        }
-
-        if (_items is { Count: > 0 } list)
-        {
-            lock (list)
+            lock (items)
             {
-                for (int i = 0; i < list.Count; i++)
+                // check if items fit into the array
+                if (array.Length - arrayIndex < items.Count)
                 {
-                    var item = list[i];
+                    ThrowHelper.ThrowArgumentException(
+                        """
+                        The number of elements in the source collection is greater than 
+                        the available space from arrayIndex to the end of the destination array.
+                        """);
+                }
+
+                for (int i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
                     array[arrayIndex + i] = item;
                 }
             }
@@ -350,9 +356,9 @@ internal sealed class Baggage : IDictionary<string, string>
     /// </summary>
     public void Clear()
     {
-        if (_items is { } list)
+        if (_items is { } items)
         {
-            lock (list)
+            lock (items)
             {
                 _items?.Clear();
             }
