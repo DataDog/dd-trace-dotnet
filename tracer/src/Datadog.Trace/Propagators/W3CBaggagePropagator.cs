@@ -9,6 +9,7 @@ using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 #nullable enable
 
@@ -116,18 +117,30 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return baggage is { Count: > 0 };
     }
 
-    internal static string Encode(string value, HashSet<char> charsToEncode)
+    internal static string Encode(string source, HashSet<char> charsToEncode)
     {
-        if (value.Length == 0)
+        if (source.Length == 0)
         {
             return string.Empty;
         }
 
-        var bytes = Encoding.UTF8.GetBytes(value);
+#if NETCOREAPP3_1_OR_GREATER
+        var byteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
+        Span<byte> bytes = stackalloc byte[byteCount];
+        byteCount = Encoding.UTF8.GetBytes(source, bytes);
+        bytes = bytes[..byteCount];
+#elif NETFRAMEWORK || NETSTANDARD
+        var byteCount = Encoding.UTF8.GetByteCount(source);
+        var bytes = ArrayPool<byte>.Shared.Rent(byteCount);
+        byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, bytes, 0);
+#endif
+
         var sb = StringBuilderCache.Acquire();
 
-        foreach (var b in bytes)
+        for (var i = 0; i < bytes.Length && i < byteCount; i++)
         {
+            var b = bytes[i];
+
             if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b))
             {
                 // encode byte as '%XX'
@@ -138,6 +151,10 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 sb.Append((char)b);
             }
         }
+
+#if NETFRAMEWORK
+        ArrayPool<byte>.Shared.Return(bytes);
+#endif
 
         return StringBuilderCache.GetStringAndRelease(sb);
     }
@@ -154,6 +171,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return string.Empty;
         }
 
+        // returns the same string (no allocations) if there are no escaped/encoded characters
         return Uri.UnescapeDataString(value.ToString());
     }
 
