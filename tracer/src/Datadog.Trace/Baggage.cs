@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 #nullable enable
@@ -375,18 +376,37 @@ internal sealed class Baggage : IDictionary<string, string>
             ThrowHelper.ThrowArgumentNullException(nameof(destination));
         }
 
-        if (Count == 0)
+        var sourceItems = _items;
+
+        if (sourceItems is null || sourceItems.Count == 0)
         {
             // nothing to merge
             return;
         }
 
-        var sourceItems = _items!; // if count > 0, then _items is not null
         var destinationItems = destination.EnsureListInitialized();
 
-        lock (sourceItems)
+        object lock1;
+        object lock2;
+
+        // ensure we lock the two objects in the same order regardless of
+        // which one is source vs destination to avoid a deadlock if:
+        // Thread 1: baggageA.MergeInto(baggageB);
+        // Thread 2: baggageB.MergeInto(baggageA);
+        if (RuntimeHelpers.GetHashCode(sourceItems) < RuntimeHelpers.GetHashCode(destinationItems))
         {
-            lock (destinationItems)
+            lock1 = sourceItems;
+            lock2 = destinationItems;
+        }
+        else
+        {
+            lock1 = destinationItems;
+            lock2 = sourceItems;
+        }
+
+        lock (lock1)
+        {
+            lock (lock2)
             {
                 foreach (var sourceItem in sourceItems)
                 {
