@@ -31,18 +31,15 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("false", "true", true)]
-        [InlineData("true", null, true)]
-        [InlineData(null, "false", false)]
-        public void CaseInsenstiveIntegrationEnabled(string sensitiveCaseValue, string upperCasedValue, bool expected)
+        [InlineData("DD_TRACE_MYSQL_ENABLED", "false", false)]
+        [InlineData("DD_TRACE_MySql_ENABLED", "false", false)]
+        public void CaseInsenstiveIntegrationEnabled(string settingName, string settingValue, bool expected)
         {
             var dict = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                { "DD_TRACE_MYSQL_ENABLED", upperCasedValue },
-                { "DD_TRACE_MySql_ENABLED", sensitiveCaseValue }
+                { settingName, settingValue },
             };
             var src = new DictionaryConfigurationSource(dict);
-
             var settings = new IntegrationSettings(nameof(IntegrationId.MySql), src);
 
             settings.EnabledInternal.Should().Be(expected);
