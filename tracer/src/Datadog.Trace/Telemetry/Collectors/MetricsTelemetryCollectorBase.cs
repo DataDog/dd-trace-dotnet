@@ -223,12 +223,12 @@ internal abstract partial class MetricsTelemetryCollectorBase
             return _wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags;
         }
 
-        if (metricKeyTags[0].StartsWith("waf_version"))
+        if (metricKeyTags[0].StartsWith("waf_version", StringComparison.Ordinal))
         {
             metricKeyTags[0] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[0];
         }
 
-        if (metricKeyTags.Length > 1 && metricKeyTags[1].StartsWith("event_rules_version"))
+        if (metricKeyTags.Length > 1 && metricKeyTags[1].StartsWith("event_rules_version", StringComparison.Ordinal))
         {
             metricKeyTags[1] = (_wafAndRulesVersionTags ?? _unknownWafAndRulesVersionTags)[1];
         }
