@@ -1,14 +1,8 @@
-// <copyright file="IPoolable.cs" company="Datadog">
+// <copyright file="MethodScopeMembersParameters.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Helpers
-{
-    internal interface IPoolable<in TSetParameters>
-    {
-        void Set(TSetParameters parameters);
+namespace Datadog.Trace.Debugger.Expressions;
 
-        void Reset();
-    }
-}
+internal record struct MethodScopeMembersParameters(int NumberOfLocals, int NumberOfArguments);

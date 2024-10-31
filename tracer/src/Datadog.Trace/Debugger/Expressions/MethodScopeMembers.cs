@@ -9,10 +9,18 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-internal record struct MethodScopeMembersParameters(int NumberOfLocals, int NumberOfArguments);
 internal class MethodScopeMembers : IPoolable<MethodScopeMembersParameters>
 {
     private int _index;
+
+    public MethodScopeMembers()
+    {
+    }
+
+    internal MethodScopeMembers(MethodScopeMembersParameters parameters)
+    {
+        Set(parameters);
+    }
 
     internal ScopeMember[] Members { get; private set; }
 
