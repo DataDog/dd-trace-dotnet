@@ -409,7 +409,7 @@ internal readonly partial struct SecurityCoordinator
             queryDic = new Dictionary<string, string[]>(queryString.AllKeys.Length);
             foreach (var originalKey in queryString.AllKeys)
             {
-                RequestDataHelper.GetNameValueCollectionValues(queryString, originalKey);
+                var values = RequestDataHelper.GetNameValueCollectionValues(queryString, originalKey);
                 if (values is not null)
                 {
                     if (string.IsNullOrEmpty(originalKey))
