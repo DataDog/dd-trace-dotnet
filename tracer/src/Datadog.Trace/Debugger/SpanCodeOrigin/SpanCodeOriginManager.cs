@@ -47,7 +47,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            Instance.AddExitSpanTag(span);
+            AddExitSpanTag(span);
         }
 
         private void AddExitSpanTag(Span span)
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 var framesLength = PopulateUserFrames(frames);
                 if (framesLength == 0)
                 {
-                    Log.Warning("No user frames has founded");
+                    Log.Warning("No user frames were found");
                     return;
                 }
 
@@ -105,8 +105,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
             finally
             {
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-                if (frames != null)
+                if (frames != null!)
                 {
                     ArrayPool<FrameInfo>.Shared.Return(frames);
                 }
@@ -118,8 +117,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             var stackTrace = new StackTrace(true);
             var stackFrames = stackTrace.GetFrames();
 
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-            if (stackFrames == null)
+            if (stackFrames == null!)
             {
                 return 0;
             }
