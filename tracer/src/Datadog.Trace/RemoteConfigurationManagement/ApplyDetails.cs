@@ -18,7 +18,7 @@ internal struct ApplyDetails
 
     public string Filename { get; }
 
-    public uint ApplyState { get; set; }
+    public ulong ApplyState { get; set; }
 
     public string? Error { get; set; }
 

@@ -83,9 +83,10 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.4", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion, string rulesVersion)
     {
         static void IncrementOpenTelemetryConfigMetrics(MetricsTelemetryCollector collector, string openTelemetryKey)
         {
@@ -146,13 +147,13 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
         if (wafVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
-            expectedWafTag = $"waf_version:{wafVersion}";
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
         }
+
+        var expectedWafTag = $"waf_version:{wafVersion ?? "unknown"}";
+        var expectedRulesetTag = $"event_rules_version:{rulesVersion ?? "unknown"}";
 
         using var scope = new AssertionScope();
         scope.FormattingOptions.MaxLines = 1000;
@@ -242,7 +243,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafInit.GetName(),
                 Points = new[] { new { Value = 4 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag },
+                Tags = new[] { expectedWafTag, expectedRulesetTag },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -251,7 +252,7 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -504,9 +505,10 @@ public class MetricsTelemetryCollectorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion)
+    [InlineData(null, null)]
+    [InlineData("1.2.3", null)]
+    [InlineData("1.2.3", "10.2")]
+    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion, string rulesVersion)
     {
         var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -551,12 +553,9 @@ public class MetricsTelemetryCollectorTests
 
         collector.AggregateMetrics();
 
-        var expectedWafTag = "waf_version:unknown";
-
         if (wafVersion is not null)
         {
-            collector.SetWafVersion(wafVersion);
-            expectedWafTag = $"waf_version:{wafVersion}";
+            collector.SetWafAndRulesVersion(wafVersion, rulesVersion);
         }
 
         using var scope = new AssertionScope();
