@@ -150,11 +150,11 @@ internal sealed class Baggage : IDictionary<string, string>
 
         lock (items)
         {
-            AddOrReplace(items, key, value);
+            AddOrReplaceInternal(items, key, value);
         }
     }
 
-    private static void AddOrReplace(List<KeyValuePair<string, string>> items, string key, string value)
+    private static void AddOrReplaceInternal(List<KeyValuePair<string, string>> items, string key, string value)
     {
         for (int i = 0; i < items.Count; i++)
         {
@@ -410,7 +410,7 @@ internal sealed class Baggage : IDictionary<string, string>
             {
                 foreach (var sourceItem in sourceItems)
                 {
-                    AddOrReplace(destinationItems, sourceItem.Key, sourceItem.Value);
+                    AddOrReplaceInternal(destinationItems, sourceItem.Key, sourceItem.Value);
                 }
             }
         }
