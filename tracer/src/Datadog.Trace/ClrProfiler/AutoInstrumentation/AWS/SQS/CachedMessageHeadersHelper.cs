@@ -13,14 +13,21 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
+    /// <summary>
+    /// Allows the creation of MessageAttributes and MessageAttributeValue with a type corresponding to the one given as template parameter
+    /// </summary>
+    /// <typeparam name="TMarkerType">can be any type in the same assembly as the Attributes we want to create.</typeparam>
     internal sealed class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
         private const string StringDataType = "String";
 
-        private static readonly Func<string, object> _createMessageAttributeValue;
+        // ReSharper disable StaticMemberInGenericType
+        // there will be one instance of those fields per template type
+        private static readonly Func<string, object> MessageAttributeValueCreator;
         private static readonly ActivatorHelper DictionaryActivator;
+        // ReSharper restore StaticMemberInGenericType
 
-        public static readonly CachedMessageHeadersHelper<TMarkerType> Instance = new();
+        public static readonly CachedMessageHeadersHelper<TMarkerType> Instance;
 
         private CachedMessageHeadersHelper()
         {
@@ -52,10 +59,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
-            _createMessageAttributeValue = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
+            MessageAttributeValueCreator = (Func<string, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<string, object>));
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
             DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
+
+            Instance = new CachedMessageHeadersHelper<TMarkerType>();
         }
 
         public IDictionary CreateMessageAttributes()
@@ -65,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
         public object CreateMessageAttributeValue(string value)
         {
-            return _createMessageAttributeValue(value);
+            return MessageAttributeValueCreator(value);
         }
     }
 }
