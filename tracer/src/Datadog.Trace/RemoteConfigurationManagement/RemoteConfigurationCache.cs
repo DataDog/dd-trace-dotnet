@@ -10,7 +10,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class RemoteConfigurationCache
     {
-        public RemoteConfigurationCache(RemoteConfigurationPath path, int length, Dictionary<string, string> hashes, int version)
+        public RemoteConfigurationCache(RemoteConfigurationPath path, long length, Dictionary<string, string> hashes, long version)
         {
             Path = path;
             Length = length;
@@ -20,13 +20,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public RemoteConfigurationPath Path { get; }
 
-        public int Length { get; }
+        public long Length { get; }
 
         public Dictionary<string, string> Hashes { get; }
 
-        public int Version { get; }
+        public long Version { get; }
 
-        public uint ApplyState { get; private set; } = ApplyStates.UNACKNOWLEDGED;
+        public ulong ApplyState { get; private set; } = ApplyStates.UNACKNOWLEDGED;
 
         public string Error { get; private set; }
 
