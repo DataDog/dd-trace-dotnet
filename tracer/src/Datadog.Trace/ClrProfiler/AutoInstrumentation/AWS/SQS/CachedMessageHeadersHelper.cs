@@ -13,7 +13,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
-    internal class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
+    internal sealed class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
         private const string StringDataType = "String";
 
