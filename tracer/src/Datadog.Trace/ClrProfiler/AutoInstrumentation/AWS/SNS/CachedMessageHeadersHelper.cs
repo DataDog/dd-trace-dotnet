@@ -15,7 +15,7 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
-    internal class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
+    internal sealed class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
         private const string StringDataType = "Binary";
 
