@@ -124,39 +124,57 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return string.Empty;
         }
 
+        // this is an upper bound and will almost always be more bytes than we need
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
+
 #if NETCOREAPP3_1_OR_GREATER
-        var byteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
-        Span<byte> bytes = stackalloc byte[byteCount];
-        byteCount = Encoding.UTF8.GetBytes(source, bytes);
-        bytes = bytes[..byteCount];
-#else
-        var byteCount = Encoding.UTF8.GetByteCount(source);
-        var bytes = ArrayPool<byte>.Shared.Rent(byteCount);
-        byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, bytes, 0);
-#endif
-
-        var sb = StringBuilderCache.Acquire();
-
-        for (var i = 0; i < bytes.Length && i < byteCount; i++)
+        if (maxByteCount < 256)
         {
-            var b = bytes[i];
+            return EncodeOnStack(maxByteCount, source, charsToEncode);
 
-            if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b))
+            static string EncodeOnStack(int maxByteCount, string source, HashSet<char> charsToEncode)
             {
-                // encode byte as '%XX'
-                sb.Append($"%{b:X2}");
-            }
-            else
-            {
-                sb.Append((char)b);
+                // allocate a buffer on the stack for the UTF-8 bytes
+                Span<byte> buffer = stackalloc byte[maxByteCount];
+                var byteCount = Encoding.UTF8.GetBytes(source, buffer);
+
+                // slice the buffer down to the actual bytes written
+                var bytes = buffer[..byteCount];
+                return EncodeBytes(bytes, charsToEncode);
             }
         }
-
-#if NETFRAMEWORK
-        ArrayPool<byte>.Shared.Return(bytes);
 #endif
 
-        return StringBuilderCache.GetStringAndRelease(sb);
+        // rent a buffer for the UTF-8 bytes
+        var buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+        var byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
+
+        // slice the buffer down to the actual bytes written
+        var bytes = buffer.AsSpan(0, byteCount);
+        var result = EncodeBytes(bytes, charsToEncode);
+
+        ArrayPool<byte>.Shared.Return(buffer);
+        return result;
+
+        static string EncodeBytes(Span<byte> bytes, HashSet<char> hashSet)
+        {
+            var sb = StringBuilderCache.Acquire();
+
+            foreach (var b in bytes)
+            {
+                if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || hashSet.Contains((char)b))
+                {
+                    // encode byte as '%XX'
+                    sb.Append($"%{b:X2}");
+                }
+                else
+                {
+                    sb.Append((char)b);
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
     }
 
     internal static string Decode(string value)
