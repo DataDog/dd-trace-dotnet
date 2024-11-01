@@ -306,8 +306,9 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 $"{PairSeparator}{key}{KeyAndValueSeparator}{value}" :
                 $"{key}{KeyAndValueSeparator}{value}";
 
-            // TODO: it's all ASCII here, so just add up the string lengths
-            _totalLength += Encoding.UTF8.GetByteCount(keyValuePairString);
+            // it's all ASCII here after encoding, so we can use the string
+            // length directly instead of using Encoding.UTF8.GetByteCount()
+            _totalLength += keyValuePairString.Length;
 
             if (_totalLength > _maxBaggageLength)
             {
