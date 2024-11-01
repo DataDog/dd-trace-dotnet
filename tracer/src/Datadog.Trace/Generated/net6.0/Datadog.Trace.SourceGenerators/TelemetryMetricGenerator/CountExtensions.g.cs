@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 42;
+    public const int Length = 43;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -38,6 +38,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => "trace_partial_flush.count",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => "context_header_style.injected",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => "context_header_style.extracted",
+            Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderTruncated => "context_header.truncated",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiResponses => "stats_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiErrors => "stats_api.errors",

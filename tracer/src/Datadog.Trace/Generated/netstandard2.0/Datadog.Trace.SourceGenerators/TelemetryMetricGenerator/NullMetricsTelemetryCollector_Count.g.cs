@@ -76,6 +76,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
+    {
+    }
+
     public void RecordCountStatsApiRequests(int increment = 1)
     {
     }
