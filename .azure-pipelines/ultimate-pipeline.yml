@@ -5035,6 +5035,12 @@ stages:
         integrations_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: INTEGRATIONS
+        integrations_aws_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS_AWS
+        integrations_aws_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS_AWS
         crossed_tracing_libraries_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: CROSSED_TRACING_LIBRARIES
