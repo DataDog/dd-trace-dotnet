@@ -294,6 +294,8 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             {
                 // reached the item count limit, stop adding items
                 CancellationRequested = true;
+
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                 return;
             }
 
@@ -304,12 +306,15 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 $"{PairSeparator}{key}{KeyAndValueSeparator}{value}" :
                 $"{key}{KeyAndValueSeparator}{value}";
 
+            // TODO: it's all ASCII here, so just add up the string lengths
             _totalLength += Encoding.UTF8.GetByteCount(keyValuePairString);
 
             if (_totalLength > _maxBaggageLength)
             {
                 // reached the byte count limit, stop adding items
                 CancellationRequested = true;
+
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
                 return;
             }
 
