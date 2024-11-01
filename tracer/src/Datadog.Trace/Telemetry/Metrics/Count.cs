@@ -102,6 +102,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
+    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:string_too_long`, `truncation_reason:list_or_map_too_large`)
+    /// </summary>
+    [TelemetryMetric<MetricTags.TruncationReason>("context_header.truncated")] ContextHeaderTruncated,
+
+    /// <summary>
     /// The number of requests sent to the stats endopint in the agent, regardless of success
     /// </summary>
     [TelemetryMetric("stats_api.requests")] StatsApiRequests,
