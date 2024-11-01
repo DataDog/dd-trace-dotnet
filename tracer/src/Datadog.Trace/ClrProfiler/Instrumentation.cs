@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -170,6 +171,22 @@ namespace Datadog.Trace.ClrProfiler
                 }
 #endif
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+
+                Log.Debug("Load OpenTelemetry Instrumentations");
+
+                // TODO: Refactor into something smarter where we only do this when we detect HangFire
+                var hangfireOptionsType = Type.GetType("OpenTelemetry.Trace.HangfireInstrumentationOptions, OpenTelemetry.Instrumentation.Hangfire", throwOnError: false);
+                var hangfireType = Type.GetType("OpenTelemetry.Instrumentation.Hangfire.Implementation.HangfireInstrumentation, OpenTelemetry.Instrumentation.Hangfire", throwOnError: false);
+                if (hangfireOptionsType is not null && hangfireType is not null)
+                {
+                    var hangfireOptions = Activator.CreateInstance(hangfireOptionsType);
+                    _ = Activator.CreateInstance(hangfireType, args: hangfireOptions);
+                    Log.Debug("OpenTelemetry.Instrumentation.Hangfire.Implementation.HangfireInstrumentation instance created");
+                }
+                else
+                {
+                    Log.Debug("OpenTelemetry.Instrumentation.Hangfire.Implementation.HangfireInstrumentation not found");
+                }
 
                 Log.Debug("Initialization finished.");
 
