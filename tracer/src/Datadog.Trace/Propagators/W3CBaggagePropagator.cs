@@ -129,7 +129,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         Span<byte> bytes = stackalloc byte[byteCount];
         byteCount = Encoding.UTF8.GetBytes(source, bytes);
         bytes = bytes[..byteCount];
-#elif NETFRAMEWORK || NETSTANDARD
+#else
         var byteCount = Encoding.UTF8.GetByteCount(source);
         var bytes = ArrayPool<byte>.Shared.Rent(byteCount);
         byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, bytes, 0);
