@@ -1629,8 +1629,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
 
-#ifdef LINUX
+    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
+#ifdef LINUX
+    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    // Otherwise the threadInfo won't have it's OsThread field set and timer_create
+    // will have random behavior.
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->RegisterThread(threadInfo);
@@ -1666,7 +1670,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         return S_OK;
     }
 #endif
-    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;
 }

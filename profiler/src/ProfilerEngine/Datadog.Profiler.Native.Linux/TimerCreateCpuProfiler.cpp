@@ -54,14 +54,7 @@ void TimerCreateCpuProfiler::RegisterThread(std::shared_ptr<ManagedThreadInfo> t
 void TimerCreateCpuProfiler::UnregisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo)
 {
     std::shared_lock lock(_registerLock);
-
-    auto timerId = threadInfo->SetTimerId(-1);
-
-    if (timerId != -1)
-    {
-        Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
-        syscall(__NR_timer_delete, timerId);
-    }
+    UnregisterThreadImpl(threadInfo.get());
 }
 
 const char* TimerCreateCpuProfiler::GetName()
@@ -95,8 +88,12 @@ bool TimerCreateCpuProfiler::StartImpl()
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
-    _pSignalManager->UnRegisterHandler();
+    // We have to remove all timers before unregistering the handler for SIGPROF.
+    // Otherwise, the process will end with exit code 155 (128 + 27 => 27 being SIGPROF value)
+    _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
+
     Instance = nullptr;
+    _pSignalManager->UnRegisterHandler();
 
     return true;
 }
@@ -112,8 +109,17 @@ bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t*
     return instance->Collect(ucontext);
 }
 
+// This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
+// contains a frame of a function that might cause a deadlock.
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
+
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
+    {
+        return true;
+    }
+
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
@@ -182,10 +188,23 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
         return;
     }
 
+    threadInfo->SetTimerId(timerId);
+
     std::int32_t _interval = std::chrono::duration_cast<std::chrono::nanoseconds>(_samplingInterval).count();
     struct itimerspec ts;
     ts.it_interval.tv_sec = (time_t)(_interval / 1000000000);
     ts.it_interval.tv_nsec = _interval % 1000000000;
     ts.it_value = ts.it_interval;
     syscall(__NR_timer_settime, timerId, 0, &ts, nullptr);
+}
+
+void TimerCreateCpuProfiler::UnregisterThreadImpl(ManagedThreadInfo* threadInfo)
+{
+    auto timerId = threadInfo->SetTimerId(-1);
+
+    if (timerId != -1)
+    {
+        Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
+        syscall(__NR_timer_delete, timerId);
+    }
 }

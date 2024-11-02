@@ -45,6 +45,7 @@ private:
 
     bool Collect(void* ucontext);
     void RegisterThreadImpl(ManagedThreadInfo* thread);
+    void UnregisterThreadImpl(ManagedThreadInfo* threadInfo);
 
     bool StartImpl() override;
     bool StopImpl() override;
