@@ -113,13 +113,44 @@ bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t*
 // contains a frame of a function that might cause a deadlock.
 extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
 
-bool TimerCreateCpuProfiler::Collect(void* ctx)
+bool TimerCreateCpuProfiler::CanCollect(void* ctx)
 {
+    // TODO (in another PR): add metrics about reasons we could not collect
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
-        return true;
+        return false;
     }
 
+    auto* context = reinterpret_cast<ucontext_t*>(ctx);
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    if (sigismember(&(context->uc_sigmask), SIGSEGV) == 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+struct ErrnoSaveAndRestore
+{
+public:
+    ErrnoSaveAndRestore() :
+        _oldErrno{errno}
+    {
+    }
+    ~ErrnoSaveAndRestore()
+    {
+        errno = _oldErrno;
+    }
+
+private:
+    int _oldErrno;
+};
+
+bool TimerCreateCpuProfiler::Collect(void* ctx)
+{
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
@@ -127,7 +158,12 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    ErrnoSaveAndRestore errnoScope;
+    if (!CanCollect(ctx))
+    {
+        return false;
+    }
 
     auto callstack = _callstackProvider.Get();
 
@@ -137,6 +173,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     }
 
     auto buffer = callstack.Data();
+    auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
     callstack.SetCount(count);
 

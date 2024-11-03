@@ -41,6 +41,7 @@ public:
 
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
+    static bool CanCollect(void* context);
     static TimerCreateCpuProfiler* Instance;
 
     bool Collect(void* ucontext);
