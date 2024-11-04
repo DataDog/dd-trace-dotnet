@@ -45,6 +45,7 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _traceContext{},
 #ifdef LINUX
     _sharedMemoryArea{nullptr},
+    _timerId{-1},
 #endif
     _info{pCorProfilerInfo},
     _blockingThreadId{0}
