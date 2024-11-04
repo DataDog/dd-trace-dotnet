@@ -122,10 +122,7 @@ namespace Datadog.Trace.DatabaseMonitoring
 
             if (command.Connection.State != ConnectionState.Open)
             {
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", command.Connection.State);
-                }
+                Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", command.Connection.State);
 
                 return false;
             }
