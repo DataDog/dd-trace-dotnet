@@ -15,12 +15,19 @@ namespace Datadog.Trace.Pdb.SourceLink;
 internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
-    /// Extract the git commit sha and repository url from a Azure DevOps SourceLink mapping string.
-    /// For example, for the following SourceLink mapping string:
-    ///     https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&amp;versionType=commit&amp;version=dd35903c688a74b62d1c6a9e4f41371c65704db8&amp;path=/*
-    /// It will return:
+    ///     Extract the git commit sha and repository url from a Azure DevOps SourceLink mapping string.
+    ///     For example, for the following SourceLink mapping string:
+    ///     https://test.visualstudio.com/test-org/_apis/git/repositories/my-repo/items?api-version=1.0&amp;versionType=commit
+    ///     &amp;version=dd35903c688a74b62d1c6a9e4f41371c65704db8&amp;path=/*
+    ///     It will return:
     ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
     ///     - repository URL: https://test.visualstudio.com/test-org/_git/my-repo
+    ///     Likewise, for the following SourceLink mapping string:
+    ///     https://dev.azure.com/organisation/project/_apis/git/repositories/example.shopping.api/items?api-version=1.0&amp;
+    ///     versionType=commit&amp;version=0e4d29442102e6cef1c271025d513c8b2187bcd6&amp;path=/*
+    /// It will return:
+    ///     - commit sha: 0e4d29442102e6cef1c271025d513c8b2187bcd6
+    ///     - repository URL: https://dev.azure.com/organisation/project/_git/example.shopping.api
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -46,15 +53,9 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length < 5)
-            {
-                return false;
-            }
+            repositoryUrl = BuildRepositoryUrl(uri);
 
-            repositoryUrl = $"https://{uri.Host}/{segments[0]}/_git/{segments[4]}";
-
-            return true;
+            return repositoryUrl != null;
         }
         catch (Exception ex)
         {
@@ -62,6 +63,35 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         return false;
+    }
+
+    private static string? BuildRepositoryUrl(Uri uri)
+    {
+        var segments = uri.AbsolutePath.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 5)
+        {
+            return null;
+        }
+
+        if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
+        {
+            // Legacy format: https://{organization}.visualstudio.com
+            var project = segments[0];
+            var repoName = segments[4];
+            return $"https://{uri.Host}/{project}/_git/{repoName}";
+        }
+
+        if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
+        {
+            // New format: https://dev.azure.com/{organization}
+            var organization = segments[0];
+            var project = segments[1];
+            var repoName = segments[5];
+            return $"https://{uri.Host}/{organization}/{project}/_git/{repoName}";
+        }
+
+        Log.Error("Unsupported Azure DevOps host: {Host}", uri.Host);
+        return null;
     }
 
     private static NameValueCollection ParseQueryString(string queryString)
@@ -73,7 +103,7 @@ internal class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         var pairs = queryString.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
         foreach (var pair in pairs)
         {
-            var parts = pair.Split(new[] { '=' }, 2);
+            var parts = pair.Split(new char[] { '=' }, 2);
             if (parts.Length == 2)
             {
                 query.Add(parts[0], parts[1]);

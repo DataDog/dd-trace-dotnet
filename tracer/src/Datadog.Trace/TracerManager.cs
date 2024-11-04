@@ -591,7 +591,7 @@ namespace Datadog.Trace
         {
             var security = Security.Instance;
             writer.WritePropertyName("appsec_enabled");
-            writer.WriteValue(security.Settings.Enabled);
+            writer.WriteValue(security.Settings.AppsecEnabled);
 
             if (security.Settings.ApiSecurityEnabled)
             {

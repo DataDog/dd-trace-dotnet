@@ -41,7 +41,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -71,7 +72,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -95,7 +97,8 @@
       language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -119,7 +122,8 @@
       language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -143,7 +147,8 @@
       language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -167,7 +172,8 @@
       language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -191,7 +197,8 @@
       language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -221,7 +228,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -251,7 +259,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -281,7 +290,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -311,7 +321,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -341,7 +352,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -371,7 +383,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -401,7 +414,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -431,7 +445,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -461,7 +476,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -491,7 +507,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -521,7 +538,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -551,7 +569,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -581,7 +600,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -611,7 +631,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -641,7 +662,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -671,7 +693,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -701,7 +724,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -731,7 +755,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -761,7 +786,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -791,7 +817,8 @@
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0

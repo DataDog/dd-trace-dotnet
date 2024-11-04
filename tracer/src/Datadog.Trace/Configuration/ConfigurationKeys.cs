@@ -300,13 +300,27 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
-        public const string HttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_SERVER_ERROR_STATUSES`")]
+        public const string DeprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's server http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
+        public const string HttpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
-        public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_CLIENT_ERROR_STATUSES`")]
+        public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's client http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
+        public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key indicating the optional name of the custom header to take into account to report the ip address from.
@@ -450,6 +464,14 @@ namespace Datadog.Trace.Configuration
         public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
         /// <summary>
+        /// Configuration key for the comma-separated list of user disabled
+        /// ADO.NET CommandType names that should not have Span created for them.
+        /// <para>"InterceptableDbCommand" and "ProfiledDbCommand" are always disabled by default.</para>
+        /// </summary>
+        /// <seealso cref="TracerSettings.DisabledAdoNetCommandTypes"/>
+        public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
@@ -553,6 +575,21 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for set the test session name
             /// </summary>
             public const string TestSessionName = "DD_TEST_SESSION_NAME";
+
+            /// <summary>
+            /// Configuration key for a kill-switch that allows to explicitly disable retries even if the remote setting is enabled.
+            /// </summary>
+            public const string FlakyRetryEnabled = "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for a single test case.
+            /// </summary>
+            public const string FlakyRetryCount = "DD_CIVISIBILITY_FLAKY_RETRY_COUNT";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for the entire session.
+            /// </summary>
+            public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
         }
 
         /// <summary>

@@ -214,6 +214,7 @@ internal static class MetricTags
         [Description("integration_name:awssdk")]AwsSdk,
         [Description("integration_name:awssqs")]AwsSqs,
         [Description("integration_name:awssns")]AwsSns,
+        [Description("integration_name:awseventbridge")]AwsEventBridge,
         [Description("integration_name:ilogger")]ILogger,
         [Description("integration_name:aerospike")]Aerospike,
         [Description("integration_name:azurefunctions")]AzureFunctions,
@@ -271,11 +272,11 @@ internal static class MetricTags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
-        [Description("waf_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
-        [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
-        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
     [EnumExtensions]

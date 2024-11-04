@@ -10,6 +10,7 @@ using System.Text;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -81,7 +82,9 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
 
-        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
         {
@@ -126,7 +129,9 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
 
-        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
         {
@@ -170,7 +175,9 @@ public class ContextPropagationTests
             });
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
-        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest, IPublishBatchRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
         {
@@ -199,7 +206,9 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPublishRequest>();
 
-        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
         var messageAttributes = (Dictionary<string, MessageAttributeValue>)proxy.MessageAttributes;
@@ -229,7 +238,9 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPublishRequest>();
 
-        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
         var messageAttributes = (Dictionary<string, MessageAttributeValue>)proxy.MessageAttributes;
@@ -259,7 +270,9 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPublishRequest>();
 
-        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(proxy, _spanContext);
+        ContextPropagation.InjectHeadersIntoMessage<PublishRequest, IPublishRequest>(
+            proxy,
+            new PropagationContext(_spanContext, baggage: null));
 
         // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
         var messageAttributes = (Dictionary<string, MessageAttributeValue>)proxy.MessageAttributes;

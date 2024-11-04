@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.Configuration;
-
 namespace Datadog.Trace.Propagators;
 
 /// <summary>

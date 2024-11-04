@@ -4,7 +4,7 @@ services:
   localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -93,7 +93,7 @@ services:
   localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -336,48 +336,6 @@ services:
       LDAP_DOMAIN: "dd-trace-dotnet.com"
       LDAP_ADMIN_PASSWORD: "Passw0rd"
       LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
-
-
-  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
-  # and only after switching to run Windows containers
-  IntegrationTests.IIS:
-    build:
-      context: ./
-      args:
-        - ENABLE_32_BIT
-        - DOTNET_TRACER_MSI
-      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
-    image: datadog-iis-loaderoptimizationregkey
-    ports:
-    - "8080:80"
-    environment:
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - DD_LOGGER_DD_API_KEY
-      - DD_LOGGER_DD_SERVICE
-      - DD_LOGGER_DD_ENV
-      - DD_LOGGER_ENABLED
-      - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
-      - DD_LOGGER_BUILD_BUILDID
-      - DD_LOGGER_BUILD_DEFINITIONNAME
-      - DD_LOGGER_BUILD_SOURCESDIRECTORY
-      - DD_LOGGER_BUILD_REPOSITORY_URI
-      - DD_LOGGER_BUILD_SOURCEVERSION
-      - DD_LOGGER_BUILD_SOURCEBRANCH
-      - DD_LOGGER_BUILD_SOURCEBRANCHNAME
-      - DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE
-      - DD_LOGGER_BUILD_REQUESTEDFORID
-      - DD_LOGGER_BUILD_REQUESTEDFOREMAIL
-      - DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI
-      - DD_LOGGER_SYSTEM_TEAMPROJECTID
-      - DD_LOGGER_SYSTEM_STAGEDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBID
-      - DD_LOGGER_SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
-      - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
 
   ProfilerIntegrationTests:
     build:
@@ -871,7 +829,7 @@ services:
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
 
   smoke-tests:
     build:
@@ -1112,7 +1070,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb
+      - SERVICES=sns,sqs,kinesis,dynamodb,events
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1

@@ -303,13 +303,17 @@ namespace Datadog.Trace.Configuration
             StartupDiagnosticLogEnabledInternal = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
             var httpServerErrorStatusCodes = config
-                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes)
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpServerErrorStatusCodes, ConfigurationKeys.DeprecatedHttpServerErrorStatusCodes)
+#pragma warning restore 618
                                             .AsString(defaultValue: "500-599");
 
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
             var httpClientErrorStatusCodes = config
-                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
+#pragma warning disable 618 // This config key has been replaced but may still be used
+                                            .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes, ConfigurationKeys.DeprecatedHttpClientErrorStatusCodes)
+#pragma warning restore 618
                                             .AsString(defaultValue: "400-499");
 
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
@@ -494,6 +498,17 @@ namespace Datadog.Trace.Configuration
             CommandsCollectionEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
                                        .AsBool(false);
+
+            var defaultDisabledAdoNetCommandTypes = new string[] { "InterceptableDbCommand", "ProfiledDbCommand" };
+            var userDisabledAdoNetCommandTypes = config.WithKeys(ConfigurationKeys.DisabledAdoNetCommandTypes).AsString();
+
+            DisabledAdoNetCommandTypes = new HashSet<string>(defaultDisabledAdoNetCommandTypes, StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(userDisabledAdoNetCommandTypes))
+            {
+                var userSplit = TrimSplitString(userDisabledAdoNetCommandTypes, commaSeparator);
+                DisabledAdoNetCommandTypes.UnionWith(userSplit);
+            }
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
@@ -1046,6 +1061,11 @@ namespace Datadog.Trace.Configuration
         internal SchemaVersion MetadataSchemaVersion { get; }
 
         /// <summary>
+        /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
+        /// </summary>
+        internal HashSet<string> DisabledAdoNetCommandTypes { get; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
@@ -1237,7 +1257,7 @@ namespace Datadog.Trace.Configuration
                 // Checks that the value about to be used follows the `401-404` structure or single 3 digit number i.e. `401` else log the warning
                 if (!Regex.IsMatch(statusConfiguration, @"^\d{3}-\d{3}$|^\d{3}$"))
                 {
-                    Log.Warning("Wrong format '{0}' for DD_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
+                    Log.Warning("Wrong format '{0}' for DD_TRACE_HTTP_SERVER/CLIENT_ERROR_STATUSES configuration.", statusConfiguration);
                 }
 
                 // If statusConfiguration equals a single value i.e. `401` parse the value and save to the array

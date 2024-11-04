@@ -114,6 +114,8 @@ internal readonly partial struct SecurityCoordinator
             _httpTransport.ReportedExternalWafsRequestHeaders = true;
         }
 
+        AttackerFingerprintHelper.AddSpanTags(_localRootSpan, result);
+
         if (result.ShouldReportSecurityResult)
         {
             _localRootSpan.SetTag(Tags.AppSecEvent, "true");
@@ -129,10 +131,8 @@ internal readonly partial struct SecurityCoordinator
             var traceContext = _localRootSpan.Context.TraceContext;
             if (result.Data != null)
             {
-                traceContext.AddWafSecurityEvents(result.Data);
+                traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
-
-            AttackerFingerprintHelper.AddSpanTags(_localRootSpan);
 
             var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
@@ -146,7 +146,6 @@ internal readonly partial struct SecurityCoordinator
                 traceContext.Origin = "appsec";
             }
 
-            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             headers ??= _httpTransport.GetRequestHeaders();
@@ -194,7 +193,7 @@ internal readonly partial struct SecurityCoordinator
         // We report always, even if there is no match
         if (result.AggregatedTotalRuntimeRasp > 0)
         {
-            localRootSpan.Context.TraceContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
+            localRootSpan.Context.TraceContext.AppSecRequestContext.AddRaspSpanMetrics(result.AggregatedTotalRuntimeRasp, result.AggregatedTotalRuntimeWithBindingsRasp, result.Timeout);
         }
     }
 

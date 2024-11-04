@@ -4,10 +4,14 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -60,6 +64,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
             // Server is ready to receive requests
             var responseMessage = await client.GetAsync(Url);
             Assert.Equal(HttpStatusCode.OK, responseMessage.StatusCode);
+
+            // verify we have some logs, so we know instrumentation happened
+            var logDirectory = Path.Combine(
+                DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance),
+                nameof(LoaderOptimizationStartup));
+
+            Output.WriteLine($"Reading files from {logDirectory}");
+            Directory.GetFiles(logDirectory).Should().NotBeEmpty();
         }
     }
 }

@@ -9,7 +9,6 @@
 #include <dirent.h>
 #include <string>
 #include <memory>
-#include <filesystem>
 
 #include <libunwind.h>
 #include <libunwind-ptrace.h>
@@ -25,7 +24,10 @@ extern "C"
 {
 #include "datadog/common.h"
 #include "datadog/profiling.h"
+#include "datadog/crashtracker.h"
 }
+
+#include <shared/src/native-src/dd_filesystem.hpp>
 
 CrashReporting* CrashReporting::Create(int32_t pid)
 {
@@ -65,9 +67,9 @@ int32_t CrashReportingLinux::Initialize()
     return result;
 }
 
-std::pair<std::string, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
+std::pair<std::string_view, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
 {
-    for (auto& module : _modules)
+    for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {
@@ -112,10 +114,10 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             continue;
         }
 
-        std::string startStr = addressRange.substr(0, dashPos);
-        std::string endStr = addressRange.substr(dashPos + 1);
-        uintptr_t start = std::stoull(startStr, nullptr, 16);
-        uintptr_t end = std::stoull(endStr, nullptr, 16);
+        auto startStr = std::string_view(addressRange).substr(0, dashPos);
+        auto endStr = std::string_view(addressRange).substr(dashPos + 1);
+        uintptr_t start = std::stoull(startStr.data(), nullptr, 16);
+        uintptr_t end = std::stoull(endStr.data(), nullptr, 16);
 
         // Get the base address of the module if we have it, otherwise add it
         auto it = moduleBaseAddresses.find(path);
@@ -131,7 +133,7 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        modules.push_back(ModuleInfo{ start, end, baseAddress, path });
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path) });
     }
 
     return modules;
@@ -196,8 +198,8 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
 
         ResolveMethodData methodData;
 
-        auto module = FindModule(ip);
-        stackFrame.moduleAddress = module.second;
+        auto [moduleName, moduleAddress] = FindModule(ip);
+        stackFrame.moduleAddress = moduleAddress;
 
         bool hasName = false;
 
@@ -216,9 +218,9 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
                 stackFrame.method = std::string(methodData.symbolName);
                 hasName = true;
 
-                auto demangleResult = ddog_demangle(libdatadog::FfiHelper::StringToCharSlice(stackFrame.method), DDOG_PROF_DEMANGLE_OPTIONS_COMPLETE);
+                auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
 
-                if (demangleResult.tag == DDOG_PROF_STRING_WRAPPER_RESULT_OK)
+                if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
                 {
                     // TODO: There is currently no safe way to free the StringWrapper
                     auto stringWrapper = demangleResult.ok;
@@ -234,13 +236,13 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         if (!hasName)
         {
             std::ostringstream unknownModule;
-            unknownModule << module.first << "!<unknown>+" << std::hex << (ip - module.second);
+            unknownModule << moduleName << "!<unknown>+" << std::hex << (ip - moduleAddress);
             stackFrame.method = unknownModule.str();
         }
 
         stackFrame.isSuspicious = false;
 
-        std::filesystem::path modulePath(module.first);
+        fs::path modulePath(moduleName);
 
         if (modulePath.has_filename())
         {
@@ -263,49 +265,6 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
     _UPT_destroy(libunwindContext);
 
     return MergeFrames(frames, managedFrames);
-}
-
-std::vector<StackFrame> CrashReportingLinux::MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames)
-{
-    std::vector<StackFrame> result;
-    result.reserve(std::max(nativeFrames.size(), managedFrames.size()));
-
-    size_t i = 0, j = 0;
-    while (i < nativeFrames.size() && j < managedFrames.size())
-    {
-        if (nativeFrames.at(i).sp < managedFrames.at(j).sp)
-        {
-            result.push_back(nativeFrames.at(i));
-            ++i;
-        }
-        else if (managedFrames.at(j).sp < nativeFrames.at(i).sp)
-        {
-            result.push_back(managedFrames.at(j));
-            ++j;
-        }
-        else
-        { // frames[i].sp == managedFrames[j].sp
-            // Prefer managedFrame when sp values are the same
-            result.push_back(managedFrames.at(j));
-            ++i;
-            ++j;
-        }
-    }
-
-    // Add any remaining frames that are left in either vector
-    while (i < nativeFrames.size())
-    {
-        result.push_back(nativeFrames.at(i));
-        ++i;
-    }
-
-    while (j < managedFrames.size())
-    {
-        result.push_back(managedFrames.at(j));
-        ++j;
-    }
-
-    return result;
 }
 
 std::string CrashReportingLinux::GetSignalInfo(int32_t signal)
@@ -344,7 +303,7 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingLinux::GetThreads()
                 continue;
             auto threadId = atoi(entry->d_name);
             auto threadName = GetThreadName(threadId);
-            threads.push_back(std::make_pair(threadId, threadName));
+            threads.push_back(std::make_pair(threadId, std::move(threadName)));
         }
 
         closedir(proc_dir);

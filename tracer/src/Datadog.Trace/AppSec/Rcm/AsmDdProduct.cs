@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDdProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();
         var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
@@ -33,26 +33,17 @@ internal class AsmDdProduct : IAsmConfigUpdater
                 ruleSet = RuleSet.From(result.TypedFile);
             }
 
-            configurationStatus.RulesByFile[result.TypedFile.Path] = ruleSet;
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.RulesByFile[firstFile.Path.Path] = ruleSet;
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
-        var oneRemoved = false;
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
-            oneRemoved |= configurationStatus.RulesByFile.Remove(removedConfig.Path);
-        }
-
-        if (configurationStatus.RulesByFile.Count == 0)
-        {
-            configurationStatus.IncomingUpdateState.FallbackToEmbeddedRuleset();
-        }
-        else if (oneRemoved)
-        {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.RulesByFile.Remove(removedConfig.Path);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
         }
     }
 }

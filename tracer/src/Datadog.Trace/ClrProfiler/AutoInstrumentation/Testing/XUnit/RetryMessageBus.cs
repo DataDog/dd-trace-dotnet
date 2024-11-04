@@ -32,6 +32,8 @@ internal class RetryMessageBus : IMessageBus
 
     public bool AbortByThreshold { get; set; }
 
+    public bool FlakyRetryEnabled { get; set; }
+
     [DuckReverseMethod]
     public void Dispose()
     {

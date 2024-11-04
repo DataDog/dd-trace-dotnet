@@ -21,13 +21,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     {
         internal const string SqsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
+        private static void Inject<TMessageRequest>(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
 
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+
 
             if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.PathwayContext != null)
             {
@@ -40,6 +41,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                     // Both PropagationKeyBase64 and PropagationKey use the Base64 encoded context
                     sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, base64EncodedContext);
                 }
+
+            if (context.SpanContext?.PathwayContext is { } pathwayContext)
+            {
+                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsSqsHeadersAdapters.GetInjectionAdapter(sb));
+
             }
 
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
@@ -93,7 +99,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject<TMessageRequest>(spanContext, carrier.MessageAttributes, dataStreamsManager);
+                var context = new PropagationContext(spanContext, Baggage.Current);
+                Inject<TMessageRequest>(context, carrier.MessageAttributes, dataStreamsManager);
             }
         }
 

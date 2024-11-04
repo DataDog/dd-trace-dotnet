@@ -69,7 +69,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var span0nominalState = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestSecurityToggling)) }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            var request1 = await agent.SetupRcmAndWait(Output, [((object)new AsmFeatures { Asm = new AsmFeature { Enabled = false } }, "ASM_FEATURES", nameof(TestSecurityToggling))], timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
 
             void CheckRequest(GetRcmRequest associatedRcmRequest, int fileNumberIfSecurityCanBeToggled)
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             CheckRequest(request1, 1);
             var span1ShouldStillBeDisabled = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestSecurityToggling)) });
+            var request2 = await agent.SetupRcmAndWait(Output, [(new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestSecurityToggling))]);
             CheckRequest(request2, 1);
 
             var spans2ShouldBeEnabled = await SendRequestsAsync(agent, url);

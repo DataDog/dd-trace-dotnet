@@ -13,7 +13,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
@@ -29,66 +29,61 @@ internal class AsmProduct : IAsmConfigUpdater
             if (asmConfig.RuleOverrides != null)
             {
                 configurationStatus.RulesOverridesByFile[asmConfigName] = asmConfig.RuleOverrides;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
             }
 
             if (asmConfig.Exclusions != null)
             {
                 configurationStatus.ExclusionsByFile[asmConfigName] = asmConfig.Exclusions;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsKey);
             }
 
             if (asmConfig.CustomRules != null)
             {
                 configurationStatus.CustomRulesByFile[asmConfigName] = asmConfig.CustomRules;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafCustomRulesKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafCustomRulesKey);
             }
 
             if (asmConfig.Actions != null)
             {
-                foreach (var action in asmConfig.Actions)
-                {
-                    if (action.Id is not null)
-                    {
-                        configurationStatus.Actions[action.Id] = action;
-                    }
-                }
-
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-
-                if (asmConfig.Actions.Length == 0)
-                {
-                    configurationStatus.Actions.Clear();
-                }
+                configurationStatus.ActionsByFile[asmConfigName] = asmConfig.Actions;
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
             }
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         var removedRulesOverride = false;
         var removedExclusions = false;
         var removedCustomRules = false;
+        var removedActions = false;
         foreach (var configurationPath in removedConfigsForThisProduct)
         {
             removedRulesOverride |= configurationStatus.RulesOverridesByFile.Remove(configurationPath.Path);
             removedExclusions |= configurationStatus.ExclusionsByFile.Remove(configurationPath.Path);
             removedCustomRules |= configurationStatus.CustomRulesByFile.Remove(configurationPath.Path);
+            removedActions |= configurationStatus.ActionsByFile.Remove(configurationPath.Path);
         }
 
         if (removedRulesOverride)
         {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
         }
 
         if (removedExclusions)
         {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsKey);
         }
 
         if (removedCustomRules)
         {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafCustomRulesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafCustomRulesKey);
+        }
+
+        if (removedActions)
+        {
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
         }
     }
 }

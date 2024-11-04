@@ -60,7 +60,6 @@ src/Datadog.Trace/Agent/TracesTransportType.cs
 src/Datadog.Trace/AppSec/AddressesConstants.cs
 src/Datadog.Trace/AppSec/AppSecRateLimiter.cs
 src/Datadog.Trace/AppSec/BlockingAction.cs
-src/Datadog.Trace/AppSec/CoreHttpContextStore.cs
 src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
 src/Datadog.Trace/AppSec/IEvent.cs
@@ -125,7 +124,6 @@ src/Datadog.Trace/DiagnosticListeners/RouteEndpoint.cs
 src/Datadog.Trace/DogStatsd/NoOpStatsd.cs
 src/Datadog.Trace/DogStatsd/StatsdExtensions.cs
 src/Datadog.Trace/DogStatsd/TracerMetricNames.cs
-src/Datadog.Trace/ExtensionMethods/ArrayExtensions.cs
 src/Datadog.Trace/ExtensionMethods/DictionaryExtensions.cs
 src/Datadog.Trace/ExtensionMethods/DoubleExtensions.cs
 src/Datadog.Trace/ExtensionMethods/MessagePackBinaryExtensions.cs
@@ -271,7 +269,6 @@ src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
 src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
-src/Datadog.Trace/AppSec/Waf/IWaf.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
@@ -732,7 +729,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestOutco
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultOutcome.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestResultStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunCleanupIntegration.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/MsTestV2/UnitTestRunnerRunSingleTestIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/FailureSite.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/ICompositeWorkItem.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/NUnit/IMethodInfo.cs

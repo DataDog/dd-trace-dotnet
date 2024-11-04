@@ -533,7 +533,6 @@ public sealed class TestSession
             CIVisibility.Log.Information("TestSession.ReceiveMessage (code coverage): {Value}", codeCoverageMessage.Value);
 
             // Adds the global code coverage percentage to the session
-            SetTag(CodeCoverageTags.Enabled, "true");
             SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoverageMessage.Value);
         }
     }
@@ -550,7 +549,7 @@ public sealed class TestSession
         };
 
         SpanContextPropagator.Instance.Inject(
-            span.Context,
+            new PropagationContext(span.Context, Baggage.Current),
             (IDictionary)environmentVariables,
             new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 

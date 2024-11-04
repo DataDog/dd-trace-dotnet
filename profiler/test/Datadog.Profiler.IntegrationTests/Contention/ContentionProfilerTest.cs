@@ -15,6 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
     public class ContentionProfilerTest
     {
         private const string ScenarioContention = "--scenario 10 --threads 20";
+        private const string ScenarioWithoutContention = "--scenario 25 --threads 2 --param 1000";
 
         private readonly ITestOutputHelper _output;
 
@@ -83,6 +84,45 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 
             // only walltime profiler enabled so should see 1 value per sample
             SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        public void ShouldGetLockContentionSamplesViaEtw(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutContention);
+
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
+            Guid guid = Guid.NewGuid();
+            runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            if (IntPtr.Size == 4)
+            {
+                // 32-bit
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-32.bevents");
+            }
+            else
+            {
+                // 64-bit
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Contention\\lockContention-64.bevents");
+            }
+
+            int eventsCount = 0;
+            agent.EventsSent += (sender, e) => eventsCount = e.Value;
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+            AssertContainLockContentionSamples(runner.Environment.PprofDir);
+            Assert.True(eventsCount > 0);
+        }
+
+        private static void AssertContainLockContentionSamples(string pprofDir)
+        {
+            var contentionSamples = SamplesHelper.GetSamples(pprofDir, "lock-count");
+            contentionSamples.Should().NotBeEmpty();
         }
 
         private static void AssertBlockingThreadLabel(string pprofDir)

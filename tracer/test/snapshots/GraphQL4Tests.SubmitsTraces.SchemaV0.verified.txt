@@ -40,7 +40,8 @@
       graphql.source: query{hero{name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -61,7 +62,8 @@
       graphql.source: query{hero{name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -216,7 +218,8 @@
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -238,7 +241,8 @@
       graphql.source: query HeroQuery{hero {name appearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -258,7 +262,8 @@
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -280,7 +285,8 @@
       graphql.source: mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -300,7 +306,8 @@
       graphql.source: subscription HumanAddedSub{humanAdded{name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -322,7 +329,8 @@
       graphql.source: subscription HumanAddedSub{humanAdded{name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -369,7 +377,8 @@ errors: [
       graphql.source: query HumanError{human(id:1){name apearsIn}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -389,7 +398,8 @@ errors: [
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -429,7 +439,8 @@ errors: [
       graphql.source: subscription NotImplementedSub{throwNotImplementedException{name}},
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.base_service: Samples.GraphQL4
     },
     Metrics: {
       _dd.top_level: 1.0

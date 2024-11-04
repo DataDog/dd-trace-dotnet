@@ -24,7 +24,7 @@ public class WebRequestAspect
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.String)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
         try
         {
@@ -46,7 +46,7 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateDefault(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
-    public static object Review(Uri parameter)
+    public static Uri Review(Uri parameter)
     {
         try
         {

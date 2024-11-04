@@ -171,7 +171,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.4.0
+  ToolVersion: 3.5.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -395,7 +395,7 @@ stages:
       parameters:
         target: builder
         baseImage: $(managedBaseImage)
-        command: "BuildManagedTracerHome ExtractDebugInfoLinux"
+        command: "BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -504,7 +504,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: true
+        useNativeSdkVersion: false
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -533,10 +533,12 @@ stages:
       matrix:
         x64:
           baseImage: centos7
+          managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
         alpine:
           baseImage: alpine
+          managedBaseImage: alpine
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
@@ -555,9 +557,18 @@ stages:
         baseImage: $(baseImage)
         useNativeSdkVersion: $(useNativeSdkVersion)
         # We only need the native wrapper for the unit tests but we do not want to publish it (universal binary)
-        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome CompileNativeWrapper CompileProfilerNativeTests RunProfilerNativeTests CompileNativeWrapperNativeTests RunNativeWrapperNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests"
         retryCountForRunCommand: 1
         apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    # We have to run these in a separate stage because the version of nm included with centos7 is insufficient to validate the glibc version
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(managedBaseImage)
+        command: "ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
+        retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -705,7 +716,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux"
+        command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -798,7 +809,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
+        command: "Clean BuildProfilerHome ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
@@ -967,7 +978,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -987,7 +998,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1012,7 +1023,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - checkout: none
 
@@ -1314,7 +1325,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1357,7 +1368,7 @@ stages:
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        condition: succeededOrFailed()
+        condition: always()
         continueOnError: true
 
       - task: PublishTestResults@2
@@ -1381,7 +1392,7 @@ stages:
   - job: managed
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1407,7 +1418,7 @@ stages:
 
       - publish: artifacts/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-        condition: succeededOrFailed()
+        condition: always()
         continueOnError: true
 
       - task: PublishTestResults@2
@@ -1460,7 +1471,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -1513,7 +1524,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -1585,13 +1596,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1648,13 +1659,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_debugger tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1708,13 +1719,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1768,13 +1779,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1806,11 +1817,12 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
         
-    # Not using chocolatey as we're getting 429 Too Many Requests
     - template: steps/install-msi.yml
       parameters:
-        url: "https://functionscdn.azureedge.net/public/artifacts/v4/latest/func-cli-x64.msi"
-        filename: "func-cli-x64.msi"
+        # Pin to a specific version of Azure Functions, as beyond this requires Azurite
+        # TODO: Make this floating and use azurite if necessary down the line
+        url: "https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi"
+        filename: "func-cli-4.0.6280-x64.msi"
         addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
 
     - script: func
@@ -1840,13 +1852,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -1886,7 +1898,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -2000,7 +2012,7 @@ stages:
     pool:
       name: azure-windows-scale-set-2
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
     steps:
     - template: steps/clone-repo.yml
@@ -2017,14 +2029,28 @@ stages:
       inputs:
         artifact: windows-msi-$(targetPlatform)
         patterns: '**/*-$(targetPlatform).msi'
-        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+        path: $(System.DefaultWorkingDirectory)$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - script: |
-        docker compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker compose up -d IntegrationTests.IIS
+    - powershell: |
+        mkdir -Force ./artifacts/build_data/snapshots
+        mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
+        mkdir -Force ./artifacts/build_data/logs/MultipleAppsInDomain
+        docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
+
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.LoaderOptimizationStartup
+
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.MultipleAppsInDomain
+
+        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup IntegrationTests.IIS.MultipleAppsInDomain
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
@@ -2042,7 +2068,7 @@ stages:
         testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - script: docker compose down
+    - script: docker compose  -f docker-compose.windows.yml down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2052,13 +2078,13 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -2134,7 +2160,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2147,7 +2173,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2234,7 +2260,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2247,7 +2273,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2414,7 +2440,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2427,7 +2453,7 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2508,7 +2534,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2521,7 +2547,7 @@ stages:
     - publish: tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -2594,7 +2620,7 @@ stages:
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2658,6 +2684,12 @@ stages:
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux debug symbols
+      inputs:
+        artifact: linux-profiler-symbols-$(artifactSuffix)
+        path: $(monitoringHome)
+
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
@@ -2696,7 +2728,7 @@ stages:
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -2766,7 +2798,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
   - job: Windows
@@ -2792,7 +2824,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
       artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
 - stage: ubsan_profiler_tests
@@ -2855,7 +2887,7 @@ stages:
     - publish: profiler/build_data
       displayName: Uploading test results
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: false
 
 - stage: integration_tests_arm64
@@ -2873,8 +2905,7 @@ stages:
         jobs: [Test, DockerTest]
 
     - job: Test
-      timeoutInMinutes: 60 #default value
-      # TODO: move this to GenerateVariables stage
+      timeoutInMinutes: 90 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
@@ -2922,7 +2953,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -2935,7 +2966,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3012,7 +3043,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -3025,7 +3056,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3098,7 +3129,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -3111,7 +3142,7 @@ stages:
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -3162,18 +3193,18 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
-    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: RunExplorationTest
+    - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
+      displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: artifacts/build_data
       displayName: Uploading exploration_tests_windows tracer logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -3278,7 +3309,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -3801,7 +3832,7 @@ stages:
     - publish: artifacts/build_data
       displayName: Uploading tool_artifacts_tests_windows logs
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -3929,7 +3960,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -5010,6 +5041,12 @@ stages:
         integrations_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: INTEGRATIONS
+        integrations_aws_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS_AWS
+        integrations_aws_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS_AWS
         crossed_tracing_libraries_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: CROSSED_TRACING_LIBRARIES
@@ -5064,10 +5101,8 @@ stages:
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
           TEST_LIBRARY: dotnet
-          AWS_ACCESS_KEY_ID: $(SYSTEM_TESTS_IDM_AWS_ACCESS_KEY_ID)
-          AWS_SECRET_ACCESS_KEY: $(SYSTEM_TESTS_IDM_AWS_SECRET_ACCESS_KEY)
-          AWS_REGION: us-east-1
-          AWS_DEFAULT_REGION: us-east-1  # AWS services should use `AWS_REGION`, but some still use the older `AWS_DEFAULT_REGION`
+          SYSTEM_TESTS_AWS_ACCESS_KEY_ID: $(SYSTEM_TESTS_IDM_AWS_ACCESS_KEY_ID)
+          SYSTEM_TESTS_AWS_SECRET_ACCESS_KEY: $(SYSTEM_TESTS_IDM_AWS_SECRET_ACCESS_KEY)
 
       - script: |
           mkdir -p all_logs
@@ -5155,7 +5190,7 @@ stages:
         snapshotPrefix: "smoke_test"
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5236,7 +5271,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests
@@ -5322,7 +5357,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5387,7 +5422,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5456,7 +5491,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5535,7 +5570,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5619,7 +5654,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/run-in-docker.yml
@@ -5699,7 +5734,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
 - stage: nuget_installer_smoke_tests_arm64
@@ -5785,7 +5820,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5849,7 +5884,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/run-in-docker.yml
@@ -5950,7 +5985,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6024,7 +6059,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6097,7 +6132,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6171,7 +6206,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - template: steps/install-latest-dotnet-sdk.yml
@@ -6197,7 +6232,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -6243,7 +6278,7 @@ stages:
 
     - publish: artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
@@ -6337,7 +6372,7 @@ stages:
             SNAPSHOT_DIR: $(System.DefaultWorkingDirectory)/tracer/build/smoke_test_snapshots
             SNAPSHOT_CI: 1
             # ignoring 'http.client_ip' and 'network.client.ip' because it's set to '::1' here instead of expected '127.0.0.1'
-            SNAPSHOT_IGNORED_ATTRS: span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.git.commit.sha,meta._dd.git.repository_url,meta.http.client_ip,meta.network.client.ip
+            SNAPSHOT_IGNORED_ATTRS: span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.git.commit.sha,meta._dd.git.repository_url,meta.http.client_ip,meta.network.client.ip,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
 
         - script: |
             # Based on variables set in smoke.dotnet-tool.nuget.dockerfile
@@ -6373,7 +6408,7 @@ stages:
 
         - publish: artifacts/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - script: ./tracer/build.sh CheckSmokeTestsForErrors
@@ -6625,7 +6660,7 @@ stages:
 
     - publish: $(Build.SourcesDirectory)/artifacts/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
 - stage: notify_slack_on_failures

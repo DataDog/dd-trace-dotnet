@@ -105,3 +105,16 @@ jobs:
         working-directory: ${{steps.assets.outputs.artifacts_path}}
         run: |
           dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+
+      - name: Prepare debug symbols for publishing
+        shell: bash
+        run: |
+          mkdir debug_symbols
+          tar -zxcf linux-native-symbols.tar.gz -C debug_symbols
+
+      - name: 'Push debug symbols to datadog'
+        uses: ./.github/actions/publish-debug-symbols
+        with:
+          symbols_folder: "debug_symbols"
+          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
+          prod_key: "${{ secrets.DD_API_KEY }}"

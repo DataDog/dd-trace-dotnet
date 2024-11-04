@@ -592,6 +592,14 @@ internal class IntelligentTestRunnerClient
         long totalUploadSize = 0;
         foreach (var packFile in packFilesObject.Files)
         {
+            if (!File.Exists(packFile))
+            {
+                // Pack files must be sent in order, if a pack file is missing, we stop the upload of the rest of the pack files
+                // Previous pack files will enrich the backend with some of the data.
+                Log.Error("ITR: Pack file '{PackFile}' is missing, cancelling upload.", packFile);
+                break;
+            }
+
             // Send PackFile content
             Log.Information("ITR: Sending {PackFile}", packFile);
             totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
@@ -1367,6 +1375,9 @@ internal class IntelligentTestRunnerClient
 
         [JsonProperty("require_git")]
         public readonly bool? RequireGit;
+
+        [JsonProperty("flaky_test_retries_enabled")]
+        public readonly bool? FlakyTestRetries;
 
         [JsonProperty("early_flake_detection")]
         public readonly EarlyFlakeDetectionSettingsResponse EarlyFlakeDetection;

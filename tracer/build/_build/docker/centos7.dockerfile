@@ -78,6 +78,8 @@ ENV \
 
 FROM base as builder
 
+ENV USE_NATIVE_SDK_VERSION=true
+
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
 RUN dotnet restore /build
@@ -103,6 +105,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
+
+ENV USE_NATIVE_SDK_VERSION=true
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/

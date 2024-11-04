@@ -27,9 +27,6 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
-#ifdef LINUX
-#include "CpuProfilerDisableScope.h"
-#endif
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -59,6 +56,7 @@
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
+#include "LibrariesInfoCache.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -124,6 +122,12 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
+    
+    // Like the SystemCallsShield, this service must be started before any profiler.
+    // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
+    // (before it uses the default memory resource a.k.a new/delete for allocation)
+    // TODO add metrics to measure if it's ok or not
+    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
@@ -1625,8 +1629,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
 
-#ifdef LINUX
+    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
+#ifdef LINUX
+    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    // Otherwise the threadInfo won't have it's OsThread field set and timer_create
+    // will have random behavior.
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->RegisterThread(threadInfo);
@@ -1662,7 +1670,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         return S_OK;
     }
 #endif
-    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;
 }
@@ -1814,14 +1821,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownOb
 
     if (_pConfiguration->IsExceptionProfilingEnabled() && _pSsiManager->IsProfilerStarted())
     {
-#ifdef LINUX
-        // Disable timer_create-based CPU profiler if needed
-        // When scope goes out of scope, the CPU profiler will be reenabled for
-        // pThreadInfo thread
-
-        auto pThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-        auto scope = CpuProfilerDisableScope(pThreadInfo.get());
-#endif
         _pExceptionsProvider->OnExceptionThrown(thrownObjectId);
     }
 
