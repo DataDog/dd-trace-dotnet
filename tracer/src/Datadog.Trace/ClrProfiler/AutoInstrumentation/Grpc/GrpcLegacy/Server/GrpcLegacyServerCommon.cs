@@ -6,7 +6,6 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -33,9 +32,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 // If we have a local span (e.g. from aspnetcore) then use that as the parent
                 // Otherwise, use the distributed context as the parent
                 var spanContext = tracer.ActiveScope?.Span.Context;
+
                 if (spanContext is null)
                 {
-                    spanContext = ExtractPropagatedContext(metadata);
+                    var extractedContext = ExtractPropagatedContext(metadata).MergeBaggageInto(Baggage.Current);
+                    spanContext = extractedContext.SpanContext;
                 }
 
                 var serviceName = tracer.DefaultServiceName ?? "grpc-server";
@@ -61,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
             return scope;
         }
 
-        private static SpanContext? ExtractPropagatedContext(IMetadata? metadata)
+        private static PropagationContext ExtractPropagatedContext(IMetadata? metadata)
         {
             try
             {
@@ -75,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 Log.Error(ex, "Error extracting propagated HTTP headers.");
             }
 
-            return null;
+            return default;
         }
     }
 }

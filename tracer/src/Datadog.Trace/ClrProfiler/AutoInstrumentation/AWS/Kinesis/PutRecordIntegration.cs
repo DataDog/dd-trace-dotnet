@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
@@ -52,10 +53,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
-            if (scope?.Span.Context != null)
-            {
-                ContextPropagation.InjectTraceIntoData(request, scope.Span.Context);
-            }
+            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
+            ContextPropagation.InjectTraceIntoData(request, context);
 
             return new CallTargetState(scope);
         }

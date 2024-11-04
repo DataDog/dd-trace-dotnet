@@ -171,10 +171,11 @@ internal readonly partial struct SecurityCoordinator
     {
         var cookies = RequestDataHelper.GetCookies(request);
 
-        if (cookies is not null)
+        if (cookies is not null && cookies.Count is > 0)
         {
-            var cookiesDic = new Dictionary<string, object>();
-            for (var i = 0; i < cookies.Count; i++)
+            var cookiesCount = cookies.Count;
+            var cookiesDic = new Dictionary<string, object>(cookiesCount);
+            for (var i = 0; i < cookiesCount; i++)
             {
                 GetCookieKeyValueFromIndex(cookies, i, out var keyForDictionary, out var cookieValue);
 

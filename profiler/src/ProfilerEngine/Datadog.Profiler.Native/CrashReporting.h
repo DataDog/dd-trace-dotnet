@@ -38,6 +38,9 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
+    bool hasPdbInfo;
+    DWORD pdbAge;
+    GUID pdbSig;
 };
 
 struct Tag

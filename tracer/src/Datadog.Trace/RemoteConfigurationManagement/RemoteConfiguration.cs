@@ -14,9 +14,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public RemoteConfiguration(
             RemoteConfigurationPath path,
             byte[] contents,
-            int length,
+            long length,
             Dictionary<string, string> hashes,
-            int version)
+            long version)
         {
             Path = path;
             Contents = contents;
@@ -29,11 +29,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public byte[] Contents { get; }
 
-        public int Length { get; }
+        public long Length { get; }
 
         public Dictionary<string, string> Hashes { get; }
 
-        public int Version { get; }
+        public long Version { get; }
 
         public override bool Equals(object o)
         {

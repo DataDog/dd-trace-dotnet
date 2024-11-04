@@ -17,13 +17,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
     {
         internal const string InjectionKey = "_datadog";
 
-        private static void Inject(SpanContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
+        private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-            dataStreamsManager?.InjectPathwayContext(context.PathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
+
+            if (context.SpanContext?.PathwayContext is { } pathwayContext)
+            {
+                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
+            }
+
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
@@ -75,7 +80,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             // Only inject if there's room
             if (carrier.MessageAttributes.Count < 10)
             {
-                Inject(spanContext, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
+                var context = new PropagationContext(spanContext, Baggage.Current);
+                Inject(context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
             }
         }
 
