@@ -129,7 +129,7 @@ public class FileAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPath)}");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPathRead)}");
             return path;
         }
     }
