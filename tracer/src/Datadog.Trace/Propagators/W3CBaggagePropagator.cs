@@ -208,7 +208,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return Decode(value.AsSpan());
     }
 
-    internal static string Decode(ReadOnlySpan<char> value)
+    private static string Decode(ReadOnlySpan<char> value)
     {
         if (value.IsEmpty)
         {
