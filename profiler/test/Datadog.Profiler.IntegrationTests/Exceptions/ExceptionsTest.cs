@@ -101,6 +101,80 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             total.Should().Be(expectedExceptionCount);
         }
 
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void ThrowExceptionsInParallelWithNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            StackTrace expectedStack;
+
+            if (framework == "net462")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+            }
+            else if (framework == "net6.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |cg: |fn:StartCallback |fg: |sg:()"));
+            }
+            else if (framework == "net7.0" || framework == "net8.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
+            }
+            else
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:ThreadHelper |cg: |fn:ThreadStart |fg: |sg:(object obj)"));
+            }
+
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var exceptionSamples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "exception").ToArray();
+
+            long total = exceptionSamples.Length;
+
+            foreach (var (stackTrace, labels, _) in exceptionSamples)
+            {
+                labels.Should().ContainSingle(x => x.Name == "exception type" && x.Value == "System.Exception");
+                labels.Should().ContainSingle(x => x.Name == "exception message" && string.IsNullOrWhiteSpace(x.Value));
+                Assert.True(stackTrace.EndWith(expectedStack));
+            }
+
+            foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
+            {
+                _output.WriteLine($"Log file: {file}");
+            }
+
+            var logFile = Directory.GetFiles(runner.Environment.LogDir)
+                .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
+
+            // Stackwalk will fail if the walltime profiler tries to inspect the thread at the same time as the exception profiler
+            // This is expected so we remove those from the expected count
+            var missedExceptions = File.ReadLines(logFile)
+                .Count(l => l.Contains("Failed to walk stack for thrown exception: CORPROF_E_STACKSNAPSHOT_UNSAFE (80131360)"));
+
+            int expectedExceptionCount = (4 * 1000) - missedExceptions;
+
+            expectedExceptionCount.Should().BeGreaterThan(0, "only a few exceptions should be missed");
+
+            total.Should().Be(expectedExceptionCount);
+        }
+
         [TestAppFact("Samples.ExceptionGenerator")]
         public void Sampling(string appName, string framework, string appAssembly)
         {
