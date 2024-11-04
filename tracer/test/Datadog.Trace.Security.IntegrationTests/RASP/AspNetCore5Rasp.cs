@@ -50,9 +50,9 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
         var spans = await SendRequestsAsync(agent, [url]);
 
         var fileId = Guid.NewGuid().ToString();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, "ASM", fileId) });
+        await agent.SetupRcmAndWait(Output, [(new Payload { RuleOverrides = [new RuleOverride { Id = ruleId, Enabled = false }] }, "ASM", fileId)]);
         spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, "ASM", fileId) });
+        await agent.SetupRcmAndWait(Output, [(new Payload { RuleOverrides = [new RuleOverride { Id = ruleId, Enabled = true }] }, "ASM", fileId)]);
         spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();

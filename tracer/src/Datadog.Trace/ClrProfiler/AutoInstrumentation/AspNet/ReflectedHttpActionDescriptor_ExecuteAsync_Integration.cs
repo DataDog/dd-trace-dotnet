@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             var security = Security.Instance;
             // response can be null if action returns null
-            if (security.Enabled && response is not null)
+            if (security.AppsecEnabled && response is not null)
             {
                 if (response.TryDuckCast<IJsonResultWebApi>(out var actionResult))
                 {

@@ -1,8 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <!-- Just temporary, until v3 -->
-    <AllowDatadogTraceReference>true</AllowDatadogTraceReference>
-  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />

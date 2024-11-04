@@ -39,7 +39,7 @@ internal class RcmSubscriptionManager : IRcmSubscriptionManager
     private IReadOnlyList<ISubscription> _subscriptions = [];
 
     private string? _backendClientState;
-    private int _targetsVersion;
+    private long _targetsVersion;
     private BigInteger _capabilities;
     private string? _lastPollError;
 

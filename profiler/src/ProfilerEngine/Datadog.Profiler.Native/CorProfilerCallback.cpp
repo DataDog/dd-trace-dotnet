@@ -57,6 +57,7 @@
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
+#include "LibrariesInfoCache.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -122,6 +123,12 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
+    
+    // Like the SystemCallsShield, this service must be started before any profiler.
+    // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
+    // (before it uses the default memory resource a.k.a new/delete for allocation)
+    // TODO add metrics to measure if it's ok or not
+    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());

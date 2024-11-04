@@ -30,7 +30,7 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.event_rules.version: 1.13.1,
+      _dd.appsec.event_rules.version: 1.13.2,
       _dd.runtime_family: dotnet
     },
     Metrics: {
