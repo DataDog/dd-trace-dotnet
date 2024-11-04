@@ -115,7 +115,14 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// <returns>True if the traceparent information was set</returns>
         internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
-            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || command.Connection == null)
+            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
+            {
+                return false;
+            }
+
+            // NOTE: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
+            //       Since the feature isn't available for Npgsql we avoid this due to the integrationId check above
+            if (command.Connection == null)
             {
                 return false;
             }
