@@ -18,6 +18,13 @@
 #include <shared_mutex>
 #include <utility>
 
+#ifdef LINUX
+#include "SpinningMutex.hpp"
+using dd_mutex_t = SpinningMutex;
+#else
+using dd_mutex_t = std::mutex
+#endif
+
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
@@ -86,6 +93,7 @@ public:
     inline std::string GetProfileThreadId() override;
     inline std::string GetProfileThreadName() override;
     inline void AcquireLock();
+    inline bool TryAcquireLock();
     inline void ReleaseLock();
 
 #ifdef LINUX
@@ -150,7 +158,7 @@ private:
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
-    std::mutex _objLock;
+    dd_mutex_t _objLock;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -195,6 +203,11 @@ std::string ManagedThreadInfo::GetProfileThreadName()
 inline void ManagedThreadInfo::AcquireLock()
 {
     _objLock.lock();
+}
+
+inline bool ManagedThreadInfo::TryAcquireLock()
+{
+    return _objLock.try_lock();
 }
 
 inline void ManagedThreadInfo::ReleaseLock()
