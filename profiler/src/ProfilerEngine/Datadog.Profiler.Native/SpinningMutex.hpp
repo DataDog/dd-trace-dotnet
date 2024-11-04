@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <sched.h>
+#include <atomic>
 #include <signal.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
-#include <time.h>
+#include <thread>
 #include <unistd.h>
 
 // /!\ For now, this class is simple enough to replace the std::mutex used for the
@@ -25,7 +25,9 @@ class SpinningMutex
 {
 public:
     SpinningMutex() :
-        _isLockTaken{0}, _ownerTid{0} {};
+        _ownerTid{0}
+    {
+    }
     ~SpinningMutex() = default;
 
     SpinningMutex(SpinningMutex const&) = delete;
@@ -36,36 +38,38 @@ public:
 
     // make it usable with std::unique_lock
     // so naming will be different from the rest of the code
+    //
+    // Taken from https://github.com/skarupke/mutex_benchmarks/blob/master/BenchmarkMutex.cpp#L442
     void lock()
     {
-        for (int spin_count = 0; !try_lock(); ++spin_count)
+        for (;;)
         {
+            if (try_lock())
+            {
+                break;
+            }
 #ifdef __x86_64__
-            // 16 taken from https://probablydance.com/2019/12/30/measuring-mutexes-spinlocks-and-how-bad-the-linux-scheduler-really-is/
-            if (spin_count < 16)
-            {
-                asm volatile("pause");
-            }
-            else
-            {
-                sched_yield();
-                spin_count = 0;
-            }
+            asm volatile("pause");
 #else
-            asm volatile("yield");
+            std::this_thread::yield();
 #endif
+            if (try_lock())
+            {
+                break;
+            }
+            std::this_thread::yield();
         }
     }
 
     void unlock()
     {
         _ownerTid = 0;
-        __sync_lock_release(&_isLockTaken);
+        _locked.clear(std::memory_order_release);
     }
 
     bool try_lock()
     {
-        auto acquired = __sync_lock_test_and_set(&_isLockTaken, 1) == 0;
+        auto acquired = !_locked.test_and_set(std::memory_order_acquire);
         if (acquired)
         {
             _ownerTid = syscall(SYS_gettid);
@@ -74,7 +78,7 @@ public:
     }
 
 private:
-    volatile sig_atomic_t _isLockTaken;
+    std::atomic_flag _locked = ATOMIC_FLAG_INIT;
     // mainly for debug reason
     pid_t _ownerTid;
 };
