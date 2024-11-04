@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         }
 
                         // try context injection only after comment injection, so that if it fails, we still have service level propagation
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
                         if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
                             tags.DbmTraceInjected = "true";

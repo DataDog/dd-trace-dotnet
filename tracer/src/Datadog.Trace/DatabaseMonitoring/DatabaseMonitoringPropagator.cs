@@ -113,10 +113,20 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// Currently only working for MSSQL (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
-        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbConnection? connection, Span span)
+        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
-            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || connection == null)
+            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || command.Connection == null)
             {
+                return false;
+            }
+
+            if (command.Connection.State != ConnectionState.Open)
+            {
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", command.Connection.State);
+                }
+
                 return false;
             }
 
@@ -126,8 +136,10 @@ namespace Datadog.Trace.DatabaseMonitoring
             var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
-            using (var injectionCommand = connection.CreateCommand())
+            using (var injectionCommand = command.Connection.CreateCommand())
             {
+                // if there is a Transaction we need to copy it or our ExecuteNonQuery will throw
+                injectionCommand.Transaction = command.Transaction;
                 injectionCommand.CommandText = SetContextCommand;
 
                 var parameter = injectionCommand.CreateParameter();

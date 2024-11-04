@@ -170,26 +170,29 @@ namespace Samples.DatabaseHelper
                     Console.WriteLine("  Synchronous");
                     Console.WriteLine();
 
-                    command = commandFactory.GetCreateTableCommand(connection);
-                    commandExecutor.ExecuteNonQuery(command);
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        command = commandFactory.GetCreateTableCommand(connection, transaction);
+                        commandExecutor.ExecuteNonQuery(command);
 
-                    command = commandFactory.GetInsertRowCommand(connection);
-                    commandExecutor.ExecuteNonQuery(command);
+                        command = commandFactory.GetInsertRowCommand(connection, transaction);
+                        commandExecutor.ExecuteNonQuery(command);
 
-                    command = commandFactory.GetSelectScalarCommand(connection);
-                    commandExecutor.ExecuteScalar(command);
+                        command = commandFactory.GetSelectScalarCommand(connection, transaction);
+                        commandExecutor.ExecuteScalar(command);
 
-                    command = commandFactory.GetUpdateRowCommand(connection);
-                    commandExecutor.ExecuteNonQuery(command);
+                        command = commandFactory.GetUpdateRowCommand(connection, transaction);
+                        commandExecutor.ExecuteNonQuery(command);
 
-                    command = commandFactory.GetSelectRowCommand(connection);
-                    commandExecutor.ExecuteReader(command);
+                        command = commandFactory.GetSelectRowCommand(connection, transaction);
+                        commandExecutor.ExecuteReader(command);
 
-                    command = commandFactory.GetSelectRowCommand(connection);
-                    commandExecutor.ExecuteReader(command, CommandBehavior.Default);
+                        command = commandFactory.GetSelectRowCommand(connection, transaction);
+                        commandExecutor.ExecuteReader(command, CommandBehavior.Default);
 
-                    command = commandFactory.GetDeleteRowCommand(connection);
-                    commandExecutor.ExecuteNonQuery(command);
+                        command = commandFactory.GetDeleteRowCommand(connection, transaction);
+                        commandExecutor.ExecuteNonQuery(command);
+                    }
                 }
 
                 if (commandExecutor.SupportsAsyncMethods)
