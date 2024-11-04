@@ -142,10 +142,17 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// Currently only working for MSSQL (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
-        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbConnection? connection, Span span)
+        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
-            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || connection == null)
+            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
             {
+                return false;
+            }
+
+            if (command.Connection == null)
+            {
+                // NOTE: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
+                //       Since the feature isn't available for Npgsql, just skipping over it for now.
                 return false;
             }
 
@@ -155,7 +162,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
-            using (var injectionCommand = connection.CreateCommand())
+            using (var injectionCommand = command.Connection.CreateCommand())
             {
                 injectionCommand.CommandText = SetContextCommand;
 
