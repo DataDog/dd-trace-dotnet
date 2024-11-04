@@ -50,7 +50,7 @@ internal static class BsonSerializationHelper
             return obj.ToString();
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
 
         try
         {

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         private static void Inject<TMessageRequest>(PropagationContext context, IDictionary messageAttributes)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
-            var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma

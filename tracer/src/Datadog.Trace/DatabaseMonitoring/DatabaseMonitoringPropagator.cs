@@ -44,7 +44,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var propagatorStringBuilder = StringBuilderCache.Acquire();
             var dddbs = span.Context.ServiceNameInternal;
             propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
 

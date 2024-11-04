@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private static void Inject<TMessageRequest>(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
-            var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
 

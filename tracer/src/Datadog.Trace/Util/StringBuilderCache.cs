@@ -23,7 +23,7 @@ namespace Datadog.Trace.Util
         [ThreadStatic]
         private static StringBuilder? _cachedInstance;
 
-        public static StringBuilder Acquire(int capacity)
+        public static StringBuilder Acquire(int capacity = MaxBuilderSize)
         {
             if (capacity <= MaxBuilderSize)
             {

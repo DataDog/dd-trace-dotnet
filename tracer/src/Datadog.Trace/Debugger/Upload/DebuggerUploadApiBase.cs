@@ -56,7 +56,7 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
 
     private string GetDefaultTagsMergedWithGlobalTags()
     {
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
 
         try
         {

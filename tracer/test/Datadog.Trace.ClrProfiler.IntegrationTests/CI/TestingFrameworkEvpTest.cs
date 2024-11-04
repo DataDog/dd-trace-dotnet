@@ -70,7 +70,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             return;
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         sb.AppendLine("***********************************");
 
         var i = 0;
@@ -105,7 +105,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             return;
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         sb.AppendLine("***********************************");
 
         var i = 0;

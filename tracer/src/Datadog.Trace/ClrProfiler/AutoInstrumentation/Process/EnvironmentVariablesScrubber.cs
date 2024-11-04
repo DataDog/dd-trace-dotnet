@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (envVariables != null)
             {
-                var variableLine = StringBuilderCache.Acquire(0);
+                var variableLine = StringBuilderCache.Acquire();
 
                 foreach (var variable in envVariables)
                 {

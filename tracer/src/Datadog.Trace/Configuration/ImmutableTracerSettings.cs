@@ -202,7 +202,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (setting.EnabledInternal == false)
                 {
-                    sb ??= StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb ??= StringBuilderCache.Acquire();
                     sb.Append(setting.IntegrationNameInternal);
                     sb.Append(';');
                 }

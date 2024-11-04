@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 return string.Empty;
             }
 
-            var builder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var builder = Util.StringBuilderCache.Acquire();
 
             try
             {

@@ -381,7 +381,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.DotnetTest: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
 
                 if (msbuildArgs is not null)
@@ -521,7 +521,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.VsConsoleTest: arguments:");
 
                 if (args != null)

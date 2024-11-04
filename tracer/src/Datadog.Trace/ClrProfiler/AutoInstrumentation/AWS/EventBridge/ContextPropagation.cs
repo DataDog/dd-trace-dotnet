@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 return;
             }
 
-            var detailBuilder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize).Append(detail);
+            var detailBuilder = Util.StringBuilderCache.Acquire().Append(detail);
             detailBuilder.Remove(detail.Length - 1, 1); // Remove last bracket
             if (detail.Length > 2)
             {
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private static string BuildContextJson(PropagationContext context, string? eventBusName)
         {
             // Inject trace context
-            var jsonBuilder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
 
             SpanContextPropagator.Instance.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
