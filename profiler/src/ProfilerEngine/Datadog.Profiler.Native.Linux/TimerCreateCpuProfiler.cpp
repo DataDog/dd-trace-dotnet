@@ -88,9 +88,13 @@ bool TimerCreateCpuProfiler::StartImpl()
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
-    // We have to remove all timers before unregistering the handler for SIGPROF.
-    // Otherwise, the process will end with exit code 155 (128 + 27 => 27 being SIGPROF value)
-    _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
+    {
+        std::unique_lock lock(_registerLock);
+
+        // We have to remove all timers before unregistering the handler for SIGPROF.
+        // Otherwise, the process will end with exit code 155 (128 + 27 => 27 being SIGPROF value)
+        _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
+    }
 
     Instance = nullptr;
     _pSignalManager->UnRegisterHandler();
