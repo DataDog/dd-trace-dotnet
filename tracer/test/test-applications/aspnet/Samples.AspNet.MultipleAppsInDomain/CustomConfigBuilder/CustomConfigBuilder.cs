@@ -49,8 +49,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
             new("DummyKey5", "DummyValue5 - from custom config"),
         ];
 
-//        string logPath = @"C:\inetpub\APMS-13426\WebApplication1\Logs\Log.txt";
-
         /// <summary>
         /// Initializes the configuration builder lazily.
         /// </summary>
@@ -58,7 +56,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
         /// <param name="config">A collection of the name/value pairs representing builder-specific attributes specified in the configuration for this provider.</param>
         protected override void LazyInitialize(string name, NameValueCollection config)
         {
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}LazyInitialize start");
             // Default to 'Enabled'. base.LazyInitialize() will override if specified in config.
             Enabled = KeyValueEnabled.Enabled;
 
@@ -96,7 +93,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
                 _kvClient = null;
             }
 
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}LazyInitialize end");
         }
 
         /// <summary>
@@ -106,8 +102,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
         /// <returns>The value corresponding to the given 'key' or null if no value is found.</returns>
         public override string GetValue(string key)
         {
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}GetValue");
-
             // hit the network!
             // Only hit the network if we didn't preload, or if we know the key exists after preloading.
             if (!Preload || _allKeys.Value.Contains(key, StringComparer.OrdinalIgnoreCase))
@@ -151,7 +145,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
         /// <returns>A collection of key/value pairs.</returns>
         public override ICollection<KeyValuePair<string, string>> GetAllValues(string prefix)
         {
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}GetAllValues");
             ConcurrentDictionary<string, string> d = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             List<Task> tasks = new List<Task>();
 
@@ -198,7 +191,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
 
         private async Task<KeyVaultSecret> GetValueAsync(string key, string version)
         {
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}GetValueAsync");
             if (_kvClient == null)
                 return null;
 
@@ -220,7 +212,6 @@ namespace Microsoft.Configuration.ConfigurationBuilders
 
         private List<string> GetAllKeys()
         {
-//            File.AppendAllText(logPath, $"{DateTime.UtcNow:u}GetAllKeys");
             List<string> keys = new List<string>(); // KeyVault keys are case-insensitive. There won't be case-duplicates. List<> should be fine.
 
             // Don't go loading all the keys if we can't, or if we were told not to
