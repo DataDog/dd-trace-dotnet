@@ -282,8 +282,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var isRemovable = IsRemovableChar(c);
                 if (isUpper || isRemovable || sb != null)
                 {
-                    sb ??= StringBuilderCache.Acquire();
-                    sb.Append(name.Substring(startIndex: 0, i));
+                    if (sb == null)
+                    {
+                        sb = StringBuilderCache.Acquire();
+                        sb.Append(name.Substring(startIndex: 0, i));
+                    }
 
                     if (isUpper)
                     {
