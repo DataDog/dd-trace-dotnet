@@ -245,8 +245,10 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(SmtpClient), new[] { "System.Net.Mail.SmtpClient::SendMailAsync(System.Net.Mail.MailMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])]" })]
     [InlineData(typeof(Activator), new string[] { "System.Activator::CreateInstance(System.AppDomain,System.String,System.String)" })]
 #if !NETFRAMEWORK
-#if NET6_0_OR_GREATER
+#if NET9_0_OR_GREATER
     [InlineData(typeof(Type))]
+#elif NET6_0_OR_GREATER
+    [InlineData(typeof(Type), new[] { "System.Type::GetMethod(System.String,System.Int32,System.Reflection.BindingFlags,System.Type[])" })]
 #else
     [InlineData(typeof(Type), new string[] { "System.Type::GetMethod(System.String,System.Reflection.BindingFlags,System.Type[])" })]
 #endif
