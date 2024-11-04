@@ -6643,7 +6643,7 @@ stages:
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - bash: dotnet tool install dd-trace --global --prerelease
+    - bash: dotnet tool install dd-trace --global --prerelease --allow-roll-forward
       displayName: "Install dd-trace"
       retryCountOnTaskFailure: 2
 
