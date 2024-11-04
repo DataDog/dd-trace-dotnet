@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -140,7 +141,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
                 // slice the buffer down to the actual bytes written
                 var bytes = buffer[..byteCount];
-                return EncodeBytes(bytes, charsToEncode);
+                return EncodeBytes(source, bytes, charsToEncode);
             }
         }
 #endif
@@ -151,18 +152,43 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         // slice the buffer down to the actual bytes written
         var bytes = buffer.AsSpan(0, byteCount);
-        var result = EncodeBytes(bytes, charsToEncode);
+        var result = EncodeBytes(source, bytes, charsToEncode);
 
         ArrayPool<byte>.Shared.Return(buffer);
         return result;
 
-        static string EncodeBytes(Span<byte> bytes, HashSet<char> hashSet)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool ByteRequiresEncoding(byte b, HashSet<char> charsToEncode)
         {
+            return b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b);
+        }
+
+        static bool AnyByteRequiresEncoding(Span<byte> bytes, HashSet<char> charsToEncode)
+        {
+            foreach (var b in bytes)
+            {
+                if (ByteRequiresEncoding(b, charsToEncode))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        static string EncodeBytes(string source, Span<byte> bytes, HashSet<char> charsToEncode)
+        {
+            if (!AnyByteRequiresEncoding(bytes, charsToEncode))
+            {
+                // no bytes require encoding, return original string
+                return source;
+            }
+
             var sb = StringBuilderCache.Acquire();
 
             foreach (var b in bytes)
             {
-                if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || hashSet.Contains((char)b))
+                if (ByteRequiresEncoding(b, charsToEncode))
                 {
                     // encode byte as '%XX'
                     sb.Append($"%{b:X2}");

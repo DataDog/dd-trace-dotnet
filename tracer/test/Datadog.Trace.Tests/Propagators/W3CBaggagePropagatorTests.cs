@@ -68,7 +68,14 @@ public class W3CBaggagePropagatorTests
     [InlineData("🐶", new char[0], "%F0%9F%90%B6")]
     public void Encode(string value, char[] charsToEncode, string expected)
     {
-        W3CBaggagePropagator.Encode(value, [..charsToEncode]).Should().Be(expected);
+        var result = W3CBaggagePropagator.Encode(value, [..charsToEncode]);
+        result.Should().Be(expected);
+
+        if (value == expected)
+        {
+            // ensure that the method is returning the same string instance when no encoding is needed
+            ReferenceEquals(value, result).Should().BeTrue();
+        }
     }
 
     [Theory]
