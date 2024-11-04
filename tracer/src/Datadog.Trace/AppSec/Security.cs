@@ -210,6 +210,7 @@ namespace Datadog.Trace.AppSec
                         if (_wafInitResult?.RuleFileVersion is not null)
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
+                            TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
                         }
 
                         RefreshRcmSubscriptions();
@@ -222,6 +223,7 @@ namespace Datadog.Trace.AppSec
                             if (!string.IsNullOrEmpty(updateResult.RuleFileVersion))
                             {
                                 WafRuleFileVersion = updateResult.RuleFileVersion;
+                                TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
                             }
 
                             UpdateActiveAddresses();
@@ -550,7 +552,7 @@ namespace Datadog.Trace.AppSec
                 if (oldWaf is null)
                 {
                     // occurs the first time we initialize the WAF
-                    TelemetryFactory.Metrics.SetWafVersion(_waf!.Version);
+                    TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
                     TelemetryFactory.Metrics.RecordCountWafInit();
                 }
             }

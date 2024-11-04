@@ -262,10 +262,15 @@ namespace Datadog.Trace.Ci
 
         private static DirectoryInfo GetParentGitFolder(string innerFolder)
         {
-            DirectoryInfo dirInfo = new DirectoryInfo(innerFolder);
+            if (string.IsNullOrEmpty(innerFolder))
+            {
+                return null;
+            }
+
+            var dirInfo = new DirectoryInfo(innerFolder);
             while (dirInfo != null)
             {
-                DirectoryInfo[] gitDirectories = dirInfo.GetDirectories(".git");
+                var gitDirectories = dirInfo.GetDirectories(".git");
                 if (gitDirectories.Length > 0)
                 {
                     foreach (var gitDir in gitDirectories)

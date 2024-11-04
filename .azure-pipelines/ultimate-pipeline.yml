@@ -2899,8 +2899,7 @@ stages:
         jobs: [Test, DockerTest]
 
     - job: Test
-      timeoutInMinutes: 60 #default value
-      # TODO: move this to GenerateVariables stage
+      timeoutInMinutes: 90 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
@@ -5036,6 +5035,12 @@ stages:
         integrations_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: INTEGRATIONS
+        integrations_aws_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS_AWS
+        integrations_aws_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS_AWS
         crossed_tracing_libraries_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: CROSSED_TRACING_LIBRARIES

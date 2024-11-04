@@ -80,7 +80,7 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         bool telemetry_enabled = true;
         shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(L"DD_INSTRUMENTATION_TELEMETRY_ENABLED"), telemetry_enabled);
 
-        bool crashtracking_enabled = false;
+        bool crashtracking_enabled = true;
         shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(L"DD_CRASHTRACKING_ENABLED"), crashtracking_enabled);
 
         if (telemetry_enabled && crashtracking_enabled)
