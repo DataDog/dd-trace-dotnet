@@ -10,7 +10,10 @@
 #include <time.h>
 #include <unistd.h>
 
-// This class is temporary.
+// /!\ For now, this class is simple enough to replace the std::mutex used for the
+// /!\ stack walk lock. If in the future we need it to be on critical paths,
+// /!\ it should be reviewed/improved.
+
 // Its goal is just to make sure we do not use signal-unsafe mechanism with the
 // timer_create-based CPU profiler.
 // Once the CPU profiler (timer_create) is ready and fully working, we will
