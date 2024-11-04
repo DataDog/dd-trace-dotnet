@@ -138,7 +138,7 @@ namespace Datadog.Trace.Debugger.Configurations
                 return null;
             }
 
-            return new string(new StringBuilder(str).ToString().Reverse().ToArray());
+            return new string(str.Reverse().ToArray());
         }
 
         private class TrieNode

@@ -7,7 +7,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
@@ -17,7 +16,6 @@ using System.Runtime.Intrinsics.X86;
 #if NET6_0
 using System.Runtime.Intrinsics.Arm;
 #endif
-using System.Text;
 using Datadog.Trace.Util;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
@@ -875,13 +873,13 @@ internal unsafe ref struct FileBitmap
     /// <returns>A string showing the bitmap in binary form.</returns>
     public override string ToString()
     {
-        var sb = new StringBuilder();
+        var sb = StringBuilderCache.Acquire();
         for (var i = 0; i < _size; i++)
         {
             sb.Append(Convert.ToString(_bitmap[i], 2).PadLeft(8, '0'));
         }
 
-        return sb.ToString();
+        return StringBuilderCache.GetStringAndRelease(sb);
     }
 
     /// <summary>
