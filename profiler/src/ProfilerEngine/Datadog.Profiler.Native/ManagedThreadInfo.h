@@ -22,7 +22,7 @@
 #include "SpinningMutex.hpp"
 using dd_mutex_t = SpinningMutex;
 #else
-using dd_mutex_t = std::mutex
+using dd_mutex_t = std::mutex;
 #endif
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
