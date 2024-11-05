@@ -393,7 +393,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
                         }
-                        else if (Tracer.Instance.ScopeManager.Active.Root.Span.GetTag(evaluationErrorTag) != null)
+                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
                         {
                             Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
                         }

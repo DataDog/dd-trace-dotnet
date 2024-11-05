@@ -6,12 +6,9 @@
 
 using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -23,26 +20,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
-        private static object _globalInstanceLock = new();
-
-        private static bool _globalInstanceInitialized;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-        private static SpanCodeOriginManager _instance;
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-
         private readonly DebuggerSettings _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
 
-        internal static SpanCodeOriginManager Instance =>
-            LazyInitializer.EnsureInitialized(
-                ref _instance,
-                ref _globalInstanceInitialized,
-                ref _globalInstanceLock);
+        internal static SpanCodeOriginManager Instance { get; } = new();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void SetCodeOrigin(Span? span)
         {
-            if (span == null || !this._settings.CodeOriginForSpansEnabled)
+            if (span == null || !_settings.CodeOriginForSpansEnabled)
             {
                 return;
             }

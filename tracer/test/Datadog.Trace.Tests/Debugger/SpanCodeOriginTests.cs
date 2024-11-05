@@ -5,13 +5,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Tests.Debugger
             SpanCodeOriginManager.Instance.SetCodeOrigin(span);
 
             // Assert
-            Assert.Null(span.Tags.GetTag(CodeOriginTag + ".type"));
+            span.Tags.GetTag(CodeOriginTag + ".type").Should().BeNull();
         }
 
         [Fact]
@@ -54,13 +56,18 @@ namespace Datadog.Trace.Tests.Debugger
             TestMethod(span);
 
             // Assert
-            Assert.NotNull(span.Tags.GetTag($"{CodeOriginTag}.type"));
-            Assert.Equal("exit", span.Tags.GetTag($"{CodeOriginTag}.type"));
-
-            Assert.NotNull(span.Tags.GetTag($"{CodeOriginTag}.frames.0.method"));
-            Assert.Equal(nameof(TestMethod), span.Tags.GetTag($"{CodeOriginTag}.frames.0.method"));
-            Assert.NotNull(span.Tags.GetTag($"{CodeOriginTag}.frames.0.type"));
-            Assert.Contains(nameof(SpanCodeOriginTests), span.Tags.GetTag($"{CodeOriginTag}.frames.0.type"));
+            var codeOriginType = span.Tags.GetTag($"{CodeOriginTag}.type");
+            codeOriginType.Should().Be("exit");
+            var frame0Method = span.Tags.GetTag($"{CodeOriginTag}.frames.0.method");
+            frame0Method.Should().Be(nameof(TestMethod));
+            var frame0Type = span.Tags.GetTag($"{CodeOriginTag}.frames.0.type");
+            frame0Type.Should().Be(GetType().FullName);
+            var file = span.Tags.GetTag($"{CodeOriginTag}.frames.0.file");
+            file.Should().EndWith($"{nameof(SpanCodeOriginTests)}.cs");
+            var line = span.Tags.GetTag($"{CodeOriginTag}.frames.0.line");
+            line.Should().NotBeNullOrEmpty();
+            var column = span.Tags.GetTag($"{CodeOriginTag}.frames.0.column");
+            column.Should().NotBeNullOrEmpty();
         }
 
         [Fact]
@@ -76,40 +83,45 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Assert
             var tags = ((List<KeyValuePair<string, string>>)(typeof(Datadog.Trace.Tagging.TagsList).GetField("_tags", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(span.Tags))).Select(i => i.Key).ToList();
-            Assert.Contains(tags, s => s.StartsWith($"{CodeOriginTag}.frames.0"));
-            Assert.Contains(tags, s => s.StartsWith($"{CodeOriginTag}.frames.1"));
-            Assert.DoesNotContain(tags, s => s.StartsWith($"{CodeOriginTag}.frames.2"));
+            tags.Should().Contain(s => s.StartsWith($"{CodeOriginTag}.frames.0"));
+            tags.Should().Contain(s => s.StartsWith($"{CodeOriginTag}.frames.1"));
+            tags.Should().NotContain(s => s.StartsWith($"{CodeOriginTag}.frames.2"));
         }
 
         private static void CreateCodeOriginManager(bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
         {
             var overrideSettings = DebuggerSettings.FromSource(
-                new NameValueConfigurationSource(new()
-                {
-                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, isEnable.ToString() },
-                    { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, numberOfFrames.ToString() },
-                    { ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes, excludeFromFilter }
-                }),
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, isEnable.ToString() },
+                        { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, numberOfFrames.ToString() },
+                        { ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes, excludeFromFilter }
+                    }),
                 NullConfigurationTelemetry.Instance);
             var instance = SpanCodeOriginManager.Instance;
             instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, overrideSettings);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void TestMethod(Span span)
         {
             SpanCodeOriginManager.Instance.SetCodeOrigin(span);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod1(Span span)
         {
             DeepTestMethod2(span);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod2(Span span)
         {
             DeepTestMethod3(span);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod3(Span span)
         {
             SpanCodeOriginManager.Instance.SetCodeOrigin(span);
