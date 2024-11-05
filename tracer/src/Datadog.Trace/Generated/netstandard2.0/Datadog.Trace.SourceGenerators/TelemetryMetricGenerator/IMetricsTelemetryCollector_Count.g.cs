@@ -41,7 +41,7 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1);
 
-    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1);
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderTruncationReason tag, int increment = 1);
 
     public void RecordCountStatsApiRequests(int increment = 1);
 
