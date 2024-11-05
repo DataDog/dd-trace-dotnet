@@ -73,23 +73,14 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             return;
         }
 
-        GetSettings(context, out var maximumItems, out var maximumBytes);
-        var headerValue = CreateHeader(baggage, maximumItems, maximumBytes);
+        var settings = Tracer.Instance.Settings;
+        var headerValue = CreateHeader(baggage, settings.BaggageMaximumItems, settings.BaggageMaximumBytes);
 
         if (!string.IsNullOrWhiteSpace(headerValue))
         {
             carrierSetter.Set(carrier, BaggageHeaderName, headerValue);
             TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Baggage);
         }
-    }
-
-    private static void GetSettings(PropagationContext context, out int maximumItems, out int maximumBytes)
-    {
-        var tracer = context.SpanContext?.TraceContext?.Tracer ?? Tracer.Instance;
-        var settings = tracer.Settings;
-
-        maximumItems = settings.BaggageMaximumItems;
-        maximumBytes = settings.BaggageMaximumBytes;
     }
 
     public bool TryExtract<TCarrier, TCarrierGetter>(
