@@ -88,9 +88,42 @@ internal unsafe ref struct FileBitmap
     }
 
     /// <summary>
-    /// Gets the size of the bitmap.
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified line count.
+    /// </summary>
+    /// <param name="lines">Line count</param>
+    public FileBitmap(int lines)
+        : this(new byte[GetSize(lines)])
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with an specified range set to 1.
+    /// </summary>
+    /// <param name="fromLine">Start of range</param>
+    /// <param name="toLine">End of range</param>
+    public FileBitmap(int fromLine, int toLine)
+        : this(toLine)
+    {
+        if (fromLine <= 0 || toLine < fromLine)
+        {
+            throw new ArgumentException("Invalid range");
+        }
+
+        for (var i = fromLine; i <= toLine; i++)
+        {
+            Set(i);
+        }
+    }
+
+    /// <summary>
+    /// Gets the size of the bitmap in Bytes.
     /// </summary>
     public int Size => _size;
+
+    /// <summary>
+    /// Gets the size of the bitmap in bits.
+    /// </summary>
+    public int BitCount => _size * 8;
 
     /// <summary>
     /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.
@@ -809,6 +842,26 @@ internal unsafe ref struct FileBitmap
                 return true;
             }
 #endif
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets if two bitmaps have at least one enabled bit in common.
+    /// </summary>
+    /// <returns>True if both bitmaps has at least 1 bit set to 1 in the same position; otherwise, false..</returns>
+    public bool IntersectsWith(ref FileBitmap other)
+    {
+        var size = Math.Min(_size, other._size);
+
+        // Iterate over each byte of the bitmap
+        for (var i = 0; i < size; i++)
+        {
+            if ((_bitmap[i] & other._bitmap[i]) > 0)
+            {
+                return true;
+            }
         }
 
         return false;

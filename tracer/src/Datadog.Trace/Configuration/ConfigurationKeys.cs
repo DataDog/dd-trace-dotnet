@@ -612,6 +612,11 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for the maximum number of retry attempts for the entire session.
             /// </summary>
             public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
+
+            /// <summary>
+            /// Configuration key for enabling Test Impat Analysis.
+            /// </summary>
+            public const string TestImpactAnalysis = "DD_CIVISIBILITY_TEST_IMPACT_ANALYSIS";
         }
 
         /// <summary>

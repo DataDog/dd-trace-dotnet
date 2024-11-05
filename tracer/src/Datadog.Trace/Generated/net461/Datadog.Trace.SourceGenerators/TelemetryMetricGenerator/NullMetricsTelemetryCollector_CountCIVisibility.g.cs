@@ -127,4 +127,8 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordCountCIVisibilityEarlyFlakeDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
     }
+
+    public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
+    {
+    }
 }
