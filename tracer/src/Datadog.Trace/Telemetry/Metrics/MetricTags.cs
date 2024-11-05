@@ -158,6 +158,12 @@ internal static class MetricTags
         [Description("header_style:baggage")] Baggage,
     }
 
+    public enum ContextHeaderTruncationReason
+    {
+        [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
+        [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
+    }
+
     internal enum TelemetryEndpoint
     {
         [Description("endpoint:agent")] Agent,
