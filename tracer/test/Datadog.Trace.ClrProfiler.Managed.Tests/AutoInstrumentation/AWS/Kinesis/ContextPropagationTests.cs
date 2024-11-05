@@ -10,6 +10,7 @@ using System.Text;
 using Amazon.Kinesis.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Newtonsoft.Json;
 using Xunit;
@@ -74,7 +75,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, _spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -105,7 +106,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, _spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -124,7 +125,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, _spanContext);
+        ContextPropagation.InjectTraceIntoData(proxy, new PropagationContext(_spanContext, baggage: null));
 
         // Naively deserialize in order to not use tracer extraction logic
         var jsonString = Encoding.UTF8.GetString(proxy.Data.ToArray());
@@ -155,7 +156,7 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, _spanContext);
+        ContextPropagation.InjectTraceIntoData(proxy, new PropagationContext(_spanContext, baggage: null));
 
         var data = proxy.Data;
 
