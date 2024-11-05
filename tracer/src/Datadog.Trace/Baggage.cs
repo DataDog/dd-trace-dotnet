@@ -418,7 +418,7 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    public void ForEach<T>(T processor)
+    public void Enumerate<T>(T processor)
         where T : struct, ICancellableObserver<KeyValuePair<string, string>>
     {
         if (_items is { } list)

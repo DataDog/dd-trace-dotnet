@@ -212,7 +212,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         try
         {
             var headerBuilder = new W3CBaggageHeaderBuilder(maxBaggageItems, maxBaggageLength, sb);
-            baggage.ForEach(headerBuilder);
+            baggage.Enumerate(headerBuilder);
 
             if (sb.Length == 0)
             {
