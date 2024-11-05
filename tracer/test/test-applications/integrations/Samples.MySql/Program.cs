@@ -19,7 +19,8 @@ namespace Samples.MySql
             // Use the connection type that is loaded by the runtime through the typical loading algorithm
             using (var connection = OpenConnection(typeof(MySqlConnection)))
             {
-                await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+                // FIXME: Somewhere in V8 of MySql we stop tracing the Transaction Scope related spans
+                await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token, useTransactionScope: false);
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
