@@ -18,6 +18,10 @@
     <CopySQLiteInteropFiles>false</CopySQLiteInteropFiles>
     <CleanSQLiteInteropFiles>false</CleanSQLiteInteropFiles>
     <CollectSQLiteInteropFiles>false</CollectSQLiteInteropFiles>
+    <!-- Forcing C#12 so we don't opt-in to the .NET 9/C#13 new overload resolution rules   -->
+    <!-- as those force choosing the span overloads (which we currently don't support)   -->
+    <!-- Once we add support for those overloads, we should remove this   -->
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net462'">
