@@ -85,16 +85,11 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
     private static void GetSettings(PropagationContext context, out int maximumItems, out int maximumBytes)
     {
-        if (context.SpanContext?.TraceContext?.Tracer.Settings is { } settings)
-        {
-            maximumItems = settings.BaggageMaximumItems;
-            maximumBytes = settings.BaggageMaximumBytes;
-        }
-        else
-        {
-            maximumItems = DefaultMaximumBaggageItems;
-            maximumBytes = DefaultMaximumBaggageBytes;
-        }
+        var tracer = context.SpanContext?.TraceContext?.Tracer ?? Tracer.Instance;
+        var settings = tracer.Settings;
+
+        maximumItems = settings.BaggageMaximumItems;
+        maximumBytes = settings.BaggageMaximumBytes;
     }
 
     public bool TryExtract<TCarrier, TCarrierGetter>(
