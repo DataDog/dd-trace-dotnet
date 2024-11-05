@@ -30,7 +30,7 @@ namespace Samples.MySql
             using (var connection = OpenConnection(loadFileType))
             {
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
-                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
+                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token, useTransactionScope: false);
             }
 
             // allow time to flush

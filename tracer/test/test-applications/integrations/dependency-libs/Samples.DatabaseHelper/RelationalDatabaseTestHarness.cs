@@ -19,6 +19,7 @@ namespace Samples.DatabaseHelper
         /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
         /// <param name="providerSpecificCommandExecutor">A <see cref="IDbCommandExecutor"/> specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand, used to call DbCommand methods.</param>
         /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <param name="useTransactionScope">Whether or not a Transcation Scope should be created.</param>
         /// <typeparam name="TCommand">The DbCommand implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</typeparam>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunAllAsync<TCommand>(
@@ -68,11 +69,13 @@ namespace Samples.DatabaseHelper
         /// <param name="connection">The <see cref="IDbConnection"/> to use to connect to the database.</param>
         /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
         /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
+        /// <param name="useTransactionScope">Whether or not a Transcation Scope should be created.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunBaseClassesAsync(
             IDbConnection connection,
             DbCommandFactory commandFactory,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool useTransactionScope = true)
         {
             var executors = new List<IDbCommandExecutor>
                             {
@@ -93,7 +96,7 @@ namespace Samples.DatabaseHelper
             {
                 foreach (var executor in executors)
                 {
-                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
                 }
             }
         }
@@ -102,7 +105,8 @@ namespace Samples.DatabaseHelper
             IDbConnection connection,
             DbCommandFactory commandFactory,
             IDbCommandExecutor providerSpecificCommandExecutor,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool useTransactionScope = true)
         {
             var executors = new List<IDbCommandExecutor>
                             {
@@ -113,7 +117,7 @@ namespace Samples.DatabaseHelper
             {
                 foreach (var executor in executors)
                 {
-                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
                 }
             }
         }
@@ -131,13 +135,14 @@ namespace Samples.DatabaseHelper
             IDbConnection connection,
             DbCommandFactory commandFactory,
             CancellationToken cancellationToken,
+            bool useTransactionScope = true,
             params IDbCommandExecutor[] providerSpecificCommandExecutors)
         {
             using (var root = SampleHelpers.CreateScope("RunAllAsync"))
             {
                 foreach (var executor in providerSpecificCommandExecutors)
                 {
-                    await RunAsync(connection, commandFactory, executor, cancellationToken);
+                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
                 }
             }
         }
