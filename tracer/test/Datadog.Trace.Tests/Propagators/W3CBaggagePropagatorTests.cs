@@ -121,6 +121,9 @@ public class W3CBaggagePropagatorTests
     }
 
     [Theory]
+    [InlineData("Jose", 0, "")]
+    [InlineData("Jose", 8, "")]
+    [InlineData("Jose", 9, "name=Jose")]
     [InlineData("Jose", 20, "name=Jose")]
     [InlineData("Jose", 21, "name=Jose,key2=value2")]
     [InlineData("José", 25, "name=Jos%C3%A9")]
