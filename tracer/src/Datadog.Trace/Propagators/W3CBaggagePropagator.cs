@@ -307,7 +307,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // reached the item count limit, stop adding items
                 CancellationRequested = true;
 
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageItemCountExceeded);
                 return;
             }
 
@@ -327,7 +327,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // reached the byte count limit, stop adding items
                 CancellationRequested = true;
 
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
                 return;
             }
 
