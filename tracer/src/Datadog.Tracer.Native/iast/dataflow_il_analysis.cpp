@@ -741,13 +741,27 @@ namespace iast
         return res;
     }
 
-    void ILAnalysis::Dump(const std::string& extraMessage)
+    template <typename... Args>
+    static void Log(bool elevated, const Args&... args)
+    {
+        if (elevated)
+        {
+            trace::Logger::Info(args...);
+        }
+        else
+        {
+            trace::Logger::Debug(args...);
+        }
+    }
+
+
+    void ILAnalysis::Dump(bool elevated, const std::string& extraMessage)
     {
         try
         {
             auto method = _body->GetMethodInfo();
             auto module = method->GetModuleInfo();
-            trace::Logger::Info("Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",
+            Log(elevated, "Dumping IL ", extraMessage, " : ", method->GetFullName(), " ",
                                  module->GetModuleFullName(), " ... ");
 
             std::unordered_map<ILInstr*, std::vector<EHClause*>*> handlers;
@@ -802,37 +816,37 @@ namespace iast
                         bool lastCommonTry = lastCommonTryIt != hs->rend() && *lastCommonTryIt == h;
                         if (h->m_pTryBegin == instruction && firstCommonTry)
                         {
-                            trace::Logger::Info(indent, "try");
-                            trace::Logger::Info(indent, "{");
+                            Log(elevated, indent, "try");
+                            Log(elevated, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                         else if (h->m_pTryEnd == instruction && firstCommonTry && CommonTry(h, lastBlock))
                         {
                             indent = HandlerExit(nesting, &exitBlock);
-                            trace::Logger::Info(indent, "}");
+                            Log(elevated, indent, "}");
                         }
 
                         if (h->m_pFilter == instruction)
                         {
-                            trace::Logger::Info(indent, "filter");
-                            trace::Logger::Info(indent, "{");
+                            Log(elevated, indent, "filter");
+                            Log(elevated, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                         else if (h->m_pHandlerBegin == instruction)
                         {
-                            trace::Logger::Info(indent, (IsFinally(h) ? WStr("finally") : WStr("catch")));
-                            trace::Logger::Info(indent, "{");
+                            Log(elevated, indent, (IsFinally(h) ? WStr("finally") : WStr("catch")));
+                            Log(elevated, indent, "{");
                             indent = HandlerEnter(nesting, h);
                         }
                     }
                 }
-                trace::Logger::Info(indent, ToString(_body, instruction)); // Write current instruction
+                Log(elevated, indent, ToString(_body, instruction)); // Write current instruction
                 if (instruction->m_opcode == CEE_ENDFILTER || instruction->m_opcode == CEE_ENDFINALLY || instruction->m_opcode == CEE_LEAVE || instruction->m_opcode == CEE_LEAVE_S)
                 {
                     if (nesting.size() > 0)
                     {
                         indent = HandlerExit(nesting);
-                        trace::Logger::Info(indent, "}");
+                        Log(elevated, indent, "}");
                     }
                 }
             }
@@ -840,11 +854,11 @@ namespace iast
             {
                 EHClause* exitBlock = nullptr;
                 indent = HandlerExit(nesting, &exitBlock);
-                trace::Logger::Info(indent, "}");
+                Log(elevated, indent, "}");
             }
 
             DEL_MAP_VALUES(handlers);
-            trace::Logger::Info("Dump end");
+            Log(elevated, "Dump end");
         }
         catch (std::exception err)
         {

@@ -415,7 +415,10 @@ namespace iast
             verificationFail = analysis.GetError();
             if (!correct || dump)
             {
-                analysis.Dump(isRejit ? "ReJit " : "  Jit ");
+                std::string message = !correct ? " [ IL Verification FAILED. Discarded ] "
+                                               : " [ Written Correctly ] " + 
+                                      isRejit ? "ReJit " : "  Jit ";
+                analysis.Dump(!correct, message);
             }
         }
 
