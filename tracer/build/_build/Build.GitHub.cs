@@ -34,6 +34,8 @@ using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
+using Nuke.Common.Utilities;
+using OpenAI;
 
 partial class Build
 {
@@ -42,6 +44,9 @@ partial class Build
 
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
+
+    [Parameter("A OpenAI key", Name = "OPEN_AI_KEY")]
+    readonly string OpenAIKey;
 
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
@@ -93,6 +98,51 @@ partial class Build
 
             Console.WriteLine($"PR assigned");
         });
+
+    Target LLMReport => _ => _
+           .Unlisted()
+           .Requires(() => GitHubRepositoryName)
+           .Requires(() => GitHubToken)
+           .Requires(() => OpenAIKey)
+           .Requires(() => PullRequestNumber)
+           .Requires(() => TargetBranch)
+           .Executes(async () =>
+           {
+               var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, include both the original code and your recommended change. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization.";
+               // This assumes that we're running in a pull request, so we compare against the target branch
+               var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
+               var changesText = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" --  \"*.cs\" \"*.h\" \"*.cpp\"")
+                    .Select(f => f.Text).JoinNewLine();
+
+               string result;
+
+               File.WriteAllText("changes.txt", changesText);
+
+               if (string.IsNullOrEmpty(changesText))
+               {
+                   result = "No changes detected.";
+               }
+               else if (string.IsNullOrEmpty(OpenAIKey))
+               {
+                   result = "Empty OpenAI key.";
+               }
+               else
+               {
+                   result = await OpenAiApiCall.GetResponseAsync(prompt + changesText, OpenAIKey);
+               }
+
+               Console.WriteLine(result);
+
+               if (string.IsNullOrEmpty(result))
+               {
+                   Console.WriteLine("Error in OpenAI's response");
+                   result = "Error in OpenAI's response";
+               }
+
+               var markdown = new StringBuilder();
+               markdown.AppendLine("## LLM Report").AppendLine(result).AppendLine();
+               // await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", markdown.ToString());
+           });
 
     Target SummaryOfSnapshotChanges => _ => _
            .Unlisted()
