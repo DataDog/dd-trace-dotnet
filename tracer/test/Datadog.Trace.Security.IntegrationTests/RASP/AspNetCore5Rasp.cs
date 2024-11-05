@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
@@ -49,9 +50,9 @@ public class AspNetCore5RaspEnabledIastDisabled : AspNetCore5Rasp
         var spans = await SendRequestsAsync(agent, [url]);
 
         var fileId = Guid.NewGuid().ToString();
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = false } } }, "ASM", fileId) });
+        await agent.SetupRcmAndWait(Output, [(new Payload { RuleOverrides = [new RuleOverride { Id = ruleId, Enabled = false }] }, "ASM", fileId)]);
         spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
-        await agent.SetupRcmAndWait(Output, new[] { ((object)new Payload { RuleOverrides = new[] { new RuleOverride { Id = ruleId, Enabled = true } } }, "ASM", fileId) });
+        await agent.SetupRcmAndWait(Output, [(new Payload { RuleOverrides = [new RuleOverride { Id = ruleId, Enabled = true }] }, "ASM", fileId)]);
         spans = spans.AddRange(await SendRequestsAsync(agent, [url]));
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -70,6 +71,7 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
         EnableRasp();
         SetSecurity(true);
         EnableIast(enableIast);
+        AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
