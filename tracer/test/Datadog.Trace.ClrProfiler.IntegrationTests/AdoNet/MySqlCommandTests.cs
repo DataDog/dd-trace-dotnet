@@ -92,10 +92,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
 
-            // ALWAYS: 75 spans
+            // ALWAYS: 108 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
             // - IDbCommand: 14 spans (2 groups * 7 spans)
+            // - BEGIN: 11 spans (1 group * 11 spans)
+            // - ROLLBACK: 11 spans (1 group * 11 spans)
+            // - TRANSACTION ISOLATION LEVEL: 11 spans (1 group * 11 spans)
             //
             // NETSTANDARD: +56 spans
             // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
@@ -107,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-            var expectedSpanCount = 147;
+            var expectedSpanCount = 180;
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
