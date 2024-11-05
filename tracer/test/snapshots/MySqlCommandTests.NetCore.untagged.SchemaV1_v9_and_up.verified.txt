@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -18,7 +18,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -41,7 +40,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -64,7 +62,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -87,7 +84,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -110,7 +106,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -133,7 +128,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -156,7 +150,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -179,7 +172,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -202,7 +194,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -225,7 +216,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -248,7 +238,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -271,7 +260,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -294,7 +282,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -317,7 +304,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -340,7 +326,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -363,7 +348,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -386,7 +370,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -409,7 +392,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -432,7 +414,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -455,7 +436,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -478,7 +458,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -501,7 +480,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -524,7 +502,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -547,7 +524,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -570,7 +546,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -593,7 +568,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -616,7 +590,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -639,7 +612,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -662,7 +634,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -685,7 +656,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -708,7 +678,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -731,7 +700,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -754,7 +722,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -777,7 +744,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -800,7 +766,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -823,7 +788,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -846,7 +810,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -869,7 +832,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -892,7 +854,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -915,7 +876,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -938,7 +898,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -961,7 +920,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -984,7 +942,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1007,7 +964,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1030,7 +986,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1053,7 +1008,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1076,7 +1030,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1099,7 +1052,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1122,7 +1074,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1145,7 +1096,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1168,7 +1118,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1191,7 +1140,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1214,7 +1162,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1237,7 +1184,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1260,7 +1206,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1283,7 +1228,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1306,7 +1250,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1329,7 +1272,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1352,7 +1294,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1375,7 +1316,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1398,7 +1338,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1421,7 +1360,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1444,7 +1382,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1467,7 +1404,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1490,7 +1426,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1513,7 +1448,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1536,7 +1470,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1559,7 +1492,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1582,7 +1514,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1605,7 +1536,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1628,7 +1558,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1651,7 +1580,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1674,7 +1602,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1697,7 +1624,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1720,7 +1646,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1743,7 +1668,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1766,7 +1690,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1789,7 +1712,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1812,7 +1734,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1835,7 +1756,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1858,7 +1778,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1881,7 +1800,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1904,7 +1822,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1927,7 +1844,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1950,7 +1866,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1973,7 +1888,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1996,7 +1910,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2019,7 +1932,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2042,7 +1954,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2065,7 +1976,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2088,7 +1998,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2111,7 +2020,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2134,7 +2042,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2157,7 +2064,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2180,7 +2086,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2203,7 +2108,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2226,7 +2130,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2249,7 +2152,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2272,7 +2174,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2295,7 +2196,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2318,7 +2218,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2341,7 +2240,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2364,7 +2262,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2387,7 +2284,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2410,7 +2306,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2433,7 +2328,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2456,7 +2350,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2479,7 +2372,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2502,7 +2394,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2525,7 +2416,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2548,7 +2438,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2571,7 +2460,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2594,7 +2482,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2617,7 +2504,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2640,7 +2526,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2663,7 +2548,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2686,7 +2570,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2709,7 +2592,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2732,7 +2614,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2755,7 +2636,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2778,7 +2658,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2801,7 +2680,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2824,7 +2702,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2847,7 +2724,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2870,7 +2746,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2893,7 +2768,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2916,7 +2790,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2939,7 +2812,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2962,7 +2834,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2985,7 +2856,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3008,7 +2878,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3031,7 +2900,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3054,7 +2922,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3077,7 +2944,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3100,7 +2966,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3123,7 +2988,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3146,7 +3010,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3169,7 +3032,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3192,7 +3054,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3215,7 +3076,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3238,7 +3098,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3261,7 +3120,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3284,7 +3142,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3307,7 +3164,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3330,7 +3186,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3353,7 +3208,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3376,7 +3230,6 @@
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
-      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   }

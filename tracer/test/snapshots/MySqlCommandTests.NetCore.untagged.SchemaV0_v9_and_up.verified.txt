@@ -1,10 +1,10 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -15,11 +15,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -27,7 +28,7 @@
     SpanId: Id_4,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -38,11 +39,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -50,7 +52,7 @@
     SpanId: Id_6,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -61,11 +63,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -73,7 +76,7 @@
     SpanId: Id_8,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -84,11 +87,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -96,7 +100,7 @@
     SpanId: Id_10,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -107,11 +111,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -119,7 +124,7 @@
     SpanId: Id_12,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -130,11 +135,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -142,7 +148,7 @@
     SpanId: Id_14,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -153,11 +159,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -165,7 +172,7 @@
     SpanId: Id_16,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -176,11 +183,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -188,7 +196,7 @@
     SpanId: Id_18,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -199,11 +207,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -211,7 +220,7 @@
     SpanId: Id_20,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -222,11 +231,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -234,7 +244,7 @@
     SpanId: Id_22,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -245,11 +255,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -257,7 +268,7 @@
     SpanId: Id_24,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -268,11 +279,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -280,7 +292,7 @@
     SpanId: Id_26,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -291,11 +303,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -303,7 +316,7 @@
     SpanId: Id_29,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -314,11 +327,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -326,7 +340,7 @@
     SpanId: Id_31,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -337,11 +351,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -349,7 +364,7 @@
     SpanId: Id_33,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -360,11 +375,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -372,7 +388,7 @@
     SpanId: Id_35,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -383,11 +399,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -395,7 +412,7 @@
     SpanId: Id_37,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -406,11 +423,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -418,7 +436,7 @@
     SpanId: Id_39,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -429,11 +447,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -441,7 +460,7 @@
     SpanId: Id_41,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -452,11 +471,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -464,7 +484,7 @@
     SpanId: Id_43,
     Name: mysql.query,
     Resource: DELETE FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -475,11 +495,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -487,7 +508,7 @@
     SpanId: Id_45,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -498,11 +519,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -510,7 +532,7 @@
     SpanId: Id_46,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -521,11 +543,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -533,7 +556,7 @@
     SpanId: Id_47,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -544,11 +567,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -556,7 +580,7 @@
     SpanId: Id_48,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -567,11 +591,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -579,7 +604,7 @@
     SpanId: Id_49,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -590,11 +615,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -602,7 +628,7 @@
     SpanId: Id_50,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -613,11 +639,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -625,7 +652,7 @@
     SpanId: Id_51,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -636,11 +663,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -648,7 +676,7 @@
     SpanId: Id_52,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -659,11 +687,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -671,7 +700,7 @@
     SpanId: Id_53,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -682,11 +711,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -694,7 +724,7 @@
     SpanId: Id_54,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -705,11 +735,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -717,7 +748,7 @@
     SpanId: Id_55,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -728,11 +759,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -740,7 +772,7 @@
     SpanId: Id_56,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -751,11 +783,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -763,7 +796,7 @@
     SpanId: Id_57,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -774,11 +807,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -786,7 +820,7 @@
     SpanId: Id_58,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -797,11 +831,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -809,7 +844,7 @@
     SpanId: Id_59,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -820,11 +855,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -832,7 +868,7 @@
     SpanId: Id_60,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -843,11 +879,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -855,7 +892,7 @@
     SpanId: Id_61,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -866,11 +903,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -878,7 +916,7 @@
     SpanId: Id_62,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -889,11 +927,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -901,7 +940,7 @@
     SpanId: Id_63,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -912,11 +951,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -924,7 +964,7 @@
     SpanId: Id_64,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -935,11 +975,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -947,7 +988,7 @@
     SpanId: Id_65,
     Name: mysql.query,
     Resource: DROP TABLE IF EXISTS `MySql-Test-GUID`; CREATE TABLE `MySql-Test-GUID` (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -958,11 +999,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -970,7 +1012,7 @@
     SpanId: Id_66,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -981,11 +1023,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -993,7 +1036,7 @@
     SpanId: Id_67,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -1004,11 +1047,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1016,7 +1060,7 @@
     SpanId: Id_68,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -1027,11 +1071,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1039,7 +1084,7 @@
     SpanId: Id_69,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -1050,11 +1095,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1062,7 +1108,7 @@
     SpanId: Id_70,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -1073,11 +1119,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1085,7 +1132,7 @@
     SpanId: Id_71,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -1096,11 +1143,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1108,7 +1156,7 @@
     SpanId: Id_72,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -1119,11 +1167,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1131,7 +1180,7 @@
     SpanId: Id_73,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -1142,11 +1191,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1154,7 +1204,7 @@
     SpanId: Id_74,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -1165,11 +1215,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1177,7 +1228,7 @@
     SpanId: Id_75,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -1188,11 +1239,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1200,7 +1252,7 @@
     SpanId: Id_76,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -1211,11 +1263,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1223,7 +1276,7 @@
     SpanId: Id_77,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -1234,11 +1287,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1246,7 +1300,7 @@
     SpanId: Id_78,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -1257,11 +1311,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1269,7 +1324,7 @@
     SpanId: Id_79,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -1280,11 +1335,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1292,7 +1348,7 @@
     SpanId: Id_80,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -1303,11 +1359,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1315,7 +1372,7 @@
     SpanId: Id_81,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -1326,11 +1383,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1338,7 +1396,7 @@
     SpanId: Id_82,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -1349,11 +1407,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1361,7 +1420,7 @@
     SpanId: Id_83,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -1372,11 +1431,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1384,7 +1444,7 @@
     SpanId: Id_84,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -1395,11 +1455,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1407,7 +1468,7 @@
     SpanId: Id_85,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -1418,11 +1479,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1430,7 +1492,7 @@
     SpanId: Id_86,
     Name: mysql.query,
     Resource: INSERT INTO `MySql-Test-GUID` (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -1441,11 +1503,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1453,7 +1516,7 @@
     SpanId: Id_87,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -1464,11 +1527,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1476,7 +1540,7 @@
     SpanId: Id_88,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -1487,11 +1551,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1499,7 +1564,7 @@
     SpanId: Id_89,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -1510,11 +1575,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1522,7 +1588,7 @@
     SpanId: Id_90,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -1533,11 +1599,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1545,7 +1612,7 @@
     SpanId: Id_91,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -1556,11 +1623,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1568,7 +1636,7 @@
     SpanId: Id_92,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -1579,11 +1647,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1591,7 +1660,7 @@
     SpanId: Id_93,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -1602,11 +1671,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1614,7 +1684,7 @@
     SpanId: Id_94,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -1625,11 +1695,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1637,7 +1708,7 @@
     SpanId: Id_95,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -1648,11 +1719,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1660,7 +1732,7 @@
     SpanId: Id_96,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -1671,11 +1743,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1683,7 +1756,7 @@
     SpanId: Id_97,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -1694,11 +1767,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1706,7 +1780,7 @@
     SpanId: Id_98,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -1717,11 +1791,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1729,7 +1804,7 @@
     SpanId: Id_99,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -1740,11 +1815,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1752,7 +1828,7 @@
     SpanId: Id_100,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -1763,11 +1839,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1775,7 +1852,7 @@
     SpanId: Id_101,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -1786,11 +1863,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1798,7 +1876,7 @@
     SpanId: Id_102,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -1809,11 +1887,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1821,7 +1900,7 @@
     SpanId: Id_103,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -1832,11 +1911,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1844,7 +1924,7 @@
     SpanId: Id_104,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -1855,11 +1935,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1867,7 +1948,7 @@
     SpanId: Id_105,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -1878,11 +1959,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1890,7 +1972,7 @@
     SpanId: Id_106,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -1901,11 +1983,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1913,7 +1996,7 @@
     SpanId: Id_107,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -1924,11 +2007,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1936,7 +2020,7 @@
     SpanId: Id_108,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -1947,11 +2031,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1959,7 +2044,7 @@
     SpanId: Id_109,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -1970,11 +2055,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -1982,7 +2068,7 @@
     SpanId: Id_110,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -1993,11 +2079,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2005,7 +2092,7 @@
     SpanId: Id_111,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -2016,11 +2103,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2028,7 +2116,7 @@
     SpanId: Id_112,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -2039,11 +2127,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2051,7 +2140,7 @@
     SpanId: Id_113,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -2062,11 +2151,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2074,7 +2164,7 @@
     SpanId: Id_114,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -2085,11 +2175,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2097,7 +2188,7 @@
     SpanId: Id_115,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -2108,11 +2199,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2120,7 +2212,7 @@
     SpanId: Id_116,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -2131,11 +2223,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2143,7 +2236,7 @@
     SpanId: Id_117,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -2154,11 +2247,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2166,7 +2260,7 @@
     SpanId: Id_118,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -2177,11 +2271,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2189,7 +2284,7 @@
     SpanId: Id_119,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -2200,11 +2295,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2212,7 +2308,7 @@
     SpanId: Id_120,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -2223,11 +2319,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2235,7 +2332,7 @@
     SpanId: Id_121,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -2246,11 +2343,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2258,7 +2356,7 @@
     SpanId: Id_122,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -2269,11 +2367,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2281,7 +2380,7 @@
     SpanId: Id_123,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -2292,11 +2391,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2304,7 +2404,7 @@
     SpanId: Id_124,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -2315,11 +2415,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2327,7 +2428,7 @@
     SpanId: Id_125,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -2338,11 +2439,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2350,7 +2452,7 @@
     SpanId: Id_126,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -2361,11 +2463,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2373,7 +2476,7 @@
     SpanId: Id_127,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -2384,11 +2487,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2396,7 +2500,7 @@
     SpanId: Id_128,
     Name: mysql.query,
     Resource: SELECT * FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -2407,11 +2511,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2419,7 +2524,7 @@
     SpanId: Id_129,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -2430,11 +2535,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2442,7 +2548,7 @@
     SpanId: Id_130,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -2453,11 +2559,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2465,7 +2572,7 @@
     SpanId: Id_131,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -2476,11 +2583,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2488,7 +2596,7 @@
     SpanId: Id_132,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -2499,11 +2607,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2511,7 +2620,7 @@
     SpanId: Id_133,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -2522,11 +2631,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2534,7 +2644,7 @@
     SpanId: Id_134,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -2545,11 +2655,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2557,7 +2668,7 @@
     SpanId: Id_135,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -2568,11 +2679,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2580,7 +2692,7 @@
     SpanId: Id_136,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -2591,11 +2703,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2603,7 +2716,7 @@
     SpanId: Id_137,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -2614,11 +2727,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2626,7 +2740,7 @@
     SpanId: Id_138,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -2637,11 +2751,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2649,7 +2764,7 @@
     SpanId: Id_139,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -2660,11 +2775,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2672,7 +2788,7 @@
     SpanId: Id_140,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -2683,11 +2799,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2695,7 +2812,7 @@
     SpanId: Id_141,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -2706,11 +2823,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2718,7 +2836,7 @@
     SpanId: Id_142,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -2729,11 +2847,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2741,7 +2860,7 @@
     SpanId: Id_143,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -2752,11 +2871,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2764,7 +2884,7 @@
     SpanId: Id_144,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -2775,11 +2895,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2787,7 +2908,7 @@
     SpanId: Id_145,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -2798,11 +2919,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2810,7 +2932,7 @@
     SpanId: Id_146,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -2821,11 +2943,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2833,7 +2956,7 @@
     SpanId: Id_147,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -2844,11 +2967,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2856,7 +2980,7 @@
     SpanId: Id_148,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -2867,11 +2991,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2879,7 +3004,7 @@
     SpanId: Id_149,
     Name: mysql.query,
     Resource: SELECT Name FROM `MySql-Test-GUID` WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -2890,11 +3015,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2902,7 +3028,7 @@
     SpanId: Id_150,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_3,
     Tags: {
@@ -2913,11 +3039,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2925,7 +3052,7 @@
     SpanId: Id_151,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_5,
     Tags: {
@@ -2936,11 +3063,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2948,7 +3076,7 @@
     SpanId: Id_152,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_7,
     Tags: {
@@ -2959,11 +3087,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2971,7 +3100,7 @@
     SpanId: Id_153,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_9,
     Tags: {
@@ -2982,11 +3111,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -2994,7 +3124,7 @@
     SpanId: Id_154,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_11,
     Tags: {
@@ -3005,11 +3135,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3017,7 +3148,7 @@
     SpanId: Id_155,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_13,
     Tags: {
@@ -3028,11 +3159,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3040,7 +3172,7 @@
     SpanId: Id_156,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_15,
     Tags: {
@@ -3051,11 +3183,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3063,7 +3196,7 @@
     SpanId: Id_157,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_17,
     Tags: {
@@ -3074,11 +3207,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3086,7 +3220,7 @@
     SpanId: Id_158,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_19,
     Tags: {
@@ -3097,11 +3231,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3109,7 +3244,7 @@
     SpanId: Id_159,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_21,
     Tags: {
@@ -3120,11 +3255,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3132,7 +3268,7 @@
     SpanId: Id_160,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_23,
     Tags: {
@@ -3143,11 +3279,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3155,7 +3292,7 @@
     SpanId: Id_161,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_25,
     Tags: {
@@ -3166,11 +3303,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3178,7 +3316,7 @@
     SpanId: Id_162,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_27,
     Tags: {
@@ -3189,11 +3327,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3201,7 +3340,7 @@
     SpanId: Id_163,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_30,
     Tags: {
@@ -3212,11 +3351,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3224,7 +3364,7 @@
     SpanId: Id_164,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_32,
     Tags: {
@@ -3235,11 +3375,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3247,7 +3388,7 @@
     SpanId: Id_165,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_34,
     Tags: {
@@ -3258,11 +3399,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3270,7 +3412,7 @@
     SpanId: Id_166,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_36,
     Tags: {
@@ -3281,11 +3423,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3293,7 +3436,7 @@
     SpanId: Id_167,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_38,
     Tags: {
@@ -3304,11 +3447,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3316,7 +3460,7 @@
     SpanId: Id_168,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_40,
     Tags: {
@@ -3327,11 +3471,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3339,7 +3484,7 @@
     SpanId: Id_169,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_42,
     Tags: {
@@ -3350,11 +3495,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   },
   {
@@ -3362,7 +3508,7 @@
     SpanId: Id_170,
     Name: mysql.query,
     Resource: UPDATE `MySql-Test-GUID` SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.MySql,
+    Service: Samples.MySql-mysql,
     Type: sql,
     ParentId: Id_44,
     Tags: {
@@ -3373,11 +3519,12 @@
       env: integration_tests,
       language: dotnet,
       out.host: mysql,
-      peer.service: world,
+      runtime-id: Guid_1,
       span.kind: client,
-      version: 1.0.0,
-      _dd.dbm_trace_injected: true,
-      _dd.peer.service.source: db.name
+      _dd.base_service: Samples.MySql
+    },
+    Metrics: {
+      _dd.top_level: 1.0
     }
   }
 ]
