@@ -1,4 +1,4 @@
-﻿// <copyright file="CountCIVisibility.cs" company="Datadog">
+// <copyright file="CountCIVisibility.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -215,4 +215,12 @@ internal enum CountCIVisibility
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("early_flake_detection.request_errors", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestErrors,
+
+    /// <summary>
+    /// The number of tests marked as Modified by Impacted Tests Detection
+    /// </summary>
+    /// <summary>
+    /// Counts the number of tainted objects after a request
+    /// </summary>
+    [TelemetryMetric("impacted_tests.is_modified", isCommon: true, NS.CIVisibility)] ImpactedTestsIsModified,
 }

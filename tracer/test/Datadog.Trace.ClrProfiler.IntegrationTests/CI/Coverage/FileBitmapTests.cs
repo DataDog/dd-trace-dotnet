@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Ci.Coverage.Util;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Coverage;
@@ -188,5 +190,46 @@ public class FileBitmapTests
 
         // Assert that we have iterated over the correct number of bits
         Assert.Equal(expectedBitStates.Length, index);
+    }
+
+    [Theory]
+    [InlineData(0, 10, true)]
+    [InlineData(15, 10, true)]
+    [InlineData(1, 10, false)]
+    [InlineData(5, 15, false)]
+    [InlineData(5, 5, false)]
+    public void GivenARange_WhenCreatingFileBitmap_ProperBitsAreSet(int from, int to, bool shouldThrow)
+    {
+        if (shouldThrow)
+        {
+            Assert.Throws<ArgumentException>(() => _ = new FileBitmap(from, to));
+        }
+        else
+        {
+            using var bitmap = new FileBitmap(from, to);
+
+            bitmap.BitCount.Should().BeGreaterThanOrEqualTo(to);
+
+            for (int x = 1; x <= bitmap.BitCount; x++)
+            {
+                var bit = bitmap.Get(x);
+                bit.Should().Be(x >= from && x <= to);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(1, 10, 11, 15, false)]
+    [InlineData(11, 15, 1, 10, false)]
+    [InlineData(1, 10, 8, 15, true)]
+    [InlineData(8, 15, 10, 15, true)]
+    [InlineData(8, 15, 15, 16, true)]
+    [InlineData(30, 36, 35, 35, true)]
+    public void GivenTwoRanges_WhenIntersectingFileBitmaps_ResultIsExpected(int from1, int to1, int from2, int to2, bool intersects)
+    {
+        var bitmap1 = new FileBitmap(from1, to1);
+        var bitmap2 = new FileBitmap(from2, to2);
+
+        bitmap1.IntersectsWith(ref bitmap2).Should().Be(intersects);
     }
 }

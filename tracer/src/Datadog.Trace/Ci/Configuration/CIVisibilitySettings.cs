@@ -121,6 +121,9 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Maximum number of retry attempts for the entire session.
             TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
+
+            // Test Impact Analysis enablement
+            ImpactedTestsDetection = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetection).AsBool(false);
         }
 
         /// <summary>
@@ -247,6 +250,8 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating the maximum number of retry attempts for the entire session.
         /// </summary>
         public int TotalFlakyRetryCount { get; private set; }
+
+        public bool ImpactedTestsDetection { get; private set; }
 
         /// <summary>
         /// Gets the tracer settings
