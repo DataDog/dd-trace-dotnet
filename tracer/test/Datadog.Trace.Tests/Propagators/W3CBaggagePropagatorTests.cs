@@ -27,45 +27,54 @@ public class W3CBaggagePropagatorTests
     public static TheoryData<string, (string Key, string Value)[]> InjectBaggageData
         => new()
         {
-            // expectedHeader, inputPairs
+            // expected header after encoding ⬅️ input key/value pairs
             { string.Empty, [] },
-            { string.Empty, [("key1", null)] },
-            { string.Empty, [("key1", string.Empty)] },
+            { string.Empty, [("key", null)] },
+            { string.Empty, [("key", string.Empty)] },
+            { string.Empty, [(null, "value")] },
+            { string.Empty, [(string.Empty, "value")] },
             { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
             { "key1=value1=valid", [("key1", "value1=valid")] },
             { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
-            { "%20key1%20=%20value1%20", [(" key1 ", " value1 ")] },
-            { "name=Jos%C3%A9", [("name", "José")] },
-            { "key%F0%9F%90%B6=value%F0%9F%98%BA", [("key🐶", "value😺")] },
+            { "%20key1%20=%20value1%20", [(" key1 ", " value1 ")] },     // encode whitespace
+            { "key=%20", [("key", " ")] },                               // encode whitespace
+            { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },    // encode whitespace
+            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] }, // encode unicode
         };
 
     public static TheoryData<string, (string Key, string Value)[]> ExtractBaggageData
         => new()
         {
-            // inputHeader, expectedPairs
+            // input header ➡️ expected key/value pairs after decoding
             { null, null },
             { string.Empty, null },
             { " ", null },
             { "invalid", null },
             { "invalid=", null },
-            { "=invalid", null },
+            { "invalid= ", null },
+            { " =invalid", null },
             { "=", null },
+            { " = ", null },
+            { "valid=%20", [("valid", " ")] },
+            { "%20=valid", [(" ", "valid")] },
+            { "%20=%20", [(" ", " ")] },
             { "key1=value1,key2=value2", [("key1", "value1"), ("key2", "value2")] },
             { "key1=value1,invalid", [("key1", "value1")] },
             { "key1=value1%2Cvalid", [("key1", "value1,valid")] },
             { "key1=value1=valid", [("key1", "value1=valid")] },
-            { "%20key1%20=%20value1%20", [(" key1 ", " value1 ")] },
-            { "name=Jos%C3%A9", [("name", "José")] },
-            { "key%F0%9F%90%B6=value%F0%9F%98%BA", [("key🐶", "value😺")] },
-            { "key1 = value1, key2 = value2 ", [("key1", "value1"), ("key2", "value2")] },
+            { "%20key1%20=%20value%091", [(" key1 ", " value\t1")] },                          // encoded whitespace
+            { "key1 = value1, key2 = value\t2 ", [("key1", "value1"), ("key2", "value\t2")] }, // whitespace not encoded
+            { "key%F0%9F%90%B6=value%E6%88%91", [("key🐶", "value我")] },                      // encoded unicode
+            { "key🐶=value我", [("key🐶", "value我")] },                                       // unicode not encoded
         };
 
     [Theory]
-    [InlineData("abcd", new char[0], "abcd")]
-    [InlineData("abcd", new[] { 'x' }, "abcd")]
-    [InlineData("abcd", new[] { 'b', 'd' }, "a%62c%64")]
-    [InlineData("José", new char[0], "Jos%C3%A9")]
-    [InlineData("🐶", new char[0], "%F0%9F%90%B6")]
+    [InlineData(null, new char[0], "")]                                              // null
+    [InlineData("", new char[0], "")]                                                // empty string
+    [InlineData("abcd", new char[0], "abcd")]                                        // no chars to encode
+    [InlineData("abcd", new[] { 'x' }, "abcd")]                                      // encode a char that is not in the string
+    [InlineData("abcd", new[] { 'b', 'd' }, "a%62c%64")]                             // encode chars that are in the string
+    [InlineData("José 🐶\t我", new char[0], "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and unicode chars
     public void Encode(string value, char[] charsToEncode, string expected)
     {
         var result = W3CBaggagePropagator.Encode(value, [..charsToEncode]);
@@ -73,16 +82,18 @@ public class W3CBaggagePropagatorTests
 
         if (value == expected)
         {
-            // ensure that the method is returning the same string instance when no encoding is needed
+            // ensure that the method returns the same string instance when no encoding is needed
             ReferenceEquals(value, result).Should().BeTrue();
         }
     }
 
     [Theory]
+    [InlineData(null, "")]
+    [InlineData("", "")]
     [InlineData("abcd", "abcd")]
     [InlineData("a%62c%64", "abcd")]
-    [InlineData("Jos%C3%A9", "José")]
-    [InlineData("%F0%9F%90%B6", "🐶")]
+    [InlineData("Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91", "José 🐶\t我")]
+    [InlineData("José 🐶\t我", "José 🐶\t我")]
     public void Decode(string value, string expected)
     {
         W3CBaggagePropagator.Decode(value).Should().Be(expected);
@@ -126,8 +137,8 @@ public class W3CBaggagePropagatorTests
     [InlineData("Jose", 9, "name=Jose")]
     [InlineData("Jose", 20, "name=Jose")]
     [InlineData("Jose", 21, "name=Jose,key2=value2")]
-    [InlineData("José", 25, "name=Jos%C3%A9")]
-    [InlineData("José", 26, "name=Jos%C3%A9,key2=value2")]
+    [InlineData("José", 25, "name=Jos%C3%A9")]             // using non-ascii to ensure we're applying the limit after encoding
+    [InlineData("José", 26, "name=Jos%C3%A9,key2=value2")] // using non-ascii to ensure we're applying the limit after encoding
     public void CreateHeader_MaxLength(string value, int maxBaggageLength, string expected)
     {
         var baggage = new Baggage
@@ -143,7 +154,7 @@ public class W3CBaggagePropagatorTests
 
     [Theory]
     [MemberData(nameof(ExtractBaggageData))]
-    public void ExtractHeader(string inputHeader, (string Key, string Value)[] expectedPairs)
+    public void ParseHeader(string inputHeader, (string Key, string Value)[] expectedPairs)
     {
         var baggage = W3CBaggagePropagator.ParseHeader(inputHeader);
 
@@ -166,7 +177,7 @@ public class W3CBaggagePropagatorTests
     public void Inject_IHeadersCollection()
     {
         var headers = new Mock<IHeadersCollection>();
-        var context = CreatePropagationContext();
+        var context = CreatePropagationContext(baggageCount: 2);
 
         BaggagePropagator.Inject(context, headers.Object);
 
@@ -175,11 +186,23 @@ public class W3CBaggagePropagatorTests
     }
 
     [Fact]
+    public void Inject_IHeadersCollection_Empty()
+    {
+        var headers = new Mock<IHeadersCollection>();
+        var context = CreatePropagationContext(baggageCount: 0);
+
+        BaggagePropagator.Inject(context, headers.Object);
+
+        // "baggage" header should not be set
+        headers.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public void Inject_CarrierAndDelegate()
     {
         // using IHeadersCollection for convenience, but carrier could be any type
         var headers = new Mock<IHeadersCollection>();
-        var context = CreatePropagationContext();
+        var context = CreatePropagationContext(baggageCount: 2);
 
         BaggagePropagator.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
 
@@ -248,7 +271,7 @@ public class W3CBaggagePropagatorTests
         context.SpanContext.Should().BeNull();
     }
 
-    private static PropagationContext CreatePropagationContext()
+    private static PropagationContext CreatePropagationContext(int baggageCount)
     {
         var spanContext = new SpanContext(
             new TraceId(0x0123456789abcdef, 0x1122334455667788),
@@ -257,11 +280,12 @@ public class W3CBaggagePropagatorTests
             serviceName: null,
             origin: null);
 
-        var baggage = new Baggage
+        var baggage = new Baggage();
+
+        for (int i = 0; i < baggageCount; i++)
         {
-            { "key1", "value1" },
-            { "key2", "value2" },
-        };
+            baggage[$"key{i + 1}"] = $"value{i + 1}";
+        }
 
         return new PropagationContext(spanContext, baggage);
     }
