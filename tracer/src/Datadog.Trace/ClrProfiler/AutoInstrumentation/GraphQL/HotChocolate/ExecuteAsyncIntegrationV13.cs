@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// <summary>
     /// HotChocolate.Execution.RequestExecutor calltarget instrumentation
     /// </summary>
-    [InstrumentMethodAttribute(
+    [InstrumentMethod(
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = "ExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         TypeName = "HotChocolate.Execution.RequestExecutor",
         MinimumVersion = "13",
         MaximumVersion = "13.*.*")]
-    [InstrumentMethodAttribute(
+    [InstrumentMethod(
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = "ExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
