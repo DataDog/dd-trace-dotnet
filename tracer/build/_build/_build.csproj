@@ -59,8 +59,6 @@
 
   <ItemGroup>
     <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
-    <Compile Include="..\..\src\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="CodeGenerators\InstrumentationCategory.cs" />
-    <Compile Include="..\..\src\Datadog.Trace\ClrProfiler\TargetFrameworks.cs" Link="CodeGenerators\TargetFrameworks.cs" />
     <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
   </ItemGroup>
 </Project>
