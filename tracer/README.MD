@@ -90,7 +90,7 @@ Alternatively, on Windows:
 
 ### macOS
 
-You can use Rider and CLion to develop on macOS. When asked to select a solution file select `Datadog.Trace.OSX.slnf`. If using CLion for the native code make sure to select "Let CMake decide" for the generator.
+You can use Rider and CLion, or Visual Studio Code to develop on macOS. When asked to select a solution file select `Datadog.Trace.OSX.slnf`. If using CLion for the native code make sure to select "Let CMake decide" for the generator.
 Building and testing can be done through the following Nuke targets:
 
 ```bash
