@@ -134,13 +134,21 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         // rent a buffer for the UTF-8 bytes
         var buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
-        var byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
+        string result;
+
+        try
+        {
+            byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
 
         // slice the buffer down to the actual bytes written
         var bytes = buffer.AsSpan(0, byteCount);
-        var result = EncodeBytes(source, bytes, charsToEncode);
-
+            result = EncodeBytes(source, bytes, charsToEncode);
+        }
+        finally
+        {
         ArrayPool<byte>.Shared.Return(buffer);
+        }
+
         return result;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
