@@ -47,8 +47,6 @@ namespace Datadog.Trace.ClrProfiler
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
 
-        private static TargetFrameworks _targetFramework = TargetFrameworks.None;
-
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.
         /// </summary>
@@ -109,8 +107,6 @@ namespace Datadog.Trace.ClrProfiler
 
                     try
                     {
-                        _targetFramework = (TargetFrameworks)Enum.Parse(typeof(TargetFrameworks), ConfigTelemetryData.ManagedTracerTfmValue.ToUpper().Replace(".", "_"));
-
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
@@ -541,7 +537,7 @@ namespace Datadog.Trace.ClrProfiler
                 var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
                 Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
-                var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, _targetFramework);
+                var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, ConfigTelemetryData.TargetFramework);
                 Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
                 if (isIast)

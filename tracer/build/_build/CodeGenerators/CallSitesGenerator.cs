@@ -15,6 +15,8 @@ namespace CodeGenerators
 
         public static void GenerateCallSites(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath) 
         {
+            Serilog.Log.Debug("Generating CallSite definitions file ...");
+
             Dictionary<string, AspectClass> aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
             {
@@ -102,6 +104,10 @@ namespace CodeGenerators
                     {
                         category = (InstrumentationCategory)Enum.Parse(typeof(InstrumentationCategory), arguments[1]);
                         return $"[AspectClass({arguments[0]},[None],Propagation,[]){version}]";
+                    }
+                    else if (arguments.Count == 3)
+                    {
+                        return $"[AspectClass({arguments[0]},[None],{arguments[1]},{Check(arguments[2])}){version}]";
                     }
                     else if (arguments.Count == 4)
                     {
@@ -254,7 +260,10 @@ namespace CodeGenerators
 
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            File.WriteAllText(outputPath / "generated_callsites.g.h", sb.ToString());
+            var fileName = outputPath / "generated_callsites.g.h";
+            File.WriteAllText(fileName, sb.ToString());
+
+            Serilog.Log.Information("CallSite definitions File saved: {File}", fileName);
 
             string Format(string line)
             {

@@ -433,6 +433,9 @@ partial class Build
             var toBuild = include.Except(exclude);
 
             DotnetBuild(toBuild, noDependencies: false);
+
+            var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
         });
 
 
@@ -2560,16 +2563,6 @@ partial class Build
                 }
             }
         });
-
-    Target GenerateCallSites => _ => _
-       .Description("Generate CallSite native files")
-       //.DependsOn(CompileManagedSrc)
-       //.Before(CompileTracerNativeSrc)
-       .Executes(() =>
-       {
-            var outputPath = NativeTracerProject.Directory / "Generated";
-            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", outputPath);
-       });
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
