@@ -107,7 +107,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
 
             var count = 0;
-            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < this._settings.CodeOriginMaxUserFrames; walkIndex++)
+            for (var walkIndex = 0; walkIndex < stackFrames.Length && count < _settings.CodeOriginMaxUserFrames; walkIndex++)
             {
                 var frame = stackFrames[walkIndex];
 
