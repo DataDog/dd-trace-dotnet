@@ -12,14 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IOperationRequest
     {
-        /// <summary>
-        /// Gets the document
-        /// </summary>
-        object Document { get; }
+        object? Document { get; }
 
-        /// <summary>
-        /// Gets the operation name
-        /// </summary>
         public string? OperationName { get; }
     }
 }

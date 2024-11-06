@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
         internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
-            where T : IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -32,33 +31,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             Scope scope = null;
             try
             {
-                var queryOperationName = request.OperationName;
-                var source = request.Query?.ToString();
-                var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating scope.");
-            }
+                string queryOperationName;
+                string source;
+                if (request.TryDuckCast(out IQueryRequest queryRequest))
+                {
+                    // this is the code path for v11-13
+                    queryOperationName = queryRequest.OperationName;
+                    source = queryRequest.Query?.ToString();
+                }
+                else if (request.TryDuckCast(out IOperationRequest operationRequest))
+                {
+                    // this is the code path for v14 and newer
+                    queryOperationName = operationRequest.OperationName;
+                    source = operationRequest.Document?.ToString();
+                }
+                else
+                {
+                    Log.Debug($"Unexpected request type in {nameof(CreateScopeFromExecuteAsync)}: {{Request}}", request);
+                    return null;
+                }
 
-            return scope;
-        }
-
-        internal static Scope CreateScopeFromExecute14Async<T>(Tracer tracer, in T request)
-            where T : IOperationRequest
-        {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                // integration disabled, don't create a scope, skip this trace
-                return null;
-            }
-
-            Scope scope = null;
-            try
-            {
-                var queryOperationName = request.OperationName;
-                var source = request.Document?.ToString();
                 var operationType = "Uncompleted";
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
             }
