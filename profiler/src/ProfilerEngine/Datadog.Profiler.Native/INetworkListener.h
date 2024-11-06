@@ -3,12 +3,15 @@
 
 #pragma once
 
+#include "cor.h"
 #include <string>
 
 class INetworkListener
 {
 public:
-    virtual void OnRequest(uint64_t timestamp, std::string url) = 0;
+    virtual void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url) = 0;
+    virtual void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode) = 0;
+    virtual void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) = 0;
 
     virtual ~INetworkListener() = default;
 };

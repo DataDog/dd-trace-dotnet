@@ -251,6 +251,7 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
+    <ClInclude Include="EventsParserHelper.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />

@@ -4,6 +4,7 @@
 #include "EventPipeEventsManager.h"
 
 #include "DotnetEventsProvider.h"
+#include "EventsParserHelper.h"
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "IGCSuspensionsListener.h"
@@ -121,7 +122,7 @@ void EventPipeEventsManager::ParseEvent(
     if (dotnetProvider != DotnetEventsProvider::Unknown)
     {
         // The events are expected to be processed synchronously so the current time is used as timestamp
-        _bclParser->ParseEvent(dotnetProvider, provider, OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData, pActivityId, pRelatedActivityId, eventThread);
+        _bclParser->ParseEvent(dotnetProvider, provider, OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, eventData, cbEventData, pActivityId, pRelatedActivityId, eventThread);
     }
 }
 
@@ -138,20 +139,20 @@ bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata
     //    keywords  - DWORD
     //    version   - DWORD
     ULONG offset = 0;
-    if (!ClrEventsParser::Read(id, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(id, pMetadata, cbMetadata, offset))
     {
         return false;
     }
 
     // skip the name to read keyword and version
-    name = ClrEventsParser::ReadWideString(pMetadata, cbMetadata, &offset);
+    name = EventsParserHelper::ReadWideString(pMetadata, cbMetadata, &offset);
 
-    if (!ClrEventsParser::Read(keywords, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(keywords, pMetadata, cbMetadata, offset))
     {
         return false;
     }
 
-    if (!ClrEventsParser::Read(version, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(version, pMetadata, cbMetadata, offset))
     {
         return false;
     }

@@ -40,10 +40,30 @@ NetworkProvider::NetworkProvider(
 }
 
 
-void NetworkProvider::OnRequest(uint64_t timestamp, std::string url)
+void NetworkProvider::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url)
 {
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity))
+    {
+        return;
+    }
+
+    BYTE* pActivityIdBytes = reinterpret_cast<BYTE*>(&activity);
 }
 
-void NetworkProvider::AddActivity(std::string url)
+void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode)
 {
+
+}
+
+void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message)
+{
+
+}
+
+
+
+bool NetworkProvider::TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity)
+{
+    return false;
 }

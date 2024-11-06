@@ -23,8 +23,8 @@ public:
         DWORD version,
         INT64 keywords,
         DWORD id,
+        LPCBYTE pEventData,
         ULONG cbEventData,
-        LPCBYTE eventData,
         LPCGUID pActivityId,
         LPCGUID pRelatedActivityId,
         ThreadID eventThread
@@ -36,23 +36,38 @@ private:
         DWORD version,
         INT64 keywords,
         DWORD id,
+        LPCBYTE pEventData,
         ULONG cbEventData,
-        LPCBYTE eventData,
         LPCGUID pActivityId,
-        LPCGUID pRelatedActivityId,
-        ThreadID eventThread
+        LPCGUID pRelatedActivityId
     );
+    void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnConnectionEstablished(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnConnectionClosed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestLeftQueue(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestHeadersStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestHeadersStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestContentStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId);
+    void OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnResponseHeadersStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnResponseHeadersStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnResponseContentStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnResponseContentStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRequestFailedDetailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnRedirect(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+
 
     void ParseSocketsEvent(
         uint64_t timestamp,
         DWORD version,
         INT64 keywords,
         DWORD id,
+        LPCBYTE pEventData,
         ULONG cbEventData,
-        LPCBYTE eventData,
         LPCGUID pActivityId,
-        LPCGUID pRelatedActivityId,
-        ThreadID eventThread
+        LPCGUID pRelatedActivityId
     );
 
     void ParseNameResolutionEvent(
@@ -60,11 +75,10 @@ private:
         DWORD version,
         INT64 keywords,
         DWORD id,
+        LPCBYTE pEventData,
         ULONG cbEventData,
-        LPCBYTE eventData,
         LPCGUID pActivityId,
-        LPCGUID pRelatedActivityId,
-        ThreadID eventThread
+        LPCGUID pRelatedActivityId
     );
 
     void ParseNetSecurityEvent(
@@ -72,11 +86,10 @@ private:
         DWORD version,
         INT64 keywords,
         DWORD id,
+        LPCBYTE pEventData,
         ULONG cbEventData,
-        LPCBYTE eventData,
         LPCGUID pActivityId,
-        LPCGUID pRelatedActivityId,
-        ThreadID eventThread
+        LPCGUID pRelatedActivityId
     );
 
 private:

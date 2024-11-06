@@ -34,7 +34,7 @@ public:
         sample->AddValue(EndTimestamp - StartTimestamp, networkCountIndex);
 
         sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
-        sample->AddLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp));
+        sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp));
     }
 
     std::string Url;

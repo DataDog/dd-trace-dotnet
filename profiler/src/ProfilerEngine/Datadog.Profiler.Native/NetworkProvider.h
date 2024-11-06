@@ -48,10 +48,12 @@ public:
 
 public:
    // Inherited via INetworkListener
-   void OnRequest(uint64_t timestamp, std::string url) override;
+   void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url) override;
+   void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
+   void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
 
 private:
-   void AddActivity(std::string url);
+   bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -64,6 +66,6 @@ private:
 
     // TODO: use NetworkActivity instead of uint64_t for the key
     //       when the exact matching logic from Guid is understood
-    std::unordered_map<uint64_t, NetworkRequestInfo> _activities;
+    std::unordered_map<NetworkActivity, NetworkRequestInfo> _activities;
 };
 
