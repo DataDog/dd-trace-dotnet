@@ -3,6 +3,24 @@
 
 
 
+
+## [Release 2.61.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.61.0)
+
+## Summary
+
+Fix Remote Configuration values are 64-bit not 32-bit
+
+## Changes
+
+### Fixes
+
+* Move all RC int values to long, to mirror RC backend  (#6228)
+
+### Build / Test
+* Pin Azure Functions version used in CI to get the integration tests running  (#6227)
+
+[Changes since 2.60.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.60.0...v2.61.0)
+
 ## [Release 2.60.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.60.0)
 
 ## Summary
