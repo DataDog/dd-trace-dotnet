@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         {
             var iast = Iast.Iast.Instance;
             var security = Security.Instance;
-            if (security.Enabled || iast.Settings.Enabled)
+            if (security.AppsecEnabled || iast.Settings.Enabled)
             {
                 if (instance.TryDuckCast<DefaultModelBindingContext>(out var defaultModelBindingContext))
                 {
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                         {
                             object bodyExtracted = null;
 
-                            if (security.Enabled)
+                            if (security.AppsecEnabled)
                             {
                                 bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                             }
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
                                     if (prov.BindingSource.Id is "Form" or "Body")
                                     {
                                         object bodyExtracted = null;
-                                        if (security.Enabled)
+                                        if (security.AppsecEnabled)
                                         {
                                             bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
                                         }

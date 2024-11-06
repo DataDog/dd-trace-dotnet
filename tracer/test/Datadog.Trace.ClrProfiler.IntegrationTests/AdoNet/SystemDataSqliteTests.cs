@@ -4,14 +4,17 @@
 // </copyright>
 
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
+    [UsesVerify]
     public class SystemDataSqliteTests : TracingIntegrationTest
     {
         public SystemDataSqliteTests(ITestOutputHelper output)
@@ -56,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         private async Task RunTest(string metadataSchemaVersion)
         {
-            const int expectedSpanCount = 91;
+            const int expectedSpanCount = 105;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
 
@@ -72,6 +75,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.Equal(expectedSpanCount, spans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("SQLite-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
+            settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
+            settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
+            settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
+            settings.AddRegexScrubber(new Regex("dd.instrumentation.time_ms: \\d+.\\d+"), "dd.instrumentation.time_ms: 123.456");
+
+            var fileName = nameof(SystemDataSqliteTests);
+
+            await VerifyHelper.VerifySpans(spans, settings)
+                  .DisableRequireUniquePrefix()
+                  .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
     }
 }

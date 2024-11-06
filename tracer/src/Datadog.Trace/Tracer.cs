@@ -148,6 +148,10 @@ namespace Datadog.Trace
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;
                     _globalInstanceInitialized = true;
+
+                    // ensure Baggage's AsyncLocal<T> has a value as soon as we can,
+                    // since it can only flow down the async call chain, not up
+                    _ = Baggage.Current;
                 }
 
                 instance.TracerManager.Start();

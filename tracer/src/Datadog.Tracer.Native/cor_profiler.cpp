@@ -255,6 +255,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     rejit_handler = info10 != nullptr
                         ? std::make_shared<RejitHandler>(info10, work_offloader)
                         : std::make_shared<RejitHandler>(this->info_, work_offloader);
+    rejit_handler->SetRejitTracking(runtime_information_.is_core());
+
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
 
     fault_tolerant_method_duplicator = std::make_shared<fault_tolerant::FaultTolerantMethodDuplicator>(this, rejit_handler, work_offloader);
@@ -1565,11 +1567,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // Note: This check must only run on desktop because it is possible (and the default) to host
     // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
     auto valid_startup_hook_callsite = true;
+    // In some cases we may choose to defer instrumenting a valid startup hook callsite.
+    // For example, if we're instrumenting the entrypoint, but the Program.Main() implementing type
+    // has a static constructor, then the JIT inserts a call to the static constructor at the start of the method.
+    // If we insert the startup hook at the start of the method, we'll miss the static constructor call. This is
+    // particularly problematic if there's any "one time setup" happening in that constructor, e.g. usages of
+    // Datadog.Trace.Manual instrumentation. This behaviour only occurs on .NET Core, so limit the behaviour to there.
+    auto can_skip_startup_hook_callsite = runtime_information_.is_core();
     if (is_desktop_iis)
     {
         valid_startup_hook_callsite = module_metadata->assemblyName == WStr("System.Web") &&
                                       caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
                                       caller.name == WStr("InvokePreStartInitMethods");
+        can_skip_startup_hook_callsite = false;
     }
     else if (module_metadata->assemblyName == WStr("System") ||
              module_metadata->assemblyName == WStr("System.Net.Http") ||
@@ -1624,6 +1634,45 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         {
             Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
             return S_OK;
+        }
+
+        // *********************************************************************
+        // Checking if the caller has an explicit static constructor.
+        // If it does, we delay instrumenting this and let the static constructor get instrumented instead.
+        // Bypassing for calls that we explicitly want to instrument (e.g. IIS startup hook)
+        // *********************************************************************
+        if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
+        {
+            mdMethodDef memberDef;
+            hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
+            if (FAILED(hr))
+            {
+                Logger::Debug("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+            }
+            else
+            {
+                // we found a static constructor, so now we need to work out if it's an explicit or implicit
+                // constructor, because we won't be able to inject into an implicit static constructor, so
+                // would inject too late
+                DWORD typeDefFlags;
+                hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
+                if (FAILED(hr))
+                {
+                    Logger::Debug("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name,
+                        ", allowing injection into ", caller.name, "()");
+                }
+                else if(typeDefFlags & tdBeforeFieldInit)
+                {
+                    Logger::Debug("JITCompilationStarted: Found .cctor for type ", caller.type.name,
+                        " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
+                }
+                else
+                {
+                    Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".",
+                        caller.name, "() as found .cctor");
+                    return S_OK;
+                }
+            }
         }
 
         // *********************************************************************
@@ -4333,7 +4382,44 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
+    // JITCachedFunctionSearchStarted has a different behaviour between .NET Framework and .NET Core
+    // On .NET Framework when we reject bcl images the rejit calls of the integrations for those bcl assemblies
+    // are not resolved (is not clear why, maybe a bug). So we end up missing spans.
+    // Also in .NET Framework  we don't need to reject the ngen image, the rejit will always do the right job.
+    // In .NET Core if we don't reject the image, the image will be used and the rejit callback will never get called
+    // (this was confirmed on issue-6124).
+    // The following code handle both scenarios.
     *pbUseCachedFunction = true;
+    if (runtime_information_.is_core())
+    {
+        // Check if this method has been rejitted, if that's the case we don't accept the image
+        bool hasBeenRejitted = this->rejit_handler->HasBeenRejitted(module_id, function_token);
+        *pbUseCachedFunction = !hasBeenRejitted;
+
+        // If we are in debug mode and the image is rejected because has been rejitted then let's write a couple of logs
+        if (Logger::IsDebugEnabled() && hasBeenRejitted)
+        {
+            ComPtr<IUnknown> metadata_interfaces;
+            if (this->info_->GetModuleMetaData(module_id, ofRead, IID_IMetaDataImport2,
+                                               metadata_interfaces.GetAddressOf()) == S_OK)
+            {
+                const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                auto functionInfo = GetFunctionInfo(metadata_import, function_token);
+
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                              ", Method:", functionInfo.type.name, ".", functionInfo.name,
+                              "() previous value =  ", *pbUseCachedFunction ? "true" : "false", "[moduleId=", module_id,
+                              ", methodDef=", HexStr(function_token), "]");
+            }
+            else
+            {
+                Logger::Debug("NGEN Image: Rejected (because rejitted) for Module: ", module_info.assembly.name,
+                              ", Function: ", HexStr(function_token),
+                              " previous value = ", *pbUseCachedFunction ? "true" : "false");
+            }          
+        }
+    }
+
     return S_OK;
 }
 

@@ -28,18 +28,17 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void RulesUpdate()
         {
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
-            Execute(waf, new[] { "testrule", "testrule", "none" }, false);
+            Execute(waf, ["testrule", "testrule", "none"], false);
 
             var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
             result.Should().NotBeNull();
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesByFile = { ["test"] = ruleSet! } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
-            var res = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var configurationState = UpdateConfigurationState(ruleSet: new() { ["test"] = ruleSet });
+            configurationState.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
+            var res = waf!.Update(configurationState);
             res.Success.Should().BeTrue();
             res.LoadedRules.Should().Be(1);
             res.Errors.Should().BeEmpty();
@@ -55,7 +54,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             var ruleOverrides = new List<RuleOverride>();
@@ -65,17 +64,17 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             var ruleOverride = new RuleOverride { Enabled = false, Id = attackParts1[2] };
             ruleOverrides.Add(ruleOverride);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-            var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides!] });
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
+            var result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
             ruleOverrides.Add(new RuleOverride { Enabled = false, Id = attackParts2[2] });
-            configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            configurationStatus.RulesOverridesByFile["test"] = [.. ruleOverrides];
+            result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
@@ -84,7 +83,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             ruleOverrides.RemoveAt(1);
             ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts2[2] });
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
@@ -93,7 +92,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             ruleOverrides.RemoveAt(0);
             ruleOverrides.Add(new RuleOverride { Enabled = true, Id = attackParts1[2] });
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
-            result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            result = waf!.Update(configurationStatus);
             result.Success.Should().BeTrue();
             result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, true);
@@ -109,7 +108,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             attackParts1.Length.Should().Be(3);
             var attackParts2 = attack2.Split('|');
             attackParts2.Length.Should().Be(3);
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using (var waf = initResult.Waf)
             {
                 waf.Should().NotBeNull();
@@ -118,11 +117,11 @@ namespace Datadog.Trace.Security.Unit.Tests
                 Execute(waf, attackParts1, true);
                 Execute(waf, attackParts2, true);
 
-                var ruleOverride = new RuleOverride { OnMatch = new[] { "block" }, Id = attackParts1[2] };
+                var ruleOverride = new RuleOverride { OnMatch = ["block"], Id = attackParts1[2] };
                 ruleOverrides.Add(ruleOverride);
-                var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-                var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+                var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides!] });
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesOverridesKey);
+                var result = waf!.Update(configurationStatus);
                 result.Success.Should().BeTrue();
                 result.HasErrors.Should().BeFalse();
                 Execute(waf, attackParts1, true, BlockingAction.BlockRequestType);

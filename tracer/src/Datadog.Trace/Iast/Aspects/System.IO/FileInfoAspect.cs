@@ -35,7 +35,7 @@ public class FileInfoAspect
     {
         try
         {
-            VulnerabilitiesModule.OnPathTraversal(path);
+            IastModule.OnPathTraversal(path);
             return path;
         }
         catch (Exception ex) when (ex is not BlockException)

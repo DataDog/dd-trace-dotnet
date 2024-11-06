@@ -17,6 +17,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
         public Dictionary<string, string> Hashes { get; set; } = new();
 
         [JsonProperty("length")]
-        public int Length { get; set; }
+        public long Length { get; set; }
     }
 }

@@ -16,6 +16,7 @@ IpcServer::IpcServer()
     _pHandler = nullptr;
     _stopRequested.store(false);
     _pLogger = nullptr;
+    _hNamedPipe = nullptr;
 
     _hInitializedEvent = ::CreateEvent(nullptr, true, false, nullptr);
 }
@@ -30,7 +31,12 @@ IpcServer::~IpcServer()
 
 void IpcServer::Stop()
 {
-    _stopRequested.store(true);
+    // Stop could be called when error and in the destructor
+    auto alreadyStopped = _stopRequested.exchange(true);
+    if (alreadyStopped)
+    {
+        return;
+    }
 
     // we also need to close the handle to the named pipe the server is listing to in order to unblock the ConnectNamedPipe() call
     // and allow the server to really stop
@@ -50,10 +56,13 @@ void IpcServer::Stop()
             ::CloseHandle(hPipe);
         }
 
-        // cleanup the server pipe
-        ::DisconnectNamedPipe(_hNamedPipe);
-        ::CloseHandle(_hNamedPipe);
-        _hNamedPipe = nullptr;
+        // cleanup the server pipe if needed (could be already closed in StartCallback())
+        if (_hNamedPipe != nullptr)
+        {
+            ::DisconnectNamedPipe(_hNamedPipe);
+            ::CloseHandle(_hNamedPipe);
+            _hNamedPipe = nullptr;
+        }
     }
 }
 
@@ -190,13 +199,11 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         return;
     }
 
-    // it is possible that an error occured when trying to connect to the Agent
-    // in that case, the server should stop
+    // It is possible that an error occurred when trying to connect to the Agent
+    // in that case, no need to start to listen to the pipe
+    // The pipe will be cleaned up in Stop()
     if (pThis->_stopRequested.load())
     {
-        ::CloseHandle(pThis->_hNamedPipe);
-        pThis->_hNamedPipe = nullptr;
-        pThis->_pHandler->OnConnectError();
         return;
     }
 
