@@ -71,6 +71,11 @@
     <None Remove="AppSec\Waf\ConfigFiles\apisecurity-config.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\..\build\_build\CodeGenerators\InstrumentationCategory.cs" Link="ClrProfiler\InstrumentationCategory.cs" />
+    <Compile Include="..\..\build\_build\CodeGenerators\TargetFrameworks.cs" Link="ClrProfiler\TargetFrameworks.cs" />
+  </ItemGroup>
+
   <!-- Below this point is reserved for vendor items -->
   <!--Newtonsoft.Json-->
   <!-- Modifications: Original condition was only for net45, but we include net461 here so that net45 and net461 generate the same Newtonsoft.Json -->
