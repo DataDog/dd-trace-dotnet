@@ -113,22 +113,18 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         // this is an upper bound and will almost always be more bytes than we need
         var maxByteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
+        int byteCount;
 
 #if NETCOREAPP3_1_OR_GREATER
         if (maxByteCount < 256)
         {
-            return EncodeOnStack(maxByteCount, source, charsToEncode);
+            // allocate a buffer on the stack for the UTF-8 bytes
+            Span<byte> stackBuffer = stackalloc byte[maxByteCount];
+            byteCount = Encoding.UTF8.GetBytes(source, stackBuffer);
 
-            static string EncodeOnStack(int maxByteCount, string source, HashSet<char> charsToEncode)
-            {
-                // allocate a buffer on the stack for the UTF-8 bytes
-                Span<byte> buffer = stackalloc byte[maxByteCount];
-                var byteCount = Encoding.UTF8.GetBytes(source, buffer);
-
-                // slice the buffer down to the actual bytes written
-                var bytes = buffer[..byteCount];
-                return EncodeBytes(source, bytes, charsToEncode);
-            }
+            // slice the buffer down to the actual bytes written
+            var stackBytes = stackBuffer[..byteCount];
+            return EncodeBytes(source, stackBytes, charsToEncode);
         }
 #endif
 
@@ -140,13 +136,13 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         {
             byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
 
-        // slice the buffer down to the actual bytes written
-        var bytes = buffer.AsSpan(0, byteCount);
+            // slice the buffer down to the actual bytes written
+            var bytes = buffer.AsSpan(0, byteCount);
             result = EncodeBytes(source, bytes, charsToEncode);
         }
         finally
         {
-        ArrayPool<byte>.Shared.Return(buffer);
+            ArrayPool<byte>.Shared.Return(buffer);
         }
 
         return result;
