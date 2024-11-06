@@ -25,23 +25,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         TypeName = "HotChocolate.Execution.RequestExecutor",
         MinimumVersion = "13",
         MaximumVersion = "13.*.*")]
-    [InstrumentMethod(
-        IntegrationName = HotChocolateCommon.IntegrationName,
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
-        // different parameter type, but we handle it in CreateScopeFromExecuteAsync using TryDuckCast to avoid code duplication
-        ParameterTypeNames = new[] { "HotChocolate.Execution.IOperationRequest", ClrNames.CancellationToken },
-        AssemblyName = "HotChocolate.Execution",
-        TypeName = "HotChocolate.Execution.RequestExecutor",
-        MinimumVersion = "14",
-        MaximumVersion = "14.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegrationV13
     {
         internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, in CancellationToken token)
+            where TQueyRequest : IQueryRequest
         {
-            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));
+            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromQueryRequest(Tracer.Instance, request));
         }
 
         internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception? exception, in CallTargetState state)
