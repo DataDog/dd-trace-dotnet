@@ -57,6 +57,19 @@ internal static class RequestDataHelper
         }
     }
 
+    internal static string? GetNameValueCollectionValue(NameValueCollection queryString, string key)
+    {
+        try
+        {
+            return queryString[key];
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading NameValueCollection value from the request.");
+            return null;
+        }
+    }
+
     // Get form from a request
     internal static NameValueCollection? GetForm(HttpRequest request)
     {

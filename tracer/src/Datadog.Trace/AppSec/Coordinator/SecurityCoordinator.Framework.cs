@@ -264,7 +264,7 @@ internal readonly partial struct SecurityCoordinator
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            var values = RequestDataHelper.GetNameValueCollectionValues(form, key);
+            var values = RequestDataHelper.GetNameValueCollectionValue(form, key);
 
             if (values is not null)
             {
