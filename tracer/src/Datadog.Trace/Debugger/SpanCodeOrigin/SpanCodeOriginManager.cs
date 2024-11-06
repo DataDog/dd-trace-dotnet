@@ -98,7 +98,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private int PopulateUserFrames(FrameInfo[] frames)
         {
-            var stackTrace = new StackTrace(true);
+            var stackTrace = new StackTrace(skipFrames: 3, fNeedFileInfo: true);
             var stackFrames = stackTrace.GetFrames();
 
             if (stackFrames == null!)

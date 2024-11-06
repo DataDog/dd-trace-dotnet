@@ -485,6 +485,8 @@
   "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES": "symbol_database_third_party_detection_excludes",
   "DD_THIRD_PARTY_DETECTION_INCLUDES": "third_party_detection_includes",
   "DD_THIRD_PARTY_DETECTION_EXCLUDES": "third_party_detection_excludes",
+  "DD_CODE_ORIGIN_FOR_SPANS_ENABLED": "code_origin_for_spans_enabled",
+  "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES": "code_origin_for_spans_max_user_frames",
   "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": "logs_direct_submission_integrations",
   "DD_LOGS_DIRECT_SUBMISSION_HOST": "logs_direct_submission_host",
   "DD_LOGS_DIRECT_SUBMISSION_SOURCE": "logs_direct_submission_source",
