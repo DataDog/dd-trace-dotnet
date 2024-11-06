@@ -229,6 +229,17 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallSiteDefinitions(UINT32 enabledCatego
     return 0;
 }
 
+EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCategories, UINT32 platform)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    return 0;
+}
+
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);

@@ -251,6 +251,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static int InitEmbeddedCallTargetDefinitions(InstrumentationCategory enabledCategories, TargetFrameworks platform)
+        {
+            if (enabledCategories == 0 || platform == 0)
+            {
+                return 0;
+            }
+
+            if (IsWindows)
+            {
+                return Windows.InitEmbeddedCallTargetDefinitions((uint)enabledCategories, (uint)platform);
+            }
+            else
+            {
+                return NonWindows.InitEmbeddedCallTargetDefinitions((uint)enabledCategories, (uint)platform);
+            }
+        }
+
         public static void UpdateSettings(string[] keys, string[] values)
         {
             if (keys.Length != values.Length)
@@ -331,6 +348,9 @@ namespace Datadog.Trace.ClrProfiler
             public static extern int InitEmbeddedCallSiteDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void UpdateSettings(
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
@@ -388,6 +408,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int InitEmbeddedCallSiteDefinitions(uint enabledCategories, uint platform);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void UpdateSettings(

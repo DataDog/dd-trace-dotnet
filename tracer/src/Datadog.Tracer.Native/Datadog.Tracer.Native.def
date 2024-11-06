@@ -25,3 +25,4 @@ EXPORTS
     ReportSuccessfulInstrumentation
     GetUserStrings
     InitEmbeddedCallSiteDefinitions
+    InitEmbeddedCallTargetDefinitions
