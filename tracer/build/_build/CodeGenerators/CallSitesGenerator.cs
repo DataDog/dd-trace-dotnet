@@ -309,7 +309,9 @@ namespace CodeGenerators
 
             public string Subfix()
             {
-                return $" {AspectMethod.FullName} {((long)Tfms).ToString()}";
+                var fullName = AspectMethod.FullName;
+                var methodName = fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>");
+                return $" {methodName} {((long)Tfms).ToString()}";
             }
         }
 }

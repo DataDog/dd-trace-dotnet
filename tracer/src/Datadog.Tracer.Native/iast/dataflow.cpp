@@ -275,7 +275,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCat
 {
     // Init aspects
     auto aspectsName = Constants::AspectsAssemblyName;
-    trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects...");
+    trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
 
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
