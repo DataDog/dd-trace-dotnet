@@ -213,7 +213,7 @@ EXTERN_C long STDAPICALLTYPE DisableCallTargetDefinitions(UINT32 disabledCategor
     return trace::profiler->DisableCallTargetDefinitions(disabledCategories);
 }
 
-EXTERN_C int InitEmbeddedCallSiteDefinitions(UINT32 enabledCategories, UINT32 platform)
+EXTERN_C int STDAPICALLTYPE InitEmbeddedCallSiteDefinitions(UINT32 enabledCategories, UINT32 platform)
 {
     if (trace::profiler == nullptr)
     {
