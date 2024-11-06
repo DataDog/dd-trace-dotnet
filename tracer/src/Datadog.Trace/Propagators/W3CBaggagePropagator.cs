@@ -106,7 +106,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
     internal static string Encode(string source, HashSet<char> charsToEncode)
     {
-        if (source.Length == 0)
+        if (string.IsNullOrEmpty(source))
         {
             return string.Empty;
         }
