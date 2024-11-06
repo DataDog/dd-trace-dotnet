@@ -17,6 +17,13 @@
 
 #include "shared/src/native-src/dd_span.hpp"
 
+typedef enum
+{
+    None2 = 0,
+    WallTime2,
+    CpuTime2
+} PROFILING_TYPE2;
+
 /// <summary>
 /// Allocating when a thread is suspended can lead to deadlocks.
 /// This container holds a buffer that is used while walking stacks to temporarily hold results.
@@ -41,6 +48,10 @@ public:
     inline std::size_t GetFramesCount() const;
     inline void SetFramesCount(std::uint16_t count);
 
+    // only used by StackSamplerLoop
+    inline void SetProfilingType(PROFILING_TYPE2 profilingType);
+    inline PROFILING_TYPE2 GetProfilingType() const;
+
     void Reset();
 
     inline bool AddFrame(std::uintptr_t ip);
@@ -61,6 +72,7 @@ protected:
 
     std::uint64_t _localRootSpanId;
     std::uint64_t _spanId;
+    PROFILING_TYPE2 _profilingType;
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -148,4 +160,15 @@ inline Callstack StackSnapshotResultBuffer::GetCallstack()
 inline void StackSnapshotResultBuffer::SetCallstack(Callstack callstack)
 {
     _callstack = std::move(callstack);
+}
+
+
+inline void StackSnapshotResultBuffer::SetProfilingType(PROFILING_TYPE2 profilingType)
+{
+    _profilingType = profilingType;
+}
+
+inline PROFILING_TYPE2 StackSnapshotResultBuffer::GetProfilingType() const
+{
+    return _profilingType;
 }

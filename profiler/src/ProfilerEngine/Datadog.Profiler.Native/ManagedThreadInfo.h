@@ -60,9 +60,6 @@ public:
     inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp);
     inline std::int64_t GetCpuTimestamp() const;
 
-    inline void GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const;
-    inline void SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate);
-
     inline std::uint64_t GetSnapshotsPerformedSuccessCount() const;
     inline std::uint64_t GetSnapshotsPerformedFailureCount() const;
     inline std::uint64_t IncSnapshotsPerformedCount(bool isStackSnapshotSuccessful);
@@ -118,8 +115,6 @@ private:
     std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
     std::uint64_t _cpuConsumptionMilliseconds;
     std::int64_t _timestamp;
-    std::uint64_t _lastKnownSampleUnixTimeUtc;
-    std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
 
     std::uint64_t _snapshotsPerformedSuccessCount;
     std::uint64_t _snapshotsPerformedFailureCount;
@@ -305,25 +300,6 @@ inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint6
     std::uint64_t prevValue = _cpuConsumptionMilliseconds;
     _cpuConsumptionMilliseconds = value;
     return prevValue;
-}
-
-inline void ManagedThreadInfo::GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const
-{
-    if (realUnixTimeUtc != nullptr)
-    {
-        *realUnixTimeUtc = _lastKnownSampleUnixTimeUtc;
-    }
-
-    if (highPrecisionNanosecsAtLastUnixTimeUpdate != nullptr)
-    {
-        *highPrecisionNanosecsAtLastUnixTimeUpdate = _highPrecisionNanosecsAtLastUnixTimeUpdate;
-    }
-}
-
-inline void ManagedThreadInfo::SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate)
-{
-    _lastKnownSampleUnixTimeUtc = realUnixTimeUtc;
-    _highPrecisionNanosecsAtLastUnixTimeUpdate = highPrecisionNanosecsAtThisUnixTimeUpdate;
 }
 
 inline std::uint64_t ManagedThreadInfo::GetSnapshotsPerformedSuccessCount() const

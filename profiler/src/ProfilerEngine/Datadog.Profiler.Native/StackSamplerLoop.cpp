@@ -443,14 +443,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
         // block used to ensure that NotifyIterationFinished gets called
         {
-            // Get the timestamp of the current collection
-            // /!\ Must not be called while the thread is suspended:
-            // current implementation uses time function which allocates
-            time_t currentUnixTimestamp = GetCurrentTimestamp();
-
-            // Get the high-precision timestamp for this sample (this is a time-unit counter, not a real time value).
-            pThreadInfo->SetLastKnownSampleUnixTimestamp(currentUnixTimestamp, thisSampleTimestampNanosecs);
-
             // Notify the loop manager that we are starting a stack collection, and set up a finalizer to notify the manager when we finsih it.
             // This will enable the manager to monitor if this collection freezes due to a deadlock.
 
@@ -482,6 +474,10 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             {
                 // We rely on RAII to call NotifyCollectionEnd when we get out this scope.
                 on_leave { _pManager->NotifyCollectionEnd(); };
+
+                pStackSnapshotResult = _pStackFramesCollector->GetStackSnapshotResult();
+                pStackSnapshotResult->SetProfilingType((PROFILING_TYPE2)profilingType);
+                UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
 
                 _pManager->NotifyCollectionStart();
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
@@ -525,7 +521,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     }
 
     // Store stack-walk results into the results buffer:
-    PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
+    //PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
 }
 
 void StackSamplerLoop::UpdateSnapshotInfos(StackSnapshotResultBuffer* const pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp)

@@ -36,6 +36,7 @@ class IConfiguration;
 
 typedef enum
 {
+    None1 = 0,
     WallTime,
     CpuTime
 } PROFILING_TYPE;

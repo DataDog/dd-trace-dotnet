@@ -26,7 +26,6 @@ protected:
 
     shared::span<uintptr_t> Data();
 
-    StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
 
     // The XxxImplementation(..) methods below are the key routines to be implemented by the specific stack sample collectors.
@@ -50,6 +49,7 @@ public:
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
+    StackSnapshotResultBuffer* GetStackSnapshotResult();
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;

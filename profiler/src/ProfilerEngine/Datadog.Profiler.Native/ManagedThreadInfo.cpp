@@ -34,8 +34,6 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _lastSampleHighPrecisionTimestampNanoseconds{0},
     _cpuConsumptionMilliseconds{0},
     _timestamp{0},
-    _lastKnownSampleUnixTimeUtc{0},
-    _highPrecisionNanosecsAtLastUnixTimeUpdate{0},
     _snapshotsPerformedSuccessCount{0},
     _snapshotsPerformedFailureCount{0},
     _deadlockTotalCount{0},
