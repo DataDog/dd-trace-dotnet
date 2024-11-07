@@ -30,12 +30,7 @@ public class SetCurrentIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref IDictionary<string, string>? value)
     {
-        if (value is null)
-        {
-            Trace.Baggage.Current = new Trace.Baggage();
-        }
-
-        Trace.Baggage.Current = new Trace.Baggage(value);
+        Trace.Baggage.Current = value is null ? new Trace.Baggage() : new Trace.Baggage(value);
         return CallTargetState.GetDefault();
     }
 }
