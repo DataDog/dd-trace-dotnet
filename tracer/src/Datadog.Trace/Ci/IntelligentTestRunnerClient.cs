@@ -592,7 +592,7 @@ internal class IntelligentTestRunnerClient
         long totalUploadSize = 0;
         foreach (var packFile in packFilesObject.Files)
         {
-            if (!File.Exists(packFile))
+            if (!Directory.Exists(Path.GetDirectoryName(packFile)) || !File.Exists(packFile))
             {
                 // Pack files must be sent in order, if a pack file is missing, we stop the upload of the rest of the pack files
                 // Previous pack files will enrich the backend with some of the data.
@@ -1083,7 +1083,10 @@ internal class IntelligentTestRunnerClient
             {
                 var sourceException = exceptionDispatchInfo.SourceException;
 
-                if (isFinalTry || sourceException is RateLimitException { DelayTimeInSeconds: null })
+                if (isFinalTry ||
+                    sourceException is RateLimitException { DelayTimeInSeconds: null } ||
+                    sourceException is DirectoryNotFoundException ||
+                    sourceException is FileNotFoundException)
                 {
                     // stop retrying
                     Log.Error<int>(sourceException, "ITR: An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
