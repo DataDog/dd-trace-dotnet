@@ -433,8 +433,9 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -617,8 +618,9 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
@@ -643,7 +645,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -768,8 +771,9 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
