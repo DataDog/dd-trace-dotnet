@@ -13,7 +13,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
     internal class ProbeRateLimiter
     {
         private const int DefaultSamplesPerSecond = 1;
-        private const int DefaultGlobalSamplesPerSecond = DefaultSamplesPerSecond * 100;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeRateLimiter));
 
@@ -22,8 +21,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private static bool _globalInstanceInitialized;
 
         private static ProbeRateLimiter _instance;
-
-        private readonly AdaptiveSampler _globalSampler = CreateSampler(DefaultGlobalSamplesPerSecond);
 
         private readonly ConcurrentDictionary<string, IAdaptiveSampler> _samplers = new();
 
@@ -49,13 +46,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
         public bool TryAddSampler(string probeId, IAdaptiveSampler sampler)
         {
             return _samplers.TryAdd(probeId, sampler);
-        }
-
-        public bool Sample(string probeId)
-        {
-            // Rate limiter is engaged at ~1 probe per second (1 probes per 1s time window)
-            var probeSampler = _samplers.GetOrAdd(probeId, _ => CreateSampler(1));
-            return probeSampler.Sample() && _globalSampler.Sample();
         }
 
         public void SetRate(string probeId, int samplesPerSecond)
