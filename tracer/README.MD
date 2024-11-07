@@ -90,7 +90,8 @@ Alternatively, on Windows:
 
 ### macOS
 
-You can use Rider and CLion to develop on macOS. Building and testing can be done through the following Nuke targets:
+You can use Rider and CLion, or Visual Studio Code to develop on macOS. When asked to select a solution file select `Datadog.Trace.OSX.slnf`. If using CLion for the native code make sure to select "Let CMake decide" for the generator.
+Building and testing can be done through the following Nuke targets:
 
 ```bash
 # Clean and build the main tracer project
@@ -114,6 +115,11 @@ docker-compose up StartDependencies.OSXARM64
 # Stop IntegrationTests dependencies.
 docker-compose down
 ```
+
+Troubleshooting tips for build errors:
+ * Try deleting the `cmake-build-debug` and `obj_*` directories.
+ * Verify your xcode developer tools installation with `xcode-select --install`. You may need to repeat this process after an operating system update.
+
 
 ## Additional Technical Documentation
 
