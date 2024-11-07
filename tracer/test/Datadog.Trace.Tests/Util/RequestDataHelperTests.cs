@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Collections.Generic;
+using System.Reflection;
 using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Coordinator;
@@ -36,6 +38,24 @@ public class RequestDataHelperTests
             request2.ValidateInput();
             var queryString = RequestDataHelper.GetQueryString(request2);
             queryString.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GivenADangerousBody_WhenGetQueryString_HelperAvoidsException()
+    {
+        var request = CreateRequestWithBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+
+        try
+        {
+            _ = request.Form;
+            Assert.True(false);
+        }
+        catch (HttpRequestValidationException)
+        {
+            var request2 = CreateRequestWithBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+            var body = RequestDataHelper.GetForm(request2);
+            body.Should().BeNull();
         }
     }
 
@@ -85,6 +105,21 @@ public class RequestDataHelperTests
         var iastContext = new IastRequestContext();
         iastContext.AddRequestData(request);
         result.Should().NotBeNull();
+    }
+
+    private static HttpRequest CreateRequestWithBody(Dictionary<string, string> values)
+    {
+        var request = new HttpRequest("file", "http://localhost/benchmarks", string.Empty);
+        var field = request.Form.GetType().BaseType.BaseType.GetField("_readOnly", BindingFlags.NonPublic | BindingFlags.Instance);
+        field.SetValue(request.Form, false);
+
+        foreach (var pair in values)
+        {
+            request.Form.Add(pair.Key, pair.Value);
+        }
+
+        request.ValidateInput();
+        return request;
     }
 }
 #endif
