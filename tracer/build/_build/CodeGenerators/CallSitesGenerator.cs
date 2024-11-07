@@ -48,10 +48,10 @@ namespace CodeGenerators
                     continue;
                 }
 
-                var aspectClassLine = GetAspectLine(aspectClassAttribute, out var category);
+                var aspectClassLine = $"{GetAspectLine(aspectClassAttribute, out var category)} {aspectClassType.FullName}";
                 if (!aspectClasses.TryGetValue(aspectClassLine, out var aspectClass))
                 {
-                    aspectClass = new AspectClass(aspectClassType, aspectClassAttribute);
+                    aspectClass = new AspectClass();
                     aspectClass.Categories |= category;
                     aspectClasses[aspectClassLine] = aspectClass;
                 }
@@ -61,16 +61,22 @@ namespace CodeGenerators
                 {
                     foreach(var aspectAttribute in method.CustomAttributes.Where(IsAspect))
                     {
-                        var aspectLine = GetAspectLine(aspectAttribute, out _);
+                        var aspectLine = $"{GetAspectLine(aspectAttribute, out _)} {GetMethodName(method)}";
                         if (!aspectClass.Aspects.TryGetValue(aspectLine, out var aspect))
                         {
-                            aspect = new Aspect(method, aspectAttribute);
+                            aspect = new Aspect();
                         }
 
                         aspect.Tfms |= tfmCategory;
                         aspectClass.Aspects[aspectLine] = aspect;
                     }
                 }
+            }
+
+            string GetMethodName(MethodDefinition method)
+            {
+                var fullName = method.FullName;
+                return fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>");
             }
 
             bool IsAspectClass(Mono.Cecil.CustomAttribute attribute)
@@ -278,40 +284,26 @@ namespace CodeGenerators
 
         internal struct AspectClass
         {
-            public AspectClass(TypeDefinition aspectClassType, CustomAttribute aspectClassAttribute)
-            {
-                AspectClassType = aspectClassType;
-                AspectClassAttribute = aspectClassAttribute;
-            }
+            public AspectClass() {}
 
-            public TypeDefinition AspectClassType;
-            public CustomAttribute AspectClassAttribute;
             public Dictionary<string, Aspect> Aspects = new Dictionary<string, Aspect>();
             public InstrumentationCategory Categories = InstrumentationCategory.Iast;
 
             public string Subfix()
             {
-                return $" {AspectClassType.FullName} {((long)Categories).ToString()}";
+                return $" {((long)Categories).ToString()}";
             }
         }
 
         internal struct Aspect
         {
-            public Aspect(MethodDefinition aspectMethod, CustomAttribute aspectAttribute)
-            {
-                AspectMethod = aspectMethod;
-                AspectAttribute = aspectAttribute;
-            }
+            public Aspect() { }
 
-            public MethodDefinition AspectMethod;
-            public CustomAttribute AspectAttribute;
             public TargetFrameworks Tfms = TargetFrameworks.None;
 
             public string Subfix()
             {
-                var fullName = AspectMethod.FullName;
-                var methodName = fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>");
-                return $" {methodName} {((long)Tfms).ToString()}";
+                return $" {((long)Tfms).ToString()}";
             }
         }
     }
