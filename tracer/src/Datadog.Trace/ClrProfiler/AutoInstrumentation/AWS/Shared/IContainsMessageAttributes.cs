@@ -4,10 +4,10 @@
 // </copyright>
 
 #nullable enable
-
 using System.Collections;
+using System.IO;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
     /// <summary>
     /// MessageAttributes interface for ducktyping
@@ -17,6 +17,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <summary>
         /// Gets or sets the message attributes
         /// </summary>
-        IDictionary? MessageAttributes { get; set;  }
+        IDictionary? MessageAttributes { get; set; } // <string, IMessageAttributeValue>
+    }
+
+    internal interface IMessageAttributeValue
+    {
+        string? DataType { get; set; } // can be String, Number, or Binary
+
+        string? StringValue { get; set; } // filled if DataType is String or Number
+
+        MemoryStream? BinaryValue { get; set; } // filled if DataType is Binary
     }
 }

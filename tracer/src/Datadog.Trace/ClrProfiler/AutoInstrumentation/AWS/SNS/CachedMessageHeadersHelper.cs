@@ -9,16 +9,34 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
-    internal static class CachedMessageHeadersHelper<TMarkerType>
+    /// <summary>
+    /// Allows the creation of MessageAttributes and MessageAttributeValue with a type corresponding to the one given as template parameter
+    /// </summary>
+    /// <typeparam name="TMarkerType">can be any type in the same assembly as the Attributes we want to create.</typeparam>
+    internal sealed class CachedMessageHeadersHelper<TMarkerType> : IMessageHeadersHelper
     {
+        // We have to use Binary for SNS because passing JSON payloads with String type makes subscription filter policies fail silently.
+        // see https://github.com/DataDog/datadog-lambda-js/pull/269 for more details.
         private const string StringDataType = "Binary";
 
-        private static readonly Func<MemoryStream, object> _createMessageAttributeValue;
-        private static readonly Func<IDictionary> _createDict;
+        // ReSharper disable StaticMemberInGenericType
+        // there will be one instance of those fields per template type
+        private static readonly Func<MemoryStream, object> MessageAttributeValueCreator;
+        private static readonly ActivatorHelper DictionaryActivator;
+        // ReSharper restore StaticMemberInGenericType
+
+        public static readonly CachedMessageHeadersHelper<TMarkerType> Instance;
+
+        private CachedMessageHeadersHelper()
+        {
+        }
 
         static CachedMessageHeadersHelper()
         {
@@ -46,35 +64,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             messageAttributeIL.Emit(OpCodes.Ret);
 
-            _createMessageAttributeValue = (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
+            MessageAttributeValueCreator = (Func<MemoryStream, object>)createMessageAttributeValueMethod.CreateDelegate(typeof(Func<MemoryStream, object>));
 
             // Initialize delegate for creating a Dictionary<string, MessageAttributeValue> object
-            var genericDictType = typeof(Dictionary<,>);
-            var constructedDictType = genericDictType.MakeGenericType(new Type[] { typeof(string), messageAttributeValueType });
-            ConstructorInfo dictionaryCtor = constructedDictType.GetConstructor(System.Type.EmptyTypes);
+            DictionaryActivator = new ActivatorHelper(typeof(Dictionary<,>).MakeGenericType(typeof(string), messageAttributeValueType));
 
-            DynamicMethod createDictMethod = new DynamicMethod(
-                $"SnsCachedMessageHeadersHelpers",
-                constructedDictType,
-                null,
-                typeof(DuckType).Module,
-                true);
-
-            ILGenerator dictIL = createDictMethod.GetILGenerator();
-            dictIL.Emit(OpCodes.Newobj, dictionaryCtor);
-            dictIL.Emit(OpCodes.Ret);
-
-            _createDict = (Func<IDictionary>)createDictMethod.CreateDelegate(typeof(Func<IDictionary>));
+            Instance = new CachedMessageHeadersHelper<TMarkerType>();
         }
 
-        public static IDictionary CreateMessageAttributes()
+        public IDictionary CreateMessageAttributes()
         {
-            return _createDict();
+            return (IDictionary)DictionaryActivator.CreateInstance();
         }
 
-        public static object CreateMessageAttributeValue(MemoryStream value)
+        public object CreateMessageAttributeValue(string value)
         {
-            return _createMessageAttributeValue(value);
+            var bytes = Encoding.UTF8.GetBytes(value);
+            var stream = new MemoryStream(bytes);
+            return MessageAttributeValueCreator(stream);
         }
     }
 }

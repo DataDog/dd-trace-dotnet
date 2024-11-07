@@ -7,6 +7,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
