@@ -389,8 +389,8 @@ namespace Datadog.Trace.Configuration
                         .ToArray();
 
             var getDefaultPropagationHeaders = () => new DefaultResult<string[]>(
-                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext],
-                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}");
+                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.W3CBaggage],
+                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
 
             // Same otel config is used for both injection and extraction
             var otelPropagation = config
