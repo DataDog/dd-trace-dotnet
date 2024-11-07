@@ -38,5 +38,4 @@ public class SetCurrentIntegration
         Trace.Baggage.Current = new Trace.Baggage(value);
         return CallTargetState.GetDefault();
     }
-
 }
