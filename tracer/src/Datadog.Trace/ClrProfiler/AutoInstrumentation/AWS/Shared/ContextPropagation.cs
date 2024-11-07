@@ -24,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
 
-            if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.PathwayContext != null)
+            if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.SpanContext?.PathwayContext != null)
             {
-                var encodedBytes = PathwayContextEncoder.Encode(context.PathwayContext.Value);
+                var encodedBytes = PathwayContextEncoder.Encode(context.SpanContext.PathwayContext.Value);
                 var base64EncodedContext = Convert.ToBase64String(encodedBytes);
                 sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContext);
 
@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                     // Both PropagationKeyBase64 and PropagationKey use the Base64 encoded context
                     sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, base64EncodedContext);
                 }
+            }
 
             if (context.SpanContext?.PathwayContext is { } pathwayContext)
             {
