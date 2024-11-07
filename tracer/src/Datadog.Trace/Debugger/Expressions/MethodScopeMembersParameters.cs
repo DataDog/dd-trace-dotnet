@@ -5,4 +5,5 @@
 
 namespace Datadog.Trace.Debugger.Expressions;
 
+#nullable enable
 internal record struct MethodScopeMembersParameters(int NumberOfLocals, int NumberOfArguments);
