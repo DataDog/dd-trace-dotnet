@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private void AddExitSpanTag(Span span)
         {
-            var frames = ArrayPool<FrameInfo>.Shared.Rent(this._settings.CodeOriginMaxUserFrames);
+            var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
             try
             {
                 var framesLength = PopulateUserFrames(frames);
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private int PopulateUserFrames(FrameInfo[] frames)
         {
-            var stackTrace = new StackTrace(skipFrames: 3, fNeedFileInfo: true);
+            var stackTrace = new StackTrace(fNeedFileInfo: true);
             var stackFrames = stackTrace.GetFrames();
 
             if (stackFrames == null!)

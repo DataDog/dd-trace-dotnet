@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void SetCodeOrigin_WhenDisabled_DoesNotSetTags()
         {
             // Arrange
-            CreateCodeOriginManager();
+            using var settingsSetter = SetCodeOriginManagerSettings();
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void SetCodeOrigin_WhenEnabled_SetsCorrectTags()
         {
             // Arrange
-            CreateCodeOriginManager(true);
+            using var settingsSetter = SetCodeOriginManagerSettings(true);
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void SetCodeOrigin_WithMaxFramesLimit_RespectsLimit()
         {
             // Arrange
-            CreateCodeOriginManager(true, 2);
+            using var settingsSetter = SetCodeOriginManagerSettings(true, 2);
 
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
@@ -88,19 +88,11 @@ namespace Datadog.Trace.Tests.Debugger
             tags.Should().NotContain(s => s.StartsWith($"{CodeOriginTag}.frames.2"));
         }
 
-        private static void CreateCodeOriginManager(bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
+        private static IDisposable SetCodeOriginManagerSettings(bool isEnable = false, int numberOfFrames = 8, string excludeFromFilter = "Datadog.Trace.Tests")
         {
-            var overrideSettings = DebuggerSettings.FromSource(
-                new NameValueConfigurationSource(
-                    new NameValueCollection
-                    {
-                        { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, isEnable.ToString() },
-                        { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, numberOfFrames.ToString() },
-                        { ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes, excludeFromFilter }
-                    }),
-                NullConfigurationTelemetry.Instance);
-            var instance = SpanCodeOriginManager.Instance;
-            instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, overrideSettings);
+            var setter = new CodeOriginSettingsSetter();
+            setter.Set(isEnable, numberOfFrames, excludeFromFilter);
+            return setter;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -125,6 +117,35 @@ namespace Datadog.Trace.Tests.Debugger
         private void DeepTestMethod3(Span span)
         {
             SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+        }
+
+        internal class CodeOriginSettingsSetter : IDisposable
+        {
+            private DebuggerSettings _original;
+
+            public void Dispose()
+            {
+                var instance = SpanCodeOriginManager.Instance;
+                instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, _original);
+            }
+
+            internal void Set(bool isEnable, int numberOfFrames, string excludeFromFilter)
+            {
+                var instance = SpanCodeOriginManager.Instance;
+                _original = (DebuggerSettings)instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(instance);
+
+                var overrideSettings = DebuggerSettings.FromSource(
+                    new NameValueConfigurationSource(
+                        new NameValueCollection
+                        {
+                            { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, isEnable.ToString() },
+                            { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, numberOfFrames.ToString() },
+                            { ConfigurationKeys.Debugger.ThirdPartyDetectionExcludes, excludeFromFilter }
+                        }),
+                    NullConfigurationTelemetry.Instance);
+
+                instance.GetType().GetField("_settings", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(instance, overrideSettings);
+            }
         }
     }
 }
