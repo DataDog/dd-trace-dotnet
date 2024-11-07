@@ -25,11 +25,11 @@ internal partial class ReaderWriterLock : IDisposable
         return true;
     }
 
-    internal bool EnterWriteLock()
+    internal bool EnterWriteLock(int timeout = TimeoutInMs)
     {
-        if (!_readerWriterLock.TryEnterWriteLock(TimeoutInMs))
+        if (!_readerWriterLock.TryEnterWriteLock(timeout))
         {
-            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs);
+            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", timeout);
             return false;
         }
 

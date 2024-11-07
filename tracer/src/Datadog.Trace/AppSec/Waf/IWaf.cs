@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafResultStruct retNative, ulong timeoutMicroSeconds);
 
-        UpdateResult Update(ConfigurationState configurationStatus, string? staticRulesFilePath = null);
+        UpdateResult Update(ConfigurationState configurationStatus);
 
         public string[] GetKnownAddresses();
 
