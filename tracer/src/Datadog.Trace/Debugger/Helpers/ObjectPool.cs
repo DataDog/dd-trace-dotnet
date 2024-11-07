@@ -9,12 +9,24 @@ using System.Collections.Concurrent;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
-    internal class ObjectPool<T, TSetParameters>(Func<T>? objectFactory = null, int maxSize = 100)
+    internal class ObjectPool<T, TSetParameters>
         where T : class, IPoolable<TSetParameters>, new()
     {
-        private readonly ConcurrentBag<T> _objects = new();
-        private readonly Func<T> _objectFactory = objectFactory ?? (() => new T());
-        private readonly int _maxSize = maxSize;
+        private readonly ConcurrentBag<T> _objects;
+        private readonly Func<T> _objectFactory;
+        private readonly int _maxSize;
+
+        public ObjectPool(Func<T>? objectFactory = null, int maxSize = 100)
+        {
+            if (maxSize <= 0)
+            {
+                throw new ArgumentException("Maximum pool size must be greater than zero.", nameof(maxSize));
+            }
+
+            _objects = new ConcurrentBag<T>();
+            _objectFactory = objectFactory ?? (() => new T());
+            _maxSize = maxSize;
+        }
 
         public int Count => _objects.Count;
 
