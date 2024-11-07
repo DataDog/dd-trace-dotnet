@@ -4,8 +4,10 @@
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
@@ -23,17 +25,24 @@ internal static class AwsSnsHandlerCommon
         var requestProxy = request.DuckCast<IAmazonSNSRequestWithTopicArn>();
 
         var scope = AwsSnsCommon.CreateScope(Tracer.Instance, sendType.OperationName, SpanKinds.Producer, out var tags);
+
+        var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
         if (tags is not null && requestProxy.TopicArn is not null)
         {
             tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            tags.TopicName = topicName;
         }
 
         if (scope?.Span.Context is { } context)
         {
+            var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+            // avoid allocation if edgeTags are not going to be used
+            var edgeTags = dataStreamsManager is { IsEnabled: true } ? ["direction:out", $"topic:{topicName}", "type:sns"] : Array.Empty<string>();
+
             if (sendType == SendType.SingleMessage)
             {
-                ContextPropagation.InjectHeadersIntoMessage(request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                ContextPropagation.InjectHeadersIntoMessage(request.DuckCast<IContainsMessageAttributes>(), context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
             }
             else if (sendType == SendType.Batch)
             {
@@ -47,7 +56,8 @@ internal static class AwsSnsHandlerCommon
 
                         if (entry != null)
                         {
-                            ContextPropagation.InjectHeadersIntoMessage(entry, context, dataStreamsManager: null, CachedMessageHeadersHelper<TPublishRequest>.Instance);
+                            scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                            ContextPropagation.InjectHeadersIntoMessage(entry, context, dataStreamsManager, CachedMessageHeadersHelper<TPublishRequest>.Instance);
                         }
                     }
                 }
