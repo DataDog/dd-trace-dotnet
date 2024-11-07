@@ -76,7 +76,7 @@ namespace CodeGenerators
             string GetMethodName(MethodDefinition method)
             {
                 var fullName = method.FullName;
-                return fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>");
+                return fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>").Replace("&", "");
             }
 
             bool IsAspectClass(Mono.Cecil.CustomAttribute attribute)
@@ -249,11 +249,11 @@ namespace CodeGenerators
                 {
                 """);
 
-            foreach (var aspectClass in aspectClasses.OrderBy(k => k.Key.ToString()))
+            foreach (var aspectClass in aspectClasses.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine(Format(aspectClass.Key + aspectClass.Value.Subfix()));
 
-                foreach (var method in aspectClass.Value.Aspects.OrderBy(k => k.Key.ToString()))
+                foreach (var method in aspectClass.Value.Aspects.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
                 {
                     sb.AppendLine(Format("  " + method.Key + method.Value.Subfix()));
                 }
