@@ -1,4 +1,4 @@
-// <copyright file="AwsSqsHeadersAdapters.cs" company="Datadog">
+// <copyright file="AwsMessageAttributesHeadersAdapters.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,9 +13,9 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 
-internal class AwsSqsHeadersAdapters
+internal static class AwsMessageAttributesHeadersAdapters
 {
     public static IBinaryHeadersCollection GetInjectionAdapter(StringBuilder carrier)
     {
@@ -65,7 +65,7 @@ internal class AwsSqsHeadersAdapters
         public MessageAttributesAdapter(IDictionary? messageAttributes)
         {
             // IDictionary returns null if the key is not present
-            var json = messageAttributes?[ContextPropagation.SqsKey]?.DuckCast<IMessageAttributeValue>();
+            var json = messageAttributes?[ContextPropagation.InjectionKey]?.DuckCast<IMessageAttributeValue>();
             if (json != null && json.StringValue != null)
             {
                 _ddAttributes = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.StringValue);

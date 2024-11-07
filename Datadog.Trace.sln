@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 17
+# Visual Studio Version 17
 VisualStudioVersion = 17.1.31903.286
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
@@ -1712,7 +1712,6 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{536f1d82-d40c-4e33-b7fa-76a0f17bf672}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{560e1104-9a6e-41e7-ab3d-85ba2740a0f7}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{56de0d44-e9e5-48da-baea-2934b1e28d4e}*SharedItemsImports = 5
-		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5c2829c2-ed0d-414c-b5a0-2bfdca07b493}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5e290fa1-e87b-4782-b977-eb5fa6c96efe}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5ee6b6eb-b768-47ec-882b-8dcaca2b1360}*SharedItemsImports = 5
@@ -1753,6 +1752,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{959e9599-8d99-43bc-8038-b91f76179c1c}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{9d5935cb-2df2-46cb-a5e1-98be134cafcc}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{a82eb6f8-d8d0-4763-b252-08ca3f39d153}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{a996927a-9222-43f4-8552-810b69ff04df}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{aa88952e-9393-4a4b-85b5-cc7f03629ce1}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{aad9038b-8f16-4e09-93af-b13e9f7acd66}*SharedItemsImports = 5

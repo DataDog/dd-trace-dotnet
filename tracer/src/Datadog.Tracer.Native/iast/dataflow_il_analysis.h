@@ -42,7 +42,7 @@ namespace iast
 
         std::vector<InstructionInfo*> LocateCallParamInstructions(ILInstr* callInstruction, int paramIndex);
 
-        void Dump(const std::string& extraMessage = "");
+        void Dump(bool debugLevel, const std::string& extraMessage = "");
 
     protected:
         InstructionInfo* GetBranchTarget(BYTE offset);
