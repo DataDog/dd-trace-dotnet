@@ -342,7 +342,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 return evaluationResult;
             }
 
-            CheckSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
+            SetSpanDecoration(snapshotCreator, ref shouldStopCapture, evaluationResult);
 
             if (evaluationResult.Metric.HasValue)
             {
@@ -370,7 +370,7 @@ namespace Datadog.Trace.Debugger.Expressions
             return evaluationResult;
         }
 
-        private void CheckSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
+        private void SetSpanDecoration(DebuggerSnapshotCreator snapshotCreator, ref bool shouldStopCapture, ExpressionEvaluationResult evaluationResult)
         {
             if (evaluationResult.Decorations == null)
             {
