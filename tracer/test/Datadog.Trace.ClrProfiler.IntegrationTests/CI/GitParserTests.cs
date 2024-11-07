@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
-                    Branch = "refs/heads/master",
+                    Branch = "master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
                     CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
-                    Branch = "refs/heads/master",
+                    Branch = "master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
                     CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
@@ -115,20 +115,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             Assert.True(Directory.Exists(testItem.GitFolderPath));
 
-            var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
+            try
+            {
+                // Let's try with the git info provider based on git commands
+                GitInfo.SetGitInfoProviders(GitCommandGitInfoProvider.Instance);
+                AssertGitInfo(testItem);
 
-            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
-            Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
-            Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
-            Assert.Equal(testItem.Branch, gitInfo.Branch);
-            Assert.Equal(testItem.Commit, gitInfo.Commit);
-            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
-            Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
-            Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
-            Assert.NotNull(gitInfo.Message);
-            Assert.NotNull(gitInfo.PgpSignature);
-            Assert.Equal(testItem.Repository, gitInfo.Repository);
-            Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
+                // Let's try with the git info provider based on manual parsing of the git folder
+                GitInfo.SetGitInfoProviders(ManualParserGitInfoProvider.Instance);
+                AssertGitInfo(testItem);
+
+                static void AssertGitInfo(TestItem testItem)
+                {
+                    var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
+                    Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
+                    Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
+                    Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
+                    Assert.Equal(testItem.Branch, gitInfo.Branch);
+                    Assert.Equal(testItem.Commit, gitInfo.Commit);
+                    Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
+                    Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
+                    Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
+                    Assert.NotNull(gitInfo.Message);
+                    Assert.Equal(testItem.Repository, gitInfo.Repository);
+                    Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
+                }
+            }
+            finally
+            {
+                // Revert the default providers
+                GitInfo.SetGitInfoProviders(GitCommandGitInfoProvider.Instance, ManualParserGitInfoProvider.Instance);
+            }
         }
 
         public class TestItem : IXunitSerializable

@@ -100,7 +100,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return new UnsupportedCIEnvironmentValues<TValueProvider>(valueProvider);
     }
 
-    protected override void Setup(GitInfo gitInfo)
+    protected override void Setup(IGitInfo gitInfo)
     {
         OnInitialize(gitInfo);
 
@@ -344,7 +344,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return path;
     }
 
-    protected abstract void OnInitialize(GitInfo gitInfo);
+    protected abstract void OnInitialize(IGitInfo gitInfo);
 }
 
 #pragma warning restore SA1649

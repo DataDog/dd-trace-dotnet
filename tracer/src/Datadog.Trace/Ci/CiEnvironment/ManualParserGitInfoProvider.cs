@@ -1,4 +1,4 @@
-// <copyright file="GitInfo.cs" company="Datadog">
+// <copyright file="ManualParserGitInfoProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,116 +12,22 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.CiEnvironment
 {
     /// <summary>
-    /// Git information class
+    /// Manual parser Git information class
     /// </summary>
-    internal class GitInfo
+    internal sealed class ManualParserGitInfoProvider : IGitInfoProvider
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitInfo));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ManualParserGitInfoProvider));
 
-        private GitInfo()
+        private ManualParserGitInfoProvider()
         {
         }
 
-        /// <summary>
-        /// Gets Source root
-        /// </summary>
-        public string SourceRoot { get; private set; }
+        public static IGitInfoProvider Instance { get; } = new ManualParserGitInfoProvider();
 
-        /// <summary>
-        /// Gets Repository
-        /// </summary>
-        public string Repository { get; private set; }
-
-        /// <summary>
-        /// Gets Branch
-        /// </summary>
-        public string Branch { get; private set; }
-
-        /// <summary>
-        /// Gets Commit
-        /// </summary>
-        public string Commit { get; private set; }
-
-        /// <summary>
-        /// Gets Author Name
-        /// </summary>
-        public string AuthorName { get; private set; }
-
-        /// <summary>
-        /// Gets Author Email
-        /// </summary>
-        public string AuthorEmail { get; private set; }
-
-        /// <summary>
-        /// Gets Author Date
-        /// </summary>
-        public DateTimeOffset? AuthorDate { get; private set; }
-
-        /// <summary>
-        /// Gets Committer Name
-        /// </summary>
-        public string CommitterName { get; private set; }
-
-        /// <summary>
-        /// Gets Committer Email
-        /// </summary>
-        public string CommitterEmail { get; private set; }
-
-        /// <summary>
-        /// Gets Committer Date
-        /// </summary>
-        public DateTimeOffset? CommitterDate { get; private set; }
-
-        /// <summary>
-        /// Gets PGP Signature
-        /// </summary>
-        public string PgpSignature { get; private set; }
-
-        /// <summary>
-        /// Gets Commit Message
-        /// </summary>
-        public string Message { get; private set; }
-
-        /// <summary>
-        /// Gets a GitInfo from a folder
-        /// </summary>
-        /// <param name="folder">Target folder to retrieve the git info</param>
-        /// <returns>Git info</returns>
-        public static GitInfo GetFrom(string folder)
-        {
-            var dirInfo = new DirectoryInfo(folder);
-
-            // Try to load git metadata from the folder
-            if (TryGetFrom(dirInfo, out var gitInfo))
-            {
-                return gitInfo;
-            }
-
-            // If not let's try to find the .git folder in a parent folder
-            if (TryGetFrom(GetParentGitFolder(folder), out var pFolderGitInfo))
-            {
-                return pFolderGitInfo;
-            }
-
-            // Return the partial gitInfo instance with the initial source root
-            return new GitInfo { SourceRoot = dirInfo.Parent?.FullName };
-        }
-
-        /// <summary>
-        /// Gets a GitInfo from the current folder or assembly attribute
-        /// </summary>
-        /// <returns>Git info</returns>
-        public static GitInfo GetCurrent()
-        {
-            var baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var gitDirectory = GetParentGitFolder(baseDirectory) ?? GetParentGitFolder(Environment.CurrentDirectory);
-            return TryGetFrom(gitDirectory, out var gitInfo) ? gitInfo : new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
-        }
-
-        private static bool TryGetFrom(DirectoryInfo gitDirectory, out GitInfo gitInfo)
+        public bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo gitInfo)
         {
             if (gitDirectory == null)
             {
@@ -220,7 +126,6 @@ namespace Datadog.Trace.Ci
                             tempGitInfo.CommitterEmail = commitObject.CommitterEmail;
                             tempGitInfo.CommitterName = commitObject.CommitterName;
                             tempGitInfo.Message = commitObject.Message;
-                            tempGitInfo.PgpSignature = commitObject.PgpSignature;
                         }
                     }
                     else
@@ -241,7 +146,6 @@ namespace Datadog.Trace.Ci
                                     tempGitInfo.CommitterEmail = commitObject.CommitterEmail;
                                     tempGitInfo.CommitterName = commitObject.CommitterName;
                                     tempGitInfo.Message = commitObject.Message;
-                                    tempGitInfo.PgpSignature = commitObject.PgpSignature;
                                     break;
                                 }
                             }
@@ -256,36 +160,9 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
+            tempGitInfo.Branch = tempGitInfo.Branch?.Replace("refs/heads/", string.Empty);
             gitInfo = tempGitInfo;
             return true;
-        }
-
-        private static DirectoryInfo GetParentGitFolder(string innerFolder)
-        {
-            if (string.IsNullOrEmpty(innerFolder))
-            {
-                return null;
-            }
-
-            var dirInfo = new DirectoryInfo(innerFolder);
-            while (dirInfo != null)
-            {
-                var gitDirectories = dirInfo.GetDirectories(".git");
-                if (gitDirectories.Length > 0)
-                {
-                    foreach (var gitDir in gitDirectories)
-                    {
-                        if (gitDir.Name == ".git")
-                        {
-                            return gitDir;
-                        }
-                    }
-                }
-
-                dirInfo = dirInfo.Parent;
-            }
-
-            return null;
         }
 
         private static List<ConfigItem> GetConfigItems(string configFile)

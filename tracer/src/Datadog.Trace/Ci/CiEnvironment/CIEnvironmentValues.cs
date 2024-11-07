@@ -288,7 +288,7 @@ internal abstract class CIEnvironmentValues
         }
     }
 
-    protected abstract void Setup(GitInfo gitInfo);
+    protected abstract void Setup(IGitInfo gitInfo);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void CleanBranchAndTag()
