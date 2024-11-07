@@ -357,6 +357,7 @@ typedef struct _CallTargetDefinition2
 
     CallTargetKind kind;
     UINT32 categories;
+    UINT32 tfms;
 
     inline CallTargetDefinition ToCallTargetDefinition() const
     {

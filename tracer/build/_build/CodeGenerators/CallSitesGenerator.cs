@@ -37,17 +37,17 @@ namespace CodeGenerators
             var tfmCategory = GetCategory(tfm);
 
             // Open dll to extract all AspectsClass attributes.
-            using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
+            using var asmDefinition = AssemblyDefinition.ReadAssembly(dllPath);
 
-            foreach (var aspectClassType in asmDefinition.MainModule.Types)
+            foreach (var type in asmDefinition.MainModule.Types)
             {
-                var aspectClassAttribute = aspectClassType.CustomAttributes.FirstOrDefault(IsAspectClass);
+                var aspectClassAttribute = type.CustomAttributes.FirstOrDefault(IsAspectClass);
                 if (aspectClassAttribute is null)
                 {
                     continue;
                 }
 
-                var aspectClassLine = $"{GetAspectLine(aspectClassAttribute, out var category)} {aspectClassType.FullName}";
+                var aspectClassLine = $"{GetAspectLine(aspectClassAttribute, out var category)} {type.FullName}";
                 if (!aspectClasses.TryGetValue(aspectClassLine, out var aspectClass))
                 {
                     aspectClass = new AspectClass();
@@ -56,7 +56,7 @@ namespace CodeGenerators
                 }
 
                 // Retrieve aspects
-                foreach(var method in aspectClassType.Methods)
+                foreach(var method in type.Methods)
                 {
                     foreach(var aspectAttribute in method.CustomAttributes.Where(IsAspect))
                     {
@@ -254,11 +254,11 @@ namespace CodeGenerators
                 {
                 """);
 
-            foreach (var aspectClass in aspectClasses.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+            foreach (var aspectClass in aspectClasses.OrderBy(static k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine(Format(aspectClass.Key + aspectClass.Value.Subfix()));
 
-                foreach (var method in aspectClass.Value.Aspects.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+                foreach (var method in aspectClass.Value.Aspects.OrderBy(static k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
                 {
                     sb.AppendLine(Format("  " + method.Key + method.Value.Subfix()));
                 }
@@ -287,7 +287,7 @@ namespace CodeGenerators
             return (TargetFrameworks)Enum.Parse<TargetFrameworks>(tfm.ToString().ToUpper().Replace('.', '_'));
         }
 
-        internal struct AspectClass
+        internal record AspectClass
         {
             public AspectClass() {}
 
@@ -300,7 +300,7 @@ namespace CodeGenerators
             }
         }
 
-        internal struct Aspect
+        internal record Aspect
         {
             public Aspect() { }
 

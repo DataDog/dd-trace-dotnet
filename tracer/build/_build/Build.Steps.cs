@@ -437,8 +437,8 @@ partial class Build
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
         });
-
 
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()

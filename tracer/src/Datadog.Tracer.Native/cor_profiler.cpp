@@ -1971,7 +1971,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories, UINT32 platform)
 {
     long numReJITs = 0;
     long enabledTargets = 0;
@@ -1993,6 +1993,12 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
         for (int i = 0; i < size; i++)
         {
             const auto& current = items[i];
+
+            // Filter out integrations that are not for the current platform
+            if ((current.tfms & platform) == 0)
+            {
+                continue;
+            }
 
             const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
             const shared::WSTRING& targetType = shared::WSTRING(current.targetType);

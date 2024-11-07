@@ -17,7 +17,6 @@ EXPORTS
     GetProbesStatuses
     DisableTracerCLRProfiler
     RegisterIastAspects
-    RegisterCallTargetDefinitions
     EnableCallTargetDefinitions
     DisableCallTargetDefinitions
     UpdateSettings

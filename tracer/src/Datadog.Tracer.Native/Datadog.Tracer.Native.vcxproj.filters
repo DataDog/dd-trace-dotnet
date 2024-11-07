@@ -269,6 +269,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\version.h" />
     <ClInclude Include="Generated\generated_definitions.h" />
     <ClInclude Include="Generated\generated_callsites.g.h" />
+    <ClInclude Include="Generated\generated_calltargets.g.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
