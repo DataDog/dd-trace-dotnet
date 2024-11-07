@@ -72,29 +72,9 @@ namespace Datadog.Trace.Vendors.ICSharpCode.SharpZipLib.Encryption
 		///
 		public ZipAESTransform(string key, byte[] saltBytes, int blockSize, bool writeMode)
 		{
-			if (blockSize != 16 && blockSize != 32) // 24 valid for AES but not supported by Winzip
-				throw new Exception("Invalid blocksize " + blockSize + ". Must be 16 or 32.");
-			if (saltBytes.Length != blockSize / 2)
-				throw new Exception("Invalid salt len. Must be " + blockSize / 2 + " for blocksize " + blockSize);
-			// initialise the encryption buffer and buffer pos
-			_blockSize = blockSize;
-			_encryptBuffer = new byte[_blockSize];
-			_encrPos = ENCRYPT_BLOCK;
-
-			// Performs the equivalent of derive_key in Dr Brian Gladman's pwd2key.c
-			var pdb = new Rfc2898DeriveBytes(key, saltBytes, KEY_ROUNDS);
-			var rm = Aes.Create();
-			rm.Mode = CipherMode.ECB;           // No feedback from cipher for CTR mode
-			_counterNonce = new byte[_blockSize];
-			byte[] key1bytes = pdb.GetBytes(_blockSize);
-			byte[] key2bytes = pdb.GetBytes(_blockSize);
-
-			// Use empty IV for AES
-			_encryptor = rm.CreateEncryptor(key1bytes, new byte[16]);
-			_pwdVerifier = pdb.GetBytes(PWD_VER_LENGTH);
-			//
-			_hmacsha1 = IncrementalHash.CreateHMAC(HashAlgorithmName.SHA1, key2bytes);
-			_writeMode = writeMode;
+			// Note: Manually edited upon vendoring
+			// Reason: We do not need to do encryption for zip operations and want to make minimal changes to the vendored library
+            throw new NotSupportedException("Encryption is not supported in this vendored version of SharpZipLib.");
 		}
 
 		/// <summary>
