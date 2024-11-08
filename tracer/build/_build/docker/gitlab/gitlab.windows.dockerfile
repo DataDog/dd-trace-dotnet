@@ -1,6 +1,6 @@
 ﻿# To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
-# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:latest .
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet9 .
 # docker push datadog/dd-trace-dotnet-docker-build:latest
 
 ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
@@ -10,9 +10,9 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
-ENV VSBUILDTOOLS_VERSION="17.7.34221.43" \
-    VSBUILDTOOLS_SHA256="59B6DA403AFE6892D4531ADB5C58DC52BFF5DB1E2173477AD7F9CF4B2C490277" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ebbb3a8f-0b8f-4c9d-ac08-5e244e84b4fe/59b6da403afe6892d4531adb5c58dc52bff5db1e2173477ad7f9cf4b2c490277/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="17.11.35327.3" \
+    VSBUILDTOOLS_SHA256="471C9A89FA8BA27D356748AE0CF25EB1F362184992DC0BB6E9CCF10178C43C27" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/69e24482-3b48-44d3-af65-51f866a08313/471c9a89fa8ba27d356748ae0cf25eb1f362184992dc0bb6e9ccf10178c43c27/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
@@ -28,11 +28,11 @@ RUN Powershell -Command .\install_net35.ps1
 COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
-# Install .NET 8
+# Install .NET 9
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="8.0.100" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/93961dfb-d1e0-49c8-9230-abcba1ebab5a/811ed1eb63d7652325727720edda26a8/dotnet-sdk-8.0.100-win-x64.exe" \
-    DOTNET_SHA512="248acec95b381e5302255310fb9396267fd74a4a2dc2c3a5989031969cb31f8270cbd14bda1bc0352ac90f8138bddad1a58e4af1e56cc4a1613b1cf2854b518e"
+ENV DOTNET_VERSION="9.0.100-rc.2.24474.11" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/084bfbb9-6197-49d9-ae9c-ad3825534f37/e1a071d344c9b24849f8034f7ce72aa6/dotnet-sdk-9.0.100-rc.2.24474.11-win-x64.exe" \
+    DOTNET_SHA512="29091a2b4d08f7fdc77065f2805a82afae0129a6b886caec71124016843a29c6abcec828794aef1c9a73a84df3f7b7258863991f61a780ea362575da0ca6879b"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
