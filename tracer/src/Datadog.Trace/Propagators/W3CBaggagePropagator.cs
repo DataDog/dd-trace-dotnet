@@ -104,11 +104,11 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return baggage is { Count: > 0 };
     }
 
-    internal static string Encode(string source, HashSet<char> charsToEncode)
+    internal static void EncodeStringAndAppend(StringBuilder sb, string source, HashSet<char> charsToEncode)
     {
         if (string.IsNullOrEmpty(source))
         {
-            return string.Empty;
+            return;
         }
 
         // this is an upper bound and will almost always be more bytes than we need
@@ -124,13 +124,13 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             // slice the buffer down to the actual bytes written
             var stackBytes = stackBuffer[..byteCount];
-            return EncodeBytes(source, stackBytes, charsToEncode);
+            EncodeBytesAndAppend(sb, source, stackBytes, charsToEncode);
+            return;
         }
 #endif
 
         // rent a buffer for the UTF-8 bytes
         var buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
-        string result;
 
         try
         {
@@ -138,14 +138,37 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             // slice the buffer down to the actual bytes written
             var bytes = buffer.AsSpan(0, byteCount);
-            result = EncodeBytes(source, bytes, charsToEncode);
+            EncodeBytesAndAppend(sb, source, bytes, charsToEncode);
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
+    }
 
-        return result;
+    private static void EncodeBytesAndAppend(StringBuilder sb, string source, Span<byte> bytes, HashSet<char> charsToEncode)
+    {
+        if (!AnyByteRequiresEncoding(bytes, charsToEncode))
+        {
+            // no bytes require encoding
+            sb.Append(source);
+            return;
+        }
+
+        foreach (var b in bytes)
+        {
+            if (ByteRequiresEncoding(b, charsToEncode))
+            {
+                // encode byte as '%XX'
+                sb.Append($"%{b:X2}");
+            }
+            else
+            {
+                sb.Append((char)b);
+            }
+        }
+
+        return;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static bool ByteRequiresEncoding(byte b, HashSet<char> charsToEncode)
@@ -164,32 +187,6 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             }
 
             return false;
-        }
-
-        static string EncodeBytes(string source, Span<byte> bytes, HashSet<char> charsToEncode)
-        {
-            if (!AnyByteRequiresEncoding(bytes, charsToEncode))
-            {
-                // no bytes require encoding, return original string
-                return source;
-            }
-
-            var sb = StringBuilderCache.Acquire();
-
-            foreach (var b in bytes)
-            {
-                if (ByteRequiresEncoding(b, charsToEncode))
-                {
-                    // encode byte as '%XX'
-                    sb.Append($"%{b:X2}");
-                }
-                else
-                {
-                    sb.Append((char)b);
-                }
-            }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
     }
 
@@ -285,7 +282,6 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         private readonly StringBuilder _sb;
 
         private int _itemCount;
-        private int _totalLength;
 
         public W3CBaggageHeaderBuilder(int maxBaggageItems, int maxBaggageLength, StringBuilder sb)
         {
@@ -315,27 +311,28 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 return;
             }
 
-            var key = Encode(item.Key, KeyCharsToEncode);
-            var value = Encode(item.Value!, ValueCharsToEncode);
+            var currentLength = _sb.Length;
 
-            var keyValuePairString = _sb.Length > 0 ?
-                $"{PairSeparator}{key}{KeyAndValueSeparator}{value}" :
-                $"{key}{KeyAndValueSeparator}{value}";
+            if (currentLength > 0)
+            {
+                _sb.Append(PairSeparator);
+            }
+
+            EncodeStringAndAppend(_sb, item.Key, KeyCharsToEncode);
+            _sb.Append(KeyAndValueSeparator);
+            EncodeStringAndAppend(_sb, item.Value, ValueCharsToEncode);
 
             // it's all ASCII here after encoding, so we can use the string
-            // length directly instead of using Encoding.UTF8.GetByteCount()
-            _totalLength += keyValuePairString.Length;
-
-            if (_totalLength > _maxBaggageLength)
+            // length directly instead of using Encoding.UTF8.GetByteCount().
+            if (_sb.Length > _maxBaggageLength)
             {
-                // reached the byte count limit, stop adding items
+                // reached the byte count limit, remove the pair we just added
+                // by restoring the previous string length and stop adding more items
+                _sb.Length = currentLength;
                 CancellationRequested = true;
 
                 TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
-                return;
             }
-
-            _sb.Append(keyValuePairString);
         }
 
         public void OnCompleted()

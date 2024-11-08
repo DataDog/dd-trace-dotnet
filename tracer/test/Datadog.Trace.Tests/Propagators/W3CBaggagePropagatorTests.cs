@@ -3,8 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -76,16 +75,12 @@ public class W3CBaggagePropagatorTests
     [InlineData("abcd", new[] { 'x' }, "abcd")]                                      // encode a char that is not in the string
     [InlineData("abcd", new[] { 'b', 'd' }, "a%62c%64")]                             // encode chars that are in the string
     [InlineData("José 🐶\t我", new char[0], "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and unicode chars
-    public void Encode(string value, char[] charsToEncode, string expected)
+    public void EncodeAndAppend(string value, char[] charsToEncode, string expected)
     {
-        var result = W3CBaggagePropagator.Encode(value, [..charsToEncode]);
-        result.Should().Be(expected);
+        var sb = new StringBuilder();
+        W3CBaggagePropagator.EncodeStringAndAppend(sb, value, [..charsToEncode]);
 
-        if (value == expected)
-        {
-            // ensure that the method returns the same string instance when no encoding is needed
-            ReferenceEquals(value, result).Should().BeTrue();
-        }
+        sb.ToString().Should().Be(expected);
     }
 
     [Theory]
