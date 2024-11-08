@@ -54,7 +54,7 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ReadyToRunManualAndAutomatic()
     {
-#if !NET6_OR_GREATER
+#if !NET6_0_OR_GREATER
         // osx-arm64 doesn't work with Ready2Run
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
 #endif
