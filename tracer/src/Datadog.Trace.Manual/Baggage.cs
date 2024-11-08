@@ -40,15 +40,8 @@ public static class Baggage
 
         string IDictionary<string, string>.this[string key]
         {
-            get
-            {
-                ThrowHelper.ThrowKeyNotFoundException($"The key was not found: {key}");
-                return null; // unreachable
-            }
-
-            set
-            {
-            }
+            get => null;
+            set { }
         }
 
         IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
