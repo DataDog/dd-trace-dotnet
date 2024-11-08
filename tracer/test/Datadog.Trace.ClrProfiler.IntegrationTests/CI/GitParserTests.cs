@@ -115,20 +115,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             Assert.True(Directory.Exists(testItem.GitFolderPath));
 
-            // Let's try with the git info provider based on git commands
-            AssertGitInfo(testItem, GitCommandGitInfoProvider.Instance);
-
             // Let's try with the git info provider based on manual parsing of the git folder
-            AssertGitInfo(testItem, ManualParserGitInfoProvider.Instance);
-
-            static void AssertGitInfo(TestItem testItem, IGitInfoProvider gitInfoProvider)
+            if (!ManualParserGitInfoProvider.Instance.TryGetFrom(testItem.GitFolderPath, out var gitInfo))
             {
-                if (!gitInfoProvider.TryGetFrom(testItem.GitFolderPath, out var gitInfo))
-                {
-                    var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
-                    throw new Exception($"Error parsing git info from provider: {gitInfoProvider.GetType().Name}{Environment.NewLine}{errors}");
-                }
+                var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
+                throw new Exception($"Error parsing git info from provider: {nameof(ManualParserGitInfoProvider)}{Environment.NewLine}{errors}");
+            }
 
+            AssertGitInfo(testItem, gitInfo);
+            AssertGitInfo(testItem, GitInfo.GetFrom(testItem.GitFolderPath));
+
+            static void AssertGitInfo(TestItem testItem, IGitInfo gitInfo)
+            {
                 Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
                 Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
                 Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
@@ -141,6 +139,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Assert.Equal(testItem.Repository, gitInfo.Repository);
                 Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
             }
+        }
+
+        [SkippableFact]
+        public void GitCommandGitInfoProviderTest()
+        {
+            Assert.True(GitCommandGitInfoProvider.Instance.TryGetFrom(Environment.CurrentDirectory, out var gitInfo));
+            Assert.NotNull(gitInfo.AuthorDate);
+            Assert.NotNull(gitInfo.AuthorEmail);
+            Assert.NotNull(gitInfo.AuthorName);
+            Assert.NotNull(gitInfo.Branch);
+            Assert.NotNull(gitInfo.Commit);
+            Assert.NotNull(gitInfo.CommitterDate);
+            Assert.NotNull(gitInfo.CommitterEmail);
+            Assert.NotNull(gitInfo.CommitterName);
+            Assert.NotNull(gitInfo.Message);
+            Assert.NotNull(gitInfo.Repository);
+            Assert.NotNull(gitInfo.SourceRoot);
         }
 
         public class TestItem : IXunitSerializable

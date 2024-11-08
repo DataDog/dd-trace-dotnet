@@ -84,7 +84,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
                 return false;
             }
 
-            var gitLogDataArray = gitLogOutput.Output.Split(["|,|"], StringSplitOptions.None);
+            var gitLogDataArray = gitLogOutput.Output.Trim().Split(["|,|"], StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
                 localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
@@ -120,7 +120,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
             if (localGitInfo.Message.EndsWith("'"))
             {
-                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1);
+                localGitInfo.Message = localGitInfo.Message.Substring(0, localGitInfo.Message.Length - 1).Trim();
             }
         }
         catch (Exception ex)
