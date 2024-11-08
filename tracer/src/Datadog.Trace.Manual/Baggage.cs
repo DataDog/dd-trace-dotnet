@@ -13,18 +13,19 @@ namespace Datadog.Trace;
 /// </summary>
 public static class Baggage
 {
-    private static readonly NoopDictionary NoopDictionaryInstance = new();
+    // only used when IL-rewriting is not available
+    private static IDictionary<string, string>? _current;
 
     /// <summary>
     /// Gets or sets the baggage collection for the current execution context.
     /// </summary>
     [Instrumented]
-    public static IDictionary<string, string?> Current
+    public static IDictionary<string, string> Current
     {
         get
         {
             // auto-instrumentation will return Trace.Baggage.Current instead
-            return NoopDictionaryInstance;
+            return _current ??= new Dictionary<string, string>();
         }
 
         set
@@ -36,60 +37,7 @@ public static class Baggage
             //     null => new Trace.Baggage(),
             //     _ => new Trace.Baggage(value)
             // };
-            _ = value;
-        }
-    }
-
-    private sealed class NoopDictionary : IDictionary<string, string?>
-    {
-        int ICollection<KeyValuePair<string, string?>>.Count => 0;
-
-        bool ICollection<KeyValuePair<string, string?>>.IsReadOnly => true;
-
-        ICollection<string> IDictionary<string, string?>.Keys { get; } = [];
-
-        ICollection<string?> IDictionary<string, string?>.Values { get; } = [];
-
-        string? IDictionary<string, string?>.this[string key]
-        {
-            get => null;
-            set { }
-        }
-
-        IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator()
-            => Enumerable.Empty<KeyValuePair<string, string?>>().GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator()
-            => Enumerable.Empty<KeyValuePair<string, string?>>().GetEnumerator();
-
-        void ICollection<KeyValuePair<string, string?>>.Add(KeyValuePair<string, string?> item)
-        {
-        }
-
-        void ICollection<KeyValuePair<string, string?>>.Clear()
-        {
-        }
-
-        bool ICollection<KeyValuePair<string, string?>>.Contains(KeyValuePair<string, string?> item) => false;
-
-        void ICollection<KeyValuePair<string, string?>>.CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex)
-        {
-        }
-
-        bool ICollection<KeyValuePair<string, string?>>.Remove(KeyValuePair<string, string?> item) => false;
-
-        bool IDictionary<string, string?>.ContainsKey(string key) => false;
-
-        void IDictionary<string, string?>.Add(string key, string? value)
-        {
-        }
-
-        bool IDictionary<string, string?>.Remove(string key) => false;
-
-        bool IDictionary<string, string?>.TryGetValue(string key, out string? value)
-        {
-            value = null;
-            return false;
+            _current = value;
         }
     }
 }
