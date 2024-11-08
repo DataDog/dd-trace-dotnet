@@ -87,6 +87,18 @@ public class RequestDataHelperTests
     }
 
     [Fact]
+    public void GivenADangerousBody_WhenGetKeys_NoException()
+    {
+        var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } }, false);
+        var form = request.Form;
+        request.ValidateInput();
+        // Getting keys should not throw an exception
+        _ = form.Keys;
+        EnableGranularValidation(request);
+        _ = request.Form.Keys;
+    }
+
+    [Fact]
     public void GivenADangerousBody_WhenGetValues_HelperAvoidsException()
     {
         var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
@@ -161,7 +173,7 @@ public class RequestDataHelperTests
         result.Should().NotBeNull();
     }
 
-    private static HttpRequest CreateRequestWithValidationAndBody(Dictionary<string, string> values)
+    private static HttpRequest CreateRequestWithValidationAndBody(Dictionary<string, string> values, bool validate = true)
     {
         var request = new HttpRequest("file", "http://localhost/benchmarks", string.Empty);
         var field = request.Form.GetType().BaseType.BaseType.GetField("_readOnly", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -172,7 +184,11 @@ public class RequestDataHelperTests
             request.Form.Add(pair.Key, pair.Value);
         }
 
-        request.ValidateInput();
+        if (validate)
+        {
+            request.ValidateInput();
+        }
+
         return request;
     }
 
