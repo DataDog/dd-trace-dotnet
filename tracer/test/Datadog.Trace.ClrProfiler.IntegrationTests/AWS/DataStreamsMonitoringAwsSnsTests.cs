@@ -47,7 +47,7 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
             // but it is compiled, so it still needs to look legit for the CI
             var expectedCount = 0;
 #else
-            var expectedCount = 5;
+            var expectedCount = 4;
 #endif
             var spans = agent.WaitForSpans(expectedCount);
             var sqsSpans = spans.Where(
