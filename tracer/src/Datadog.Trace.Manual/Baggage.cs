@@ -29,7 +29,13 @@ public static class Baggage
 
         set
         {
-            // auto-instrumentation will set Trace.Baggage.Current instead
+            // auto-instrumentation will add:
+            // Trace.Baggage.Current = value switch
+            // {
+            //     Trace.Baggage b => b,
+            //     null => new Trace.Baggage(),
+            //     _ => new Trace.Baggage(value)
+            // };
             _ = value;
         }
     }
