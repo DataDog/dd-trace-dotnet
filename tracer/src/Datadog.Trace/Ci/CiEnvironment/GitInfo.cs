@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.IO;
@@ -18,32 +19,32 @@ internal class GitInfo : IGitInfo
     /// <summary>
     /// Gets or sets Source root
     /// </summary>
-    public string SourceRoot { get; internal set; }
+    public string? SourceRoot { get; internal set; }
 
     /// <summary>
     /// Gets or sets Repository
     /// </summary>
-    public string Repository { get; internal set; }
+    public string? Repository { get; internal set; }
 
     /// <summary>
     /// Gets or sets Branch
     /// </summary>
-    public string Branch { get; internal set; }
+    public string? Branch { get; internal set; }
 
     /// <summary>
     /// Gets or sets Commit
     /// </summary>
-    public string Commit { get; internal set; }
+    public string? Commit { get; internal set; }
 
     /// <summary>
     /// Gets or sets Author Name
     /// </summary>
-    public string AuthorName { get; internal set; }
+    public string? AuthorName { get; internal set; }
 
     /// <summary>
     /// Gets or sets Author Email
     /// </summary>
-    public string AuthorEmail { get; internal set; }
+    public string? AuthorEmail { get; internal set; }
 
     /// <summary>
     /// Gets or sets Author Date
@@ -53,12 +54,12 @@ internal class GitInfo : IGitInfo
     /// <summary>
     /// Gets or sets Committer Name
     /// </summary>
-    public string CommitterName { get; internal set; }
+    public string? CommitterName { get; internal set; }
 
     /// <summary>
     /// Gets or sets Committer Email
     /// </summary>
-    public string CommitterEmail { get; internal set; }
+    public string? CommitterEmail { get; internal set; }
 
     /// <summary>
     /// Gets or sets Committer Date
@@ -68,7 +69,7 @@ internal class GitInfo : IGitInfo
     /// <summary>
     /// Gets or sets Commit Message
     /// </summary>
-    public string Message { get; internal set; }
+    public string? Message { get; internal set; }
 
     /// <summary>
     /// Gets a GitInfo from a folder
@@ -81,14 +82,14 @@ internal class GitInfo : IGitInfo
         foreach (var provider in _gitInfoProviders)
         {
             // Try to load git metadata from the folder
-            if (provider.TryGetFrom(dirInfo, out var gitInfo))
+            if (provider.TryGetFrom(dirInfo, out var gitInfo) && gitInfo != null)
             {
                 return gitInfo;
             }
 
             // If not let's try to find the .git folder in a parent folder
             var parentGitFolder = GetParentGitFolder(folder);
-            if (parentGitFolder != null && provider.TryGetFrom(parentGitFolder, out var pFolderGitInfo))
+            if (parentGitFolder != null && provider.TryGetFrom(parentGitFolder, out var pFolderGitInfo) && pFolderGitInfo != null)
             {
                 return pFolderGitInfo;
             }
@@ -110,7 +111,7 @@ internal class GitInfo : IGitInfo
         {
             foreach (var provider in _gitInfoProviders)
             {
-                if (provider.TryGetFrom(gitDirectory, out var gitInfo))
+                if (provider.TryGetFrom(gitDirectory, out var gitInfo) && gitInfo != null)
                 {
                     return gitInfo;
                 }
@@ -120,7 +121,7 @@ internal class GitInfo : IGitInfo
         return new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
     }
 
-    private static DirectoryInfo GetParentGitFolder(string innerFolder)
+    private static DirectoryInfo? GetParentGitFolder(string? innerFolder)
     {
         if (string.IsNullOrEmpty(innerFolder))
         {

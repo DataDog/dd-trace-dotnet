@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 
@@ -15,32 +16,32 @@ internal interface IGitInfo
     /// <summary>
     /// Gets Source root
     /// </summary>
-    string SourceRoot { get; }
+    string? SourceRoot { get; }
 
     /// <summary>
     /// Gets Repository
     /// </summary>
-    string Repository { get; }
+    string? Repository { get; }
 
     /// <summary>
     /// Gets Branch
     /// </summary>
-    string Branch { get; }
+    string? Branch { get; }
 
     /// <summary>
     /// Gets Commit
     /// </summary>
-    string Commit { get; }
+    string? Commit { get; }
 
     /// <summary>
     /// Gets Author Name
     /// </summary>
-    string AuthorName { get; }
+    string? AuthorName { get; }
 
     /// <summary>
     /// Gets Author Email
     /// </summary>
-    string AuthorEmail { get; }
+    string? AuthorEmail { get; }
 
     /// <summary>
     /// Gets Author Date
@@ -50,12 +51,12 @@ internal interface IGitInfo
     /// <summary>
     /// Gets Committer Name
     /// </summary>
-    string CommitterName { get; }
+    string? CommitterName { get; }
 
     /// <summary>
     /// Gets Committer Email
     /// </summary>
-    string CommitterEmail { get; }
+    string? CommitterEmail { get; }
 
     /// <summary>
     /// Gets Committer Date
@@ -65,5 +66,5 @@ internal interface IGitInfo
     /// <summary>
     /// Gets Commit Message
     /// </summary>
-    string Message { get; }
+    string? Message { get; }
 }

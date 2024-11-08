@@ -238,7 +238,7 @@ internal abstract class CIEnvironmentValues
         Message = null;
         SourceRoot = null;
 
-        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder));
+        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder!));
 
         // **********
         // Remove sensitive info from repository url

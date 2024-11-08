@@ -146,7 +146,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If we have the original commit message we use that.
                 if (string.IsNullOrWhiteSpace(Message) ||
                     (Message!.StartsWith("Merge", StringComparison.Ordinal) &&
-                     !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
+                     !gitInfo.Message!.StartsWith("Merge", StringComparison.Ordinal)))
                 {
                     Message = gitInfo.Message;
                 }
