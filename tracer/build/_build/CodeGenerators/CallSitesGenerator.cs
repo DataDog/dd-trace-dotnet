@@ -23,7 +23,7 @@ namespace CodeGenerators
                 RetrieveCallSites(aspectClasses, dllPath, tfm);
             }
 
-            GenerateCallSites(aspectClasses, outputPath);
+            GenerateFile(aspectClasses, outputPath);
         }
 
         internal static void RetrieveCallSites(Dictionary<string, AspectClass> aspectClasses, string dllPath, TargetFramework tfm)
@@ -235,7 +235,7 @@ namespace CodeGenerators
             }
         }
 
-        internal static void GenerateCallSites(Dictionary<string, AspectClass> aspectClasses, AbsolutePath outputPath)
+        internal static void GenerateFile(Dictionary<string, AspectClass> aspectClasses, AbsolutePath outputPath)
         {
             var sb = new StringBuilder();
             sb.AppendLine("""

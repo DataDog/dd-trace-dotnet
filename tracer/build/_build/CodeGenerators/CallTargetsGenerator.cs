@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators.Helpers;
@@ -21,45 +22,44 @@ namespace CodeGenerators
         {
             Serilog.Log.Debug("Generating CallTarget definitions file ...");
 
-            Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions = new Dictionary<CallTargetDefinitionSource, TargetFrameworks>();
+            Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets = new Dictionary<CallTargetDefinitionSource, TargetFrameworks>();
             foreach(var tfm in targetFrameworks)
             {
+                var tfmCategory = GetCategory(tfm);
                 var dllPath = getDllPath(tfm);
-                RetrieveCallTargets(definitions, dllPath, tfm);
+                // We check if the assembly file exists.
+                if (!File.Exists(dllPath))
+                {
+                    throw new FileNotFoundException($"Error extracting types for CallTarget generation. Assembly file was not found. Path: {dllPath}", dllPath);
+                }
+
+                // Open dll to extract all AspectsClass attributes.
+                using var assembly = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
+
+                RetrieveCallTargets(callTargets, assembly, tfmCategory);
+
+                RetrieveAdoNetCallTargets(callTargets, assembly, tfmCategory);
             }
 
-            GenerateCallSites(definitions, outputPath, version);
+
+            GenerateFile(callTargets, outputPath, version);
         }
 
-        internal static void RetrieveCallTargets(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, string dllPath, TargetFramework tfm)
+        internal static void RetrieveCallTargets(Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets, AssemblyDefinition assembly, TargetFrameworks tfmCategory)
         {
-            // We check if the assembly file exists.
-            if (!File.Exists(dllPath))
+            foreach (var type in EnumTypes(assembly.MainModule.Types))
             {
-                throw new FileNotFoundException($"Error extracting types for CallTarget generation. Assembly file was not found. Path: {dllPath}", dllPath);
-            }
-
-            var tfmCategory = GetCategory(tfm);
-
-            // Open dll to extract all AspectsClass attributes.
-            using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
-
-            foreach (var type in asmDefinition.MainModule.Types)
-            {
-                var attribute = type.CustomAttributes.FirstOrDefault(IsCallTargetClass);
-                if (attribute is null)
+                foreach (var attribute in type.CustomAttributes.Where(IsTargetAttribute))
                 {
-                    continue;
-                }
-
-                foreach (var definition in GetCallTargetDefinition(type, attribute))
-                {
-                    definitions.TryGetValue(definition, out var tfms);
-                    definitions[definition] = (tfms | tfmCategory);
+                    foreach (var definition in GetCallTargetDefinition(type, attribute))
+                    {
+                        callTargets.TryGetValue(definition, out var tfms);
+                        callTargets[definition] = (tfms | tfmCategory);
+                    }
                 }
             }
 
-            static bool IsCallTargetClass(Mono.Cecil.CustomAttribute attribute)
+            static bool IsTargetAttribute(Mono.Cecil.CustomAttribute attribute)
             {
                 return attribute.AttributeType.FullName.StartsWith("Datadog.Trace.ClrProfiler.InstrumentMethodAttribute");
             }
@@ -163,65 +163,286 @@ namespace CodeGenerators
                 }
                 return res;
             }
+        }
 
-            static string[] GetStringArray(object value)
+        internal static void RetrieveAdoNetCallTargets(Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets, AssemblyDefinition assembly, TargetFrameworks tfmCategory)
+        {
+            List<AssemblyCallTargetDefinitionSource> adoNetClientInstruments = new List<AssemblyCallTargetDefinitionSource>();
+            foreach (var attribute in assembly.MainModule.Assembly.CustomAttributes.Where(IsTargetClientInstrumentAttribute))
             {
-                if(value is CustomAttributeArgument[] values)
-                {
-                    return values.Select(v => Convert.ToString(v.Value)).ToArray();
-                }
-
-                return null;
+                adoNetClientInstruments.AddRange(GetAdoNetClientInstruments(attribute));
             }
 
-            static bool TryGetVersion(string version, ushort defaultValue, out (ushort Major, ushort Minor, ushort Patch) parsedVersion)
+            List<AdoNetSignature> adoNetSignatures = new List<AdoNetSignature>();
+            foreach (var type in EnumTypes(assembly.MainModule.Types))
             {
-                var major = defaultValue;
-                var minor = defaultValue;
-                var patch = defaultValue;
-
-                var parts = version.Split('.');
-                if (parts.Length >= 1 && !ParsePart(parts[0], defaultValue, out major))
+                foreach (var attribute in type.CustomAttributes.Where(IsTargetSignatureAttribute))
                 {
-                    parsedVersion = default;
-                    return false;
+                    adoNetSignatures.Add(GetAdoNetSignature(type, attribute));
                 }
+            }
 
-                if (parts.Length >= 2 && !ParsePart(parts[1], defaultValue, out minor))
+            var merged = MergeAdoNetAttributes(adoNetClientInstruments, adoNetSignatures);
+
+            foreach (var definition in merged)
+            {
+                callTargets.TryGetValue(definition, out var tfms);
+                callTargets[definition] = (tfms | tfmCategory);
+            }
+
+            static bool IsTargetClientInstrumentAttribute(Mono.Cecil.CustomAttribute attribute)
+            {
+                return attribute.AttributeType.FullName.Equals("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute");
+            }
+
+            static bool IsTargetSignatureAttribute(Mono.Cecil.CustomAttribute attribute)
+            {
+                return attribute.AttributeType.FullName.Equals("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute/AdoNetTargetSignatureAttribute");
+            }
+
+            static AdoNetSignature GetAdoNetSignature(TypeDefinition type, CustomAttribute attribute)
+            {
+                var hasMisconfiguredInput = false;
+
+                string? methodName = null;
+                string? returnTypeName = null;
+                string[]? parameterTypeNames = null;
+                int? integrationKind = null;
+                int? returnType = null;
+                string? callTargetType = null;
+
+                foreach (var namedArgument in attribute.Properties)
                 {
-                    parsedVersion = default;
-                    return false;
-                }
-
-                if (parts.Length >= 3 && !ParsePart(parts[2], defaultValue, out patch))
-                {
-                    parsedVersion = default;
-                    return false;
-                }
-
-                parsedVersion = (major, minor, patch);
-                return true;
-
-                static bool ParsePart(string part, ushort defaultValue, out ushort value)
-                {
-                    if (part == "*")
+                    switch (namedArgument.Name)
                     {
-                        value = defaultValue;
-                        return true;
+                        case nameof(AdoNetSignatureAttributeProperties.MethodName):
+                            methodName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetSignatureAttributeProperties.ReturnTypeName):
+                            returnTypeName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetSignatureAttributeProperties.ParameterTypeNames):
+                            parameterTypeNames = GetStringArray(namedArgument.Argument.Value);
+                            break;
+                        case nameof(AdoNetSignatureAttributeProperties.CallTargetType):
+                            callTargetType = ((TypeDefinition)namedArgument.Argument.Value).FullName;
+                            break;
+                        case nameof(AdoNetSignatureAttributeProperties.CallTargetIntegrationKind):
+                            integrationKind = namedArgument.Argument.Value as int?;
+                            break;
+                        case nameof(AdoNetSignatureAttributeProperties.ReturnType):
+                            returnType = namedArgument.Argument.Value as int?;
+                            break;
+                        default:
+                            hasMisconfiguredInput = true;
+                            break;
                     }
 
-                    if (ushort.TryParse(part, out value))
+                    if (hasMisconfiguredInput)
                     {
-                        return true;
+                        break;
+                    }
+                }
+
+                return new AdoNetSignature(
+                    className: type.FullName,
+                    targetMethodName: methodName!,
+                    targetReturnType: returnTypeName,
+                    targetParameterTypes: parameterTypeNames ?? Array.Empty<string>(),
+                    instrumentationTypeName: callTargetType!.ToString(),
+                    callTargetIntegrationKind: integrationKind ?? 0,
+                    returnType: returnType ?? 0);
+            }
+
+            static List<AssemblyCallTargetDefinitionSource> GetAdoNetClientInstruments(CustomAttribute attribute)
+            {
+                List<AssemblyCallTargetDefinitionSource> res = new List<AssemblyCallTargetDefinitionSource>();
+                var hasMisconfiguredInput = false;
+
+                string? assemblyName = null;
+                string? integrationName = null;
+                string? typeName = null;
+                string? minimumVersion = null;
+                string? maximumVersion = null;
+                string? dataReaderTypeName = null;
+                string? dataReaderTaskTypeName = null;
+                string[]? signatureAttributeTypes = null;
+
+                foreach (var namedArgument in attribute.Properties)
+                {
+                    switch (namedArgument.Name)
+                    {
+                        case nameof(AdoNetInstrumentAttributeProperties.AssemblyName):
+                            assemblyName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.TypeName):
+                            typeName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.MinimumVersion):
+                            minimumVersion = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.MaximumVersion):
+                            maximumVersion = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.IntegrationName):
+                            integrationName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.DataReaderType):
+                            dataReaderTypeName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.DataReaderTaskType):
+                            dataReaderTaskTypeName = namedArgument.Argument.Value?.ToString();
+                            break;
+                        case nameof(AdoNetInstrumentAttributeProperties.TargetMethodAttributes):
+                            signatureAttributeTypes = GetStringArray(namedArgument.Argument.Value);
+                            break;
+                        default:
+                            hasMisconfiguredInput = true;
+                            break;
                     }
 
-                    value = defaultValue;
-                    return false;
+                    if (hasMisconfiguredInput)
+                    {
+                        break;
+                    }
                 }
+
+                (ushort Major, ushort Minor, ushort Patch) minVersion = default;
+                (ushort Major, ushort Minor, ushort Patch) maxVersion = default;
+                TryGetVersion(minimumVersion, ushort.MinValue, out minVersion);
+                TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion);
+
+                foreach (var signatureAttributeName in signatureAttributeTypes!)
+                {
+                    res.Add(
+                        new AssemblyCallTargetDefinitionSource(
+                            signatureAttributeName: signatureAttributeName,
+                            integrationName: integrationName!,
+                            assemblyName: assemblyName!,
+                            targetTypeName: typeName!,
+                            minimumVersion: minVersion,
+                            maximumVersion: maxVersion,
+                            isAdoNetIntegration: true,
+                            instrumentationCategory: InstrumentationCategory.Tracing,
+                            dataReaderTypeName,
+                            dataReaderTaskTypeName));
+                }
+
+                return res;
+            }
+
+            static List<CallTargetDefinitionSource> MergeAdoNetAttributes(List<AssemblyCallTargetDefinitionSource> attributes, List<AdoNetSignature> signatures)
+            {
+                List<CallTargetDefinitionSource> res = new List<CallTargetDefinitionSource>();
+
+                foreach (var attribute in attributes)
+                {
+                    foreach (var signature in signatures)
+                    {
+                        if (signature.ClassName == attribute.SignatureAttributeName)
+                        {
+                            // found it
+                            var returnTypeName = signature.ReturnType switch
+                            {
+                                1 => attribute.DataReaderTypeName,
+                                2 => attribute.DataReaderTaskTypeName,
+                                _ => signature.TargetReturnType
+                            };
+
+                            var callTargetSource =
+                                new CallTargetDefinitionSource(
+                                    integrationName: attribute.IntegrationName!,
+                                    assemblyName: attribute.AssemblyName!,
+                                    targetTypeName: attribute.TargetTypeName!,
+                                    targetMethodName: signature.TargetMethodName,
+                                    targetReturnType: returnTypeName!,
+                                    targetParameterTypes: signature.TargetParameterTypes.AsArray() ?? [],
+                                    minimumVersion: attribute.MinimumVersion,
+                                    maximumVersion: attribute.MaximumVersion,
+                                    instrumentationTypeName: signature.InstrumentationTypeName,
+                                    integrationKind: signature.CallTargetIntegrationKind,
+                                    isAdoNetIntegration: true,
+                                    instrumentationCategory: InstrumentationCategory.Tracing);
+
+                            res.Add(callTargetSource);
+                        }
+                    }
+                }
+
+                return res;
             }
         }
 
-        internal static void GenerateCallSites(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath, string version)
+        static IEnumerable<TypeDefinition> EnumTypes(IEnumerable<TypeDefinition> types)
+        {
+            foreach (var type in types)
+            {
+                foreach (var nestedType in EnumTypes(type.NestedTypes))
+                {
+                    yield return nestedType;
+                }
+
+                yield return type;
+            }
+        }
+
+        static string[] GetStringArray(object value)
+        {
+            if (value is CustomAttributeArgument[] values)
+            {
+                return values.Select(v => Convert.ToString(v.Value)).ToArray();
+            }
+
+            return null;
+        }
+
+        static bool TryGetVersion(string version, ushort defaultValue, out (ushort Major, ushort Minor, ushort Patch) parsedVersion)
+        {
+            var major = defaultValue;
+            var minor = defaultValue;
+            var patch = defaultValue;
+
+            var parts = version.Split('.');
+            if (parts.Length >= 1 && !ParsePart(parts[0], defaultValue, out major))
+            {
+                parsedVersion = default;
+                return false;
+            }
+
+            if (parts.Length >= 2 && !ParsePart(parts[1], defaultValue, out minor))
+            {
+                parsedVersion = default;
+                return false;
+            }
+
+            if (parts.Length >= 3 && !ParsePart(parts[2], defaultValue, out patch))
+            {
+                parsedVersion = default;
+                return false;
+            }
+
+            parsedVersion = (major, minor, patch);
+            return true;
+
+            static bool ParsePart(string part, ushort defaultValue, out ushort value)
+            {
+                if (part == "*")
+                {
+                    value = defaultValue;
+                    return true;
+                }
+
+                if (ushort.TryParse(part, out value))
+                {
+                    return true;
+                }
+
+                value = defaultValue;
+                return false;
+            }
+        }
+
+        internal static void GenerateFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath, string version)
         {
             var sb = new StringBuilder();
             sb.AppendLine("""
@@ -393,6 +614,71 @@ namespace CodeGenerators
             public InstrumentationCategory InstrumentationCategory { get; }
         }
 
+        internal record AdoNetSignature
+        {
+            public AdoNetSignature(string className, string targetMethodName, string? targetReturnType, string[] targetParameterTypes, string instrumentationTypeName, int callTargetIntegrationKind, int returnType)
+            {
+                ClassName = className;
+                TargetMethodName = targetMethodName;
+                TargetReturnType = targetReturnType;
+                TargetParameterTypes = new(targetParameterTypes);
+                InstrumentationTypeName = instrumentationTypeName;
+                CallTargetIntegrationKind = callTargetIntegrationKind;
+                ReturnType = returnType;
+            }
+
+            public string ClassName { get; }
+
+            public string TargetMethodName { get; }
+
+            public string? TargetReturnType { get; }
+
+            public EquatableArray<string> TargetParameterTypes { get; }
+
+            public string InstrumentationTypeName { get; }
+
+            public int CallTargetIntegrationKind { get; }
+
+            public int ReturnType { get; }
+        }
+
+        internal record AssemblyCallTargetDefinitionSource
+        {
+            public AssemblyCallTargetDefinitionSource(string signatureAttributeName, string integrationName, string assemblyName, string targetTypeName, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory, string? dataReaderTypeName, string? dataReaderTaskTypeName)
+            {
+                SignatureAttributeName = signatureAttributeName;
+                IntegrationName = integrationName;
+                AssemblyName = assemblyName;
+                TargetTypeName = targetTypeName;
+                MinimumVersion = minimumVersion;
+                MaximumVersion = maximumVersion;
+                IsAdoNetIntegration = isAdoNetIntegration;
+                InstrumentationCategory = instrumentationCategory;
+                DataReaderTypeName = dataReaderTypeName;
+                DataReaderTaskTypeName = dataReaderTaskTypeName;
+            }
+
+            public string SignatureAttributeName { get; }
+
+            public string IntegrationName { get; }
+
+            public string AssemblyName { get; }
+
+            public string TargetTypeName { get; }
+
+            public (ushort Major, ushort Minor, ushort Patch) MinimumVersion { get; }
+
+            public (ushort Major, ushort Minor, ushort Patch) MaximumVersion { get; }
+
+            public bool IsAdoNetIntegration { get; }
+
+            public InstrumentationCategory InstrumentationCategory { get; }
+
+            public string? DataReaderTypeName { get; }
+
+            public string? DataReaderTaskTypeName { get; }
+        }
+
         private static class InstrumentAttributeProperties
         {
             public const string AssemblyName = nameof(AssemblyName);
@@ -409,5 +695,28 @@ namespace CodeGenerators
             public const string CallTargetIntegrationKind = nameof(CallTargetIntegrationKind);
             public const string InstrumentationCategory = nameof(InstrumentationCategory);
         }
+
+        private static class AdoNetSignatureAttributeProperties
+        {
+            public const string MethodName = nameof(MethodName);
+            public const string ReturnTypeName = nameof(ReturnTypeName);
+            public const string ParameterTypeNames = nameof(ParameterTypeNames);
+            public const string CallTargetType = nameof(CallTargetType);
+            public const string CallTargetIntegrationKind = nameof(CallTargetIntegrationKind);
+            public const string ReturnType = nameof(ReturnType);
+        }
+
+        private static class AdoNetInstrumentAttributeProperties
+        {
+            public const string AssemblyName = nameof(AssemblyName);
+            public const string TypeName = nameof(TypeName);
+            public const string MinimumVersion = nameof(MinimumVersion);
+            public const string MaximumVersion = nameof(MaximumVersion);
+            public const string IntegrationName = nameof(IntegrationName);
+            public const string DataReaderType = nameof(DataReaderType);
+            public const string DataReaderTaskType = nameof(DataReaderTaskType);
+            public const string TargetMethodAttributes = nameof(TargetMethodAttributes);
+        }
+
     }
 }
