@@ -54,6 +54,8 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ReadyToRunManualAndAutomatic()
     {
+        // MacOs doesn't work with Ready2Run apparently
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SetEnvironmentVariable("READY2RUN_ENABLED", "1");
         await RunTest(usePublishWithRID: true);
     }
