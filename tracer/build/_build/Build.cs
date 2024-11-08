@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using CodeGenerators;
 using Colorful;
 using Nuke.Common;
 using Nuke.Common.CI;
@@ -604,6 +605,8 @@ partial class Build : NukeBuild
             {
                 Logger.Information("Debugging...");
                 // Execute whatever you want to debug here
+                var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
             });
-    */
+    //*/
 }
