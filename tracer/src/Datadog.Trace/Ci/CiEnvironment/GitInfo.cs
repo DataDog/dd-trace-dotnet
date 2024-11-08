@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -72,31 +73,28 @@ internal class GitInfo : IGitInfo
     public string? Message { get; internal set; }
 
     /// <summary>
+    /// Gets parsing errors
+    /// </summary>
+    public List<string> Errors { get; } = new();
+
+    /// <summary>
     /// Gets a GitInfo from a folder
     /// </summary>
     /// <param name="folder">Target folder to retrieve the git info</param>
     /// <returns>Git info</returns>
     public static IGitInfo GetFrom(string folder)
     {
-        var dirInfo = new DirectoryInfo(folder);
         foreach (var provider in _gitInfoProviders)
         {
             // Try to load git metadata from the folder
-            if (provider.TryGetFrom(dirInfo, out var gitInfo) && gitInfo != null)
+            if (provider.TryGetFrom(folder, out var gitInfo) && gitInfo != null)
             {
                 return gitInfo;
-            }
-
-            // If not let's try to find the .git folder in a parent folder
-            var parentGitFolder = GetParentGitFolder(folder);
-            if (parentGitFolder != null && provider.TryGetFrom(parentGitFolder, out var pFolderGitInfo) && pFolderGitInfo != null)
-            {
-                return pFolderGitInfo;
             }
         }
 
         // Return the partial gitInfo instance with the initial source root
-        return new GitInfo { SourceRoot = dirInfo.Parent?.FullName };
+        return new GitInfo { SourceRoot = new DirectoryInfo(folder).Parent?.FullName };
     }
 
     /// <summary>
@@ -111,7 +109,7 @@ internal class GitInfo : IGitInfo
         {
             foreach (var provider in _gitInfoProviders)
             {
-                if (provider.TryGetFrom(gitDirectory, out var gitInfo) && gitInfo != null)
+                if (provider.TryGetFrom(gitDirectory.FullName, out var gitInfo) && gitInfo != null)
                 {
                     return gitInfo;
                 }
@@ -121,7 +119,7 @@ internal class GitInfo : IGitInfo
         return new GitInfo { SourceRoot = gitDirectory?.Parent?.FullName };
     }
 
-    private static DirectoryInfo? GetParentGitFolder(string? innerFolder)
+    public static DirectoryInfo? GetParentGitFolder(string? innerFolder)
     {
         if (string.IsNullOrEmpty(innerFolder))
         {

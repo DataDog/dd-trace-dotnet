@@ -13,5 +13,5 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// </summary>
 internal interface IGitInfoProvider
 {
-    bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo);
+    bool TryGetFrom(string folder, out IGitInfo? gitInfo);
 }

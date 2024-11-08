@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -67,4 +68,9 @@ internal interface IGitInfo
     /// Gets Commit Message
     /// </summary>
     string? Message { get; }
+
+    /// <summary>
+    /// Gets parsing errors
+    /// </summary>
+    public List<string> Errors { get; }
 }

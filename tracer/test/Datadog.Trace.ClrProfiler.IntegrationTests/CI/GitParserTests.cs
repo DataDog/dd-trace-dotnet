@@ -115,36 +115,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             Assert.True(Directory.Exists(testItem.GitFolderPath));
 
-            try
+            // Let's try with the git info provider based on git commands
+            AssertGitInfo(testItem, GitCommandGitInfoProvider.Instance);
+
+            // Let's try with the git info provider based on manual parsing of the git folder
+            AssertGitInfo(testItem, ManualParserGitInfoProvider.Instance);
+
+            static void AssertGitInfo(TestItem testItem, IGitInfoProvider gitInfoProvider)
             {
-                // Let's try with the git info provider based on git commands
-                GitInfo.SetGitInfoProviders(GitCommandGitInfoProvider.Instance);
-                AssertGitInfo(testItem);
-
-                // Let's try with the git info provider based on manual parsing of the git folder
-                GitInfo.SetGitInfoProviders(ManualParserGitInfoProvider.Instance);
-                AssertGitInfo(testItem);
-
-                static void AssertGitInfo(TestItem testItem)
+                if (!gitInfoProvider.TryGetFrom(testItem.GitFolderPath, out var gitInfo))
                 {
-                    var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
-                    Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
-                    Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
-                    Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
-                    Assert.Equal(testItem.Branch, gitInfo.Branch);
-                    Assert.Equal(testItem.Commit, gitInfo.Commit);
-                    Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
-                    Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
-                    Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
-                    Assert.NotNull(gitInfo.Message);
-                    Assert.Equal(testItem.Repository, gitInfo.Repository);
-                    Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
+                    var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
+                    throw new Exception($"Error parsing git info from provider: {gitInfoProvider.GetType().Name}{Environment.NewLine}{errors}");
                 }
-            }
-            finally
-            {
-                // Revert the default providers
-                GitInfo.SetGitInfoProviders(GitCommandGitInfoProvider.Instance, ManualParserGitInfoProvider.Instance);
+
+                Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
+                Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
+                Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
+                Assert.Equal(testItem.Branch, gitInfo.Branch);
+                Assert.Equal(testItem.Commit, gitInfo.Commit);
+                Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
+                Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
+                Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
+                Assert.NotNull(gitInfo.Message);
+                Assert.Equal(testItem.Repository, gitInfo.Repository);
+                Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
             }
         }
 

@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
-internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
+internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandGitInfoProvider));
 
@@ -22,7 +22,13 @@ internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
 
     public static IGitInfoProvider Instance { get; } = new GitCommandGitInfoProvider();
 
-    public bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo)
+    private static DateTimeOffset UnixTimeStampToDateTime(long unixTimeStamp)
+    {
+        const long unixEpochTicks = TimeSpan.TicksPerDay * 719162; // 621,355,968,000,000,000
+        return new DateTimeOffset((unixTimeStamp * TimeSpan.TicksPerSecond) + unixEpochTicks, TimeSpan.Zero);
+    }
+
+    protected override bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo)
     {
         var localGitInfo = new GitInfo
         {
@@ -44,6 +50,10 @@ internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
             {
                 localGitInfo.Repository = repositoryOutput.Output.Trim();
             }
+            else
+            {
+                localGitInfo.Errors.Add($"Error getting repository URL: {repositoryOutput?.Error}");
+            }
 
             // Get the branch name
             var branchOutput = ProcessHelpers.RunCommand(
@@ -56,6 +66,10 @@ internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
             {
                 localGitInfo.Branch = branchName;
             }
+            else
+            {
+                localGitInfo.Errors.Add($"Error getting branch name: {branchOutput?.Error}");
+            }
 
             // Get the remaining data from the log -1
             var gitLogOutput = ProcessHelpers.RunCommand(
@@ -66,26 +80,27 @@ internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
                     useWhereIsIfFileNotFound: true));
             if (gitLogOutput?.ExitCode != 0)
             {
+                localGitInfo.Errors.Add($"Error getting git log: {gitLogOutput?.Error}");
                 return false;
             }
 
             var gitLogDataArray = gitLogOutput.Output.Split(["|,|"], StringSplitOptions.None);
             if (gitLogDataArray.Length < 8)
             {
-                ThrowHelper.ThrowException("Git log output does not contain the expected number of fields");
+                localGitInfo.Errors.Add($"Git log output does not contain the expected number of fields: {gitLogOutput.Output}");
                 return false;
             }
 
             // Parse author and committer dates from Unix timestamp
             if (!long.TryParse(gitLogDataArray[1], out var authorUnixDate))
             {
-                ThrowHelper.ThrowException("Error parsing author date from git log output");
+                localGitInfo.Errors.Add("Error parsing author date from git log output");
                 return false;
             }
 
             if (!long.TryParse(gitLogDataArray[4], out var committerUnixDate))
             {
-                ThrowHelper.ThrowException("Error parsing committer date from git log output");
+                localGitInfo.Errors.Add("Error parsing committer date from git log output");
                 return false;
             }
 
@@ -110,16 +125,10 @@ internal sealed class GitCommandGitInfoProvider : IGitInfoProvider
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while trying to get git information from the repository");
+            localGitInfo.Errors.Add($"Error while trying to get git information from the repository: {ex}");
             return false;
         }
 
         return true;
-    }
-
-    private static DateTimeOffset UnixTimeStampToDateTime(long unixTimeStamp)
-    {
-        const long unixEpochTicks = TimeSpan.TicksPerDay * 719162; // 621,355,968,000,000,000
-        return new DateTimeOffset((unixTimeStamp * TimeSpan.TicksPerSecond) + unixEpochTicks, TimeSpan.Zero);
     }
 }
