@@ -43,6 +43,6 @@ public:
     uint64_t EndTimestamp;
     int32_t StatusCode;
     std::string Error;
-    std::string StopThreadId;
-    // TODO: check with BE if we also need the Stop thread name
+    std::string EndThreadId;
+    // TODO: check with BE if we also need the thread name
 };
