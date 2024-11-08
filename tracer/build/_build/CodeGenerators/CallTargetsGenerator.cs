@@ -356,7 +356,7 @@ namespace CodeGenerators
                                     targetTypeName: attribute.TargetTypeName!,
                                     targetMethodName: signature.TargetMethodName,
                                     targetReturnType: returnTypeName!,
-                                    targetParameterTypes: signature.TargetParameterTypes.AsArray() ?? [],
+                                    targetParameterTypes: signature.TargetParameterTypes.AsArray(),
                                     minimumVersion: attribute.MinimumVersion,
                                     maximumVersion: attribute.MaximumVersion,
                                     instrumentationTypeName: signature.InstrumentationTypeName,
@@ -580,7 +580,7 @@ namespace CodeGenerators
                 TargetTypeName = targetTypeName;
                 TargetMethodName = targetMethodName;
                 TargetReturnType = targetReturnType;
-                TargetParameterTypes = new EquatableArray<string>(targetParameterTypes);
+                TargetParameterTypes = new EquatableArray<string>(targetParameterTypes ?? Array.Empty<string>());
                 MinimumVersion = minimumVersion;
                 MaximumVersion = maximumVersion;
                 InstrumentationTypeName = instrumentationTypeName;
