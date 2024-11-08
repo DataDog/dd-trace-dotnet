@@ -14,8 +14,6 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandGitInfoProvider));
-
     private GitCommandGitInfoProvider()
     {
     }
@@ -39,6 +37,18 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
         try
         {
+            // Ensure we have permissions to read the git directory
+            var safeDirectory = ProcessHelpers.RunCommand(
+                new ProcessHelpers.Command(
+                    cmd: "git",
+                    arguments: $"config --global --add safe.directory {gitDirectory.FullName}",
+                    workingDirectory: gitDirectory.FullName,
+                    useWhereIsIfFileNotFound: true));
+            if (safeDirectory?.ExitCode != 0)
+            {
+                localGitInfo.Errors.Add($"Error setting safe.directory: {safeDirectory?.Error}");
+            }
+
             // Get the repository URL
             var repositoryOutput = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
