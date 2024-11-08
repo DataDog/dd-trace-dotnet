@@ -50,6 +50,11 @@ namespace Datadog.Trace.Propagators
                 return W3CTraceContextPropagator.Instance;
             }
 
+            if (string.Equals(headerStyle, ContextPropagationHeaderStyle.W3CBaggage, StringComparison.OrdinalIgnoreCase))
+            {
+                return W3CBaggagePropagator.Instance;
+            }
+
             if (string.Equals(headerStyle, ContextPropagationHeaderStyle.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(headerStyle, ContextPropagationHeaderStyle.Deprecated.B3MultipleHeaders, StringComparison.OrdinalIgnoreCase))
             {

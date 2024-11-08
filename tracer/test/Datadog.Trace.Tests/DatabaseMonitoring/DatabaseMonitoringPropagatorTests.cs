@@ -205,10 +205,12 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var commandMock = new Mock<IDbCommand>();
             var parameterMock = new Mock<IDbDataParameter>();
             connectionMock.Setup(c => c.CreateCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c.State).Returns(ConnectionState.Open);
             commandMock.SetupSet(c => c.CommandText = It.IsAny<string>())
                        .Callback<string>(value => sql = value);
             commandMock.Setup(c => c.CreateParameter()).Returns(parameterMock.Object);
             commandMock.SetupGet(c => c.Parameters).Returns(Mock.Of<IDataParameterCollection>());
+            commandMock.SetupGet(c => c.Connection).Returns(connectionMock.Object);
             parameterMock.SetupSet(p => p.Value = It.IsAny<byte[]>())
                          .Callback<object>(value => context = (byte[])value);
 
@@ -217,7 +219,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
                 var span = tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
                 span.Context.TraceContext.SetSamplingPriority(samplingPriority);
 
-                DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
+                DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, commandMock.Object, span);
 
                 if (shouldInject)
                 {

@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           mkdir debug_symbols
-          tar -zxcf linux-native-symbols.tar.gz -C debug_symbols
+          tar -zxvf linux-native-symbols.tar.gz -C debug_symbols
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols

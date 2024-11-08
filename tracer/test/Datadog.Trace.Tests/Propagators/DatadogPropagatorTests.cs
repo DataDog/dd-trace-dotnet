@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Propagators
             Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 [ContextPropagationHeaderStyle.Datadog],
                 [ContextPropagationHeaderStyle.Datadog],
-                false);
+                propagationExtractFirst: false);
 
             TestBaggage = new Baggage
             {

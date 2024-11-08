@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
@@ -26,7 +27,7 @@ internal static class AwsSqsHandlerCommon
         }
 
         // we can't use generic constraints for this duck typing, because we need the original type
-        // for the InjectHeadersIntoMessage<TSendMessageRequest> call below
+        // for the Inject call below
         var requestProxy = request.DuckCast<IAmazonSQSRequestWithQueueUrl>();
 
         var scope = AwsSqsCommon.CreateScope(Tracer.Instance, sendType.OperationName, out var tags, spanKind: SpanKinds.Producer);
@@ -57,7 +58,7 @@ internal static class AwsSqsHandlerCommon
 
     private static void InjectForSingleMessage<TSendMessageRequest>(DataStreamsManager? dataStreamsManager, TSendMessageRequest request, Scope scope, string queueName)
     {
-        var requestProxy = request.DuckCast<ISendMessageRequest>();
+        var requestProxy = request.DuckCast<IContainsMessageAttributes>();
         if (requestProxy == null)
         {
             return;
@@ -69,13 +70,13 @@ internal static class AwsSqsHandlerCommon
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
         }
 
-        ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.Span.Context, dataStreamsManager);
+        ContextPropagation.InjectHeadersIntoMessage(requestProxy, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageRequest>.Instance);
     }
 
     private static void InjectForBatch<TSendMessageBatchRequest>(DataStreamsManager? dataStreamsManager, TSendMessageBatchRequest request, Scope scope, string queueName)
     {
         var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
-        if (requestProxy == null)
+        if (requestProxy == null || requestProxy.Entries == null)
         {
             return;
         }
@@ -90,7 +91,7 @@ internal static class AwsSqsHandlerCommon
                 scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 // this needs to be done for context propagation even when DSM is disabled
                 // (when DSM is enabled, it injects the pathway context on top of the trace context)
-                ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope.Span.Context, dataStreamsManager);
+                ContextPropagation.InjectHeadersIntoMessage(entry, scope.Span.Context, dataStreamsManager, CachedMessageHeadersHelper<TSendMessageBatchRequest>.Instance);
             }
         }
     }
@@ -119,11 +120,11 @@ internal static class AwsSqsHandlerCommon
         // request the message attributes that a datadog instrumentation might have set when sending
         if (request.MessageAttributeNames is null)
         {
-            request.MessageAttributeNames = [ContextPropagation.SqsKey];
+            request.MessageAttributeNames = [ContextPropagation.InjectionKey];
         }
         else
         {
-            request.MessageAttributeNames.AddDistinct(ContextPropagation.SqsKey);
+            request.MessageAttributeNames.AddDistinct(ContextPropagation.InjectionKey);
         }
 
         if (request.AttributeNames is null)
@@ -161,7 +162,7 @@ internal static class AwsSqsHandlerCommon
                         int.TryParse(sentTimeStr, out sentTime);
                     }
 
-                    var adapter = AwsSqsHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
+                    var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(message.MessageAttributes);
                     var parentPathway = dataStreamsManager.ExtractPathwayContext(adapter);
                     span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, sentTime, parentPathway);
                 }

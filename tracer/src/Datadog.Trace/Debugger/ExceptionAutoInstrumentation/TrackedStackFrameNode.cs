@@ -124,7 +124,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (members == null)
             {
-                members = new MethodScopeMembers(0, 0);
+                members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
 
             var limitInfo = new CaptureLimitInfo(
@@ -164,7 +164,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             if (Members == null)
             {
-                Members = new MethodScopeMembers(0, 0);
+                Members = new MethodScopeMembers(new MethodScopeMembersParameters(0, 0));
             }
 
             type = (type.IsGenericTypeDefinition ? value?.GetType() : type) ?? type;

@@ -171,7 +171,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.5.0
+  ToolVersion: 3.6.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -2037,6 +2037,7 @@ stages:
     - powershell: |
         mkdir -Force ./artifacts/build_data/snapshots
         mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
+        mkdir -Force ./artifacts/build_data/logs/MultipleAppsInDomain
         docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
 
         docker compose -f docker-compose.windows.yml build `
@@ -2044,7 +2045,12 @@ stages:
             --build-arg ENABLE_32_BIT=$(enable32bit) `
             IntegrationTests.IIS.LoaderOptimizationStartup
 
-        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.MultipleAppsInDomain
+
+        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup IntegrationTests.IIS.MultipleAppsInDomain
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
