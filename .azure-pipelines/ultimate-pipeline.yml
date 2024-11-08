@@ -1,5 +1,5 @@
 # Change the default BuildId to not include a '.' in the name (use '_' instead)
-name: $(Date:yyyyMMdd)_$(Rev:rr)
+name: $(Date:yyyyMMdd)-$(Rev:rr)
 
 trigger:
   branches:
@@ -141,7 +141,7 @@ variables:
   IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   IntegrationTestSampleName:  $(TEST_SAMPLE_NAME)
   IntegrationTestFilter:  $(TEST_FILTER)
-  DockerComposeProjectName: ddtrace_$(Build.BuildNumber)
+  DockerComposeProjectName: ddtrace-$(Build.BuildNumber)
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
