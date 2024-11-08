@@ -3,6 +3,11 @@
 
 #include "NetworkRequestInfo.h"
 
-NetworkRequestInfo::NetworkRequestInfo()
+NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
+    :
+    Url(std::move(url)),
+    StartTimestamp(startTimestamp),
+    EndTimestamp(0),
+    StatusCode(0)
 {
 }

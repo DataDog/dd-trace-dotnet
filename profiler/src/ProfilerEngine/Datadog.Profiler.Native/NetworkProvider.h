@@ -53,7 +53,8 @@ public:
    void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
 
 private:
-   bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity);
+   bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
+   bool CaptureThreadInfo(NetworkRequestInfo& info);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -66,6 +67,6 @@ private:
 
     // TODO: use NetworkActivity instead of uint64_t for the key
     //       when the exact matching logic from Guid is understood
-    std::unordered_map<NetworkActivity, NetworkRequestInfo> _activities;
+    std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 };
 
