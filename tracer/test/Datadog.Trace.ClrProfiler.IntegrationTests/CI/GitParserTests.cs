@@ -144,18 +144,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [SkippableFact]
         public void GitCommandGitInfoProviderTest()
         {
-            Assert.True(GitCommandGitInfoProvider.Instance.TryGetFrom(Environment.CurrentDirectory, out var gitInfo));
-            Assert.NotNull(gitInfo.AuthorDate);
-            Assert.NotNull(gitInfo.AuthorEmail);
-            Assert.NotNull(gitInfo.AuthorName);
-            Assert.NotNull(gitInfo.Branch);
-            Assert.NotNull(gitInfo.Commit);
-            Assert.NotNull(gitInfo.CommitterDate);
-            Assert.NotNull(gitInfo.CommitterEmail);
-            Assert.NotNull(gitInfo.CommitterName);
-            Assert.NotNull(gitInfo.Message);
-            Assert.NotNull(gitInfo.Repository);
-            Assert.NotNull(gitInfo.SourceRoot);
+            if (GitCommandGitInfoProvider.Instance.TryGetFrom(Environment.CurrentDirectory, out var gitInfo))
+            {
+                Assert.NotNull(gitInfo.AuthorDate);
+                Assert.NotNull(gitInfo.AuthorEmail);
+                Assert.NotNull(gitInfo.AuthorName);
+                Assert.NotNull(gitInfo.Branch);
+                Assert.NotNull(gitInfo.Commit);
+                Assert.NotNull(gitInfo.CommitterDate);
+                Assert.NotNull(gitInfo.CommitterEmail);
+                Assert.NotNull(gitInfo.CommitterName);
+                Assert.NotNull(gitInfo.Message);
+                Assert.NotNull(gitInfo.Repository);
+                Assert.NotNull(gitInfo.SourceRoot);
+            }
+            else
+            {
+                var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
+                throw new Exception($"Error parsing git info from provider: {nameof(GitCommandGitInfoProvider)}{Environment.NewLine}{errors}");
+            }
         }
 
         public class TestItem : IXunitSerializable
