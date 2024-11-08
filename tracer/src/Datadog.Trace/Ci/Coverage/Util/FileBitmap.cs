@@ -17,6 +17,7 @@ using System.Runtime.Intrinsics.X86;
 #if NET6_0
 using System.Runtime.Intrinsics.Arm;
 #endif
+using System.Text;
 using Datadog.Trace.Util;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
@@ -874,13 +875,13 @@ internal unsafe ref struct FileBitmap
     /// <returns>A string showing the bitmap in binary form.</returns>
     public override string ToString()
     {
-        var sb = StringBuilderCache.Acquire();
+        var sb = new StringBuilder();
         for (var i = 0; i < _size; i++)
         {
             sb.Append(Convert.ToString(_bitmap[i], 2).PadLeft(8, '0'));
         }
 
-        return StringBuilderCache.GetStringAndRelease(sb);
+        return sb.ToString();
     }
 
     /// <summary>
