@@ -54,14 +54,7 @@ void TimerCreateCpuProfiler::RegisterThread(std::shared_ptr<ManagedThreadInfo> t
 void TimerCreateCpuProfiler::UnregisterThread(std::shared_ptr<ManagedThreadInfo> threadInfo)
 {
     std::shared_lock lock(_registerLock);
-
-    auto timerId = threadInfo->SetTimerId(-1);
-
-    if (timerId != -1)
-    {
-        Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
-        syscall(__NR_timer_delete, timerId);
-    }
+    UnregisterThreadImpl(threadInfo.get());
 }
 
 const char* TimerCreateCpuProfiler::GetName()
@@ -95,8 +88,16 @@ bool TimerCreateCpuProfiler::StartImpl()
 
 bool TimerCreateCpuProfiler::StopImpl()
 {
-    _pSignalManager->UnRegisterHandler();
+    {
+        std::unique_lock lock(_registerLock);
+
+        // We have to remove all timers before unregistering the handler for SIGPROF.
+        // Otherwise, the process will end with exit code 155 (128 + 27 => 27 being SIGPROF value)
+        _pManagedThreadsList->ForEach([this](ManagedThreadInfo* thread) { UnregisterThreadImpl(thread); });
+    }
+
     Instance = nullptr;
+    _pSignalManager->UnRegisterHandler();
 
     return true;
 }
@@ -112,6 +113,46 @@ bool TimerCreateCpuProfiler::CollectStackSampleSignalHandler(int sig, siginfo_t*
     return instance->Collect(ucontext);
 }
 
+// This symbol is defined in the Datadog.Linux.ApiWrapper. It allows us to check if the thread to be profiled
+// contains a frame of a function that might cause a deadlock.
+extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
+
+bool TimerCreateCpuProfiler::CanCollect(void* ctx)
+{
+    // TODO (in another PR): add metrics about reasons we could not collect
+    if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
+    {
+        return false;
+    }
+
+    auto* context = reinterpret_cast<ucontext_t*>(ctx);
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    if (sigismember(&(context->uc_sigmask), SIGSEGV) == 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+struct ErrnoSaveAndRestore
+{
+public:
+    ErrnoSaveAndRestore() :
+        _oldErrno{errno}
+    {
+    }
+    ~ErrnoSaveAndRestore()
+    {
+        errno = _oldErrno;
+    }
+
+private:
+    int _oldErrno;
+};
+
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
@@ -121,7 +162,12 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    auto* context = reinterpret_cast<unw_context_t*>(ctx);
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    ErrnoSaveAndRestore errnoScope;
+    if (!CanCollect(ctx))
+    {
+        return false;
+    }
 
     auto callstack = _callstackProvider.Get();
 
@@ -131,6 +177,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     }
 
     auto buffer = callstack.Data();
+    auto* context = reinterpret_cast<unw_context_t*>(ctx);
     auto count = unw_backtrace2((void**)buffer.data(), buffer.size(), context, UNW_INIT_SIGNAL_FRAME);
     callstack.SetCount(count);
 
@@ -182,10 +229,23 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
         return;
     }
 
+    threadInfo->SetTimerId(timerId);
+
     std::int32_t _interval = std::chrono::duration_cast<std::chrono::nanoseconds>(_samplingInterval).count();
     struct itimerspec ts;
     ts.it_interval.tv_sec = (time_t)(_interval / 1000000000);
     ts.it_interval.tv_nsec = _interval % 1000000000;
     ts.it_value = ts.it_interval;
     syscall(__NR_timer_settime, timerId, 0, &ts, nullptr);
+}
+
+void TimerCreateCpuProfiler::UnregisterThreadImpl(ManagedThreadInfo* threadInfo)
+{
+    auto timerId = threadInfo->SetTimerId(-1);
+
+    if (timerId != -1)
+    {
+        Log::Debug("Unregister timer for thread ", threadInfo->GetOsThreadId());
+        syscall(__NR_timer_delete, timerId);
+    }
 }

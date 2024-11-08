@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -552,6 +553,8 @@ namespace Datadog.Trace
             // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
+
+            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
 
             return span;
         }

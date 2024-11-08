@@ -4,75 +4,44 @@
 // </copyright>
 
 #nullable enable
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
 {
     internal static class ContextPropagation
     {
-        private const string SnsKey = "_datadog";
+        internal const string InjectionKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(PropagationContext context, IDictionary messageAttributes)
+        private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
+
+            if (context.SpanContext?.PathwayContext is { } pathwayContext)
+            {
+                dataStreamsManager?.InjectPathwayContext(pathwayContext, AwsMessageAttributesHeadersAdapters.GetInjectionAdapter(sb));
+            }
+
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            var bytes = Encoding.UTF8.GetBytes(resultString);
-            var stream = new MemoryStream(bytes);
-            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
+            messageAttributes[InjectionKey] = messageHeadersHelper.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoBatch<TClientMarker, TBatchRequest>(
-            TBatchRequest request,
-            PropagationContext context)
-            where TBatchRequest : IPublishBatchRequest
+        public static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
-            // Skip adding Trace Context if entries don't exist or empty.
-            if (request.PublishBatchRequestEntries is not { Count: > 0 })
-            {
-                return;
-            }
-
-            foreach (var t in request.PublishBatchRequestEntries)
-            {
-                var entry = t?.DuckCast<IContainsMessageAttributes>();
-
-                if (entry != null)
-                {
-                    InjectHeadersIntoMessage<TClientMarker, IContainsMessageAttributes>(entry, context);
-                }
-            }
-        }
-
-        public static void InjectHeadersIntoMessage<TClientMarker, TMessageRequest>(
-            TMessageRequest carrier,
-            PropagationContext context)
-            where TMessageRequest : IContainsMessageAttributes
-        {
-            // Skip adding Trace Context if there is no more space left to inject.
-            // AWS SNS Message Attributes limit is 10.
-            if (carrier.MessageAttributes is { Count: >= 10 })
-            {
-                return;
-            }
-
-            // Add distributed tracing headers to the message.
+            // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
             {
-                carrier.MessageAttributes = CachedMessageHeadersHelper<TClientMarker>.CreateMessageAttributes();
+                carrier.MessageAttributes = messageHeadersHelper.CreateMessageAttributes();
             }
             else
             {
@@ -107,8 +76,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 #endif
             }
 
-            // Inject the tracing headers
-            Inject<TClientMarker>(context, carrier.MessageAttributes);
+            // SNS/SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
+            // Only inject if there's room
+            if (carrier.MessageAttributes.Count < 10)
+            {
+                var context = new PropagationContext(spanContext, Baggage.Current);
+                Inject(context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
+            }
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>

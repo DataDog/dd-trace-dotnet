@@ -8,9 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 {
@@ -30,35 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class PublishBatchIntegration
     {
-        private const string Operation = "PublishBatch";
-
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TPublishBatchRequest">Type of the request object</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the SNS operation</param>
-        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishBatchRequest>(TTarget instance, TPublishBatchRequest request)
-            where TPublishBatchRequest : IPublishBatchRequest, IDuckType
         {
-            if (request.Instance is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out var tags);
-            if (tags is not null && request.TopicArn is not null)
-            {
-                tags.TopicArn = request.TopicArn;
-                tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
-            }
-
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            ContextPropagation.InjectHeadersIntoBatch<TTarget, TPublishBatchRequest>(request, context);
-
-            return new CallTargetState(scope);
+            return AwsSnsHandlerCommon.BeforePublish(request, AwsSnsHandlerCommon.SendType.Batch);
         }
 
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)

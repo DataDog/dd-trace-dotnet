@@ -192,8 +192,8 @@ namespace Datadog.Trace.Tests.Debugger
 
         private MethodScopeMembers CreateScopeMembers()
         {
-            var scope = new MethodScopeMembers(10, 5);
-
+            var scope = new MethodScopeMembers();
+            scope.Set(new MethodScopeMembersParameters(10, 5));
             // Add locals
             scope.AddMember(new ScopeMember("IntLocal", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));

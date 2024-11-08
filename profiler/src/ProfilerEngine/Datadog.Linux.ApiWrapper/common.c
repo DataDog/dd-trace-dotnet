@@ -20,6 +20,17 @@ __attribute__((visibility("hidden"))) inline int __dd_set_shared_memory(volatile
     return set_shared_memory(mem);
 }
 
+void (*volatile dd_notify_libraries_cache_update)() = NULL;
+__attribute__((visibility("hidden"))) inline void __dd_notify_libraries_cache_update()
+{
+    void (*volatile notify_libraries_cache_update)() = dd_notify_libraries_cache_update;
+
+    if (notify_libraries_cache_update == NULL)
+        return;
+
+    notify_libraries_cache_update();
+}
+
 __attribute__((visibility("hidden"))) inline int is_interrupted_by_profiler(int rc, int error_code, int interrupted_by_profiler)
 {
     return rc == -1L && error_code == EINTR && interrupted_by_profiler != 0;

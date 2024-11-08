@@ -11,6 +11,7 @@ packages/
 **/obj/
 
 !tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
+!tracer/test/test-applications/aspnet/Samples.AspNet.MultipleAppsInDomain/bin/
 !artifacts/msi/
 
 !tracer/test/Datadog.Trace.TestHelpers/
