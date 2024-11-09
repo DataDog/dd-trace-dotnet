@@ -20,8 +20,6 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// </summary>
 internal sealed class ManualParserGitInfoProvider : GitInfoProvider
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ManualParserGitInfoProvider));
-
     private ManualParserGitInfoProvider()
     {
     }
@@ -84,7 +82,6 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             else
             {
                 tempGitInfo.Errors.Add($"HEAD file not found in the git directory: {headPath}");
-                Log.Warning("GitInfo: HEAD file not found in the git directory: {GitDirectory}", headPath);
                 gitInfo = null;
                 return false;
             }
@@ -119,7 +116,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
                 if (File.Exists(objectFilePath))
                 {
                     // Load and parse object file
-                    if (GitCommitObject.TryGetFromObjectFile(objectFilePath, out var commitObject))
+                    if (GitCommitObject.TryGetFromObjectFile(objectFilePath, tempGitInfo.Errors, out var commitObject))
                     {
                         tempGitInfo.AuthorDate = commitObject.AuthorDate;
                         tempGitInfo.AuthorEmail = commitObject.AuthorEmail;
@@ -137,9 +134,9 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
                     var files = Directory.GetFiles(packFolder, "*.idx", SearchOption.TopDirectoryOnly);
                     foreach (var idxFile in files)
                     {
-                        if (GitPackageOffset.TryGetPackageOffset(idxFile, tempGitInfo.Commit, out var packageOffset))
+                        if (GitPackageOffset.TryGetPackageOffset(idxFile, tempGitInfo.Commit, tempGitInfo.Errors, out var packageOffset))
                         {
-                            if (GitCommitObject.TryGetFromPackageOffset(packageOffset, out var commitObject))
+                            if (GitCommitObject.TryGetFromPackageOffset(packageOffset, tempGitInfo.Errors, out var commitObject))
                             {
                                 tempGitInfo.AuthorDate = commitObject.AuthorDate;
                                 tempGitInfo.AuthorEmail = commitObject.AuthorEmail;
@@ -158,7 +155,6 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
         catch (Exception ex)
         {
             tempGitInfo.Errors.Add($"GitInfo: Error loading git information from directory: {ex}");
-            Log.Error(ex, "GitInfo: Error loading git information from directory");
             gitInfo = null;
             return false;
         }
@@ -328,7 +324,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             Message = string.Join(Environment.NewLine, msgLines);
         }
 
-        public static bool TryGetFromObjectFile(string filePath, out GitCommitObject commitObject)
+        public static bool TryGetFromObjectFile(string filePath, List<string> errors, out GitCommitObject commitObject)
         {
             commitObject = default;
             try
@@ -352,13 +348,13 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error getting commit object from object file");
+                errors.Add($"Error getting commit object from object file: {ex}");
             }
 
             return false;
         }
 
-        public static bool TryGetFromPackageOffset(GitPackageOffset packageOffset, out GitCommitObject commitObject)
+        public static bool TryGetFromPackageOffset(GitPackageOffset packageOffset, List<string> errors, out GitCommitObject commitObject)
         {
             commitObject = default;
             try
@@ -413,18 +409,18 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
                         }
                         else
                         {
-                            Log.Warning("The commit data doesn't have a valid zlib header magic number. [Received: 0x{ZlibMagicNumber}, Expected: 0x78]", zlibMagicNumber.ToString("X2"));
+                            errors.Add($"The commit data doesn't have a valid zlib header magic number. [Received: 0x{zlibMagicNumber:X2}, Expected: 0x78]");
                         }
                     }
                     else
                     {
-                        Log.Warning<int>("The object size is outside of an acceptable range: {ObjectSize}", objectSize);
+                        errors.Add($"The object size is outside of an acceptable range: {objectSize}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error loading commit information from package offset");
+                errors.Add($"Error getting commit object from package offset: {ex}");
             }
 
             return false;
@@ -442,7 +438,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             Offset = offset;
         }
 
-        public static bool TryGetPackageOffset(string idxFilePath, string commitSha, out GitPackageOffset packageOffset)
+        public static bool TryGetPackageOffset(string idxFilePath, string commitSha, List<string> errors, out GitPackageOffset packageOffset)
         {
             packageOffset = default;
 
@@ -531,7 +527,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error getting package offset");
+                errors.Add($"Error getting package offset: {ex}");
             }
 
             return false;
