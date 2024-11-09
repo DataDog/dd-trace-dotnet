@@ -10,12 +10,17 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using Microsoft.VisualStudio.Services.WebApi;
+using Newtonsoft;
+using Newtonsoft.Json;
+using Nuke.Common.IO;
+using static CodeGenerators.CallTargetsGenerator;
 
 namespace PrepareRelease
 {
     public static class GenerateIntegrationDefinitions
     {
-        public static List<InstrumentedAssembly> GetAllIntegrations(ICollection<string> assemblyPaths)
+        public static List<InstrumentedAssembly> GetAllIntegrations(ICollection<string> assemblyPaths, AbsolutePath dependabotJsonFile)
         {
             var callTargetIntegrations = Enumerable.Empty<InstrumentedAssembly>();
 
@@ -25,7 +30,7 @@ namespace PrepareRelease
                 var assemblyLoadContext = new CustomAssemblyLoadContext(Path.GetDirectoryName(path));
                 var assembly = assemblyLoadContext.LoadFromAssemblyPath(path);
 
-                callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(assembly));
+                callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(assembly, dependabotJsonFile));
 
                 assemblyLoadContext.Unload();
             }
@@ -33,62 +38,24 @@ namespace PrepareRelease
             return callTargetIntegrations.ToList();
         }
 
-        static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly)
+        static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly, AbsolutePath dependabotJsonFile)
         {
-            var definitionsClass = assembly.GetType("Datadog.Trace.ClrProfiler.InstrumentationDefinitions");
-            var definitionsMethod = definitionsClass
-               .GetMethod("GetAllDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
-            var derivedDefinitionsMethod = definitionsClass
-                   .GetMethod("GetAllDerivedDefinitionsNative", BindingFlags.Static | BindingFlags.NonPublic);
-            var getIntegrationIdMethod = definitionsClass
-                   .GetMethod("GetIntegrationId", BindingFlags.Static | BindingFlags.NonPublic);
-            var getAdoNetIntegrationIdMethod = definitionsClass
-                   .GetMethod("GetAdoNetIntegrationId", BindingFlags.Static | BindingFlags.Public);
-
-            var integrationIdExtensionsClass = assembly.GetType("Datadog.Trace.Configuration.IntegrationIdExtensions");
-            var toStringFastMethod = integrationIdExtensionsClass.GetMethod("ToStringFast", BindingFlags.Static | BindingFlags.Public);
-
-            var structDefinition = assembly.GetType("Datadog.Trace.ClrProfiler.NativeCallTargetDefinition");
-
-            Array definitions = (Array)definitionsMethod.Invoke(null, Array.Empty<object>());
-            Array derivedDefinitions = (Array)derivedDefinitionsMethod.Invoke(null, Array.Empty<object>());
-
+            var definitions = JsonConvert.DeserializeObject<CallTargetDefinitionSource[]>(File.ReadAllText(dependabotJsonFile));
             return definitions
-                  .Cast<object>()
-                  .Concat(derivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
                   {
-                      IntegrationName = GetIntegrationName(structDefinition, x, toStringFastMethod, getIntegrationIdMethod, getAdoNetIntegrationIdMethod),
-                      TargetAssembly = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetAssembly").GetValue(x)),
-                      TargetMinimumMajor = (ushort) structDefinition.GetField("TargetMinimumMajor").GetValue(x),
-                      TargetMinimumMinor = (ushort) structDefinition.GetField("TargetMinimumMinor").GetValue(x),
-                      TargetMinimumPatch = (ushort) structDefinition.GetField("TargetMinimumPatch").GetValue(x),
-                      TargetMaximumMajor = (ushort) structDefinition.GetField("TargetMaximumMajor").GetValue(x),
-                      TargetMaximumMinor = (ushort) structDefinition.GetField("TargetMaximumMinor").GetValue(x),
-                      TargetMaximumPatch = (ushort) structDefinition.GetField("TargetMaximumPatch").GetValue(x),
+                      IntegrationName = x.IntegrationName,
+                      TargetAssembly = x.AssemblyName,
+                      TargetMinimumMajor = x.MinimumVersion.Major,
+                      TargetMinimumMinor = x.MinimumVersion.Minor,
+                      TargetMinimumPatch = x.MinimumVersion.Patch,
+                      TargetMaximumMajor = x.MaximumVersion.Major,
+                      TargetMaximumMinor = x.MaximumVersion.Minor,
+                      TargetMaximumPatch = x.MaximumVersion.Patch,
                   })
                   .Distinct()
                   .ToList();
-            
-            static string GetIntegrationName(Type structDefinition, object definition, MethodInfo toStringFast, MethodInfo getIntegrationId, MethodInfo getAdoNetIntegrationId)
-            {
-                var targetAssemblyName = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetAssembly").GetValue(definition));
-                var targetTypeName = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("TargetType").GetValue(definition));
-                // var targetType = assembly.GetType(targetTypeName);
-                
-                var integrationType = Marshal.PtrToStringUni((IntPtr) structDefinition.GetField("IntegrationType").GetValue(definition));
-                // can't get the actual types we need, so hack it
-                var integrationId = getIntegrationId.Invoke(null, new object[] {integrationType, structDefinition});
-                var integrationName = (string) toStringFast.Invoke(null, new[] {integrationId});
-                if (integrationName == "AdoNet")
-                {
-                    // use the other method
-                    integrationId = getAdoNetIntegrationId.Invoke(null, new object[] {integrationType, targetTypeName, targetAssemblyName});
-                    integrationName = (string) toStringFast.Invoke(null, new[] {integrationId});
-                }
-
-                return  integrationName;
-            }
+           
         }
 
         class CustomAssemblyLoadContext : AssemblyLoadContext

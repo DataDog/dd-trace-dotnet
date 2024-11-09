@@ -13,7 +13,7 @@ public static class Projects
     public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
     public const string NativeLoaderNativeTests = "Datadog.Trace.ClrProfiler.Native.Tests";
     public const string DatadogTraceTrimming = "Datadog.Trace.Trimming";
-    
+
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
@@ -54,4 +54,5 @@ public static class FileNames
     public const string AfterInstallScript = "after-install.sh";
     public const string AfterRemoveScript = "after-remove.sh";
 
+    public const string DefinitionsJson = "generated_calltargets.g.json";
 }

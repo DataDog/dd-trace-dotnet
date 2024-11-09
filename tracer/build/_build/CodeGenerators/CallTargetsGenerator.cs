@@ -1,16 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Mono.Cecil;
-using NuGet.Protocol;
 using Nuke.Common.IO;
-using YamlDotNet.Core;
 
 namespace CodeGenerators
 {
@@ -18,7 +15,7 @@ namespace CodeGenerators
     {
         private const string NullLiteral = "null";
 
-        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version) 
+        public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath) 
         {
             Serilog.Log.Debug("Generating CallTarget definitions file ...");
 
@@ -42,7 +39,8 @@ namespace CodeGenerators
             }
 
 
-            GenerateFile(callTargets, outputPath, version);
+            GenerateNativeFile(callTargets, outputPath, version);
+            GenerateJsonFile(callTargets, dependabotPath);
         }
 
         internal static void RetrieveCallTargets(Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets, AssemblyDefinition assembly, TargetFrameworks tfmCategory)
@@ -442,7 +440,7 @@ namespace CodeGenerators
             }
         }
 
-        internal static void GenerateFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath, string version)
+        internal static void GenerateNativeFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath, string version)
         {
             var sb = new StringBuilder();
             sb.AppendLine("""
@@ -565,6 +563,29 @@ namespace CodeGenerators
                 };
             }
         }
+
+        internal static void GenerateJsonFile(Dictionary<CallTargetDefinitionSource, TargetFrameworks> definitions, AbsolutePath outputPath)
+        {
+            var orderedDefinitions = definitions
+                                        .Keys
+                                        .OrderBy(static x => x.IntegrationName)
+                                        .ThenBy(static x => x.AssemblyName)
+                                        .ThenBy(static x => x.TargetTypeName)
+                                        .ThenBy(static x => x.TargetMethodName)
+                                        .ToArray();
+
+            var options = new JsonSerializerOptions();
+            options.IncludeFields = true;
+            options.WriteIndented = true;
+            string jsonString = System.Text.Json.JsonSerializer.Serialize(orderedDefinitions, options);
+
+            if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
+            var fileName = outputPath / FileNames.DefinitionsJson;
+            File.WriteAllText(fileName, jsonString);
+
+            Serilog.Log.Information("CallTarget definitions File saved: {File}", fileName);
+        }
+
 
         internal static TargetFrameworks GetCategory(TargetFramework tfm)
         {

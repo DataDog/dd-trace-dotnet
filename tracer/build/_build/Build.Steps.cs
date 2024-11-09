@@ -82,6 +82,8 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
+    AbsolutePath DependabotPath => TracerDirectory / "dependabot";
+
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);
@@ -437,7 +439,7 @@ partial class Build
 
             var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
             CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
-            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, DependabotPath);
         });
 
     Target CompileTracerNativeTestsWindows => _ => _
