@@ -307,7 +307,7 @@ WCHAR* g_callTargets_Sig_293[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("Yarp.R
 WCHAR* g_callTargets_Sig_294[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("_"),};
 WCHAR* g_callTargets_Sig_295[]={(WCHAR*)WStr("System.Web.Mvc.ActionResult"),(WCHAR*)WStr("System.Web.Mvc.ControllerContext"),(WCHAR*)WStr("System.Web.Mvc.ActionDescriptor"),(WCHAR*)WStr("System.Collections.Generic.IDictionary`2[System.String,System.Object]"),};
 
-std::vector<CallTargetDefinition2> g_callTargets=
+std::vector<CallTargetDefinition3> g_callTargets=
 {
 {(WCHAR*)WStr("netstandard"),(WCHAR*)WStr("System.Data.Common.DbCommand"),(WCHAR*)WStr("ExecuteDbDataReader"),g_callTargets_Sig_106,2,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),CallTargetKind::Derived,1,165},
 {(WCHAR*)WStr("netstandard"),(WCHAR*)WStr("System.Data.Common.DbCommand"),(WCHAR*)WStr("ExecuteNonQuery"),g_callTargets_Sig_116,1,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),CallTargetKind::Derived,1,165},

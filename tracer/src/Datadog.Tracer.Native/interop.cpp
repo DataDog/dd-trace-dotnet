@@ -178,6 +178,18 @@ EXTERN_C int STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLeng
     return trace::profiler->RegisterIastAspects(aspects, aspectsLength);
 }
 
+EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions3(WCHAR* id, CallTargetDefinition3* items, int size,
+                                                           UINT32 enabledCategories)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in RegisterCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories, 0xFFFFFFFF);
+}
+
 EXTERN_C long STDAPICALLTYPE EnableCallTargetDefinitions(UINT32 enabledCategories)
 {
     if (trace::profiler == nullptr)

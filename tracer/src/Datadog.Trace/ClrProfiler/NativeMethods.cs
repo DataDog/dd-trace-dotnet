@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition2[] items, uint enabledCategories)
+        public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition3[] items, uint enabledCategories)
         {
             if (items == null || items.Length == 0)
             {
@@ -138,11 +138,11 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                return Windows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+                return Windows.RegisterCallTargetDefinitions3(id, items, items.Length, enabledCategories);
             }
             else
             {
-                return NonWindows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+                return NonWindows.RegisterCallTargetDefinitions3(id, items, items.Length, enabledCategories);
             }
         }
 
@@ -253,7 +253,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+            public static extern int RegisterCallTargetDefinitions3([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition3[] methodArrays, int size, uint enabledCategories);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int EnableCallTargetDefinitions(uint enabledCategories);
@@ -297,7 +297,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+            public static extern int RegisterCallTargetDefinitions3([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition3[] methodArrays, int size, uint enabledCategories);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int EnableCallTargetDefinitions(uint enabledCategories);

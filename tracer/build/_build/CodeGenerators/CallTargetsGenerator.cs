@@ -486,7 +486,7 @@ namespace CodeGenerators
 
             //Write all CallTargets
             sb.AppendLine();
-            sb.AppendLine("std::vector<CallTargetDefinition2> g_callTargets=");
+            sb.AppendLine("std::vector<CallTargetDefinition3> g_callTargets=");
             sb.AppendLine("{");
             int x = 0;
             foreach (var definition in definitions

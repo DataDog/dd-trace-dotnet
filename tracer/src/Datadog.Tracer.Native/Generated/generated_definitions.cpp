@@ -13,7 +13,7 @@ std::vector<WCHAR*>* GeneratedDefinitions::GetCallSites()
     return &g_callSites;
 }
 
-std::vector<CallTargetDefinition2>* GeneratedDefinitions::GetCallTargets()
+std::vector<CallTargetDefinition3>* GeneratedDefinitions::GetCallTargets()
 {
     return &g_callTargets;
 }
