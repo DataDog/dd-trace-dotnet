@@ -13,6 +13,7 @@
 #include <unordered_map>
 
 #include "CallstackProvider.h"
+#include "DiscardMetrics.hpp"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -29,7 +30,8 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 LinuxStackFramesCollector::LinuxStackFramesCollector(
     ProfilerSignalManager* signalManager,
     IConfiguration const* const configuration,
-    CallstackProvider* callstackProvider) :
+    CallstackProvider* callstackProvider,
+    MetricsRegistry& metricsRegistry) :
     StackFramesCollectorBase(configuration, callstackProvider),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
@@ -42,6 +44,11 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     {
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
     }
+
+    // For now have one metric for both walltime and cpu (naive)
+    _samplingRequest = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_walltime_cpu_sampling_requests");
+    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_walltime_cpu_sample_discard");
+
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -127,6 +134,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         _stackWalkFinished = false;
 
+        _samplingRequest->Incr();
         errorCode = _signalManager->SendSignal(threadId);
 
         if (errorCode == -1)
@@ -190,6 +198,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
+        _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
         return E_ABORT;
     }
 
@@ -275,6 +284,7 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
 
     if (count == 0)
     {
+        _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
         return E_FAIL;
     }
 
@@ -283,12 +293,49 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     return S_OK;
 }
 
-bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) const
+
+bool IsInSigSegvHandler(void* context)
 {
+    auto* ctx = reinterpret_cast<ucontext_t*>(context);
+
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    return sigismember(&(ctx->uc_sigmask), SIGSEGV) == 1;
+}
+
+bool LinuxStackFramesCollector::CanCollect(int32_t threadId, siginfo_t* info, void* context) const
+{
+    // This is a workaround to prevent libunwind from unwinding 2 signal frames and potentially crashing.
+    // Current crash occurs in libcoreclr.so, while reading the Elf header.
+    if (IsInSigSegvHandler(context))
+    {
+        _discardMetrics->Incr<DiscardReason::InSegvHandler>();
+        return false;
+    }
+
+    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
+    if (currentThreadInfo == nullptr)
+    {
+        _discardMetrics->Incr<DiscardReason::UnknownThread>();
+        return false;
+    }
+
+    if (currentThreadInfo->GetOsThreadId() != threadId)
+    {
+        _discardMetrics->Incr<DiscardReason::WrongManagedThread>();
+        return false;
+    }
+
     // on OSX, processId can be equal to 0. https://sourcegraph.com/github.com/dotnet/runtime/-/blob/src/coreclr/pal/src/exception/signal.cpp?L818:5&subtree=true
     // Since the profiler does not run on OSX, we leave it like this.
-    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
-    return currentThreadInfo != nullptr && currentThreadInfo->GetOsThreadId() == threadId && processId == _processId;
+    if (info->si_pid != _processId)
+    {
+        _discardMetrics->Incr<DiscardReason::ExternalSignal>();
+        return false;
+    }
+
+    return true;
 }
 
 void LinuxStackFramesCollector::MarkAsInterrupted()
@@ -301,54 +348,37 @@ void LinuxStackFramesCollector::MarkAsInterrupted()
     }
 }
 
-bool IsInSigSegvHandler(void* context)
-{
-    auto* ctx = reinterpret_cast<ucontext_t*>(context);
-
-    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
-    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
-    // but that less likely)
-    return sigismember(&(ctx->uc_sigmask), SIGSEGV) == 1;
-}
-
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
-    // This is a workaround to prevent libunwind from unwind 2 signal frames and potentially crashing.
-    // Current crash occurs in libcoreclr.so, while reading the Elf header.
-    if (IsInSigSegvHandler(context))
-    {
-        return false;
-    }
-
     // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
     auto oldErrno = errno;
 
     bool success = false;
 
-    LinuxStackFramesCollector* pCollectorInstance = s_pInstanceCurrentlyStackWalking;
+    LinuxStackFramesCollector* pCollector = s_pInstanceCurrentlyStackWalking;
 
-    if (pCollectorInstance != nullptr)
+    if (pCollector != nullptr)
     {
-        std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
+        std::unique_lock<std::mutex> lock(s_stackWalkInProgressMutex);
 
-        pCollectorInstance = s_pInstanceCurrentlyStackWalking;
+        pCollector = s_pInstanceCurrentlyStackWalking;
 
         // sampling in progress
-        if (pCollectorInstance != nullptr)
+        if (pCollector != nullptr)
         {
-            pCollectorInstance->MarkAsInterrupted();
-
             // There can be a race:
             // The sampling thread has sent the signal and is waiting, but another SIGUSR1 signal was sent
             // by another thread and is handled before the one sent by the sampling thread.
-            if (pCollectorInstance->CanCollect(OpSysTools::GetThreadId(), info->si_pid))
+            if (pCollector->CanCollect(OpSysTools::GetThreadId(), info, context))
             {
+                pCollector->MarkAsInterrupted();
+
                 // In case it's the thread we want to sample, just get its callstack
-                auto resultErrorCode = pCollectorInstance->CollectCallStackCurrentThread(context);
+                auto errorCode = pCollector->CollectCallStackCurrentThread(context);
 
                 // release the lock
-                stackWalkInProgressLock.unlock();
-                pCollectorInstance->NotifyStackWalkCompleted(resultErrorCode);
+                lock.unlock();
+                pCollector->NotifyStackWalkCompleted(errorCode);
                 success = true;
             }
         }
