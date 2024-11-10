@@ -61,10 +61,13 @@ __thread unsigned long long functions_entered_counter = 0;
 __attribute__((visibility("hidden")))
 atomic_int is_app_crashing = 0;
 
+__attribute__((visibility("hidden")))
+__thread int8_t is_thread_routine_ended = 0;
+
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
-    return functions_entered_counter + is_app_crashing;
+    return functions_entered_counter + is_app_crashing + is_thread_routine_ended;
 }
 
 #if defined(__aarch64__)
@@ -541,6 +544,23 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
 #ifdef DD_ALPINE
 
+struct pthread_wrapped_arg
+{
+    void* (*func)(void*);
+    void* orig_arg;
+};
+
+__attribute__((visibility("hidden")))
+static void* entry2(void* arg)
+{
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
+    void* result = new_arg->func(new_arg->orig_arg);
+    // check if we should call the profiler
+    is_thread_routine_ended = 1;
+    free(new_arg);
+    return result;
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
@@ -551,7 +571,11 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
 
     // call the real pthread_create (libc/musl-libc)
-    int result = __real_pthread_create(res, attrp, entry, arg);
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)malloc(sizeof(struct pthread_wrapped_arg));
+    new_arg->func = entry;
+    new_arg->orig_arg = arg;
+
+    int result = __real_pthread_create(res, attrp, entry2, new_arg);
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 

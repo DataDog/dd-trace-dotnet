@@ -1320,6 +1320,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->Stop();
+    }
+#endif
+
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
