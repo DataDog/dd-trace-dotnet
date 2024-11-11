@@ -70,12 +70,10 @@ internal class Program
             // verify instrumentation
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
 
-            // baggage works without an active span
+            // baggage works even without an active span
             var baggage = Baggage.Current;
-            Expect(baggage is not null);
-            baggage!["key1"] = "value1";
-            Expect(baggage.ContainsKey("key1"));
-            Expect(baggage["key1"] == "value1");
+            baggage["key1"] = "value1";
+            Expect(baggage.TryGetValue("key1", out var baggageValue1) && baggageValue1 == "value1");
 
             // Manual + automatic before reconfiguration
             var firstOperationName = $"Manual-{++count}.Initial";
@@ -90,12 +88,17 @@ internal class Program
                 Expect(scope.Span.GetTag("Temp") == "TempTest");
                 scope.Span.SetTag("Temp", null);
 
+                // baggage keeps working with an active span
+                baggage["key2"] = "value2";
+                Expect(baggage.TryGetValue("key2", out var baggageValue2) && baggageValue2 == "value2");
+
                 var responseMessage = await SendHttpRequest("Initial");
                 var requestMessage = responseMessage.RequestMessage!;
 
                 // verify baggage in the request headers
-                Expect(requestMessage.Headers.Contains("baggage"));
-                Expect(requestMessage.Headers.GetValues("baggage").FirstOrDefault() == "key1=value1");
+                Expect(
+                    requestMessage.Headers.TryGetValues("baggage", out var baggageValues) &&
+                    baggageValues.FirstOrDefault() == "key1=value1,key2=value2");
             }
 
             await _initialTracer.ForceFlushAsync();
