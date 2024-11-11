@@ -587,6 +587,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{
 		tracer\build\PackageVersionsLatestMajors.g.props = tracer\build\PackageVersionsLatestMajors.g.props
 		tracer\build\PackageVersionsLatestMinors.g.props = tracer\build\PackageVersionsLatestMinors.g.props
 		tracer\build\PackageVersionsLatestSpecific.g.props = tracer\build\PackageVersionsLatestSpecific.g.props
+		tracer\build\supported_calltargets.g.json = tracer\build\supported_calltargets.g.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.EventBridge", "tracer\test\test-applications\integrations\Samples.AWS.EventBridge\Samples.AWS.EventBridge.csproj", "{D6155F26-8245-4B66-8944-79C3DF9F9DA3}"
