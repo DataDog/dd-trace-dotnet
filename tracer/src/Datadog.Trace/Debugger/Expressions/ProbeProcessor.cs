@@ -406,18 +406,18 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         break;
                     case TargetSpan.Active:
-                        var activeScope = Tracer.Instance.InternalActiveScope.Span;
-                        if (activeScope != null)
+                        var activeSpan = Tracer.Instance.InternalActiveScope.Span;
+                        if (activeSpan != null)
                         {
-                            activeScope.SetTag(decoration.TagName, decoration.Value);
-                            activeScope.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                            activeSpan.SetTag(decoration.TagName, decoration.Value);
+                            activeSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
                             if (decoration.Errors?.Length > 0)
                             {
-                                activeScope.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                                activeSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
                             }
                             else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
                             {
-                                activeScope.SetTag(evaluationErrorTag, null);
+                                activeSpan.SetTag(evaluationErrorTag, null);
                             }
 
                             attachedTags = true;
