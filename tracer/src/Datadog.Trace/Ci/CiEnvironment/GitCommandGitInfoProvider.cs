@@ -20,12 +20,6 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
     public static IGitInfoProvider Instance { get; } = new GitCommandGitInfoProvider();
 
-    private static DateTimeOffset UnixTimeStampToDateTime(long unixTimeStamp)
-    {
-        const long unixEpochTicks = TimeSpan.TicksPerDay * 719162; // 621,355,968,000,000,000
-        return new DateTimeOffset((unixTimeStamp * TimeSpan.TicksPerSecond) + unixEpochTicks, TimeSpan.Zero);
-    }
-
     protected override bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo)
     {
         var localGitInfo = new GitInfo
@@ -116,10 +110,10 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
             // Populate the localGitData struct with the parsed information
             localGitInfo.Commit = gitLogDataArray[0];
-            localGitInfo.AuthorDate = UnixTimeStampToDateTime(authorUnixDate);
+            localGitInfo.AuthorDate = DateTimeOffset.FromUnixTimeSeconds(authorUnixDate);
             localGitInfo.AuthorName = gitLogDataArray[2];
             localGitInfo.AuthorEmail = gitLogDataArray[3];
-            localGitInfo.CommitterDate = UnixTimeStampToDateTime(committerUnixDate);
+            localGitInfo.CommitterDate = DateTimeOffset.FromUnixTimeSeconds(committerUnixDate);
             localGitInfo.CommitterName = gitLogDataArray[5];
             localGitInfo.CommitterEmail = gitLogDataArray[6];
             localGitInfo.Message = string.Join("|,|", gitLogDataArray.Skip(7)).Trim();
