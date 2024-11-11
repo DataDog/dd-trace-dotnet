@@ -52,12 +52,14 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
+                 const RuntimeInformation& runtimeInfo, bool enabled);
         virtual ~Dataflow();
     private:
         CS _cs;
         ICorProfilerInfo3* _profiler = nullptr;
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
+        bool m_enabled = false;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
 
         std::map<ModuleID, ModuleInfo*> _modules;
@@ -123,6 +125,7 @@ namespace iast
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
         MethodInfo* GetMethodInfo(FunctionID functionId);
 
+        bool IsEnabled();
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);
 

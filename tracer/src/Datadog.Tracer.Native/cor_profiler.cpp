@@ -345,9 +345,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     Logger::Info(isRaspEnabled ? "RASP Callsite instrumentation is enabled."
                                : "RASP Callsite instrumentation is disabled.");
 
+    
     if (isIastEnabled || isRaspEnabled)
     {
-        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_);
+        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_, true);
         if (FAILED(_dataflow->Init()))
         {
             Logger::Error("Callsite Dataflow failed to initialize");
@@ -356,6 +357,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
+        _dataflow = new iast::Dataflow(info_, rejit_handler, runtime_information_, false);
         Logger::Info("Callsite instrumentation is disabled.");
     }
 
@@ -1505,7 +1507,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
 
-        if (_dataflow != nullptr)
+        if (_dataflow != nullptr && _dataflow->IsEnabled())
         {
             _dataflow->JITCompilationStarted(module_id, function_token);
         }
@@ -2133,6 +2135,15 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    if (_dataflow != nullptr && !_dataflow->IsEnabled())
+    {
+        if (FAILED(_dataflow->Init()))
+        {
+            Logger::Error("Callsite Dataflow failed to initialize");
+            DEL(_dataflow);
+        }
+    }
 
     if (_dataflow != nullptr)
     {

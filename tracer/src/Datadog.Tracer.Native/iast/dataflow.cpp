@@ -154,10 +154,16 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
+bool Dataflow::IsEnabled()
+{
+    return m_enabled;
+}
+
 Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
-                   const RuntimeInformation& runtimeInfo) :
+                   const RuntimeInformation& runtimeInfo, bool enabled) :
     Rejitter(rejitHandler, RejitterPriority::Low)
 {
+    m_enabled = enabled;
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
