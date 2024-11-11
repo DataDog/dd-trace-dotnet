@@ -1,14 +1,25 @@
-Condition:
+﻿Condition:
 Json:
 {
-  "eq": [
+  "any": [
     {
-      "ref": "BooleanValue"
+      "ref": "CustomArrayLocal"
     },
-    false
+    {
+      "eq": [
+        {
+          "getmember":[
+            {
+              "ref": "@it"
+            },
+            "NestedString"
+          ] 
+        },
+        "hello"
+      ]
+    }
   ]
 }
-
 Expression: (
     scopeMember,
     scopeMember,
@@ -41,7 +52,7 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = !BooleanValue;
+    var $dd_el_result = CustomArrayLocal.Any(nestedObject => nestedObject.NestedString == "hello");
 
     return $dd_el_result;
 }

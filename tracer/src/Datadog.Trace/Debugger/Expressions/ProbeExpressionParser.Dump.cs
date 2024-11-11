@@ -13,7 +13,6 @@ using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
-using Enumerable = System.Linq.Enumerable;
 
 namespace Datadog.Trace.Debugger.Expressions;
 

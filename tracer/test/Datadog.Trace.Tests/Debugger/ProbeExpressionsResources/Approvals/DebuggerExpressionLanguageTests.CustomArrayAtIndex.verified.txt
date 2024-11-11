@@ -1,12 +1,12 @@
-Template:
+﻿Template:
 Segments: 
 
 {
-    "getmember": [
+    "index": [
         {
-            "ref": "this"
+            "ref": "CustomArrayLocal"
         },
-        "NullableNullValue"
+        0
     ]
 }
 Expressions: 
@@ -45,10 +45,10 @@ Expressions:
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.NullableNullValue == null)
+    var $dd_el_result = (((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]) == null)
         ? "null"
         : {
-            fieldsArray = this.NullableNullValue
+            fieldsArray = ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])
                 .GetType()
                 .GetFields(
                     BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
@@ -62,7 +62,8 @@ Expressions:
                 {
                     fieldValues.Append(
                         ProbeExpressionParser<string>.DumpObject(
-                            fieldsArray[index].GetValue(this.NullableNullValue),
+                            fieldsArray[index].GetValue(
+                                (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
                             0));
@@ -89,4 +90,4 @@ Expressions:
 
     return $dd_el_result;
 }
-Result: The result of the expression is: null
+Result: The result of the expression is: ParentProtectedStaticMember=Hello from parent protected static member, _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, ...
