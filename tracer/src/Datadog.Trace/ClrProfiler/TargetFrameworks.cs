@@ -6,14 +6,12 @@
 
 using System;
 
-namespace CodeGenerators;
+namespace Datadog.Trace.ClrProfiler;
 
 [Flags]
 internal enum TargetFrameworks : uint
 {
-    None = 0, // For CodeGenerator only
-
-    // NOTE : When modifying this file make sure to update the TargetFrameworks enum in the ClrProfiler folder inside the Datadog.Trace project
+    // NOTE : When modifying this file make sure to update the TargetFrameworks enum in the CodeGenerator folder inside the _build project
 
     NET461 = 1,
     NET462 = 2,

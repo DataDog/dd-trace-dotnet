@@ -6,12 +6,12 @@
 
 using System;
 
-namespace CodeGenerators;
+namespace Datadog.Trace.ClrProfiler;
 
 [Flags]
 internal enum InstrumentationCategory : uint
 {
-    // NOTE : When modifying this file make sure to update the InstrumentationCategory enum in the ClrProfiler folder inside the Datadog.Trace project
+    // NOTE : When modifying this file make sure to update the InstrumentationCategory enum in the CodeGenerator folder inside the _build project
 
     Tracing = 1,
     AppSec = 2,

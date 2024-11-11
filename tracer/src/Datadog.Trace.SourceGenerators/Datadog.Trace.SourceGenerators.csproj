@@ -14,7 +14,7 @@
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup>    
-    <Compile Include="..\..\build\_build\CodeGenerators\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />    
+    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />    
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
       <Link>MessagePack\Attributes.cs</Link>
     </Compile>

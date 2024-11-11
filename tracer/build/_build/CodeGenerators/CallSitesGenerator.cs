@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Datadog.Trace.ClrProfiler;
 using Mono.Cecil;
 using Nuke.Common.IO;
 
