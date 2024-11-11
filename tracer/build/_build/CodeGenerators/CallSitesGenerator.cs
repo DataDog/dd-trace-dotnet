@@ -15,7 +15,7 @@ namespace CodeGenerators
 
         public static void GenerateCallSites(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath) 
         {
-            Serilog.Log.Debug("Generating CallSite definitions file ...");
+            Logger.Debug("Generating CallSite definitions file ...");
 
             Dictionary<string, AspectClass> aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
@@ -73,23 +73,29 @@ namespace CodeGenerators
                 }
             }
 
-            string GetMethodName(MethodDefinition method)
+            static string GetMethodName(MethodDefinition method)
             {
                 var fullName = method.FullName;
-                return fullName.Substring(fullName.IndexOf("::") + 2).Replace("<T>", "<!!0>").Replace("&", "");
+                var methodNameStart = fullName.IndexOf("::");
+                if (methodNameStart < 0)
+                {
+                    throw new InvalidOperationException("Could not find '::' in method name " + fullName);
+                }
+
+                return fullName.Substring(methodNameStart + 2).Replace("<T>", "<!!0>").Replace("&", "");
             }
 
-            bool IsAspectClass(Mono.Cecil.CustomAttribute attribute)
+            static bool IsAspectClass(Mono.Cecil.CustomAttribute attribute)
             {
                 return attribute.AttributeType.FullName.StartsWith("Datadog.Trace.Iast.Dataflow.AspectClass");
             }
 
-            bool IsAspect(Mono.Cecil.CustomAttribute attribute)
+            static bool IsAspect(Mono.Cecil.CustomAttribute attribute)
             {
                 return attribute.AttributeType.FullName.StartsWith("Datadog.Trace.Iast.Dataflow.Aspect");
             }
 
-            string GetAspectLine(Mono.Cecil.CustomAttribute data, out InstrumentationCategory category)
+            static string GetAspectLine(Mono.Cecil.CustomAttribute data, out InstrumentationCategory category)
             {
                 category = InstrumentationCategory.Iast;
                 var arguments = data.ConstructorArguments.Select(GetArgument).ToList();
@@ -178,12 +184,12 @@ namespace CodeGenerators
                     _ => throw new Exception()
                 };
 
-                string Check(string val, string ifEmpty = "[]")
+                static string Check(string val, string ifEmpty = "[]")
                 {
                     return (string.IsNullOrEmpty(val) || val == NullLiteral || val == "[]") ? ifEmpty : val;
                 }
 
-                string MakeSameSize(string val, string ifEmpty = "[0]", string defaultValue = "False")
+                static string MakeSameSize(string val, string ifEmpty = "[0]", string defaultValue = "False")
                 {
                     val = Check(val, ifEmpty);
                     int count = val.Count(c => c == ',');
@@ -197,7 +203,7 @@ namespace CodeGenerators
                     return $"{val},[{values}]";
                 }
 
-                string GetArgument(Mono.Cecil.CustomAttributeArgument customAttributeArgument)
+                static string GetArgument(Mono.Cecil.CustomAttributeArgument customAttributeArgument)
                 {
                     if (customAttributeArgument.Value is null) 
                     {
