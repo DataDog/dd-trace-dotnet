@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ba
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class Baggage_SetCurrent_Integration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(ref IDictionary<string, string>? value)
+    internal static CallTargetState OnMethodBegin<TTarget>(ref IDictionary<string, string?>? value)
     {
         Trace.Baggage.Current = value switch
         {

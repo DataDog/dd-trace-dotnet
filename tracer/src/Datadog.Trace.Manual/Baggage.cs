@@ -14,18 +14,18 @@ namespace Datadog.Trace;
 public static class Baggage
 {
     // only used when IL-rewriting is not available
-    private static IDictionary<string, string>? _current;
+    private static IDictionary<string, string?>? _current;
 
     /// <summary>
     /// Gets or sets the baggage collection for the current execution context.
     /// </summary>
     [Instrumented]
-    public static IDictionary<string, string> Current
+    public static IDictionary<string, string?> Current
     {
         get
         {
             // auto-instrumentation will return Trace.Baggage.Current instead
-            return _current ??= new Dictionary<string, string>();
+            return _current ??= new Dictionary<string, string?>();
         }
 
         set

@@ -28,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ba
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class Baggage_GetCurrent_Integration
 {
-    internal static CallTargetReturn<IDictionary<string, string>?> OnMethodEnd<TTarget>(
+    internal static CallTargetReturn<IDictionary<string, string?>?> OnMethodEnd<TTarget>(
         IDictionary<string, string>? returnValue,
         Exception? exception,
         in CallTargetState state)
     {
-        return new CallTargetReturn<IDictionary<string, string>?>(Trace.Baggage.Current);
+        return new CallTargetReturn<IDictionary<string, string?>?>(Trace.Baggage.Current);
     }
 }

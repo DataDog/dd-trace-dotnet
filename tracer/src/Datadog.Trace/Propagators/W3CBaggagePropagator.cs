@@ -278,7 +278,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return baggage;
     }
 
-    private struct W3CBaggageHeaderBuilder : ICancellableObserver<KeyValuePair<string, string>>
+    private struct W3CBaggageHeaderBuilder : ICancellableObserver<KeyValuePair<string, string?>>
     {
         private readonly int _maxBaggageItems;
         private readonly int _maxBaggageLength;
@@ -296,7 +296,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         public bool CancellationRequested { get; private set; }
 
-        public void OnNext(KeyValuePair<string, string> item)
+        public void OnNext(KeyValuePair<string, string?> item)
         {
             if (string.IsNullOrWhiteSpace(item.Key) || string.IsNullOrEmpty(item.Value))
             {
@@ -316,7 +316,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             }
 
             var key = Encode(item.Key, KeyCharsToEncode);
-            var value = Encode(item.Value, ValueCharsToEncode);
+            var value = Encode(item.Value!, ValueCharsToEncode);
 
             var keyValuePairString = _sb.Length > 0 ?
                 $"{PairSeparator}{key}{KeyAndValueSeparator}{value}" :
