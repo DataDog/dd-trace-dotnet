@@ -71,8 +71,11 @@ internal class Program
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
 
             // baggage works without an active span
-            Baggage.Current["key1"] = "value1";
-            Expect(Baggage.Current["key1"] == "value1");
+            var baggage = Baggage.Current;
+            Expect(baggage is not null);
+            baggage!["key1"] = "value1";
+            Expect(baggage.ContainsKey("key1"));
+            Expect(baggage["key1"] == "value1");
 
             // Manual + automatic before reconfiguration
             var firstOperationName = $"Manual-{++count}.Initial";
@@ -88,9 +91,11 @@ internal class Program
                 scope.Span.SetTag("Temp", null);
 
                 var responseMessage = await SendHttpRequest("Initial");
+                var requestMessage = responseMessage.RequestMessage!;
 
                 // verify baggage in the request headers
-                Expect(responseMessage.RequestMessage.Headers.GetValues("baggage").FirstOrDefault() == "key1=value1");
+                Expect(requestMessage.Headers.Contains("baggage"));
+                Expect(requestMessage.Headers.GetValues("baggage").FirstOrDefault() == "key1=value1");
             }
 
             await _initialTracer.ForceFlushAsync();
