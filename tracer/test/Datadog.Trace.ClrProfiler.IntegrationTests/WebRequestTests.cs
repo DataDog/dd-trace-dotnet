@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetInstrumentationVerification();
 
-            var expectedAllSpansCount = 130;
+            var expectedAllSpansCount = 134;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
