@@ -8,9 +8,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 
-namespace Datadog.Trace.SourceGenerators.Helpers;
+namespace CodeGenerators;
 
 /// <summary>
 /// An immutable, equatable array. This is equivalent to <see cref="Array"/> but with value equality support.

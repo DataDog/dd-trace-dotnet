@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using Datadog.Trace.SourceGenerators.Helpers;
 using Mono.Cecil;
 using Nuke.Common.IO;
 
