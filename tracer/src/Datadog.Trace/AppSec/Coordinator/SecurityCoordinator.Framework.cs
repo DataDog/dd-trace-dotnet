@@ -251,6 +251,9 @@ internal readonly partial struct SecurityCoordinator
 
     internal Dictionary<string, object>? GetBodyFromRequest()
     {
+        // When accessing the property Form of a HttpRequest might throw a ValidationException if regular validation is enabled.
+        // Granular validation would not throw an exception when accessing Form but it will throw it when accessing GetValues or Get.
+        // The keys property never throws any exception.
         var form = RequestDataHelper.GetForm(_httpTransport.Context.Request);
 
         if (form is null)
