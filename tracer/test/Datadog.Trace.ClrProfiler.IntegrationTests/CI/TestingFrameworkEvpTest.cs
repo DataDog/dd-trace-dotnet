@@ -280,7 +280,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
             [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
             [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot,
+            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
             [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
             [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
             [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",

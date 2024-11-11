@@ -70,7 +70,6 @@ src/Datadog.Trace/AspNet/TracingHttpModule.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs
-src/Datadog.Trace/Ci/GitInfo.cs
 src/Datadog.Trace/Ci/IEvent.cs
 src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
