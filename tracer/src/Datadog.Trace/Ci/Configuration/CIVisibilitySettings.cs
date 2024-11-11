@@ -28,9 +28,20 @@ namespace Datadog.Trace.Ci.Configuration
             var config = new ConfigurationBuilder(source, telemetry);
             Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
             Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
+            Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
+
+            if (Enabled == false)
+            {
+                // If the CI Visibility is disabled we don't need to load the rest of the configuration
+                // and we can return early.
+                // This is useful to avoid loading the CIEnvironmentValues instance when calculating the test session name
+                // and avoid the overhead of loading the configuration.
+                TestSessionName = string.Empty;
+                return;
+            }
+
             Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
-            Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
             AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
             // By default intake payloads has a 5MB limit
