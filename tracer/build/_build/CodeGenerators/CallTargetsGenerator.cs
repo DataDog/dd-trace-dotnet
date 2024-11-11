@@ -546,6 +546,7 @@ namespace CodeGenerators
 
 
             //Write all CallTargets
+            bool inWin32Section = false;
             sb.AppendLine();
             sb.AppendLine("std::vector<CallTargetDefinition3> g_callTargets=");
             sb.AppendLine("{");
@@ -556,6 +557,18 @@ namespace CodeGenerators
                                         .ThenBy(static x => x.Key.TargetTypeName)
                                         .ThenBy(static x => x.Key.TargetMethodName))
             {
+                bool win32Only = definition.Value.IsNetFxOnly();
+                if (win32Only && !inWin32Section)
+                {
+                    inWin32Section = true;
+                    sb.AppendLine("#if _WIN32");
+                }
+                else if (!win32Only && inWin32Section)
+                {
+                    inWin32Section = false;
+                    sb.AppendLine("#endif");
+                }
+
                 sb.AppendLine(GetCallTarget(definition.Key, signatures[GetSignature(definition.Key)], definition.Value, x++));
             }
 
@@ -638,7 +651,6 @@ namespace CodeGenerators
 
             Logger.Information("CallTarget definitions File saved: {File}", fileName);
         }
-
 
         internal static TargetFrameworks GetCategory(TargetFramework tfm)
         {

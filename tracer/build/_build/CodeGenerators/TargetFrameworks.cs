@@ -27,3 +27,12 @@ internal enum TargetFrameworks : uint
     NET8_0 = 512,
     NET0_0 = 1024,
 }
+
+
+internal static class TargetFrameworksExtensions
+{ 
+    public static bool IsNetFxOnly(this TargetFrameworks tfm)
+    {
+        return ((uint)(tfm & (~(TargetFrameworks.NET461 | TargetFrameworks.NET462)))) == 0;
+    }
+}
