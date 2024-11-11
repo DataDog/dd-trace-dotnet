@@ -63,7 +63,6 @@ namespace CodeGenerators
             static List<CallTargetDefinitionSource> GetCallTargetDefinition(TypeDefinition type, CustomAttribute attribute)
             {
                 var res = new List<CallTargetDefinitionSource>();
-                var hasMisconfiguredInput = false;
                 string assemblyName = null;
                 string[] assemblyNames = null;
                 string integrationName = null;
@@ -122,20 +121,21 @@ namespace CodeGenerators
                             instrumentationCategory = (InstrumentationCategory)(namedArgument.Argument.Value as uint?).GetValueOrDefault();
                             break;
                         default:
-                            hasMisconfiguredInput = true;
-                            break;
-                    }
-
-                    if (hasMisconfiguredInput)
-                    {
-                        break;
+                            throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid property: '{namedArgument.Name}'");
                     }
                 }
 
                 (ushort Major, ushort Minor, ushort Patch) minVersion = default;
+                if (!TryGetVersion(minimumVersion, ushort.MinValue, out minVersion))
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for minimum: '{minimumVersion}'");
+                }
+
                 (ushort Major, ushort Minor, ushort Patch) maxVersion = default;
-                TryGetVersion(minimumVersion, ushort.MinValue, out minVersion);
-                TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion);
+                if (!TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion))
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for maximum: '{maximumVersion}'");
+                }
 
                 foreach (var assembly in assemblyNames ?? new[] { assemblyName })
                 {
@@ -198,8 +198,6 @@ namespace CodeGenerators
 
             static AdoNetSignature GetAdoNetSignature(TypeDefinition type, CustomAttribute attribute)
             {
-                var hasMisconfiguredInput = false;
-
                 string methodName = null;
                 string returnTypeName = null;
                 string[] parameterTypeNames = null;
@@ -230,13 +228,7 @@ namespace CodeGenerators
                             returnType = namedArgument.Argument.Value as int?;
                             break;
                         default:
-                            hasMisconfiguredInput = true;
-                            break;
-                    }
-
-                    if (hasMisconfiguredInput)
-                    {
-                        break;
+                            throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid property: '{namedArgument.Name}'");
                     }
                 }
 
@@ -253,8 +245,6 @@ namespace CodeGenerators
             static List<AssemblyCallTargetDefinitionSource> GetAdoNetClientInstruments(CustomAttribute attribute)
             {
                 var res = new List<AssemblyCallTargetDefinitionSource>();
-                var hasMisconfiguredInput = false;
-
                 string assemblyName = null;
                 string integrationName = null;
                 string typeName = null;
@@ -293,20 +283,21 @@ namespace CodeGenerators
                             signatureAttributeTypes = GetStringArray(namedArgument.Argument.Value);
                             break;
                         default:
-                            hasMisconfiguredInput = true;
-                            break;
-                    }
-
-                    if (hasMisconfiguredInput)
-                    {
-                        break;
+                            throw new InvalidOperationException($"Error: Assembly ADO Attribute Integration '{attribute}' has invalid property: '{namedArgument.Name}'");
                     }
                 }
 
                 (ushort Major, ushort Minor, ushort Patch) minVersion = default;
+                if (!TryGetVersion(minimumVersion, ushort.MinValue, out minVersion))
+                {
+                    throw new InvalidOperationException($"Error: Assembly ADO Attribute Integration '{attribute}' has invalid value for minimum: '{minimumVersion}'");
+                }
+
                 (ushort Major, ushort Minor, ushort Patch) maxVersion = default;
-                TryGetVersion(minimumVersion, ushort.MinValue, out minVersion);
-                TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion);
+                if (!TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion))
+                {
+                    throw new InvalidOperationException($"Error: Assembly ADO Attribute Integration '{attribute}' has invalid value for maximum: '{maximumVersion}'");
+                }
 
                 foreach (var signatureAttributeName in signatureAttributeTypes!)
                 {

@@ -82,8 +82,6 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
-    AbsolutePath DependabotPath => TracerDirectory / "dependabot";
-
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeTracerTestsProject => Solution.GetProject(Projects.NativeTracerNativeTests);

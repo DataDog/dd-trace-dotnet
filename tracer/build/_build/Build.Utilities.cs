@@ -223,7 +223,7 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotProj = DependabotPath / "Datadog.Dependabot.Integrations.csproj";
+           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
            var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
