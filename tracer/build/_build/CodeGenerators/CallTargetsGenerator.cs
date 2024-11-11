@@ -572,6 +572,12 @@ namespace CodeGenerators
                 sb.AppendLine(GetCallTarget(definition.Key, signatures[GetSignature(definition.Key)], definition.Value, x++));
             }
 
+            if (inWin32Section)
+            {
+                inWin32Section = false;
+                sb.AppendLine("#endif");
+            }
+
             sb.AppendLine("""
                 };
                 }

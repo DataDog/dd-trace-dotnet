@@ -53,7 +53,9 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHash(System.Byte[],System.Int32,System.Int32)\",\"\",[3],[False],[None],Default,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHash(System.IO.Stream)\",\"\",[1],[False],[None],Default,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Security.Cryptography.HashAlgorithm::ComputeHashAsync(System.IO.Stream,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ComputeHash(System.Security.Cryptography.HashAlgorithm) 1"),
+#endif
 (WCHAR*)WStr("[AspectClass(\"mscorlib\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.SymmetricAlgorithmAspect 4"),
+#if _WIN32
 (WCHAR*)WStr("  [AspectCtorReplace(\"System.Security.Cryptography.AesCryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Default,[])] InitAesCryptoServiceProvider() 1"),
 (WCHAR*)WStr("  [AspectCtorReplace(\"System.Security.Cryptography.DESCryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Default,[])] InitDES() 1"),
 (WCHAR*)WStr("  [AspectCtorReplace(\"System.Security.Cryptography.RC2CryptoServiceProvider::.ctor()\",\"\",[0],[False],[None],Default,[])] InitRC2() 1"),
@@ -69,8 +71,8 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("  [AspectMethodInsertAfter(\"System.Security.Cryptography.Rijndael::Create(System.String)\",\"\",[0],[False],[None],Default,[])] Create(System.Security.Cryptography.SymmetricAlgorithm) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertAfter(\"System.Security.Cryptography.TripleDES::Create()\",\"\",[0],[False],[None],Default,[])] Create(System.Security.Cryptography.SymmetricAlgorithm) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertAfter(\"System.Security.Cryptography.TripleDES::Create(System.String)\",\"\",[0],[False],[None],Default,[])] Create(System.Security.Cryptography.SymmetricAlgorithm) 1"),
-(WCHAR*)WStr("[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects 4"),
 #endif
+(WCHAR*)WStr("[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects 4"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable`1<!!0>)\",\"\",[0],[False],[None],Default,[]);V3.2.0] Concat(System.Collections.Generic.IEnumerable`1<!!0>) 165"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)\",\"\",[0],[False],[None],Default,[])] Concat(System.Collections.Generic.IEnumerable`1<System.String>) 165"),
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object)\",\"\",[0],[False],[None],Default,[])] Concat(System.Object,System.Object) 165"),
@@ -552,8 +554,8 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewHttpRequestMessage(System.Net.Http.HttpRequestMessage) 164"),
 #if _WIN32
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)\",\"\",[1],[False],[None],Default,[])] ReviewHttpRequestMessage(System.Object) 1"),
-(WCHAR*)WStr("[AspectClass(\"System.Net.Requests,System,netstandard\",[None],Sink,[Ssrf])] Datadog.Trace.Iast.Aspects.System.Net.WebRequestAspect 12"),
 #endif
+(WCHAR*)WStr("[AspectClass(\"System.Net.Requests,System,netstandard\",[None],Sink,[Ssrf])] Datadog.Trace.Iast.Aspects.System.Net.WebRequestAspect 12"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Net.WebRequest::Create(System.String)\",\"\",[0],[False],[None],Default,[])] Review(System.String) 165"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Net.WebRequest::Create(System.Uri)\",\"\",[0],[False],[None],Default,[])] Review(System.Uri) 165"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Net.WebRequest::CreateDefault(System.Uri)\",\"\",[0],[False],[None],Default,[])] Review(System.Uri) 165"),
@@ -660,13 +662,15 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("[AspectClass(\"System.Web\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Web.HttpCookieAspect 4"),
 #if _WIN32
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.Web.HttpCookie::get_Value()\",\"\",[0],[False],[None],Default,[])] GetValue(System.Web.HttpCookie) 1"),
+#endif
 (WCHAR*)WStr("[AspectClass(\"System.Web\",[None],Sink,[TrustBoundaryViolation])] Datadog.Trace.Iast.Aspects.System.Web.SessionState.HttpSessionStateBaseAspect 4"),
+#if _WIN32
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpSessionStateBase::Add(System.String,System.Object)\",\"\",[0,1],[False,False],[None],Default,[])] Add(System.Object) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpSessionStateBase::Remove(System.String)\",\"\",[0],[False],[None],Default,[])] Add(System.Object) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpSessionStateBase::set_Item(System.Int32,System.Object)\",\"\",[0],[False],[None],Default,[])] Add(System.Object) 1"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpSessionStateBase::set_Item(System.String,System.Object)\",\"\",[0,1],[False,False],[None],Default,[])] Add(System.Object) 1"),
-(WCHAR*)WStr("[AspectClass(\"System.Web\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpResponseAspect 4"),
 #endif
+(WCHAR*)WStr("[AspectClass(\"System.Web\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpResponseAspect 4"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpResponse::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String) 165"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpResponse::Redirect(System.String,System.Boolean)\",\"\",[1],[False],[None],Default,[])] Redirect(System.String) 165"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.HttpResponse::RedirectPermanent(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String) 165"),
@@ -674,8 +678,8 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("[AspectClass(\"System.Web.Extensions\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.Web.Extensions.JavaScriptSerializerAspects 4"),
 #if _WIN32
 (WCHAR*)WStr("  [AspectMethodReplace(\"System.Web.Script.Serialization.JavaScriptSerializer::DeserializeObject(System.String)\",\"\",[0],[False],[None],Default,[])] DeserializeObject(System.Object,System.String) 1"),
-(WCHAR*)WStr("[AspectClass(\"System.Web.Mvc\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpControllerAspect 4"),
 #endif
+(WCHAR*)WStr("[AspectClass(\"System.Web.Mvc\",[None],Sink,[UnvalidatedRedirect])] Datadog.Trace.Iast.Aspects.System.Web.HttpControllerAspect 4"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.Mvc.Controller::Redirect(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String) 165"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Web.Mvc.Controller::RedirectPermanent(System.String)\",\"\",[0],[False],[None],Default,[])] Redirect(System.String) 165"),
 (WCHAR*)WStr("[AspectClass(\"System.Web;System.Runtime.Extensions;System.Web.HttpUtility\",[None],Sink,[Ssrf])] Datadog.Trace.Iast.Aspects.System.Net.HttpUtilityAspect 4"),

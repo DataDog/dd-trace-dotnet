@@ -288,6 +288,12 @@ namespace CodeGenerators
 
                     sb.AppendLine(Format("  " + method.Key + method.Value.Suffix()));
                 }
+
+                if (inWin32Section)
+                {
+                    inWin32Section = false;
+                    sb.AppendLine("#endif");
+                }
             }
 
             sb.AppendLine("""
