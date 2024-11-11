@@ -11,34 +11,6 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal abstract class GitInfoProvider : IGitInfoProvider
 {
-    protected static DirectoryInfo? GetParentGitFolder(string? innerFolder)
-    {
-        if (string.IsNullOrEmpty(innerFolder))
-        {
-            return null;
-        }
-
-        var dirInfo = new DirectoryInfo(innerFolder);
-        while (dirInfo != null)
-        {
-            var gitDirectories = dirInfo.GetDirectories(".git");
-            if (gitDirectories.Length > 0)
-            {
-                foreach (var gitDir in gitDirectories)
-                {
-                    if (gitDir.Name == ".git")
-                    {
-                        return gitDir;
-                    }
-                }
-            }
-
-            dirInfo = dirInfo.Parent;
-        }
-
-        return null;
-    }
-
     public bool TryGetFrom(string folder, out IGitInfo? gitInfo)
     {
         // Try to load git metadata from the folder

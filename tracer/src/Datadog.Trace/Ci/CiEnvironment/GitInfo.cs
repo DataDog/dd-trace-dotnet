@@ -159,7 +159,22 @@ internal class GitInfo : IGitInfo
         var dirInfo = new DirectoryInfo(innerFolder);
         while (dirInfo != null)
         {
-            var gitDirectories = dirInfo.GetDirectories(".git");
+            DirectoryInfo[] gitDirectories;
+            try
+            {
+                gitDirectories = dirInfo.GetDirectories(".git");
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                Log.Error(ex, "Get directories failed with DirectoryNotFoundException");
+                return null;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Log.Error(ex, "Get directories failed with UnauthorizedAccessException");
+                return null;
+            }
+
             if (gitDirectories.Length > 0)
             {
                 foreach (var gitDir in gitDirectories)
@@ -175,10 +190,5 @@ internal class GitInfo : IGitInfo
         }
 
         return null;
-    }
-
-    internal static void SetGitInfoProviders(params IGitInfoProvider[] providers)
-    {
-        _gitInfoProviders = providers;
     }
 }
