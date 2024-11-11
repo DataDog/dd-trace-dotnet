@@ -35,7 +35,7 @@ namespace Datadog.Trace.Ci.Configuration
                 // If the CI Visibility is disabled we don't need to load the rest of the configuration
                 // and we can return early.
                 // This is useful to avoid loading the CIEnvironmentValues instance when calculating the test session name
-                // and avoid the overhead of loading the configuration.
+                // and avoid the overhead of loading the configuration on normal no CI Visibility mode.
                 TestSessionName = string.Empty;
                 return;
             }
