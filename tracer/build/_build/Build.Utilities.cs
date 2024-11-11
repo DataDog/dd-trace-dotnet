@@ -224,7 +224,7 @@ partial class Build
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
            var dependabotProj = DependabotPath / "Datadog.Dependabot.Integrations.csproj";
-           var dependabotJsonFile = DependabotPath / FileNames.DefinitionsJson;
+           var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
            var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
            var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
                                          {
@@ -246,7 +246,7 @@ partial class Build
                            .Select(x => x.ToString())
                            .ToList();
 
-           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, dependabotJsonFile);
+           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
            await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);

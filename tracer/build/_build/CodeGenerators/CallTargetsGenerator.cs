@@ -19,7 +19,7 @@ namespace CodeGenerators
         {
             Serilog.Log.Debug("Generating CallTarget definitions file ...");
 
-            Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets = new Dictionary<CallTargetDefinitionSource, TargetFrameworks>();
+            var callTargets = new Dictionary<CallTargetDefinitionSource, TargetFrameworks>();
             foreach(var tfm in targetFrameworks)
             {
                 var tfmCategory = GetCategory(tfm);
@@ -64,19 +64,19 @@ namespace CodeGenerators
 
             static List<CallTargetDefinitionSource> GetCallTargetDefinition(TypeDefinition type, CustomAttribute attribute)
             {
-                List<CallTargetDefinitionSource> res = new List<CallTargetDefinitionSource>();
+                var res = new List<CallTargetDefinitionSource>();
                 var hasMisconfiguredInput = false;
-                string? assemblyName = null;
-                string[]? assemblyNames = null;
-                string? integrationName = null;
-                string? typeName = null;
-                string[]? typeNames = null;
-                string? methodName = null;
-                string? returnTypeName = null;
-                string? minimumVersion = null;
-                string? maximumVersion = null;
-                string[]? parameterTypeNames = null;
-                string? callTargetType = null;
+                string assemblyName = null;
+                string[] assemblyNames = null;
+                string integrationName = null;
+                string typeName = null;
+                string[] typeNames = null;
+                string methodName = null;
+                string returnTypeName = null;
+                string minimumVersion = null;
+                string maximumVersion = null;
+                string[] parameterTypeNames = null;
+                string callTargetType = null;
                 int? integrationKind = null;
                 var instrumentationCategory = InstrumentationCategory.Tracing;
 
@@ -165,13 +165,13 @@ namespace CodeGenerators
 
         internal static void RetrieveAdoNetCallTargets(Dictionary<CallTargetDefinitionSource, TargetFrameworks> callTargets, AssemblyDefinition assembly, TargetFrameworks tfmCategory)
         {
-            List<AssemblyCallTargetDefinitionSource> adoNetClientInstruments = new List<AssemblyCallTargetDefinitionSource>();
+            var adoNetClientInstruments = new List<AssemblyCallTargetDefinitionSource>();
             foreach (var attribute in assembly.MainModule.Assembly.CustomAttributes.Where(IsTargetClientInstrumentAttribute))
             {
                 adoNetClientInstruments.AddRange(GetAdoNetClientInstruments(attribute));
             }
 
-            List<AdoNetSignature> adoNetSignatures = new List<AdoNetSignature>();
+            var adoNetSignatures = new List<AdoNetSignature>();
             foreach (var type in EnumTypes(assembly.MainModule.Types))
             {
                 foreach (var attribute in type.CustomAttributes.Where(IsTargetSignatureAttribute))
@@ -202,12 +202,12 @@ namespace CodeGenerators
             {
                 var hasMisconfiguredInput = false;
 
-                string? methodName = null;
-                string? returnTypeName = null;
-                string[]? parameterTypeNames = null;
+                string methodName = null;
+                string returnTypeName = null;
+                string[] parameterTypeNames = null;
                 int? integrationKind = null;
                 int? returnType = null;
-                string? callTargetType = null;
+                string callTargetType = null;
 
                 foreach (var namedArgument in attribute.Properties)
                 {
@@ -254,17 +254,17 @@ namespace CodeGenerators
 
             static List<AssemblyCallTargetDefinitionSource> GetAdoNetClientInstruments(CustomAttribute attribute)
             {
-                List<AssemblyCallTargetDefinitionSource> res = new List<AssemblyCallTargetDefinitionSource>();
+                var res = new List<AssemblyCallTargetDefinitionSource>();
                 var hasMisconfiguredInput = false;
 
-                string? assemblyName = null;
-                string? integrationName = null;
-                string? typeName = null;
-                string? minimumVersion = null;
-                string? maximumVersion = null;
-                string? dataReaderTypeName = null;
-                string? dataReaderTaskTypeName = null;
-                string[]? signatureAttributeTypes = null;
+                string assemblyName = null;
+                string integrationName = null;
+                string typeName = null;
+                string minimumVersion = null;
+                string maximumVersion = null;
+                string dataReaderTypeName = null;
+                string dataReaderTaskTypeName = null;
+                string[] signatureAttributeTypes = null;
 
                 foreach (var namedArgument in attribute.Properties)
                 {
@@ -461,13 +461,13 @@ namespace CodeGenerators
             sb.AppendLine();
 
             // Retrieve all signatures
-            HashSet<string> signatureTexts = new HashSet<string>();
+            var signatureTexts = new HashSet<string>();
             foreach (var definition in definitions)
             {
                 signatureTexts.Add(GetSignature(definition.Key));
             }
            
-            Dictionary<string, string> signatures = new Dictionary<string, string>();
+            var signatures = new Dictionary<string, string>();
             foreach (var sig in signatureTexts.OrderBy(s => s, StringComparer.OrdinalIgnoreCase))
             {
                 if (!signatures.TryGetValue(sig, out var sigName))
@@ -637,7 +637,7 @@ namespace CodeGenerators
 
         internal record AdoNetSignature
         {
-            public AdoNetSignature(string className, string targetMethodName, string? targetReturnType, string[] targetParameterTypes, string instrumentationTypeName, int callTargetIntegrationKind, int returnType)
+            public AdoNetSignature(string className, string targetMethodName, string targetReturnType, string[] targetParameterTypes, string instrumentationTypeName, int callTargetIntegrationKind, int returnType)
             {
                 ClassName = className;
                 TargetMethodName = targetMethodName;
@@ -652,7 +652,7 @@ namespace CodeGenerators
 
             public string TargetMethodName { get; }
 
-            public string? TargetReturnType { get; }
+            public string TargetReturnType { get; }
 
             public EquatableArray<string> TargetParameterTypes { get; }
 
@@ -665,7 +665,7 @@ namespace CodeGenerators
 
         internal record AssemblyCallTargetDefinitionSource
         {
-            public AssemblyCallTargetDefinitionSource(string signatureAttributeName, string integrationName, string assemblyName, string targetTypeName, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory, string? dataReaderTypeName, string? dataReaderTaskTypeName)
+            public AssemblyCallTargetDefinitionSource(string signatureAttributeName, string integrationName, string assemblyName, string targetTypeName, (ushort Major, ushort Minor, ushort Patch) minimumVersion, (ushort Major, ushort Minor, ushort Patch) maximumVersion, bool isAdoNetIntegration, InstrumentationCategory instrumentationCategory, string dataReaderTypeName, string dataReaderTaskTypeName)
             {
                 SignatureAttributeName = signatureAttributeName;
                 IntegrationName = integrationName;
@@ -695,9 +695,9 @@ namespace CodeGenerators
 
             public InstrumentationCategory InstrumentationCategory { get; }
 
-            public string? DataReaderTypeName { get; }
+            public string DataReaderTypeName { get; }
 
-            public string? DataReaderTaskTypeName { get; }
+            public string DataReaderTaskTypeName { get; }
         }
 
         private static class InstrumentAttributeProperties

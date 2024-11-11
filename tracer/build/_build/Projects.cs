@@ -54,5 +54,5 @@ public static class FileNames
     public const string AfterInstallScript = "after-install.sh";
     public const string AfterRemoveScript = "after-remove.sh";
 
-    public const string DefinitionsJson = "generated_calltargets.g.json";
+    public const string DefinitionsJson = "supported_calltargets.g.json";
 }

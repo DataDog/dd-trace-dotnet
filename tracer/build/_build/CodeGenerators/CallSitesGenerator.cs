@@ -16,7 +16,7 @@ namespace CodeGenerators
         {
             Serilog.Log.Debug("Generating CallSite definitions file ...");
 
-            Dictionary<string, AspectClass> aspectClasses = new Dictionary<string, AspectClass>();
+            var aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
             {
                 var dllPath = getDllPath(tfm);
