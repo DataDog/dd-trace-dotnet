@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -93,6 +94,8 @@ public static class SignInManagerPasswordSignInUserIntegration
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
                 }
+
+                SecurityCoordinator.CollectHeaders(span);
             }
             else if (userExists)
             {

@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -101,6 +102,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 {
                     TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
                 }
+
+                SecurityCoordinator.CollectHeaders(span);
             }
 
             return returnValue;

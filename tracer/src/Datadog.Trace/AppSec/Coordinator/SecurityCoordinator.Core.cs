@@ -9,6 +9,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
@@ -56,6 +57,18 @@ internal readonly partial struct SecurityCoordinator
         var cookie = cookies.ElementAt(i);
         key = cookie.Key;
         value = cookie.Value;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void CollectHeaders(Span internalSpan)
+    {
+        var context = CoreHttpContextStore.Instance.Get();
+        internalSpan = TryGetRoot(internalSpan);
+        if (context != null)
+        {
+            var headers = new HeadersCollectionAdapter(context.Request.Headers);
+            AddRequestHeaders(internalSpan, headers);
+        }
     }
 
     internal void BlockAndReport(IResult? result)

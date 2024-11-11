@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.UserManager`1",
     MethodName = "CreateAsync",
-    ParameterTypeNames = new[] { "!0" },
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.UserManager`1",
     MethodName = "CreateAsync",
-    ParameterTypeNames = new[] { "!0" },
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -92,7 +93,7 @@ public static class UserManagerCreateIntegration
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, id);
                     setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
                 }
-            }
+                }
             else
             {
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
@@ -110,6 +111,7 @@ public static class UserManagerCreateIntegration
             }
 
             security.SetTraceSamplingPriority(span);
+            SecurityCoordinator.CollectHeaders(span);
         }
 
         return returnValue;
