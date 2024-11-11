@@ -15,7 +15,7 @@ namespace CodeGenerators
 
         public static void GenerateCallSites(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath) 
         {
-            Logger.Debug("Generating CallSite definitions file ...");
+            Serilog.Log.Debug("Generating CallSite definitions file ...");
 
             Dictionary<string, AspectClass> aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
