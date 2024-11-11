@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
@@ -11,7 +12,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 internal abstract class GitInfoProvider : IGitInfoProvider
 {
-    public bool TryGetFrom(string folder, out IGitInfo? gitInfo)
+    public bool TryGetFrom(string folder, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
         // Try to load git metadata from the folder
         if (TryGetFrom(new DirectoryInfo(folder), out gitInfo))
@@ -44,5 +45,5 @@ internal abstract class GitInfoProvider : IGitInfoProvider
         return false;
     }
 
-    protected abstract bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo);
+    protected abstract bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo);
 }

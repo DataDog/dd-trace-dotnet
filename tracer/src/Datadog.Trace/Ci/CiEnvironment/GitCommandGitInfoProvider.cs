@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Logging;
@@ -20,7 +21,7 @@ internal sealed class GitCommandGitInfoProvider : GitInfoProvider
 
     public static IGitInfoProvider Instance { get; } = new GitCommandGitInfoProvider();
 
-    protected override bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo)
+    protected override bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
         var localGitInfo = new GitInfo
         {

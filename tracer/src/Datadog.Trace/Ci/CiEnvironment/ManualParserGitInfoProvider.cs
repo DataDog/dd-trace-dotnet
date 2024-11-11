@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -26,7 +27,7 @@ internal sealed class ManualParserGitInfoProvider : GitInfoProvider
 
     public static IGitInfoProvider Instance { get; } = new ManualParserGitInfoProvider();
 
-    protected override bool TryGetFrom(DirectoryInfo gitDirectory, out IGitInfo? gitInfo)
+    protected override bool TryGetFrom(DirectoryInfo gitDirectory, [NotNullWhen(true)] out IGitInfo? gitInfo)
     {
         if (gitDirectory == null)
         {

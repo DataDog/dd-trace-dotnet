@@ -4,7 +4,7 @@
 // </copyright>
 #nullable enable
 
-using System.IO;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -13,5 +13,5 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 /// </summary>
 internal interface IGitInfoProvider
 {
-    bool TryGetFrom(string folder, out IGitInfo? gitInfo);
+    bool TryGetFrom(string folder, [NotNullWhen(true)] out IGitInfo? gitInfo);
 }
