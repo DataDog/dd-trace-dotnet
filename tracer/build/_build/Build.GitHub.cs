@@ -108,15 +108,35 @@ partial class Build
            .Requires(() => TargetBranch)
            .Executes(async () =>
            {
-               var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, include both the original code and your recommended change. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization.";
+               var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, include both the original code and your recommended change. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
                // This assumes that we're running in a pull request, so we compare against the target branch
                var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
-               var changesText = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" --  \"*.cs\" \"*.h\" \"*.cpp\"")
+
+               // This is for actual PR changes
+               /*
+               var changesText = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" --  \"*.csproj\" \"*.cs\" \"*.yml\" \"*.h\" \"*.cpp\"")
                     .Select(f => f.Text).JoinNewLine();
+               */
 
-               string result;
+               string result = string.Empty;
+               var client = GetGitHubClient();
 
-               File.WriteAllText("changes.txt", changesText);
+               var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+               var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+
+               var descriptionPrompt = " The body of the PR is: " + pullRequest.Body + Environment.NewLine;
+
+               string changesText = string.Empty;
+               foreach (var file in pullRequestFiles)
+               {
+                   changesText += ($"Filename: {file.FileName}" + Environment.NewLine);
+                   changesText += ($"Changes:\n{file.Patch}");
+                   changesText += (new string('-', 40)) + Environment.NewLine + Environment.NewLine; 
+               }
+
+               var fullPrompt = prompt + descriptionPrompt + changesText;
+               File.WriteAllText("changes.txt", fullPrompt);
+               Console.WriteLine(fullPrompt);
 
                if (string.IsNullOrEmpty(changesText))
                {
@@ -128,7 +148,7 @@ partial class Build
                }
                else
                {
-                   result = await OpenAiApiCall.GetResponseAsync(prompt + changesText, OpenAIKey);
+                   result = await OpenAiApiCall.GetResponseAsync(fullPrompt, OpenAIKey);
                }
 
                Console.WriteLine(result);
@@ -141,6 +161,7 @@ partial class Build
 
                var markdown = new StringBuilder();
                markdown.AppendLine("## LLM Report").AppendLine(result).AppendLine();
+               File.WriteAllText("LLMResult.txt", markdown.ToString());
                // await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", markdown.ToString());
            });
 
