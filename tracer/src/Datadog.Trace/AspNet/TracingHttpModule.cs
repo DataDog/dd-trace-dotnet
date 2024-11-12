@@ -195,7 +195,10 @@ namespace Datadog.Trace.AspNet
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        if (bodyArgs is not null)
+                        {
+                            args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        }
                     }
 
                     securityCoordinator.BlockAndReport(args);

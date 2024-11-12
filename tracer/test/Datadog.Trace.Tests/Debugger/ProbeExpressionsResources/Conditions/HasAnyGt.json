@@ -1,0 +1,14 @@
+{
+  "dsl": "any(ref CollectionIntLocal, { @it > 10 })",
+  "any": [
+    {
+      "ref": "CollectionIntLocal"
+    },
+    {
+      "gt": [
+        "@it",
+        10
+      ]
+    }
+  ]
+}
