@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -120,14 +119,13 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         // this is an upper bound and will almost always be more bytes than we need
         var maxByteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
-        int byteCount;
 
 #if NETCOREAPP3_1_OR_GREATER
         if (maxByteCount < 256)
         {
             // allocate a buffer on the stack for the UTF-8 bytes
             Span<byte> stackBuffer = stackalloc byte[maxByteCount];
-            byteCount = Encoding.UTF8.GetBytes(source, stackBuffer);
+            var byteCount = Encoding.UTF8.GetBytes(source, stackBuffer);
 
             // slice the buffer down to the actual bytes written
             var stackBytes = stackBuffer[..byteCount];
@@ -137,11 +135,11 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 #endif
 
         // rent a buffer for the UTF-8 bytes
-        var buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+        var buffer = ArrayPool<byte>.Shared.Rent(minimumLength: maxByteCount);
 
         try
         {
-            byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
+            var byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
 
             // slice the buffer down to the actual bytes written
             var bytes = buffer.AsSpan(0, byteCount);
@@ -155,34 +153,39 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
     private static void EncodeBytesAndAppend(StringBuilder sb, Span<byte> bytes, HashSet<char> charsToEncode)
     {
-        foreach (var b in bytes)
+        // allocate a buffer on the stack (or rent one) for hexadecimal strings
+#if NETCOREAPP3_1_OR_GREATER
+        Span<char> hexStringBuffer = stackalloc char[2];
+#else
+        var buffer = ArrayPool<char>.Shared.Rent(minimumLength: 2);
+        var hexStringBuffer = buffer.AsSpan(start: 0, length: 2);
+#endif
+
+        for (var index = 0; index < bytes.Length; index++)
         {
+            var b = bytes[index];
+
             if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b))
             {
-                // encode byte as '%XX'
-#if NET6_0_OR_GREATER
-                Span<char> buffer = stackalloc char[2];
-                if (b.TryFormat(buffer, out var chars, format: "X2") && chars == 2)
-                {
-                    sb.Append('%').Append(buffer);
-                }
-                else
-                {
-                    // fallback
-                    sb.Append($"%{b:X2}");
-                }
-#else
-                sb.Append($"%{b:X2}");
-#endif                
+                // encode byte as "%FF" (hexadecimal)
+                var byteToEncode = bytes.Slice(index, 1);
+                HexString.ToHexChars(byteToEncode, hexStringBuffer, lowerCase: false);
+
+                sb.Append('%').Append(hexStringBuffer);
             }
             else
             {
+                // append the byte as a character
                 sb.Append((char)b);
             }
         }
+
+#if !NETCOREAPP3_1_OR_GREATER
+        ArrayPool<char>.Shared.Return(buffer);
+#endif
     }
 
-    internal static bool AnyCharRequiresEncoding(string source, HashSet<char> charsToEncode)
+    private static bool AnyCharRequiresEncoding(string source, HashSet<char> charsToEncode)
     {
         foreach (var c in source)
         {
