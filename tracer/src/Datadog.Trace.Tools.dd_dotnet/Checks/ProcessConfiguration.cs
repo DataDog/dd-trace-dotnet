@@ -51,7 +51,7 @@ internal static class ProcessConfiguration
         }
         else
         {
-                Utils.WriteInfo("Did not find JSON configuration file to load from: " + jsonDirectory);
+            Utils.WriteInfo("Did not find JSON configuration file to load from: " + jsonDirectory);
         }
 
         return configurationSource;
