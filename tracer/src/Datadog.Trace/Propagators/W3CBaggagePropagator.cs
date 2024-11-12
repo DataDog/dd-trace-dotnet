@@ -328,7 +328,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
             EncodeStringAndAppend(_sb, item.Key, KeyCharsToEncode);
             _sb.Append(KeyAndValueSeparator);
-            EncodeStringAndAppend(_sb, item.Value, ValueCharsToEncode);
+            EncodeStringAndAppend(_sb, item.Value!, ValueCharsToEncode);
 
             // it's all ASCII here after encoding, so we can use the string
             // length directly instead of using Encoding.UTF8.GetByteCount().
