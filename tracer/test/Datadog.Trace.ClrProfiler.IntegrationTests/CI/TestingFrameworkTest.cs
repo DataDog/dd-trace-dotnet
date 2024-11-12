@@ -67,7 +67,7 @@ public abstract class TestingFrameworkTest : TestHelper
             return;
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         sb.AppendLine("***********************************");
 
         var i = 0;

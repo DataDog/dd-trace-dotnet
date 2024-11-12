@@ -227,7 +227,7 @@ internal partial class ProbeExpressionParser<T>
 
     private string DumpCollection(object value, Type assignableFrom)
     {
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         try
         {
             if (value == null)

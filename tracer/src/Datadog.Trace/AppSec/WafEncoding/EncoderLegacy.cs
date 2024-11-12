@@ -225,8 +225,7 @@ internal class EncoderLegacy : IEncoder
 
     public static string FormatArgs(object o)
     {
-        // zero capacity because we don't know the size in advance
-        var sb = StringBuilderCache.Acquire(0);
+        var sb = StringBuilderCache.Acquire();
         FormatArgsInternal(o, sb);
         return StringBuilderCache.GetStringAndRelease(sb);
     }
