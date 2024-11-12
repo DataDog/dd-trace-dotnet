@@ -89,9 +89,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start).ToList();
+            var allSpans = agent.WaitForSpans(expectedAllSpansCount, assertExpectedCount: false).OrderBy(s => s.Start).ToList();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
+#if NET9_0_OR_GREATER
+            // .NET 9.0 changed the behaviour when AllowWriteStreamBuffering=false
+            // The net result is that we end up creating a "WebRequest" span instead
+            // of an "HttpClient" span in one of the cases. Rather than creating a whole
+            // separate set of snapshots for .NET 9+, just "fixing" that one span instead.
+            var rogueSpan = allSpans.SingleOrDefault(
+                s => s.Tags.TryGetValue(Tags.HttpUrl, out var tag)
+                  && tag.EndsWith("?BeginGetResponseAsync_NoBuffering"));
+
+            // it should never be null, but fall through to fail the snapshots for easier debuggability if it is
+            if (rogueSpan is not null)
+            {
+                Output.WriteLine("Updating span with HttpClient tags");
+                rogueSpan.Tags["component"] = "HttpMessageHandler"; // previously "WebRequest"
+                rogueSpan.Tags["http-client-handler-type"] = "System.Net.Http.SocketsHttpHandler"; // previously not set
+            }
+#endif
 #if NETCOREAPP
             // different TFMs use different underlying handlers, which we don't really care about for the snapshots
             settings.AddSimpleScrubber("System.Net.Http.HttpClientHandler", "System.Net.Http.SocketsHttpHandler");
