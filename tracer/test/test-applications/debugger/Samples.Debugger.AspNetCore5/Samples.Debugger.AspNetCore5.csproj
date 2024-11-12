@@ -105,9 +105,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0-rc.2.24474.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.0-rc.2.24474.1" />
-    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="9.0.0-rc.2.24474.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.0" />
+    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="9.0.0" />
     <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.10" />
     <PackageReference Update="SQLitePCLRaw.core" Version="2.1.10" />
   </ItemGroup>
