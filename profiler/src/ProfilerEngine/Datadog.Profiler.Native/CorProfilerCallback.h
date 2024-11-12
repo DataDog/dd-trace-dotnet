@@ -283,6 +283,7 @@ private:
     static void InspectProcessorInfo();
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
     static void PrintEnvironmentVariables();
+    static void OnThreadRoutineFinished();
 
     void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     void DisposeInternal();

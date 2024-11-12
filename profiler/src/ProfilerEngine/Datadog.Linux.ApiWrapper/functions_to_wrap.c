@@ -61,13 +61,10 @@ __thread unsigned long long functions_entered_counter = 0;
 __attribute__((visibility("hidden")))
 atomic_int is_app_crashing = 0;
 
-__attribute__((visibility("hidden")))
-__thread int8_t is_thread_routine_ended = 0;
-
 // this function is called by the profiler
 unsigned long long dd_inside_wrapped_functions()
 {
-    return functions_entered_counter + is_app_crashing + is_thread_routine_ended;
+    return functions_entered_counter + is_app_crashing;
 }
 
 #if defined(__aarch64__)
@@ -555,9 +552,10 @@ static void* entry2(void* arg)
 {
     struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
     void* result = new_arg->func(new_arg->orig_arg);
-    // check if we should call the profiler
-    is_thread_routine_ended = 1;
     free(new_arg);
+    // Call into the profiler to do extra cleanup.
+    // This is *useful* at shutdown time to avoid crashing.
+    __dd_on_thread_routine_finished();
     return result;
 }
 

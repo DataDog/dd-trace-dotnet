@@ -82,6 +82,10 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
+#ifdef LINUX
+extern "C" void (*volatile dd_on_thread_routine_finished)() __attribute__((weak));
+#endif
+
 CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration) :
     _pConfiguration{std::move(pConfiguration)}
 {
@@ -94,6 +98,12 @@ CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfig
 #ifndef _WINDOWS
     CGroup::Initialize();
 #endif
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = CorProfilerCallback::OnThreadRoutineFinished;
+    }
+#endif
 }
 
 // Cleanup
@@ -105,6 +115,13 @@ CorProfilerCallback::~CorProfilerCallback()
 
 #ifndef _WINDOWS
     CGroup::Cleanup();
+#endif
+
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = nullptr;
+    }
 #endif
 }
 
@@ -1552,6 +1569,31 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     return S_OK;
 }
 
+#ifdef LINUX
+void CorProfilerCallback::OnThreadRoutineFinished()
+{
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto myThis = _this;
+    if (myThis == nullptr)
+    {
+        return;
+    }
+
+    auto* cpuProfiler = myThis->_pCpuProfiler;
+    if (cpuProfiler == nullptr)
+    {
+        return;
+    }
+
+    cpuProfiler->UnregisterThread(threadInfo);
+}
+#endif
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
@@ -1561,6 +1603,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
+
+    ManagedThreadInfo::CurrentThreadInfo = nullptr;
 
     std::shared_ptr<ManagedThreadInfo> pThreadInfo;
     Log::Debug("Removing thread ", std::hex, threadId, " from the trace context threads list.");
