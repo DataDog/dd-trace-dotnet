@@ -151,7 +151,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         }
     }
 
-    private static void EncodeBytesAndAppend(StringBuilder sb, Span<byte> bytes, HashSet<char> charsToEncode)
+    private static void EncodeBytesAndAppend(StringBuilder sb, ReadOnlySpan<byte> bytes, HashSet<char> charsToEncode)
     {
         // allocate a buffer on the stack (or rent one) for hexadecimal strings
 #if NETCOREAPP3_1_OR_GREATER
