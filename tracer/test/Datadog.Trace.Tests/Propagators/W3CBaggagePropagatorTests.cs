@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -263,6 +264,21 @@ public class W3CBaggagePropagatorTests
 
         headers.Setup(h => h.GetValues("baggage"))
                .Returns([header]);
+
+        var context = BaggagePropagator.Extract(headers.Object);
+
+        headers.Verify(h => h.GetValues("baggage"), Times.Once());
+        context.Baggage.Should().BeNull();
+        context.SpanContext.Should().BeNull();
+    }
+
+    [Fact]
+    public void Extract_NoHeader()
+    {
+        var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+        headers.Setup(h => h.GetValues("baggage"))
+               .Returns([]);
 
         var context = BaggagePropagator.Extract(headers.Object);
 

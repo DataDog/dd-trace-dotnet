@@ -1,33 +1,73 @@
-// <copyright file="ContextTests.cs" company="Datadog">
+// <copyright file="WafConcurrencyTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+
 #if NETFRAMEWORK
 using System.Web.Routing;
-#else
 #endif
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-public class ContextTests : WafLibraryRequiredTest
+public class WafConcurrencyTests : WafLibraryRequiredTest
 {
     // here we use just 1 sec instead of the 20sec common one as we dont really care about the result, just that it runs
     public const int WafRunTimeoutMicroSeconds = 1_000_000;
+
+    [Fact]
+    public void MultipleWafOps()
+    {
+        var results = new ConcurrentBag<UpdateResult>();
+        var threads = new List<Thread>();
+        for (var i = 0; i < 5; i++)
+        {
+            var initResult = CreateWaf();
+            var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+            var confState = CreateConfigurationState("ruleset-withblockips.json");
+            var disposeThread = new Thread(waf.Dispose);
+            var updateThread = new Thread(
+               () =>
+               {
+                   var ur = waf.Update(confState);
+                   results.Add(ur);
+               });
+
+            updateThread.Start();
+            disposeThread.Start();
+            threads.Add(updateThread);
+            threads.Add(disposeThread);
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Join();
+        }
+
+        foreach (var result in results)
+        {
+            if (!result.Success)
+            {
+                var acceptableError = result.ErrorMessage.Contains("disposed") || result.ErrorMessage.Contains("Couldn't acquire lock to update waf");
+                acceptableError.Should().BeTrue();
+            }
+        }
+    }
 
     [Theory]
     [InlineData(true)]

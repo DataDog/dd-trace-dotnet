@@ -6,24 +6,19 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
-using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
-using static Datadog.Trace.AppSec.Rcm.ConfigurationState;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -128,23 +123,40 @@ namespace Datadog.Trace.AppSec.Waf
             try
             {
                 var updateObject = updateData.ResultDdwafObject;
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateObject, ref diagnosticsValue);
-                if (newHandle != IntPtr.Zero)
+                // test if not disposed as iis might recycle the pool and cause shutdown tasks (dispose) to happen on another thread
+                if (_wafLocker.EnterWriteLock())
                 {
-                    var oldHandle = _wafHandle;
-                    if (_wafLocker.EnterWriteLock())
+                    if (!Disposed)
                     {
-                        _wafHandle = newHandle;
-                        _wafLocker.ExitWriteLock();
-                        _wafLibraryInvoker.Destroy(oldHandle);
-                        return UpdateResult.FromSuccess(diagnosticsValue);
-                    }
+                        // update within the lock as iis can recycle and cause dispose to happen at the same time
+                        var newHandle = _wafLibraryInvoker.Update(_wafHandle, ref updateObject, ref diagnosticsValue);
+                        if (newHandle != IntPtr.Zero)
+                        {
+                            var oldHandle = _wafHandle;
+                            _wafHandle = newHandle;
+                            _wafLocker.ExitWriteLock();
+                            _wafLibraryInvoker.Destroy(oldHandle);
+                            return UpdateResult.FromSuccess(diagnosticsValue);
+                        }
 
-                    _wafLibraryInvoker.Destroy(newHandle);
+                        _wafLocker.ExitWriteLock();
+                        _wafLibraryInvoker.Destroy(newHandle);
+                    }
+                    else
+                    {
+                        _wafLocker.ExitWriteLock();
+                        res = UpdateResult.FromFailed("Waf is already disposed and can't be updated");
+                    }
+                }
+                else
+                {
+                    res = UpdateResult.FromFailed("Couldn't acquire lock to update waf");
                 }
             }
             catch (Exception e)
             {
+                res = UpdateResult.FromException(e);
+                _wafLocker.ExitWriteLock();
                 Log.Error(e, "An exception occurred while trying to update waf with new data");
             }
             finally
@@ -157,7 +169,7 @@ namespace Datadog.Trace.AppSec.Waf
             return res;
         }
 
-        public UpdateResult Update(ConfigurationState configurationStatus, string? rulesPath = null)
+        public UpdateResult Update(ConfigurationState configurationStatus)
         {
             var dic = configurationStatus.BuildDictionaryForWafAccordingToIncomingUpdate();
             if (dic is null)
@@ -272,8 +284,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             Disposed = true;
-            _wafLibraryInvoker.Destroy(_wafHandle);
-            _wafLocker.Dispose();
+            // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
+            if (_wafLocker.EnterWriteLock(15000))
+            {
+                _wafLibraryInvoker.Destroy(_wafHandle);
+                _wafLocker.ExitWriteLock();
+            }
         }
     }
 }

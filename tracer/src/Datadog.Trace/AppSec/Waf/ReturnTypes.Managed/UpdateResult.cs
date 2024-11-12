@@ -36,6 +36,11 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             NothingToUpdate = nothingToUpdate;
         }
 
+        private UpdateResult(string errorMessage)
+        {
+            ErrorMessage = errorMessage;
+        }
+
         internal bool Success { get; }
 
         internal bool UnusableRules { get; }
@@ -66,5 +71,9 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         public static UpdateResult FromFailed(DdwafObjectStruct diagObj) => new(diagObj, false);
 
         public static UpdateResult FromSuccess(DdwafObjectStruct diagObj) => new(diagObj, true);
+
+        internal static UpdateResult FromException(Exception e) => new(e.Message);
+
+        internal static UpdateResult FromFailed(string message) => new(message);
     }
 }
