@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -163,10 +164,9 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         for (var index = 0; index < bytes.Length; index++)
         {
-            var b = bytes[index];
-            var c = (char)b;
+            var c = (char)bytes[index];
 
-            if (b < 0x20 || b > 0x7E || char.IsWhiteSpace(c) || charsToEncode.Contains(c))
+            if (CharRequiresEncoding(c, charsToEncode))
             {
                 // encode byte as "%FF" (hexadecimal)
                 var byteToEncode = bytes.Slice(index, 1);
@@ -186,11 +186,17 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 #endif
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool CharRequiresEncoding(char c, HashSet<char> charsToEncode)
+    {
+        return c < 0x20 || c > 0x7E || char.IsWhiteSpace(c) || charsToEncode.Contains(c);
+    }
+
     private static bool AnyCharRequiresEncoding(string source, HashSet<char> charsToEncode)
     {
         foreach (var c in source)
         {
-            if (c < 0x20 || c > 0x7E || char.IsWhiteSpace(c) || charsToEncode.Contains(c))
+            if (CharRequiresEncoding(c, charsToEncode))
             {
                 return true;
             }
