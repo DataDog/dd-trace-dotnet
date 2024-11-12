@@ -132,23 +132,23 @@ namespace Datadog.Trace.Tests.Debugger
             var json = GetJsonPart(jsonExpression);
             var scopeMembers = CreateScopeMembers();
             DebuggerExpression? condition = null;
-            DebuggerExpression[] templates;
+            DebuggerExpression?[] templates;
             DebuggerExpression? metrics = null;
-            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {
                 condition = new DebuggerExpression(dsl, json, null);
-                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+                templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
             else if (dirName == TemplatesFolder)
             {
-                templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
+                templates = new DebuggerExpression?[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
             else if (dirName == MetricsFolder)
             {
                 metrics = new DebuggerExpression(dsl, json, null);
-                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+                templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
             else
             {
@@ -255,10 +255,10 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine($"Result: {evaluationResult.Condition}");
             }
 
-            if (evaluator.Templates.Any(t => t.Dsl != DefaultDslTemplate))
+            if (evaluator.Templates.Any(t => t?.Dsl != DefaultDslTemplate))
             {
                 builder.AppendLine("Template:");
-                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
+                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t?.Json))}");
                 builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
                 builder.AppendLine($"Result: {SanitizeEvaluationResult(evaluationResult.Template)}");
             }
