@@ -164,8 +164,9 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         for (var index = 0; index < bytes.Length; index++)
         {
             var b = bytes[index];
+            var c = (char)b;
 
-            if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b))
+            if (b < 0x20 || b > 0x7E || char.IsWhiteSpace(c) || charsToEncode.Contains(c))
             {
                 // encode byte as "%FF" (hexadecimal)
                 var byteToEncode = bytes.Slice(index, 1);
@@ -176,7 +177,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             else
             {
                 // append the byte as a character
-                sb.Append((char)b);
+                sb.Append(c);
             }
         }
 
