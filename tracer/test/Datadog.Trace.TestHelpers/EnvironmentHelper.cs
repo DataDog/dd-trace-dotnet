@@ -128,7 +128,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 ("win", _, "X64", _) => ("dll", "win-x64"),
                 ("win", _, "X86", _) => ("dll", "win-x86"),
-                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, false) => ("so", "linux-arm64"),
+                ("linux", "Arm64", _, true) => ("so", "linux-musl-arm64"),
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),
@@ -193,6 +194,16 @@ namespace Datadog.Trace.TestHelpers
 
             // see https://github.com/DataDog/dd-trace-dotnet/pull/3579
             environmentVariables["DD_INTERNAL_WORKAROUND_77973_ENABLED"] = "1";
+
+            // In some scenarios (.NET 6, SSI run enabled) enabling procdump makes
+            // grabbing a stack trace _crazy_ expensive (10s). Setting this "fixes" it.
+            // But for some reason, .NET Core 2.1 gets _very_ unhappy about it -
+            // given we don't really support .NET Core 2.1 anyway, and this _only_ happens
+            // when procdump is attached, just skip in that
+            if (_major > 2)
+            {
+                environmentVariables["_NO_DEBUG_HEAP"] = "1";
+            }
 
             // Set a canary variable that should always be ignored
             // and check that it doesn't appear in the logs
@@ -284,13 +295,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[ConfigurationKeys.Telemetry.AgentlessEnabled] = "0";
             }
-
-            // Don't attach the profiler to these processes
-            environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
-                "devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;" +
-                "ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;" +
-                "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
-                "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe";
 
             ConfigureTransportVariables(environmentVariables, agent);
 
@@ -453,66 +457,44 @@ namespace Datadog.Trace.TestHelpers
         public string GetSampleApplicationOutputDirectory(string packageVersion = "", string framework = "", bool usePublishFolder = true, bool usePublishWithRID = false)
         {
             var targetFramework = string.IsNullOrEmpty(framework) ? GetTargetFramework() : framework;
-            var binDir = Path.Combine(
-                GetSampleProjectDirectory(),
-                "bin");
-
-            string outputDir;
+            var binDir = Path.Combine(GetSampleProjectDirectory(), "bin");
+            var artifactsBinDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "bin");
+            var artifactsPublishDir = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", "publish");
 
             if (_samplesDirectory.Contains("aspnet"))
             {
-                outputDir = Path.Combine(
+                return Path.Combine(
                     binDir,
                     EnvironmentTools.GetBuildConfiguration(),
                     "publish");
             }
             else if (EnvironmentTools.GetOS() == "win" && !usePublishWithRID)
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework);
+                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
             }
             else if (usePublishWithRID)
             {
-                string rid;
-                if (IsAlpine())
-                {
-                    rid = $"{EnvironmentTools.GetOS()}-musl-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
-                }
-                else
-                {
-                    rid = $"{EnvironmentTools.GetOS()}-{(EnvironmentTools.GetPlatform() == "Arm64" ? "arm64" : "x64")}";
-                }
-
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework,
-                    rid,
-                    "publish");
+                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
             }
             else if (usePublishFolder)
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework,
-                    "publish");
+                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
             }
             else
             {
-                outputDir = Path.Combine(
-                    binDir,
-                    packageVersion,
-                    EnvironmentTools.GetBuildConfiguration(),
-                    targetFramework);
+                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
             }
 
-            return outputDir;
+            string GetPivot()
+            {
+                var rid = usePublishWithRID
+                              ? $"_{EnvironmentTools.GetOS()}{(IsAlpine() ? "-musl" : string.Empty)}-{EnvironmentTools.GetPlatform().ToLowerInvariant()}"
+                              : string.Empty;
+
+                var config = EnvironmentTools.GetBuildConfiguration().ToLowerInvariant();
+                var packageVersionPivot = string.IsNullOrEmpty(packageVersion) ? string.Empty : $"_{packageVersion}";
+                return $"{config}_{targetFramework}{packageVersionPivot}{rid}";
+            }
         }
 
         public string GetTargetFramework()

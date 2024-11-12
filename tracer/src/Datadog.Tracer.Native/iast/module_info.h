@@ -58,10 +58,9 @@ namespace iast
         std::unordered_map<mdMethodSpec, MethodSpec*> _specs;
         std::unordered_map<mdSignature, SignatureInfo*> _signatures;
 
-        CS _cs;
-        //std::map<mdMethodDef, std::function<HRESULT(MethodInfo*, Dataflow*)>> _jitHooks;
 
     protected:
+        CS _cs;
         Dataflow* _dataflow = nullptr;
         IMetaDataImport2* _metadataImport = nullptr;
         IMetaDataEmit2* _metadataEmit = nullptr;
@@ -113,9 +112,9 @@ namespace iast
         virtual bool IsCoreLib();
         WSTRING GetModuleFullName();
         mdToken DefineMemberRef(const WSTRING& moduleName, const WSTRING& typeName, const WSTRING& methodName, const WSTRING& methodParams);
+        mdMethodSpec DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig);
 
         virtual bool IsInlineEnabled();
-        virtual bool ExcludeInChaining();
 
         TypeInfo* GetTypeInfo(mdTypeDef typeDef);
         MemberRefInfo* GetMemberRefInfo(mdMemberRef token);
@@ -143,7 +142,7 @@ namespace iast
         static HRESULT GetILRewriter(MethodInfo* methodInfo, ILRewriter** rewriter);
         HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, int requiredParamCount, ILRewriter** rewriter);
         HRESULT GetILRewriter(const WSTRING& typeName, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature, ILRewriter** rewriter, MethodInfo** pMethodInfo = nullptr);
-        static HRESULT CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage = "");
+        static HRESULT CommitILRewriter(ILRewriter** rewriter);
 
         bool AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2);
 

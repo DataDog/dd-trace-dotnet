@@ -54,6 +54,8 @@ const WSTRING invalid_method_probe_probe_is_not_supported =
     WStr("The method where the probe should have been placed is not supported.");
 const WSTRING line_probe_il_offset_lookup_failure =
     WStr("There was a failure in determining the exact location where the line probe was supposed to be placed.");
+const WSTRING line_probe_il_offset_lookup_failure_2 =
+    WStr("There was a failure in determining the exact location where the line probe was supposed to be placed. [2]");
 const WSTRING line_probe_in_async_generic_method_in_optimized_code =
     WStr("Placing line probes in async generic methods in Release builds is currently not supported.");
 const WSTRING invalid_probe_probe_cctor_ctor_not_supported =

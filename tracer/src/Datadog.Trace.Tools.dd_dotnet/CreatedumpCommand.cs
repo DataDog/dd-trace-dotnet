@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -346,7 +348,7 @@ internal class CreatedumpCommand : Command
 
             if (typeName != null)
             {
-                if (typeName.EndsWith("BlockingMiddleware"))
+                if (typeName.Contains("BlockingMiddleware"))
                 {
                     return false;
                 }
@@ -409,7 +411,7 @@ internal class CreatedumpCommand : Command
 
             // Note: if refactoring, make sure to dispose the ClrMD DataTarget before calling createdump,
             // otherwise the calls to ptrace from createdump will fail
-            if (Environment.GetEnvironmentVariable("DD_TRACE_CRASH_HANDLER_PASSTHROUGH") == "1")
+            if (Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_PASSTHROUGH") == "1")
             {
                 if (allArguments.Length > 0)
                 {
@@ -421,7 +423,10 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
-        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Datadog.Profiler.Native.so"));
+        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
+        var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
+
+        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
 
         var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
 
@@ -514,7 +519,14 @@ internal class CreatedumpCommand : Command
             // The stacks aren't suspicious, but maybe the exception is
             var exceptionType = exception.Type.Name ?? string.Empty;
 
-            var suspiciousExceptionTypes = new[] { "System.InvalidProgramException", "System.Security.VerificationException", "System.MissingMethodException", "System.BadImageFormatException" };
+            var suspiciousExceptionTypes = new[]
+            {
+                "System.InvalidProgramException",
+                "System.MissingFieldException",
+                "System.MissingMemberException",
+                "System.BadImageFormatException",
+                "System.TypeLoadException"
+            };
 
             if (exceptionType.StartsWith("Datadog", StringComparison.OrdinalIgnoreCase) || suspiciousExceptionTypes.Contains(exceptionType))
             {
@@ -538,7 +550,7 @@ internal class CreatedumpCommand : Command
 
         try
         {
-            var outputFile = Environment.GetEnvironmentVariable("DD_TRACE_CRASH_OUTPUT");
+            var outputFile = Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_OUTPUT");
 
             if (!string.IsNullOrEmpty(outputFile))
             {
@@ -666,7 +678,7 @@ internal class CreatedumpCommand : Command
 
         if (exception != null)
         {
-            tags = [..tags, ("exception", exception.ToString())];
+            tags = [.. tags, ("exception", exception.ToString())];
         }
 
         var bag = new List<IntPtr>();

@@ -68,7 +68,6 @@ partial class Build
     readonly IEnumerable<string> GacProjects = new []
     {
         Projects.DatadogTrace,
-        Projects.DatadogTraceAspNet
     };
 
     Target GacAdd => _ => _
@@ -298,9 +297,9 @@ partial class Build
        .Requires(() => NewIsPrerelease)
        .Executes(() =>
         {
-            if (NewVersion == Version)
+            if (NewVersion == Version && IsPrerelease == NewIsPrerelease)
             {
-                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version}");
+                throw new Exception($"Cannot set versions, new version {NewVersion} was the same as {Version} and {IsPrerelease} == {NewIsPrerelease}");
             }
 
             // Samples need to use the latest version (i.e. the _current_ build version, before updating)
@@ -338,39 +337,7 @@ partial class Build
               var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
-              foreach (var t in diff)
-              {
-                  if (t.operation != Operation.EQUAL)
-                  {
-                      var str = DiffToString(t);
-                      if (str.Contains(value: '\n'))
-                      {
-                          // if the diff is multiline, start with a newline so that all changes are aligned
-                          // otherwise it's easy to miss the first line of the diff
-                          str = "\n" + str;
-                      }
-
-                      Logger.Information(str);
-                  }
-              }
-          }
-
-          string DiffToString(Diff diff)
-          {
-              if (diff.operation == Operation.EQUAL)
-              {
-                  return string.Empty;
-              }
-
-              var symbol = diff.operation switch
-              {
-                  Operation.DELETE => '-',
-                  Operation.INSERT => '+',
-                  _ => throw new Exception("Unknown value of the Option enum.")
-              };
-              // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
-              var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
-              return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
+              PrintDiff(diff);
           }
       });
 
@@ -409,16 +376,23 @@ partial class Build
 
                 listTasks.Add(Task.Run(async () =>
                 {
-                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                    try
+                    {
+                        await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                    CopyDirectoryRecursively(
-                        source: extractLocation,
-                        target: snapshotsDirectory,
-                        DirectoryExistsPolicy.Merge,
-                        FileExistsPolicy.Skip,
-                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                        CopyDirectoryRecursively(
+                            source: extractLocation,
+                            target: snapshotsDirectory,
+                            DirectoryExistsPolicy.Merge,
+                            FileExistsPolicy.Skip,
+                            excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                    DeleteDirectory(extractLocation);
+                        DeleteDirectory(extractLocation);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Warning(e, $"Ignoring issue downloading: '{artifact}'");
+                    }
                 }));
             }
 
@@ -453,7 +427,7 @@ partial class Build
         }
     }
 
-    private async Task<bool> IsDebugRun()
+    private bool IsDebugRun()
     {
         var forceDebugRun = Environment.GetEnvironmentVariable("ForceDebugRun");
         if (!string.IsNullOrEmpty(forceDebugRun)
@@ -462,36 +436,14 @@ partial class Build
             return true;
         }
 
-        var buildId = Environment.GetEnvironmentVariable("BUILD_BUILDID");
-        if (string.IsNullOrEmpty(buildId))
+        var scheduleName = Environment.GetEnvironmentVariable("BUILD_CRONSCHEDULE_DISPLAYNAME");
+        if (string.IsNullOrEmpty(scheduleName))
         {
             // not in CI
             return false;
         }
-
-        try
-        {
-            var azDoApi = $"https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/{buildId}";
-            using var client = new HttpClient();
-            using var stream = await client.GetStreamAsync(azDoApi);
-            using var json = await JsonDocument.ParseAsync(stream);
-            var triggerInfo = json.RootElement.GetProperty("triggerInfo");
-            if (triggerInfo.TryGetProperty("scheduleName", out var scheduleNameElement))
-            {
-                var scheduleName = scheduleNameElement.ToString();
-                return scheduleName == "Daily Debug Run";
-            }
-            else
-            {
-                // scheduleName not found - this will happen on PRs etc
-                return false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "Error calling Azdo API to check for debug run");
-            return false;
-        }
+        
+        return scheduleName == "Daily Debug Run";
     } 
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
@@ -508,7 +460,61 @@ partial class Build
 
         return MSBuildTargetPlatform.x64;
     }
+    
+    private static string GetDefaultRuntimeIdentifier(bool isAlpine)
+    {
+        // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+        return (Platform, (string)GetDefaultTargetPlatform()) switch
+        {
+            (PlatformFamily.Windows, "x86") => "win-x86",
+            (PlatformFamily.Windows, "x64") => "win-x64",
+
+            (PlatformFamily.Linux, "x64") => isAlpine ? "linux-musl-x64" : "linux-x64",
+            (PlatformFamily.Linux, "ARM64" or "ARM64EC") => isAlpine ? "linux-musl-arm64" : "linux-arm64",
+            
+            (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
+            _ => null
+        };
+    }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
     private static MSBuildTargetPlatform ARM64ECTargetPlatform = (MSBuildTargetPlatform)"ARM64EC";
+
+    private static void PrintDiff(List<Diff> diff, bool printEqual = false)
+    {
+        foreach (var t in diff)
+        {
+            if (printEqual || t.operation != Operation.EQUAL)
+            {
+                var str = DiffToString(t);
+                if (str.Contains(value: '\n'))
+                {
+                    // if the diff is multiline, start with a newline so that all changes are aligned
+                    // otherwise it's easy to miss the first line of the diff
+                    str = "\n" + str;
+                }
+
+                Logger.Information(str);
+            }
+        }
+
+        string DiffToString(Diff diff)
+        {
+            if (diff.operation == Operation.EQUAL)
+            {
+                return string.Empty;
+            }
+
+            var symbol = diff.operation switch
+            {
+                Operation.DELETE => '-',
+                Operation.INSERT => '+',
+                _ => throw new Exception("Unknown value of the Option enum.")
+            };
+            // put the symbol at the beginning of each line to make diff clearer when whole blocks of text are missing
+            var lines = diff.text.TrimEnd(trimChar: '\n').Split(Environment.NewLine);
+            return string.Join(Environment.NewLine, lines.Select(l => symbol + l));
+        }
+
+    }
 }

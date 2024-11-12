@@ -1,3 +1,4 @@
+using System.Linq;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
@@ -26,6 +27,8 @@ partial class Build
     Project DebuggerIntegrationTests => Solution.GetProject(Projects.DebuggerIntegrationTests);
 
     Project DebuggerSamples => Solution.GetProject(Projects.DebuggerSamples);
+
+    Project ExceptionReplaySamples => Solution.GetProject(Projects.ExceptionReplaySamples);
 
     Project DebuggerSamplesTestRuns => Solution.GetProject(Projects.DebuggerSamplesTestRuns);
 
@@ -68,6 +71,7 @@ partial class Build
 
     Target CompileDebuggerIntegrationTestsSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .DependsOn(CompileDebuggerIntegrationTestsDependencies)
         .Requires(() => Framework)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -76,6 +80,11 @@ partial class Build
         .Executes(() =>
         {
             DotnetBuild(DebuggerSamples, framework: Framework);
+
+            if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
+            {
+                DotnetBuild(ExceptionReplaySamples, framework: Framework);
+            }
 
             if (!IsWin)
             {
@@ -86,6 +95,15 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetNoWarnDotNetCore3()
                     .SetProject(DebuggerSamples));
+
+                if (ExceptionReplaySamples.TryGetTargetFrameworks().Contains(Framework))
+                {
+                    DotNetPublish(x => x
+                                      .SetFramework(Framework)
+                                      .SetConfiguration(BuildConfiguration)
+                                      .SetNoWarnDotNetCore3()
+                                      .SetProject(ExceptionReplaySamples));
+                }
             }
         });
 
@@ -95,10 +113,10 @@ partial class Build
         .After(BuildDebuggerIntegrationTests)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
-        .Executes(async () =>
+        .Executes(() =>
         {
-            var isDebugRun = await IsDebugRun();
-            EnsureExistingDirectory(TestLogsDirectory);
+            var isDebugRun = IsDebugRun();
+            EnsureCleanDirectory(TestLogsDirectory);
             EnsureResultsDirectory(DebuggerIntegrationTests);
 
             try
@@ -116,7 +134,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
                     .WithDatadogLogger()
                     .SetProjectFile(DebuggerIntegrationTests));
@@ -125,9 +143,9 @@ partial class Build
                 {
                     var filter = (IsWin, IsArm64) switch
                     {
-                        (true, _) => "(RunOnWindows=True)",
-                        (_, true) => "(Category!=ArmUnsupported)",
-                        _ => "(Category!=LinuxUnsupported)",
+                        (true, _) => "(RunOnWindows=True)&(SkipInCI!=True)",
+                        (_, true) => "(Category!=ArmUnsupported)&(SkipInCI!=True)",
+                        _ => "(Category!=LinuxUnsupported)&(SkipInCI!=True)",
                     };
 
                     return Filter is null ? filter : $"{Filter}&{filter}";

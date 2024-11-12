@@ -62,7 +62,6 @@ public class AspNetMvc5AsmBlockingActionsClassicWithoutSecurity : AspNetMvc5AsmB
 public abstract class AspNetMvc5AsmBlockingActions : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _classicMode;
 
     public AspNetMvc5AsmBlockingActions(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)

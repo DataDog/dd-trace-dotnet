@@ -97,13 +97,23 @@ namespace Datadog.Trace.Util
 
         private static TagsCacheItem ExtractTagsFromConnectionString(string connectionString)
         {
-            // Parse the connection string
-            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+            try
+            {
+                // Parse the connection string
+                var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            return new TagsCacheItem(
-                dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
-                dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
-                outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
+                // Extract the tags
+                return new TagsCacheItem(
+                    dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
+                    dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
+                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
+            }
+            catch (Exception)
+            {
+                // DbConnectionStringBuilder can throw exceptions if the connection string is invalid
+                // in this case we should not use the connection string and just return default
+                return default;
+            }
         }
 
         private static string? GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)

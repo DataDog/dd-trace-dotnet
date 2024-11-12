@@ -4,6 +4,7 @@
    <assembly fullname="amqmdnetstd" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
+   <assembly fullname="AWSSDK.EventBridge" />
    <assembly fullname="AWSSDK.Kinesis" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
@@ -12,6 +13,8 @@
    <assembly fullname="Couchbase.NetClient" />
    <assembly fullname="coverlet.core" />
    <assembly fullname="Datadog.Trace" />
+   <assembly fullname="Datadog.Trace.Manual" />
+   <assembly fullname="Datadog.Trace.OpenTracing" />
    <assembly fullname="dotnet" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="Google.Protobuf" />
@@ -118,6 +121,7 @@
    <assembly fullname="Oracle.DataAccess" />
    <assembly fullname="Oracle.ManagedDataAccess" />
    <assembly fullname="RabbitMQ.Client" />
+   <assembly fullname="RestSharp" />
    <assembly fullname="Serilog" />
    <assembly fullname="ServiceStack.Redis" />
    <assembly fullname="StackExchange.Redis" />
@@ -200,8 +204,15 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
+      <type fullname="System.Data.ConnectionState" />
+      <type fullname="System.Data.DbType" />
+      <type fullname="System.Data.IDataParameter" />
+      <type fullname="System.Data.IDataParameterCollection" />
+      <type fullname="System.Data.IDataRecord" />
       <type fullname="System.Data.IDbCommand" />
       <type fullname="System.Data.IDbConnection" />
+      <type fullname="System.Data.IDbDataParameter" />
+      <type fullname="System.Data.IDbTransaction" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />
@@ -568,6 +579,7 @@
       <type fullname="System.Func`4" />
       <type fullname="System.Func`5" />
       <type fullname="System.Func`6" />
+      <type fullname="System.Func`7" />
       <type fullname="System.GC" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />

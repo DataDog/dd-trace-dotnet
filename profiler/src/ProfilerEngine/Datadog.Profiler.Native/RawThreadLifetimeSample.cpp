@@ -20,4 +20,7 @@ void RawThreadLifetimeSample::OnTransform(
         sample->AddFrame({EmptyModule, StopFrame, "", 0});
         sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeThreadStop));
     }
+
+    // Set an arbitratry value to avoid being discarded by the backend
+    sample->AddValue(1, valueOffset[0]);
 }

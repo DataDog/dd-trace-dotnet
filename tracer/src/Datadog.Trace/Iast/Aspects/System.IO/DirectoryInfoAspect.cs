@@ -5,7 +5,8 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec.Rasp;
+using System;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects;
@@ -59,8 +60,15 @@ public class DirectoryInfoAspect
 #endif
     public static string ReviewPath(string path)
     {
-        IastModule.OnPathTraversal(path);
-        RaspModule.OnLfi(path);
-        return path;
+        try
+        {
+            IastModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(DirectoryInfoAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
     }
 }

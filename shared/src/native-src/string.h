@@ -75,4 +75,6 @@ std::basic_string<TChar> ReplaceString(std::basic_string<TChar> subject, const s
     return subject;
 }
 
+bool string_iequal(WSTRING const& s1, WSTRING const& s2);
+
 } // namespace shared

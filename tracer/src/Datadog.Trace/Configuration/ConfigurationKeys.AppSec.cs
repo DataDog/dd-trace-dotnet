@@ -71,6 +71,11 @@ namespace Datadog.Trace.Configuration
             internal const string MaxStackTraceDepth = "DD_APPSEC_MAX_STACK_TRACE_DEPTH";
 
             /// <summary>
+            /// with a default value of 75, defines the percentage of frames taken from the top of the stack when trimming. Min 0, Max 100
+            /// </summary>
+            internal const string MaxStackTraceDepthTopPercent = "DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT";
+
+            /// <summary>
             /// The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterKeyRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP";
@@ -91,12 +96,23 @@ namespace Datadog.Trace.Configuration
             internal const string JsonBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
 
             /// <summary>
-            /// Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// Deprecate. Automatic tracking of user events mode. Values can be disabled, safe or extended.
+            /// This config is in the process of being deprecated. Please use DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE
+            /// instead.
+            /// Values will be automatically translated:
+            /// disabled = disabled
+            /// safe = anon
+            /// extended = ident
             /// </summary>
             internal const string UserEventsAutomatedTracking = "DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING";
 
             /// <summary>
-            /// Unless set to true or 1, tracers don’t collect schemas. After the experiment, the environment variable will be removed and schema collection will be enabled only when ASM is enabled
+            /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
+            /// </summary>
+            internal const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
+
+            /// <summary>
+            /// When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
             /// </summary>
             internal const string ApiSecurityEnabled = "DD_API_SECURITY_ENABLED";
 

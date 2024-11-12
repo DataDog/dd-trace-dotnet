@@ -9,11 +9,8 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
@@ -42,7 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             {
                 // try extracting all the details we need
                 var requestMetadataWrapper = new MetadataHeadersCollection(requestMetadata);
-                var existingSpanContext = SpanContextPropagator.Instance.Extract(requestMetadataWrapper);
+                var existingContext = SpanContextPropagator.Instance.Extract(requestMetadataWrapper);
+                var existingSpanContext = existingContext.SpanContext;
 
                 // If this operation creates the trace, then we will need to re-apply the sampling priority
                 bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && tracer.ActiveScope == null;
@@ -146,7 +144,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     parentContext: span.Context.ParentInternal);
 
                 // Add the propagation headers
-                SpanContextPropagator.Instance.Inject(span.Context, collection);
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                SpanContextPropagator.Instance.Inject(context, collection);
             }
             catch (Exception ex)
             {
@@ -195,7 +194,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
-                metadata.Add(TemporaryHeaders.ParentService, parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName);
+                var parentService = parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName;
+                if (parentService is not null)
+                {
+                    metadata.Add(TemporaryHeaders.ParentService, parentService);
+                }
             }
         }
 

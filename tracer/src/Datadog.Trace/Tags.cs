@@ -8,7 +8,7 @@ using System;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Standard span tags used by integrations.
+    /// Standard Datadog span tags.
     /// </summary>
     public static partial class Tags
     {
@@ -431,6 +431,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The rule name associated with the AWS EventBridge span.
+        /// </summary>
+        internal const string RuleName = "rulename";
+
+        /// <summary>
         /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
@@ -602,6 +607,26 @@ namespace Datadog.Trace
         internal const string AppSecWafInitRuleErrors = "_dd.appsec.event_rules.errors";
 
         /// <summary>
+        /// Indicates the http endpoint fingerprint
+        /// </summary>
+        internal const string AppSecFpEndpoint = "_dd.appsec.fp.http.endpoint";
+
+        /// <summary>
+        /// Indicates the http header fingerprint
+        /// </summary>
+        internal const string AppSecFpHeader = "_dd.appsec.fp.http.header";
+
+        /// <summary>
+        /// Indicates the http network fingerprint
+        /// </summary>
+        internal const string AppSecFpHttpNetwork = "_dd.appsec.fp.http.network";
+
+        /// <summary>
+        /// Indicates the session fingerprint
+        /// </summary>
+        internal const string AppSecFpSession = "_dd.appsec.fp.session";
+
+        /// <summary>
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         internal const string ActorIp = "actor.ip";
@@ -692,6 +717,12 @@ namespace Datadog.Trace
         /// </summary>
         internal const string BaseService = "_dd.base_service";
 
+        /// <summary>
+        /// Tag used to propagate the unsigned  64 bits last parent Id
+        /// lower-case 16 characters hexadecimal string
+        /// </summary>
+        internal const string LastParentId = "_dd.parent_id";
+
         internal static class User
         {
             internal const string Email = "usr.email";
@@ -719,6 +750,12 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
+
+            /// <summary>
+            /// A boolean allowing the propagation to downstream services the information that the current distributed trace
+            /// is containing at least one ASM security event, no matter its type (threats, business logic events, IAST, etc.).
+            /// </summary>
+            internal const string AppSec = "_dd.p.appsec";
         }
     }
 }

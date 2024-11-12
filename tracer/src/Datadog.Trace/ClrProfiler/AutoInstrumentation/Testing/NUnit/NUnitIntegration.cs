@@ -292,6 +292,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Early flake detection flags
             Common.SetEarlyFlakeDetectionTestTagsAndAbortReason(test, isRetry, ref _newTestCases, ref _totalTestCases);
 
+            // Flaky Retry
+            Common.SetFlakyRetryTags(test, isRetry);
+
             // Test code and code owners
             test.SetTestMethodInfo(testMethod);
 

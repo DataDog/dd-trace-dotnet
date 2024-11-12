@@ -11,6 +11,12 @@ jobs:
       github.event_name == 'workflow_dispatch' || 
       (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read secrets
+      pull-requests: read # Fetches PRs
+      issues: write # Opens milestones
+      statuses: write # add a commit status check
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -52,6 +58,12 @@ jobs:
         name: 'Freeze 25 PRs'
         with:
           page_number: 4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 5
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: ./.github/actions/deploy-aas-dev-apps

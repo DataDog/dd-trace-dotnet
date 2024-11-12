@@ -11,11 +11,13 @@
 #include <vector>
 
 #include "IAllocationsRecorder.h"
-
+#include "ServiceBase.h"
 
 class IFrameStore;
 
-class AllocationsRecorder : public IAllocationsRecorder
+class AllocationsRecorder :
+    public IAllocationsRecorder,
+    public ServiceBase
 {
 private:
     struct AllocInfo

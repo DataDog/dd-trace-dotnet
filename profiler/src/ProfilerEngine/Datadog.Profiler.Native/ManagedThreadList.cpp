@@ -365,3 +365,13 @@ bool ManagedThreadList::RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThre
 
     return false;
 }
+
+void ManagedThreadList::ForEach(std::function<void (ManagedThreadInfo*)> callback)
+{
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+    for (auto& thread : _threads)
+    {
+        callback(thread.get());
+    }
+}

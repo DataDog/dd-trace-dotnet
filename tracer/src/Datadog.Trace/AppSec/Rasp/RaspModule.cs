@@ -5,9 +5,13 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
@@ -23,36 +27,58 @@ internal static class RaspModule
     {
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
         AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
+        AddressesConstants.DBStatement => RaspRuleType.SQlI,
+        AddressesConstants.ShellInjection => RaspRuleType.CommandInjection,
         _ => null,
     };
 
     internal static void OnLfi(string file)
     {
-        CheckVulnerability(AddressesConstants.FileAccess, file);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
     }
 
     internal static void OnSSRF(string url)
     {
-        CheckVulnerability(AddressesConstants.UrlAccess, url);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.UrlAccess] = url }, AddressesConstants.UrlAccess);
     }
 
-    private static void CheckVulnerability(string address, string valueToCheck)
+    internal static void OnSqlQuery(string sql, IntegrationId id)
+    {
+        var ddbbType = SqlIntegrationIdToDDBBType(id);
+        CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.DBStatement] = sql, [AddressesConstants.DBSystem] = ddbbType }, AddressesConstants.DBStatement);
+    }
+
+    private static string SqlIntegrationIdToDDBBType(IntegrationId id)
+    {
+        // Check https://datadoghq.atlassian.net/wiki/spaces/APM/pages/2357395856/Span+attributes#db.system
+        return id switch
+        {
+            IntegrationId.SqlClient => "sqlserver",
+            IntegrationId.MySql => "mysql",
+            IntegrationId.Npgsql => "postgresql",
+            IntegrationId.Oracle => "oracle",
+            IntegrationId.Sqlite => "sqlite",
+            IntegrationId.NHibernate => "nhibernate",
+            _ => "generic"
+        };
+    }
+
+    private static void CheckVulnerability(Dictionary<string, object> arguments, string address)
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled)
+        if (!security.RaspEnabled || !security.AddressEnabled(address))
         {
             return;
         }
 
         var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null)
+        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
             return;
         }
 
-        var arguments = new Dictionary<string, object> { [address] = valueToCheck };
         RunWafRasp(arguments, rootSpan, address);
     }
 
@@ -81,8 +107,16 @@ internal static class RaspModule
 
     private static void RunWafRasp(Dictionary<string, object> arguments, Span rootSpan, string address)
     {
-        var securityCoordinator = new SecurityCoordinator(Security.Instance, rootSpan);
-        var result = securityCoordinator.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
+        var securityCoordinator = SecurityCoordinator.TryGet(Security.Instance, rootSpan);
+
+        // We need a context for RASP
+        if (securityCoordinator is null)
+        {
+            Log.Warning("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
+            return;
+        }
+
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
         {
@@ -106,7 +140,7 @@ internal static class RaspModule
                 }
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             Log.Error(ex, "RASP: Error while sending stack.");
         }
@@ -115,7 +149,7 @@ internal static class RaspModule
 
         // we want to report first because if we are inside a try{} catch(Exception ex){} block, we will not report
         // the blockings, so we report first and then block
-        securityCoordinator.ReportAndBlock(result);
+        securityCoordinator.Value.ReportAndBlock(result);
     }
 
     private static void AddSpanId(IResult? result)
@@ -140,11 +174,33 @@ internal static class RaspModule
 
     private static void SendStack(Span rootSpan, string id)
     {
-        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, id);
+        var stack = StackReporter.GetStack(Security.Instance.Settings.MaxStackTraceDepth, Security.Instance.Settings.MaxStackTraceDepthTopPercent, id);
 
         if (stack is not null)
         {
-            rootSpan.Context.TraceContext.AddStackTraceElement(stack, Security.Instance.Settings.MaxStackTraces);
+            rootSpan.Context.TraceContext.AppSecRequestContext.AddRaspStackTrace(stack, Security.Instance.Settings.MaxStackTraces);
+        }
+    }
+
+    internal static void OnCommandInjection(string fileName, string argumentLine, Collection<string>? argumentList, bool useShellExecute)
+    {
+        try
+        {
+            if (!Security.Instance.RaspEnabled || !useShellExecute)
+            {
+                return;
+            }
+
+            var commandLine = RaspShellInjectionHelper.BuildCommandInjectionCommand(fileName, argumentLine, argumentList);
+
+            if (!string.IsNullOrEmpty(commandLine))
+            {
+                CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.ShellInjection] = commandLine }, AddressesConstants.ShellInjection);
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            Log.Error(ex, "RASP: Error while checking command injection.");
         }
     }
 }

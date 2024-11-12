@@ -5,6 +5,7 @@
 #include "shared/src/native-src/string.h"
 
 std::atomic<std::uint32_t> ManagedThreadInfo::s_nextProfilerThreadInfoId{1};
+thread_local std::shared_ptr<ManagedThreadInfo> ManagedThreadInfo::CurrentThreadInfo{nullptr};
 
 std::uint32_t ManagedThreadInfo::GenerateProfilerThreadInfoId()
 {
@@ -40,10 +41,13 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
     _deadlockTotalCount{0},
     _deadlockInPeriodCount{0},
     _deadlockDetectionPeriod{0},
-    _stackWalkLock(1),
     _isThreadDestroyed{false},
-    _traceContextTrackingInfo{},
+    _traceContext{},
+#ifdef LINUX
     _sharedMemoryArea{nullptr},
-    _info{pCorProfilerInfo}
+    _timerId{-1},
+#endif
+    _info{pCorProfilerInfo},
+    _blockingThreadId{0}
 {
 }

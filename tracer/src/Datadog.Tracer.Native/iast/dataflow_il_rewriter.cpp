@@ -9,6 +9,7 @@
 #include "module_info.h"
 #include "method_info.h"
 #include "aspect.h"
+#include "dataflow_aspects.h"
 #include "dataflow_il_analysis.h"
 #include "signature_info.h"
 
@@ -412,7 +413,7 @@ namespace iast
     }
 
 
-    ILInstr* ILRewriter::NewILInstr(OPCODE opcode, ULONG32 arg)
+    ILInstr* ILRewriter::NewILInstr(OPCODE opcode, ULONG32 arg, bool isNew)
     {
         //m_bDirty = true;
         m_nInstrs++;
@@ -421,6 +422,7 @@ namespace iast
         res->m_opcode = opcode;
         res->m_Arg32 = arg;
         res->m_originalArg64 = res->m_Arg64;
+        res->m_isNew = isNew;
         return res;
     }
 
@@ -531,14 +533,9 @@ namespace iast
         return &m_IL;
     }
 
-    HRESULT ILRewriter::Export(const std::string& applyMessage)
+    HRESULT ILRewriter::Export()
     {
         HRESULT hr = S_OK;
-
-        if (m_methodInfo && applyMessage.size() > 0)
-        {
-            m_methodInfo->_applyMessage += applyMessage + " ";
-        }
 
         if (!IsDirty())
         {
@@ -762,18 +759,6 @@ namespace iast
         return hr;
     }
 
-    int ILRewriter::GetSpotInfoId(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod)
-    {
-        return aspect->GetSpotInfoId(m_methodInfo, pInstr->GetLine(), aspectMedhod);
-    }
-    SpotInfoStatus ILRewriter::GetSpotInfoStatus(ILInstr* pInstr, Aspect* aspect)
-    {
-        int id = GetSpotInfoId(pInstr, aspect);
-        if (id < 0) { return SpotInfoStatus::Disabled; }
-        if (id > 0) {return SpotInfoStatus::Tracked; }
-        return SpotInfoStatus::Enabled;
-    }
-
     HRESULT ILRewriter::AddProbeBefore(mdToken hookMethod, ILInstr* pInsertProbeBeforeThisInstr, OPCODE opCode, ULONG32* hookArg)
     {
         ILInstr* pNewInstr = nullptr;
@@ -865,95 +850,5 @@ namespace iast
             return E_FAIL;
 
         return S_OK;
-    }
-
-
-    HRESULT ILRewriter::AddArgProbe(int argPosition, Aspect* aspect)
-    {
-        HRESULT hr = S_FALSE;
-
-        OPCODE opCode;
-        INT32 arg = 0;
-        if (argPosition == 0)
-        {
-            opCode = CEE_LDARG_0;
-        }
-        else if (argPosition == 1)
-        {
-            opCode = CEE_LDARG_1;
-        }
-        else if (argPosition == 2)
-        {
-            opCode = CEE_LDARG_2;
-        }
-        else if (argPosition == 3)
-        {
-            opCode = CEE_LDARG_3;
-        }
-        else
-        {
-            opCode = CEE_LDARG_S;
-        }
-        arg = argPosition;
-
-        for (ILInstr* pInstr = GetILList()->m_pNext; pInstr != GetILList(); pInstr = pInstr->m_pNext)
-        {
-            if (pInstr->m_opcode == opCode && pInstr->m_Arg32 == arg)
-            {
-                //Insert call after load arg
-                mdMemberRef aspectMethod;
-                int spotInfoId = LoadSpotInfoArgument(pInstr, aspect, &aspectMethod, false);
-                if (spotInfoId >= 0) // -1 means disabled spotInfo
-                {
-                    ILInstr* pNewInstr = NewILInstr();
-                    pNewInstr->m_opcode = CEE_CALL;
-                    pNewInstr->m_Arg32 = aspectMethod;
-                    pInstr = InsertAfter((spotInfoId > 0) ? pInstr->m_pNext : pInstr, pNewInstr);
-                }
-            }
-        }
-        return hr;
-    }
-
-    int ILRewriter::LoadSpotInfoArgument(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod, bool insertBefore)
-    {
-        int spotInfoId = GetSpotInfoId(pInstr, aspect, aspectMedhod);
-        if (spotInfoId > 0)
-        {
-            ILInstr* pNewInstr;
-            pNewInstr = NewILInstr();
-            pNewInstr->m_opcode = CEE_LDC_I4;
-            pNewInstr->m_Arg32 = spotInfoId;
-            if (insertBefore)
-            {
-                pInstr = InsertBefore(pInstr, pNewInstr);
-            }
-            else
-            {
-                pInstr = InsertAfter(pInstr, pNewInstr);
-            }
-        }
-        return spotInfoId;
-    }
-    ILInstr* ILRewriter::AddAspectCall(ILInstr* pInstr, Aspect* aspect, bool pop)
-    {
-        ILInstr* res = pInstr;
-        mdMemberRef aspectMedhod;
-        auto spotId = LoadSpotInfoArgument(pInstr, aspect, &aspectMedhod);
-        if (spotId >= 0)
-        {
-            ILInstr* pNewInstr;
-            pNewInstr = NewILInstr();
-            pNewInstr->m_opcode = CEE_CALL;
-            pNewInstr->m_Arg32 = aspectMedhod;
-            res = InsertBefore(pInstr, pNewInstr);
-            if (pop)
-            {
-                pNewInstr = NewILInstr();
-                pNewInstr->m_opcode = CEE_POP;
-                res = InsertBefore(pInstr, pNewInstr);
-            }
-        }
-        return res;
     }
 }

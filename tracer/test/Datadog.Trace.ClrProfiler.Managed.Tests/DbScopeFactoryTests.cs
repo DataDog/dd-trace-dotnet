@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -19,6 +20,8 @@ using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
+    [Collection("DbScopeFactoryTests")]
+    [TracerRestorer]
     public class DbScopeFactoryTests
     {
         private const string DbmCommandText = "SELECT 1";
@@ -153,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -175,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using (var scope = CreateDbCommandScope(tracer, command))
@@ -188,6 +191,38 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                      .NotBe(DbmCommandText)
                                      .And.Contain(DbmCommandText)
                                      .And.Subject;
+
+            // second attempt should still have the same data
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            command.CommandText.Should().Be(injectedTest);
+        }
+
+        [Fact]
+        public async Task CreateDbCommandScope_DetectsCommandIsReusedOnAppend()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            // adding a query plan hint to trigger
+            command.CommandText = "/*+ IndexScan(a) */ " + DbmCommandText;
+
+            IConfigurationSource source = new NameValueConfigurationSource(new NameValueCollection { { ConfigurationKeys.DbmPropagationMode, "service" } });
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using (var scope = CreateDbCommandScope(tracer, command))
+            {
+                scope.Should().NotBeNull();
+            }
+
+            // Should have injected the data once, not prepended
+            var injectedTest = command.CommandText.Should()
+                                      .NotBe(DbmCommandText)
+                                      .And.NotEndWith(DbmCommandText)
+                                      .And.Contain(DbmCommandText)
+                                      .And.Subject;
 
             // second attempt should still have the same data
             using (var scope = CreateDbCommandScope(tracer, command))
@@ -211,7 +246,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, dbmMode }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -233,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 { ConfigurationKeys.DbmPropagationMode, "disabled" }
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             using var scope = CreateDbCommandScope(tracer, command);
@@ -268,6 +303,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.False(result2);
             Assert.False(actualIntegrationId2.HasValue);
             Assert.Null(actualDbType2);
+        }
+
+        [Fact]
+        internal void TryGetIntegrationDetails_FailsForKnownCommandTypes_AndUserDefined()
+        {
+            Tracer.Configure(TracerSettings.Create(new Dictionary<string, object> { { ConfigurationKeys.DisabledAdoNetCommandTypes, "SomeFakeDbCommand" } }));
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
+            Assert.False(result);
+            Assert.False(actualIntegrationId.HasValue);
+            Assert.Null(actualDbType);
+
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            Assert.False(result2);
+            Assert.False(actualIntegrationId2.HasValue);
+            Assert.Null(actualDbType2);
+
+            bool result3 = DbScopeFactory.TryGetIntegrationDetails("SomeFakeDbCommand", out var actualIntegrationId3, out var actualDbType3);
+            Assert.False(result3);
+            Assert.False(actualIntegrationId3.HasValue);
+            Assert.Null(actualDbType3);
         }
 
         [Theory]

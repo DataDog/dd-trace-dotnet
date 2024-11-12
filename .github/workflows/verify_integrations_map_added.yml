@@ -7,6 +7,8 @@ on:
 jobs:
   bump_package_versions:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Support longpaths

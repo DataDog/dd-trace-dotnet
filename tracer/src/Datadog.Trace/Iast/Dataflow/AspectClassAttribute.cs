@@ -12,7 +12,7 @@ using Datadog.Trace.Iast.Helpers;
 namespace Datadog.Trace.Iast.Dataflow;
 
 [AttributeUsage(AttributeTargets.Class)]
-internal sealed class AspectClassAttribute : Attribute
+internal class AspectClassAttribute : Attribute
 {
     private readonly List<object> parameters = new List<object>();
 

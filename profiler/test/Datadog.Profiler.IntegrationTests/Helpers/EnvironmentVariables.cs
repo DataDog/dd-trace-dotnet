@@ -7,6 +7,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 {
     internal class EnvironmentVariables
     {
+        public const string ProfilerEnabled = "DD_PROFILING_ENABLED";
         public const string ProfilingLogDir = "DD_TRACE_LOG_DIRECTORY";
         public const string ProfilingPprofDir = "DD_INTERNAL_PROFILING_OUTPUT_DIR";
         public const string CodeHotSpotsEnable = "DD_PROFILING_CODEHOTSPOTS_ENABLED";
@@ -27,5 +28,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ThreadLifetimeEnabled = "DD_INTERNAL_THREAD_LIFETIME_ENABLED";
         public const string SsiDeployed = "DD_INJECTION_ENABLED";
         public const string EtwEnabled = "DD_INTERNAL_PROFILING_ETW_ENABLED";
+        public const string CpuProfilerType = "DD_INTERNAL_CPU_PROFILER_TYPE";
+        public const string CpuProfilingInterval = "DD_INTERNAL_CPU_PROFILING_INTERVAL";
+        public const string SsiShortLivedThreshold = "DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD";
+        public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
+        public const string EtwReplayEndpoint = "DD_INTERNAL_ETW_REPLAY_ENDPOINT";
+        public const string SsiTelemetryEnabled = "DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED";
     }
 }

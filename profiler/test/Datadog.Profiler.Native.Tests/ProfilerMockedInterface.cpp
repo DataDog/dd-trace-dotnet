@@ -31,6 +31,13 @@ std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamp
     return {std::move(collector), *collectorPtr};
 }
 
+std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager()
+{
+    std::unique_ptr<ISsiManager> manager = std::make_unique<MockSsiManager>();
+    auto managerPtr = static_cast<MockSsiManager*>(manager.get());
+    return {std::move(manager), *managerPtr};
+}
+
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 {
     std::vector<std::pair<std::string, std::string>> result;

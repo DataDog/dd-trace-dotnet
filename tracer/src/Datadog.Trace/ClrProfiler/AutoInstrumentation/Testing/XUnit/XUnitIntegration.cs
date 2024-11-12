@@ -116,6 +116,15 @@ internal static class XUnitIntegration
             }
         }
 
+        // Flaky retries
+        if (CIVisibility.Settings.FlakyRetryEnabled == true)
+        {
+            if (retryMessageBus is { ExecutionIndex: >0 })
+            {
+                test.SetTag(EarlyFlakeDetectionTags.TestIsRetry, "true");
+            }
+        }
+
         // Test code and code owners
         if (testMethod is not null)
         {

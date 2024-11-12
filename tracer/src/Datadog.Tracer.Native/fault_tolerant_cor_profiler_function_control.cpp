@@ -7,7 +7,8 @@
 using namespace fault_tolerant;
 
 FaultTolerantCorProfilerFunctionControl::FaultTolerantCorProfilerFunctionControl(
-    ICorProfilerFunctionControl* corProfilerFunctionControl, ModuleID moduleId, mdMethodDef methodId,
+    ICorProfilerFunctionControl* corProfilerFunctionControl, ICorProfilerInfo* corProfilerInfo, ModuleID moduleId,
+    mdMethodDef methodId,
     RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
     InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation) :
     m_moduleId(moduleId),
@@ -15,7 +16,8 @@ FaultTolerantCorProfilerFunctionControl::FaultTolerantCorProfilerFunctionControl
     moduleHandler(moduleHandler),
     methodHandler(methodHandler),
     injectSuccessfulInstrumentation(std::move(injectSuccessfulInstrumentation)),
-    m_pICorProfilerFunctionControl(corProfilerFunctionControl)
+    m_pICorProfilerFunctionControl(corProfilerFunctionControl),
+    m_pCorProfilerInfo(corProfilerInfo)
 {
 }
 
@@ -61,7 +63,8 @@ ULONG STDMETHODCALLTYPE FaultTolerantCorProfilerFunctionControl::Release()
 HRESULT FaultTolerantCorProfilerFunctionControl::SetILFunctionBody(ULONG cbNewILMethodHeader,
                                                                    LPCBYTE pbNewILMethodHeader)
 {
-    return injectSuccessfulInstrumentation(moduleHandler, methodHandler, m_pICorProfilerFunctionControl, pbNewILMethodHeader);
+    return injectSuccessfulInstrumentation(moduleHandler, methodHandler, m_pICorProfilerFunctionControl,
+                                           m_pCorProfilerInfo, pbNewILMethodHeader);
 }
 
 HRESULT FaultTolerantCorProfilerFunctionControl::SetCodegenFlags(DWORD flags)

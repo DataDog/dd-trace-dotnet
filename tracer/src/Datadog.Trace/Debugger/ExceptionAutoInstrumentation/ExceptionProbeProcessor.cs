@@ -101,12 +101,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            if (instrumentedProbes.Any(p => p.ProbeStatus is Status.RECEIVED))
-            {
-                // Not all probes have been confirmed as installed, instrumented or errored out yet
-                return null;
-            }
-
             if (instrumentedProbes.Any(p => !p.MayBeOmittedFromCallStack && p.ProbeStatus == Status.INSTALLED))
             {
                 // Not all request rejit carried out yet.

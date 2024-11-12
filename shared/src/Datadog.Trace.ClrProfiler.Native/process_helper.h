@@ -31,7 +31,7 @@ private:
     static void ExitChild(int pipeToParent, int error);
 #endif
 public:
-    static bool RunProcess(const std::string& processPath, const std::vector<std::string>& args);
+    static bool RunProcess(const std::string& processPath, const std::vector<std::string>& args, std::string input);
 };
 
 } // namespace datadog::shared::nativeloader

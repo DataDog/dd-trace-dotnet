@@ -64,7 +64,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-        private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes("_dd.parent_id");
+        private readonly byte[] _lastParentIdBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.LastParentId);
+        private readonly byte[] _baseServiceNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.BaseService);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -72,6 +73,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
+
+        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Metrics.ApmEnabled);
 
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
@@ -404,17 +407,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
-            // add "language=dotnet" tag to all spans, except those that
-            // represents a downstream service or external dependency
-            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
-            }
+            // add "language=dotnet" tag to all spans
+            count++;
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
-            if (string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+            var serviceNameEqualsDefault = string.Equals(span.Context.ServiceNameInternal, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
+            if (serviceNameEqualsDefault)
             {
                 var versionRawBytes = MessagePackStringCache.GetVersionBytes(model.TraceChunk.ServiceVersion);
 
@@ -423,6 +423,19 @@ namespace Datadog.Trace.Agent.MessagePack
                     count++;
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
+                }
+            }
+
+            // add _dd.base_service tag to spans where the service name has been overrideen
+            if (!serviceNameEqualsDefault && !string.IsNullOrEmpty(model.TraceChunk.DefaultServiceName))
+            {
+                var serviceNameRawBytes = MessagePackStringCache.GetServiceBytes(model.TraceChunk.DefaultServiceName);
+
+                if (serviceNameRawBytes is not null)
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _baseServiceNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
                 }
             }
 
@@ -620,6 +633,15 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+            }
+
+            // add the "apm.enabled" tag with a value of 0
+            // to the first span in the chunk when APM is disabled
+            if (!model.TraceChunk.IsApmEnabled && model.IsLocalRoot)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"

@@ -219,7 +219,8 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
 
     // System.Text.StringBuilder::Append(System.Text.StringBuilder,System.Int32,System.Int32)
 
-#if !NETFRAMEWORK
+#if NETCOREAPP3_1_OR_GREATER
+
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendStringBuilderIndexes_ResultIsTainted()
     {

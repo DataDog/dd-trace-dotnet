@@ -14,9 +14,11 @@
         "http.method": "GET",
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",
+        "language": "dotnet",
         "out.host": "localhost",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "client"
+        "span.kind": "client",
+        "_dd.base_service": "AspNetCoreSmokeTest"
       },
       "metrics": {
         "_dd.top_level": 1.0,
@@ -36,8 +38,12 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.waf.version": "1.18.0",
+		"_dd.appsec.event_rules.version": "1.13.2",
+        "_dd.appsec.waf.version": "1.20.1",
         "_dd.runtime_family": "dotnet",
+        "_dd.appsec.s.res.body": "H4sIAAAAAAAAA4u2iAUA8YntnQMAAAA=",
+        "_dd.appsec.s.req.headers": "H4sIAAAAAAAAA4WOMQrAIBDA/uKsQ7fiVw6Ho4oVrIp3Q4v491JcLc4JJNAEVzwcMbITGgB2Y2QT0SWht27kwAWrSzzlt7LIaLNXjJ4WCuFVYkhelRpyDfws/NFVwa7S3+SfdmaarXfzAg6PMlH9AAAA",
+        "_dd.appsec.s.res.headers": "H4sIAAAAAAAAA4uuVkrOzytJzSvRLaksSFWyio6OtoiN1alWyknNU7IyrI2tjQUAcaAU2yQAAAA=",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
         "http.client_ip": "127.0.0.1",
@@ -54,7 +60,7 @@
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 153.0,
+        "_dd.appsec.event_rules.loaded": 158.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,

@@ -89,87 +89,127 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            TracerDebugger.WaitForDebugger();
-
-            var swTotal = Stopwatch.StartNew();
-            Log.Debug("Initialization started.");
-
-            var sw = Stopwatch.StartNew();
-            legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
-            if (legacyMode)
+            try
             {
-                InitializeLegacy();
-            }
-            else
-            {
-                InitializeNoNativeParts(sw);
+                TracerDebugger.WaitForDebugger();
 
+                var swTotal = Stopwatch.StartNew();
+                Log.Debug("Initialization started.");
+
+                var sw = Stopwatch.StartNew();
+                legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                if (legacyMode)
+                {
+                    InitializeLegacy();
+                }
+                else
+                {
+                    InitializeNoNativeParts(sw);
+
+                    try
+                    {
+                        Log.Debug("Enabling CallTarget integration definitions in native library.");
+
+                        InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
+                        if (Security.Instance.AppsecEnabled)
+                        {
+                            Log.Debug("Enabling AppSec call target category");
+                            enabledCategories |= InstrumentationCategory.AppSec;
+                        }
+
+                        var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                        Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
+                        TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
+
+                        var raspEnabled = Security.Instance.Settings.RaspEnabled;
+                        var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
+
+                        if (raspEnabled || iastEnabled)
+                        {
+                            InstrumentationCategory category = 0;
+                            if (iastEnabled)
+                            {
+                                Log.Debug("Enabling Iast call target category");
+                                category |= InstrumentationCategory.Iast;
+
+                                Iast.Iast.Instance.InitAnalyzers();
+                            }
+
+                            if (raspEnabled)
+                            {
+                                Log.Debug("Enabling Rasp");
+                            }
+
+                            EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error sending CallTarget integration definitions to native library");
+                    }
+
+                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
+                    sw.Restart();
+
+                    InitializeTracer(sw);
+                }
+
+#if NETSTANDARD2_0 || NETCOREAPP3_1
                 try
                 {
-                    Log.Debug("Enabling CallTarget integration definitions in native library.");
-
-                    InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                    if (Security.Instance.Enabled)
-                    {
-                        Log.Debug("Enabling AppSec call target category");
-                        enabledCategories |= InstrumentationCategory.AppSec;
-                    }
-
-                    var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
-                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
-
-                    var raspEnabled = Security.Instance.Settings.RaspEnabled;
-                    var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
-
-                    if (raspEnabled || iastEnabled)
-                    {
-                        InstrumentationCategory category = 0;
-                        if (iastEnabled)
-                        {
-                            Log.Debug("Enabling Iast call target category");
-                            category |= InstrumentationCategory.Iast;
-                        }
-
-                        if (raspEnabled)
-                        {
-                            Log.Debug("Enabling Rasp");
-                        }
-
-                        EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
-                    }
+                    // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
+                    // while the app is shutting down, which results in flaky tests due to the short-
+                    // lived nature of our apps. This appears to be a bug in the runtime (although
+                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
+                    // hash which calls into the native library, triggering the load.
+                    _ = string.Empty.ToUUID();
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Error sending CallTarget integration definitions to native library");
+                    Log.Error(ex, "Error triggering eager OpenSSL load");
                 }
+#endif
+                LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
-                sw.Restart();
+                Log.Debug("Initialization finished.");
 
-                InitializeTracer(sw);
-            }
-
-#if NETSTANDARD2_0 || NETCOREAPP3_1
-            try
-            {
-                // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
-                // while the app is shutting down, which results in flaky tests due to the short-
-                // lived nature of our apps. This appears to be a bug in the runtime (although
-                // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
-                // hash which calls into the native library, triggering the load.
-                _ = string.Empty.ToUUID();
+                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error triggering eager OpenSSL load");
+                // if we're in SSI we want to be as safe as possible, so catching to avoid the possibility of a crash
+                try
+                {
+                    Log.Error(ex, "Error in Datadog.Trace.ClrProfiler.Managed.Loader.Startup.Startup(). Functionality may be impacted.");
+                    return;
+                }
+                catch
+                {
+                    // Swallowing any errors here, as something went _very_ wrong, even with logging
+                    // and we 100% don't want to crash in SSI. Outside of SSI we do want to see the crash
+                    // so that it's visible to the user.
+                    if (IsInSsi())
+                    {
+                        return;
+                    }
+                }
+
+                throw;
             }
-#endif
-            LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-            Log.Debug("Initialization finished.");
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
+            static bool IsInSsi()
+            {
+                try
+                {
+                    // Not using the ReadEnvironmentVariable method here to avoid logging (which could cause a crash itself)
+                    return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DD_INJECTION_ENABLED"));
+                }
+                catch
+                {
+                    // sigh, nothing works, _pretend_ we're in SSI so that we don't crash the app
+                    return true;
+                }
+            }
         }
 
         /// <summary>
@@ -409,7 +449,7 @@ namespace Datadog.Trace.ClrProfiler
                     }
                     else
                     {
-                        Log.Information("Exception Debugging is disabled. To enable it, please set DD_EXCEPTION_DEBUGGING_ENABLED environment variable to 'true'.");
+                        Log.Information("Exception Replay is disabled. To enable it, please set DD_EXCEPTION_REPLAY_ENABLED environment variable to '1'/'true'.");
                     }
                 }
                 catch (Exception ex)
@@ -442,7 +482,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             if (!legacyMode) { return; }
 
-            if (!Security.Instance.Settings.Enabled)
+            if (!Security.Instance.Settings.AppsecEnabled)
             {
                 Log.Debug("Skipping AppSec initialization because AppSec is disabled");
             }
@@ -462,6 +502,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+                Iast.Iast.Instance.InitAnalyzers();
                 InitializeInstrumentationsLegacy(InstrumentationCategory.Iast, sw);
             }
         }
@@ -512,17 +553,24 @@ namespace Datadog.Trace.ClrProfiler
                     // TODO: LiveDebugger should be initialized in TracerManagerFactory so it can respond
                     // to changes in ExporterSettings etc.
 
-                    var sw = Stopwatch.StartNew();
-                    var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
-
-                    if (isDiscoverySuccessful)
+                    try
                     {
-                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
+                        var sw = Stopwatch.StartNew();
+                        var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
+                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DiscoveryService, sw.ElapsedMilliseconds);
 
-                        Log.Debug("Initializing live debugger.");
+                        if (isDiscoverySuccessful)
+                        {
+                            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, RcmSubscriptionManager.Instance, settings, serviceName, tracer.TracerManager.Telemetry, debuggerSettings, tracer.TracerManager.GitMetadataTagsProvider);
 
-                        await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                            Log.Debug("Initializing live debugger.");
+
+                            await InitializeLiveDebugger(liveDebugger).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error initializing live debugger.");
                     }
                 });
         }

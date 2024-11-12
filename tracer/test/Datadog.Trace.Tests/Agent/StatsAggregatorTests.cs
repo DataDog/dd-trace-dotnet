@@ -455,7 +455,8 @@ namespace Datadog.Trace.Tests.Agent
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
-                             clientDropP0: true));
+                             clientDropP0: true,
+                             spanMetaStructs: true));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

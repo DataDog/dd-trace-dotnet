@@ -46,7 +46,7 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
                 userStrings.push_back(str);
             }
         }
-        hr = method->CommitILRewriter();
+        hr = method->CommitILRewriter(true);
     }
 
     if (userStrings.size() > 0)

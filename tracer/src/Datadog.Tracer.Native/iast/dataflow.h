@@ -2,6 +2,13 @@
 #include "../../../../shared/src/native-src/pal.h"
 #include "iast_util.h"
 #include "aspect.h"
+#include "../rejit_handler.h"
+#include "../rejit_preprocessor.h"
+
+namespace trace
+{
+    class FunctionControlWrapper;
+}
 
 namespace iast
 {
@@ -16,7 +23,7 @@ namespace iast
     struct ILInstr;
     enum class DataflowAspectFilterValue;
     class AspectFilter;
-    struct InstrumentResult;
+    struct DataflowContext;
 
     struct RewriteMethodResponse
     {
@@ -40,12 +47,12 @@ namespace iast
         AspectFilter* GetFilter(DataflowAspectFilterValue filterValue);
     };
 
-    class Dataflow
+    class Dataflow : public trace::Rejitter
     {
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(ICorProfilerInfo* profiler);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
@@ -65,21 +72,20 @@ namespace iast
         std::vector<WSTRING> _methodAttributeIncludeFilters;
         std::vector<WSTRING> _methodAttributeExcludeFilters;
 
-        bool _traceJitMethods = false;
-
     protected:
         bool _initialized = false;
         bool _loaded = false;
+        bool _setILOnJit = false;
 
         std::vector<DataflowAspectClass*> _aspectClasses;
         std::vector<DataflowAspect*> _aspects;
         std::map<ModuleID, ModuleAspects*> _moduleAspects;
 
-        HRESULT RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl* pFunctionControl);
-        MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, bool isRejit = false);
+        HRESULT RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl = nullptr);
+        MethodInfo* JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl = nullptr);
 
         std::vector<DataflowAspectReference*> GetAspects(ModuleInfo* module);
-        static InstrumentResult InstrumentInstruction(ILRewriter* rewriter, ILInstr* instruction, std::vector<DataflowAspectReference*>& aspects);
+        static bool InstrumentInstruction(DataflowContext& context, std::vector<DataflowAspectReference*>& aspects);
 
     public:
         bool IsInitialized();
@@ -119,5 +125,14 @@ namespace iast
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);
+
+    public:
+        void Shutdown() override;
+        RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
+        bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
+        void RemoveModule(ModuleID moduleId) override;
+        void AddNGenInlinerModule(ModuleID moduleId) override;
+
+        HRESULT RejitMethod(trace::FunctionControlWrapper& functionControl) override;
     };
-}
+} // namespace iast

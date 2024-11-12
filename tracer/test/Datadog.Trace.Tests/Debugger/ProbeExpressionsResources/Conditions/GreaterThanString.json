@@ -1,0 +1,26 @@
+{
+    "dsl": "this.String > this.Nested._string",
+    "gt": [
+      {
+        "getmember": [
+          {
+            "ref": "this"
+          },
+          "String"
+        ]
+      },
+      {
+        "getmember": [
+            {
+                "getmember": [
+                    {
+                        "ref": "this"
+                    },
+                    "Nested"
+                ]
+            },
+            "_string"
+          ]
+      }
+    ]
+  }

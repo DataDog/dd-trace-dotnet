@@ -3,6 +3,7 @@
 
 
 #include "EtwEventsManager.h"
+#include "FrameStore.h"
 #include "IContentionListener.h"
 #include "IAllocationsListener.h"
 #include "IGCSuspensionsListener.h"
@@ -31,13 +32,15 @@ EtwEventsManager::EtwEventsManager(
     _pContentionListener(pContentionListener)
 {
     _isDebugLogEnabled = pConfiguration->IsEtwLoggingEnabled();
-
+    _agentReplayEndpoint = pConfiguration->GetEtwReplayEndpoint();
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         pGCSuspensionsListener);
     _logger = std::make_unique<ProfilerLogger>();
+    _IpcClient = nullptr;
+    _IpcServer = nullptr;
 }
 
 
@@ -63,6 +66,7 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
     t.tm_hour = st.wHour;
     t.tm_min = st.wMinute;
     t.tm_sec = st.wSecond;
+    t.tm_isdst = -1; // don't mess with daylight saving time (already done by SystemTimeToTzSpecificLocalTime)
     time_t timeSinceEpoch = mktime(&t);
 
     return timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
@@ -82,17 +86,45 @@ void EtwEventsManager::OnEvent(
     {
         if (_isDebugLogEnabled)
         {
-            std::cout << "StackWalk for thread #" << tid << std::endl;
+            std::cout << "StackWalk for thread #" << tid;
         }
 
         auto pThreadInfo = GetOrCreate(tid);
         if (pThreadInfo->LastEventWasContentionStart())
         {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << " (contention start)" << std::endl;
+            }
+
             AttachContentionCallstack(pThreadInfo, cbEventData, pEventData);
         }
         else if (pThreadInfo->LastEventWasAllocationTick())
         {
-            AttachAllocationCallstack(pThreadInfo, cbEventData, pEventData);
+            if (_isDebugLogEnabled)
+            {
+                std::cout << " (allocation tick)" << std::endl;
+            }
+
+            if (_pAllocationListener != nullptr)
+            {
+                AttachAllocationCallstack(pThreadInfo, cbEventData, pEventData);
+                _pAllocationListener->OnAllocation(
+                    pThreadInfo->AllocationTickTimestamp,
+                    tid,
+                    pThreadInfo->AllocationKind,
+                    pThreadInfo->AllocationClassId,
+                    pThreadInfo->AllocatedType,
+                    pThreadInfo->AllocationAmount,
+                    pThreadInfo->AllocationCallStack);
+            }
+        }
+        else
+        {
+            if (_isDebugLogEnabled)
+            {
+                std::cout << std::endl;
+            }
         }
 
         pThreadInfo->ClearLastEventId();
@@ -153,7 +185,7 @@ void EtwEventsManager::OnEvent(
         {
             if (_isDebugLogEnabled)
             {
-                std::cout << "AllocationTick" << std::endl;
+                std::cout << "AllocationTick" << " v" << version << std::endl;
             }
 
             if (_pAllocationListener == nullptr)
@@ -165,8 +197,44 @@ void EtwEventsManager::OnEvent(
             pThreadInfo->LastEventId = EventId::AllocationTick;
 
             auto timestamp = TimestampToEpochNS(systemTimestamp);
-            // TODO: get the type name and ClassID from the payload
-            // TODO: update IAllocationListener to take the type name, ClassID and stack
+            // Get the type name and ClassID from the payload
+            //template tid = "GCAllocationTick_V3" >
+            //    <data name = "AllocationAmount" inType = "win:UInt32" />
+            //    <data name = "AllocationKind" inType = "win:UInt32" />
+            //    <data name = "ClrInstanceID" inType = "win:UInt16" />
+            //    <data name = "AllocationAmount64" inType = "win:UInt64"/>
+            //    <data name = "TypeID" inType = "win:Pointer" />
+            //    <data name = "TypeName" inType = "win:UnicodeString" />
+            //
+            // !! the following 2 fields cannot be directly accessed because
+            // !! they will be stored after the string TypeName
+            //    <data name = "HeapIndex" inType = "win:UInt32" />
+            //    <data name = "Address" inType = "win:Pointer" />
+            // but no object size...
+            // Since the events are received asynchronously, it is not even possible
+            // to assume that the object that was stored at the received Adress field
+            // is still there: it could have been moved by a garbage collection
+            AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
+            pThreadInfo->AllocationTickTimestamp = timestamp;
+            pThreadInfo->AllocationKind = pPayload->AllocationKind;
+
+            // when events are replayed, no pointer value should be used
+            // --> ClassID is invalid and should not be used
+            if (!_agentReplayEndpoint.empty())
+            {
+                pThreadInfo->AllocationClassId = 0;
+            }
+            else
+            {
+                pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+            }
+
+            pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
+
+            // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?
+            pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(&(pPayload->FirstCharInName)));
+
+            // wait for the sibling StackWalk event to create the sample
         }
         else
         {
@@ -240,14 +308,32 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
     }
 }
 
+// In case of tests, a custom endpoint can be used to avoid the need of the Datadog Agent
+// and the received IPs are not valid --> we need to use a fake one
 void EtwEventsManager::AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    if (_agentReplayEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->ContentionCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->ContentionCallStack.clear();
+        pThreadInfo->ContentionCallStack.push_back(FrameStore::FakeLockContentionIP);
+    }
 }
 
 void EtwEventsManager::AttachAllocationCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData)
 {
-    AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    if (_agentReplayEndpoint.empty())
+    {
+        AttachCallstack(pThreadInfo->AllocationCallStack, userDataLength, pUserData);
+    }
+    else
+    {
+        pThreadInfo->AllocationCallStack.clear();
+        pThreadInfo->AllocationCallStack.push_back(FrameStore::FakeAllocationIP);
+    }
 }
 
 void EtwEventsManager::OnStop()
@@ -269,9 +355,10 @@ bool EtwEventsManager::Start()
     buffer << NamedPipePrefix;
     buffer << pid;
     std::string pipeName = buffer.str();
+
     Log::Info("Exposing ", pipeName);
 
-    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this);
+    _eventsHandler = std::make_unique<EtwEventsHandler>(_logger.get(), this, nullptr);
     _IpcServer = IpcServer::StartAsync(
         _logger.get(),
         pipeName,
@@ -287,7 +374,7 @@ bool EtwEventsManager::Start()
     }
 
     // create the client part to send the registration command
-    pipeName = NamedPipeAgent;
+    pipeName = (_agentReplayEndpoint.empty()) ? NamedPipeAgent : _agentReplayEndpoint;
     Log::Info("Contacting ", pipeName, "...");
 
     _IpcClient = IpcClient::Connect(_logger.get(), pipeName, TimeoutMS);
@@ -303,25 +390,28 @@ bool EtwEventsManager::Start()
 
 void EtwEventsManager::Stop()
 {
-    // unregister our process ID to the Datadog Agent
-    if (SendRegistrationCommand(false))
-    {
-        Log::Info("Unregistered from the Datadog Agent");
-    }
-    else
-    {
-        Log::Warn("Fail to unregister from the Datadog Agent...");
-    }
-
     if (_IpcClient != nullptr)
     {
-        if (_IpcClient->Disconnect())
+        // unregister our process ID to the Datadog Agent
+        if (SendRegistrationCommand(false))
         {
-            Log::Info("Disconnected from the Datadog Agent named pipe");
+            Log::Info("Unregistered from the Datadog Agent");
         }
         else
         {
-            Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+            Log::Warn("Fail to unregister from the Datadog Agent...");
+        }
+
+        if (_IpcClient != nullptr)
+        {
+            if (_IpcClient->Disconnect())
+            {
+                Log::Info("Disconnected from the Datadog Agent named pipe");
+            }
+            else
+            {
+                Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+            }
         }
     }
 
@@ -343,6 +433,7 @@ bool EtwEventsManager::SendRegistrationCommand(bool add)
     {
         return false;
     }
+
     auto pClient = _IpcClient.get();
     DWORD pid = ::GetCurrentProcessId();
 
@@ -356,12 +447,14 @@ bool EtwEventsManager::SendRegistrationCommand(bool add)
         SetupUnregisterCommand(message, pid);
     }
 
+    Log::Info("Sending command to the Datadog Agent...");
     auto code = pClient->Send(&message, sizeof(message));
     if (code != NamedPipesCode::Success)
     {
         LogLastError("Failed to write to pipe", code);
         return false;
     }
+    Log::Info("Command sent to the Datadog Agent");
 
     IpcHeader response;
     code = pClient->Read(&response, sizeof(response));

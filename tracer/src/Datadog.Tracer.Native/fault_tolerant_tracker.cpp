@@ -1,20 +1,11 @@
 #include "fault_tolerant_tracker.h"
 
-void fault_tolerant::FaultTolerantTracker::RequestRevert(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
-{
-    std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future = promise->get_future();
-    rejit_handler->EnqueueRequestRevert(requests, promise);
-    future.get();
-}
-
 void fault_tolerant::FaultTolerantTracker::RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
 {
     std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
-    rejit_handler->EnqueueRequestRejit(requests, promise);
+    rejit_handler->EnqueueRequestRejit(requests, promise, true);
     future.get();
 }
 
@@ -129,7 +120,6 @@ void fault_tolerant::FaultTolerantTracker::AddSuccessfulInstrumentationId(
 {
     std::lock_guard lock(_successfulInstrumentationIdsMutex);
 
-    RequestRevert(moduleId, methodId, rejit_handler);
     RequestRejit(moduleId, methodId, rejit_handler);
 
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
@@ -165,7 +155,7 @@ bool fault_tolerant::FaultTolerantTracker::ShouldHeal(ModuleID moduleId, mdMetho
 
     if (shouldHeal)
     {
-        RequestRevert(moduleId, methodId, rejit_handler);
+        RequestRejit(moduleId, methodId, rejit_handler);
     }
 
     return shouldHeal;

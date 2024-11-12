@@ -9,8 +9,9 @@ namespace debugger
 {
 
 bool IsDebuggerEnabled();
-bool IsExceptionDebuggingEnabled();
+bool IsExceptionReplayEnabled();
 bool IsDebuggerInstrumentAllEnabled();
+bool IsDebuggerInstrumentAllLinesEnabled();
 
 } // namespace debugger
 

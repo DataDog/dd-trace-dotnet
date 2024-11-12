@@ -1,0 +1,872 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "context": {
+                "fields": {
+                  "_connection": {
+                    "isNull": "true",
+                    "type": "DefaultConnectionInfo"
+                  },
+                  "_features": {
+                    "fields": {
+                      "Cache": {
+                        "fields": {
+                          "Authentication": {
+                            "isNull": "true",
+                            "type": "IHttpAuthenticationFeature"
+                          },
+                          "Lifetime": {
+                            "isNull": "true",
+                            "type": "IHttpRequestLifetimeFeature"
+                          },
+                          "RequestIdentifier": {
+                            "isNull": "true",
+                            "type": "IHttpRequestIdentifierFeature"
+                          },
+                          "ServiceProviders": {
+                            "notCapturedReason": "depth",
+                            "type": "IServiceProvidersFeature",
+                            "value": "IServiceProvidersFeature"
+                          },
+                          "Session": {
+                            "notCapturedReason": "redactedIdent",
+                            "type": "ISessionFeature"
+                          }
+                        },
+                        "type": "FeatureInterfaces",
+                        "value": "FeatureInterfaces"
+                      },
+                      "Collection": {
+                        "type": "IFeatureCollection",
+                        "value": "IFeatureCollection"
+                      }
+                    },
+                    "type": "FeatureReferences`1",
+                    "value": "FeatureReferences`1"
+                  },
+                  "_request": {
+                    "fields": {
+                      "_context": {
+                        "fields": {
+                          "_connection": {
+                            "isNull": "true",
+                            "type": "DefaultConnectionInfo"
+                          },
+                          "_features": {
+                            "notCapturedReason": "depth",
+                            "type": "FeatureReferences`1",
+                            "value": "FeatureReferences`1"
+                          },
+                          "_request": {
+                            "notCapturedReason": "depth",
+                            "type": "DefaultHttpRequest",
+                            "value": "DefaultHttpRequest"
+                          },
+                          "_response": {
+                            "notCapturedReason": "depth",
+                            "type": "DefaultHttpResponse",
+                            "value": "DefaultHttpResponse"
+                          },
+                          "_websockets": {
+                            "isNull": "true",
+                            "type": "DefaultWebSocketManager"
+                          },
+                          "FormOptions": {
+                            "notCapturedReason": "depth",
+                            "type": "FormOptions",
+                            "value": "FormOptions"
+                          },
+                          "ServiceScopeFactory": {
+                            "notCapturedReason": "depth",
+                            "type": "IServiceScopeFactory",
+                            "value": "IServiceScopeFactory"
+                          }
+                        },
+                        "type": "DefaultHttpContext",
+                        "value": "DefaultHttpContext"
+                      },
+                      "_features": {
+                        "fields": {
+                          "Cache": {
+                            "notCapturedReason": "depth",
+                            "type": "FeatureInterfaces",
+                            "value": "FeatureInterfaces"
+                          },
+                          "Collection": {
+                            "notCapturedReason": "depth",
+                            "type": "IFeatureCollection",
+                            "value": "IFeatureCollection"
+                          }
+                        },
+                        "type": "FeatureReferences`1",
+                        "value": "FeatureReferences`1"
+                      },
+                      "RouteValues": {
+                        "isNull": "true",
+                        "type": "RouteValueDictionary"
+                      }
+                    },
+                    "type": "DefaultHttpRequest",
+                    "value": "DefaultHttpRequest"
+                  },
+                  "_response": {
+                    "fields": {
+                      "_context": {
+                        "fields": {
+                          "_connection": {
+                            "isNull": "true",
+                            "type": "DefaultConnectionInfo"
+                          },
+                          "_features": {
+                            "notCapturedReason": "depth",
+                            "type": "FeatureReferences`1",
+                            "value": "FeatureReferences`1"
+                          },
+                          "_request": {
+                            "notCapturedReason": "depth",
+                            "type": "DefaultHttpRequest",
+                            "value": "DefaultHttpRequest"
+                          },
+                          "_response": {
+                            "notCapturedReason": "depth",
+                            "type": "DefaultHttpResponse",
+                            "value": "DefaultHttpResponse"
+                          },
+                          "_websockets": {
+                            "isNull": "true",
+                            "type": "DefaultWebSocketManager"
+                          },
+                          "FormOptions": {
+                            "notCapturedReason": "depth",
+                            "type": "FormOptions",
+                            "value": "FormOptions"
+                          },
+                          "ServiceScopeFactory": {
+                            "notCapturedReason": "depth",
+                            "type": "IServiceScopeFactory",
+                            "value": "IServiceScopeFactory"
+                          }
+                        },
+                        "type": "DefaultHttpContext",
+                        "value": "DefaultHttpContext"
+                      },
+                      "_features": {
+                        "fields": {
+                          "Cache": {
+                            "notCapturedReason": "depth",
+                            "type": "FeatureInterfaces",
+                            "value": "FeatureInterfaces"
+                          },
+                          "Collection": {
+                            "notCapturedReason": "depth",
+                            "type": "IFeatureCollection",
+                            "value": "IFeatureCollection"
+                          }
+                        },
+                        "type": "FeatureReferences`1",
+                        "value": "FeatureReferences`1"
+                      }
+                    },
+                    "type": "DefaultHttpResponse",
+                    "value": "DefaultHttpResponse"
+                  },
+                  "_websockets": {
+                    "isNull": "true",
+                    "type": "DefaultWebSocketManager"
+                  },
+                  "FormOptions": {
+                    "fields": {
+                      "BufferBody": {
+                        "type": "Boolean",
+                        "value": "False"
+                      },
+                      "BufferBodyLengthLimit": {
+                        "type": "Int64",
+                        "value": "134217728"
+                      },
+                      "KeyLengthLimit": {
+                        "type": "Int32",
+                        "value": "2048"
+                      },
+                      "MemoryBufferThreshold": {
+                        "type": "Int32",
+                        "value": "65536"
+                      },
+                      "MultipartBodyLengthLimit": {
+                        "type": "Int64",
+                        "value": "134217728"
+                      },
+                      "MultipartBoundaryLengthLimit": {
+                        "type": "Int32",
+                        "value": "128"
+                      },
+                      "MultipartHeadersCountLimit": {
+                        "type": "Int32",
+                        "value": "16"
+                      },
+                      "MultipartHeadersLengthLimit": {
+                        "type": "Int32",
+                        "value": "16384"
+                      },
+                      "ValueCountLimit": {
+                        "type": "Int32",
+                        "value": "1024"
+                      },
+                      "ValueLengthLimit": {
+                        "type": "Int32",
+                        "value": "4194304"
+                      }
+                    },
+                    "type": "FormOptions",
+                    "value": "FormOptions"
+                  },
+                  "ServiceScopeFactory": {
+                    "type": "IServiceScopeFactory",
+                    "value": "IServiceScopeFactory"
+                  }
+                },
+                "type": "DefaultHttpContext",
+                "value": "DefaultHttpContext"
+              },
+              "next": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`1",
+                "value": "Func`1"
+              },
+              "this": {
+                "type": "<>c",
+                "value": "<>c"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_mutex": {
+                    "isNull": "true",
+                    "type": "Mutex"
+                  },
+                  "_mutexIndex": {
+                    "type": "Int32",
+                    "value": "-1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233043"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The depth of iterations reached 0"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "AbandonedMutexException",
+                "value": "AbandonedMutexException"
+              }
+            },
+            "staticFields": {
+              "<>9": {
+                "type": "<>c",
+                "value": "<>c"
+              },
+              "<>9__5_0": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Action`1",
+                "value": "Action`1"
+              },
+              "<>9__5_1": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Action`1",
+                "value": "Action`1"
+              },
+              "<>9__5_2": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`3",
+                "value": "Func`3"
+              },
+              "<>9__5_3": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Action`1",
+                "value": "Action`1"
+              },
+              "<>9__5_4": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "RequestDelegate",
+                "value": "RequestDelegate"
+              }
+            },
+            "throwable": {
+              "message": "The depth of iterations reached 0",
+              "stacktrace": [],
+              "type": "System.Threading.AbandonedMutexException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "<Configure>b__5_2",
+            "type": "Samples.Debugger.AspNetCore5.Startup+<>c"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "<Configure>b__5_2",
+      "name": "Samples.Debugger.AspNetCore5.Startup+<>c",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "method": {
+                "fields": {
+                  "_invocationCount": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_invocationList": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodBase": {
+                    "isNull": "true",
+                    "type": "Object"
+                  },
+                  "_methodPtr": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_methodPtrAux": {
+                    "type": "IntPtr",
+                    "value": "ScrubbedValue"
+                  },
+                  "_target": {
+                    "type": "Object",
+                    "value": "Object"
+                  }
+                },
+                "type": "Func`2",
+                "value": "Func`2"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_mutex": {
+                    "isNull": "true",
+                    "type": "Mutex"
+                  },
+                  "_mutexIndex": {
+                    "type": "Int32",
+                    "value": "-1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233043"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The depth of iterations reached 0"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "AbandonedMutexException",
+                "value": "AbandonedMutexException"
+              }
+            },
+            "throwable": {
+              "message": "The depth of iterations reached 0",
+              "stacktrace": [],
+              "type": "System.Threading.AbandonedMutexException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Me",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Me",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest+PingPonged",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "iteration": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "this": {
+                "type": "RecursiveExceptionTest",
+                "value": "RecursiveExceptionTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_mutex": {
+                    "isNull": "true",
+                    "type": "Mutex"
+                  },
+                  "_mutexIndex": {
+                    "type": "Int32",
+                    "value": "-1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233043"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The depth of iterations reached 0"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "AbandonedMutexException",
+                "value": "AbandonedMutexException"
+              }
+            },
+            "throwable": {
+              "message": "The depth of iterations reached 0",
+              "stacktrace": [],
+              "type": "System.Threading.AbandonedMutexException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "<Recursive>b__1_0",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "<Recursive>b__1_0",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "0"
+              },
+              "this": {
+                "type": "RecursiveExceptionTest",
+                "value": "RecursiveExceptionTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_mutex": {
+                    "isNull": "true",
+                    "type": "Mutex"
+                  },
+                  "_mutexIndex": {
+                    "type": "Int32",
+                    "value": "-1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233043"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The depth of iterations reached 0"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "AbandonedMutexException",
+                "value": "AbandonedMutexException"
+              }
+            },
+            "throwable": {
+              "message": "The depth of iterations reached 0",
+              "stacktrace": [],
+              "type": "System.Threading.AbandonedMutexException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "arguments": {
+              "iterations": {
+                "type": "Int32",
+                "value": "1"
+              },
+              "this": {
+                "type": "RecursiveExceptionTest",
+                "value": "RecursiveExceptionTest"
+              }
+            },
+            "locals": {
+              "@exception": {
+                "fields": {
+                  "_mutex": {
+                    "isNull": "true",
+                    "type": "Mutex"
+                  },
+                  "_mutexIndex": {
+                    "type": "Int32",
+                    "value": "-1"
+                  },
+                  "HelpLink": {
+                    "isNull": "true",
+                    "type": "String"
+                  },
+                  "HResult": {
+                    "type": "Int32",
+                    "value": "-2146233043"
+                  },
+                  "InnerException": {
+                    "isNull": "true",
+                    "type": "Exception"
+                  },
+                  "Message": {
+                    "type": "String",
+                    "value": "The depth of iterations reached 0"
+                  },
+                  "Source": {
+                    "type": "String",
+                    "value": "Samples.Probes.TestRuns"
+                  },
+                  "StackTrace": "ScrubbedValue"
+                },
+                "type": "AbandonedMutexException",
+                "value": "AbandonedMutexException"
+              }
+            },
+            "throwable": {
+              "message": "The depth of iterations reached 0",
+              "stacktrace": [],
+              "type": "System.Threading.AbandonedMutexException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest"
+          },
+          "version": 1
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.TestRuns.ExceptionReplay.RecursiveExceptionTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "samples.debugger.aspnetcore5"
+  }
+]

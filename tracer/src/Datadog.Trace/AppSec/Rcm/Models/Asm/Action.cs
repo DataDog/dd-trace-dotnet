@@ -19,5 +19,5 @@ internal class Action
     [JsonProperty("parameters")]
     public Parameter? Parameters { get; set; }
 
-    public List<KeyValuePair<string, object?>> ToKeyValuePair() => new() { new("type", Type), new("id", Id), new("parameters", Parameters?.ToKeyValuePair()) };
+    public List<KeyValuePair<string, object?>> ToKeyValuePair() => [new("type", Type), new("id", Id), new("parameters", Parameters?.ToKeyValuePair())];
 }

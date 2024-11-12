@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 
@@ -45,20 +46,38 @@ namespace Datadog.Trace.Configuration
             /// Default value is 1 mb.
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseBatchSizeInBytes"/>
-            public const string SymbolDatabaseBatchSizeInBytes = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_BATCH_SIZE_BYTES";
+            public const string SymbolDatabaseBatchSizeInBytes = "DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES";
 
             /// <summary>
             /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
-            public const string SymbolDatabaseUploadEnabled = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED";
+            public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
-            /// Configuration key for a separated comma list of libraries to include in the symbol database upload
+            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
             /// Default value is empty.
             /// </summary>
-            public const string SymbolDatabaseIncludes = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_INCLUDES";
+            public const string ThirdPartyDetectionIncludes = "DD_THIRD_PARTY_DETECTION_INCLUDES";
+
+            /// <summary>
+            /// Configuration key for a separated comma list of libraries to exclude for the 3rd party detection
+            /// Default value is empty.
+            /// </summary>
+            public const string ThirdPartyDetectionExcludes = "DD_THIRD_PARTY_DETECTION_EXCLUDES";
+
+            /// <summary>
+            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
+            /// Default value is empty.
+            /// </summary>
+            public const string SymDbThirdPartyDetectionIncludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES";
+
+            /// <summary>
+            /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
+            /// Default value is empty.
+            /// </summary>
+            public const string SymDbThirdPartyDetectionExcludes = "DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES";
 
             /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
@@ -87,38 +106,60 @@ namespace Datadog.Trace.Configuration
             public const string RedactedTypes = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES";
 
             /// <summary>
-            /// Configuration key for enabling or disabling Exception Debugging.
+            /// The old configuration key for enabling or disabling Exception Replay.
             /// Default value is false (disabled).
             /// </summary>
-            /// <seealso cref="ExceptionDebuggingSettings.Enabled"/>
+            /// <seealso cref="ExceptionReplaySettings.Enabled"/>
+            [Obsolete]
             public const string ExceptionDebuggingEnabled = "DD_EXCEPTION_DEBUGGING_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Exception Replay.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="ExceptionReplaySettings.Enabled"/>
+            public const string ExceptionReplayEnabled = "DD_EXCEPTION_REPLAY_ENABLED";
 
             /// <summary>
             /// Configuration key for the maximum number of frames in a call stack we would like to capture values for.
             /// </summary>
-            /// <seealso cref="ExceptionDebuggingSettings.MaximumFramesToCapture"/>
-            public const string ExceptionDebuggingMaxFramesToCapture = "DD_EXCEPTION_DEBUGGING_MAX_FRAMES_TO_CAPTURE";
+            /// <seealso cref="ExceptionReplaySettings.MaximumFramesToCapture"/>
+            public const string ExceptionReplayMaxFramesToCapture = "DD_EXCEPTION_REPLAY_MAX_FRAMES_TO_CAPTURE";
 
             /// <summary>
             /// Configuration key to enable capturing the variables of all the frames in exception call stack.
             /// Default value is false.
             /// </summary>
-            /// <seealso cref="ExceptionDebuggingSettings.CaptureFullCallStack"/>
-            public const string ExceptionDebuggingCaptureFullCallStackEnabled = "DD_EXCEPTION_DEBUGGING_CAPTURE_FULL_CALLSTACK_ENABLED";
+            /// <seealso cref="ExceptionReplaySettings.CaptureFullCallStack"/>
+            public const string ExceptionReplayCaptureFullCallStackEnabled = "DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED";
 
             /// <summary>
             /// Configuration key for the interval used to track exceptions
             /// Default value is <c>1</c>h.
             /// </summary>
-            /// <seealso cref="ExceptionDebuggingSettings.RateLimit"/>
-            public const string RateLimitSeconds = "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS";
+            /// <seealso cref="ExceptionReplaySettings.RateLimit"/>
+            public const string RateLimitSeconds = "DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS";
 
             /// <summary>
-            /// Configuration key for setting the maximum number of exceptions to be analyzed by Exception Debugging within a 1-second time interval.
+            /// Configuration key for setting the maximum number of exceptions to be analyzed by Exception Replay within a 1-second time interval.
             /// Default value is <c>100</c>.
             /// </summary>
-            /// <seealso cref="ExceptionDebuggingSettings.MaxExceptionAnalysisLimit"/>
-            public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_DEBUGGING_MAX_EXCEPTION_ANALYSIS_LIMIT";
+            /// <seealso cref="ExceptionReplaySettings.MaxExceptionAnalysisLimit"/>
+            public const string MaxExceptionAnalysisLimit = "DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT";
+
+            /// <summary>
+            /// Configuration key to enable tag code origin for span.
+            /// Default value is false.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.CodeOriginForSpansEnabled"/>
+            public const string CodeOriginForSpansEnabled = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the number of frames to be tagged in exit span code origin.
+            /// Default value is <c>8</c>.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.CodeOriginMaxUserFrames"/>
+            public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
         }
     }
 }

@@ -127,9 +127,9 @@ namespace Datadog.Trace.Ci
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
+            Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
 
             // Set the service name if empty
-            Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
@@ -138,6 +138,7 @@ namespace Datadog.Trace.Ci
 
             // Normalize the service name
             tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -195,9 +196,9 @@ namespace Datadog.Trace.Ci
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             var tracerSettings = settings.TracerSettings;
+            Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
 
             // Set the service name if empty
-            Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
             {
                 // Extract repository name from the git url and use it as a default service name.
@@ -206,6 +207,7 @@ namespace Datadog.Trace.Ci
 
             // Normalize the service name
             tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -559,7 +561,7 @@ namespace Datadog.Trace.Ci
                     test.SetErrorInfo(exception);
                 }
 
-                test.Close(TestStatus.Fail);
+                test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
             }
 
             foreach (var testSuite in TestSuite.ActiveTestSuites)
@@ -589,7 +591,7 @@ namespace Datadog.Trace.Ci
                     testSession.SetErrorInfo(exception);
                 }
 
-                await testSession.CloseAsync(TestStatus.Fail).ConfigureAwait(false);
+                await testSession.CloseAsync(TestStatus.Skip).ConfigureAwait(false);
             }
 
             await FlushAsync().ConfigureAwait(false);
@@ -743,7 +745,7 @@ namespace Datadog.Trace.Ci
 
                     if (settings.EarlyFlakeDetectionEnabled == true || itrSettings.EarlyFlakeDetection.Enabled == true)
                     {
-                        Log.Information("ITR: Early flake detection settings has been enabled by the settings api.");
+                        Log.Information("CIVisibility: Early flake detection settings has been enabled by the settings api.");
                         EarlyFlakeDetectionSettings = itrSettings.EarlyFlakeDetection;
                         settings.SetEarlyFlakeDetectionEnabled(true);
                         EarlyFlakeDetectionResponse = await lazyItrClient.Value.GetEarlyFlakeDetectionTestsAsync().ConfigureAwait(false);
@@ -752,13 +754,22 @@ namespace Datadog.Trace.Ci
                     {
                         settings.SetEarlyFlakeDetectionEnabled(false);
                     }
+
+                    if (settings.FlakyRetryEnabled == null && itrSettings.FlakyTestRetries.HasValue)
+                    {
+                        Log.Information("CIVisibility: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
+                        settings.SetFlakyRetryEnabled(itrSettings.FlakyTestRetries.Value);
+                    }
                 }
 
                 // Log code coverage status
                 Log.Information("{V}", settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
 
                 // Log early flake detection status
-                Log.Information("{V}", settings.EarlyFlakeDetectionEnabled == true ? "ITR: Early flake detection is enabled." : "ITR: Early flake detection is disabled.");
+                Log.Information("{V}", settings.EarlyFlakeDetectionEnabled == true ? "CIVisibility: Early flake detection is enabled." : "CIVisibility: Early flake detection is disabled.");
+
+                // Log flaky retries status
+                Log.Information("{V}", settings.FlakyRetryEnabled == true ? "CIVisibility: Flaky retries is enabled." : "CIVisibility: Flaky retries is disabled.");
 
                 // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.

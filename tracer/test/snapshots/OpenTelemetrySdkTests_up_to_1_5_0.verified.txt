@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -727,6 +727,28 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
     TraceId: Id_25,
     SpanId: Id_34,
     Name: internal,
+    Resource: DeprecatedHttpStatusTagName,
+    Service: MyServiceName,
+    Type: custom,
+    ParentId: Id_26,
+    Tags: {
+      env: integration_tests,
+      http.status_code: 404,
+      language: dotnet,
+      otel.library.name: MyServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_4,
+      service.instance.id: Guid_3,
+      service.name: MyServiceName,
+      service.version: 1.0.x,
+      span.kind: internal,
+      _dd.base_service: CustomServiceName
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_35,
+    Name: internal,
     Resource: Response,
     Service: MyServiceName,
     Type: custom,
@@ -747,7 +769,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   },
   {
     TraceId: Id_25,
-    SpanId: Id_35,
+    SpanId: Id_36,
     Name: internal,
     Resource: StartActiveSpan.Child,
     Service: MyServiceName,
@@ -767,8 +789,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
     }
   },
   {
-    TraceId: Id_36,
-    SpanId: Id_37,
+    TraceId: Id_37,
+    SpanId: Id_38,
     Name: internal,
     Resource: SayHello2,
     Service: MyServiceName,
@@ -802,8 +824,8 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
     ]
   },
   {
-    TraceId: Id_38,
-    SpanId: Id_39,
+    TraceId: Id_39,
+    SpanId: Id_40,
     Name: internal,
     Resource: SayHello3,
     Service: MyServiceName,
@@ -837,14 +859,38 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       {
         TraceIdHigh: LinkIdHigh,
         TraceIdLow: LinkIdLow,
-        SpanId: Id_37,
+        SpanId: Id_38,
         TraceFlags: 2147483649
       }
     ]
   },
   {
-    TraceId: Id_40,
-    SpanId: Id_41,
+    TraceId: Id_41,
+    SpanId: Id_42,
+    Name: internal,
+    Resource: service.name should be the DefaultServiceName value,
+    Service: CustomServiceName,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: MissingServiceName,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_7,
+      runtime-id: Guid_2,
+      service.name: CustomServiceName,
+      span.kind: internal
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_44,
     Name: internal,
     Resource: Transform,
     Service: CustomServiceName,
@@ -854,7 +900,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       language: dotnet,
       otel.library.name: AdditionalActivitySource,
       otel.status_code: STATUS_CODE_UNSET,
-      otel.trace_id: Guid_7,
+      otel.trace_id: Guid_8,
       runtime-id: Guid_2,
       span.kind: internal
     },

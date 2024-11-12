@@ -26,7 +26,15 @@ public class UriAspect
     public static Uri Init(string uriBase)
     {
         var result = new Uri(uriBase);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -43,7 +51,15 @@ public class UriAspect
 #pragma warning disable CS0618 // Type or member is obsolete
         var result = new Uri(uriBase, uriText, escape);
 #pragma warning restore CS0618 // Type or member is obsolete
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -57,7 +73,15 @@ public class UriAspect
     public static Uri Init(Uri uriBase, string relativeUri)
     {
         var result = new Uri(uriBase, relativeUri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -71,7 +95,15 @@ public class UriAspect
     public static Uri Init(Uri uriBase, Uri relativeUri)
     {
         var result = new Uri(uriBase, relativeUri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -87,7 +119,18 @@ public class UriAspect
 #pragma warning disable CS0618 // Type or member is obsolete
         var result = new Uri(uriBase, dontEscape);
 #pragma warning restore CS0618 // Type or member is obsolete
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        try
+        {
+            if (dontEscape)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -101,7 +144,15 @@ public class UriAspect
     public static Uri Init(string uriBase, UriKind uriKind)
     {
         var result = new Uri(uriBase, uriKind);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -116,7 +167,15 @@ public class UriAspect
     public static Uri Init(string uriBase, in UriCreationOptions options)
     {
         var result = new Uri(uriBase, in options);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.OriginalString, uriBase);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 #endif
@@ -132,9 +191,16 @@ public class UriAspect
     public static bool TryCreate(string uri, UriKind kind, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(uri, kind, out uriCreated);
-        if (uriCreated is not null)
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+            if (uriCreated is not null)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, uri);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(TryCreate)}");
         }
 
         return result;
@@ -152,9 +218,16 @@ public class UriAspect
     public static bool TryCreate(string uri, in UriCreationOptions options, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(uri, options, out uriCreated);
-        if (uriCreated is not null)
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+            if (uriCreated is not null)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, uri);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(TryCreate)}");
         }
 
         return result;
@@ -172,9 +245,16 @@ public class UriAspect
     public static bool TryCreate(Uri? baseUri, string? relativeUri, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(baseUri, relativeUri, out uriCreated);
-        if (uriCreated is not null)
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri);
+            if (uriCreated is not null)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(TryCreate)}");
         }
 
         return result;
@@ -191,9 +271,16 @@ public class UriAspect
     public static bool TryCreate(Uri? baseUri, Uri? relativeUri, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(baseUri, relativeUri, out uriCreated);
-        if (uriCreated is not null)
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri?.OriginalString);
+            if (uriCreated is not null)
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri?.OriginalString);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(TryCreate)}");
         }
 
         return result;
@@ -208,7 +295,15 @@ public class UriAspect
     public static string UnescapeDataString(string uri)
     {
         var result = Uri.UnescapeDataString(uri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(UnescapeDataString)}");
+        }
+
         return result;
     }
 
@@ -223,7 +318,15 @@ public class UriAspect
 #pragma warning disable SYSLIB0013 // obsolete
         var result = Uri.EscapeUriString(uri);
 #pragma warning restore SYSLIB0013
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+        try
+        {
+            result = IastModule.OnSsrfEscape(uri, result)!;
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(EscapeUriString)}");
+        }
+
         return result;
     }
 
@@ -236,7 +339,15 @@ public class UriAspect
     public static string EscapeDataString(string uri)
     {
         var result = Uri.EscapeDataString(uri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+        try
+        {
+            result = IastModule.OnSsrfEscape(uri, result)!;
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(EscapeDataString)}");
+        }
+
         return result;
     }
 
@@ -249,7 +360,15 @@ public class UriAspect
     public static string GetAbsoluteUri(Uri instance)
     {
         var result = instance.AbsoluteUri;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetAbsoluteUri)}");
+        }
+
         return result;
     }
 
@@ -262,7 +381,15 @@ public class UriAspect
     public static string GetAbsolutePath(Uri instance)
     {
         var result = instance.AbsolutePath;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetAbsolutePath)}");
+        }
+
         return result;
     }
 
@@ -275,7 +402,15 @@ public class UriAspect
     public static string GetLocalPath(Uri instance)
     {
         var result = instance.LocalPath;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetLocalPath)}");
+        }
+
         return result;
     }
 
@@ -291,9 +426,16 @@ public class UriAspect
 #pragma warning disable CS0618 // Type or member is obsolete
         var result = instance.MakeRelative(uri);
 #pragma warning restore CS0618 // Type or member is obsolete
-        if (!string.IsNullOrWhiteSpace(result))
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
+            if (!string.IsNullOrWhiteSpace(result))
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, uri.OriginalString);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(MakeRelative)}");
         }
 
         return result;
@@ -309,9 +451,16 @@ public class UriAspect
     public static Uri? MakeRelativeUri(Uri instance, Uri uri)
     {
         var result = instance.MakeRelativeUri(uri);
-        if (!string.IsNullOrWhiteSpace(result?.OriginalString))
+        try
         {
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result!.OriginalString, uri.OriginalString);
+            if (!string.IsNullOrWhiteSpace(result?.OriginalString))
+            {
+                PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result!.OriginalString, uri.OriginalString);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(MakeRelativeUri)}");
         }
 
         return result;
@@ -326,7 +475,15 @@ public class UriAspect
     public static string GetHost(Uri instance)
     {
         var result = instance.Host;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetHost)}");
+        }
+
         return result;
     }
 
@@ -339,7 +496,15 @@ public class UriAspect
     public static string GetPathAndQuery(Uri instance)
     {
         var result = instance.PathAndQuery;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetPathAndQuery)}");
+        }
+
         return result;
     }
 
@@ -352,7 +517,15 @@ public class UriAspect
     public static string GetAuthority(Uri instance)
     {
         var result = instance.Authority;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetAuthority)}");
+        }
+
         return result;
     }
 
@@ -365,7 +538,15 @@ public class UriAspect
     public static string GetQuery(Uri instance)
     {
         var result = instance.Query;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(GetQuery)}");
+        }
+
         return result;
     }
 
@@ -379,7 +560,15 @@ public class UriAspect
     {
         // We want the null reference exception to be launched here if target is null
         var result = instance!.ToString();
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriAspect)}.{nameof(ToString)}");
+        }
+
         return result;
     }
 }

@@ -19,7 +19,8 @@ namespace Samples.MySql
             // Use the connection type that is loaded by the runtime through the typical loading algorithm
             using (var connection = OpenConnection(typeof(MySqlConnection)))
             {
-                await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+                // FIXME: Somewhere in V8 of MySql we stop tracing the Transaction Scope related spans
+                await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token, useTransactionScope: false);
             }
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
@@ -29,7 +30,7 @@ namespace Samples.MySql
             using (var connection = OpenConnection(loadFileType))
             {
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
-                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
+                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token, useTransactionScope: false);
             }
 
             // allow time to flush
@@ -42,7 +43,7 @@ namespace Samples.MySql
 
             if (connectionString == null)
             {
-                var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major != 8;
+                var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major < 8;
 
                 if (oldMySqlServer)
                 {

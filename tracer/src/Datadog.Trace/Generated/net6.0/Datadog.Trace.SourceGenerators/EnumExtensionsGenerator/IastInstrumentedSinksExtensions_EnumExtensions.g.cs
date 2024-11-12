@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 26;
+    public const int Length = 27;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -56,6 +56,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss => "vulnerability_type:xss",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak => "vulnerability_type:directory_listing_leak",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout => "vulnerability_type:session_timeout",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.EmailHtmlInjection => "vulnerability_type:email_html_injection",
             _ => value.ToString(),
         };
 
@@ -95,6 +96,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.EmailHtmlInjection,
         };
 
     /// <summary>
@@ -134,6 +136,7 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.Xss),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.DirectoryListingLeak),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.SessionTimeout),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.EmailHtmlInjection),
         };
 
     /// <summary>
@@ -173,5 +176,6 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:xss",
             "vulnerability_type:directory_listing_leak",
             "vulnerability_type:session_timeout",
+            "vulnerability_type:email_html_injection",
         };
 }

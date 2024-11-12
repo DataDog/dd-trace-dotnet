@@ -44,12 +44,14 @@ namespace Samples.Computer01
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
         private SigSegvHandlerExecution _sigsegvHandler;
+#if NETCOREAPP3_0_OR_GREATER
+        private LinuxDlIteratePhdrDeadlock _linuxDlIteratePhdrDeadlock;
+#endif
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
         private SocketTimeout _socketTest;
 #endif
-        private Obfuscation _obfuscation;
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
 
@@ -165,10 +167,6 @@ namespace Samples.Computer01
                     StartSocketTimeout();
                     break;
 #endif
-                case Scenario.Obfuscation:
-                    StartObfuscation();
-                    break;
-
                 case Scenario.ForceSigSegvHandler:
                     StartForceSigSegvHandler();
                     break;
@@ -180,6 +178,12 @@ namespace Samples.Computer01
                 case Scenario.StringConcat:
                     StartStringConcat(parameter);
                     break;
+
+#if NETCOREAPP3_0_OR_GREATER
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StartLinuxDlIteratePhdrDeadlock();
+                    break;
+#endif
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -296,10 +300,6 @@ namespace Samples.Computer01
                     break;
 #endif
 
-                case Scenario.Obfuscation:
-                    StopObfuscation();
-                    break;
-
                 case Scenario.ForceSigSegvHandler:
                     StopForceSigSegvHandler();
                     break;
@@ -311,6 +311,12 @@ namespace Samples.Computer01
                 case Scenario.StringConcat:
                     StopStringConcat();
                     break;
+
+#if NETCOREAPP3_0_OR_GREATER
+                case Scenario.LinuxDlIteratePhdrDeadlock:
+                    StopLinuxDlIteratePhdrDeadlock();
+                    break;
+#endif
             }
         }
 
@@ -432,10 +438,6 @@ namespace Samples.Computer01
 #endif
                     case Scenario.ForceSigSegvHandler:
                         RunForceSigSegvHandler();
-                        break;
-
-                    case Scenario.Obfuscation:
-                        RunObfuscation();
                         break;
 
                     case Scenario.ThreadSpikes:
@@ -575,6 +577,14 @@ namespace Samples.Computer01
             _linuxMallockDeadlock.Start();
         }
 
+#if NETCOREAPP3_0_OR_GREATER
+        private void StartLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock = new LinuxDlIteratePhdrDeadlock();
+            _linuxDlIteratePhdrDeadlock.Start();
+        }
+#endif
+
         private void StartMeasureAllocations()
         {
             _measureAllocations = new MeasureAllocations();
@@ -618,12 +628,6 @@ namespace Samples.Computer01
             _socketTest.Start();
         }
 #endif
-
-        private void StartObfuscation()
-        {
-            _obfuscation = new Obfuscation();
-            _obfuscation.Start();
-        }
 
         private void StopForceSigSegvHandler()
         {
@@ -724,11 +728,6 @@ namespace Samples.Computer01
         }
 #endif
 
-        private void StopObfuscation()
-        {
-            _obfuscation.Stop();
-        }
-
         private void StopGarbageCollections()
         {
             _garbageCollections.Stop();
@@ -748,6 +747,13 @@ namespace Samples.Computer01
         {
             _linuxMallockDeadlock.Stop();
         }
+
+#if NETCOREAPP3_0_OR_GREATER
+        private void StopLinuxDlIteratePhdrDeadlock()
+        {
+            _linuxDlIteratePhdrDeadlock.Stop();
+        }
+#endif
 
         private void StopMeasureAllocations()
         {
@@ -950,12 +956,6 @@ namespace Samples.Computer01
         private void RunForceSigSegvHandler()
         {
             var test = new SigSegvHandlerExecution();
-            test.Run();
-        }
-
-        private void RunObfuscation()
-        {
-            var test = new Obfuscation();
             test.Run();
         }
 

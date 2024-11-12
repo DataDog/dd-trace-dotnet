@@ -8,7 +8,6 @@
     <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="il_rewriter.cpp" />
     <ClCompile Include="il_rewriter_wrapper.cpp" />
-    <ClCompile Include="integration.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
@@ -27,7 +26,6 @@
       <Filter>Debugger</Filter>
     </ClCompile>
     <ClCompile Include="environment_variables_util.cpp" />
-    <ClCompile Include="tracer_tokens.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp">
       <Filter>shared</Filter>
     </ClCompile>
@@ -46,19 +44,10 @@
     <ClCompile Include="debugger_probes_tracker.cpp">
       <Filter>Debugger</Filter>
     </ClCompile>
-    <ClCompile Include="iast\iast_util.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
-    <ClCompile Include="iast\dataflow_il_analysis.cpp" />
-    <ClCompile Include="iast\dataflow_il_rewriter.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />
     <ClCompile Include="iast\signature_info.cpp" />
-    <ClCompile Include="iast\method_info.cpp" />
-    <ClCompile Include="iast\module_info.cpp" />
     <ClCompile Include="iast\signature_types.cpp" />
-    <ClCompile Include="iast\dataflow_aspects.cpp" />
-    <ClCompile Include="iast\dataflow.cpp" />
-    <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
-    <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp">
       <Filter>FaultTolerant</Filter>
     </ClCompile>
@@ -78,9 +67,55 @@
       <Filter>FaultTolerant\Hooks</Filter>
     </ClCompile>
     <ClCompile Include="iast\method_analyzers.cpp" />
-    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\method_analyzer.cpp" />
     <ClCompile Include="threadUtils.cpp" />
+    <ClCompile Include="iast\dataflow.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_aspects.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_il_analysis.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\dataflow_il_rewriter.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\iast_util.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\method_info.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\module_info.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\string_optimization_aspect_filter.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="iast\string_literal_aspect_filter.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
+    <ClCompile Include="tracer_rejit_preprocessor.cpp">
+      <Filter>Tracer</Filter>
+    </ClCompile>
+    <ClCompile Include="tracer_tokens.cpp">
+      <Filter>Tracer</Filter>
+    </ClCompile>
+    <ClCompile Include="tracer_method_rewriter.cpp">
+      <Filter>Tracer</Filter>
+    </ClCompile>
+    <ClCompile Include="tracer_handler_module_method.cpp">
+      <Filter>Tracer</Filter>
+    </ClCompile>
+    <ClCompile Include="integration.cpp" />
+    <ClCompile Include="tracer_integration_definition.cpp">
+      <Filter>Tracer</Filter>
+    </ClCompile>
+    <ClCompile Include="function_control_wrapper.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp">
+      <Filter>Iast</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -93,12 +128,10 @@
     <ClInclude Include="environment_variables_util.h" />
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
-    <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
-    <ClInclude Include="module_metadata.h" />
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="version.h" />
@@ -120,7 +153,6 @@
     <ClInclude Include="debugger_probes_instrumentation_requester.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="tracer_tokens.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h">
       <Filter>shared</Filter>
     </ClInclude>
@@ -151,25 +183,14 @@
     <ClInclude Include="debugger_probes_tracker.h">
       <Filter>Debugger</Filter>
     </ClInclude>
-    <ClInclude Include="iast\dataflow.h" />
-    <ClInclude Include="iast\iast_util.h" />
     <ClInclude Include="iast\aspect.h" />
-    <ClInclude Include="iast\iast_constants.h" />
-    <ClInclude Include="iast\method_info.h" />
     <ClInclude Include="iast\signature_info.h" />
     <ClInclude Include="iast\signature_types.h" />
-    <ClInclude Include="iast\module_info.h" />
     <ClInclude Include="iast\app_domain_info.h" />
-    <ClInclude Include="iast\dataflow_aspects.h" />
     <ClInclude Include="iast\aspect_filter_factory.h" />
     <ClInclude Include="iast\aspect_filter.h" />
-    <ClInclude Include="iast\string_literal_aspect_filter.h" />
-    <ClInclude Include="iast\string_optimization_aspect_filter.h" />
-    <ClInclude Include="iast\dataflow_il_rewriter.h" />
-    <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="iast\method_analyzers.h" />
     <ClInclude Include="iast\method_analyzer.h" />
-    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="fault_tolerant_tracker.h">
       <Filter>FaultTolerant</Filter>
@@ -194,6 +215,57 @@
       <Filter>FaultTolerant\Hooks</Filter>
     </ClInclude>
     <ClInclude Include="threadUtils.h" />
+    <ClInclude Include="iast\dataflow.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_aspects.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_il_analysis.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\dataflow_il_rewriter.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\iast_constants.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\iast_util.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\method_info.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\module_info.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\string_optimization_aspect_filter.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="iast\string_literal_aspect_filter.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer_rejit_preprocessor.h">
+      <Filter>Tracer</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer_tokens.h">
+      <Filter>Tracer</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer_method_rewriter.h">
+      <Filter>Tracer</Filter>
+    </ClInclude>
+    <ClInclude Include="tracer_handler_module_method.h">
+      <Filter>Tracer</Filter>
+    </ClInclude>
+    <ClInclude Include="integration.h" />
+    <ClInclude Include="module_metadata.h" />
+    <ClInclude Include="tracer_integration_definition.h">
+      <Filter>Tracer</Filter>
+    </ClInclude>
+    <ClInclude Include="function_control_wrapper.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h">
+      <Filter>Iast</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
@@ -207,6 +279,12 @@
     </Filter>
     <Filter Include="FaultTolerant\Hooks">
       <UniqueIdentifier>{35c3ef95-c2c0-4141-8a54-ee60d6a8c348}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Iast">
+      <UniqueIdentifier>{b3968733-8197-4e3a-9c1e-a615a113e3ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tracer">
+      <UniqueIdentifier>{981bc011-a78e-4f39-b0b2-429340f384cc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

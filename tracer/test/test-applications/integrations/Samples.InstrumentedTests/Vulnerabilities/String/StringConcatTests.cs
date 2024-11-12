@@ -31,7 +31,7 @@ public class StringConcatTests : InstrumentationTestsBase
     //Basic cases
 
     [Fact]
-    public void GivenStringConcatBasicOperations_WhenPerformed_ResultIsOK()
+    public void GivenStringConcatOperations_WhenPerformed_ResultIsOK()
     {
         var testString1 = AddTaintedString("01");
         var testString2 = AddTaintedString("abc");
@@ -58,7 +58,6 @@ public class StringConcatTests : InstrumentationTestsBase
 
         FormatTainted(String.Concat(new string[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
         FormatTainted(String.Concat(new object[] { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
-        FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
         FormatTainted(String.Concat(testString1, " dummy ")).Should().Be(":+-01-+: dummy ");
         FormatTainted(String.Concat(" dummy ", testString2, " dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
         FormatTainted(String.Concat(" dummy ", testString3)).Should().Be(" dummy :+-ABCD-+:");
@@ -67,6 +66,18 @@ public class StringConcatTests : InstrumentationTestsBase
         FormatTainted(String.Concat(null, testString2, " dummy ")).Should().Be(":+-abc-+: dummy ");
         FormatTainted(String.Concat(null, testString2, (object)" dummy ")).Should().Be(":+-abc-+: dummy ");
         FormatTainted(String.Concat((object)" dummy ", null, testString2, (object)" dummy ")).Should().Be(" dummy :+-abc-+: dummy ");
+    }
+
+    [Fact]
+    public void GivenStringConcatOperations_WhenPerformedWithGenerics_ResultIsOK()
+    {
+        var testString1 = AddTaintedString("01");
+        var testString2 = AddTaintedString("abc");
+        var testString3 = AddTaintedString("ABCD");
+        var testString4 = AddTaintedString(".,;:?");
+        var testString5 = AddTaintedString("+-*/{}");
+
+        FormatTainted(String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
     }
 
     [Fact]
@@ -610,14 +621,14 @@ public class StringConcatTests : InstrumentationTestsBase
     }
 
     [Fact]
-    
+
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectArrayParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new object[] { "concat", "concat2", taintedValue, taintedValue2 }));
     }
 
     [Fact]
-    
+
     public void GivenATaintedObject_WhenCallingConcatWithGenericObjectListParam_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("concatconcat2:+-tainted-+::+-TAINTED2-+:", String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }), () => String.Concat<object>(new List<object> { "concat", "concat2", taintedValue, taintedValue2 }));

@@ -8,7 +8,21 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <LangVersion>latest</LangVersion>
+
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
+
   </PropertyGroup>
 
   <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
+
+  <!-- Ensure that we don't reference Datadog.Trace directly (unless explicitly handled) -->
+  <!-- Note that you need to ensure the buid logic is updated to exclude the project if you take this approach -->
+  <Target Name="ValidateDisallowedReferences" BeforeTargets="CoreCompile">
+    <Error
+      Condition="'%(ProjectReference.FileName)' == 'Datadog.Trace' AND '$(AllowDatadogTraceReference)' != 'true'"
+      Text="You should not directly reference Datadog.Trace in this project" />
+  </Target>
 </Project>

@@ -26,7 +26,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(string uriText)
     {
         var result = new UriBuilder(uriText);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uriText);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -39,7 +47,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(Uri uri)
     {
         var result = new UriBuilder(uri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -53,7 +69,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(string scheme, string host)
     {
         var result = new UriBuilder(scheme, host);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -68,7 +92,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(string scheme, string host, int port)
     {
         var result = new UriBuilder(scheme, host, port);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -84,7 +116,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(string scheme, string host, int port, string path)
     {
         var result = new UriBuilder(scheme, host, port, path);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -101,7 +141,15 @@ public class UriBuilderAspect
     public static UriBuilder Init(string scheme, string host, int port, string path, string extra)
     {
         var result = new UriBuilder(scheme, host, port, path, extra);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
+
         return result;
     }
 
@@ -114,7 +162,14 @@ public class UriBuilderAspect
     public static void SetHost(UriBuilder instance, string parameter)
     {
         instance.Host = parameter;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+        }
     }
 
     /// <summary>
@@ -126,7 +181,14 @@ public class UriBuilderAspect
     public static void SetQuery(UriBuilder instance, string parameter)
     {
         instance.Query = parameter;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+        }
     }
 
     /// <summary>
@@ -138,7 +200,14 @@ public class UriBuilderAspect
     public static void SetPath(UriBuilder instance, string parameter)
     {
         instance.Path = parameter;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetPath)}");
+        }
     }
 
     /// <summary>
@@ -150,7 +219,15 @@ public class UriBuilderAspect
     public static string GetHost(UriBuilder instance)
     {
         var result = instance.Host;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetHost)}");
+        }
+
         return result;
     }
 
@@ -163,7 +240,15 @@ public class UriBuilderAspect
     public static string GetQuery(UriBuilder instance)
     {
         var result = instance.Query;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
+        }
+
         return result;
     }
 
@@ -176,7 +261,15 @@ public class UriBuilderAspect
     public static string GetPath(UriBuilder instance)
     {
         var result = instance.Path;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, instance.Uri.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetPath)}");
+        }
+
         return result;
     }
 
@@ -190,7 +283,15 @@ public class UriBuilderAspect
     {
         // We want the null reference exception to be launched here if target is null
         var result = instance!.ToString();
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
+        try
+        {
+            PropagationModuleImpl.PropagateWholeResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(ToString)}");
+        }
+
         return result;
     }
 }

@@ -6,27 +6,17 @@ on:
       forced_commit_id:
         description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
         required: false
+      ignore_gitlab_failures:
+        description: "DANGER Force ignoring any issues with the GitLab artifacts or SSI. Don't use this unless you _really_ know what you're doing"
+        required: false
 
 jobs:
-  lib-injection-image-test:
-    permissions:
-      contents: read
-      packages: write
-    strategy:
-      matrix:
-        runtime: ['bullseye-slim','alpine']
-      fail-fast: false
-    uses: ./.github/workflows/lib-injection-test.yml
-    with:
-      commit_id: ${{ github.event.inputs.forced_commit_id || github.sha }}
-      runtime: ${{ matrix.runtime }}
-    secrets:
-      DOCKER_REGISTRY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   create_draft_release:
-    needs:
-      - lib-injection-image-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # create release
+      actions: read # read secrets
+      issues: write # change milestones 
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
@@ -56,6 +46,12 @@ jobs:
         run: |
           git config user.name "${{ github.actor }}"
           git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Check GitLab status"
+        if: ${{ !github.event.inputs.ignore_gitlab_failures }}
+        run: ./tracer/build.sh VerifyReleaseReadiness
+        env:
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
 
       - name: "Get current version"
         id: versions
@@ -109,3 +105,16 @@ jobs:
         working-directory: ${{steps.assets.outputs.artifacts_path}}
         run: |
           dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+
+      - name: Prepare debug symbols for publishing
+        shell: bash
+        run: |
+          mkdir debug_symbols
+          tar -zxvf linux-native-symbols.tar.gz -C debug_symbols
+
+      - name: 'Push debug symbols to datadog'
+        uses: ./.github/actions/publish-debug-symbols
+        with:
+          symbols_folder: "debug_symbols"
+          preprod_key: "${{ secrets.DD_PREPROD_API_KEY }}"
+          prod_key: "${{ secrets.DD_API_KEY }}"

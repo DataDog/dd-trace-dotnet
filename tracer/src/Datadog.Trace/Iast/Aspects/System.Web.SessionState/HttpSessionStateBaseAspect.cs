@@ -29,12 +29,20 @@ public class HttpSessionStateBaseAspect
     [AspectMethodInsertBefore("System.Web.HttpSessionStateBase::Remove(System.String)", 0)]
     public static object Add(object value)
     {
-        if (value is string valueStr)
+        try
         {
-            IastModule.OnTrustBoundaryViolation(valueStr);
-        }
+            if (value is string valueStr)
+            {
+                IastModule.OnTrustBoundaryViolation(valueStr);
+            }
 
-        return value;
+            return value;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpSessionStateBaseAspect)}.{nameof(Add)}");
+            return value;
+        }
     }
 }
 

@@ -34,6 +34,7 @@ public class GrpcDotNetTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, "1");
 
         SetEnvironmentVariable("IAST_GRPC_SOURCE_TEST", "1");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }
 
     [SkippableFact]

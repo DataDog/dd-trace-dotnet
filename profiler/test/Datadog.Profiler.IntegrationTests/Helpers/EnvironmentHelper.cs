@@ -18,11 +18,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private static string _solutionDirectory = null;
         private readonly string _framework;
         private readonly string _testOutputPath;
+        private readonly bool _enableProfiler;
 
-        public EnvironmentHelper(string framework, bool enableTracer)
+        public EnvironmentHelper(string framework, bool enableTracer, bool enableProfiler)
         {
             _framework = framework;
             _testOutputPath = BuildTestOutputPath(framework);
+            _enableProfiler = enableProfiler;
 
             if (enableTracer)
             {
@@ -140,9 +142,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var loaderConfigFilePath = Path.GetTempFileName();
             using var sw = new StreamWriter(loaderConfigFilePath);
 
-            // loader conf doesn't support musl, so we have to force IsAlpine to false
-            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(isAlpine: false)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(isAlpine: false)};{tracerPath}");
+            sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
+            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
             return loaderConfigFilePath;
         }
 
@@ -172,7 +173,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
             }
 
-            environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            if (_enableProfiler)
+            {
+                environmentVariables["DD_PROFILING_ENABLED"] = "1";
+            }
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
@@ -327,7 +332,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("win", "x86", _) => "win-x86",
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", _) => "linux-arm64",
+                ("linux", "Arm64", false) => "linux-arm64",
+                ("linux", "Arm64", true) => "linux-musl-arm64",
                 ("osx", _, _) => "osx-x64",
                 _ => throw new PlatformNotSupportedException()
             };

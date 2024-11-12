@@ -1,43 +1,48 @@
+parameters:
+  - name: packageType
+    type: string
+    default: runtime
+
 steps:
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 2.1
+  displayName: install dotnet core ${{ parameters.packageType }} 2.1
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 2.1.x
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 3.0
+  displayName: install dotnet core ${{ parameters.packageType }} 3.0
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 3.0.x
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 3.1
+  displayName: install dotnet core ${{ parameters.packageType }} 3.1
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 3.1.x
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 5.0
+  displayName: install dotnet core ${{ parameters.packageType }} 5.0
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 5.0.x
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 6.0
+  displayName: install dotnet core ${{ parameters.packageType }} 6.0
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 6.0.x
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
-  displayName: install dotnet core runtime 7.0
+  displayName: install dotnet core ${{ parameters.packageType }} 7.0
   inputs:
-    packageType: runtime
+    packageType: ${{ parameters.packageType }}
     version: 7.0.x
   retryCountOnTaskFailure: 5
 

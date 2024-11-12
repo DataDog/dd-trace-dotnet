@@ -76,6 +76,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderTruncationReason tag, int increment = 1)
+    {
+    }
+
     public void RecordCountStatsApiRequests(int increment = 1)
     {
     }
@@ -85,6 +89,14 @@ internal partial class NullMetricsTelemetryCollector
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
     }
 
@@ -101,6 +113,10 @@ internal partial class NullMetricsTelemetryCollector
     }
 
     public void RecordCountVersionConflictTracerCreated(int increment = 1)
+    {
+    }
+
+    public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
     {
     }
 
@@ -145,6 +161,10 @@ internal partial class NullMetricsTelemetryCollector
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
     {
     }
 

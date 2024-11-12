@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
@@ -45,6 +46,8 @@ namespace Samples.Security.AspNetCore5.Controllers
         public string[] StringArrayArguments { get; set; }
 
         public QueryData InnerQuery { get; set; }
+
+        public string UserName { get; set; }
     }
 
     public class XContentTypeOptionsAttribute : ActionFilterAttribute
@@ -73,9 +76,9 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Ok\n");
         }
 
-        private SQLiteConnection DbConnection 
+        private SQLiteConnection DbConnection
         {
-            get 
+            get
             {
                 if (dbConnection is null)
                 {
@@ -94,8 +97,8 @@ namespace Samples.Security.AspNetCore5.Controllers
                 "glpat--A7DO-8ZdceglrnsrMJ5",
                 "glsa_6NVhs0hQUXFVHroLsch9IslQFSgd4Lum_324AC0da",
                 "xapp-1-MGVEG-1-xswt",
-            }; 
-            
+            };
+
             return Content($"Loaded {hardcodedSecrets.Length} strings with potential hardcoded secrets.\n");
         }
 
@@ -111,6 +114,22 @@ namespace Samples.Security.AspNetCore5.Controllers
             SHA1.Create().ComputeHash(byteArg);
             return Content($"Weak hashes launched with delays {delay1} and {delay2}.\n");
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
+        }
+
+        // Create the DB and populate it with some data
+        [HttpGet("PopulateDDBB")]
+        [Route("PopulateDDBB")]
+        public IActionResult PopulateDDBB()
+        {
+            try
+            {
+                dbConnection ??= IastControllerHelper.CreateDatabase();
+                return Content("OK");
+            }
+            catch (SQLiteException ex)
+            {
+                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
+            }
         }
 
         [HttpGet("SqlQuery")]
@@ -132,14 +151,14 @@ namespace Samples.Security.AspNetCore5.Controllers
                     return Content($"Result: " + rname);
                 }
             }
-            catch (Exception ex)
+            catch (SQLiteException ex)
             {
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
 
             return BadRequest($"No query or username was provided");
         }
-        
+
         [HttpGet("NoSqlQueryMongoDb")]
         [Route("NoSqlQueryMongoDb")]
         public IActionResult NoSqlQueryMongoDb(string price, string query)
@@ -175,7 +194,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No price or query was provided");
         }
-        
+
         [HttpGet("NHibernateQuery")]
         [Route("NHibernateQuery")]
         public IActionResult NHibernateQuery(string username)
@@ -219,7 +238,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return BadRequest($"No json was provided");
         }
-        
+
 #if NETCOREAPP3_0_OR_GREATER
         [HttpGet("SystemTextJsonParseTainting")]
         [Route("SystemTextJsonParseTainting")]
@@ -231,7 +250,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     var doc = JsonDocument.Parse(json);
                     var str = doc.RootElement.GetProperty("key").GetString();
-                    
+
                     // Trigger a vulnerability with the tainted string
                     return ExecuteCommandInternal(str, "");
                 }
@@ -247,18 +266,31 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("ExecuteCommand")]
         [Route("ExecuteCommand")]
-        public IActionResult ExecuteCommand(string file, string argumentLine)
+        public IActionResult ExecuteCommand(string file, string argumentLine, bool fromShell = false)
         {
-            return ExecuteCommandInternal(file, argumentLine);
+            return ExecuteCommandInternal(file, argumentLine, fromShell);
         }
 
-        private IActionResult ExecuteCommandInternal(string file, string argumentLine)
+        private IActionResult ExecuteCommandInternal(string file, string argumentLine, bool fromShell = false)
         {
             try
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    var result = Process.Start(file, argumentLine);
+                    Process result;
+                    if (fromShell)
+                    {
+                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                        startInfo.FileName = file;
+                        startInfo.Arguments = argumentLine;
+                        startInfo.UseShellExecute = true;
+                        result = Process.Start(startInfo);
+                    }
+                    else
+                    {
+                        result = Process.Start(file, argumentLine);
+                    }
+                    
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -270,10 +302,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
-            }
         }
 
         //It uses Newtonsoft by default for netcore 2.1
@@ -284,7 +312,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Query(query);
             }
-            catch (Exception ex)
+            catch (SQLiteException ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
             }
@@ -292,12 +320,17 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult Query(QueryData query)
         {
-            if (!string.IsNullOrEmpty(query.Query))
+            if (!string.IsNullOrEmpty(query?.Query))
             {
                 return ExecuteQuery(query.Query);
             }
 
-            if (query.Arguments is not null)
+            if (!string.IsNullOrEmpty(query?.UserName))
+            {
+                return ExecuteQuery("SELECT Surname from Persons where name = '" + query?.UserName + "'");
+            }
+
+            if (query?.Arguments != null)
             {
                 foreach (var value in query.Arguments)
                 {
@@ -532,11 +565,17 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.SameSite = SameSiteMode.None;
             cookieOptions.HttpOnly = false;
             cookieOptions.Secure = false;
-            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
-            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
+            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions); //Normal cookie
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions); //Excluded cookie
+            string longval = "abcdefghijklmnopqrstuvwxyz0123456789";
+            for (int x = 0; x < 3; x++)
+            {
+                Response.Cookies.Append($"LongCookie.{longval}.{x}", $"FilteredCookie{x}", cookieOptions);  //Filtered (grouped) cookies (same hash)
+            }
+
             return Content("Sending AllVulnerabilitiesCookie");
         }
-        
+
         [HttpGet("InsecureAuthProtocol")]
         [Route("InsecureAuthProtocol")]
         public IActionResult InsecureAuthProtocol(bool forbidden = false)
@@ -545,7 +584,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return StatusCode(403);
             }
-            
+
             return Content("InsecureAuthProtocol page");
         }
 
@@ -667,7 +706,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValueUntainted);
             }
 
-            if (returnCode != (int) HttpStatusCode.OK)
+            if (returnCode != (int)HttpStatusCode.OK)
             {
                 return StatusCode(returnCode);
             }
@@ -735,7 +774,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StrictTransportSecurity")]
         [Route("StrictTransportSecurity")]
-        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto ="")
+        public ActionResult StrictTransportSecurity(string contentType = "text/html", int returnCode = 200, string hstsHeaderValue = "", string xForwardedProto = "")
         {
             // We don't want a header injection vulnerability here, so we untaint the header values by
             // using reflection to access the private field "m_string" from the String class.
@@ -803,8 +842,8 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     return defaultValue;
                 }
-                if (!null1 && !null2) 
-                { 
+                if (!null1 && !null2)
+                {
                     return name1 + name2;
                 }
                 else
@@ -839,7 +878,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             return Content($"returned header {returnedName},{returnedValue}");
         }
-        
+
         private readonly string xmlContent = @"<?xml version=""1.0"" encoding=""ISO-8859-1""?>
                 <data><user><name>jaime</name><password>1234</password><account>administrative_account</account></user>
                 <user><name>tom</name><password>12345</password><account>toms_acccount</account></user>
@@ -875,10 +914,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return StatusCode(500, IastControllerHelper.ToFormattedString(ex));
             }
-            
+
             return BadRequest($"No type was provided");
         }
-        
+
         [HttpGet("MaxRanges")]
         [Route("MaxRanges")]
         public ActionResult MaxRanges(int count, string tainted)
@@ -888,7 +927,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 str += tainted;
             }
-            
+
             try
             {
                 Type.GetType(str);
@@ -948,7 +987,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         public IActionResult ReflectedXss(string param)
         {
             ViewData["XSS"] = param + "<b>More Text</b>";
-            return View("ReflectedXss");
+            return View("Xss");
         }
 
         [HttpGet("ReflectedXssEscaped")]
@@ -958,9 +997,56 @@ namespace Samples.Security.AspNetCore5.Controllers
             var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
                             + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
             ViewData["XSS"] = escapedText;
-            return View("ReflectedXss");
+            return View("Xss");
         }
-        
+
+        [HttpGet("StoredXss")]
+        [Route("StoredXss")]
+        public IActionResult StoredXss()
+        {
+            var param = GetDbValue();
+            ViewData["XSS"] = param + "<b>More Text</b>";
+            return View("Xss");
+        }
+
+        [HttpGet("StoredXssEscaped")]
+        [Route("StoredXssEscaped")]
+        public IActionResult StoredXssEscaped()
+        {
+            var param = GetDbValue();
+            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
+                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
+            ViewData["XSS"] = escapedText;
+            return View("Xss");
+        }
+
+
+        [HttpGet("StoredSqli")]
+        [Route("StoredSqli")]
+        public IActionResult StoredSqli()
+        {
+            try
+            {
+                var details = GetDbValue("Michael");
+                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
+                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
+                return Content($"Result: " + rname);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500);
+            }
+        }
+
+        private string GetDbValue(string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
+            var reader = new SQLiteCommand(taintedQuery, DbConnection).ExecuteReader();
+            reader.Read();
+            var res = reader.GetString(0);
+            return res;
+        }
+
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
         public IActionResult TestJsonTagSizeExceeded(string tainted)
@@ -974,9 +1060,97 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("TestJsonTagSizeExceeded");
         }
 
+        [HttpGet("Email")]
+        [Route("Email")]
+        public IActionResult Email(string param)
+        {
+            return View("Email");
+        }
+
+        [HttpGet("SendEmailSmtpData")]
+        [Route("SendEmailSmtpData")]
+        public IActionResult SendEmailSmtpData(string email, string name, string lastname,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587)
+        {
+            return SendMailAux(name, lastname, email, smtpUsername, smtpPassword, smtpserver, smtpPort);
+        }
+
+        [HttpGet("SendEmail")]
+        [Route("SendEmail")]
+        public IActionResult SendEmail(string email, string name, string lastname)
+        {
+            return SendMailAux(name, lastname, email);
+        }
+
+        private IActionResult SendMailAux(string firstName, string lastName, string email,
+            string smtpUsername = "", string smtpPassword = "", string smtpserver = "127.0.0.1",
+            int smtpPort = 587, bool escape = false)
+        {
+            var contentHtml = $"Hi " + firstName + " " + lastName + ", <br />" +
+                "We appreciate you subscribing to our newsletter. To complete your subscription, kindly click the link below. <br />" +
+                "<a href=\"https://localhost/confirm?token=435345\">Complete your subscription</a>";
+
+            if (escape)
+            {
+                contentHtml = WebUtility.HtmlEncode(contentHtml);
+            }
+
+            var subject = firstName + " welcome!";
+
+            if (string.IsNullOrEmpty(smtpUsername))
+            {
+                smtpUsername = email;
+            }
+
+            try
+            {
+
+                var mailMessage = new MailMessage();
+                mailMessage.From = new MailAddress(smtpUsername);
+                mailMessage.To.Add(email);
+                mailMessage.Subject = subject;
+                mailMessage.Body = contentHtml;
+                mailMessage.IsBodyHtml = true; // Set to true to indicate that the body is HTML
+
+                var client = new SmtpClient(smtpserver, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+                    EnableSsl = true,
+                    Timeout = 1000
+                };
+                client.Send(mailMessage);
+            }
+            catch (SmtpException)
+            {
+                return StatusCode(200, "Mail message was not sent");
+            }
+
+            return Content("Email sent");
+        }
+
         static string CopyStringAvoidTainting(string original)
         {
             return new string(original.AsEnumerable().ToArray());
+        }
+
+        [HttpGet("DatabaseSourceInjection")]
+        [Route("DatabaseSourceInjection")]
+        public ActionResult DatabaseSourceInjection(string host, bool injectOnlyDatabase)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (injectOnlyDatabase) { host = GetDbValue(); }
+                else { host += GetDbValue(); }
+                result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
         }
     }
 }

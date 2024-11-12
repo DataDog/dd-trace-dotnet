@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using K4os.Compression.LZ4.Streams;
 using Perftools.Profiles;
 using Xunit;
@@ -84,6 +85,29 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return threadNames.Count;
         }
 
+        public static HashSet<int> GetThreadIds(string directory)
+        {
+            HashSet<int> ids = new();
+            var regex = new Regex(@"<[0-9]+> \[#(?<OsId>[0-9]+)\]", RegexOptions.Compiled);
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    foreach (var label in sample.Labels(profile))
+                    {
+                        if (label.Name == "thread id")
+                        {
+                            var match = regex.Match(label.Value);
+                            ids.Add(int.Parse(match.Groups["OsId"].Value));
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            return ids;
+        }
+
         public static bool IsLabelPresent(string directory, string labelName)
         {
             foreach (var profile in GetProfiles(directory))
@@ -109,13 +133,24 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return true;
         }
 
-        internal static IEnumerable<(StackTrace StackTrace, Label[] Labels, long[] Values)> GetSamples(string directory)
+        internal static IEnumerable<(StackTrace StackTrace, PprofHelper.Label[] Labels, long[] Values)> GetSamples(string directory, string sampleTypeFilter = null)
         {
             foreach (var profile in GetProfiles(directory))
             {
+                var sampleTypeIdx = -1;
+                if (sampleTypeFilter != null)
+                {
+                    var sampleTypes = profile.SampleType();
+                    sampleTypeIdx = Array.IndexOf(sampleTypes, sampleTypeFilter);
+                }
+
                 foreach (var sample in profile.Sample)
                 {
-                    yield return (sample.StackTrace(profile), sample.Label.ToArray(), sample.Value.ToArray());
+                    var values = sample.Value.ToArray();
+                    if (sampleTypeFilter == null || (sampleTypeIdx != -1 && values[sampleTypeIdx] != 0))
+                    {
+                        yield return (sample.StackTrace(profile), GetLabels(profile, sample).ToArray(), values);
+                    }
                 }
             }
         }
@@ -148,6 +183,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return SamplesWithTimestamp(directory)
                 .OrderBy(s => s.Time)
                 .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
+        }
+
+        private static IEnumerable<PprofHelper.Label> GetLabels(Profile profile, Sample sample)
+        {
+            return sample.Labels(profile);
         }
 
         private static bool HaveSamplesValueCount(string directory, int valuesCount)

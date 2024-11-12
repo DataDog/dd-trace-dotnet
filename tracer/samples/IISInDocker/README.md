@@ -1,5 +1,5 @@
 # ASP.NET Docker Sample
-This sample demonstrates how to build and deploy an ASP.NET Framework application in IIS using a Windows container. This also demonstrates how to configure environment variables using at the time of container startup, which may be the earliest that time that IP's and networking values are populated.
+This sample demonstrates how to build and deploy an ASP.NET application in IIS using a Windows container. This also demonstrates how to configure environment variables during container startup, which may be the earliest time that IPs and networking values are populated.
 
 ## Build and Run
 To build and run the application, open a terminal in this directory and run the following commands:

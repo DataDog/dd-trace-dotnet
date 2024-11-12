@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {
+    private bool _isAdditiveContextDisposed;
+
     internal abstract bool IsBlocked { get; }
 
     internal abstract int StatusCode { get; }
@@ -32,7 +35,13 @@ internal abstract class HttpTransportBase
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
     /// </summary>
-    internal void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
+    internal void DisposeAdditiveContext()
+    {
+        GetAdditiveContext()?.Dispose();
+        _isAdditiveContextDisposed = true;
+    }
+
+    internal bool IsAdditiveContextDisposed() => _isAdditiveContextDisposed;
 
     internal abstract void SetAdditiveContext(IContext additiveContext);
 

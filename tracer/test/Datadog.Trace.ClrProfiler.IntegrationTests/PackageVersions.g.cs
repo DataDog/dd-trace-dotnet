@@ -36,6 +36,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AwsSns => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSns : PackageVersionsLatestSpecific.AwsSns;
 
+        public static IEnumerable<object[]> AwsEventBridge => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsEventBridge : PackageVersionsLatestSpecific.AwsEventBridge;
+
         public static IEnumerable<object[]> MongoDB => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MongoDB : PackageVersionsLatestSpecific.MongoDB;
 
         public static IEnumerable<object[]> ElasticSearch7 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch7 : PackageVersionsLatestSpecific.ElasticSearch7;
@@ -72,11 +74,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> XUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnit : PackageVersionsLatestSpecific.XUnit;
 
+        public static IEnumerable<object[]> XUnitRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitRetries : PackageVersionsLatestSpecific.XUnitRetries;
+
         public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnit : PackageVersionsLatestSpecific.NUnit;
+
+        public static IEnumerable<object[]> NUnitRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnitRetries : PackageVersionsLatestSpecific.NUnitRetries;
 
         public static IEnumerable<object[]> MSTest => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest : PackageVersionsLatestSpecific.MSTest;
 
         public static IEnumerable<object[]> MSTest2 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2 : PackageVersionsLatestSpecific.MSTest2;
+
+        public static IEnumerable<object[]> MSTest2Retries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2Retries : PackageVersionsLatestSpecific.MSTest2Retries;
 
         public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Kafka : PackageVersionsLatestSpecific.Kafka;
 

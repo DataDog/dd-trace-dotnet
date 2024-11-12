@@ -10,9 +10,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -42,13 +42,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix)))
+                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
                     // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
+
+                // We might block the SQL call from RASP depending on the query
+                VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
                 tags = tracer.CurrentTraceSettings.Schema.Database.CreateSqlTags();
                 tags.DbType = dbType;
@@ -65,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope.Span.Type = SpanTypes.Sql;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Error creating or populating scope.");
                 return scope;
@@ -73,15 +76,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                if (Iast.Iast.Instance.Settings.Enabled)
-                {
-                    IastModule.OnSqlQuery(commandText, integrationId);
-                }
-
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
-                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix);
+                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                                          // if we appended the comment, we need to look for a potential DBM comment in the whole string.
+                                          (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
                     if (alreadyInjected)
                     {
                         // The command text is already injected, so they're probably caching the SqlCommand
@@ -102,14 +102,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjected);
-                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
+
+                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
-                            command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjected)
-                            {
-                                tags.DbmTraceInjected = "true";
-                            }
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }
@@ -118,6 +117,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 Log.Error(ex, "Error propagating span data for DBM");
             }
+
+            // we have to start the span before doing the DBM propagation work (to have the span ID)
+            // but ultimately, we don't want to measure the time spent instrumenting.
+            scope.Span.ResetStartTime();
 
             return scope;
 
@@ -167,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
+                    if (IsDisabledCommandType(commandTypeName))
                     {
                         integrationId = null;
                         dbType = null;
@@ -193,6 +196,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     };
                     return true;
             }
+        }
+
+        internal static bool IsDisabledCommandType(string commandTypeName)
+        {
+            if (string.IsNullOrEmpty(commandTypeName))
+            {
+                return false;
+            }
+
+            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+
+            if (disabledTypes is null || disabledTypes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var disabledType in disabledTypes)
+            {
+                if (string.Equals(disabledType, commandTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static class Cache<TCommand>

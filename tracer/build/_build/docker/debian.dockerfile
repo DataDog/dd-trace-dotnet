@@ -18,7 +18,9 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-RUN apt-get update \
+    # Add nfpm source
+RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
+    && apt-get update \
     && apt-get -y upgrade \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --fix-missing \
         git \
@@ -30,9 +32,6 @@ RUN apt-get update \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-dev \
-        rubygems \
         uuid-dev \
         autoconf \
         libtool \
@@ -45,10 +44,7 @@ RUN apt-get update \
         lsb-release \
         software-properties-common \
         gnupg \
-        \
-    && gem install --version 1.6.0 --user-install git \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --version 1.14.2 --minimal-deps --no-document fpm \
+        nfpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang
@@ -61,9 +57,8 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
 # Install the .NET SDK
-RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
-    && chmod +x ./dotnet-install.sh \
-    && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
+COPY ./bootstrap/dotnet-install.sh .
+RUN ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
 # Trigger first run experience by running arbitrary cmd
@@ -89,12 +84,11 @@ FROM base as tester
 # Install ASP.NET Core runtimes using install script
 # There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
 
+COPY ./bootstrap/dotnet-install.sh .
 RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
     else export NETCORERUNTIME2_1=dotnet; \
     fi \
-    && curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \

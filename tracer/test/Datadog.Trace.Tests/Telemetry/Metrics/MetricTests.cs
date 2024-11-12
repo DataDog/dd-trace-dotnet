@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricTests.cs" company="Datadog">
+// <copyright file="MetricTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,10 +23,13 @@ public class MetricTests
 {
     private static readonly Dictionary<string, string[]> IgnoredTagsByMetricName = new()
     {
-        { "waf.init", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
         { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "trace_chunks_dropped", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_chunks_sent", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.requests", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.bytes", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.responses", ["src_library"] }, // this is optional, only added by the rust library
+        { "trace_api.errors", ["src_library"] }, // this is optional, only added by the rust library
     };
 
     private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
@@ -34,6 +37,21 @@ public class MetricTests
         { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
         { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark", "is_new", "early_flake_detection_abort_reason", "browser_driver", "is_rum" } },
         { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled", "early_flake_detection_enabled" } },
+        { "endpoint_payload.requests_errors", ["status_code"] },
+        { "git_requests.search_commits_errors", ["status_code"] },
+        { "git_requests.objects_pack_errors", ["status_code"] },
+        { "git_requests.settings_errors", ["status_code"] },
+        { "itr_skippable_tests.request_errors", ["status_code"] },
+        { "early_flake_detection.request_errors", ["status_code"] },
+        { "endpoint_payload.requests", ["rq_compressed"] },
+        { "git_requests.search_commits", ["rq_compressed"] },
+        { "git_requests.objects_pack", ["rq_compressed"] },
+        { "git_requests.settings", ["rq_compressed"] },
+        { "itr_skippable_tests.request", ["rq_compressed"] },
+        { "early_flake_detection.request", ["rq_compressed"] },
+        { "git_requests.search_commits_ms", ["rs_compressed"] },
+        { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
+        { "early_flake_detection.response_bytes", ["rs_compressed"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
@@ -45,8 +63,8 @@ public class MetricTests
     public void OnlyAllowedMetricsAreSubmitted()
     {
         // Only metrics defined in the following json documents should be submitted
-        // https://github.com/DataDog/dd-go/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
-        // https://github.com/DataDog/dd-go/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
+        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/common_metrics.json
+        // https://github.com/DataDog/dd-go/blob/prod/trace/apps/tracer-telemetry-intake/telemetry-metrics/static/dotnet_metrics.json
         //
         // These are duplicated in this repo. When adding new metrics, add them into the embedded json files here, then
         // after merging, update the source JSON file in dd-go
@@ -123,6 +141,38 @@ public class MetricTests
         }
     }
 
+    /*
+        if a metric uses waf_version then it's always the first element
+        if a metric uses event_rules_version then it's always the second element
+        if a metric uses event_rules_version then we always have a waf_version
+    */
+
+    [Fact]
+    public void CheckASMTags()
+    {
+        var actual = GetImplementedMetricsAndTags();
+
+        foreach (var metric in actual)
+        {
+            foreach (var permutation in metric.TagPermutations)
+            {
+                for (int i = 0; i < permutation.Length; i++)
+                {
+                    if (permutation[i].StartsWith("waf_version"))
+                    {
+                        i.Should().Be(0, $"waf_version should always be the first tag for {metric.Metric}");
+                    }
+
+                    if (permutation[i].StartsWith("event_rules_version"))
+                    {
+                        i.Should().Be(1, $"event_rules_version should always be the second tag for {metric.Metric}");
+                        permutation[0].Should().StartWith("waf_version", $"event_rules_version should always be accompanied by waf_version for {metric.Metric}");
+                    }
+                }
+            }
+        }
+    }
+
     private static List<ImplementedMetricAndTags> GetImplementedMetricsAndTags()
     {
         var results = new List<ImplementedMetricAndTags>();
@@ -173,11 +223,16 @@ public class MetricTests
                 var attributeType = attr.AttributeType;
                 if (attributeType == typeof(TelemetryMetricAttribute))
                 {
-                    // no tags unless this is an ASM metric, in which case we include waf_version
+                    // no tags unless this is an ASM metric, in which case we include waf_version and event_rules_version
                     // see src\Datadog.Trace\Telemetry\Collectors\MetricsTelemetryCollector.GetTags(string? ns, string[]? metricKeyTags)
                     if (ns == MetricNamespaceConstants.ASM)
                     {
-                        return new() { new[] { "waf_version:unknown" } };
+                        bool isRasp = member.Name.StartsWith("rasp", StringComparison.Ordinal);
+                        return new()
+                        {
+                            isRasp ? new[] { "waf_version:unknown" } :
+                            new[] { "waf_version:unknown", "event_rules_version:unknown" }
+                        };
                     }
 
                     return new List<string[]>();

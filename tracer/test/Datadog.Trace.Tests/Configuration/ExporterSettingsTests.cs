@@ -39,6 +39,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settings, "someurl");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData(@"C:\temp\someval")]
         // [InlineData(@"\\temp\someval")] // network path doesn't work with uris, so we don't support it :/
@@ -53,6 +54,20 @@ namespace Datadog.Trace.Tests.Configuration
             // Without additional settings, metrics defaults to UDP even if DD_TRACE_AGENT_URL is UDS
             AssertMetricsUdpIsConfigured(settingsFromSource);
         }
+#else
+        [Theory]
+        [InlineData(@"C:\temp\someval")]
+        public void UnixAgentUriOnWindows_UdsUnsupported_UsesDefaultHttp(string path)
+        {
+            var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}");
+            var expectedUri = new Uri($"http://127.0.0.1:8126");
+            AssertHttpIsConfigured(settingsFromSource, expectedUri);
+            settingsFromSource.AgentUri.Should().Be(expectedUri);
+            settingsFromSource.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+            // Without additional settings, metrics defaults to UDP even if DD_TRACE_AGENT_URL is UDS
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+        }
+#endif
 
         [Fact]
         public void InvalidAgentUrlShouldNotThrow()
@@ -63,6 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.ValidationWarnings.Should().Contain($"The Uri: '{param}' is not valid. It won't be taken into account to send traces. Note that only absolute urls are accepted.");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData("unix://some/socket.soc", "/socket.soc")]
         [InlineData("unix://./socket.soc", "/socket.soc")]
@@ -91,6 +107,7 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.ValidationWarnings.Should().Contain($"The provided Uri {uri.AbsoluteUri} contains a relative path which may not work. This is the path to the socket that will be used: {expectedSocket}");
             settingsFromSource.ValidationWarnings.Should().Contain($"The socket provided {expectedSocket} cannot be found. The tracer will still rely on this socket to send traces.");
         }
+#endif
 
         [Fact]
         public void AgentHost()
@@ -125,6 +142,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settingsFromSource);
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void MetricsUnixDomainSocketPath()
         {
@@ -136,6 +154,18 @@ namespace Datadog.Trace.Tests.Configuration
             settings.MetricsUnixDomainSocketPath.Should().Be(param);
             // AssertUdsIsConfigured(settings, param); //This is actually not working as we don't recompute the transport when setting the property
         }
+#else
+        [Fact]
+        public void MetricsUnixDomainSocketPath_UdsUnsupported_UsesDefaultUdp()
+        {
+            var param = "/var/path";
+            var settings = new ExporterSettings() { MetricsUnixDomainSocketPath = param };
+
+            AssertMetricsUdpIsConfigured(settings);
+            // This is actually not working as we don't recompute the transport when setting the property
+            // settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+#endif
 
         [Fact]
         public void MetricsPipeName()
@@ -202,6 +232,7 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Throws<ArgumentException>(() => new ExporterSettings() { PartialFlushMinSpans = param });
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void UnixDomainSocketPathWellFormed()
         {
@@ -227,6 +258,36 @@ namespace Datadog.Trace.Tests.Configuration
             // Uses UDP by default
             AssertMetricsUdpIsConfigured(settings);
         }
+#else
+        [Fact]
+        public void UnixDomainSocketPathWellFormed_UdsUnsupported_UsesDefaultHttp()
+        {
+            var settingsFromSource = Setup("DD_TRACE_AGENT_URL", "unix:///var/datadog/myscocket.soc");
+            var expectedUri = new Uri("http://127.0.0.1:8126/");
+            AssertHttpIsConfigured(settingsFromSource, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+            settingsFromSource.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+
+            var settings = new ExporterSettings();
+            AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+
+            settings.AgentUri = new Uri("unix:///var/datadog/myscocket.soc");
+            AssertHttpIsConfigured(settings, expectedUri);
+            AssertMetricsUdpIsConfigured(settingsFromSource);
+            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+
+        [Fact]
+        public void Traces_SocketFilesExist_NoExplicitConfig_UdsUnsupported_UsesDefaultTcp()
+        {
+            var expectedUri = new Uri($"http://127.0.0.1:8126");
+            var settings = Setup(DefaultTraceSocketFilesExist());
+            AssertHttpIsConfigured(settings, expectedUri);
+            // Uses UDP by default
+            AssertMetricsUdpIsConfigured(settings);
+        }
+#endif
 
         [Fact]
         public void Traces_SocketFilesExist_ExplicitAgentHost_UsesDefaultTcp()
@@ -288,6 +349,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(settingsFromSource, "someurl", expectedPort);
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void Metrics_DogStatsdUrl_UdsOnWindows()
         {
@@ -306,6 +368,26 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdsIsConfigured(settingsFromSource, socketPath);
             settingsFromSource.ValidationWarnings.Should().BeEmpty();
         }
+#else
+        [Fact]
+        public void Metrics_DogStatsdUrl_UdsUnsupported_UsesDefaultUdpOnWindows()
+        {
+            var path = @"C:\temp\someval";
+            var socketPath = path.Replace("\\", "/");
+            var settings = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{path}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            AssertMetricsUdpIsConfigured(settings);
+            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+
+        [Fact]
+        public void Metrics_DogStatsdUrl_UdsUnsupported_UsesDefaultUdsOnLinux()
+        {
+            var socketPath = @"/some/socket.soc";
+            var settings = Setup(FileExistsMock(socketPath), $"DD_DOGSTATSD_URL:unix://{socketPath}", "DD_TRACE_AGENT_URL:http://localhost:8126");
+            AssertMetricsUdpIsConfigured(settings);
+            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+#endif
 
         [Fact]
         public void Metrics_DogStatsdUrl_InvalidUrlShouldNotThrow()
@@ -316,6 +398,7 @@ namespace Datadog.Trace.Tests.Configuration
             settingsFromSource.ValidationWarnings.Should().Contain($"The Uri: '{param}' in {ConfigurationKeys.MetricsUri} is not valid. It won't be taken into account to send metrics. Note that only absolute urls are accepted.");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Theory]
         [InlineData("unix://some/socket.soc", "/socket.soc")]
         [InlineData("unix://./socket.soc", "/socket.soc")]
@@ -366,6 +449,15 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdsIsConfigured(settings, ExporterSettings.DefaultMetricsUnixDomainSocket);
         }
 
+#else
+        [Fact]
+        public void Metrics_SocketFilesExist_NoExplicitConfig_UdsUnsupported_UsesDefaultUdp()
+        {
+            var settings = Setup(DefaultMetricsSocketFilesExist());
+            AssertMetricsUdpIsConfigured(settings);
+        }
+
+#endif
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitMetricsPort_UsesUdp()
         {
@@ -381,6 +473,7 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsPipeIsConfigured(settings, "somepipe");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
         {
@@ -388,6 +481,16 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdsIsConfigured(settings, "somesocket");
         }
 
+#else
+        [Fact]
+        public void Metrics_SocketFilesExist_ExplicitUdsConfig_UdsUnsupported_UsesDefaultUdp()
+        {
+            var settings = Setup(DefaultMetricsSocketFilesExist(), "DD_DOGSTATSD_SOCKET:somesocket");
+            AssertMetricsUdpIsConfigured(settings);
+            settings.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+
+#endif
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitConfigForAll_UsesUdp()
         {
@@ -395,8 +498,9 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsUdpIsConfigured(config, "someotherhost");
         }
 
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
-        public void Metrics_SocketFilesExist_DogstatsdUrl_ExplicitConfigForAll_UsesUdp()
+        public void Metrics_SocketFilesExist_DogstatsdUrl_ExplicitConfigForAll_UsesUds()
         {
             var config = Setup(
                 DefaultSocketFilesExist(),
@@ -406,6 +510,21 @@ namespace Datadog.Trace.Tests.Configuration
                 "DD_DOGSTATSD_SOCKET:somesocket");
             AssertMetricsUdsIsConfigured(config, "/var/datadog/mysocket.soc");
         }
+
+#else
+        [Fact]
+        public void Metrics_SocketFilesExist_DogstatsdUrl_ExplicitConfigForAll_UdsUnsupported_UsesDefaultUdp()
+        {
+            var config = Setup(
+                DefaultSocketFilesExist(),
+                "DD_DOGSTATSD_URL:unix:///var/datadog/mysocket.soc",
+                "DD_AGENT_HOST:someotherhost",
+                "DD_DOGSTATSD_PIPE_NAME:somepipe",
+                "DD_DOGSTATSD_SOCKET:somesocket");
+            AssertMetricsUdpIsConfigured(config);
+            config.ValidationWarnings.Should().NotBeEmpty().And.ContainMatch("*current runtime doesn't support UDS*");
+        }
+#endif
 
         [Fact]
         public void Metrics_SocketFilesExist_TraceAgentUrlAndAgentHostIsSet_UsesCorrectHost()

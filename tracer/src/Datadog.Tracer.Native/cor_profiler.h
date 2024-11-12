@@ -14,6 +14,7 @@
 #include "il_rewriter.h"
 #include "integration.h"
 #include "rejit_preprocessor.h"
+#include "tracer_rejit_preprocessor.h"
 #include "debugger_rejit_preprocessor.h"
 #include "rejit_handler.h"
 #include <unordered_set>
@@ -45,7 +46,6 @@ class FaultTolerantRewriter;
 
 namespace trace
 {
-
 class CorProfiler : public CorProfilerBase
 {
 private:
@@ -115,6 +115,7 @@ private:
     static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
                                      const shared::WSTRING& nativemethods_type_name,
                                      const shared::WSTRING& library_path = shared::WSTRING());
+    static void __stdcall NativeLog(int32_t level, const WCHAR* message, int32_t length);
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
@@ -122,6 +123,7 @@ private:
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
+    HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
@@ -168,18 +170,12 @@ public:
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
 
     HRESULT STDMETHODCALLTYPE JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline) override;
+
     //
     // ReJIT Methods
     //
-
-    HRESULT STDMETHODCALLTYPE ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
-                                                      BOOL fIsSafeToBlock) override;
-
     HRESULT STDMETHODCALLTYPE GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                  ICorProfilerFunctionControl* pFunctionControl) override;
-
-    HRESULT STDMETHODCALLTYPE ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus,
-                                                       BOOL fIsSafeToBlock) override;
 
     HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                          HRESULT hrStatus) override;
@@ -207,7 +203,8 @@ public:
     //
     // Tracer Integration methods #2
     //
-    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories = -1);
+    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size,
+                                       UINT32 enabledCategories = -1);
     long EnableCallTargetDefinitions(UINT32 enabledCategories);
     long DisableCallTargetDefinitions(UINT32 disabledCategories);
 
@@ -254,7 +251,6 @@ public:
     //
     // Getters for exception filter
     //
-
     bool IsCallTargetBubbleUpExceptionTypeAvailable() const;
     bool IsCallTargetBubbleUpFunctionAvailable() const;
 };

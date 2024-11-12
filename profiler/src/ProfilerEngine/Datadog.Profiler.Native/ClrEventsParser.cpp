@@ -10,6 +10,7 @@
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "Log.h"
+#include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 
 
@@ -218,17 +219,40 @@ ClrEventsParser::ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG
     {
         // This event provides the size of each generation after the collection
         // --> not used today but could be interesting to detect leaks (i.e. gen2/LOH/POH are growing)
+        uint64_t gen2Size = 0;
+        uint64_t lohSize = 0;
+        uint64_t pohSize = 0;
 
-        // TODO: check for size and see if V2 with POH numbers could be read from payload
-        GCHeapStatsV1Payload payload = {0};
-        ULONG offset = 0;
-        if (!Read<GCHeapStatsV1Payload>(payload, pEventData, cbEventData, offset))
+        // check for size and see if V2 with POH numbers could be read from payload
+        if (version == 1)
         {
-            return;
+            GCHeapStatsV1Payload payload = {0};
+            ULONG offset = 0;
+            if (!Read<GCHeapStatsV1Payload>(payload, pEventData, cbEventData, offset))
+            {
+                return;
+            }
+
+            gen2Size = payload.GenerationSize2;
+            lohSize = payload.GenerationSize3;
+            pohSize = 0;
+        }
+        else if (version == 2)
+        {
+            GCHeapStatsV2Payload payload = {0};
+            ULONG offset = 0;
+            if (!Read<GCHeapStatsV2Payload>(payload, pEventData, cbEventData, offset))
+            {
+                return;
+            }
+
+            gen2Size = payload.GenerationSize2;
+            lohSize = payload.GenerationSize3;
+            pohSize = payload.GenerationSize4;
         }
 
         LOG_GC_EVENT("OnGCHeapStats");
-        OnGCHeapStats(timestamp);
+        OnGCHeapStats(timestamp, gen2Size, lohSize, pohSize);
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
     {
@@ -269,6 +293,18 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
 
         _pContentionListener->OnContention(payload.DurationNs);
     }
+
+    if ((id == EVENT_CONTENTION_START) && (version >= 2))
+    {
+        ContentionStartV2Payload payload{0};
+        ULONG offset = 0;
+        if (!Read<ContentionStartV2Payload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        _pContentionListener->SetBlockingThread(payload.LockOwnerThreadID);
+    }
 }
 
 void ClrEventsParser::NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration)
@@ -283,6 +319,10 @@ void ClrEventsParser::NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionStart: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
 }
@@ -295,11 +335,18 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
     bool isCompacting,
     uint64_t pauseDuration,
     uint64_t totalDuration,
-    uint64_t endTimestamp
+    uint64_t endTimestamp,
+    uint64_t gen2Size,
+    uint64_t lohSize,
+    uint64_t pohSize
     )
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
+        std::stringstream buffer;
+        buffer << "OnGarbageCollectionEnd: " << number << " " << generation << " " << reason << " " << type;
+        LOG_GC_EVENT(buffer.str());
+
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
             generation,
@@ -308,8 +355,10 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
             isCompacting,
             pauseDuration,
             totalDuration,
-            endTimestamp
-            );
+            endTimestamp,
+            gen2Size,
+            lohSize,
+            pohSize);
     }
 }
 
@@ -334,6 +383,9 @@ void ClrEventsParser::ResetGC(GCDetails& gc)
     gc.StartTimestamp = 0;
     gc.HasGlobalHeapHistoryBeenReceived = false;
     gc.HasHeapStatsBeenReceived = false;
+    gc.gen2Size = 0;
+    gc.lohSize = 0;
+    gc.pohSize = 0;
 }
 
 void ClrEventsParser::InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload)
@@ -347,6 +399,9 @@ void ClrEventsParser::InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPay
     gc.StartTimestamp = timestamp;
     gc.HasGlobalHeapHistoryBeenReceived = false;
     gc.HasHeapStatsBeenReceived = false;
+    gc.gen2Size = 0;
+    gc.lohSize = 0;
+    gc.pohSize = 0;
 }
 
 void ClrEventsParser::OnGCTriggered()
@@ -427,12 +482,15 @@ void ClrEventsParser::OnGCRestartEEEnd(uint64_t timestamp)
             gc.IsCompacting,
             gc.PauseDuration,
             timestamp - gc.StartTimestamp,
-            timestamp);
+            timestamp,
+            gc.gen2Size,
+            gc.lohSize,
+            gc.pohSize);
         ResetGC(gc);
     }
 }
 
-void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
+void ClrEventsParser::OnGCHeapStats(uint64_t timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize)
 {
     // Note: last event for non background GC (will be GcGlobalHeapHistory for background gen 2)
     GCDetails& gc = GetCurrentGC();
@@ -441,6 +499,10 @@ void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
     {
         return;
     }
+
+    gc.gen2Size = gen2Size;
+    gc.lohSize = lohSize;
+    gc.pohSize = pohSize;
 
     if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
@@ -456,7 +518,10 @@ void ClrEventsParser::OnGCHeapStats(uint64_t timestamp)
                 gc.IsCompacting,
                 gc.PauseDuration,
                 timestamp - gc.StartTimestamp,
-                timestamp
+                timestamp,
+                gc.gen2Size,
+                gc.lohSize,
+                gc.pohSize
                 );
             ResetGC(gc);
     }
@@ -491,7 +556,10 @@ void ClrEventsParser::OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayl
             gc.IsCompacting,
             gc.PauseDuration,
             timestamp - gc.StartTimestamp,
-            timestamp);
+            timestamp,
+            gc.gen2Size,
+            gc.lohSize,
+            gc.pohSize);
         ResetGC(gc);
     }
 }

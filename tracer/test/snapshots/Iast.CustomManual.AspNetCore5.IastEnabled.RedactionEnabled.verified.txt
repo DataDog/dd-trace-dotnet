@@ -35,7 +35,8 @@
       "evidence": {
         "valueParts": [
           {
-            "value": "Vicent",
+            "redacted": true,
+            "pattern": "abcdef",
             "source": 0
           }
         ]
@@ -46,7 +47,8 @@
     {
       "origin": "http.request.parameter",
       "name": "userName",
-      "value": "Vicent"
+      "redacted": true,
+      "pattern": "abcdef"
     }
   ]
 }
@@ -55,7 +57,7 @@
       process_id: 0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _sampling_priority_v1: 2.0
     }
   },
   {

@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                SpanContext? propagatedContext = null;
+                PropagationContext extractedContext = default;
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     try
                     {
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers);
+                        extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, parent: extractedContext.SpanContext, tags: tags, serviceName: serviceName);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
@@ -323,7 +323,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
-                SpanContextPropagator.Instance.Inject(span.Context, adapter);
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                SpanContextPropagator.Instance.Inject(context, adapter);
 
                 if (dataStreamsManager.IsEnabled)
                 {

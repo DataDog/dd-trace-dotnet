@@ -35,14 +35,14 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return result is not null;
     }
 
-    public ConfigurationResult<string>? GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+    public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetString(key);
 #pragma warning restore DD0002
         if (result is null)
         {
-            return null;
+            return ConfigurationResult<string>.NotFound();
         }
 
         if (validator is null || validator(result))
@@ -55,14 +55,19 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<string>.Invalid(result);
     }
 
-    public ConfigurationResult<int>? GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+    public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetInt32(key);
 #pragma warning restore DD0002
         if (result is null)
         {
-            return null;
+            // Because this is an IConfigurationSource _not_ an ITelemeteredConfigurationSource
+            // we can't distinguish between "not found" and "found but failed to parse"
+            // so we just have to accept this for now. Alternatively, we could call `GetString()`
+            // and do the parsing ourselves, but that doesn't necessarily have the same behaviour
+            // (e.g. this would fail with a json-based source)
+            return ConfigurationResult<int>.NotFound();
         }
 
         if (validator is null || validator(result.Value))
@@ -75,14 +80,19 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<int>.Invalid(result.Value);
     }
 
-    public ConfigurationResult<double>? GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+    public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetDouble(key);
 #pragma warning restore DD0002
         if (result is null)
         {
-            return null;
+            // Because this is an IConfigurationSource _not_ an ITelemeteredConfigurationSource
+            // we can't distinguish between "not found" and "found but failed to parse"
+            // so we just have to accept this for now. Alternatively, we could call `GetString()`
+            // and do the parsing ourselves, but that doesn't necessarily have the same behaviour
+            // (e.g. this would fail with a json-based source)
+            return ConfigurationResult<double>.NotFound();
         }
 
         if (validator is null || validator(result.Value))
@@ -95,14 +105,19 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<double>.Invalid(result.Value);
     }
 
-    public ConfigurationResult<bool>? GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+    public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetBool(key);
 #pragma warning restore DD0002
         if (result is null)
         {
-            return null;
+            // Because this is an IConfigurationSource _not_ an ITelemeteredConfigurationSource
+            // we can't distinguish between "not found" and "found but failed to parse"
+            // so we just have to accept this for now. Alternatively, we could call `GetString()`
+            // and do the parsing ourselves, but that doesn't necessarily have the same behaviour
+            // (e.g. this would fail with a json-based source)
+            return ConfigurationResult<bool>.NotFound();
         }
 
         if (validator is null || validator(result.Value))
@@ -115,17 +130,22 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<bool>.Invalid(result.Value);
     }
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
         => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var result = Source.GetDictionary(key, allowOptionalMappings);
 #pragma warning restore DD0002
         if (result is null)
         {
-            return null;
+            // Because this is an IConfigurationSource _not_ an ITelemeteredConfigurationSource
+            // we can't distinguish between "not found" and "found but failed to parse"
+            // so we just have to accept this for now. Alternatively, we could call `GetString()`
+            // and do the parsing ourselves, but that doesn't necessarily have the same behaviour
+            // (e.g. this would fail with a json-based source)
+            return ConfigurationResult<IDictionary<string, string>>.NotFound();
         }
 
         // This is horrible. We _could_ call Source.GetString(), but as this is a custom implementation,
@@ -133,7 +153,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         string stringifiedDictionary;
         if (result.Count > 0)
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             foreach (var kvp in result)
             {
                 sb.Append(kvp.Key).Append(':').Append(kvp.Value).Append(',');
@@ -158,7 +178,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         return ConfigurationResult<IDictionary<string, string>>.Invalid(result);
     }
 
-    public ConfigurationResult<T>? GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+    public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
         var value = Source.GetString(key);
@@ -166,7 +186,12 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
 
         if (value is null)
         {
-            return null;
+            // Because this is an IConfigurationSource _not_ an ITelemeteredConfigurationSource
+            // we can't distinguish between "not found" and "found but failed to parse"
+            // so we just have to accept this for now. Alternatively, we could call `GetString()`
+            // and do the parsing ourselves, but that doesn't necessarily have the same behaviour
+            // (e.g. this would fail with a json-based source)
+            return ConfigurationResult<T>.NotFound();
         }
 
         var result = converter(value);
@@ -183,6 +208,6 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         }
 
         telemetry.Record(key, value, recordValue, ConfigurationOrigins.Code, TelemetryErrorCode.ParsingCustomError);
-        return null;
+        return ConfigurationResult<T>.ParseFailure();
     }
 }

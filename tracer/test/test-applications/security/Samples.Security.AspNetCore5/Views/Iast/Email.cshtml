@@ -1,0 +1,115 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subscribe to Newsletter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="email"] {
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .smtp-table {
+            margin-top: 20px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .smtp-table td {
+                padding: 8px;
+                border: 1px solid #ccc;
+            }
+
+        button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #45a049;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Please, subscribe to our newsletter</h1>
+        <form asp-controller="Iast" asp-action="SendEmailSmtpData" method="get">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" value="John" required />
+
+            <label for="lastname">Last name:</label>
+            <input type="text" id="lastname" name="lastname" value="Doe" required />
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" value="test@fakemail2322.com" required />
+
+            <button type="submit">Subscribe</button>
+
+            <h2>SMTP Configuration</h2>
+            <table class="smtp-table">
+                <tr>
+                    <td><label for="smtpUsername">SMTP Username:</label></td>
+                    <td><input type="text" id="smtpUsername" name="smtpUsername" value="admin@fakemail2322.com" /></td>
+                </tr>
+                <tr>
+                    <td><label for="smtpPassword">SMTP Password:</label></td>
+                    <td><input type="password" id="smtpPassword" name="smtpPassword" value="qwerty" /></td>
+                </tr>
+                <tr>
+                    <td><label for="smtpserver">SMTP Server:</label></td>
+                    <td><input type="text" id="smtpserver" name="smtpserver" value="smtp-fakemail2322.com" /></td>
+                </tr>
+                <tr>
+                    <td><label for="smtpPort">SMTP Port:</label></td>
+                    <td><input type="text" id="smtpPort" name="smtpPort" value="587" /></td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</body>
+</html>

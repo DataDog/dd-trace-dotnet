@@ -62,7 +62,7 @@ public class SymbolUploaderTest
         Assert.True(result.Scopes.Count == root.Scopes.Count);
         Assert.True(classesScope?.Length == 1);
         Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
-        Assert.True(classesScope[0].ScopeType == SymbolType.Class);
+        Assert.True(classesScope[0].ScopeType == ScopeType.Class);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class SymbolUploaderTest
             Assert.NotNull(classesScope);
             Assert.True(root1.Scopes.Count == root.Scopes.Count);
             Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
-            Assert.True(classesScope.All(cls => cls.ScopeType == SymbolType.Class));
+            Assert.True(classesScope.All(cls => cls.ScopeType == ScopeType.Class));
         }
     }
 
@@ -134,7 +134,7 @@ public class SymbolUploaderTest
             Language = "dotnet",
             Service = nameof(SymbolUploaderTest),
             Version = "0",
-            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = SymbolType.Assembly, Scopes = null } }
+            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = ScopeType.Assembly, Scopes = null } }
         };
 
         var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();
@@ -143,7 +143,7 @@ public class SymbolUploaderTest
             scopes.Add(new Trace.Debugger.Symbols.Model.Scope
             {
                 Name = $"type: {i}",
-                ScopeType = SymbolType.Class,
+                ScopeType = ScopeType.Class,
             });
         }
 

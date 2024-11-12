@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -16,6 +17,7 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -82,20 +84,13 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var testModules = new List<MockCIVisibilityTestModule>();
 
         // Inject session
-        var sessionId = RandomIdGenerator.Shared.NextSpanId();
-        var sessionCommand = "test command";
-        var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-        SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
-
-        const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
-        const string gitBranch = "main";
-        const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+        InjectSession(
+            out var sessionId,
+            out var sessionCommand,
+            out var sessionWorkingDirectory,
+            out var gitRepositoryUrl,
+            out var gitBranch,
+            out var gitCommitSha);
 
         var codeCoverageReceived = new StrongBox<bool>(false);
         var name = $"session_{sessionId}";
@@ -108,13 +103,10 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         string[] messages = null;
 
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-
         using var logsIntake = new MockLogsIntakeForCiVisibility();
         EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
-        using var agent = EnvironmentHelper.GetMockAgent();
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
@@ -137,6 +129,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
 
                 var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                ValidateMetadata(payload.Metadata, sessionCommand);
                 if (payload.Events?.Length > 0)
                 {
                     foreach (var @event in payload.Events)
@@ -374,6 +367,16 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
         Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
         Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
+
+        // Smoke check telemetry
+        agent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+        var allData = agent.Telemetry.Cast<TelemetryData>().ToArray();
+
+        // we will have multiple app closing events
+        TelemetryHelper.GetMetricData(allData, "endpoint_payload.requests", "endpoint:test_cycle", singleAppClosing: false)
+                       .Should()
+                       .NotBeEmpty()
+                       .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
     }
 
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, string settingsJson, string testsJson, int expectedSpans, string friendlyName)
@@ -383,28 +386,18 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var testModules = new List<MockCIVisibilityTestModule>();
 
         // Inject session
-        var sessionId = RandomIdGenerator.Shared.NextSpanId();
-        var sessionCommand = "test command";
-        var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-        SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
-
-        const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
-        const string gitBranch = "main";
-        const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+        InjectSession(
+            out var sessionId,
+            out var sessionCommand,
+            out var sessionWorkingDirectory,
+            out var gitRepositoryUrl,
+            out var gitBranch,
+            out var gitCommitSha);
 
         try
         {
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-
             using var logsIntake = new MockLogsIntakeForCiVisibility();
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
@@ -486,6 +479,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             throw;
         }
     }
+
+    private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)
+        => isGzipped ? tags.Contains("rq_compressed:true") : !tags.Contains("rq_compressed:true");
 
     private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
     {

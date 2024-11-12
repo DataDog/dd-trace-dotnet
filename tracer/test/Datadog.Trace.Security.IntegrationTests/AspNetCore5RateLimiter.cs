@@ -29,7 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             this.fixture.SetOutput(null);
         }
 
-        [SkippableTheory(Skip = "Don't run in CI as test is slow, can be run manually by removing this attribute")]
+        [SkippableTheory]
         [InlineData(true, 90, 100)]
         [InlineData(false, 90, 100)]
         [InlineData(true, 110, 100)]
@@ -38,6 +38,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(false, 30, 20)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("SkipInCI", "True")] // Don't run in CI as test is slow, can be run manually by removing this attribute
         public async Task TestRateLimiterSecurity(bool enableSecurity, int totalRequests, int? traceRateLimit, string url = DefaultAttackUrl)
         {
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit.ToString());

@@ -12,6 +12,7 @@
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
 #include "IUpscaleProvider.h"
+#include "ManagedThreadInfo.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
@@ -83,17 +84,27 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
 // .NET Framework implementation
 void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
 {
-    AddContentionSample(timestamp, threadId, contentionDurationNs, stack);
+    AddContentionSample(timestamp, threadId, contentionDurationNs, 0, WStr(""), stack);
+}
+
+void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
+{
+    std::shared_ptr<ManagedThreadInfo> info;
+    if (osThreadId != 0 && _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
+    {
+        ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
+    }
 }
 
 // .NET synchronous implementation: we are expecting to be called from the same thread that is contending.
 // It means that the current thread will be stack walking itself.
 void ContentionProvider::OnContention(double contentionDurationNs)
 {
-    AddContentionSample(0, -1, contentionDurationNs, _emptyStack);
+    auto [blockingThreadId, blockingThreadName] = ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(0, WStr(""));
+    AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
-void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
+void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
     _lockContentionsDurationMetric->Add(contentionDurationNs);
@@ -156,8 +167,12 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         // We know that we don't have any span ID nor end point details
 
         rawSample.Timestamp = timestamp;
-        auto end_stack = stack.begin() + std::min(stack.size(), static_cast<std::size_t>(rawSample.Stack.Capacity()));
-        std::copy(stack.begin(), end_stack, rawSample.Stack.begin());
+        auto cs = _callstackProvider.Get();
+        const auto nbFrames = std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
+        auto end_stack = stack.begin() + nbFrames;
+        std::copy(stack.begin(), end_stack, cs.begin());
+        cs.SetCount(nbFrames);
+        rawSample.Stack = std::move(cs);
 
         // we need to create a fake IThreadInfo if there is no thread in ManagedThreadList with the same OS thread id
         // There is one race condition here: the contention events are received asynchronously so the event thread might be dead
@@ -189,11 +204,16 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
         {
             rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
+
+            // TODO: do we need to set to -1?
+            //rawSample.AppDomainId = -1;
         }
     }
 
     rawSample.ContentionDuration = contentionDurationNs;
     rawSample.Bucket = std::move(bucket);
+    rawSample.BlockingThreadId = blockingThreadId;
+    rawSample.BlockingThreadName = std::move(blockingThreadName);
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();

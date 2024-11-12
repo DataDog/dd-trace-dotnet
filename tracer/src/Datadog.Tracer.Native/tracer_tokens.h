@@ -5,6 +5,8 @@
 
 #define FASTPATH_COUNT 9
 
+using namespace shared;
+
 namespace trace
 {
 

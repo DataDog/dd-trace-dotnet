@@ -89,6 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
+            settings.AddRegexScrubber(new Regex("dd.instrumentation.time_ms: \\d+.\\d+"), "dd.instrumentation.time_ms: 123.456");
 
             var fileName = nameof(SystemDataSqlClientTests);
 

@@ -26,6 +26,7 @@ public class WeakCipherTests : TestHelper
         : base("WeakCipher", output)
     {
         SetServiceVersion("1.0.0");
+        SetEnvironmentVariable("DD_APPSEC_STACK_TRACE_ENABLED", "false");
     }
 
 #if !NET7_0_OR_GREATER

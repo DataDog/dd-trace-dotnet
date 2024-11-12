@@ -58,9 +58,9 @@ std::unique_ptr<libdatadog::AgentProxy> ExporterBuilder::CreateAgentProxy()
     auto endpoint = CreateEndpoint();
 
     auto result = ddog_prof_Exporter_new(
-        FfiHelper::StringToCharSlice(_libraryName),
-        FfiHelper::StringToCharSlice(_libraryVersion),
-        FfiHelper::StringToCharSlice(_languageFamily),
+        to_char_slice(_libraryName),
+        to_char_slice(_libraryVersion),
+        to_char_slice(_languageFamily),
         static_cast<ddog_Vec_Tag*>(*_tags._impl),
         endpoint.inner);
 
@@ -103,10 +103,10 @@ ExporterBuilder::AgentEndpoint ExporterBuilder::CreateEndpoint()
     {
         assert(!_site.empty());
         assert(!_apiKey.empty());
-        return {ddog_prof_Endpoint_agentless(FfiHelper::StringToCharSlice(_site), FfiHelper::StringToCharSlice(_apiKey))};
+        return {ddog_prof_Endpoint_agentless(to_char_slice(_site), to_char_slice(_apiKey))};
     }
 
-    return {ddog_prof_Endpoint_agent(FfiHelper::StringToCharSlice(_url))};
+    return {ddog_prof_Endpoint_agent(to_char_slice(_url))};
 }
 
 std::unique_ptr<Exporter> ExporterBuilder::Build()

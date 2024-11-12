@@ -85,6 +85,12 @@ internal abstract class CIEnvironmentValues
 
     public string[]? NodeLabels { get; protected set; }
 
+    public string? HeadCommit { get; protected set; }
+
+    public string? PrBaseCommit { get; protected set; }
+
+    public string? PrBaseBranch { get; protected set; }
+
     public CodeOwners? CodeOwners { get; protected set; }
 
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
@@ -232,7 +238,7 @@ internal abstract class CIEnvironmentValues
         Message = null;
         SourceRoot = null;
 
-        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder));
+        Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder!));
 
         // **********
         // Remove sensitive info from repository url
@@ -282,7 +288,7 @@ internal abstract class CIEnvironmentValues
         }
     }
 
-    protected abstract void Setup(GitInfo gitInfo);
+    protected abstract void Setup(IGitInfo gitInfo);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void CleanBranchAndTag()
@@ -522,6 +528,8 @@ internal abstract class CIEnvironmentValues
         public const string GitHubRunNumber = "GITHUB_RUN_NUMBER";
         public const string GitHubWorkflow = "GITHUB_WORKFLOW";
         public const string GitHubJob = "GITHUB_JOB";
+        public const string GitHubEventPath = "GITHUB_EVENT_PATH";
+        public const string GitHubBaseRef = "GITHUB_BASE_REF";
 
         // Teamcity CI Environment variables
         public const string TeamCityVersion = "TEAMCITY_VERSION";

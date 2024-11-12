@@ -34,6 +34,7 @@ internal static class SourceTypeUtils
         SourceType.CookieValue => "http_request_cookie_value",
         SourceType.RequestUri => "http_request_uri",
         SourceType.GrpcRequestBody => "grpc_request_body",
+        SourceType.SqlRowValue => "sql_row_value",
         _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
     };
 
@@ -53,6 +54,7 @@ internal static class SourceTypeUtils
             SourceType.CookieValue => "http.request.cookie.value",
             SourceType.RequestUri => "http.request.uri",
             SourceType.GrpcRequestBody => "grpc.request.body",
+            SourceType.SqlRowValue => "sql.row.value",
             _ => throw new Exception($"SourceTypeName TEXT for value {value} not defined")
         };
 
@@ -72,6 +74,7 @@ internal static class SourceTypeUtils
             "http.request.cookie.value" => SourceType.CookieValue,
             "http.request.uri" => SourceType.RequestUri,
             "grpc.request.body" => SourceType.GrpcRequestBody,
+            "sql.row.value" => SourceType.SqlRowValue,
             _ => throw new Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined")
         };
 }

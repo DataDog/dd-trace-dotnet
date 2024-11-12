@@ -76,10 +76,21 @@ namespace Datadog.Trace.Configuration
             // But while it's here, we need to handle it properly
             if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
             {
+#if NETCOREAPP3_1_OR_GREATER
                 if (TrySetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin))
                 {
                     return;
                 }
+#else
+                // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets
+                ValidationWarnings.Add($"Found UDS configuration {ConfigurationKeys.TracesUnixDomainSocketPath}, but current runtime doesn't support UDS, so ignoring it.");
+                _telemetry.Record(
+                    ConfigurationKeys.TracesUnixDomainSocketPath,
+                    tracesUnixDomainSocketPath,
+                    recordValue: true,
+                    origin,
+                    TelemetryErrorCode.UdsOnUnsupportedPlatform);
+#endif
             }
 
             if ((agentPort != null && agentPort != 0) || agentHost != null)
@@ -94,6 +105,8 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, so we don't care if the file already exists
+#if NETCOREAPP3_1_OR_GREATER
             if (_fileExists(DefaultTracesUnixDomainSocket))
             {
                 // setting the urls as well for retro compatibility in the almost impossible case where someone
@@ -102,6 +115,7 @@ namespace Datadog.Trace.Configuration
                 SetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), origin);
                 return;
             }
+#endif
 
             ValidationWarnings.Add("No transport configuration found, using default values");
 
@@ -133,6 +147,7 @@ namespace Datadog.Trace.Configuration
         {
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
             {
+#if NETCOREAPP3_1_OR_GREATER
                 TracesTransport = TracesTransportType.UnixDomainSocket;
                 TracesUnixDomainSocketPathInternal = uri.PathAndQuery;
 
@@ -159,6 +174,19 @@ namespace Datadog.Trace.Configuration
                     recordValue: true,
                     origin,
                     potentiallyInvalid ? TelemetryErrorCode.PotentiallyInvalidUdsPath : null);
+#else
+                // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets, but it's _explicitly_ being
+                // configured here, so warn the user, and switch to using the default transport instead.
+                ValidationWarnings.Add($"The provided Uri {uri} represents a Unix Domain Socket (UDS), but the current runtime doesn't support UDS. Falling back to the default TCP transport.");
+                _telemetry.Record(
+                    ConfigurationKeys.AgentUri,
+                    uri.ToString(),
+                    recordValue: true,
+                    origin,
+                    TelemetryErrorCode.UdsOnUnsupportedPlatform);
+                SetAgentUriAndTransport(CreateDefaultUri(), ConfigurationOrigins.Calculated);
+                return;
+#endif
             }
             else
             {

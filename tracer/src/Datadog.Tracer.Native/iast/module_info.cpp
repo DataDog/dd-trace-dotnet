@@ -80,10 +80,6 @@ bool ModuleInfo::IsInlineEnabled()
 {
     return true;
 }
-bool ModuleInfo::ExcludeInChaining()
-{
-    return false;
-}
 
 bool ModuleInfo::IsNestedType(DWORD typeDefFlags)
 {
@@ -755,7 +751,7 @@ HRESULT ModuleInfo::GetILRewriter(const WSTRING& typeName, const WSTRING& method
     }
     return GetILRewriter(methodInfo, rewriter);
 }
-HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter, const std::string& applyMessage)
+HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter)
 {
     HRESULT hr = S_FALSE;
     if (*rewriter != nullptr)
@@ -763,7 +759,7 @@ HRESULT ModuleInfo::CommitILRewriter(ILRewriter** rewriter, const std::string& a
         auto method = (*rewriter)->GetMethodInfo();
         if (method != nullptr)
         {
-            hr = method->CommitILRewriter(applyMessage);
+            hr = method->CommitILRewriter();
         }
     }
     *rewriter = nullptr;
@@ -878,6 +874,19 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
                             " methodName: " , methodName);
         return 0;
     }
+}
+
+mdMethodSpec ModuleInfo::DefineMethodSpec(mdMemberRef targetMethod, SignatureInfo* sig)
+{
+    mdMethodSpec methodSpec = 0; 
+    HRESULT hr = _metadataEmit->DefineMethodSpec(targetMethod, sig->_pSig, sig->_nSig, &methodSpec);
+    if (FAILED(hr))
+    {
+        trace::Logger::Warn("DefineMethodSpec failed with code ", hr);
+        methodSpec = 0;
+    }
+
+    return methodSpec;
 }
 
 std::vector<WSTRING> ModuleInfo::GetCustomAttributes(mdToken token)

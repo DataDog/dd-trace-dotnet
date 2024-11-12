@@ -6,6 +6,7 @@
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
 #pragma warning disable SA1118 // parameter spans multiple lines
 [assembly: AdoNetClientInstrumentMethods(
@@ -102,4 +103,58 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         typeof(CommandExecuteScalarAsyncAttribute),
         // object Microsoft.Data.SqlClient.SqlCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data",
+    TypeName = "System.Data.SqlClient.SqlDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "System.Data.SqlClient",
+    TypeName = "System.Data.SqlClient.SqlDataReader",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Microsoft.Data.SqlClient",
+    TypeName = "Microsoft.Data.SqlClient.SqlDataReader",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "5.*.*",
+    IntegrationName = nameof(IntegrationId.SqlClient),
+    DataReaderType = TypeNames.DbDataReaderType,
+    DataReaderTaskType = TypeNames.DbDataReaderTaskType,
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
     })]

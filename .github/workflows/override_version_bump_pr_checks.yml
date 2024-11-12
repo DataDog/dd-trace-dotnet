@@ -6,12 +6,15 @@ on:
 jobs:
   override_checks:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write # Update status checks
 
     steps:
-      - name: Fail if branch is not version-bump PR
-        if: ${{ !startsWith(github.ref, 'refs/heads/version-bump-') }}
+      - name: Fail if branch is not version-bump PR or bot PR
+        if: ${{ !startsWith(github.ref, 'refs/heads/version-bump-') && !startsWith(github.ref, 'refs/heads/bot/') }}
         run: |
-          echo "This workflow should only be triggered on the version-bump-x.x.x branch, but found  ${{ github.ref }}"
+          echo "This workflow should only be triggered on the version-bump-x.x.x or bot/* branches but found  ${{ github.ref }}"
           exit 1
 
       - run: |

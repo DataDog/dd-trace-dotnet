@@ -7,6 +7,8 @@ on:
 jobs:
   verify_span_metadata:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Support longpaths

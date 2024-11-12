@@ -40,6 +40,7 @@ namespace Datadog.Trace.Configuration
         AwsSdk,
         AwsSqs,
         AwsSns,
+        AwsEventBridge,
         AwsLambda,
         ILogger,
         Aerospike,
@@ -81,5 +82,7 @@ namespace Datadog.Trace.Configuration
         Selenium,
         DirectoryListingLeak,
         SessionTimeout,
+        DatadogTraceManual,
+        EmailHtmlInjection
     }
 }

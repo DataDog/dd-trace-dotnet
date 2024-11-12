@@ -220,9 +220,13 @@ public class StringBuilderInsertTests : InstrumentationTestsBase
     [Fact]
     public void StringBuilder_Insert_Int_With_Untainted()
     {
+        var check = new StringBuilder("TaintedStringBuilder");
+        var tainted = new StringBuilder("TaintedStringBuilder");
+        AddTainted(tainted);
+
         AssertTaintedFormatWithOriginalCallCheck("10:+-TaintedStringBuilder-+:",
-            _taintedStringBuilder.Insert(0, 10),
-            () => _taintedStringBuilder.Insert(0, 10));
+            tainted.Insert(0, 10),
+            () => check.Insert(0, 10));
     }
 
     [Fact]

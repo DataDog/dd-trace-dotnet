@@ -1,0 +1,13 @@
+{
+  "dsl": "{typeof(this.Nested)}",
+  "typeof": [
+    {
+      "getmember": [
+        {
+          "ref": "this"
+        },
+        "Nested"
+      ]
+    }
+  ]
+}

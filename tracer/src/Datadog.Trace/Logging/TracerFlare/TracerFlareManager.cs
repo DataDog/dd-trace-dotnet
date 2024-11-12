@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -34,6 +33,8 @@ internal class TracerFlareManager : ITracerFlareManager
     private readonly IRcmSubscriptionManager _subscriptionManager;
     private readonly ITelemetryController _telemetryController;
     private readonly TracerFlareApi _flareApi;
+
+    private string? _debugEnabledConfigPath;
     private ISubscription? _subscription;
     private Timer? _resetTimer = null;
 
@@ -86,6 +87,7 @@ internal class TracerFlareManager : ITracerFlareManager
         // Restore the log level to its old value
         if (!_wasDebugLogEnabled)
         {
+            _debugEnabledConfigPath = null;
             GlobalSettings.SetDebugEnabledInternal(false);
         }
     }
@@ -126,9 +128,10 @@ internal class TracerFlareManager : ITracerFlareManager
             var debugRequested = false;
             foreach (var remoteConfig in config)
             {
-                if (IsEnableDebugConfig(remoteConfig.Path))
+                if (IsEnableDebugConfig(remoteConfig))
                 {
                     debugRequested = true;
+                    _debugEnabledConfigPath = remoteConfig.Path.Path;
                     break;
                 }
             }
@@ -180,12 +183,16 @@ internal class TracerFlareManager : ITracerFlareManager
         try
         {
             var enableDebugDeleted = false;
-            foreach (var removedConfig in config)
+
+            if (_debugEnabledConfigPath != null)
             {
-                if (IsEnableDebugConfig(removedConfig))
+                foreach (var removedConfig in config)
                 {
-                    enableDebugDeleted = true;
-                    break;
+                    if (_debugEnabledConfigPath == removedConfig.Path)
+                    {
+                        enableDebugDeleted = true;
+                        break;
+                    }
                 }
             }
 
@@ -341,10 +348,32 @@ internal class TracerFlareManager : ITracerFlareManager
         }
     }
 
-    private static bool IsEnableDebugConfig(RemoteConfigurationPath remoteConfigPath)
+    private static bool IsEnableDebugConfig(RemoteConfiguration remoteConfig)
     {
-        return remoteConfigPath.Id.Equals("flare-log-level.debug", StringComparison.Ordinal)
-            || remoteConfigPath.Id.Equals("flare-log-level.trace", StringComparison.Ordinal);
+        try
+        {
+            var remoteConfigPath = remoteConfig.Path;
+
+            if (remoteConfigPath.Id.Equals("flare-log-level.debug", StringComparison.Ordinal)
+                || remoteConfigPath.Id.Equals("flare-log-level.trace", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            var json = JObject.Parse(EncodingHelpers.Utf8NoBom.GetString(remoteConfig.Contents));
+
+            var logLevel = json["config"]?["log_level"]?.Value<string>();
+
+            return logLevel is not null
+                && (logLevel.Equals("debug", StringComparison.OrdinalIgnoreCase)
+                    || logLevel.Equals("trace", StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Invalid configuration provided for tracer flare");
+        }
+
+        return false;
     }
 
     private static ApplyDetails[] AcknowledgeAll(List<RemoteConfiguration> config)

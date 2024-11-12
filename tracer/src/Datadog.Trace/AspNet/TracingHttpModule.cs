@@ -130,15 +130,17 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
+                var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? new System.Collections.Specialized.NameValueCollection();
                 NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                PropagationContext extractedContext = default;
+
                 if (tracer.InternalActiveScope == null)
                 {
                     try
                     {
                         // extract propagated http headers
-                        headers = httpRequest.Headers.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                        headers = requestHeaders.Wrap();
+                        extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -146,12 +148,12 @@ namespace Datadog.Trace.AspNet
                     }
                 }
 
-                string host = httpRequest.Headers.Get("Host");
-                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
+                string host = requestHeaders.Get("Host");
+                var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
-                scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
@@ -159,9 +161,9 @@ namespace Datadog.Trace.AspNet
                     SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {
-                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
+                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -171,7 +173,8 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                    var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -180,10 +183,10 @@ namespace Datadog.Trace.AspNet
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var security = Security.Instance;
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
-                    var securityCoordinator = new SecurityCoordinator(security, scope.Span);
+                    var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
 
                     // request args
                     var args = securityCoordinator.GetBasicRequestArgsForWaf();
@@ -192,7 +195,10 @@ namespace Datadog.Trace.AspNet
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        if (bodyArgs is not null)
+                        {
+                            args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        }
                     }
 
                     securityCoordinator.BlockAndReport(args);
@@ -242,9 +248,9 @@ namespace Datadog.Trace.AspNet
                         // the security needs to come before collecting the response code,
                         // since blocking will change the response code
                         var security = Security.Instance;
-                        if (security.Enabled)
+                        if (security.AppsecEnabled)
                         {
-                            var securityCoordinator = new SecurityCoordinator(security, rootSpan);
+                            var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();
                             args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
 
@@ -279,8 +285,13 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, app.Context.Request.Url.Scheme);
-                                    InsecureAuthAnalyzer.AnalyzeInsecureAuth(app.Context.Request.Headers, IntegrationId, app.Context.Response.StatusCode);
+                                    var requestUrl = RequestDataHelper.GetUrl(app.Context.Request);
+                                    ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
+                                    var headers = RequestDataHelper.GetHeaders(app.Context.Request);
+                                    if (headers is not null)
+                                    {
+                                        InsecureAuthAnalyzer.AnalyzeInsecureAuth(headers, IntegrationId, app.Context.Response.StatusCode);
+                                    }
                                 }
                                 catch (PlatformNotSupportedException ex)
                                 {
@@ -336,8 +347,16 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
-                            scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            var url = RequestDataHelper.GetUrl(app.Request);
+                            if (url is not null)
+                            {
+                                string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
+                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            }
+                            else
+                            {
+                                scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()}";
+                            }
                         }
                     }
                     finally

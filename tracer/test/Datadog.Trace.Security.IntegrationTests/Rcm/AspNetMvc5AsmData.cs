@@ -60,7 +60,6 @@ public class AspNetMvc5AsmDataClassicWithoutSecurity : AspNetMvc5AsmData
 public abstract class AspNetMvc5AsmData : RcmBaseFramework, IClassFixture<IisFixture>, IAsyncLifetime
 {
     private readonly IisFixture _iisFixture;
-    private readonly string _testName;
     private readonly bool _classicMode;
 
     public AspNetMvc5AsmData(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)

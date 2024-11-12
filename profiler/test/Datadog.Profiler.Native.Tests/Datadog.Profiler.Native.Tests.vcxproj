@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -40,6 +40,7 @@
   <ItemGroup Label="Required files from the project(s) being tested">
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
@@ -57,6 +58,8 @@
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="CpuProfilerTypeTest.cpp" />
+    <ClCompile Include="CrashReportingTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="ErrorCodeTest.cpp" />
@@ -81,6 +84,7 @@
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SampleValueTypeProviderTest.cpp" />
     <ClCompile Include="ServiceBaseTest.cpp" />
+    <ClCompile Include="SsiManagerTest.cpp" />
     <ClCompile Include="StackSnapshotResultBufferTest.cpp" />
     <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
@@ -95,6 +99,7 @@
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
     <ClInclude Include="RuntimeInfoHelper.h" />
     <ClInclude Include="ThreadsCpuManagerHelper.h" />
@@ -109,6 +114,9 @@
     <ProjectReference Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj">
       <Project>{0831386b-1a96-443f-b02b-c1d2b65fd845}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -208,6 +216,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

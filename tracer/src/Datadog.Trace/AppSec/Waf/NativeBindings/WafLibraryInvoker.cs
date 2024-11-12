@@ -44,9 +44,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
+        private readonly GetKnownAddressesDelegate _getKnownAddresses;
         private string _version = null;
+        private bool _isKnownAddressesSuported = false;
 
-        private WafLibraryInvoker(IntPtr libraryHandle)
+        private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {
             ExportErrorHappened = false;
             _initField = GetDelegateForNativeFunction<InitDelegate>(libraryHandle, "ddwaf_init");
@@ -75,6 +77,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
+            // Get know addresses
+            if (IsKnowAddressesSuported(libVersion))
+            {
+                _getKnownAddresses = GetDelegateForNativeFunction<GetKnownAddressesDelegate>(libraryHandle, "ddwaf_known_addresses");
+            }
+
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
@@ -122,6 +130,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
 
         private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
+
+        private delegate IntPtr GetKnownAddressesDelegate(IntPtr wafHandle, ref uint size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SetupLogCallbackDelegate(
@@ -174,7 +184,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return LibraryInitializationResult.FromPlatformNotSupported();
             }
 
-            var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle);
+            var wafLibraryInvoker = new WafLibraryInvoker(libraryHandle, libVersion);
             if (wafLibraryInvoker.ExportErrorHappened)
             {
                 Log.Error("Waf library couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
@@ -213,10 +223,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
-            if ((tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10) ||
-                (tracerVersion is { Minor: >= 38, Major: >= 2 } && wafMajor == 1 && wafMinor < 13) ||
-                (tracerVersion is { Minor: >= 44, Major: >= 2 } && wafMajor == 1 && wafMinor < 15) ||
-                (tracerVersion is { Minor: >= 51, Major: >= 2 } && wafMajor == 1 && wafMinor < 17))
+            if ((tracerVersion is { Minor: >= 34, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor <= 10) ||
+                (tracerVersion is { Minor: >= 38, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 13) ||
+                (tracerVersion is { Minor: >= 44, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 15) ||
+                (tracerVersion is { Minor: >= 51, Major: 2 } or { Major: > 2 } && wafMajor == 1 && wafMinor < 17))
             {
                 Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
                 return false;
@@ -229,6 +239,65 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             _setupLogging(_setupLogCallbackField, logLevel);
+        }
+
+        internal string[] GetKnownAddresses(IntPtr wafHandle)
+        {
+            try
+            {
+                if (!IsKnowAddressesSuported())
+                {
+                    return Array.Empty<string>();
+                }
+
+                uint size = 0;
+                var result = _getKnownAddresses(wafHandle, ref size);
+
+                if (size == 0)
+                {
+                    return Array.Empty<string>();
+                }
+
+                string[] knownAddresses = new string[size];
+
+                for (uint i = 0; i < size; i++)
+                {
+                    // Calculate the pointer to each string
+                    var stringPtr = Marshal.ReadIntPtr(result, (int)i * IntPtr.Size);
+                    knownAddresses[i] = Marshal.PtrToStringAnsi(stringPtr);
+                }
+
+                return knownAddresses;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while getting known addresses");
+                return Array.Empty<string>();
+            }
+        }
+
+        internal bool IsKnowAddressesSuported(string libVersion = null)
+        {
+            try
+            {
+                if (_version is null && libVersion is not null)
+                {
+                    _version = libVersion;
+                }
+
+                if (_version is null)
+                {
+                    GetVersion();
+                    _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
+                }
+
+                return _isKnownAddressesSuported;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while checking if known addresses are supported");
+                return false;
+            }
         }
 
         internal string GetVersion()

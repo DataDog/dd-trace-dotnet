@@ -23,8 +23,8 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         public void CheckAssemblyExclussion(string assemblyName, bool outcome)
         {
             // we check twice to make sure that the cache does not change the outcome
-            StackWalker.AssemblyExcluded(assemblyName).Should().Be(outcome);
-            StackWalker.AssemblyExcluded(assemblyName).Should().Be(outcome);
+            StackWalker.MustSkipAssembly(assemblyName).Should().Be(outcome);
+            StackWalker.MustSkipAssembly(assemblyName).Should().Be(outcome);
         }
     }
 }

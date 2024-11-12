@@ -123,8 +123,8 @@ public class CoverageRewriteTests
     }
 
 #if NETCOREAPP2_1
-    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test if we find a NullReferenceException
-    [SkippableTheory(typeof(NullReferenceException))]
+    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test in some cases
+    [SkippableTheory(typeof(NullReferenceException), typeof(IndexOutOfRangeException))]
 #else
     [SkippableTheory]
 #endif
@@ -161,8 +161,8 @@ public class CoverageRewriteTests
     }
 
 #if NETCOREAPP2_1
-    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test if we find a NullReferenceException
-    [SkippableTheory(typeof(NullReferenceException))]
+    // Due to a BCL Bug in .NET Core 2.1 [DirectoryInfo.GetDirectories()] triggered by this test, we need to skip the test in some cases
+    [SkippableTheory(typeof(NullReferenceException), typeof(IndexOutOfRangeException))]
 #else
     [SkippableTheory]
 #endif

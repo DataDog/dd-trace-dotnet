@@ -19,7 +19,7 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value);
 
-    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(double value);
+    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
 
     public void RecordDistributionCIVisibilityGitRequestsObjectsPackMs(double value);
 
@@ -31,13 +31,13 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordDistributionCIVisibilityITRSkippableTestsRequestMs(double value);
 
-    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(double value);
+    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
 
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value);
 
     public void RecordDistributionCIVisibilityEarlyFlakeDetectionRequestMs(double value);
 
-    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(double value);
+    public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value);
 
     public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value);
 }

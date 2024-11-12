@@ -11,6 +11,7 @@
 #include "DeploymentMode.h"
 #include "EnablementStatus.h"
 #include "TagsHelper.h"
+#include "CpuProfilerType.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
@@ -68,6 +69,12 @@ public:
     virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
     virtual bool IsEtwEnabled() const = 0;
     virtual bool IsEtwLoggingEnabled() const = 0;
+    virtual std::string const& GetEtwReplayEndpoint() const = 0;
     virtual EnablementStatus GetEnablementStatus() const = 0;
     virtual DeploymentMode GetDeploymentMode() const = 0;
+    virtual CpuProfilerType GetCpuProfilerType() const = 0;
+    virtual std::chrono::milliseconds GetCpuProfilingInterval() const = 0;
+    virtual std::chrono::milliseconds GetSsiLongLivedThreshold() const = 0;
+    virtual bool IsTelemetryToDiskEnabled() const = 0;
+    virtual bool IsSsiTelemetryEnabled() const = 0;
 };

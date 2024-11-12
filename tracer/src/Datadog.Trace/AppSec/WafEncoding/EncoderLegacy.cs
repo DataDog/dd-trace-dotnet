@@ -225,8 +225,7 @@ internal class EncoderLegacy : IEncoder
 
     public static string FormatArgs(object o)
     {
-        // zero capacity because we don't know the size in advance
-        var sb = StringBuilderCache.Acquire(0);
+        var sb = StringBuilderCache.Acquire();
         FormatArgsInternal(o, sb);
         return StringBuilderCache.GetStringAndRelease(sb);
     }
@@ -334,7 +333,7 @@ internal class EncoderLegacy : IEncoder
             _wafLibraryInvoker = wafLibraryInvoker;
         }
 
-        public ref DdwafObjectStruct ResultDdwafObject => ref _resultDdwafObject;
+        public DdwafObjectStruct ResultDdwafObject => _resultDdwafObject;
 
         public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
     }

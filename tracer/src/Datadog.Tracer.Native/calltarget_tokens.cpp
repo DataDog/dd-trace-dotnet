@@ -374,7 +374,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         // should be the callTargetState)
         unsigned temp = 0;
         const auto len = CorSigCompressToken(callTargetStateTypeRef, &temp);
-        if (originalSignatureSize - len > 0)
+        if (originalSignatureSize > len)
         {
             if (originalSignature[originalSignatureSize - len - 1] == ELEMENT_TYPE_VALUETYPE)
             {
@@ -556,7 +556,7 @@ ModuleMetadata* CallTargetTokens::GetMetadata()
 
 HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 {
-    std::lock_guard<std::mutex> guard(metadata_mutex);
+    std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
 
     auto hr = EnsureCorLibTokens();
     if (FAILED(hr))

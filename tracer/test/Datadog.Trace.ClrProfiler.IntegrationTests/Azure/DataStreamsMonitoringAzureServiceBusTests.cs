@@ -31,9 +31,10 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         => from packageVersionArray in new string[] { string.Empty }
            select new string[] { packageVersionArray };
 
-    [SkippableTheory(Skip = "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI")]
+    [SkippableTheory]
     [MemberData(nameof(GetPackageVersions))]
     [Trait("Category", "EndToEnd")]
+    [Trait("SkipInCI", "True")] // "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI"
     public async Task HandleProduceAndConsume(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
@@ -59,9 +60,10 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         }
     }
 
-    [SkippableTheory(Skip = "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI")]
+    [SkippableTheory]
     [MemberData(nameof(GetPackageVersions))]
     [Trait("Category", "EndToEnd")]
+    [Trait("SkipInCI", "True")] // This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI
     public async Task ValidateSpanTags(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");

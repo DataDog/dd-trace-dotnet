@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
@@ -100,7 +99,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var assemblyScope = new Model.Scope
             {
                 Name = assemblyName,
-                ScopeType = SymbolType.Assembly,
+                ScopeType = ScopeType.Assembly,
                 SourceFile = string.IsNullOrEmpty(_assemblyPath) ? null : _assemblyPath,
             };
 
@@ -213,7 +212,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 classScope = new Model.Scope
                 {
                     Name = typeDefinitionHandle.FullName(MetadataReader),
-                    ScopeType = SymbolType.Class,
+                    ScopeType = ScopeType.Class,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
                     StartLine = linesAndSource.StartLine,
@@ -567,7 +566,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var methodScope = new Model.Scope
             {
-                ScopeType = SymbolType.Method,
+                ScopeType = ScopeType.Method,
                 Name = methodName,
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
@@ -691,7 +690,7 @@ namespace Datadog.Trace.Debugger.Symbols
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
-                if (index == 0)
+                if (index == 0 && !method.IsStaticMethod())
                 {
                     argsSymbol[index] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
                     index++;

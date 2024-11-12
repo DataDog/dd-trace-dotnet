@@ -38,7 +38,7 @@ std::unique_ptr<IExporter> CreateTransparentExporter(std::list<std::shared_ptr<S
             pendingSamples.push_back(sample);
         }));
 
-    EXPECT_CALL(mockExporter, Export())
+    EXPECT_CALL(mockExporter, Export(_))
         .WillRepeatedly(Invoke([&pendingSamples, &exportedSamples] {
             exportedSamples.splice(exportedSamples.end(), std::move(pendingSamples));
             return true;
@@ -274,7 +274,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(1));
-    EXPECT_CALL(mockExporter, Export()).Times(AtLeast(1)).WillRepeatedly(Throw(std::exception()));
+    EXPECT_CALL(mockExporter, Export(_)).Times(AtLeast(1)).WillRepeatedly(Throw(std::exception()));
 
     const std::string runtimeId = "MyRid";
     FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
@@ -303,7 +303,7 @@ TEST(SamplesCollectorTest, MustExportAfterStop)
 
     // the provider and exporter are supposed to be called once AFTER Stop()
     EXPECT_CALL(mockExporter, Add(_)).Times(2);
-    EXPECT_CALL(mockExporter, Export()).Times(1).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockExporter, Export(_)).Times(1).WillRepeatedly(Return(true));
 
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
@@ -335,7 +335,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
 
     auto [exporter, mockExporter] = CreateExporter();
     EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(3)).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
-    EXPECT_CALL(mockExporter, Export()).Times(1); // Called once when stopping
+    EXPECT_CALL(mockExporter, Export(_)).Times(1); // Called once when stopping
 
     auto metricsSender = MockMetricsSender();
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();

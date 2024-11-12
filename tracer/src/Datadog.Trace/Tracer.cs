@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -148,6 +149,10 @@ namespace Datadog.Trace
                     instance = new Tracer(tracerManager: null); // don't replace settings, use existing
                     _instance = instance;
                     _globalInstanceInitialized = true;
+
+                    // ensure Baggage's AsyncLocal<T> has a value as soon as we can,
+                    // since it can only flow down the async call chain, not up
+                    _ = Baggage.Current;
                 }
 
                 instance.TracerManager.Start();
@@ -351,6 +356,7 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
             if (ignoreActiveScope && parent == null)
             {
                 // don't set the span's parent,
@@ -419,13 +425,25 @@ namespace Datadog.Trace
 
                 if (traceContext == null)
                 {
-                    // If parent is SpanContext but its TraceContext is null, then it was extracted from
-                    // propagation headers. Create a new TraceContext (this will start a new trace) and initialize
+                    var propagatedTags = parentSpanContext.PropagatedTags;
+                    var samplingPriority = parentSpanContext.SamplingPriority;
+
+                    // When in appsec standalone mode, only distributed traces with the `_dd.p.appsec` tag
+                    // are propagated downstream, however we need 1 trace per minute sent to the backend, so
+                    // we unset sampling priority so the rate limiter decides.
+                    if (Settings?.AppsecStandaloneEnabledInternal == true)
+                    {
+                        // If the trace has appsec propagation tag, the default priority is user keep
+                        samplingPriority = propagatedTags?.GetTag(Tags.Propagated.AppSec) == "1" ? SamplingPriorityValues.UserKeep : null;
+                    }
+
+                    // If parent is SpanContext but its TraceContext is null, then it was extracted from propagation headers.
+                    // Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
-                    traceContext = new TraceContext(this, parentSpanContext.PropagatedTags);
+                    traceContext = new TraceContext(this, propagatedTags);
                     TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.Continued);
 
-                    var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
+                    samplingPriority ??= DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
@@ -535,6 +553,8 @@ namespace Datadog.Trace
             // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
+
+            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
 
             return span;
         }

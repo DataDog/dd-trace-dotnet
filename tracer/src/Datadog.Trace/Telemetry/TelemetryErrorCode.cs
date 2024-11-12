@@ -61,4 +61,7 @@ internal enum TelemetryErrorCode
 
     [Description("Potentially invalid UDS path")]
     PotentiallyInvalidUdsPath = 15,
+
+    [Description("Attempting to use UDS on unsupported runtime")]
+    UdsOnUnsupportedPlatform = 16,
 }

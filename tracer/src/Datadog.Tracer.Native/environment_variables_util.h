@@ -54,15 +54,13 @@ bool EnableInlining();
 bool IsNGENEnabled();
 bool IsDebugEnabled();
 bool IsDumpILRewriteEnabled();
-bool IsTracingDisabled();
 bool IsAzureAppServices();
-bool NeedsAgentInAAS();
-bool NeedsDogstatsdInAAS();
 bool IsTraceAnnotationEnabled();
 bool IsAzureFunctionsEnabled();
 bool IsVersionCompatibilityEnabled();
 bool IsIastEnabled();
 bool IsRaspEnabled();
+bool IsEditAndContinueEnabled();
 
 } // namespace trace
 

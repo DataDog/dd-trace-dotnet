@@ -140,11 +140,11 @@ namespace Datadog.Trace
                 gitMetadataTagsProvider);
 
             telemetry.RecordTracerSettings(settings, defaultServiceName);
-            TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
+            TelemetryFactory.Metrics.SetWafAndRulesVersion(Security.Instance.DdlibWafVersion, Security.Instance.WafRuleFileVersion);
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
                                        : null;
-            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.Enabled, initError);
+            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.AppsecEnabled, initError);
 
             var profiler = Profiler.Instance;
             telemetry.RecordProfilerSettings(profiler);
@@ -263,39 +263,47 @@ namespace Datadog.Trace
             // Note: the order that rules are registered is important, as they are evaluated in order.
             // The first rule that matches will be used to determine the sampling rate.
 
-            // Remote and local "custom" sampling rules:
-            // Unlike most settings, local custom sampling rules configuration (DD_TRACE_SAMPLING_RULES) is not
-            // simply overriden with the remote configuration. Instead, remote rules are merged with local rules,
-            // with remote rules taking precedence.
-
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
-
-            // remote sampling rules
-            var remoteSamplingRulesJson = settings.RemoteSamplingRules;
-
-            if (!string.IsNullOrWhiteSpace(remoteSamplingRulesJson))
+            if (settings.AppsecStandaloneEnabledInternal)
             {
-                var remoteSamplingRules =
-                    RemoteCustomSamplingRule.BuildFromConfigurationString(
-                        remoteSamplingRulesJson,
-                        RegexBuilder.DefaultTimeout);
-
-                sampler.RegisterRules(remoteSamplingRules);
+                var samplerStandalone = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: 1, intervalMilliseconds: 60_000));
+                samplerStandalone.RegisterRule(new GlobalSamplingRateRule(1.0f));
+                return samplerStandalone;
             }
 
-            // local sampling rules
-            var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
-            var localSamplingRulesJson = settings.CustomSamplingRulesInternal;
+            var sampler = new TraceSampler(new TracerRateLimiter(maxTracesPerInterval: settings.MaxTracesSubmittedPerSecondInternal, intervalMilliseconds: null));
 
-            if (patternFormatIsValid && !string.IsNullOrWhiteSpace(localSamplingRulesJson))
+            // sampling rules (remote value overrides local value)
+            var samplingRulesJson = settings.CustomSamplingRulesInternal;
+
+            // check if the rules are remote or local because they have different JSON schemas
+            if (settings.CustomSamplingRulesIsRemote)
             {
-                var localSamplingRules =
-                    LocalCustomSamplingRule.BuildFromConfigurationString(
-                        localSamplingRulesJson,
-                        samplingRulesFormat,
-                        RegexBuilder.DefaultTimeout);
+                // remote sampling rules
+                if (!string.IsNullOrWhiteSpace(samplingRulesJson))
+                {
+                    var remoteSamplingRules =
+                        RemoteCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            RegexBuilder.DefaultTimeout);
 
-                sampler.RegisterRules(localSamplingRules);
+                    sampler.RegisterRules(remoteSamplingRules);
+                }
+            }
+            else
+            {
+                // local sampling rules
+                var patternFormatIsValid = SamplingRulesFormat.IsValid(settings.CustomSamplingRulesFormat, out var samplingRulesFormat);
+
+                if (patternFormatIsValid && !string.IsNullOrWhiteSpace(samplingRulesJson))
+                {
+                    var localSamplingRules =
+                        LocalCustomSamplingRule.BuildFromConfigurationString(
+                            samplingRulesJson,
+                            samplingRulesFormat,
+                            RegexBuilder.DefaultTimeout);
+
+                    sampler.RegisterRules(localSamplingRules);
+                }
             }
 
             // global sampling rate (remote value overrides local value)
@@ -338,7 +346,7 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval);
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)

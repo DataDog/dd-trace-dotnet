@@ -18,6 +18,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
     {
         private const string ScenarioGenerics = "--scenario 9";
         private const string ScenarioMeasureAllocation = "--scenario 16";
+        private const string ScenarioWithoutGC = "--scenario 25 --threads 2 --param 1000";
 
         private readonly ITestOutputHelper _output;
 
@@ -45,7 +46,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             EnvironmentHelper.DisableDefaultProfilers(runner);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -69,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -85,7 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -98,10 +99,10 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             Dictionary<string, AllocStats> profiledAllocations = GetProfiledAllocations(allocationSamples);
             Dictionary<string, AllocStats> realAllocations = GetRealAllocations(runner.ProcessOutput);
 
-            _output.WriteLine("Comparing allocations");
-            _output.WriteLine("-------------------------------------------------------");
-            _output.WriteLine("      Count          Size Type");
-            _output.WriteLine("-------------------------------------------------------");
+            runner.XUnitLogger.WriteLine("Comparing allocations");
+            runner.XUnitLogger.WriteLine("-------------------------------------------------------");
+            runner.XUnitLogger.WriteLine("      Count          Size Type");
+            runner.XUnitLogger.WriteLine("-------------------------------------------------------");
             foreach (var allocation in profiledAllocations)
             {
                 var allocStats = allocation.Value;
@@ -121,8 +122,41 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine($"{allocStats.Count,11} {allocStats.Size,13} {type}");
                 builder.AppendLine($"{stats.Count,11} {stats.Size,13}");
-                _output.WriteLine(builder.ToString());
+                runner.XUnitLogger.WriteLine(builder.ToString());
             }
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net462" })]
+        public void ShouldGetAllocationSamplesViaEtw(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.EtwEnabled, "1");
+            Guid guid = Guid.NewGuid();
+            runner.Environment.SetVariable(EnvironmentVariables.EtwReplayEndpoint, "\\\\.\\pipe\\DD_ETW_TEST_AGENT-" + guid);
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            if (IntPtr.Size == 4)
+            {
+                // 32-bit
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-32.bevents");
+            }
+            else
+            {
+                // 64-bit
+                agent.StartEtwProxy(runner.XUnitLogger, "DD_ETW_TEST_AGENT-" + guid, "Allocations\\allocations-64.bevents");
+            }
+
+            int eventsCount = 0;
+            agent.EventsSent += (sender, e) => eventsCount = e.Value;
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var allocationSamples = ExtractAllocationSamples(runner.Environment.PprofDir).ToArray();
+            allocationSamples.Should().NotBeEmpty();
         }
 
         private static Dictionary<string, AllocStats> GetProfiledAllocations(IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> allocations)
@@ -313,7 +347,12 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                             continue;
                         }
 
-                        var size = sample.Value[1];
+                        long size = 0;
+                        // no size available for .NET Framework
+                        if (sample.Value.Count > 1)
+                        {
+                           size = sample.Value[1];
+                        }
 
                         var labels = sample.Labels(profile).ToArray();
 
@@ -332,7 +371,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
         private void CheckAllocationProfiles(TestApplicationRunner runner)
         {
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

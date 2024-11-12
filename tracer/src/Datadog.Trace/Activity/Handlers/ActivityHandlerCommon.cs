@@ -58,11 +58,6 @@ namespace Datadog.Trace.Activity.Handlers
                 var activityTraceId = w3cActivity.TraceId;
                 var activitySpanId = w3cActivity.SpanId;
 
-                if (activityTraceId != null! && activitySpanId != null!)
-                {
-                    activityKey = activityTraceId + activitySpanId;
-                }
-
                 // If the user has specified a parent context, get the parent Datadog SpanContext
                 if (w3cActivity is { ParentSpanId: { } parentSpanId, ParentId: { } parentId })
                 {
@@ -104,11 +99,13 @@ namespace Datadog.Trace.Activity.Handlers
                 {
                     // We ensure the activity follows the same TraceId as the span
                     // And marks the ParentId the current spanId
-
-                    if (activity.Parent is null || activity.Parent.StartTimeUtc < activeSpan.StartTime.UtcDateTime)
+                    if ((activity.Parent is null || activity.Parent.StartTimeUtc <= activeSpan.StartTime.UtcDateTime)
+                        && activitySpanId is not null
+                        && activityTraceId is not null)
                     {
                         // TraceId (always 32 chars long even when using 64-bit ids)
                         w3cActivity.TraceId = activeSpan.Context.RawTraceId;
+                        activityTraceId = w3cActivity.TraceId;
 
                         // SpanId (always 16 chars long)
                         w3cActivity.ParentSpanId = activeSpan.Context.RawSpanId;
@@ -135,6 +132,11 @@ namespace Datadog.Trace.Activity.Handlers
 
                     rawTraceId = activityTraceId;
                     rawSpanId = activitySpanId;
+                }
+
+                if (activityTraceId != null! && activitySpanId != null!)
+                {
+                    activityKey = activityTraceId + activitySpanId;
                 }
             }
 
@@ -163,6 +165,17 @@ namespace Datadog.Trace.Activity.Handlers
                 }
 
                 activityKey ??= activity.Id;
+
+                if (activityKey is null)
+                {
+                    // identified by Error Tracking
+                    // unsure how exactly this occurs after reading through the Activity source code
+                    // Activity.Id, Activity.SpanId and/or Activity.TraceId were null
+                    // if this is the case, just ignore the Activity
+                    activityMapping = default;
+                    return;
+                }
+
                 activityMapping = ActivityMappingById.GetOrAdd(activityKey, _ => new(activity.Instance!, CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
             }
             catch (Exception ex)
@@ -208,6 +221,14 @@ namespace Datadog.Trace.Activity.Handlers
                     else
                     {
                         key = activity.Id;
+                    }
+
+                    if (key is null)
+                    {
+                        // Adding this as a protective measure as Error Tracking identified
+                        // instances where StartActivity had an Activity with null Id, SpanId, TraceId
+                        // In that case we just skip the Activity, so doing the same thing here.
+                        return;
                     }
 
                     if (ActivityMappingById.TryRemove(key, out ActivityMapping someValue) && someValue.Scope?.Span is not null)

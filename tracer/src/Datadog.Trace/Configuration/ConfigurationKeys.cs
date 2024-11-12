@@ -68,6 +68,12 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling Standalone ASM, thus disabling APM tracing and its billing.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string AppsecStandaloneEnabled = "DD_EXPERIMENTAL_APPSEC_STANDALONE_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
@@ -294,13 +300,27 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for the application's server http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
-        public const string HttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_SERVER_ERROR_STATUSES`")]
+        public const string DeprecatedHttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's server http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpServerErrorStatusCodes"/>
+        public const string HttpServerErrorStatusCodes = "DD_TRACE_HTTP_SERVER_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key for the application's client http statuses to set spans as errors by.
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
-        public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+        [Obsolete("This parameter is obsolete and should be replaced by `DD_TRACE_HTTP_CLIENT_ERROR_STATUSES`")]
+        public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+
+        /// <summary>
+        /// Configuration key for the application's client http statuses to set spans as errors by.
+        /// </summary>
+        /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
+        public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
         /// Configuration key indicating the optional name of the custom header to take into account to report the ip address from.
@@ -363,6 +383,7 @@ namespace Datadog.Trace.Configuration
         /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
         /// they will override any header injections or extraction styled defined here, respectively.
         /// </summary>
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
@@ -371,6 +392,22 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.PropagationExtractFirstOnly"/>
         public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
+
+        /// <summary>
+        /// Configuration key to set the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumItems"/>
+        public const string BaggageMaximumItems = "DD_TRACE_BAGGAGE_MAX_ITEMS";
+
+        /// <summary>
+        /// Configuration key to set the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumBytes"/>
+        public const string BaggageMaximumBytes = "DD_TRACE_BAGGAGE_MAX_BYTES";
 
         /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
@@ -442,6 +479,14 @@ namespace Datadog.Trace.Configuration
         /// Default value is false
         /// </summary>
         public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
+
+        /// <summary>
+        /// Configuration key for the comma-separated list of user disabled
+        /// ADO.NET CommandType names that should not have Span created for them.
+        /// <para>"InterceptableDbCommand" and "ProfiledDbCommand" are always disabled by default.</para>
+        /// </summary>
+        /// <seealso cref="TracerSettings.DisabledAdoNetCommandTypes"/>
+        public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.
@@ -542,6 +587,26 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for set the rum flushing wait in milliseconds
             /// </summary>
             public const string RumFlushWaitMillis = "DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS";
+
+            /// <summary>
+            /// Configuration key for set the test session name
+            /// </summary>
+            public const string TestSessionName = "DD_TEST_SESSION_NAME";
+
+            /// <summary>
+            /// Configuration key for a kill-switch that allows to explicitly disable retries even if the remote setting is enabled.
+            /// </summary>
+            public const string FlakyRetryEnabled = "DD_CIVISIBILITY_FLAKY_RETRY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for a single test case.
+            /// </summary>
+            public const string FlakyRetryCount = "DD_CIVISIBILITY_FLAKY_RETRY_COUNT";
+
+            /// <summary>
+            /// Configuration key for the maximum number of retry attempts for the entire session.
+            /// </summary>
+            public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
         }
 
         /// <summary>
@@ -620,7 +685,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key to enable or disable improved template-based resource names
             /// when using WCF Web HTTP. Requires <see cref="DelayWcfInstrumentationEnabled"/> be set
-            /// to true. Disabled by default
+            /// to true. Enabled by default
             /// </summary>
             /// <seealso cref="TracerSettings.WcfWebHttpResourceNamesEnabled"/>
             public const string WcfWebHttpResourceNamesEnabled = "DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED";
@@ -634,9 +699,9 @@ namespace Datadog.Trace.Configuration
             public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
 
             /// <summary>
-            /// Enables a fix around header tags normalization.
-            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
-            /// This flag defaults to true and is here only in case customers need backwards compatibility.
+            /// Enables a fix for header tags normalization.
+            /// We used to normalize tag names even if they were specified in user configuration, but we should not.
+            /// Default value is <c>true</c>.
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
@@ -644,19 +709,6 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
-
-            /// <summary>
-            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
-            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
-            /// This will override the default mapping that is used to create an operation name based on
-            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
-            /// <para>
-            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
-            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
-            /// to have an easier migration path.
-            /// </para>
-            /// </summary>
-            public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
             /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.

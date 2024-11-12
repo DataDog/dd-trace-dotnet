@@ -1,11 +1,23 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
+# macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
+# but we're using 3.13.4 on Linux, which doesn't have FetchContent_MakeAvailable
+
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.54.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 3.6.0)
+
+if (UNIVERSAL)
+   find_package(GlibcCompat REQUIRED)
+   message(STATUS "Glibc Compat objects")
+endif()
 
 # ******************************************************
 # Environment detection
@@ -53,6 +65,7 @@ if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(STATUS "Setting compilation for 64bits processor")
     SET(BIT64 true)
 endif()
+
 
 # ******************************************************
 # Detect prerequisites
@@ -102,14 +115,22 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c++20 -fPIC -fms-extensions -fvisibility=hidden -g)
+add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
-if (ISMACOS)
-    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
-elseif(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+
+if (UNIVERSAL)
+    add_compile_options(-stdlib=libc++ -DUNIVERSAL)
+elseif (ISMACOS)
+    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden -Wno-deprecated-this-capture)
+else()
+    add_compile_options(-stdlib=libstdc++)
 endif()
+
+if(ISLINUX)
+    add_compile_options(-DLINUX -Wno-pragmas)
+endif()
+
 if (BIT64)
     add_compile_options(-DBIT64 -DHOST_64BIT)
 else()
@@ -164,27 +185,39 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
 
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native.static" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
+
+find_library(LIBDL dl)
 
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
-        ${CMAKE_DL_LIBS}
+        $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
     )
 elseif(ISLINUX)
+    set(dd_profiling_linker_script "${CMAKE_CURRENT_SOURCE_DIR}/native_loader.version")
+    find_library(LIBPTHREAD pthread)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         -static-libgcc
         -static-libstdc++
-        ${CMAKE_DL_LIBS}
+        $<$<BOOL:${LIBPTHREAD}>:pthread>
+        $<$<BOOL:${LIBDL}>:dl>
         coreclr
         spdlog-headers
         -Wl,--build-id
+        -Wl,-version-script=${dd_profiling_linker_script}
+        -Wl,--no-undefined
     )
 endif()
 
+set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
+
 add_dependencies("Datadog.Trace.ClrProfiler.Native.static" coreclr spdlog-headers)
+
+if (UNIVERSAL)
+   add_dependencies("Datadog.Trace.ClrProfiler.Native.static" glibc-compat)
+endif()
 
 # ******************************************************
 # Define shared target
@@ -198,3 +231,10 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
+
+if (UNIVERSAL)
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
+        glibc-compat
+        -flto
+        )
+endif()

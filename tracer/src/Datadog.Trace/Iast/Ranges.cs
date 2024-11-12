@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 namespace Datadog.Trace.Iast;
 
@@ -199,33 +200,57 @@ internal static class Ranges
 
         foreach (var range in ranges)
         {
-            var newRange = new Range(range.Start, range.Length, range.Source, secureMarks);
+            var newRange = new Range(range.Start, range.Length, range.Source, range.SecureMarks | secureMarks);
             newRanges.Add(newRange);
         }
 
         return newRanges.ToArray();
     }
 
-    internal static bool ContainsUnsafeRange(IEnumerable<Range>? ranges)
+    internal static Range[] GetUnsafeRanges(Range[] ranges, SecureMarks safeMarks, SourceType[]? safeSources)
     {
-        if (ranges is null)
+        if (safeMarks == SecureMarks.None && safeSources is null)
         {
-            return false;
+            return ranges;
         }
 
-        foreach (var range in ranges)
+        int insecureCount = 0;
+        for (int x = 0; x < ranges.Length; x++)
         {
-            if (range.SecureMarks == SecureMarks.None)
+            var range = ranges[x];
+            if (!range.IsSecure(safeMarks, safeSources))
             {
-                return true;
+                insecureCount++;
             }
         }
 
-        return false;
+        if (insecureCount == ranges.Length)
+        {
+            // This is made in order to avoid unnecessary allocations (most common situation)
+            return ranges;
+        }
+        else if (insecureCount == 0)
+        {
+            return [];
+        }
+
+        Range[] insecureRanges = new Range[insecureCount];
+        int i = 0;
+        for (int x = 0; x < ranges.Length; x++)
+        {
+            var range = ranges[x];
+            if (!range.IsSecure(safeMarks, safeSources))
+            {
+                insecureRanges[i] = range;
+                i++;
+            }
+        }
+
+        return insecureRanges;
     }
 
     /// <summary>
-    /// Returns an array of ranges without ranges that are marked with the given marks.
+    /// Returns an array of ranges without ranges that are not marked with the given marks.
     /// </summary>
     internal static Range[]? UnsafeRanges(Range[]? ranges, SecureMarks secureMarks)
     {

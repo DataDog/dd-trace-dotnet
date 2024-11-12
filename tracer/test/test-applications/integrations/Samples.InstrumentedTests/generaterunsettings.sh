@@ -13,13 +13,16 @@ echo FILE $FILE
 echo SOLUTIONFOLDER $SOLUTIONFOLDER
 
 if [[ "$ARCH" == *"aarch64"* ]]; then
-  BIN_FOLDER="linux-arm64"
+    case $DISTRIBUTION in
+    *"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-arm64";;
+    *) echo Linux; BIN_FOLDER="linux-arm64";;
+    esac
   else
 	  case $DISTRIBUTION in 
 		*"Ubuntu"*) echo Ubuntu; BIN_FOLDER="linux-x64";;
 		*"Alpine"*) echo Alpine; BIN_FOLDER="linux-musl-x64";;
 		*) echo Linux; BIN_FOLDER="linux-x64";;
-	  esac 
+	  esac
 fi
 
 # Check for macos

@@ -14,6 +14,9 @@ on:
 jobs:
   bump_version:
     runs-on: windows-latest
+    permissions:
+      contents: write # Push branches
+      issues: write # change milestones 
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       NewVersion: "${{ github.event.inputs.version }}"
@@ -36,12 +39,15 @@ jobs:
           dotnet-version: '8.0.100'
 
       - name: "Bump Version"
-        id: versions
-        run: .\tracer\build.ps1 UpdateVersion OutputCurrentVersionToGitHub
+        run: .\tracer\build.ps1 UpdateVersion
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+
+      - name: "Output Version"
+        id: versions
+        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
 
       - name: "Push hotfix branch"
         run: |

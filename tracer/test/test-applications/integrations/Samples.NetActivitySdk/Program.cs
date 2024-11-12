@@ -49,6 +49,8 @@ public static class Program
         RunNonW3CId(); // 2 spans (total 46)
         RunActivityReservedAttributes(); // 1 span (47 total)
 
+        RunManuallyUpdatedStartTime(); // 3 spans (50 total)
+
         await Task.Delay(1000);
     }
 
@@ -70,6 +72,7 @@ public static class Program
         Console.WriteLine($"Activity.StatusDescription: {activity.StatusDescription}");
         Console.WriteLine($"Activity.TraceStateString: {activity.TraceStateString}");
         Console.WriteLine($"Activity.Source.Name: {activity.Source.Name}");
+        Console.WriteLine($"Activity.STartTime: {activity.StartTimeUtc}");
         Console.WriteLine("Tags:");
         foreach(var tag in activity.TagObjects)
         {
@@ -167,6 +170,40 @@ public static class Program
             {
                 child.SetIdFormat(ActivityIdFormat.Hierarchical);
                 child.Start();
+            }
+        }
+    }
+
+    private static void RunManuallyUpdatedStartTime()
+    {
+        using (var parent = new Activity("TimeParent"))
+        {
+            parent.SetIdFormat(ActivityIdFormat.Hierarchical);
+            parent.SetStartTime(new DateTime(1980, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            parent.Start();
+            using (var manuallySetStartTime = new Activity("TimeTrigger"))
+            {
+                manuallySetStartTime.SetIdFormat(ActivityIdFormat.Hierarchical);
+                manuallySetStartTime.Start();
+                // ISSUE: Activity's can have their start time modified after they are started
+                //        We use the Activity.Parent.StartTime as a basis to check whether to 
+                //        nest an Activity as a child node. 
+                //        This code then clears/updates various Span/Trace ID values on the Activity
+                //        and resets the Activity.Id value.
+                //        The issue here is that for Hierarchical IDs we were setting a Span/Trace ID
+                //        when we shouldn't have been and then clearing out the Activity.Id.
+                //        The Activity.Id would then be null and would cause issues for us and the customer's
+                //        application if they did anything with the ID.
+                manuallySetStartTime.SetStartTime(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+                using (var child = new Activity("TimeChild"))
+                {
+                    child.SetIdFormat(ActivityIdFormat.Hierarchical);
+                    child.Start();
+
+                    // Without the fix, this child.Id.Substring(1) call would throw an NRE
+                    // as we cleared out the ID wrongly.
+                    Console.WriteLine(child.Id.Substring(1));
+                }
             }
         }
     }

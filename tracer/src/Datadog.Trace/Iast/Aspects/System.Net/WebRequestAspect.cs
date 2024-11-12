@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -24,11 +24,18 @@ public class WebRequestAspect
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.String)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -39,10 +46,17 @@ public class WebRequestAspect
     [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateDefault(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
-    public static object Review(Uri parameter)
+    public static Uri Review(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebRequestAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 }

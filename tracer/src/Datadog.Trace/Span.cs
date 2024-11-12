@@ -31,7 +31,6 @@ namespace Datadog.Trace
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
 
         private int _isFinished;
-        private bool _baseServiceTagSet;
 
         internal Span(SpanContext context, DateTimeOffset? start)
             : this(context, start, null)
@@ -80,13 +79,6 @@ namespace Datadog.Trace
             get => Context.ServiceNameInternal;
             set
             {
-                // Ignore case because service name and _dd.base_service are normalized in the agent and backend
-                if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
-                {
-                    Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
-                    _baseServiceTagSet = true;
-                }
-
                 Context.ServiceNameInternal = value;
             }
         }
@@ -160,7 +152,7 @@ namespace Datadog.Trace
         /// </returns>
         public override string ToString()
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
@@ -429,10 +421,7 @@ namespace Datadog.Trace
                     SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
                     SetTag(Trace.Tags.ErrorStack, exception.ToString());
 
-                    if (IsRootSpan)
-                    {
-                        ExceptionDebugging.Report(this, exception);
-                    }
+                    ExceptionDebugging.Report(this, exception);
                 }
                 catch (Exception ex)
                 {

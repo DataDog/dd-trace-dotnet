@@ -32,15 +32,17 @@ struct ThreadInfo
     // bit field to identify the last received event for ClrStackWalk association
     EventId LastEventId = EventId::Unknown;
 
-    // Lock contention
+    // Lock contentions
     std::vector<uintptr_t> ContentionCallStack;
     uint64_t ContentionStartTimestamp = 0;
 
     // Allocations
     std::vector<uintptr_t> AllocationCallStack;
     uint64_t AllocationTickTimestamp = 0;
+    uint32_t AllocationKind = 0;
+    uintptr_t AllocationClassId = 0;
     std::string AllocatedType;
-    uintptr_t ClassId = 0;
+    uint64_t AllocationAmount = 0;
 
 public:
     const inline bool LastEventWasContentionStart()
@@ -108,6 +110,7 @@ private:
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler> _eventsHandler;
+    std::string _agentReplayEndpoint;
     std::unique_ptr<IpcServer> _IpcServer; // used to connect to the Windows Agent and register our process ID
     std::unique_ptr<IpcClient> _IpcClient; // used to receive ETW events from the Windows Agent
 

@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         resourceName = $"{httpMethod} {controllerName}.{actionName}";
                     }
 
-                    SpanContext propagatedContext = null;
+                    PropagationContext extractedContext = default;
                     NameValueHeadersCollection? headers = null;
 
                     if (tracer.InternalActiveScope == null)
@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             // extract propagated http headers
                             headers = httpContext.Request.Headers.Wrap();
-                            propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                            extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                         }
                         catch (Exception ex)
                         {
@@ -146,7 +146,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     var tags = new AspNetTags();
-                    scope = tracer.StartActiveInternal(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
+
+                    scope = tracer.StartActiveInternal(
+                        isChildAction ? ChildActionOperationName : OperationName,
+                        extractedContext.SpanContext,
+                        tags: tags);
+
                     span = scope.Span;
 
                     span.DecorateWebServerSpan(
@@ -162,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
 
-                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                    if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {
                         Headers.Ip.RequestIpExtractor.AddIpToTags(httpContext.Request.UserHostAddress, httpContext.Request.IsSecureConnection, key => httpContext.Request.Headers[key], tracer.Settings.IpHeader, tags);
                     }

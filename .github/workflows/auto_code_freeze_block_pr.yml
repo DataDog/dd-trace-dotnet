@@ -2,10 +2,20 @@ name: Auto Block PR on Code Freeze
 
 on:
   pull_request:
+    branches:
+      - 'main'
+      - 'master'
+      - 'release/**'
+      - 'hotfix/**'
+
 
 jobs:
   check_for_code_freeze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read # need to read milestones
+      statuses: write # add a commit status check
 
     steps:
     - uses: octokit/request-action@v2.x

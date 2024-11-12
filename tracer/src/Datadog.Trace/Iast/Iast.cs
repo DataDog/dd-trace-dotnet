@@ -40,11 +40,6 @@ internal class Iast
     internal Iast(IastSettings settings = null)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
-        if (_settings.Enabled)
-        {
-            HardcodedSecretsAnalyzer.Initialize(TimeSpan.FromMilliseconds(_settings.RegexTimeout));
-        }
-
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
@@ -66,6 +61,14 @@ internal class Iast
                 _instance = value;
                 _globalInstanceInitialized = true;
             }
+        }
+    }
+
+    internal void InitAnalyzers()
+    {
+        if (_settings.Enabled)
+        {
+            HardcodedSecretsAnalyzer.Initialize(TimeSpan.FromMilliseconds(_settings.RegexTimeout));
         }
     }
 }

@@ -17,6 +17,8 @@ internal class AppSecRequestContext
 {
     private const string StackKey = "_dd.stack";
     private const string ExploitStackKey = "exploit";
+    private const string VulnerabilityStackKey = "vulnerability";
+    private const string AppsecKey = "appsec";
     private readonly object _sync = new();
     private readonly List<object> _wafSecurityEvents = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces = null;
@@ -28,8 +30,17 @@ internal class AppSecRequestContext
         {
             if (_wafSecurityEvents.Count > 0)
             {
-                var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
-                tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                // Older version of the Agent doesn't support meta struct
+                // Fallback to the _dd.appsec.json tag
+                if (Security.Instance.IsMetaStructSupported())
+                {
+                    span.SetMetaStruct(AppsecKey, MetaStructHelper.ObjectToByteArray(new Dictionary<string, List<object>> { { "triggers", _wafSecurityEvents } }));
+                }
+                else
+                {
+                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
+                }
             }
 
             if (_raspStackTraces?.Count > 0)
@@ -41,11 +52,11 @@ internal class AppSecRequestContext
         }
     }
 
-    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings)
+    internal void AddRaspSpanMetrics(ulong duration, ulong durationWithBindings, bool timeout)
     {
         lock (_sync)
         {
-            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings);
+            _raspTelemetryHelper?.AddRaspSpanMetrics(duration, durationWithBindings, timeout);
         }
     }
 
@@ -59,20 +70,30 @@ internal class AppSecRequestContext
 
     internal void AddRaspStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
     {
+        AddStackTrace(ExploitStackKey, stackTrace, maxStackTraces);
+    }
+
+    internal void AddVulnerabilityStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
+    {
+        AddStackTrace(VulnerabilityStackKey, stackTrace, maxStackTraces);
+    }
+
+    internal void AddStackTrace(string stackCategory, Dictionary<string, object> stackTrace, int maxStackTraces)
+    {
         lock (_sync)
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(ExploitStackKey))
+            if (!_raspStackTraces.ContainsKey(stackCategory))
             {
-                _raspStackTraces.Add(ExploitStackKey, new());
+                _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[ExploitStackKey].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
             {
                 return;
             }
 
-            _raspStackTraces[ExploitStackKey].Add(stackTrace);
+            _raspStackTraces[stackCategory].Add(stackTrace);
         }
     }
 }

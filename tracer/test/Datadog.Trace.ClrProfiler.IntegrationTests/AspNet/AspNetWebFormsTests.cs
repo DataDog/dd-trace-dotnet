@@ -63,10 +63,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "1.0.0");
         }
 
-        [Fact(Skip = "This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.")]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
+        [Trait("SkipInCI", "True")] // This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.
         public async Task NestedAsyncElasticCallSubmitsTrace()
         {
             var testStart = DateTime.UtcNow;

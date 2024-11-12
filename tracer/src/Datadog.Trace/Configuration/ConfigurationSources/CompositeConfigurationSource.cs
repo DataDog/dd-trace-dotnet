@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -75,8 +76,10 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public string? GetString(string key)
         {
-            return _sources.Select(source => source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                  .Select(source => source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true))
+                  .FirstOrDefault(value => value.IsValid, ConfigurationResult<string>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         /// <summary>
@@ -89,8 +92,10 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public int? GetInt32(string key)
         {
-            return _sources.Select(source => source.GetInt32(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                       .Select(source => source.GetInt32(key, NullConfigurationTelemetry.Instance, validator: null))
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<int>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         /// <summary>
@@ -103,8 +108,10 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public double? GetDouble(string key)
         {
-            return _sources.Select(source => source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                       .Select(source => source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null))
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<double>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         /// <summary>
@@ -117,8 +124,10 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public bool? GetBool(string key)
         {
-            return _sources.Select(source => source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                       .Select(source => source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null))
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<bool>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         internal void AddInternal(IConfigurationSource source)
@@ -159,16 +168,20 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key)
         {
-            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                       .Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         /// <inheritdoc />
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
-            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, separator: ':'))
-                           .FirstOrDefault(value => value != null)?.Result;
+            var value = _sources
+                       .Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, separator: ':'))
+                       .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
+            return value.IsValid ? value.Result : null;
         }
 
         /// <inheritdoc />
@@ -176,31 +189,45 @@ namespace Datadog.Trace.Configuration
             => _sources.Select(source => source.IsPresent(key)).FirstOrDefault(value => value);
 
         /// <inheritdoc />
-        ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
-            => _sources.Select(source => source.GetString(key, telemetry, validator, recordValue)).FirstOrDefault(value => value != null);
+        ConfigurationResult<string> ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+            => _sources
+              .Select(source => source.GetString(key, telemetry, validator, recordValue))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<string>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
-            => _sources.Select(source => source.GetInt32(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        ConfigurationResult<int> ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+            => _sources
+              .Select(source => source.GetInt32(key, telemetry, validator))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<int>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
-            => _sources.Select(source => source.GetDouble(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        ConfigurationResult<double> ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+            => _sources
+              .Select(source => source.GetDouble(key, telemetry, validator))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<double>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
-            => _sources.Select(source => source.GetBool(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        ConfigurationResult<bool> ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+            => _sources
+              .Select(source => source.GetBool(key, telemetry, validator))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<bool>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => _sources.Select(source => source.GetDictionary(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+            => _sources
+              .Select(source => source.GetDictionary(key, telemetry, validator))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => _sources.Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator)).FirstOrDefault(value => value != null);
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+            => _sources
+              .Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings, separator))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<IDictionary<string, string>>.NotFound());
 
         /// <inheritdoc />
-        ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
-            => _sources.Select(source => source.GetAs<T>(key, telemetry, converter, validator, recordValue)).FirstOrDefault(value => value != null);
+        ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+            => _sources
+              .Select(source => source.GetAs<T>(key, telemetry, converter, validator, recordValue))
+              .FirstOrDefault(value => value.IsValid, ConfigurationResult<T>.NotFound());
     }
 }

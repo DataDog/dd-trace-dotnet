@@ -28,24 +28,9 @@ bool IsDumpILRewriteEnabled()
     CheckIfTrue(shared::GetEnvironmentValue(environment::dump_il_rewrite_enabled));
 }
 
-bool IsTracingDisabled()
-{
-    CheckIfFalse(shared::GetEnvironmentValue(environment::tracing_enabled));
-}
-
 bool IsAzureAppServices()
 {
     CheckIfTrue(shared::GetEnvironmentValue(environment::azure_app_services));
-}
-
-bool NeedsAgentInAAS()
-{
-    CheckIfTrue(shared::GetEnvironmentValue(environment::aas_needs_agent));
-}
-
-bool NeedsDogstatsdInAAS()
-{
-    CheckIfTrue(shared::GetEnvironmentValue(environment::aas_needs_dogstatsd));
 }
 
 bool IsTraceAnnotationEnabled()
@@ -81,6 +66,19 @@ bool IsRaspSettingEnabled()
 bool IsRaspEnabled()
 {
     return IsRaspSettingEnabled() && IsAsmSettingEnabled();
+}
+
+bool IsEditAndContinueEnabledCore()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_core), false);
+}
+bool IsEditAndContinueEnabledNetFx()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::ide_edit_and_continue_netfx), false);
+}
+bool IsEditAndContinueEnabled()
+{
+    return IsEditAndContinueEnabledCore() || IsEditAndContinueEnabledNetFx();
 }
 
 } // namespace trace

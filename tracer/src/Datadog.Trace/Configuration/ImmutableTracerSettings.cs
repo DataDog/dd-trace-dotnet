@@ -8,13 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -29,6 +28,7 @@ namespace Datadog.Trace.Configuration
     public partial record ImmutableTracerSettings
     {
         private readonly bool _traceEnabled;
+        private readonly bool _appsecStandaloneEnabled;
         private readonly DomainMetadata _domainMetadata;
         private readonly bool _isDataStreamsMonitoringEnabled;
         private readonly bool _logsInjectionEnabled;
@@ -38,6 +38,7 @@ namespace Datadog.Trace.Configuration
         private readonly IReadOnlyDictionary<string, string> _globalTags;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
+        private readonly string? _customSamplingRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         [PublicApi]
         public ImmutableTracerSettings(IConfigurationSource source)
-            : this(new TracerSettings(source, new ConfigurationTelemetry()), true)
+            : this(new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog()), true)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableTracerSettings_Ctor_Source);
         }
@@ -93,18 +94,18 @@ namespace Datadog.Trace.Configuration
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabledInternal;
+            _appsecStandaloneEnabled = settings.AppsecStandaloneEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
 #pragma warning restore 618
             MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            CustomSamplingRulesInternal = settings.CustomSamplingRulesInternal;
+            _customSamplingRules = settings.CustomSamplingRulesInternal;
             CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
             SpanSamplingRules = settings.SpanSamplingRules;
             _globalSamplingRate = settings.GlobalSamplingRateInternal;
             IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
             _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
-            HeaderTagsNormalizationFixEnabled = settings.HeaderTagsNormalizationFixEnabled;
             GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
@@ -131,9 +132,10 @@ namespace Datadog.Trace.Configuration
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
+            BaggageMaximumItems = settings.BaggageMaximumItems;
+            BaggageMaximumBytes = settings.BaggageMaximumBytes;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
-            OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
@@ -159,7 +161,7 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
-            IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
+            IsRunningMiniAgentInAzureFunctions = settings.IsRunningMiniAgentInAzureFunctions;
 
             IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
             LambdaMetadata = settings.LambdaMetadata;
@@ -183,11 +185,14 @@ namespace Datadog.Trace.Configuration
             }
 
             DbmPropagationMode = settings.DbmPropagationMode;
+            DisabledAdoNetCommandTypes = settings.DisabledAdoNetCommandTypes;
 
             // We need to take a snapshot of the config telemetry for the tracer settings,
             // but we can't send it to the static collector, as this settings object may never be "activated"
             Telemetry = new ConfigurationTelemetry();
             settings.CollectTelemetry(Telemetry);
+
+            ErrorLog = settings.ErrorLog.Clone();
 
             // Record the final disabled settings values in the telemetry, we can't quite get this information
             // through the IntegrationTelemetryCollector currently so record it here instead
@@ -197,7 +202,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (setting.EnabledInternal == false)
                 {
-                    sb ??= StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb ??= StringBuilderCache.Acquire();
                     sb.Append(setting.IntegrationNameInternal);
                     sb.Append(';');
                 }
@@ -258,6 +263,13 @@ namespace Datadog.Trace.Configuration
         internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
+        /// Gets a value indicating whether Appsec standalone billing is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AppsecStandaloneEnabled"/>
+        internal bool AppsecStandaloneEnabledInternal => DynamicSettings.AppsecStandaloneEnabled ?? _appsecStandaloneEnabled;
+
+        /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Exporter_Get)]
@@ -298,14 +310,9 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal { get; }
+        internal string? CustomSamplingRulesInternal => DynamicSettings.SamplingRules ?? _customSamplingRules;
 
-        /// <summary>
-        /// Gets the trace sampling rules from remote config.
-        /// These contain custom remote rules and dynamic (aka adaptive) rules.
-        /// They will be merged with local sampling rules.
-        /// </summary>
-        internal string? RemoteSamplingRules => DynamicSettings.SamplingRules;
+        internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
 
         /// <summary>
         /// Gets a value indicating the format for custom sampling rules ("regex" or "glob").
@@ -351,8 +358,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GrpcTags_Get)]
         internal IReadOnlyDictionary<string, string> GrpcTagsInternal { get; }
-
-        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -510,6 +515,22 @@ namespace Datadog.Trace.Configuration
         internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
+        /// Gets the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumItems"/>
+        internal int BaggageMaximumItems { get; }
+
+        /// <summary>
+        /// Gets the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumBytes"/>
+        internal int BaggageMaximumBytes { get; }
+
+        /// <summary>
         /// Gets a value indicating the trace methods configuration.
         /// </summary>
         internal string TraceMethods { get; }
@@ -518,11 +539,6 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
-        /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
@@ -553,7 +569,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Azure Functions
         /// on a consumption plan
         /// </summary>
-        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+        internal bool IsRunningMiniAgentInAzureFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
@@ -625,14 +641,24 @@ namespace Datadog.Trace.Configuration
         internal IConfigurationTelemetry Telemetry { get; }
 
         /// <summary>
+        /// Gets the error logs that were collected from <see cref="TracerSettings"/> when this instance was built
+        /// </summary>
+        internal OverrideErrorLog ErrorLog { get; }
+
+        /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
         /// RCM requires the "full" agent (not just the trace agent), so is not available in some scenarios
         /// </summary>
         internal bool IsRemoteConfigurationAvailable =>
             !(IsRunningInAzureAppService
-           || IsRunningInAzureFunctionsConsumptionPlan
+           || IsRunningMiniAgentInAzureFunctions
            || IsRunningInGCPFunctions
            || LambdaMetadata.IsRunningInLambda);
+
+        /// <summary>
+        /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
+        /// </summary>
+        internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

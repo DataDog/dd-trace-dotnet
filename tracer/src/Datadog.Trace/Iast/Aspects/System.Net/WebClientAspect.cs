@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Net;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Propagation;
 
 #nullable enable
 
@@ -53,11 +51,22 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.Collections.Specialized.NameValueCollection)", 1)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -116,10 +125,21 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection,System.Object)", 3)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.Collections.Specialized.NameValueCollection)", 1)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.Uri,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
-    public static object ReviewUri(Uri parameter)
+    public static Uri ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            if (parameter is not null && parameter.OriginalString is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(WebClientAspect)}.{nameof(ReviewUri)}");
+            return parameter;
+        }
     }
 }

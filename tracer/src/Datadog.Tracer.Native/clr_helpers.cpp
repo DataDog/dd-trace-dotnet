@@ -979,43 +979,24 @@ bool FindTypeDefByName(const shared::WSTRING& instrumentationTargetMethodTypeNam
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef)
 {
     mdTypeDef parentTypeDef = mdTypeDefNil;
-    auto nameParts = shared::Split(instrumentationTargetMethodTypeName, '+');
-    auto instrumentedMethodTypeName = instrumentationTargetMethodTypeName;
+    const auto nameParts = shared::Split(instrumentationTargetMethodTypeName, '+');
 
-    if (nameParts.size() == 2)
+    for (const auto& namePart : nameParts)
     {
-        // We're instrumenting a nested class, find the parent first
-        auto hr = metadata_import->FindTypeDefByName(nameParts[0].c_str(), mdTokenNil, &parentTypeDef);
+        auto hr = metadata_import->FindTypeDefByName(namePart.c_str(), parentTypeDef, &parentTypeDef);
 
         if (FAILED(hr))
         {
             // This can happen between .NET framework and .NET core, not all apis are
             // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
             // System.Data
-            Logger::Debug("Can't load the parent TypeDef: ", nameParts[0],
-                  " for nested class: ", instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
+            Logger::Debug("Can't load the TypeDef for: ", instrumentationTargetMethodTypeName,
+                          ", Module: ", assemblyName);
             return false;
         }
-        instrumentedMethodTypeName = nameParts[1];
-    }
-    else if (nameParts.size() > 2)
-    {
-        Logger::Warn("Invalid TypeDef-only one layer of nested classes are supported: ", instrumentationTargetMethodTypeName,
-             ", Module: ", assemblyName);
-        return false;
     }
 
-    // Find the type we're instrumenting
-    auto hr = metadata_import->FindTypeDefByName(instrumentedMethodTypeName.c_str(), parentTypeDef, &typeDef);
-    if (FAILED(hr))
-    {
-        // This can happen between .NET framework and .NET core, not all apis are
-        // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
-        // System.Data
-        Logger::Debug("Can't load the TypeDef for: ", instrumentedMethodTypeName, ", Module: ", assemblyName);
-        return false;
-    }
-
+    typeDef = parentTypeDef;
     return true;
 }
 
@@ -1126,7 +1107,7 @@ HRESULT ResolveTypeInternal(ICorProfilerInfo4* info,
         ComPtr<IUnknown> metadata_interfaces;
         auto hr = info->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2,
                                                             metadata_interfaces.GetAddressOf());
-        if (FAILED(hr))
+        if (hr != S_OK)
         {
             Logger::Warn("[ResolveTypeInternal] GetModuleMetaData has failed with: ", shared::WSTRING(refTypeName.data()));
             continue;

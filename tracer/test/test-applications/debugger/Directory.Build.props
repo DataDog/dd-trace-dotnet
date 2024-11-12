@@ -7,6 +7,18 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
+    <NuGetAudit>false</NuGetAudit>
+    <!--  _Really_ stop it complaining  -->
+    <NoWarn>NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <LangVersion>latest</LangVersion>
     
     <DebugType>portable</DebugType>
@@ -18,4 +30,13 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
+
+  <!-- Ensure that we don't reference Datadog.Trace directly (unless explicitly handled) -->
+  <!-- Note that you need to ensure the buid logic is updated to exclude the project if you take this approach -->
+  <Target Name="ValidateDisallowedReferences" BeforeTargets="CoreCompile">
+    <Error
+      Condition="'%(ProjectReference.FileName)' == 'Datadog.Trace' AND '$(AllowDatadogTraceReference)' != 'true'"
+      Text="You should not directly reference Datadog.Trace in this project" />
+  </Target>
+
 </Project>

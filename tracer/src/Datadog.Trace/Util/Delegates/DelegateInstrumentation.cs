@@ -1,4 +1,4 @@
-﻿// <copyright file="DelegateInstrumentation.cs" company="Datadog">
+// <copyright file="DelegateInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,7 @@ using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Delegates;
 
@@ -206,20 +207,30 @@ internal static class DelegateInstrumentation
 
         private void CreateCustomActivator()
         {
-            var ctor = _wrapperType.GetConstructors()[0];
-            var createHeadersMethod = new DynamicMethod(
-                $"TypeActivator" + _wrapperType.Name,
-                typeof(Wrapper<TCallbacks>),
-                new[] { typeof(object), typeof(Delegate), typeof(TCallbacks) },
-                typeof(ActivatorHelper).Module,
-                true);
+            try
+            {
+                var ctor = _wrapperType.GetConstructors()[0];
+                var createHeadersMethod = new DynamicMethod(
+                    $"TypeActivator" + _wrapperType.Name,
+                    typeof(Wrapper<TCallbacks>),
+                    new[] { typeof(object), typeof(Delegate), typeof(TCallbacks) },
+                    typeof(ActivatorHelper).Module,
+                    true);
 
-            var il = createHeadersMethod.GetILGenerator();
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Ldarg_2);
-            il.Emit(OpCodes.Newobj, ctor);
-            il.Emit(OpCodes.Ret);
-            _activator = (Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>)createHeadersMethod.CreateDelegate(typeof(Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>), _wrapperType);
+                var il = createHeadersMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_1);
+                il.Emit(OpCodes.Ldarg_2);
+                il.Emit(OpCodes.Newobj, ctor);
+                il.Emit(OpCodes.Ret);
+                _activator = (Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>)createHeadersMethod.CreateDelegate(typeof(Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>), _wrapperType);
+            }
+            catch (Exception ex)
+            {
+                // This method is only called once, so no point saving the logger in the static field forever
+                // If we throw, then _activator will continue to have the default activator which is fine
+                DatadogLogging.GetLoggerFor<ActivatorHelper>()
+                              .Warning(ex, "Error creating the custom activator for: {Type}", typeof(TCallbacks).FullName);
+            }
         }
     }
 
@@ -393,7 +404,7 @@ internal static class DelegateInstrumentation
                     }
                 }
 
-                TInnerReturn? continuationResult = default;
+                TInnerReturn? continuationResult;
                 try
                 {
                     // *
@@ -404,6 +415,7 @@ internal static class DelegateInstrumentation
                 catch (Exception ex)
                 {
                     asyncCallback.OnException(sender, ex);
+                    continuationResult = taskResult;
                 }
 
                 // *

@@ -7,7 +7,8 @@
 using System.Net.Http;
 #endif
 using System;
-using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec;
+
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
 #endif
@@ -53,9 +54,16 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
     public static string Review(string parameter)
     {
-        IastModule.OnSSRF(parameter);
-        RaspModule.OnSSRF(parameter);
-        return parameter;
+        try
+        {
+            VulnerabilitiesModule.OnSSRF(parameter);
+            return parameter;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(Review)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -88,9 +96,20 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static Uri ReviewUri(Uri parameter)
     {
-        IastModule.OnSSRF(parameter.OriginalString);
-        RaspModule.OnSSRF(parameter.OriginalString);
-        return parameter;
+        try
+        {
+            if (parameter is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.OriginalString);
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewUri)}");
+            return parameter;
+        }
     }
 
     /// <summary>
@@ -110,30 +129,45 @@ public class HttpClientAspect
 #endif
     [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
 #if !NETFRAMEWORK
-    public static object ReviewHttpRequestMessage(HttpRequestMessage parameter)
+    public static HttpRequestMessage ReviewHttpRequestMessage(HttpRequestMessage parameter)
     {
-        var uri = parameter.RequestUri;
-
-        if (uri is not null)
+        try
         {
-            IastModule.OnSSRF(uri.OriginalString);
-            RaspModule.OnSSRF(uri.OriginalString);
-        }
+            if (parameter is not null && parameter.RequestUri is not null && parameter.RequestUri.OriginalString is not null)
+            {
+                VulnerabilitiesModule.OnSSRF(parameter.RequestUri.OriginalString);
+            }
 
-        return parameter;
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
+            return parameter;
+        }
     }
 #else
     public static object ReviewHttpRequestMessage(object parameter)
     {
-        var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
-
-        if (uri is not null)
+        try
         {
-            IastModule.OnSSRF(uri.OriginalString);
-            RaspModule.OnSSRF(uri.OriginalString);
-        }
+            if (parameter is not null)
+            {
+                var uri = parameter.DuckCast<ClrProfiler.AutoInstrumentation.AspNet.IHttpRequestMessage>()?.RequestUri;
 
-        return parameter;
+                if (uri is not null)
+                {
+                    VulnerabilitiesModule.OnSSRF(uri.OriginalString);
+                }
+            }
+
+            return parameter!;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpClientAspect)}.{nameof(ReviewHttpRequestMessage)}");
+            return parameter;
+        }
     }
 #endif
 }

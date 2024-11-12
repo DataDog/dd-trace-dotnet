@@ -314,8 +314,6 @@ public class StringBuilderAppendJoin : InstrumentationTestsBase
             () => GetTaintedStringBuilder("test").AppendJoin('.', (object[])null));
     }
 
-    // System.Text.StringBuilder::AppendJoin(System.Char,System.Collections.Generic.IEnumerable`1<!!0>)
-
     [Fact]
     public void GivenAStringBuilderTainted_WhenAppendJoinCharIEnumerable_ThenResultIsTainted()
     {

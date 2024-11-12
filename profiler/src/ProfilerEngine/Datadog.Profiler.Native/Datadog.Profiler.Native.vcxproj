@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -251,11 +251,14 @@
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
+    <ClInclude Include="ISsiManager.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
+    <ClInclude Include="SsiManager.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -352,7 +355,6 @@
     <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
-    <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
@@ -360,6 +362,7 @@
     <ClInclude Include="SumMetric.h" />
     <ClInclude Include="Tags.h" />
     <ClInclude Include="TagsHelper.h" />
+    <ClInclude Include="TelemetryMetricsWorker.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadLifetimeProvider.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -397,6 +400,8 @@
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
+    <ClCompile Include="SkipProfileHeuristicType.h" />
+    <ClCompile Include="SsiManager.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
@@ -440,6 +445,7 @@
     <ClCompile Include="SumMetric.cpp" />
     <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
+    <ClCompile Include="TelemetryMetricsWorker.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadLifetimeProvider.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
@@ -462,6 +468,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.10.0.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

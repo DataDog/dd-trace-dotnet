@@ -57,7 +57,6 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
-        private readonly string _testName;
         private readonly bool _classicMode;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -65,7 +64,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.ApiSecurityEnabled, "false");
 
             _classicMode = classicMode;
             _iisFixture = iisFixture;

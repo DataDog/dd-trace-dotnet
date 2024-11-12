@@ -64,7 +64,7 @@ StackSamplerLoop::StackSamplerLoop(
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
-    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
     _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
@@ -75,6 +75,8 @@ StackSamplerLoop::StackSamplerLoop(
     Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
     Log::Info("Max CodeHotspots sampled threads = ", _codeHotspotsThreadsThreshold);
     Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
+    Log::Info("Manual Cpu profiler is ", (_isCpuEnabled) ? "enabled" : "disabled");
+    Log::Info("Wall-time profiler is ", (_isWalltimeEnabled) ? "enabled" : "disabled");
 
     _pCorProfilerInfo->AddRef();
 
@@ -250,8 +252,14 @@ void StackSamplerLoop::WalltimeProfilingIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip thread if it has a trace context
-        if (_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip thread if it has a trace context
+            _targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
@@ -371,8 +379,14 @@ void StackSamplerLoop::CodeHotspotIteration()
             firstThread = _targetThread.get();
         }
 
-        // skip if it has no trace context
-        if (!_targetThread->HasTraceContext() || !_targetThread->CanBeInterrupted())
+        auto mustSkip =
+#ifdef LINUX
+            !_targetThread->CanBeInterrupted() ||
+#endif
+            // skip if it has no trace context
+            !_targetThread->HasTraceContext();
+
+        if (mustSkip)
         {
             _targetThread.reset();
             continue;
@@ -508,7 +522,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // ----------- ----------- ----------- ----------- ----------- -----------
         } // _pManager->AllowStackWalk(..)
 
-    } // SemaphoreScope guardedLock(pThreadInfo->GetStackWalkLock())
+    }
 
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);

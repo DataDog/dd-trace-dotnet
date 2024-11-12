@@ -47,6 +47,8 @@ public:
     ILInstr* EndFinally() const;
 
     ILInstr* CreateInstr(unsigned opCode) const;
+    ILInstr* CreateInstr(unsigned opCode, uint32_t arg) const;
+    ILInstr* CreateInstr(unsigned opCode, ILInstr* target) const;
     ILInstr* InitObj(mdTypeRef type_ref) const;
 };
 

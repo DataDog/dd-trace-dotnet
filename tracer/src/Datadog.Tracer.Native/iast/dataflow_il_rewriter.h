@@ -8,9 +8,8 @@ namespace iast
     class ILAnalysis;
     class SignatureInfo;
     class ModuleInfo;
-    class Aspect;
+    class DataflowAspectReference;
     class MethodInfo;
-    enum class SpotInfoStatus;
 
     typedef enum
     {
@@ -28,6 +27,7 @@ namespace iast
 
         unsigned        m_opcode;
         unsigned        m_offset;
+        bool            m_isNew;
 
         union
         {
@@ -45,7 +45,7 @@ namespace iast
             INT32       m_originalArg32;
             INT64       m_originalArg64;
         };
-        inline bool IsNew() { return m_offset == -1; }
+        inline bool IsNew() { return m_isNew; }
         inline bool IsDirty() { return IsNew() || m_Arg64 != m_originalArg64; }
         inline int GetLine() { return (IsNew() && m_pNext) ? m_pNext->GetLine() : -((int)m_offset); }
     };
@@ -95,7 +95,6 @@ namespace iast
         HRESULT ImportIL(LPCBYTE pIL);
         HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);
         void ComputeOffsets();
-
         void AdjustState(ILInstr* pNewInstr);
 
     public:
@@ -104,10 +103,10 @@ namespace iast
         //void SetDirty();
         HRESULT Import();
         HRESULT Import(LPCBYTE pMethodIL);
-        ILInstr* NewILInstr(OPCODE opcode = CEE_COUNT, ULONG32 arg = 0);
+        ILInstr* NewILInstr(OPCODE opcode = CEE_COUNT, ULONG32 arg = 0, bool isNew = false);
         ILInstr* InsertBefore(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
         ILInstr* InsertAfter(ILInstr* pWhere, ILInstr* pWhat, bool updateReferences = true);
-        HRESULT Export(const std::string& applyMessage = "");
+        HRESULT Export();
         ILInstr* GetILList();
         ILInstr* GetInstrFromOffset(unsigned offset);
         std::vector<EHClause*> GetExceptionHandlers();
@@ -117,9 +116,6 @@ namespace iast
         void SetLocalsSignatureToken(mdSignature localVarSigToken);
         SignatureInfo* GetLocalsSignature();
 
-        int GetSpotInfoId(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod = nullptr);
-        SpotInfoStatus GetSpotInfoStatus(ILInstr* pInstr, Aspect* aspect);
-
         HRESULT AddProbeBefore(mdToken hookMethod, ILInstr* pInsertProbeBeforeThisInstr, OPCODE opCode = CEE_LDC_I4,
                                ULONG32* hookArg = nullptr);
         HRESULT AddProbeAfter(mdToken hookMethod, ILInstr* pInsertProbeAfterThisInstr, OPCODE opCode = CEE_LDC_I4,
@@ -127,10 +123,5 @@ namespace iast
 
         HRESULT AddEnterProbe(mdToken onEnterHook, OPCODE opCode = CEE_LDC_I4, ULONG32* hookArg = nullptr);
         HRESULT AddExitProbe(mdToken onExitHook, OPCODE opCode = CEE_LDC_I4, ULONG32* hookArg = nullptr);
-
-        HRESULT AddArgProbe(int argPosition, Aspect* aspect);
-        int LoadSpotInfoArgument(ILInstr* pInstr, Aspect* aspect, mdMemberRef* aspectMedhod = nullptr,
-                                 bool insertBefore = true);
-        ILInstr* AddAspectCall(ILInstr* pInstr, Aspect* aspect, bool pop = false);
     };
 }

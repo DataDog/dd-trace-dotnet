@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -32,6 +35,8 @@ partial class Build
                List = false)]
     readonly bool ExplorationTestCloneLatest;
 
+    const string LineProbesFileName = "exploration_test_line_probes";
+
     Target SetUpExplorationTests
         => _ => _
                .Description("Setup exploration tests.")
@@ -39,8 +44,8 @@ partial class Build
                .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
-                    SetUpExplorationTest();
                     GitCloneBuild();
+                    SetUpExplorationTest();
                 });
 
     void SetUpExplorationTest()
@@ -64,7 +69,7 @@ partial class Build
     void SetUpExplorationTest_Debugger()
     {
         Logger.Information($"Set up exploration test for debugger.");
-        //TODO TBD
+        CreateLineProbesIfNeeded();
     }
 
     void SetUpExplorationTest_ContinuousProfiler()
@@ -111,6 +116,8 @@ partial class Build
         var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
         var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
+        FileSystemTasks.EnsureCleanDirectory(target);
+
         var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
         GitTasks.Git(cloneCommand);
 
@@ -136,13 +143,12 @@ partial class Build
                .Description("Run exploration tests.")
                .Requires(() => ExplorationTestUseCase)
                .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
+               .DependsOn(CleanTestLogs)
                .Executes(() =>
                 {
-                    FileSystemTasks.EnsureExistingDirectory(TestLogsDirectory);
                     try
                     {
-                        var envVariables = GetEnvironmentVariables();
-                        RunExplorationTestsGitUnitTest(envVariables);
+                        RunExplorationTestsGitUnitTest();
                         RunExplorationTestAssertions();
                     }
                     finally
@@ -152,7 +158,7 @@ partial class Build
                 })
         ;
 
-    Dictionary<string, string> GetEnvironmentVariables()
+    Dictionary<string, string> GetEnvironmentVariables(ExplorationTestDescription testDescription, TargetFramework framework)
     {
         var envVariables = new Dictionary<string, string>
         {
@@ -164,7 +170,7 @@ partial class Build
         switch (ExplorationTestUseCase)
         {
             case global::ExplorationTestUseCase.Debugger:
-                AddDebuggerEnvironmentVariables(envVariables);
+                AddDebuggerEnvironmentVariables(envVariables, testDescription, framework);
                 break;
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 AddContinuousProfilerEnvironmentVariables(envVariables);
@@ -176,17 +182,26 @@ partial class Build
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
 
+        if (testDescription.EnvironmentVariables != null)
+        {
+            foreach (var (key, value) in testDescription.EnvironmentVariables)
+            {
+                // Use TryAdd to avoid overriding the environment variables set by the caller
+                envVariables.TryAdd(key, value);
+            }
+        }
+
         return envVariables;
     }
 
-    void RunExplorationTestsGitUnitTest(Dictionary<string, string> envVariables)
+    void RunExplorationTestsGitUnitTest()
     {
         if (ExplorationTestName.HasValue)
         {
             Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
-            RunUnitTest(testDescription, envVariables);
+            RunUnitTest(testDescription);
         }
         else
         {
@@ -194,12 +209,12 @@ partial class Build
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                RunUnitTest(testDescription, envVariables);
+                RunUnitTest(testDescription);
             }
         }
     }
 
-    void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
+    void RunUnitTest(ExplorationTestDescription testDescription)
     {
         if (!testDescription.ShouldRun)
         {
@@ -214,28 +229,21 @@ partial class Build
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
-        if (testDescription.EnvironmentVariables != null)
-        {
-            foreach (var (key, value) in testDescription.EnvironmentVariables)
-            {
-                // Use TryAdd to avoid overriding the environment variables set by the caller
-                envVariables.TryAdd(key, value);
-            }
-        }
-
         if (Framework == null)
         {
             foreach (var targetFramework in testDescription.SupportedFrameworks)
             {
-                Test(targetFramework);
+                var envVariables = GetEnvironmentVariables(testDescription, targetFramework);
+                Test(targetFramework, envVariables);
             }
         }
         else
         {
-            Test(Framework);
+            var envVariables = GetEnvironmentVariables(testDescription, Framework);
+            Test(Framework, envVariables);
         }
 
-        void Test(TargetFramework targetFramework)
+        void Test(TargetFramework targetFramework, Dictionary<string, string> envVariables)
         {
             DotNetTest(
                 x =>
@@ -253,6 +261,234 @@ partial class Build
 
                     return x;
                 });
+        }
+    }
+
+    private void CreateLineProbesIfNeeded()
+    {
+        ExplorationTestDescription testDescription = null;
+        if (ExplorationTestName.HasValue)
+        {
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            if (!testDescription.LineProbesEnabled)
+            {
+                Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+                return;
+            }
+        }
+        else
+        {
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
+        }
+
+        Logger.Information($"Provided exploration test name is {testDescription.Name}.");
+
+        ExplorationTestDescription.GetAllExplorationTestDescriptions();
+
+        var sw = new Stopwatch();
+        sw.Start();
+
+        CreateLineProbesFile(testDescription);
+
+        sw.Stop();
+        Logger.Information("Creating line probes file finished. Took ");
+        Logger.Information(sw.Elapsed.Minutes > 0 ? $"{sw.Elapsed.Minutes:D2} minutes and {sw.Elapsed.Seconds:D2} seconds." : $"{sw.Elapsed.Seconds:D2} seconds.");
+
+        return;
+
+        static void UpdateProgressBar(double processedWeight, double totalWeight, int totalFiles)
+        {
+            double progress = processedWeight / totalWeight;
+            int progressBarWidth = 50;
+            int filledWidth = (int)(progress * progressBarWidth);
+
+            int processedFiles = (int)(progress * totalFiles); //estimated
+
+            Console.Write("\r[");
+            Console.Write(new string('#', filledWidth));
+            Console.Write(new string('-', progressBarWidth - filledWidth));
+            Console.Write($"] {progress:P1} | Est. Files: {processedFiles}/{totalFiles}");
+        }
+
+        void CreateLineProbesFile(ExplorationTestDescription testDescription)
+        {
+            Logger.Information($"Creating line probes file for {testDescription.Name}.");
+
+            var frameworks = Framework != null ? new[] { Framework } : testDescription.SupportedFrameworks;
+            var allCsFiles = Directory.EnumerateFiles($"{ExplorationTestsDirectory}{Path.DirectorySeparatorChar}{testDescription.Name}", "*.cs", SearchOption.AllDirectories).
+                                       Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")).ToArray();
+
+            foreach (var framework in frameworks)
+            {
+                var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
+                var tracerAssemblyPath = GetTracerAssemblyPath(framework);
+                var tracer = Assembly.LoadFile(tracerAssemblyPath);
+                var extractorType = tracer.GetType("Datadog.Trace.Debugger.Symbols.SymbolExtractor");
+                var createMethod = extractorType?.GetMethod("Create", BindingFlags.Static | BindingFlags.Public);
+                var testAssembliesPaths = GetAllTestAssemblies(testRootPath);
+                if (testAssembliesPaths.Length == 0)
+                {
+                    throw new Exception($"Can't find any test assembly for {ExplorationTestsDirectory}/{framework}");
+                }
+
+                var metadataReaders = new List<Tuple<object, MethodInfo, string>>();
+                foreach (var testAssemblyPath in testAssembliesPaths)
+                {
+                    var currentAssembly = Assembly.LoadFile(testAssemblyPath);
+                    var symbolExtractor = createMethod?.Invoke(null, new object[] { currentAssembly });
+                    if (symbolExtractor == null)
+                    {
+                        throw new Exception($"Could not get SymbolExtractor instance for assembly: {testAssemblyPath}");
+                    }
+
+                    var metadataReader = symbolExtractor.GetType().GetProperty("DatadogMetadataReader", BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(symbolExtractor);
+                    var getMethodAndOffsetMethod = metadataReader?.GetType().GetMethod("GetContainingMethodTokenAndOffset", BindingFlags.Instance | BindingFlags.NonPublic);
+                    if (getMethodAndOffsetMethod == null)
+                    {
+                        throw new Exception("Could not find GetContainingMethodTokenAndOffset");
+                    }
+
+                    var isPdbExist = (bool?)metadataReader.GetType().GetProperty("IsPdbExist", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(metadataReader);
+                    if (!isPdbExist.HasValue || !isPdbExist.Value)
+                    {
+                        Logger.Debug($"Skipping assembly {testAssemblyPath} because there is no PDB info");
+                        continue;
+                    }
+
+                    metadataReaders.Add(Tuple.Create(metadataReader, getMethodAndOffsetMethod, currentAssembly.ManifestModule.ModuleVersionId.ToString()));
+                }
+
+                var lineProbes = new List<string>();
+                var locker = new object();
+                HashSet<string> noMatchingPdbAssembly = new HashSet<string>();
+
+                var fileWeights = allCsFiles.ToDictionary(
+                    file => file,
+                    file => (double)File.ReadLines(file).Count()
+                );
+                double totalWeight = fileWeights.Values.Sum();
+                double processedWeight = 0;
+
+                foreach (var csFile in allCsFiles)
+                {
+                    bool fileProcessed = false;
+                    foreach (var metadataReader in metadataReaders)
+                    {
+                        var pdbPath = (string)metadataReader?.Item1?.GetType().GetProperty("PdbFullPath", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(metadataReader.Item1);
+                        if (string.IsNullOrEmpty(pdbPath))
+                        {
+                            continue;
+                        }
+
+                        var assemblyName = Path.GetFileNameWithoutExtension(pdbPath);
+                        if (string.IsNullOrEmpty(assemblyName))
+                        {
+                            continue;
+                        }
+
+                        if (!csFile.Contains(assemblyName!))
+                        {
+                            // if the metadata reader isn't the correct one, continue.
+                            // it's not a bulletproof but probably enough for exploration test
+                            if (noMatchingPdbAssembly.Add(assemblyName))
+                            {
+                                Logger.Debug($"Skipping assembly {assemblyName} because there is no matching PDB info");
+                            }
+                            continue;
+                        }
+
+                        fileProcessed = true;
+                        int numberOfLines = (int)fileWeights[csFile];
+                        Parallel.For(0, numberOfLines, () => new List<string>(), (i, state, localList) =>
+                        {
+                            int? byteCodeOffset = null;
+                            // ReSharper disable once ExpressionIsAlwaysNull
+                            var args = new object[] { csFile, i, /*column*/ null, byteCodeOffset };
+                            var method = metadataReader.Item2.Invoke(metadataReader.Item1, args);
+
+                            // i.e. we got a method and bytecode offset
+                            if (args[3] != null && method != null)
+                            {
+                                localList.Add($"{metadataReader.Item3},{(int)method},{(int)args[3]}");
+                            }
+
+                            return localList;
+                        }, localList =>
+                        {
+                            lock (locker)
+                            {
+                                lineProbes.AddRange(localList);
+                            }
+                        });
+                    }
+
+                    if (fileProcessed)
+                    {
+                        processedWeight += fileWeights[csFile];
+                        UpdateProgressBar(processedWeight, totalWeight, allCsFiles.Count());
+                    }
+                }
+
+                if (lineProbes.Count > 0)
+                {
+                    File.WriteAllText(Path.Combine(testRootPath, LineProbesFileName),
+                                      string.Join(Environment.NewLine, lineProbes));
+                    lineProbes.Clear();
+                }
+
+                Console.WriteLine();
+            }
+        }
+    }
+
+    string GetTracerAssemblyPath(TargetFramework framework)
+    {
+        TargetFramework tracerFramework = null;
+        if (framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0))
+        {
+            tracerFramework = TargetFramework.NET6_0;
+        }
+
+        else if (framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP3_1))
+        {
+            tracerFramework = TargetFramework.NETCOREAPP3_1;
+        }
+
+        else if (framework == TargetFramework.NETSTANDARD2_0 ||
+                 framework == TargetFramework.NETCOREAPP2_1 ||
+                 framework == TargetFramework.NETCOREAPP3_0)
+        {
+            tracerFramework = TargetFramework.NETSTANDARD2_0;
+        }
+
+        else if (framework == TargetFramework.NET461 ||
+                 framework == TargetFramework.NET462)
+        {
+            tracerFramework = TargetFramework.NET461;
+        }
+
+        if (tracerFramework == null)
+        {
+            throw new Exception("Can't determined the correct tracer framework version");
+        }
+
+        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace.dll";
+    }
+
+    static string[] GetAllTestAssemblies(string rootPath)
+    {
+        return Directory.EnumerateFiles(rootPath, "*.*", SearchOption.AllDirectories)
+                        .Where(f => !Exclude(f) && IsSupportedExtension(f)).ToArray();
+
+        bool Exclude(string path)
+        {
+            return path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}");
+        }
+
+        bool IsSupportedExtension(string path)
+        {
+            var extensions = new[] { ".dll", ".exe", ".so" };
+            return extensions.Any(ext => string.Equals(Path.GetExtension(path), ext, StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -301,7 +537,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper, /*ilspy*/
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper
 }
 
 class ExplorationTestDescription
@@ -318,6 +554,7 @@ class ExplorationTestDescription
     public string[] TestsToIgnore { get; set; }
 
     public bool ShouldRun { get; set; } = true;
+    public bool LineProbesEnabled { get; set; }
 
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
@@ -375,7 +612,14 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
-                ShouldRun = false // Dictates that this exploration test should not take part in the CI
+                TestsToIgnore = new string[]
+                {
+                    "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion",
+                    "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion_UnknownFields",
+                    "Google.Protobuf.CodedInputStreamTest.RecursionLimitAppliedWhileSkippingGroup",
+                    "Google.Protobuf.JsonParserTest.MaliciousRecursion"
+                },
+                LineProbesEnabled = true
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
@@ -452,17 +696,6 @@ class ExplorationTestDescription
                 // Workaround for https://github.com/dotnet/runtime/issues/95653
                 EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
-            //ExplorationTestName.ilspy => new ExplorationTestDescription()
-            //{
-            //    Name = ExplorationTestName.ilspy,
-            //    GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
-            //    GitRepositoryTag = "v7.1",
-            //    IsGitSubmodulesRequired = true,
-            //    PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-            //    IsTestedByVSTest = true,
-            //    TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
-            //    SupportedFrameworks = new[] { TargetFramework.NET461 },
-            //},
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
 

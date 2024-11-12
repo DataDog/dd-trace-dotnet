@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -11,11 +11,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -30,11 +35,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -49,11 +59,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -68,11 +83,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -87,11 +107,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -106,11 +131,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -125,11 +155,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -144,11 +179,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -163,11 +203,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -182,11 +227,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -201,11 +251,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -220,11 +275,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -239,11 +299,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -258,11 +323,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -277,11 +347,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -296,11 +371,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -315,11 +395,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -334,11 +419,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -353,11 +443,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -372,11 +467,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -391,11 +491,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -410,11 +515,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -429,11 +539,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -448,11 +563,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -467,11 +587,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -486,11 +611,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -505,11 +635,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -524,11 +659,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -543,11 +683,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -562,11 +707,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -581,11 +731,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -600,11 +755,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -619,11 +779,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -638,11 +803,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -657,11 +827,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -676,11 +851,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -695,11 +875,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -714,11 +899,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -733,11 +923,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -752,11 +947,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -771,11 +971,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -790,11 +995,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -809,11 +1019,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -828,11 +1043,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -847,11 +1067,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -866,11 +1091,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -885,11 +1115,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -904,11 +1139,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -923,11 +1163,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -942,11 +1187,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -961,11 +1211,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -980,11 +1235,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -999,11 +1259,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1018,11 +1283,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1037,11 +1307,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1056,11 +1331,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1075,11 +1355,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1094,11 +1379,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1113,11 +1403,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1132,11 +1427,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1151,11 +1451,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1170,11 +1475,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1189,11 +1499,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1208,11 +1523,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1227,11 +1547,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1246,11 +1571,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1265,11 +1595,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1284,11 +1619,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1303,11 +1643,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1322,11 +1667,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1341,11 +1691,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1360,11 +1715,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1379,11 +1739,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1398,11 +1763,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1417,11 +1787,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1436,11 +1811,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1455,11 +1835,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1474,11 +1859,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1493,11 +1883,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1512,11 +1907,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1531,11 +1931,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1550,11 +1955,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1569,11 +1979,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1588,11 +2003,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1607,11 +2027,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1626,11 +2051,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1645,11 +2075,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1664,11 +2099,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1683,11 +2123,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1702,11 +2147,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1721,11 +2171,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1740,11 +2195,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1759,11 +2219,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1778,11 +2243,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1797,11 +2267,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1816,11 +2291,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1835,11 +2315,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1854,11 +2339,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1873,11 +2363,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1892,11 +2387,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1911,11 +2411,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1930,11 +2435,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1949,11 +2459,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1968,11 +2483,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -1987,11 +2507,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2006,11 +2531,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2025,11 +2555,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2044,11 +2579,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2063,11 +2603,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2082,11 +2627,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2101,11 +2651,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2120,11 +2675,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2139,11 +2699,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2158,11 +2723,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2177,11 +2747,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2196,11 +2771,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2215,11 +2795,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2234,11 +2819,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2253,11 +2843,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2272,11 +2867,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2291,11 +2891,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2310,11 +2915,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2329,11 +2939,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2348,11 +2963,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2367,11 +2987,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2386,11 +3011,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2405,11 +3035,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2424,11 +3059,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2443,11 +3083,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2462,11 +3107,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2481,11 +3131,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2500,11 +3155,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2519,11 +3179,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2538,11 +3203,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2557,11 +3227,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2576,11 +3251,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2595,11 +3275,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2614,11 +3299,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2633,11 +3323,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2652,11 +3347,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2671,11 +3371,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2690,11 +3395,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2709,11 +3419,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2728,11 +3443,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2747,11 +3467,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2766,11 +3491,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2785,11 +3515,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2804,11 +3539,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2823,11 +3563,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2842,11 +3587,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2861,11 +3611,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2880,11 +3635,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2899,11 +3659,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2918,11 +3683,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2937,11 +3707,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2956,11 +3731,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2975,11 +3755,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -2994,11 +3779,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3013,11 +3803,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3032,11 +3827,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3051,11 +3851,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3070,11 +3875,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3089,11 +3899,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3108,11 +3923,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3127,11 +3947,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3146,11 +3971,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3165,11 +3995,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   },
   {
@@ -3184,11 +4019,16 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       peer.service: sqlserver,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: out.host
+    },
+    Metrics: {
+      dd.instrumentation.time_ms: 123.456
     }
   }
 ]

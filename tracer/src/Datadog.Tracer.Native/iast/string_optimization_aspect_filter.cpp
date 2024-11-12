@@ -1,4 +1,5 @@
 #include "string_optimization_aspect_filter.h"
+#include "dataflow_aspects.h"
 
 namespace iast
 {
@@ -22,8 +23,11 @@ namespace iast
         _targetMemberRefs.clear();
     }
 
-    bool StringOptimizationAspectFilter::AllowInstruction(ILInstr* instruction, ILRewriter* processor)
+    bool StringOptimizationAspectFilter::AllowInstruction(DataflowContext& context)
     {
+        ILInstr* instruction = context.instruction;
+        ILRewriter* processor = context.rewriter;
+
         if (_targetMemberRefs.empty()) { return true; }
         ILInstr* instr = instruction->m_pNext;
         // if the resulting string it is stored we cannot filter

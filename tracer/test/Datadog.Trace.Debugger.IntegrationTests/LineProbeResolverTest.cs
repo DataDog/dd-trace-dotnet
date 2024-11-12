@@ -7,6 +7,7 @@ using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.IntegrationTests.Helpers;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Samples.Probes.TestRuns.SmokeTests;
 using Xunit;
@@ -21,7 +22,7 @@ public class LineProbeResolverTest
     public LineProbeResolverTest()
     {
         var guidGenerator = new DeterministicGuidGenerator();
-        _lineProbeResolver = LineProbeResolver.Create();
+        _lineProbeResolver = LineProbeResolver.Create(ImmutableHashSet<string>.Empty, ImmutableHashSet<string>.Empty);
         var probeDefinitions = DebuggerTestHelper.GetAllProbes(typeof(LambdaSingleLine), "net461", unlisted: true, guidGenerator);
         _probeDefinition = probeDefinitions.First().Probe;
     }

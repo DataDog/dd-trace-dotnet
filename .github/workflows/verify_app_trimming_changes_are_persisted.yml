@@ -7,6 +7,8 @@ on:
 jobs:
   verify_app_trimming_descriptor_generator:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Support longpaths

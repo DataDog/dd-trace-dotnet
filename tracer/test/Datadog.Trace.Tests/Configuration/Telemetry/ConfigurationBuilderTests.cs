@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
@@ -177,7 +176,7 @@ public class ConfigurationBuilderTests
                     },
                     { } i => new List<Entry>
                     {
-                        Entry.String(Key, i.ToString(), ConfigurationOrigins.Code, error: null),
+                        Entry.String(Key, Convert.ToString(i, CultureInfo.InvariantCulture), ConfigurationOrigins.Code, error: null),
                     },
                 };
 
@@ -407,12 +406,22 @@ public class ConfigurationBuilderTests
     public abstract class StringTestsBase
     {
         private const string Default = "Some default";
+        private readonly IConfigurationSourceFactory _factory;
         private readonly IConfigurationSource _source;
         private readonly Dictionary<string, object> _collection;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
+        private readonly Func<string, ParsingResult<string>> _converter = val
+            => val switch
+            {
+                "none" => "false",
+                "on" => "true",
+                _ => ParsingResult<string>.Failure(),
+            };
+
         public StringTestsBase(IConfigurationSourceFactory factory)
         {
+            _factory = factory;
             _collection = new Dictionary<string, object>
             {
                 { "key", "value" },
@@ -472,6 +481,24 @@ public class ConfigurationBuilderTests
                 => new ConfigurationBuilder(_source, _telemetry)
                   .WithKeys(key)
                   .AsString(Default, x => !string.IsNullOrEmpty(x));
+        }
+
+        [Theory]
+        [InlineData("none", "false")]
+        [InlineData("on", "true")]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetString_ReturnsTheExpectedValueWithConverter(string value, string expected)
+        {
+            const string key = "key_converter";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys(key)
+                        .AsString(() => Default, validator: null, converter: _converter);
+
+            actual.Should().Be(expected);
         }
     }
 
@@ -600,10 +627,9 @@ public class ConfigurationBuilderTests
 
             var actual = new ConfigurationBuilder(source, _telemetry)
                         .WithKeys("key")
-                        .GetAs(
-                             getDefaultValue: null,
+                        .GetAsStruct(
                              validator: null,
-                             converter: _nullableConverter);
+                             converter: _converter);
 
             actual.Should().BeNull();
         }
@@ -632,12 +658,22 @@ public class ConfigurationBuilderTests
     public abstract class BoolTestsBase
     {
         private const bool Default = true;
+        private readonly IConfigurationSourceFactory _factory;
         private readonly Dictionary<string, object> _collection;
         private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
+        private readonly Func<string, ParsingResult<bool>> _converter = val
+            => val switch
+            {
+                "on" => true,
+                "off" => false,
+                _ => ParsingResult<bool>.Failure(),
+            };
+
         public BoolTestsBase(IConfigurationSourceFactory factory)
         {
+            _factory = factory;
             _collection = new Dictionary<string, object>
             {
                 { "key_True", true },
@@ -698,17 +734,45 @@ public class ConfigurationBuilderTests
                       .AsBool(Default, x => x);
             }
         }
+
+        [Theory]
+        [InlineData("off", false)]
+        [InlineData("on", true)]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetBool_ReturnsTheExpectedValueWithConverter(string value, bool expected)
+        {
+            const string key = "key_converter";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys(key)
+                        .AsBool(() => Default, validator: null, converter: _converter);
+
+            actual.Should().Be(expected);
+        }
     }
 
     public abstract class Int32TestsBase
     {
         private const int Default = 42;
+        private readonly IConfigurationSourceFactory _factory;
         private readonly Dictionary<string, object> _collection;
         private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
+        private readonly Func<string, ParsingResult<int>> _absConverter = val
+            => val switch
+            {
+                { } x when int.TryParse(x, out var value) && value >= 0 => value,
+                { } x when int.TryParse(x, out var value) && value < 0 => -value,
+                _ => ParsingResult<int>.Failure(),
+            };
+
         public Int32TestsBase(IConfigurationSourceFactory factory)
         {
+            _factory = factory;
             _collection = new Dictionary<string, object>()
             {
                 { "key", 123 },
@@ -771,17 +835,49 @@ public class ConfigurationBuilderTests
                       .AsInt32(Default, x => x > 0);
             }
         }
+
+        [Theory]
+        [InlineData("23", 23)]
+        [InlineData("35", 35)]
+        [InlineData("-27", 27)]
+        [InlineData("0", 0)]
+        [InlineData("-0", 0)]
+        [InlineData("1.23", Default)]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetInt32_ReturnsTheExpectedValueWithConverter(string value, int expected)
+        {
+            const string key = "key_converter";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys(key)
+                        .AsInt32(Default, validator: null, converter: _absConverter);
+
+            actual.Should().Be(expected);
+        }
     }
 
     public abstract class DoubleTestsBase
     {
         private const double Default = 42.0;
+        private readonly IConfigurationSourceFactory _factory;
         private readonly Dictionary<string, object> _collection;
         private readonly IConfigurationSource _source;
         private readonly NullConfigurationTelemetry _telemetry = new();
 
+        private readonly Func<string, ParsingResult<double>> _absConverter = val
+            => val switch
+            {
+                { } x when TryParse(x, out var value) && value >= 0 => value,
+                { } x when TryParse(x, out var value) && value < 0 => -value,
+                _ => ParsingResult<double>.Failure(),
+            };
+
         public DoubleTestsBase(IConfigurationSourceFactory factory)
         {
+            _factory = factory;
             _collection = new Dictionary<string, object>()
             {
                 { "key", 1.23 },
@@ -849,6 +945,29 @@ public class ConfigurationBuilderTests
                       .WithKeys(key)
                       .AsDouble(Default, x => x > 0);
             }
+        }
+
+        [Theory]
+        [InlineData("23.1", 23.1)]
+        [InlineData("23", 23.0)]
+        [InlineData("35.5", 35.5)]
+        [InlineData("-27.1", 27.1)]
+        [InlineData("-27", 27.0)]
+        [InlineData("0", 0)]
+        [InlineData("-0", 0)]
+        [InlineData(null, Default)]
+        [InlineData("", Default)]
+        [InlineData("invalid", Default)]
+        public void GetDouble_ReturnsTheExpectedValueWithConverter(string value, double expected)
+        {
+            const string key = "key_converter";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+            var actual = new ConfigurationBuilder(source, _telemetry)
+                        .WithKeys(key)
+                        .AsDouble(Default, validator: null, converter: _absConverter);
+
+            actual.Should().Be(expected);
         }
 
         protected static bool TryParse(string txt, out double value)

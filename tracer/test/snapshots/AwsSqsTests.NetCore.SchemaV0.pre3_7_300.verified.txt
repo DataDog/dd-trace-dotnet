@@ -38,9 +38,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -67,9 +69,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -90,9 +94,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -113,9 +119,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -136,9 +144,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -159,9 +169,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -182,9 +194,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       out.host: aws_sqs,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -211,9 +225,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -240,9 +256,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -269,9 +287,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -298,9 +318,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -327,9 +349,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -356,9 +380,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -385,9 +411,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -414,9 +442,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -443,9 +473,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -472,9 +504,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -501,9 +535,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -530,9 +566,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -559,9 +597,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -588,9 +628,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -617,9 +659,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -646,9 +690,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -675,9 +721,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -704,9 +752,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -733,9 +783,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      language: dotnet,
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -762,9 +814,11 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      language: dotnet,
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.AWS.SQS
     },
     Metrics: {
       _dd.top_level: 1.0

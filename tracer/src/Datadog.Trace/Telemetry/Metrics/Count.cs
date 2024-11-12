@@ -102,6 +102,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
+    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`)
+    /// </summary>
+    [TelemetryMetric<MetricTags.ContextHeaderTruncationReason>("context_header.truncated")] ContextHeaderTruncated,
+
+    /// <summary>
     /// The number of requests sent to the stats endopint in the agent, regardless of success
     /// </summary>
     [TelemetryMetric("stats_api.requests")] StatsApiRequests,
@@ -115,6 +120,16 @@ internal enum Count
     /// The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)
     /// </summary>
     [TelemetryMetric<MetricTags.ApiError>("stats_api.errors")] StatsApiErrors,
+
+    /// <summary>
+    /// The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.hiding", isCommon: true, NS.Tracer)] OpenTelemetryConfigHiddenByDatadogConfig,
+
+    /// <summary>
+    /// The number of times an OpenTelemetry configuration has a mapping to a Datadog configuration but it cannot be mapped correctly.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.invalid", isCommon: true, NS.Tracer)] OpenTelemetryConfigInvalid,
 #endregion
 #region Telemetry Namespace
 
@@ -139,6 +154,11 @@ internal enum Count
     /// The number of version-conflict tracers created
     /// </summary>
     [TelemetryMetric("version_conflict_tracers_created", isCommon: false)] VersionConflictTracerCreated,
+
+    /// <summary>
+    /// The number of services in which the customer has installed manual instrumentation that is greater than the automatic instrumentation (and so won't work)
+    /// </summary>
+    [TelemetryMetric("unsupported_custom_instrumentation_services", isCommon: false)] UnsupportedCustomInstrumentationServices,
 
     /// <summary>
     /// The number of logs sent to the direct log submission sink, tagged by IntegrationName. Includes only logs that were sent, not filtered logs
@@ -197,6 +217,11 @@ internal enum Count
     /// Counts the number of times a timeout was hit when evaluating a specific rule type.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
+
+    /// <summary>
+    /// Counts the number of times a timeout was hit when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<AuthenticationFramework>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
 
 #endregion
 #region Iast Namespace

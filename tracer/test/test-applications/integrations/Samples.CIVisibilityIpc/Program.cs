@@ -12,7 +12,7 @@ class Program
 
         Console.WriteLine(@"Using SessionId: " + sessionId);
 
-        var ipcClientType = typeof(Datadog.Trace.Tracer).Assembly.GetType("Datadog.Trace.Ci.Ipc.IpcClient")!;
+        var ipcClientType = Samples.SampleHelpers.IpcClientType!;
         var setMessageReceivedCallbackMethod = ipcClientType.GetMethod("SetMessageReceivedCallback");
         var trySendMessageMethod = ipcClientType.GetMethod("TrySendMessage");
         using var ipcClient = (IDisposable)Activator.CreateInstance(ipcClientType, sessionId)!;

@@ -39,8 +39,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             var initResult = obfuscate
-                                 ? Waf.Create(WafLibraryInvoker!, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                                 : Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+                                 ? CreateWaf(obfuscationParameterKeyRegex: SecurityConstants.ObfuscationParameterKeyRegexDefault, obfuscationParameterValueRegex: SecurityConstants.ObfuscationParameterValueRegexDefault)
+                                 : CreateWaf();
             initResult.Success.Should().BeTrue();
             using (var waf = initResult.Waf)
             {
@@ -50,6 +50,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 waf.Should().NotBeNull();
                 using var context = waf.CreateContext();
                 var result = context.Run(args, TimeoutMicroSeconds);
+                result.Timeout.Should().BeFalse("Timeout should be false");
                 result.ReturnCode.Should().Be(WafReturnCode.Match);
                 result.Data.Should().NotBeNull();
                 var jsonString = JsonConvert.SerializeObject(result.Data);

@@ -6,9 +6,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq.Expressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Util;
@@ -67,7 +70,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             return;
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         sb.AppendLine("***********************************");
 
         var i = 0;
@@ -102,7 +105,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             return;
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         sb.AppendLine("***********************************");
 
         var i = 0;
@@ -163,6 +166,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         AssertTargetSpanExists(targetTest, CommonTags.OSArchitecture);
         AssertTargetSpanExists(targetTest, CommonTags.OSPlatform);
         AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
+        targetTest.Metrics[CommonTags.LogicalCpuCount].Should().Be(Environment.ProcessorCount);
+        targetTest.Metrics.Remove(CommonTags.LogicalCpuCount);
     }
 
     protected virtual void CheckOriginTag(MockCIVisibilityTest targetTest)
@@ -275,7 +280,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
             [CIEnvironmentValues.Constants.AzureBuildBuildId] = "BuildId",
             [CIEnvironmentValues.Constants.AzureSystemJobId] = "JobId",
-            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot,
+            [CIEnvironmentValues.Constants.AzureBuildSourcesDirectory] = current.SourceRoot ?? string.Empty,
             [CIEnvironmentValues.Constants.AzureBuildDefinitionName] = "DefinitionName",
             [CIEnvironmentValues.Constants.AzureSystemTeamFoundationServerUri] = "https://foundation.server.url/",
             [CIEnvironmentValues.Constants.AzureSystemStageDisplayName] = "StageDisplayName",
@@ -299,5 +304,61 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         }
 
         CIValues = CIEnvironmentValues.Create(ciDictionaryValues);
+    }
+
+    protected void ValidateMetadata(Dictionary<string, Dictionary<string, object>>? metadata, string testCommand)
+    {
+        metadata.Should().NotBeNull();
+        metadata ??= new Dictionary<string, Dictionary<string, object>>();
+        metadata.Should().ContainKey("*");
+        metadata["*"].Should().ContainKeys(Trace.Tags.RuntimeId, "language", CommonTags.LibraryVersion, "env");
+
+        var jobName = ((CIEnvironmentValues?)CIValues)?.JobName;
+        var valueKey = string.IsNullOrEmpty(jobName) ? testCommand : $"{jobName}-{testCommand}";
+
+        Expression<Func<KeyValuePair<string, object>, bool>> selector =
+            kv =>
+                kv.Key == "test_session.name" &&
+                kv.Value.ToString() == valueKey;
+
+        metadata.Should().ContainKey(SpanTypes.Test);
+        metadata[SpanTypes.Test].Should().Contain(selector);
+
+        metadata.Should().ContainKey(SpanTypes.TestSuite);
+        metadata[SpanTypes.TestSuite].Should().Contain(selector);
+
+        metadata.Should().ContainKey(SpanTypes.TestModule);
+        metadata[SpanTypes.TestModule].Should().Contain(selector);
+
+        metadata.Should().ContainKey(SpanTypes.TestSession);
+        metadata[SpanTypes.TestSession].Should().Contain(selector);
+    }
+
+    protected void InjectSession(
+        out ulong sessionId,
+        out string sessionCommand,
+        out string sessionWorkingDirectory,
+        out string gitRepositoryUrl,
+        out string gitBranch,
+        out string gitCommitSha)
+    {
+        // Inject session
+        sessionId = RandomIdGenerator.Shared.NextSpanId();
+        sessionCommand = "test command";
+        sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+        SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+        SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
+        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
+        SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
+
+        gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
+        gitBranch = "main";
+        gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
+        SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
     }
 }

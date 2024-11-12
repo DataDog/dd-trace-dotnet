@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class XUnitTestRunnerRunAsyncIntegration
 {
+    private static int _totalRetries = -1;
+
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -42,6 +45,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
         {
             return CallTargetState.GetDefault();
         }
+
+        Interlocked.CompareExchange(ref _totalRetries, CIVisibility.Settings.TotalFlakyRetryCount, -1);
 
         var runnerInstance = instance.DuckCast<TestRunnerStruct>();
         ITestRunner? testRunnerInstance = null;
@@ -67,7 +72,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true)
+        if (CIVisibility.Settings.EarlyFlakeDetectionEnabled != true &&
+            CIVisibility.Settings.FlakyRetryEnabled != true)
         {
             return CallTargetState.GetDefault();
         }
@@ -75,7 +81,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         // Try to ducktype the current instance to ITestClassRunner
         if (!instance.TryDuckCast<ITestRunner>(out testRunnerInstance))
         {
-            Common.Log.Error("EFD: Current test runner instance cannot be ducktyped.");
+            Common.Log.Error("EFD/Retry: Current test runner instance cannot be ducktyped.");
             return CallTargetState.GetDefault();
         }
 
@@ -83,21 +89,23 @@ public static class XUnitTestRunnerRunAsyncIntegration
         RetryMessageBus retryMessageBus;
         if (testRunnerInstance.MessageBus is IDuckType { Instance: { } } ducktypedMessageBus)
         {
-            Common.Log.Debug("EFD: Current message bus is a duck type, retrieving RetryMessageBus instance");
+            Common.Log.Debug("EFD/Retry: Current message bus is a duck type, retrieving RetryMessageBus instance");
             retryMessageBus = (RetryMessageBus)ducktypedMessageBus.Instance;
         }
         else if (testRunnerInstance.MessageBus is { } messageBus)
         {
             // Let's replace the IMessageBus with our own implementation to process all results before sending them to the original bus
-            Common.Log.Debug("EFD: Current message bus is not a duck type, creating new RetryMessageBus");
+            Common.Log.Debug("EFD/Retry: Current message bus is not a duck type, creating new RetryMessageBus");
             var duckMessageBus = messageBus.DuckCast<IMessageBus>();
             var messageBusInterfaceType = messageBus.GetType().GetInterface("IMessageBus")!;
             retryMessageBus = new RetryMessageBus(duckMessageBus, 1, 1);
+            // EFD is disabled but FlakeRetry is enabled
+            retryMessageBus.FlakyRetryEnabled = CIVisibility.Settings.EarlyFlakeDetectionEnabled != true && CIVisibility.Settings.FlakyRetryEnabled == true;
             testRunnerInstance.MessageBus = retryMessageBus.DuckImplement(messageBusInterfaceType);
         }
         else
         {
-            Common.Log.Error("EFD: Message bus is null.");
+            Common.Log.Error("EFD/Retry: Message bus is null.");
             return CallTargetState.GetDefault();
         }
 
@@ -121,77 +129,105 @@ public static class XUnitTestRunnerRunAsyncIntegration
     {
         if (state.State is TestRunnerState { MessageBus: { } messageBus } testRunnerState)
         {
-            if (messageBus is { TestIsNew: true, AbortByThreshold: false })
+            if (messageBus is { TestIsNew: true, AbortByThreshold: false } or { FlakyRetryEnabled: true }
+             && returnValue.TryDuckCast<IRunSummary>(out var runSummary))
             {
+                var isFlakyRetryEnabled = messageBus.FlakyRetryEnabled;
                 var index = messageBus.ExecutionIndex;
                 if (index == 0)
                 {
-                    // Let's make decisions based on the first execution regarding slow tests
-                    var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
-                    messageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
+                    // Let's make decisions based on the first execution regarding slow tests or retry failed test feature
+                    if (isFlakyRetryEnabled)
+                    {
+                        messageBus.TotalExecutions = CIVisibility.Settings.FlakyRetryCount + 1;
+                    }
+                    else
+                    {
+                        var duration = TraceClock.Instance.UtcNow - testRunnerState.StartTime;
+                        messageBus.TotalExecutions = Common.GetNumberOfExecutionsForDuration(duration);
+                    }
+
                     messageBus.ExecutionNumber = messageBus.TotalExecutions - 1;
                 }
 
                 if (messageBus.ExecutionNumber > 0)
                 {
-                    var retryNumber = messageBus.ExecutionIndex + 1;
-                    // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                    Common.Log.Debug<int, int>("EFD: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
-                    var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
-                    if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary) &&
-                        returnValue.TryDuckCast<IRunSummary>(out var runSummary))
+                    var doRetry = true;
+                    if (isFlakyRetryEnabled)
                     {
-                        Common.Log.Debug<int>("EFD: [Retry {Num}] Aggregating results.", retryNumber);
-                        runSummary.Aggregate(innerRunSummary);
+                        var remainingTotalRetries = Interlocked.Decrement(ref _totalRetries);
+                        if (runSummary.Failed == 0)
+                        {
+                            Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
+                            doRetry = false;
+                        }
+                        else if (remainingTotalRetries < 1)
+                        {
+                            Common.Log.Debug<int>("EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", CIVisibility.Settings.TotalFlakyRetryCount);
+                            doRetry = false;
+                        }
                     }
-                    else
+
+                    if (doRetry)
                     {
-                        Common.Log.Error<int>("EFD: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
+                        var retryNumber = messageBus.ExecutionIndex + 1;
+                        // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
+                        Common.Log.Debug<int, int>("EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, messageBus.ExecutionNumber);
+                        var innerReturnValue = await ((Task<TReturn>)testRunnerState.TestRunner.RunAsync()).ConfigureAwait(false);
+                        if (innerReturnValue.TryDuckCast<IRunSummary>(out var innerRunSummary))
+                        {
+                            Common.Log.Debug<int>("EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
+                            runSummary.Aggregate(innerRunSummary);
+                        }
+                        else
+                        {
+                            Common.Log.Error<int>("EFD/Retry: [Retry {Num}] Unable to duck cast the return value to IRunSummary.", retryNumber);
+                        }
                     }
                 }
                 else
                 {
-                    Common.Log.Debug("EFD: All retries were executed.");
+                    if (isFlakyRetryEnabled && runSummary.Failed == 0)
+                    {
+                        Common.Log.Debug("EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
+                    }
+                    else
+                    {
+                        Common.Log.Debug("EFD/Retry: All retries were executed.");
+                    }
                 }
 
                 if (index == 0)
                 {
                     messageBus.FlushMessages();
 
-                    if (returnValue.TryDuckCast<IRunSummary>(out var runSummary))
-                    {
-                        // Let's clear the failed and skipped runs if we have at least one successful run
+                    // Let's clear the failed and skipped runs if we have at least one successful run
 #pragma warning disable DDLOG004
-                        Common.Log.Debug($"EFD: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
+                    Common.Log.Debug($"EFD/Retry: Summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
 #pragma warning restore DDLOG004
-                        var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
-                        if (passed > 0)
-                        {
-                            runSummary.Total = 1;
-                            runSummary.Failed = 0;
-                            runSummary.Skipped = 0;
-                        }
-                        else if (runSummary.Skipped > 0)
-                        {
-                            runSummary.Total = 1;
-                            runSummary.Skipped = 1;
-                            runSummary.Failed = 0;
-                        }
-                        else if (runSummary.Failed > 0)
-                        {
-                            runSummary.Total = 1;
-                            runSummary.Skipped = 0;
-                            runSummary.Failed = 1;
-                        }
+                    var passed = runSummary.Total - runSummary.Skipped - runSummary.Failed;
+                    if (passed > 0)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Failed = 0;
+                        runSummary.Skipped = 0;
+                    }
+                    else if (runSummary.Skipped > 0)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Skipped = 1;
+                        runSummary.Failed = 0;
+                    }
+                    else if (runSummary.Failed > 0)
+                    {
+                        runSummary.Total = 1;
+                        runSummary.Skipped = 0;
+                        runSummary.Failed = 1;
+                    }
 
 #pragma warning disable DDLOG004
-                        Common.Log.Debug($"EFD: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
+                    Common.Log.Debug($"EFD/Retry: Returned summary: {testRunnerState.TestRunner.DisplayName} [Total: {runSummary.Total}, Failed: {runSummary.Failed}, Skipped: {runSummary.Skipped}]");
 #pragma warning restore DDLOG004
-                    }
-                    else
-                    {
-                        Common.Log.Error("EFD: Unable to duck cast the return value to IRunSummary.");
-                    }
                 }
             }
             else

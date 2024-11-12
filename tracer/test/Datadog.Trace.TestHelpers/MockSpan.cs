@@ -14,8 +14,6 @@ namespace Datadog.Trace.TestHelpers
     [DebuggerDisplay("{ToString(),nq}")]
     public class MockSpan
     {
-        private Dictionary<string, byte[]> _metastruct;
-
         [Key("trace_id")]
         public ulong TraceId { get; set; }
 
@@ -53,27 +51,7 @@ namespace Datadog.Trace.TestHelpers
         public Dictionary<string, double> Metrics { get; set; }
 
         [Key("meta_struct")]
-        public Dictionary<string, byte[]> MetaStruct
-        {
-            get
-            {
-                return _metastruct;
-            }
-
-            set
-            {
-                if (value is not null)
-                {
-                    _metastruct = new Dictionary<string, byte[]>();
-
-                    foreach (var key in value.Keys)
-                    {
-                        // No need to store the binary data
-                        _metastruct[key] = Array.Empty<byte>();
-                    }
-                }
-            }
-        }
+        public Dictionary<string, byte[]> MetaStruct { get; set; }
 
         [Key("span_links")]
         public List<MockSpanLink> SpanLinks { get; set; }

@@ -26,7 +26,6 @@ class CallTargetTokens
 {
 private:
     ModuleMetadata* module_metadata_ptr = nullptr;
-    std::mutex metadata_mutex;
 
     // CorLib tokens
     volatile mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
@@ -53,6 +52,8 @@ private:
 protected:
     // CallTarget tokens
     volatile mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
+
+    std::recursive_mutex metadata_mutex;
 
     const bool enable_by_ref_instrumentation = false;
     const bool enable_calltarget_state_by_ref = false;

@@ -91,8 +91,8 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::StartImpl()
 {
-    RunStackSampling();
-    RunWatcher();
+    InitializeSampler();
+    RunWatcherAndSampler();
 
     return true;
 }
@@ -106,7 +106,7 @@ bool StackSamplerLoopManager::StopImpl()
     return true;
 }
 
-void StackSamplerLoopManager::RunStackSampling()
+void StackSamplerLoopManager::InitializeSampler()
 {
     _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
         _pCorProfilerInfo,
@@ -119,11 +119,9 @@ void StackSamplerLoopManager::RunStackSampling()
         _pWallTimeCollector,
         _pCpuTimeCollector,
         _metricsRegistry);
-
-    _pStackSamplerLoop->Start();
 }
 
-void StackSamplerLoopManager::RunWatcher()
+void StackSamplerLoopManager::RunWatcherAndSampler()
 {
     _pWatcherThread = std::make_unique<std::thread>([this]
         {
@@ -146,6 +144,9 @@ void StackSamplerLoopManager::WatcherLoop()
 {
     Log::Info("StackSamplerLoopManager::WatcherLoop started.");
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WatcherThreadName);
+
+    // Start the sampler loop only when the watcher is ready
+    _pStackSamplerLoop->Start();
 
     while (false == _isWatcherShutdownRequested)
     {
@@ -440,12 +441,12 @@ bool StackSamplerLoopManager::AllowStackWalk(std::shared_ptr<ManagedThreadInfo> 
     // https://sourcegraph.com/github.com/dotnet/runtime/-/blob/src/coreclr/vm/proftoeeinterfaceimpl.cpp?L8479
     // we _must_ block in ICorProfilerCallback::ThreadDestroyed to prevent the thread from being destroyed
     // while walking its callstack.
-    pThreadInfo->GetStackWalkLock().Acquire();
+    pThreadInfo->AcquireLock();
 
     // We _must_ check if the thread was not destroyed while acquiring the lock
     if (pThreadInfo->IsDestroyed())
     {
-        pThreadInfo->GetStackWalkLock().Release();
+        pThreadInfo->ReleaseLock();
         return false;
     }
 
@@ -498,7 +499,7 @@ void StackSamplerLoopManager::NotifyIterationFinished()
 {
     std::lock_guard<std::mutex> guardedLock(_watcherActivityLock);
 
-    _pTargetThread->GetStackWalkLock().Release();
+    _pTargetThread->ReleaseLock();
     _pTargetThread.reset();
     _collectionStartNs = 0;
     _isTargetThreadSuspended = false;

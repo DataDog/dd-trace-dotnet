@@ -14,6 +14,10 @@ on:
 jobs:
   bump_version:
     runs-on: windows-latest
+    permissions:
+      contents: write # Creates a branch
+      pull-requests: write # Creates a PR
+      issues: write # Closes milestones
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
       NewVersion: "${{ github.event.inputs.version }}"
@@ -31,12 +35,15 @@ jobs:
           dotnet-version: '8.0.100'
 
       - name: "Bump Version"
-        id: versions
-        run: .\tracer\build.ps1 UpdateVersion OutputCurrentVersionToGitHub
+        run: .\tracer\build.ps1 UpdateVersion
 
       - name: "Verify Changes"
         id: changes
         run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump -ExpectChangelogUpdate false
+
+      - name: "Output Version"
+        id: versions
+        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
 
       - name: Create Pull Request
         id: pr

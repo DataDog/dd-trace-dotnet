@@ -370,7 +370,7 @@ public class StringSplitTests : InstrumentationTestsBase
 
     // Test System.String::Split(System.String,System.Int32,System.StringSplitOptions)
 
-#if !NETFRAMEWORK
+#if NETCOREAPP3_1_OR_GREATER
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithStringAndOptions_ResultIsTainted2()
     {
@@ -389,12 +389,7 @@ public class StringSplitTests : InstrumentationTestsBase
     {
         AssertNoneTainted(_untaintedString.Split("i", StringSplitOptions.None));
     }
-#endif
 
-    // Test System.String::Split(System.String,System.StringSplitOptions)
-
-
-#if !NETFRAMEWORK
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithStringAndOptions_ResultIsTainted1()
     {
@@ -413,9 +408,6 @@ public class StringSplitTests : InstrumentationTestsBase
     {
         AssertNoneTainted(_untaintedString.Split("i", 1, StringSplitOptions.None));
     }
-#endif
-
-    // Test System.String::Split(System.Char,System.StringSplitOptions)
 
     [Fact]
 
@@ -446,6 +438,7 @@ public class StringSplitTests : InstrumentationTestsBase
         AssertEqual(expected, str.Split('|'));
     }
 
+
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharAndOptions_ResultIsTainted4()
     {
@@ -456,7 +449,6 @@ public class StringSplitTests : InstrumentationTestsBase
         AssertAllTainted(results);
     }
 
-#if !NETFRAMEWORK
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharAndOptions_ResultIsTainted5()
     {
@@ -476,11 +468,6 @@ public class StringSplitTests : InstrumentationTestsBase
     {
         AssertNoneTainted(_untaintedString.Split('i', StringSplitOptions.None));
     }
-#endif
-
-    // Test System.String::Split(System.Char,System.Int32,System.StringSplitOptions)
-
-#if NETCOREAPP
 
     [Fact]
     public void GivenATaintedObject_WhenCallingSplitWithCharIndexAndOptions_ResultIsTainted2()

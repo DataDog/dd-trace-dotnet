@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -274,6 +275,11 @@ internal partial class ProbeExpressionParser<T>
                                         return IsInstanceOf(reader, parameters, itParameter);
                                     }
 
+                                case "typeof":
+                                    {
+                                        return GetTypeName(reader, parameters, itParameter);
+                                    }
+
                                 case "isUndefined":
                                     {
                                         return IsUndefined(reader, parameters, itParameter);
@@ -347,6 +353,11 @@ internal partial class ProbeExpressionParser<T>
                     case JsonToken.Integer:
                         {
                             return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Int32));
+                        }
+
+                    case JsonToken.Float:
+                        {
+                            return Expression.Constant(Convert.ChangeType(readerValue, TypeCode.Double));
                         }
 
                     case JsonToken.StartArray:
@@ -425,9 +436,9 @@ internal partial class ProbeExpressionParser<T>
         }
 
         if (typeof(T).IsNumeric()
-            && typeof(IConvertible).IsAssignableFrom(finalExpr.Type))
+            && TryConvertToNumericType<T>(finalExpr, out var result))
         {
-            return CallConvertToNumericType<T>(finalExpr);
+            return result;
         }
 
         if (typeof(T) != typeof(string))

@@ -99,7 +99,7 @@ void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(const ModuleID 
     }
     else
     {
-        Logger::Warn("    * Succeeded in the creation of the new <Original> method. MethodDef: ",
+        Logger::Info("    * Succeeded in the creation of the new <Original> method. MethodDef: ",
                      shared::TokenStr(&methodDef), " Method Name:",
                      functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") +
                      moduleInfo.path);
@@ -123,7 +123,7 @@ void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(const ModuleID 
     }
     else
     {
-        Logger::Warn("    * Succeeded in the creation of the new <Instrumented> method. MethodDef: ",
+        Logger::Info("    * Succeeded in the creation of the new <Instrumented> method. MethodDef: ",
                      shared::TokenStr(&methodDef), " Method Name:",
                      functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") +
                      moduleInfo.path);

@@ -129,6 +129,9 @@
         <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
           <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" Action="write"/>
         </RegistryKey>
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\Windows Error Reporting\RuntimeExceptionHelperModules">
+          <RegistryValue Type="integer" Name="[INSTALLFOLDER.win_x64]Datadog.Trace.ClrProfiler.Native.dll" Value="1" Action="write"/>
+        </RegistryKey>
       </Component>
     </ComponentGroup>
   </Fragment>

@@ -38,7 +38,10 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _errorStatistics{},
     _useBacktrace2{configuration->UseBacktrace2()}
 {
-    _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    if (_signalManager != nullptr)
+    {
+        _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
+    }
 }
 
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
@@ -81,29 +84,34 @@ void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
     }
 }
 
+
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                        uint32_t* pHR,
                                                                                        bool selfCollect)
 {
     long errorCode;
 
+    // If there a timer associated to the managed thread, we have to disarm it.
+    // Otherwise, the CPU consumption to collect the callstack, will be accounted as "user app CPU time"
+    auto timerId = pThreadInfo->GetTimerId();
+
     if (selfCollect)
     {
         // In case we are self-unwinding, we do not want to be interrupted by the signal-based profilers (walltime and cpu)
         // This will crashing in libunwind (accessing a memory area  which was unmapped)
         // This lock is acquired by the signal-based profiler (see StackSamplerLoop->StackSamplerLoopManager)
-        pThreadInfo->GetStackWalkLock().Acquire();
+        pThreadInfo->AcquireLock();
 
         on_leave
         {
-            pThreadInfo->GetStackWalkLock().Release();
+            pThreadInfo->ReleaseLock();
         };
 
         errorCode = CollectCallStackCurrentThread(nullptr);
     }
     else
     {
-        if (!_signalManager->IsHandlerInPlace())
+        if (_signalManager == nullptr || !_signalManager->IsHandlerInPlace())
         {
             *pHR = E_FAIL;
             return GetStackSnapshotResult();
@@ -139,7 +147,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
             if (status == std::cv_status::timeout)
             {
                 _lastStackWalkErrorCode = E_ABORT;
-                ;
+                
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;

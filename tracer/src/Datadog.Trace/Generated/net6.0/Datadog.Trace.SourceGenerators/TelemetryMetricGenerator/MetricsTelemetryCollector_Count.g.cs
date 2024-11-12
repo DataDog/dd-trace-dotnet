@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 368;
+    private const int CountLength = 569;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -59,6 +59,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awssdk" }),
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
+            new(new[] { "integration_name:awseventbridge" }),
             new(new[] { "integration_name:ilogger" }),
             new(new[] { "integration_name:aerospike" }),
             new(new[] { "integration_name:azurefunctions" }),
@@ -99,35 +100,37 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:selenium" }),
             new(new[] { "integration_name:directorylistingleak" }),
             new(new[] { "integration_name:sessiontimeout" }),
-            // spans_finished, index = 78
+            new(new[] { "integration_name:datadogtracemanual" }),
+            new(new[] { "integration_name:emailhtmlinjection" }),
+            // spans_finished, index = 81
             new(null),
-            // spans_enqueued_for_serialization, index = 79
+            // spans_enqueued_for_serialization, index = 82
             new(new[] { "reason:p0_keep" }),
             new(new[] { "reason:single_span_sampling" }),
             new(new[] { "reason:default" }),
-            // spans_dropped, index = 82
+            // spans_dropped, index = 85
             new(new[] { "reason:p0_drop" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
-            // trace_segments_created, index = 86
+            // trace_segments_created, index = 89
             new(new[] { "new_continued:new" }),
             new(new[] { "new_continued:continued" }),
-            // trace_chunks_enqueued_for_serialization, index = 88
+            // trace_chunks_enqueued_for_serialization, index = 91
             new(new[] { "reason:p0_keep" }),
             new(new[] { "reason:default" }),
-            // trace_chunks_dropped, index = 90
+            // trace_chunks_dropped, index = 93
             new(new[] { "reason:p0_drop" }),
             new(new[] { "reason:overfull_buffer" }),
             new(new[] { "reason:serialization_error" }),
             new(new[] { "reason:api_error" }),
-            // trace_chunks_sent, index = 94
+            // trace_chunks_sent, index = 97
             new(null),
-            // trace_segments_closed, index = 95
+            // trace_segments_closed, index = 98
             new(null),
-            // trace_api.requests, index = 96
+            // trace_api.requests, index = 99
             new(null),
-            // trace_api.responses, index = 97
+            // trace_api.responses, index = 100
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -150,26 +153,31 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // trace_api.errors, index = 119
+            // trace_api.errors, index = 122
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // trace_partial_flush.count, index = 122
+            // trace_partial_flush.count, index = 125
             new(new[] { "reason:large_trace" }),
             new(new[] { "reason:single_span_ingestion" }),
-            // context_header_style.injected, index = 124
+            // context_header_style.injected, index = 127
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
-            // context_header_style.extracted, index = 128
+            new(new[] { "header_style:baggage" }),
+            // context_header_style.extracted, index = 132
             new(new[] { "header_style:tracecontext" }),
             new(new[] { "header_style:datadog" }),
             new(new[] { "header_style:b3multi" }),
             new(new[] { "header_style:b3single" }),
-            // stats_api.requests, index = 132
+            new(new[] { "header_style:baggage" }),
+            // context_header.truncated, index = 137
+            new(new[] { "truncation_reason:baggage_item_count_exceeded" }),
+            new(new[] { "truncation_reason:baggage_byte_count_exceeded" }),
+            // stats_api.requests, index = 139
             new(null),
-            // stats_api.responses, index = 133
+            // stats_api.responses, index = 140
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -192,14 +200,196 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // stats_api.errors, index = 155
+            // stats_api.errors, index = 162
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // telemetry_api.requests, index = 158
+            // otel.env.hiding, index = 165
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
+            // otel.env.invalid, index = 255
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_debug", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_runtime_metrics_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_service", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_tags", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_propagation_style", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_sample_rate", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:dd_trace_otel_enabled", "config_opentelemetry:unknown" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_log_level" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_metrics_exporter" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_propagators" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_resource_attributes" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_sdk_disabled" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_service_name" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_exporter" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:otel_traces_sampler_arg" }),
+            new(new[] { "config_datadog:unknown", "config_opentelemetry:unknown" }),
+            // telemetry_api.requests, index = 345
             new(new[] { "endpoint:agent" }),
             new(new[] { "endpoint:agentless" }),
-            // telemetry_api.responses, index = 160
+            // telemetry_api.responses, index = 347
             new(new[] { "endpoint:agent", "status_code:200" }),
             new(new[] { "endpoint:agent", "status_code:201" }),
             new(new[] { "endpoint:agent", "status_code:202" }),
@@ -244,16 +434,18 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "endpoint:agentless", "status_code:503" }),
             new(new[] { "endpoint:agentless", "status_code:504" }),
             new(new[] { "endpoint:agentless", "status_code:5xx" }),
-            // telemetry_api.errors, index = 204
+            // telemetry_api.errors, index = 391
             new(new[] { "endpoint:agent", "type:timeout" }),
             new(new[] { "endpoint:agent", "type:network" }),
             new(new[] { "endpoint:agent", "type:status_code" }),
             new(new[] { "endpoint:agentless", "type:timeout" }),
             new(new[] { "endpoint:agentless", "type:network" }),
             new(new[] { "endpoint:agentless", "type:status_code" }),
-            // version_conflict_tracers_created, index = 210
+            // version_conflict_tracers_created, index = 397
             new(null),
-            // direct_log_logs, index = 211
+            // unsupported_custom_instrumentation_services, index = 398
+            new(null),
+            // direct_log_logs, index = 399
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
             new(new[] { "integration_name:ciapp" }),
@@ -288,6 +480,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awssdk" }),
             new(new[] { "integration_name:awssqs" }),
             new(new[] { "integration_name:awssns" }),
+            new(new[] { "integration_name:awseventbridge" }),
             new(new[] { "integration_name:ilogger" }),
             new(new[] { "integration_name:aerospike" }),
             new(new[] { "integration_name:azurefunctions" }),
@@ -328,9 +521,11 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:selenium" }),
             new(new[] { "integration_name:directorylistingleak" }),
             new(new[] { "integration_name:sessiontimeout" }),
-            // direct_log_api.requests, index = 285
+            new(new[] { "integration_name:datadogtracemanual" }),
+            new(new[] { "integration_name:emailhtmlinjection" }),
+            // direct_log_api.requests, index = 476
             new(null),
-            // direct_log_api.responses, index = 286
+            // direct_log_api.responses, index = 477
             new(new[] { "status_code:200" }),
             new(new[] { "status_code:201" }),
             new(new[] { "status_code:202" }),
@@ -353,34 +548,43 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "status_code:503" }),
             new(new[] { "status_code:504" }),
             new(new[] { "status_code:5xx" }),
-            // direct_log_api.errors, index = 308
+            // direct_log_api.errors, index = 499
             new(new[] { "type:timeout" }),
             new(new[] { "type:network" }),
             new(new[] { "type:status_code" }),
-            // waf.init, index = 311
+            // waf.init, index = 502
             new(null),
-            // waf.updates, index = 312
+            // waf.updates, index = 503
             new(null),
-            // waf.requests, index = 313
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
-            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
-            // waf.input_truncated, index = 318
+            // waf.requests, index = 504
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
+            new(new[] { "waf_version", "event_rules_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
+            // waf.input_truncated, index = 509
             new(new[] { "truncation_reason:string_too_long" }),
             new(new[] { "truncation_reason:list_or_map_too_large" }),
             new(new[] { "truncation_reason:object_too_deep" }),
-            // rasp.rule.eval, index = 321
+            // rasp.rule.eval, index = 512
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // rasp.rule.match, index = 323
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            new(new[] { "waf_version", "rule_type:command_injection" }),
+            // rasp.rule.match, index = 516
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // rasp.timeout, index = 325
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            new(new[] { "waf_version", "rule_type:command_injection" }),
+            // rasp.timeout, index = 520
             new(new[] { "waf_version", "rule_type:lfi" }),
             new(new[] { "waf_version", "rule_type:ssrf" }),
-            // executed.source, index = 327
+            new(new[] { "waf_version", "rule_type:sql_injection" }),
+            new(new[] { "waf_version", "rule_type:command_injection" }),
+            // instrum.user_auth.missing_user_id, index = 524
+            new(new[] { "framework:aspnetcore_identity" }),
+            new(new[] { "framework:unknown" }),
+            // executed.source, index = 526
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -394,9 +598,10 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.matrix.parameter" }),
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
-            // executed.propagation, index = 340
+            new(new[] { "source_type:sql.row.value" }),
+            // executed.propagation, index = 540
             new(null),
-            // executed.sink, index = 341
+            // executed.sink, index = 541
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -423,7 +628,8 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:xss" }),
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
-            // request.tainted, index = 367
+            new(new[] { "vulnerability_type:email_html_injection" }),
+            // request.tainted, index = 568
             new(null),
         };
 
@@ -433,7 +639,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 74, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 74, 1, 22, 3, 1, 1, 5, 3, 2, 2, 2, 13, 1, 26, 1, };
+        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 4, 4, 4, 2, 14, 1, 27, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -449,206 +655,235 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountSpanFinished(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[78], increment);
+        Interlocked.Add(ref _buffer.Count[81], increment);
     }
 
     public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1)
-    {
-        var index = 79 + (int)tag;
-        Interlocked.Add(ref _buffer.Count[index], increment);
-    }
-
-    public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
         var index = 82 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
+    public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
+    {
+        var index = 85 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
     public void RecordCountTraceSegmentCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1)
     {
-        var index = 86 + (int)tag;
+        var index = 89 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkEnqueued(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1)
     {
-        var index = 88 + (int)tag;
+        var index = 91 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
-        var index = 90 + (int)tag;
+        var index = 93 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceChunkSent(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[94], increment);
+        Interlocked.Add(ref _buffer.Count[97], increment);
     }
 
     public void RecordCountTraceSegmentsClosed(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[95], increment);
+        Interlocked.Add(ref _buffer.Count[98], increment);
     }
 
     public void RecordCountTraceApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[96], increment);
+        Interlocked.Add(ref _buffer.Count[99], increment);
     }
 
     public void RecordCountTraceApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 97 + (int)tag;
+        var index = 100 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTraceApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 119 + (int)tag;
+        var index = 122 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTracePartialFlush(Datadog.Trace.Telemetry.Metrics.MetricTags.PartialFlushReason tag, int increment = 1)
     {
-        var index = 122 + (int)tag;
+        var index = 125 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountContextHeaderStyleInjected(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
-        var index = 124 + (int)tag;
+        var index = 127 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
-        var index = 128 + (int)tag;
+        var index = 132 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderTruncationReason tag, int increment = 1)
+    {
+        var index = 137 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[132], increment);
+        Interlocked.Add(ref _buffer.Count[139], increment);
     }
 
     public void RecordCountStatsApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 133 + (int)tag;
+        var index = 140 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 155 + (int)tag;
+        var index = 162 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
+    {
+        var index = 165 + ((int)tag1 * 10) + (int)tag2;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountOpenTelemetryConfigInvalid(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
+    {
+        var index = 255 + ((int)tag1 * 10) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
-        var index = 158 + (int)tag;
+        var index = 345 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
     {
-        var index = 160 + ((int)tag1 * 22) + (int)tag2;
+        var index = 347 + ((int)tag1 * 22) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountTelemetryApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
     {
-        var index = 204 + ((int)tag1 * 3) + (int)tag2;
+        var index = 391 + ((int)tag1 * 3) + (int)tag2;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountVersionConflictTracerCreated(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[210], increment);
+        Interlocked.Add(ref _buffer.Count[397], increment);
+    }
+
+    public void RecordCountUnsupportedCustomInstrumentationServices(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Count[398], increment);
     }
 
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
-        var index = 211 + (int)tag;
+        var index = 399 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountDirectLogApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[285], increment);
+        Interlocked.Add(ref _buffer.Count[476], increment);
     }
 
     public void RecordCountDirectLogApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
-        var index = 286 + (int)tag;
+        var index = 477 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountDirectLogApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
-        var index = 308 + (int)tag;
+        var index = 499 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountWafInit(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[311], increment);
+        Interlocked.Add(ref _buffer.Count[502], increment);
     }
 
     public void RecordCountWafUpdates(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[312], increment);
+        Interlocked.Add(ref _buffer.Count[503], increment);
     }
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
-        var index = 313 + (int)tag;
+        var index = 504 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
     {
-        var index = 318 + (int)tag;
+        var index = 509 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 321 + (int)tag;
+        var index = 512 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspRuleMatch(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 323 + (int)tag;
+        var index = 516 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
-        var index = 325 + (int)tag;
+        var index = 520 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
+    {
+        var index = 524 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
-        var index = 327 + (int)tag;
+        var index = 526 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[340], increment);
+        Interlocked.Add(ref _buffer.Count[540], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        var index = 341 + (int)tag;
+        var index = 541 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[367], increment);
+        Interlocked.Add(ref _buffer.Count[568], increment);
     }
 }

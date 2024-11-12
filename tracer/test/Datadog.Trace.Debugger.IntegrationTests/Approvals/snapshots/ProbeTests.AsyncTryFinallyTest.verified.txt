@@ -1,0 +1,359 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "27": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "27"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "31": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "31"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "32": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "32"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "33": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "19"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "33"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "37": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "19"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "37"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "38": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "19"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "38"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "39": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "AsyncTryFinallyTest"
+                }
+              },
+              "locals": {
+                "ret": {
+                  "type": "Int32",
+                  "value": "9"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncTryFinallyTest.cs",
+            "lines": [
+              "39"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.AsyncTryFinallyTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

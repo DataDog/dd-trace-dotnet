@@ -81,12 +81,12 @@ jobs:
         input: ../results/csharp.sarif
         output: ../results/csharp.sarif
 
-    - name: Upload sarif file
-      run: |
-        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
-      env:
-        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
+    # - name: Upload sarif file
+    #   run: |
+    #     datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+    #     datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
+    #   env:
+    #     DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
 
   tracer:
     name: Analyze Tracer
@@ -158,9 +158,9 @@ jobs:
         input: ../results/csharp.sarif
         output: ../results/csharp.sarif
 
-    - name: Upload sarif file
-      run: |
-        datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
-        datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
-      env:
-        DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'
+    # - name: Upload sarif file
+    #   run: |
+    #     datadog-ci sarif upload ../results/cpp.sarif --service dd-trace-dotnet
+    #     datadog-ci sarif upload ../results/csharp.sarif --service dd-trace-dotnet
+    #   env:
+    #     DD_API_KEY: '${{ secrets.DD_STAGING_API_KEY }}'

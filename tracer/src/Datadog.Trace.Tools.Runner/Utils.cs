@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -405,7 +406,7 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
             configurationSource.AddInternal(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry());
+            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
             Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
@@ -562,9 +563,10 @@ namespace Datadog.Trace.Tools.Runner
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    var archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
                     tracerProfilerArm64 = tracerProfiler64;
-                    ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
+                    ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
                 }
                 else
                 {
@@ -838,7 +840,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             const char Quote = '\"';
             const char Backslash = '\\';
-            var stringBuilder = StringBuilderCache.Acquire(100);
+            var stringBuilder = StringBuilderCache.Acquire();
 
             foreach (var argument in args)
             {

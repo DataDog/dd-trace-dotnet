@@ -39,13 +39,13 @@ public class HashAlgorithmAspect
         {
             var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
             scope?.Dispose();
+            return target;
         }
-        catch (Exception ex)
+        catch (global::System.Exception ex)
         {
-            Log.Error(ex, "Error in HashAlgorithmAspect.");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(HashAlgorithmAspect)}.{nameof(ComputeHash)}");
+            return target;
         }
-
-        return target;
     }
 }
 #endif

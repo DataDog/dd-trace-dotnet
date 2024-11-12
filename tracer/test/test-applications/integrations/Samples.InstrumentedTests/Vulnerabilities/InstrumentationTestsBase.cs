@@ -46,10 +46,10 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _iastRequestContextProperty = _traceContextType.GetProperty("IastRequestContext", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _operationNameProperty = _spanType.GetProperty("OperationName", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _rangesProperty = _taintedObjectType.GetProperty("Ranges", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _startProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _sourceProperty = _rangeType.GetProperty("Source", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _secureMarksProperty = _rangeType.GetProperty("SecureMarks", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
@@ -69,6 +69,14 @@ public class InstrumentationTestsBase : IDisposable
 
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
     protected static string commandInjectionType = "COMMAND_INJECTION";
+
+    [Flags]
+    public enum SecureMarks : byte
+    {
+        None = 0,
+        Xss = 1,
+        Ssrf = 2,
+    }
 
     public InstrumentationTestsBase()
     {
@@ -112,9 +120,23 @@ public class InstrumentationTestsBase : IDisposable
         return tainted;
     }
 
-    protected void AssertTainted(object tainted)
+    protected void AssertTainted(object tainted, string additionalInfo = "")
     {
-        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted.");
+        GetTainted(tainted).Should().NotBeNull(tainted.ToString() + " is not tainted. " + additionalInfo);
+    }
+
+    protected void AssertSecureMarks(object value, SecureMarks secureMarks)
+    {
+        AssertTainted(value);
+        string result = value.ToString();
+        var tainted = GetTainted(value);
+        var ranges = _rangesProperty.Invoke(tainted, Array.Empty<object>()) as Array;
+
+        foreach (var range in ranges)
+        {
+            var rangeSecureMarks = (SecureMarks)_secureMarksProperty.Invoke(range, Array.Empty<object>());
+            rangeSecureMarks.Should().Be(secureMarks);
+        }
     }
 
     private object GetTainted(object tainted)
@@ -122,9 +144,9 @@ public class InstrumentationTestsBase : IDisposable
         return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
 
-    protected void AssertNotTainted(object value)
+    protected void AssertNotTainted(object value, string additionalInfo = "")
     {
-        GetTainted(value).Should().BeNull(value + " is tainted.");
+        GetTainted(value).Should().BeNull(value + " is tainted. " + additionalInfo);
     }
 
     protected void AssertInstrumented()
@@ -139,7 +161,7 @@ public class InstrumentationTestsBase : IDisposable
         spans.Count.Should().Be(spansGenerated);
     }
 
-    protected void AssertVulnerable(string expectedType = null, string expectedEvidence = null, bool evidenceTainted = true, byte sourceType = 0, int vulnerabilities = 1)
+    protected void AssertVulnerable(string expectedType = null, string expectedEvidence = null, bool evidenceTainted = true, short sourceType = -1, int vulnerabilities = 1)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
         vulnerabilityList.Count.Should().Be(vulnerabilities);
@@ -153,12 +175,12 @@ public class InstrumentationTestsBase : IDisposable
         var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
         var evidenceValue = _evidenceValueField.GetValue(evidence);
 
-        if (evidenceTainted)
+        if (evidenceTainted && sourceType >= 0)
         {
             var range = (_evidenceRangesField.GetValue(evidence) as Array).GetValue(0);
             var source = _sourceProperty.Invoke(range, Array.Empty<object>());
             var origin = (byte)_sourceOriginField.GetValue(source);
-            origin.Should().Be(sourceType);
+            origin.Should().Be((byte)sourceType);
         }
 
         if (!string.IsNullOrEmpty(expectedEvidence))
@@ -251,7 +273,7 @@ public class InstrumentationTestsBase : IDisposable
         AssertTaintedFormatWithOriginalCallCheck(null, instrumented, notInstrumented);
     }
 
-    protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
+    protected object AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
         if (expected is not null)
@@ -262,6 +284,8 @@ public class InstrumentationTestsBase : IDisposable
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
+        
+        return instrumented;
     }
 
     protected void AssertUntaintedWithOriginalCallCheck(Action instrumented, Expression<Action> notInstrumented)
@@ -336,8 +360,9 @@ public class InstrumentationTestsBase : IDisposable
 
         foreach (var range in rangesList)
         {
-            var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
-            result = result.Insert(start + (int)_lengthProperty.Invoke(range, Array.Empty<object>()), "-+:");
+            var start = (int)_startProperty.Invoke(range, Array.Empty<object>());
+            var length = (int)_lengthProperty.Invoke(range, Array.Empty<object>());
+            result = result.Insert(start + length, "-+:");
             result = result.Insert(start, ":+-");
         }
 
@@ -353,8 +378,8 @@ public class InstrumentationTestsBase : IDisposable
 
         foreach (var range in ranges)
         {
-            var start = (int)_StartProperty.Invoke(range, Array.Empty<object>());
-            var length = (int)_LengthProperty.Invoke(range, Array.Empty<object>());
+            var start = (int)_startProperty.Invoke(range, Array.Empty<object>());
+            var length = (int)_lengthProperty.Invoke(range, Array.Empty<object>());
             (start + length).Should().BeLessThanOrEqualTo(result.Length);
         }
     }
@@ -364,7 +389,7 @@ public class InstrumentationTestsBase : IDisposable
         return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
-    public static object TestRealDDBBLocalCall(Func<object> expression)
+    public static T TestRealDDBBLocalCall<T>(Func<T> expression)
     {
         if (!IsWindows())
         {
@@ -374,7 +399,7 @@ public class InstrumentationTestsBase : IDisposable
             }
             catch (InvalidOperationException)
             {
-                return null;
+                return default(T);
             }
         }
         else

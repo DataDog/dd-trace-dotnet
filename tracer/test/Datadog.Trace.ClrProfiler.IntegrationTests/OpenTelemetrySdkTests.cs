@@ -81,14 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(string.Empty);
         }
 
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (var version in PackageVersions.OpenTelemetry)
-            {
-                yield return new object[] { version[0], false };
-                yield return new object[] { version[0], true };
-            }
-        }
+        public static IEnumerable<object[]> GetData() => PackageVersions.OpenTelemetry;
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
@@ -96,20 +89,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string packageVersion, bool legacyOperationNames)
+        public async Task SubmitsTraces(string packageVersion)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
-            if (legacyOperationNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "true");
-            }
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 38;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -118,23 +106,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
                 var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
 
-                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("1.7.0"))
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
-                    activitySourceSpans.Count().Should().Be(2);
-                }
-                else
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
-                    activitySourceSpans.Count().Should().Be(1);
-                }
+                otelSpans.Count().Should().Be(expectedSpanCount - 3); // there is another span w/ service == ServiceNameOverride
+                activitySourceSpans.Count().Should().Be(2);
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
                 ValidateIntegrationSpans(activitySourceSpans, metadataSchemaVersion: "v0", expectedServiceName: CustomServiceName, isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
+                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var traceStatePRegex = new Regex("p:[0-9a-fA-F]+");
@@ -167,26 +147,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 36;
+                const int expectedSpanCount = 38;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
 
-                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("1.7.0"))
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
-                }
-                else
-                {
-                    otelSpans.Count().Should().Be(expectedSpanCount - 1); // there is another span w/ service == ServiceNameOverride
-                }
+                otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion, false);
+                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
@@ -224,20 +197,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static string GetSuffix(string packageVersion, bool legacyOperationNames)
+        private static string GetSuffix(string packageVersion)
         {
-            var legacyEnabled = string.Empty;
-            if (legacyOperationNames)
-            {
-                legacyEnabled = "_withLegacyOperationName";
-            }
-
             // The snapshots are only different in .NET Core 2.1 - .NET 5 with package version 1.0.1
 #if !NET6_0_OR_GREATER
             if (!string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) < new Version("1.2.0"))
             {
-                return "_1_0" + legacyEnabled;
+                return "_1_0";
             }
 #endif
 
@@ -245,17 +212,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (!string.IsNullOrEmpty(packageVersion)
             && new Version(packageVersion) <= new Version("1.5.0"))
             {
-                return "_up_to_1_5_0" + legacyEnabled;
+                return "_up_to_1_5_0";
             }
 
             // v1.7.0 fixed StartRootSpan to not be a child of the active span
             if (!string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) < new Version("1.7.0"))
             {
-                return "_up_to_1_7_0" + legacyEnabled;
+                return "_up_to_1_7_0";
             }
 
-            return string.Empty + legacyEnabled;
+            return string.Empty;
         }
     }
 }

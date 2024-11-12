@@ -243,6 +243,11 @@ namespace PrepareRelease
             {
                 Console.WriteLine($"Updating source version instances to {VersionString()}");
 
+                // Pipeline
+                SynchronizeVersion(
+                    "../.azure-pipelines/ultimate-pipeline.yml",
+                    text => Regex.Replace(text, $"ToolVersion: {VersionPattern(withPrereleasePostfix: true)}", $"ToolVersion: {VersionString(withPrereleasePostfix: true)}"));
+
                 // Nuke build
                 SynchronizeVersion(
                     "build/_build/Build.cs",
@@ -262,11 +267,11 @@ namespace PrepareRelease
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                    "src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(

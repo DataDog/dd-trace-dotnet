@@ -1,0 +1,6 @@
+System.InvalidOperationException
+System.Data.SqlClient.SqlException
+   at MyApp.Data.DbContext.ExecuteCommand(String command)
+   at MyApp.Services.CommandService.RunCommand(String command)
+   at MyApp.Controllers.CommandController.ExecuteCommand(String command)
+Resulting Hash: -85424392

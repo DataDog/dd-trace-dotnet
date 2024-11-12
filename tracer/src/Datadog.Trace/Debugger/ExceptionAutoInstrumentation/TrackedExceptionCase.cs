@@ -37,6 +37,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public string ExceptionToString { get; }
 
+        public int NormalizedExceptionHash { get; private set; }
+
         public ExceptionCollectionState TrackingExceptionCollectionState { get; private set; } = ExceptionCollectionState.None;
 
         public bool IsDone => TrackingExceptionCollectionState == ExceptionCollectionState.Finalizing || TrackingExceptionCollectionState == ExceptionCollectionState.Done;
@@ -76,7 +78,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 var @case = ExceptionCaseInstrumentationManager.Instrument(ExceptionIdentifier);
                 BeginCollect(@case);
-                CachedDoneExceptions.Remove(ExceptionToString);
+                CachedDoneExceptions.Remove(NormalizedExceptionHash);
             }
         }
 
@@ -87,10 +89,11 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             StartCollectingTime = DateTime.UtcNow;
         }
 
-        public bool Revert()
+        public bool Revert(int normalizedExceptionHash)
         {
             if (BeginTeardown())
             {
+                NormalizedExceptionHash = normalizedExceptionHash;
                 ExceptionCaseInstrumentationManager.Revert(ExceptionCase);
                 EndTeardown();
                 return true;

@@ -21,12 +21,12 @@ public abstract class ConsoleTestHelper : ToolTestHelper
     {
     }
 
-    protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    protected Task<CustomProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
         return StartConsole(EnvironmentHelper, enableProfiler, "wait", environmentVariables);
     }
 
-    protected Task<ProcessHelper> StartConsoleWithArgs(string args, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    protected Task<CustomProcessHelper> StartConsoleWithArgs(string args, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
     {
         return StartConsole(EnvironmentHelper, enableProfiler, args, environmentVariables);
     }
@@ -49,19 +49,23 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return (executable, args);
     }
 
-    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
+    protected Task<CustomProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, string args, params (string Key, string Value)[] environmentVariables)
     {
         var (executable, baseArgs) = PrepareSampleApp(environmentHelper);
-
         args = $"{baseArgs} {args}";
 
+        return StartConsole(executable, args, environmentHelper, enableProfiler, environmentVariables);
+    }
+
+    protected async Task<CustomProcessHelper> StartConsole(string executable, string args, EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    {
         var processStart = new ProcessStartInfo(executable, args) { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
 
         MockTracerAgent? agent = null;
 
         if (enableProfiler)
         {
-            agent = MockTracerAgent.Create(Output);
+            agent = MockTracerAgent.Create(Output, useTelemetry: true, optionalTelemetryHeaders: true);
 
             environmentHelper.SetEnvironmentVariables(
                 agent,
@@ -125,20 +129,20 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         throw new TimeoutException("Timeout when waiting for the target process to start");
     }
 
-    private class CustomProcessHelper : ProcessHelper
+    public class CustomProcessHelper : ProcessHelper
     {
-        private readonly MockTracerAgent? _agent;
-
         public CustomProcessHelper(MockTracerAgent? agent, Process process, Action<string>? onDataReceived = null)
             : base(process, onDataReceived)
         {
-            _agent = agent;
+            Agent = agent;
         }
+
+        public MockTracerAgent? Agent { get; }
 
         public override void Dispose()
         {
             base.Dispose();
-            _agent?.Dispose();
+            Agent?.Dispose();
         }
     }
 }

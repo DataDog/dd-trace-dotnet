@@ -23,7 +23,6 @@ runs:
         owner: DataDog
         repo: dd-trace-dotnet
         state: open
-        base: master
         per_page: 25
         page: ${{inputs.page_number}}
       env:

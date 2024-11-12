@@ -2,7 +2,25 @@
   "enableDatadog": true,
   "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net60.json",
   "warmUpCount": 5,
-  "count": 50,
+  "count": 80,
+  "services": [
+    {
+      "name": "Execute",
+      "options": {
+        "onScenarioStart": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)",
+          "redirectStandardOutput": true
+        },
+        "onExecutionEnd": {
+          "processName": "cmd.exe",
+          "processArguments": "/c \"..\\remove_logs.cmd\"",
+          "workingDirectory": "$(CWD)"
+        }
+      }
+    }
+  ],
   "scenarios": [
     {
       "name": "Baseline",
@@ -18,7 +36,7 @@
   "processName": "dotnet",
   "processArguments": ".\\Samples.HttpMessageHandler.dll",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\..\\..\\test\\test-applications\\integrations\\Samples.HttpMessageHandler\\bin\\Release\\net6.0",
+  "workingDirectory": "$(CWD)\\..\\..\\..\\..\\artifacts\\bin\\Samples.HttpMessageHandler\\release_net6.0",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
     "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",

@@ -10,7 +10,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 namespace Datadog.Trace.Iast.Dataflow;
 
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal sealed class AspectCtorReplaceAttribute : AspectAttribute
+internal class AspectCtorReplaceAttribute : AspectAttribute
 {
     public AspectCtorReplaceAttribute(string targetMethod)
         : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)

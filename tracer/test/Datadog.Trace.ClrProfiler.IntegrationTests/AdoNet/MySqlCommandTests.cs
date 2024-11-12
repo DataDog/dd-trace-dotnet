@@ -27,50 +27,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMySql8Data()
+        public static IEnumerable<object[]> GetMySqlData(bool newVersionsOnly)
         {
-            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
-
-            foreach (object[] item in PackageVersions.MySqlData)
+            foreach (var item in PackageVersions.MySqlData)
             {
-                if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
+                var version = (string)item[0];
+                var isNewVersion = string.IsNullOrEmpty(version) || Version.Parse(version).Major >= 8;
+                if (newVersionsOnly != isNewVersion)
                 {
                     continue;
                 }
 
-                var result = propagation.SelectMany(prop => new[]
+                foreach (var propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" })
                 {
-                    new[] { item[0], "v0", prop },
-                    new[] { item[0], "v1", prop }
-                });
-
-                foreach (var row in result)
-                {
-                    yield return row;
-                }
-            }
-        }
-
-        public static IEnumerable<object[]> GetOldMySqlData()
-        {
-            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
-
-            foreach (object[] item in PackageVersions.MySqlData)
-            {
-                if (((string)item[0]).StartsWith("8"))
-                {
-                    continue;
-                }
-
-                var result = propagation.SelectMany(prop => new[]
-                {
-                    new[] { item[0], "v0", prop },
-                    new[] { item[0], "v1", prop }
-                });
-
-                foreach (var row in result)
-                {
-                    yield return row;
+                    yield return [version, "v0", propagation];
+                    yield return [version, "v1", propagation];
                 }
             }
         }
@@ -78,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
+        [MemberData(nameof(GetMySqlData), parameters: true)]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
@@ -86,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetOldMySqlData))]
+        [MemberData(nameof(GetMySqlData), parameters: false)]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)

@@ -60,13 +60,17 @@ internal enum CountCIVisibility
     [TelemetryMetric("events_enqueued_for_serialization", isCommon: true, NS.CIVisibility)] EventsEnqueueForSerialization,
 
     /// <summary>
-    /// The number of requests sent to the endpoint by CI Visibility
+    /// The number of requests sent to the endpoint, regardless of success, tagged by endpoint type
+    /// (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`) and a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric<MetricTags.CIVisibilityEndpoints>
+    [TelemetryMetric<MetricTags.CIVisibilityEndpointAndCompression>
         ("endpoint_payload.requests", isCommon: true, NS.CIVisibility)] EndpointPayloadRequests,
 
     /// <summary>
-    /// The number of code coverage finished calls by CI Visibility
+    /// The number of requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code`)
+    /// and endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<
             MetricTags.CIVisibilityEndpoints,
@@ -94,34 +98,46 @@ internal enum CountCIVisibility
         ("git.command_errors", isCommon: true, NS.CIVisibility)] GitCommandErrors,
 
     /// <summary>
-    /// The number of requests sent to the search commit endpoint by CI Visibility
+    /// The number of requests sent to the search commit endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric("git_requests.search_commits", isCommon: true, NS.CIVisibility)] GitRequestsSearchCommits,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
+        ("git_requests.search_commits", isCommon: true, NS.CIVisibility)] GitRequestsSearchCommits,
 
     /// <summary>
-    /// The number of search commit requests sent to the endpoint that errored by CI Visibility
+    /// The number of search commit requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("git_requests.search_commits_errors", isCommon: true, NS.CIVisibility)] GitRequestsSearchCommitsErrors,
 
     /// <summary>
-    /// The number of requests sent to the git object pack endpoint by CI Visibility
+    /// The number of requests sent to the git object pack endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric("git_requests.objects_pack", isCommon: true, NS.CIVisibility)] GitRequestsObjectsPack,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
+        ("git_requests.objects_pack", isCommon: true, NS.CIVisibility)] GitRequestsObjectsPack,
 
     /// <summary>
-    /// The number of git object pack requests sent to the endpoint that errored by CI Visibility
+    /// The number of git object pack requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("git_requests.objects_pack_errors", isCommon: true, NS.CIVisibility)] GitRequestsObjectsPackErrors,
 
     /// <summary>
-    /// The number of requests sent to the settings endpoint, regardless of success by CI Visibility
+    /// The number of requests sent to the settings endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric("git_requests.settings", isCommon: true, NS.CIVisibility)] GitRequestsSettings,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
+        ("git_requests.settings", isCommon: true, NS.CIVisibility)] GitRequestsSettings,
 
     /// <summary>
-    /// The number of settings requests sent to the endpoint that errored by CI Visibility
+    /// The number of settings requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("git_requests.settings_errors", isCommon: true, NS.CIVisibility)] GitRequestsSettingsErrors,
@@ -133,12 +149,16 @@ internal enum CountCIVisibility
         ("git_requests.settings_response", isCommon: true, NS.CIVisibility)] GitRequestsSettingsResponse,
 
     /// <summary>
-    /// The number of requests sent to the itr skippable tests endpoint by CI Visibility
+    /// The number of requests sent to the itr skippable tests endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric("itr_skippable_tests.request", isCommon: true, NS.CIVisibility)] ITRSkippableTestsRequest,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
+        ("itr_skippable_tests.request", isCommon: true, NS.CIVisibility)] ITRSkippableTestsRequest,
 
     /// <summary>
-    /// The number of itr skippable tests requests sent to the endpoint that errored by CI Visibility
+    /// The number of itr skippable tests requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("itr_skippable_tests.request_errors", isCommon: true, NS.CIVisibility)] ITRSkippableTestsRequestErrors,
@@ -182,12 +202,16 @@ internal enum CountCIVisibility
     [TelemetryMetric("code_coverage.errors", isCommon: true, NS.CIVisibility)] CodeCoverageErrors,
 
     /// <summary>
-    /// The number of requests sent to the early flake detection endpoint by CI Visibility
+    /// The number of requests sent to the known tests endpoint, regardless of success.
+    /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
-    [TelemetryMetric("early_flake_detection.request", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequest,
+    [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
+        ("early_flake_detection.request", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequest,
 
     /// <summary>
-    /// The number of early flake detection requests sent to the endpoint that errored by CI Visibility
+    /// The number of known tests requests sent to the endpoint that errored, tagget by the error type
+    /// (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)
+    /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
         ("early_flake_detection.request_errors", isCommon: true, NS.CIVisibility)] EarlyFlakeDetectionRequestErrors,

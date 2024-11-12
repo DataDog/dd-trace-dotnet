@@ -282,6 +282,7 @@
     <ClInclude Include="fault_tolerant_method_duplicator.h" />
     <ClInclude Include="fault_tolerant_rewriter.h" />
     <ClInclude Include="fault_tolerant_tracker.h" />
+    <ClInclude Include="function_control_wrapper.h" />
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="iast\app_domain_info.h" />
     <ClInclude Include="iast\aspect.h" />
@@ -335,6 +336,10 @@
     <ClInclude Include="stats.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="threadUtils.h" />
+    <ClInclude Include="tracer_handler_module_method.h" />
+    <ClInclude Include="tracer_integration_definition.h" />
+    <ClInclude Include="tracer_method_rewriter.h" />
+    <ClInclude Include="tracer_rejit_preprocessor.h" />
     <ClInclude Include="tracer_tokens.h" />
   </ItemGroup>
   <ItemGroup>
@@ -359,6 +364,7 @@
     <ClCompile Include="fault_tolerant_method_duplicator.cpp" />
     <ClCompile Include="fault_tolerant_rewriter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp" />
+    <ClCompile Include="function_control_wrapper.cpp" />
     <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />
@@ -385,6 +391,10 @@
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
     <ClCompile Include="threadUtils.cpp" />
+    <ClCompile Include="tracer_handler_module_method.cpp" />
+    <ClCompile Include="tracer_integration_definition.cpp" />
+    <ClCompile Include="tracer_method_rewriter.cpp" />
+    <ClCompile Include="tracer_rejit_preprocessor.cpp" />
     <ClCompile Include="tracer_tokens.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

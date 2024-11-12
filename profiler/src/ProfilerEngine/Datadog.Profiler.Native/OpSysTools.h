@@ -105,6 +105,18 @@ public:
         }
         return nbElement == 3;
     }
+
+    ///
+    /// This function get the current timestamp in a signal-safe manner
+    ///
+    static inline std::uint64_t GetTimestampSafe()
+    {
+        struct timespec ts;
+        // TODO error handling ?
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return (std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+    }
+
 #endif
 
     static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);

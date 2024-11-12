@@ -79,36 +79,44 @@ namespace Datadog.Trace.Configuration
                 return dictionary;
             }
 
+            bool enableHeaderTagsBehaviors = allowOptionalMappings;
             var entries = data.Split(DictionarySeparatorChars, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var entry in entries)
             {
-                // we need TrimStart() before looking for the separator so we can skip entries with no key
+                // we need Trim() before looking forthe separator so we can skip entries with no key
                 // (that is, entries with a leading separator, like "<empty or whitespace>:value")
-                var trimmedEntry = entry.TrimStart();
-
-                if (trimmedEntry.Length > 0)
+                var trimmedEntry = entry.Trim();
+                if (trimmedEntry.Length == 0 || trimmedEntry[0] == separator)
                 {
-                    // separatorIndex == 0 is a leading separator, not valid
-                    var separatorIndex = trimmedEntry.IndexOf(separator);
+                    continue;
+                }
+                else if (enableHeaderTagsBehaviors && trimmedEntry[trimmedEntry.Length - 1] == separator)
+                {
+                    // When parsing header tags, any input trailing colons is invalid
+                    continue;
+                }
 
-                    if (separatorIndex < 0 && allowOptionalMappings)
-                    {
-                        // entries with no separator are allowed (e.g. "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        // note we already did TrimStart(), so we only need TrimEnd().
-                        var key = trimmedEntry.TrimEnd();
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (separatorIndex > 0)
-                    {
-                        // split at the first separator only. any other separators are part of the value.
-                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did TrimStart() on the key, so it only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
+                var separatorIndex = enableHeaderTagsBehaviors switch
+                {
+                    false => trimmedEntry.IndexOf(separator), // In the general case, we split on the first colon
+                    true => trimmedEntry.LastIndexOf(separator), // However, for header tags parsing is recommended to split on last colon
+                };
+
+                if (separatorIndex < 0 && enableHeaderTagsBehaviors)
+                {
+                    // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
+                    // it's a key with no value.
+                    var key = trimmedEntry;
+                    dictionary[key] = string.Empty;
+                }
+                else if (separatorIndex > 0)
+                {
+                    // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
+                    // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
+                    var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
+                    var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
+                    dictionary[key] = value;
                 }
             }
 
@@ -181,13 +189,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        ConfigurationResult<string> ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<string>.NotFound();
             }
 
             if (validator is null || validator(value))
@@ -201,13 +209,13 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        ConfigurationResult<int> ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<int>.NotFound();
             }
 
             if (int.TryParse(value, out var result))
@@ -223,17 +231,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingInt32Error);
-            return null;
+            return ConfigurationResult<int>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        ConfigurationResult<double> ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<double>.NotFound();
             }
 
             if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
@@ -249,17 +257,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingDoubleError);
-            return null;
+            return ConfigurationResult<double>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        ConfigurationResult<bool> ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<bool>.NotFound();
             }
 
             var result = value.ToBoolean();
@@ -276,17 +284,17 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue: true, Origin, TelemetryErrorCode.ParsingBooleanError);
-            return null;
+            return ConfigurationResult<bool>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<T>.NotFound();
             }
 
             var result = converter(value);
@@ -303,24 +311,24 @@ namespace Datadog.Trace.Configuration
             }
 
             telemetry.Record(key, value, recordValue, Origin, TelemetryErrorCode.ParsingCustomError);
-            return null;
+            return ConfigurationResult<T>.ParseFailure();
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
             if (value is null)
             {
-                return null;
+                return ConfigurationResult<IDictionary<string, string>>.NotFound();
             }
 
             // We record the original dictionary value here instead of serializing the _parsed_ value

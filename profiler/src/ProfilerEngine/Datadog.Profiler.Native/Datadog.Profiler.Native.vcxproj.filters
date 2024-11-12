@@ -445,6 +445,26 @@
     <ClInclude Include="ServiceBase.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="LinkedList.hpp" />
+    <ClInclude Include="TelemetryMetricsWorker.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Callstack.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="CallstackProvider.h" />
+    <ClInclude Include="MemoryResourceManager.h" />
+    <ClInclude Include="ISsiManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="SsiManager.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="ISsiLifetime.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="DeploymentMode.h" />
+    <ClInclude Include="EnablementStatus.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -674,6 +694,24 @@
     </ClCompile>
     <ClCompile Include="ServiceBase.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="TelemetryMetricsWorker.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Callstack.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="CallstackProvider.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryResourceManager.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SsiManager.cpp">
+      <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="SkipProfileHeuristicType.h">
+      <Filter>Profiler-Driver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

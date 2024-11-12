@@ -1,0 +1,50 @@
+name: "Publish native debug symbols"
+description: 'Publish native debug symbols'
+
+inputs:
+  symbols_folder:
+    description: "Folder containing the debug symbols"
+    required: true
+  preprod_key:
+    description: "Preprod API key"
+    default: ""
+    required: false
+  prod_key:
+    description: "Prod API key"
+    default: ""
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    # datadog-ci needs the version 20 (https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L6)
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    # Use the same go version as in https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L21
+    - name: Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '^1.22.3'
+
+    # Use the same version of datadog-ci as in https://github.com/DataDog/profiling-backend/blob/prod/debug-symbol-upload/Dockerfile#L14
+    - name: Install datadog-ci
+      shell: bash
+      run: npm install -g @datadog/datadog-ci@2.42.0
+
+    - name: Push debug symbols
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.prod_key }}" ]; then
+          echo "Push symbols to prod env"
+          DATADOG_API_KEY="${{ inputs.prod_key }}" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
+        fi
+
+        if [ -n "${{ inputs.preprod_key }}" ]; then
+          echo "Push symbols to staging env"
+          DATADOG_API_KEY="${{ inputs.preprod_key }}" DATADOG_SITE="datad0g.com" DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload ${{inputs.symbols_folder}}
+        fi
+
+    

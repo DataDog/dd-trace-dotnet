@@ -39,4 +39,5 @@ namespace OsSpecificApi
         IGCSuspensionsListener* pGCSuspensionsListener,
         IConfiguration* pConfiguration
         );
+    double GetProcessLifetime();
  } // namespace OsSpecificApi

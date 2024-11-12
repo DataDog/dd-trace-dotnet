@@ -5,6 +5,7 @@ using namespace shared;
 namespace iast
 {
     class MethodInfo;
+    class MethodSpec;
     class ModuleAspects;
     class Dataflow;
     class AspectFilter;
@@ -15,10 +16,11 @@ namespace iast
     class ILRewriter;
     struct ILInstr;
 
-    struct InstrumentResult
+    struct DataflowContext
     {
+        ILRewriter* rewriter;
         ILInstr* instruction;
-        bool written;
+        bool aborted;
     };
 
     enum class DataflowAspectFilterValue
@@ -117,7 +119,7 @@ namespace iast
         WSTRING ToString();
     };
 
-    class DataflowAspectReference : Aspect
+    class DataflowAspectReference
     {
     public:
         DataflowAspectReference(ModuleAspects* moduleAspects, DataflowAspect* aspect, mdMemberRef targetMethod, mdTypeRef targetType, const std::vector<mdTypeRef>& paramType);
@@ -131,22 +133,23 @@ namespace iast
         std::vector<mdTypeRef> _targetParamTypeToken;
         std::vector<AspectFilter*> _filters;
 
+    private:
+        std::map<mdMethodSpec, mdMethodSpec> _aspectMethodSpecs;
         mdMemberRef _aspectMemberRef = 0;
-        mdMemberRef _aspectTrackMemberRef = 0;
 
     private:
+        bool IsReinstrumentation(mdMemberRef method);
         bool IsTargetMethod(mdMemberRef method);
-        void ResolveAspect();
 
     public:
-        std::string GetAspectTypeName() override;
-        std::string GetAspectMethodName() override;
-        AspectType GetAspectType() override;
-        std::vector<VulnerabilityType> GetVulnerabilityTypes() override;
+        std::string GetAspectTypeName();
+        std::string GetAspectMethodName();
+        AspectType GetAspectType();
+        std::vector<VulnerabilityType> GetVulnerabilityTypes();
 
-        mdMemberRef GetAspectMemberRef() override;
+        mdToken GetAspectMemberRef(MethodSpec* methodSpec);
 
-        InstrumentResult Apply(ILRewriter* rewriter, ILInstr* instr);
-        bool ApplyFilters(ILInstr* instruction, ILRewriter* processor);
+        bool Apply(DataflowContext& context);
+        bool ApplyFilters(DataflowContext& context);
     };
 }

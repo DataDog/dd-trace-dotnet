@@ -1,5 +1,8 @@
 # startup.ps1: Startup script to customize the environment when the container starts but before starting IIS
 
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+
 # For example, set DD_AGENT_HOST at launch time, which may be necessary for ECS applications sending traces to their EC2 instance
 # $dockerHost = (curl http://169.254.169.254/latest/meta-data/local-ipv4).Content
 # [Environment]::SetEnvironmentVariable("DD_AGENT_HOST", "$dockerHost")

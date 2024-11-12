@@ -33,9 +33,9 @@ public:
 
     ~AgentProxy() = default;
 
-    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
-        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata));
+        auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata), std::move(info));
         if (!ec)
         {
             return std::move(ec); // ?? really ?? otherwise it calls the copy constructor :sad:
@@ -107,14 +107,14 @@ private:
         ddog_prof_Exporter_Request* _inner;
     };
 
-    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info)
     {
         auto start = encodedProfile->start;
         auto end = encodedProfile->end;
         auto profileBuffer = encodedProfile->buffer;
         std::string const profile_filename = "auto.pprof";
 
-        ddog_prof_Exporter_File profile{FfiHelper::StringToCharSlice(profile_filename), ddog_Vec_U8_as_slice(&profileBuffer)};
+        ddog_prof_Exporter_File profile{to_char_slice(profile_filename), ddog_Vec_U8_as_slice(&profileBuffer)};
 
         std::vector<ddog_prof_Exporter_File> uncompressed_files;
         uncompressed_files.reserve(1);
@@ -127,7 +127,7 @@ private:
         for (auto& [filename, content] : files)
         {
             ddog_Slice_U8 fileSlice{reinterpret_cast<const uint8_t*>(content.c_str()), content.size()};
-            to_compress_files.push_back({FfiHelper::StringToCharSlice(filename), fileSlice});
+            to_compress_files.push_back({to_char_slice(filename), fileSlice});
         }
 
         ddog_prof_Exporter_Slice_File uncompressed_files_view = {uncompressed_files.data(), uncompressed_files.size()};
@@ -137,21 +137,28 @@ private:
         ddog_CharSlice ffi_metadata{};
         if (!metadata.empty())
         {
-            ffi_metadata = FfiHelper::StringToCharSlice(metadata);
+            ffi_metadata = to_char_slice(metadata);
             pMetadata = &ffi_metadata;
         }
 
         // json defined in internal RFC - Pprof System Info Support
+        // that is used for SSI telemetry metrics.
         // Mostly already passed through tags today
-        ddog_CharSlice* pOptions = nullptr;
+        ddog_CharSlice* pInfo = nullptr;
+        ddog_CharSlice ffi_info{};
+        if (!info.empty())
+        {
+            ffi_info = to_char_slice(info);
+            pInfo = &ffi_info;
+        }
+
         auto* endpoints_stats = encodedProfile->endpoints_stats;
         auto requestResult =
             ddog_prof_Exporter_Request_build(
                 _exporter.get(), start, end,
                 to_compress_files_view, uncompressed_files_view,
                 static_cast<ddog_Vec_Tag const*>(*tags._impl),
-                endpoints_stats, pMetadata, pOptions,
-                10000);
+                endpoints_stats, pMetadata, pInfo);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {

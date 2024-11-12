@@ -11,6 +11,13 @@ namespace debugger
 
 // DebuggerRejitPreprocessor
 
+DebuggerRejitPreprocessor::DebuggerRejitPreprocessor(CorProfiler* corProfiler,
+                                                     std::shared_ptr<RejitHandler> rejit_handler,
+                                                     std::shared_ptr<RejitWorkOffloader> work_offloader) :
+    RejitPreprocessor(corProfiler, rejit_handler, work_offloader, RejitterPriority::Critical)
+{
+}
+
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
     std::vector<MethodIdentifier>& rejitRequests)
@@ -40,7 +47,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
         Logger::Debug("  Loading Assembly Metadata...");
         auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                      metadataInterfaces.GetAddressOf());
-        if (FAILED(hr))
+        if (hr != S_OK)
         {
             Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", moduleInfo.id, " ",
                          moduleInfo.assembly.name);
@@ -92,7 +99,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
                 continue;
             }
 
-            auto moduleHandler = m_rejit_handler->GetOrAddModule(moduleInfo.id);
+            auto moduleHandler = GetOrAddModule(moduleInfo.id);
             if (moduleHandler == nullptr)
             {
                 Logger::Warn("Module handler is null, this only happens if the RejitHandler has been shutdown.");
@@ -246,6 +253,49 @@ const bool DebuggerRejitPreprocessor::SupportsSelectiveEnablement()
     return false;
 }
 
+bool DebuggerRejitPreprocessor::CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport,
+    const FunctionInfo& functionInfo, const MethodReference& targetMethod)
+{
+    const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
+    const auto isStatic = !(functionInfo.method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+    const auto thisArg = isStatic ? 0 : 1;
+    const auto numOfArgsTargetMethod = targetMethod.signature_types.size();
+
+    // Compare if the current mdMethodDef contains the same number of arguments as the
+    // instrumentation target
+    if (numOfArgs != numOfArgsTargetMethod - thisArg)
+    {
+        Logger::Info("    * Skipping ", functionInfo.type.name, ".", functionInfo.name,
+                     ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
+        return false;
+    }
+
+    // Compare each mdMethodDef argument type to the instrumentation target
+    bool argumentsMismatch = false;
+    const auto& methodArguments = functionInfo.method_signature.GetMethodArguments();
+
+    Logger::Debug("    * Comparing signature for method: ", functionInfo.type.name, ".", functionInfo.name);
+    for (unsigned int i = 0; i < numOfArgs && (i + thisArg) < numOfArgsTargetMethod; i++)
+    {
+        const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
+        const auto integrationArgumentTypeName = targetMethod.signature_types[i + thisArg];
+        Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+        {
+            argumentsMismatch = true;
+            break;
+        }
+    }
+    if (argumentsMismatch)
+    {
+        Logger::Info("    * Skipping ", targetMethod.method_name,
+                     ": the methoddef doesn't have the right type of arguments.");
+        return false;
+    }
+
+    return true;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
@@ -388,7 +438,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The methoddef: ",
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The MethodDef: ",
                       shared::TokenStr(&moveNextMethod), " is not valid!");
         return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }
@@ -396,8 +446,10 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     const auto hr = caller.method_signature.TryParse();
     if (FAILED(hr))
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",
-                      caller.method_signature.str(), " cannot be parsed.");
+        Logger::Error(
+                    "    * DebuggerRejitPreprocessor::TransformKickOffToMoveNext: [MethodDef=", shared::TokenStr(&moveNextMethod),
+                    ", Type=", caller.type.name, ", Method=", caller.name, "]", ": could not parse method signature.");
+        Logger::Debug("    Method signature is: ", caller.method_signature.str());
         return {hr, mdMethodDefNil, FunctionInfo()};
     }
 
@@ -426,7 +478,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMe
 
     if (moveNextMethod == mdMethodDefNil)
     {
-        Logger::Info("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
+        Logger::Debug("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
         return {S_OK, methodDef, functionInfo};
     }
 

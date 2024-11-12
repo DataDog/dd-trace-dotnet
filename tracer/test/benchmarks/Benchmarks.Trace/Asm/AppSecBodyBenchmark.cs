@@ -80,8 +80,8 @@ namespace Benchmarks.Trace.Asm
             context?.Dispose();
             _httpContext.Features.Set<IContext>(null);
 #else
-            var securityTransport = new SecurityCoordinator(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
-            securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
+            var securityTransport = SecurityCoordinator.Get(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
+            securityTransport!.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = _httpContext.Items["waf"] as IContext;
             context?.Dispose();
             _httpContext.Items["waf"] = null;

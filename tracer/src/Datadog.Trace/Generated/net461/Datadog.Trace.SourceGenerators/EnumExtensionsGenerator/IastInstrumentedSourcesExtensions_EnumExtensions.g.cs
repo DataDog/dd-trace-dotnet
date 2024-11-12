@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSourcesExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 13;
+    public const int Length = 14;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources"/> value.
@@ -43,6 +43,7 @@ internal static partial class IastInstrumentedSourcesExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter => "source_type:http.request.matrix.parameter",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri => "source_type:http.request.uri",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.GrpcRequestBody => "source_type:grpc.request.body",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.SqlRowValue => "source_type:sql.row.value",
             _ => value.ToString(),
         };
 
@@ -69,6 +70,7 @@ internal static partial class IastInstrumentedSourcesExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.GrpcRequestBody,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.SqlRowValue,
         };
 
     /// <summary>
@@ -95,6 +97,7 @@ internal static partial class IastInstrumentedSourcesExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.GrpcRequestBody),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.SqlRowValue),
         };
 
     /// <summary>
@@ -121,5 +124,6 @@ internal static partial class IastInstrumentedSourcesExtensions
             "source_type:http.request.matrix.parameter",
             "source_type:http.request.uri",
             "source_type:grpc.request.body",
+            "source_type:sql.row.value",
         };
 }

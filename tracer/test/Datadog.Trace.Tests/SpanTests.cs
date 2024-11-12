@@ -30,14 +30,11 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings(
-                new NameValueConfigurationSource(
-                    new NameValueCollection
-                    {
-                        { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
-                        { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
-                    }),
-                new ConfigurationTelemetry());
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
+                { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
+            });
 
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
@@ -359,64 +356,6 @@ namespace Datadog.Trace.Tests
             // The normal GetTag only look into the Meta dictionary.
             span.GetTag(stringKey).Should().Be(stringValue);
             span.GetTag(numericKey).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSet_HasBaseService()
-        {
-            var origName = "MyServiceA";
-            var newName = "MyServiceB";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = newName;
-
-            span.ServiceName.Should().Be(newName);
-            span.GetTag(Tags.BaseService).Should().Be(origName);
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenNotSet_HasNoBaseService()
-        {
-            var origName = "MyServiceA";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-
-            span.ServiceName.Should().Be(origName);
-            span.GetTag(Tags.BaseService).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSetSame_HasNoBaseService()
-        {
-            var origName = "MyServiceA";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = origName;
-
-            span.ServiceName.Should().Be(origName);
-            span.GetTag(Tags.BaseService).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSetSameWithDifferentCase_HasNoBaseService()
-        {
-            var origName = "MyServiceA";
-            var newName = origName.ToUpper();
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = newName;
-
-            span.ServiceName.Should().Be(newName); // ServiceName should change although _dd.base_service has not been added
-            span.GetTag(Tags.BaseService).Should().BeNull();
-        }
-
-        [Fact]
-        public void ServiceOverride_WhenSetTwice_HasBaseService()
-        {
-            var origName = "MyServiceA";
-            var newName = "MyServiceC";
-            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = "MyServiceB";
-            span.ServiceName = newName;
-
-            span.ServiceName.Should().Be(newName);
-            span.GetTag(Tags.BaseService).Should().Be(origName);
         }
     }
 }

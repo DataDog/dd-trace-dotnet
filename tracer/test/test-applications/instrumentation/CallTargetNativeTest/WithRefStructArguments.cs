@@ -9,12 +9,12 @@ partial class Program
         var wRefStructArg = new WithRefStructArguments();
 
         Console.WriteLine($"{typeof(WithRefArguments).FullName} | ReadOnlySpan<char> methods");
-        RunMethod(() => wRefStructArg.VoidReadOnlySpanMethod("BadParam"));
+        RunMethod(() => wRefStructArg.VoidReadOnlySpanMethod("BadParam".AsSpan()));
         RunMethod(() =>
         {
             var arg1 = "BadParam".AsSpan();
             wRefStructArg.VoidReadOnlySpanMethod(ref arg1);
-            if (arg1 != "Hello World") throw new Exception("Error modifying arg1 value.");
+            if (!arg1.SequenceEqual("Hello World".AsSpan())) throw new Exception("Error modifying arg1 value.");
         });
         RunMethod(() =>
         {
@@ -27,15 +27,18 @@ partial class Program
             var arg1 = "BadParam".AsSpan();
             var arg2 = "BadParam".AsSpan();
             wRefStructArg.Void2ReadOnlySpanMethod(ref arg1, ref arg2);
-            if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-            if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+            if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
+            if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
         });
         RunMethod(() =>
         {
             var arg1 = "BadParam".AsSpan();
             var arg2 = "BadParam".AsSpan();
             wRefStructArg.Void2ReadOnlySpanMethod(arg1, ref arg2);
-            if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+            if (!arg2.SequenceEqual("World".AsSpan()))
+            {
+                throw new Exception("Error modifying arg2 value.");
+            }
         });
         
         Console.WriteLine($"{typeof(WithRefArguments).FullName} | Span<char> methods");
@@ -118,7 +121,7 @@ partial class Program
             var arg4 = new ReadOnlyRefStruct("BadParam");
             wRefStructArg.VoidMixedMethod(ref arg1, ref arg2, ref arg3, ref arg4);
             if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-            if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+            if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
             if (arg3.ToString() != "Hello") throw new Exception("Error modifying arg3 value.");
             if (arg4.Value != "World") throw new Exception("Error modifying arg4 value.");
         });
@@ -129,7 +132,7 @@ partial class Program
             var arg3 = new Span<char>(['B', 'a', 'd', 'P', 'a', 'r', 'a', 'm']);
             var arg4 = new ReadOnlyRefStruct("BadParam");
             wRefStructArg.VoidMixedMethod(arg1, ref arg2, arg3, ref arg4);
-            if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+            if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
             if (arg4.Value != "World") throw new Exception("Error modifying arg4 value.");
         });
     }
@@ -141,30 +144,30 @@ internal class WithRefStructArguments
     
     public void VoidReadOnlySpanMethod(ReadOnlySpan<char> arg1)
     {
-        if (arg1 != "Hello World") throw new Exception("Error modifying arg1 value.");
+        if (!arg1.SequenceEqual("Hello World".AsSpan())) throw new Exception("Error modifying arg1 value.");
     }
 
     public void VoidReadOnlySpanMethod(ref ReadOnlySpan<char> arg1)
     {
-        if (arg1 != "Hello World") throw new Exception("Error modifying arg1 value.");
+        if (!arg1.SequenceEqual("Hello World".AsSpan())) throw new Exception("Error modifying arg1 value.");
     }
 
     public void Void2ReadOnlySpanMethod(ReadOnlySpan<char> arg1, ReadOnlySpan<char> arg2)
     {
-        if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
 
     public void Void2ReadOnlySpanMethod(ref ReadOnlySpan<char> arg1, ref ReadOnlySpan<char> arg2)
     {
-        if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
 
     public void Void2ReadOnlySpanMethod(ReadOnlySpan<char> arg1, ref ReadOnlySpan<char> arg2)
     {
-        if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg1.SequenceEqual("Hello".AsSpan())) throw new Exception("Error modifying arg1 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
     }
     
     // *** Span<char> arguments ***
@@ -232,7 +235,7 @@ internal class WithRefStructArguments
     public void VoidMixedMethod(string arg1, ReadOnlySpan<char> arg2, Span<char> arg3, ReadOnlyRefStruct arg4)
     {
         if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
         if (arg3.ToString() != "Hello") throw new Exception("Error modifying arg3 value.");
         if (arg4.Value != "World") throw new Exception("Error modifying arg4 value.");
     }
@@ -240,7 +243,7 @@ internal class WithRefStructArguments
     public void VoidMixedMethod(ref string arg1, ref ReadOnlySpan<char> arg2, ref Span<char> arg3, ref ReadOnlyRefStruct arg4)
     {
         if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
         if (arg3.ToString() != "Hello") throw new Exception("Error modifying arg3 value.");
         if (arg4.Value != "World") throw new Exception("Error modifying arg4 value.");
     }
@@ -248,7 +251,7 @@ internal class WithRefStructArguments
     public void VoidMixedMethod(string arg1, ref ReadOnlySpan<char> arg2, Span<char> arg3, ref ReadOnlyRefStruct arg4)
     {
         if (arg1 != "Hello") throw new Exception("Error modifying arg1 value.");
-        if (arg2 != "World") throw new Exception("Error modifying arg2 value.");
+        if (!arg2.SequenceEqual("World".AsSpan())) throw new Exception("Error modifying arg2 value.");
         if (arg3.ToString() != "Hello") throw new Exception("Error modifying arg3 value.");
         if (arg4.Value != "World") throw new Exception("Error modifying arg4 value.");
     }

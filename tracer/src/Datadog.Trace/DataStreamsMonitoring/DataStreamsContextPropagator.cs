@@ -88,6 +88,17 @@ internal class DataStreamsContextPropagator
                 }
             }
         }
+        else
+        {
+            // can happen if the value is coming from a user-provided getter, for instance via SpanContextExtractor
+            foreach (var headerValue in headerValues)
+            {
+                if (!string.IsNullOrEmpty(headerValue))
+                {
+                    return PathwayContextEncoder.Decode(Convert.FromBase64String(headerValue));
+                }
+            }
+        }
 
         return null;
     }

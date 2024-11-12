@@ -4,8 +4,7 @@ Param(
     [string[]]$BuildArguments
 )
 
-# in case we are being run from outside this directory
-Set-Location $PSScriptRoot
+$ErrorActionPreference = "Stop"
 
 $ROOT_DIR="$PSScriptRoot/.."
 $BUILD_DIR="$ROOT_DIR/tracer/build/_build"
@@ -18,7 +17,7 @@ $IMAGE_NAME="dd-trace-dotnet/alpine-base"
    "$BUILD_DIR"
 
 &docker run -it --rm `
-    --mount type=bind,source="$ROOT_DIR",target=/project `
+    --mount "type=bind,source=$ROOT_DIR,target=/project" `
     --env NugetPackageDirectory=/project/packages `
     --env artifacts=/project/tracer/bin/artifacts `
     --env DD_INSTRUMENTATION_TELEMETRY_ENABLED=0 `

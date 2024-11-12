@@ -43,7 +43,15 @@ public class TypeAspect
     [AspectMethodInsertBefore("System.Type::InvokeMember(System.String,System.Reflection.BindingFlags,System.Reflection.Binder,System.Object,System.Object[],System.Reflection.ParameterModifier[],System.Globalization.CultureInfo,System.String[])", 7)]
     public static string ReflectionInjectionParam(string param)
     {
-        IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
-        return param;
+        try
+        {
+            IastModule.OnReflectionInjection(param, IntegrationId.ReflectionInjection);
+            return param;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(TypeAspect)}.{nameof(ReflectionInjectionParam)}");
+            return param;
+        }
     }
 }

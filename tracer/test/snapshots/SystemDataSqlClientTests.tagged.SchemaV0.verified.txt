@@ -11,11 +11,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -31,11 +35,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -51,11 +59,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -71,11 +83,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -91,11 +107,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -111,11 +131,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -131,11 +155,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -151,11 +179,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -171,11 +203,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -191,11 +227,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -211,11 +251,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -231,11 +275,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -251,11 +299,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -271,11 +323,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -291,11 +347,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -311,11 +371,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -331,11 +395,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -351,11 +419,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -371,11 +443,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -391,11 +467,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -411,11 +491,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -431,11 +515,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -451,11 +539,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -471,11 +563,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -491,11 +587,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -511,11 +611,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -531,11 +635,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -551,11 +659,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -571,11 +683,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -591,11 +707,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -611,11 +731,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -631,11 +755,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -651,11 +779,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -671,11 +803,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -691,11 +827,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -711,11 +851,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -731,11 +875,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -751,11 +899,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -771,11 +923,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -791,11 +947,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -811,11 +971,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -831,11 +995,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -851,11 +1019,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -871,11 +1043,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -891,11 +1067,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -911,11 +1091,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -931,11 +1115,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -951,11 +1139,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -971,11 +1163,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -991,11 +1187,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1011,11 +1211,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1031,11 +1235,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1051,11 +1259,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1071,11 +1283,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1091,11 +1307,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1111,11 +1331,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1131,11 +1355,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1151,11 +1379,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1171,11 +1403,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1191,11 +1427,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1211,11 +1451,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1231,11 +1475,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1251,11 +1499,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1271,11 +1523,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1291,11 +1547,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1311,11 +1571,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1331,11 +1595,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1351,11 +1619,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1371,11 +1643,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1391,11 +1667,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1411,11 +1691,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1431,11 +1715,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1451,11 +1739,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1471,11 +1763,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1491,11 +1787,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1511,11 +1811,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1531,11 +1835,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1551,11 +1859,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1571,11 +1883,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1591,11 +1907,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1611,11 +1931,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1631,11 +1955,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1651,11 +1979,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1671,11 +2003,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1691,11 +2027,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1711,11 +2051,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1731,11 +2075,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1751,11 +2099,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1771,11 +2123,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1791,11 +2147,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1811,11 +2171,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1831,11 +2195,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1851,11 +2219,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1871,11 +2243,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1891,11 +2267,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1911,11 +2291,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1931,11 +2315,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1951,11 +2339,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1971,11 +2363,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -1991,11 +2387,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2011,11 +2411,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2031,11 +2435,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2051,11 +2459,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2071,11 +2483,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2091,11 +2507,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2111,11 +2531,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2131,11 +2555,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2151,11 +2579,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2171,11 +2603,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2191,11 +2627,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2211,11 +2651,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2231,11 +2675,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2251,11 +2699,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2271,11 +2723,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2291,11 +2747,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2311,11 +2771,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2331,11 +2795,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2351,11 +2819,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2371,11 +2843,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2391,11 +2867,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2411,11 +2891,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2431,11 +2915,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2451,11 +2939,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2471,11 +2963,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2491,11 +2987,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2511,11 +3011,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2531,11 +3035,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2551,11 +3059,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2571,11 +3083,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2591,11 +3107,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2611,11 +3131,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2631,11 +3155,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2651,11 +3179,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2671,11 +3203,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2691,11 +3227,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2711,11 +3251,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2731,11 +3275,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2751,11 +3299,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2771,11 +3323,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2791,11 +3347,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2811,11 +3371,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2831,11 +3395,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2851,11 +3419,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2871,11 +3443,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2891,11 +3467,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2911,11 +3491,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2931,11 +3515,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2951,11 +3539,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2971,11 +3563,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -2991,11 +3587,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3011,11 +3611,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3031,11 +3635,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3051,11 +3659,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3071,11 +3683,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3091,11 +3707,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3111,11 +3731,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3131,11 +3755,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3151,11 +3779,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3171,11 +3803,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3191,11 +3827,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3211,11 +3851,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3231,11 +3875,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3251,11 +3899,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3271,11 +3923,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3291,11 +3947,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3311,11 +3971,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3331,11 +3995,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   },
@@ -3351,11 +4019,15 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer,
+      _dd.dbm_trace_injected: true
     },
     Metrics: {
+      dd.instrumentation.time_ms: 123.456,
       _dd.top_level: 1.0
     }
   }

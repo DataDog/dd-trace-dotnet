@@ -53,9 +53,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             // Let's detect if we already have a session for this test process
-            if (SpanContextPropagator.Instance.Extract(
-                    EnvironmentHelpers.GetEnvironmentVariables(),
-                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is not null)
+            var context = SpanContextPropagator.Instance.Extract(
+                EnvironmentHelpers.GetEnvironmentVariables(),
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (context.SpanContext is not null)
             {
                 // Session found in the environment variables
                 // let's bail-out
@@ -155,7 +157,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     {
                         if (TryGetCoveragePercentageFromXml(extCodeCoverageFilePath, out var coveragePercentage))
                         {
-                            session.SetTag(CodeCoverageTags.Enabled, "true");
                             session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                         }
                         else
@@ -380,7 +381,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.DotnetTest: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
 
                 if (msbuildArgs is not null)
@@ -520,7 +521,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.VsConsoleTest: arguments:");
 
                 if (args != null)

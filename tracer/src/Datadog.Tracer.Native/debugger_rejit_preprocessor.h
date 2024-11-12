@@ -16,6 +16,9 @@ class DebuggerRejitPreprocessor : public RejitPreprocessor<std::shared_ptr<Metho
 public:
     using RejitPreprocessor::RejitPreprocessor;
 
+    DebuggerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
+                            std::shared_ptr<RejitWorkOffloader> work_offloader);
+
     ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                std::vector<MethodIdentifier>& rejitRequests);
     void EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modules,
@@ -35,6 +38,10 @@ protected:
     const bool GetIsExactSignatureMatch(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool GetIsEnabled(const std::shared_ptr<MethodProbeDefinition>& definition) final;
     const bool SupportsSelectiveEnablement() final;
+
+    bool CheckExactSignatureMatch(ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo& functionInfo,
+                                          const MethodReference& targetMethod) override;
+
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const std::shared_ptr<MethodProbeDefinition>& methodProbe) final;

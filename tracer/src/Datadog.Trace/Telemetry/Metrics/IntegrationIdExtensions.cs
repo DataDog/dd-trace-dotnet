@@ -41,6 +41,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AwsSdk => MetricTags.IntegrationName.AwsSdk,
             IntegrationId.AwsSns => MetricTags.IntegrationName.AwsSns,
             IntegrationId.AwsSqs => MetricTags.IntegrationName.AwsSqs,
+            IntegrationId.AwsEventBridge => MetricTags.IntegrationName.AwsEventBridge,
             IntegrationId.AwsLambda => MetricTags.IntegrationName.AwsLambda,
             IntegrationId.ILogger => MetricTags.IntegrationName.ILogger,
             IntegrationId.Aerospike => MetricTags.IntegrationName.Aerospike,
@@ -80,8 +81,10 @@ internal static class IntegrationIdExtensions
             IntegrationId.NHibernate => MetricTags.IntegrationName.NHibernate,
             IntegrationId.DotnetTest => MetricTags.IntegrationName.DotnetTest,
             IntegrationId.Selenium => MetricTags.IntegrationName.Selenium,
+            IntegrationId.DatadogTraceManual => MetricTags.IntegrationName.DatadogTraceManual,
             IntegrationId.DirectoryListingLeak => MetricTags.IntegrationName.DirectoryListingLeak,
             IntegrationId.SessionTimeout => MetricTags.IntegrationName.SessionTimeout,
+            IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

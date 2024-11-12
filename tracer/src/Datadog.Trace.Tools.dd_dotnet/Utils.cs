@@ -102,9 +102,10 @@ internal class Utils
             }
             else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
             {
-                tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Trace.ClrProfiler.Native.so"));
+                var archFolder = IsAlpine() ? "linux-musl-arm64" : "linux-arm64";
+                tracerProfiler64 = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Trace.ClrProfiler.Native.so"));
                 tracerProfilerArm64 = tracerProfiler64;
-                ldPreload = FileExists(Path.Combine(tracerHome, "linux-arm64", "Datadog.Linux.ApiWrapper.x64.so"));
+                ldPreload = FileExists(Path.Combine(tracerHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so"));
             }
             else
             {

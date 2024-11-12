@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -25,10 +26,23 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture = fixture;
             _enableSecurity = enableSecurity;
             _fixture.SetOutput(outputHelper);
+            EnableRasp(false);
             if (userTrackingMode != null)
             {
-                EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                if (userTrackingMode is "ident" or "anon")
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE", userTrackingMode);
+                }
+                else
+                {
+                    EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);
+                }
             }
+        }
+
+        public virtual string GetTestFileName(string testName)
+        {
+            return $"{_testName}-{testName}";
         }
 
         public override void Dispose()
@@ -46,15 +60,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("login.auto.success", "Input.UserName=TestUser&Input.Password=test")]
-        [InlineData("login.auto.failure", "Input.UserName=TestUser&Input.Password=wrong")]
-        [InlineData("login.auto.failure", "Input.UserName=NoSuchUser&Input.Password=test")]
+        [InlineData("login.auto.failure1", "Input.UserName=TestUser&Input.Password=wrong")]
+        [InlineData("login.auto.failure2", "Input.UserName=NoSuchUser&Input.Password=test")]
         protected async Task TestUserLoginEvent(string eventName, string bodyString)
         {
             await TryStartApp();
             var agent = _fixture.Agent;
             var url = "/Account/Index";
             var settings = VerifyHelper.GetSpanVerifierSettings(eventName, bodyString);
-            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent));
+            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent), fileNameOverride: GetTestFileName(eventName));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
@@ -81,6 +95,22 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         public AspNetCore5AutoUserEventsExtendedModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base(fixture, outputHelper, true, "extended")
+        {
+        }
+    }
+
+    public class AspNetCore5AutoUserEventsIndentModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsIndentModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "ident")
+        {
+        }
+    }
+
+    public class AspNetCore5AutoUserEventsAnonModeSecurityEnabled : AspNetCore5AutoUserEvents
+    {
+        public AspNetCore5AutoUserEventsAnonModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base(fixture, outputHelper, true, "anon")
         {
         }
     }

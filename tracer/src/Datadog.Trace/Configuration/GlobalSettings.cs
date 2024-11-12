@@ -27,18 +27,27 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         /// <param name="telemetry">Records the origin of telemetry values</param>
-        internal GlobalSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        /// <param name="overrideHandler">Records any errors </param>
+        internal GlobalSettings(
+            IConfigurationSource source,
+            IConfigurationTelemetry telemetry,
+            IConfigurationOverrideHandler overrideHandler)
         {
-            DebugEnabledInternal = new ConfigurationBuilder(source, telemetry)
-                          .WithKeys(ConfigurationKeys.DebugEnabled)
-                          .AsBoolWithOpenTelemetryMapping(
-                            defaultValue: false,
-                            openTelemetryKey: ConfigurationKeys.OpenTelemetry.LogLevel,
-                            openTelemetryConverter: value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
-                                                             ? ParsingResult<bool>.Success(result: true)
-                                                             : ParsingResult<bool>.Failure());
+            var builder = new ConfigurationBuilder(source, telemetry);
 
-            DiagnosticSourceEnabled = new ConfigurationBuilder(source, telemetry)
+            var otelConfig = builder
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.LogLevel)
+                            .AsBoolResult(
+                                 value => string.Equals(value, "debug", StringComparison.OrdinalIgnoreCase)
+                                              ? ParsingResult<bool>.Success(result: true)
+                                              : ParsingResult<bool>.Failure());
+
+            DebugEnabledInternal = builder
+                                  .WithKeys(ConfigurationKeys.DebugEnabled)
+                                  .AsBoolResult()
+                                  .OverrideWith(in otelConfig, overrideHandler, false);
+
+            DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
                                      .AsBool(true);
         }
@@ -127,6 +136,6 @@ namespace Datadog.Trace.Configuration
         }
 
         private static GlobalSettings CreateFromDefaultSources()
-            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+            => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config, OverrideErrorLog.Instance);
     }
 }

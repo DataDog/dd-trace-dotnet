@@ -172,7 +172,7 @@
 
     <!-- StyleCop -->
     <ItemGroup Condition=" '$(MSBuildProjectExtension)' == '.csproj' And '$(MSBuildProjectName)' != 'Website-AspNet' ">
-        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.*" PrivateAssets="all" />
+        <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all" />
         <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
         <Compile Include="$(MSBuildThisFileDirectory)\src\GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
     </ItemGroup>
@@ -194,6 +194,8 @@
     <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
       <ClCompile>
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1</PreprocessorDefinitions>
+	<BuildStlModules>false</BuildStlModules>
+	<EnableModules>false</EnableModules>
       </ClCompile>
     </ItemDefinitionGroup>
 

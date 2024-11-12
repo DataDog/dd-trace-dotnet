@@ -19,6 +19,10 @@ on:
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # read secrets
+      packages: write # pushing to ghcr.io
     env:
       AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
     steps:

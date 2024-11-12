@@ -4,62 +4,11 @@
 #include <unordered_map>
 
 #include "log.h"
+#include "util.h"
 #include "../../../shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/util.h"
-
-#if AMD64
-
-#if _WINDOWS
-const std::string currentOsArch = "win-x64";
-#elif LINUX
-const std::string currentOsArch = "linux-x64";
-#elif MACOS
-const std::string currentOsArch = "osx-x64";
-#else
-#error "currentOsArch not defined."
-#endif
-
-#elif X86
-
-#if _WINDOWS
-const std::string currentOsArch = "win-x86";
-#elif LINUX
-const std::string currentOsArch = "linux-x86";
-#elif MACOS
-const std::string currentOsArch = "osx-x86";
-#else
-#error "currentOsArch not defined."
-#endif
-
-#elif ARM64
-
-#if _WINDOWS
-const std::string currentOsArch = "win-arm64";
-#elif LINUX
-const std::string currentOsArch = "linux-arm64";
-#elif MACOS
-const std::string currentOsArch = "osx-arm64";
-#else
-#error "currentOsArch not defined."
-#endif
-
-#elif ARM
-
-#if _WINDOWS
-const std::string currentOsArch = "win-arm";
-#elif LINUX
-const std::string currentOsArch = "linux-arm";
-#elif MACOS
-const std::string currentOsArch = "osx-arm";
-#else
-#error "currentOsArch not defined."
-#endif
-
-#else
-#error "currentOsArch not defined."
-#endif
 
 namespace datadog::shared::nativeloader
 {
@@ -98,18 +47,14 @@ namespace datadog::shared::nativeloader
         fs::path configFolder = fs::path(configFilePath).remove_filename();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
 
-        // Get the current path
-        fs::path oldCurrentPath = fs::current_path();
-        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Current Path: ", oldCurrentPath);
+        const auto isRunningOnAlpine = IsRunningOnAlpine();
+        const auto currentOsArch = GetCurrentOsArch(isRunningOnAlpine);
 
-        // Set the current path to the configuration folder (to allow relative paths)
-        fs::current_path(configFolder);
-
-        const std::string allOsArch[12] = {
-            "win-x64", "linux-x64", "osx-x64",
-            "win-x86", "linux-x86", "osx-x86",
-            "win-arm64", "linux-arm64", "osx-arm64",
-            "win-arm", "linux-arm", "osx-arm",
+        const std::string allOsArch[16] = {
+            "win-x64", "linux-x64", "linux-musl-x64", "osx-x64",
+            "win-x86", "linux-x86", "linux-musl-x86", "osx-x86",
+            "win-arm64", "linux-arm64", "linux-musl-arm64", "osx-arm64",
+            "win-arm", "linux-arm", "linux-musl-arm", "osx-arm",
         };
 
         while (t)
@@ -143,9 +88,11 @@ namespace datadog::shared::nativeloader
                     {
                         // Convert possible relative paths to absolute paths using the configuration file folder as base
                         // (current_path)
-                        std::string absoluteFilepathValue = fs::absolute(filepathValue).string();
-                        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
-                        if (fs::exists(absoluteFilepathValue))
+                        std::string absoluteFilepathValue = (configFolder / filepathValue).string();
+                        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"] (", currentOsArch, ")" );
+                        
+                        ec.clear();
+                        if (fs::exists(absoluteFilepathValue, ec))
                         {
                             Log::Debug("[", type, "] Creating a new DynamicInstance object");
 
@@ -177,8 +124,17 @@ namespace datadog::shared::nativeloader
                         }
                         else
                         {
-                            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
-                                 "' cannot be loaded, file doesn't exist.");
+                            if (ec)
+                            {
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, error code: ", ec.value(), ", message: ", ec.message());
+                            }
+                            else
+                            {
+
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, file doesn't exist.");
+                            }
                         }
                     }
                     else
@@ -197,9 +153,6 @@ namespace datadog::shared::nativeloader
             }
         }
         t.close();
-
-        // Set the current path to the original one
-        fs::current_path(oldCurrentPath);
     }
 
     HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)

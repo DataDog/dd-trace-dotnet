@@ -86,6 +86,21 @@ public static class Program
             RunSpanOperationName();
             RunSpanReservedAttributes();
         }
+
+        using var missingServiceTracerProvider = Sdk.CreateTracerProviderBuilder()
+            .AddSource("MissingServiceName")
+            .AddActivitySourceIfEnvironmentVariablePresent()
+            .AddConsoleExporter()
+            .AddOtlpExporterIfEnvironmentVariablePresent()
+            .Build();
+
+        var missingServiceTracer = missingServiceTracerProvider.GetTracer("MissingServiceName");
+
+        using (var unknownServiceSpan = missingServiceTracer.StartRootSpan("service.name should be the DefaultServiceName value"))
+        {
+            Thread.Sleep(100);
+        }
+
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
@@ -161,10 +176,19 @@ public static class Program
 
     private static void RunSpecialTagRemappers(TelemetrySpan span)
     {
+        // these tags should go to the "meta" tags
+        // this is the current tag name
         using (var httpSpan = _tracer.StartActiveSpan("SomeHttpSpan"))
         {
             httpSpan.SetAttribute("http.response.status_code", 404);
         }
+
+        // this is the deprecated tag name
+        using (var httpSpanDeprecated = _tracer.StartActiveSpan("DeprecatedHttpStatusTagName"))
+        {
+            httpSpanDeprecated.SetAttribute("http.status_code", 404);
+        }
+
     }
 
     private static void RunSpanUpdateMethods(TelemetrySpan span)

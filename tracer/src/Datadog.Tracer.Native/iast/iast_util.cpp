@@ -245,6 +245,22 @@ static thread_local std::unordered_map<void *, bool> locked;
         }
         return res;
     }
+    int Compare(const VersionInfo& v1, const VersionInfo& v2)
+    {
+        if (v1.major != v2.major)
+        {
+            return v1.major - v2.major;
+        }
+        if (v1.minor != v2.minor)
+        {
+            return v1.minor - v2.minor;
+        }
+        if (v1.build != v2.build)
+        {
+            return v1.build - v2.build;
+        }
+        return v1.rev - v2.rev;
+    }
     std::string GetDatadogVersion()
     {
         return PROFILER_VERSION;

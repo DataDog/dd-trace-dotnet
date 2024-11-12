@@ -8,10 +8,10 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
@@ -68,6 +68,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         EnableRasp();
         SetSecurity(true);
         EnableIast(enableIast);
+        AddCookies(new Dictionary<string, string> { { "cookie-key", "cookie-value" } });
         EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
@@ -81,7 +82,7 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         _classicMode = classicMode;
         _enableIast = enableIast;
 
-        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(Configuration.ConfigurationKeys.DebugEnabled, "0");
     }
 
     [SkippableTheory]
@@ -92,8 +93,16 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
     [InlineData("/Iast/GetFileContent?file=/etc/password", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [InlineData("/Iast/SsrfAttackNoCatch?host=127.0.0.1", "SSRF")]
+    [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
     public async Task TestRaspRequest(string url, string exploit)
     {
+        AddHeaders(new()
+        {
+            { "Accept-Language", "en_UK" },
+            { "X-Custom-Header", "42" },
+            { "AnotherHeader", "Value" },
+        });
+
         var agent = _iisFixture.Agent;
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.UseParameters(url, exploit);
@@ -104,6 +113,30 @@ public abstract class AspNetMvc5RaspTests : AspNetBase, IClassFixture<IisFixture
         await SubmitRequest(url, null, "application/json");
         var spans = agent.WaitForSpans(2, minDateTime: dateTime);
         await VerifySpans(spans, settings, testName: testName, methodNameOverride: exploit);
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("/Iast/ExecuteQueryFromBodyQueryData", "SqlI", "{\"UserName\": \"' or '1'='1\"}")]
+    public async Task TestRaspRequestSqlInBody(string url, string exploit, string body = null)
+    {
+        var agent = _iisFixture.Agent;
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.UseParameters(url, exploit, body);
+        settings.AddIastScrubbing();
+        var dateTime = DateTime.UtcNow;
+        var answer = await SubmitRequest("/Iast/PopulateDDBB", null, string.Empty);
+        _iisFixture.Agent.SpanFilters.Add(s => !s.Resource.Contains("/Iast/PopulateDDBB"));
+        agent.WaitForSpans(2, minDateTime: dateTime);
+        dateTime = DateTime.UtcNow;
+        var testName = _enableIast ? "RaspIast.AspNetMvc5" : "Rasp.AspNetMvc5";
+        testName += _classicMode ? ".Classic" : ".Integrated";
+        await SubmitRequest(url, body, "application/json");
+        var spans = agent.WaitForSpans(2, minDateTime: dateTime);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        await VerifySpans(spansFiltered.ToImmutableList(), settings, testName: testName, methodNameOverride: exploit);
     }
 
     public async Task InitializeAsync()

@@ -26,11 +26,19 @@ public partial class DirectoryEntryAspect
     [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::.ctor(System.String,System.String,System.String,System.DirectoryServices.AuthenticationTypes)", 3)]
     public static object Init(string path)
     {
-        if (!string.IsNullOrEmpty(path) && path.ToLower().StartsWith("ldap"))
+        try
         {
-            IastModule.OnLdapInjection(path);
-        }
+            if (!string.IsNullOrEmpty(path) && path.ToLower().StartsWith("ldap"))
+            {
+                IastModule.OnLdapInjection(path);
+            }
 
-        return path;
+            return path;
+        }
+        catch (global::System.Exception ex)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(DirectoryEntryAspect)}.{nameof(Init)}");
+            return path;
+        }
     }
 }

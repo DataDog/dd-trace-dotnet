@@ -46,8 +46,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string DdAgentChecks = "---- DATADOG AGENT CHECKS -----";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
+        public const string ContinuousProfilerEnabledWithHeuristics = "DD_PROFILING_ENABLED is set to 'auto'. The continuous profiler is enabled and may begin profiling based on heuristics.";
+        public const string ContinuousProfilerSsiEnabledWithHeuristics = "DD_INJECTION_ENABLED contains 'profiler'. The continuous profiler is enabled through SSI and may begin profiling based on heuristics.";
+        public const string ContinuousProfilerSsiMonitoring = "DD_INJECTION_ENABLED is set but does not contain 'profiler'. The continuous profiler is monitoring but will not generate profiles.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
-        public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
+        public const string ContinuousProfilerNotSet = "DD_INJECTION_ENABLED and DD_PROFILING_ENABLED are not set, the continuous profiler is disabled.";
         public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
         public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
 

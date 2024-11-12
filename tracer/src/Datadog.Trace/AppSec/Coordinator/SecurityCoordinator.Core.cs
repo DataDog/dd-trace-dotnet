@@ -14,46 +14,48 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Primitives;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
 internal readonly partial struct SecurityCoordinator
 {
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(CoreHttpContextStore.Instance.Get());
+        _httpTransport = transport;
     }
 
     private static bool CanAccessHeaders => true;
 
-    public static Dictionary<string, string[]> ExtractHeadersFromRequest(IHeaderDictionary headers)
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
-        var headersDic = new Dictionary<string, string[]>(headers.Keys.Count);
-        foreach (var k in headers.Keys)
+        var context = CoreHttpContextStore.Instance.Get();
+        if (context is null)
         {
-            var currentKey = k ?? string.Empty;
-            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
-            {
-                currentKey = currentKey.ToLowerInvariant();
-#if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, headers[currentKey]))
-                {
-#else
-                if (!headersDic.ContainsKey(currentKey))
-                {
-                    headersDic.Add(currentKey, headers[currentKey]);
-                }
-                else
-                {
-#endif
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
-                }
-            }
+            Log.Warning("Can't instantiate SecurityCoordinator.Core as no transport has been provided and CoreHttpContextStore.Instance.Get() returned null, make sure HttpContext is available");
+            return null;
         }
 
-        return headersDic;
+        return new SecurityCoordinator(security, span, new(context));
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
+
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
+
+    private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(IHeaderDictionary headers, string currentKey) => GetHeaderAsArray(headers[currentKey]);
+
+    private static void GetCookieKeyValueFromIndex(IRequestCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies.ElementAt(i);
+        key = cookie.Key;
+        value = cookie.Value;
     }
 
     internal void BlockAndReport(IResult? result)
@@ -86,23 +88,7 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
-
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
-        for (var i = 0; i < request.Cookies.Count; i++)
-        {
-            var cookie = request.Cookies.ElementAt(i);
-            var currentKey = cookie.Key ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
-            if (!keyExists)
-            {
-                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
-            }
-            else
-            {
-                value?.Add(cookie.Value);
-            }
-        }
-
+        var cookiesDic = ExtractCookiesFromRequest(request);
         var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
         // a query string like ?test&[$slice} only fills the key part in dotnetcore and in IIS it only fills the value part, it's been decided to make it a key always
         foreach (var kvp in request.Query)
@@ -130,7 +116,11 @@ internal readonly partial struct SecurityCoordinator
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
-        AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+
+        if (cookiesDic is not null)
+        {
+            AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+        }
 
         return addressesDictionary;
 
@@ -149,7 +139,18 @@ internal readonly partial struct SecurityCoordinator
 
         public override HttpContext Context { get; }
 
-        internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
+        internal override bool IsBlocked
+        {
+            get
+            {
+                if (Context.Items.TryGetValue(BlockingAction.BlockDefaultActionName, out var value))
+                {
+                    return value is true;
+                }
+
+                return false;
+            }
+        }
 
         internal override int StatusCode => Context.Response.StatusCode;
 
@@ -157,8 +158,16 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get
+            {
+                if (Context.Items.TryGetValue(ReportedExternalWafsRequestHeadersStr, out var value))
+                {
+                    return value is bool boolValue && boolValue;
+                }
+
+                return false;
+            }
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;

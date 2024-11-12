@@ -37,11 +37,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -140,11 +142,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -245,11 +249,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -352,11 +358,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -459,11 +467,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -566,11 +576,13 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -677,11 +689,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -784,11 +798,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -891,11 +907,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -998,11 +1016,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1107,11 +1127,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1210,11 +1232,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1313,11 +1337,13 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1417,10 +1443,12 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1522,10 +1550,12 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
+      language: dotnet,
       out.host: 127.0.0.1,
       peer.hostname: 127.0.0.1,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.GrpcDotNet
     },
     Metrics: {
       _dd.top_level: 1.0

@@ -62,9 +62,6 @@ public class ProbesTests : TestHelper
             typeof(NotSupportedFailureTest)
     };
 
-    private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
-    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1", "stack", "m_task" };
-
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
@@ -755,189 +752,20 @@ public class ProbesTests : TestHelper
         }
     }
 
-    private async Task ApproveSnapshots(string[] snapshots, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
+    private Task ApproveSnapshots(string[] snapshots, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(snapshots, testDescription, isMultiPhase, phaseNumber, "snapshots");
+        return Approver.ApproveSnapshots(snapshots, GetTestName(testDescription, isMultiPhase, phaseNumber), Output);
     }
 
-    private async Task ApproveStatuses(string[] statuses, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
+    private Task ApproveStatuses(string[] statuses, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        await ApproveOnDisk(statuses, testDescription, isMultiPhase, phaseNumber, "statuses");
+        return Approver.ApproveStatuses(statuses, GetTestName(testDescription, isMultiPhase, phaseNumber), Output);
     }
 
-    private async Task ApproveOnDisk(string[] dataToApprove, ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber, string path)
+    private string GetTestName(ProbeTestDescription testDescription, bool isMultiPhase, int phaseNumber)
     {
-        if (dataToApprove.Length > 1)
-        {
-            // Order the snapshots alphabetically so we'll be able to create deterministic approvals
-            dataToApprove = dataToApprove.OrderBy(snapshot => snapshot).ToArray();
-        }
-
-        var settings = new VerifySettings();
-
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
-        settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
-        settings.DisableRequireUniquePrefix();
-        settings.ScrubEmptyLines();
-
-        foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
-        {
-            settings.AddRegexScrubber(regexPattern, replacement);
-        }
-
-        AddRuntimeIdScrubber(settings);
-
-        settings.AddScrubber(ScrubSnapshotJson);
-
-        VerifierSettings.DerivePathInfo(
-            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", path)));
-
-        var toVerify =
-            "["
-           +
-            string.Join(
-                ",",
-                dataToApprove.Select(JsonUtility.NormalizeJsonString))
-           +
-            "]";
-
-        await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
-
-        void ScrubSnapshotJson(StringBuilder input)
-        {
-            var json = JArray.Parse(input.ToString());
-
-            var toRemove = new List<JToken>();
-            foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
-            {
-                foreach (var item in descendant)
-                {
-                    try
-                    {
-                        if (_knownPropertiesToReplace.Contains(item.Key) && item.Value != null)
-                        {
-                            item.Value.Replace(JToken.FromObject("ScrubbedValue"));
-                            continue;
-                        }
-
-                        var value = item.Value.ToString();
-                        switch (item.Key)
-                        {
-                            case "type":
-                                // Sanitizes types whose values may vary from run to run and consequently produce a different approval file.
-                                if (_typesToScrub.Contains(item.Value.ToString()))
-                                {
-                                    item.Value.Parent.Parent["value"].Replace("ScrubbedValue");
-                                }
-
-                                break;
-                            case "function":
-
-                                // Remove stackframes from "System" namespace, or where the frame was not resolved to a method
-                                if (value.StartsWith("System") || value == string.Empty)
-                                {
-                                    toRemove.Add(item.Value.Parent.Parent);
-                                    continue;
-                                }
-
-                                // Scrub MoveNext methods from `stack` in the snapshot as it varies between Windows/Linux.
-                                if (value.Contains(".MoveNext"))
-                                {
-                                    item.Value.Replace(string.Empty);
-                                }
-
-                                // Scrub generated DisplayClass from stack in the snapshot as it varies between .net frameworks
-                                if (value.Contains("<>c__DisplayClass"))
-                                {
-                                    item.Value.Replace(string.Empty);
-                                }
-
-                                break;
-                            case "fileName":
-                            case "file":
-                                // Remove the full path of file names
-                                item.Value.Replace(Path.GetFileName(value));
-
-                                break;
-
-                            case "message":
-                                if (!value.Contains("Installed probe ") && !value.Contains("Error installing probe ") && !value.Contains("Emitted probe ") &&
-                                    !IsParentName(item, parentName: "throwable") &&
-                                    !IsParentName(item, parentName: "exception"))
-                                {
-                                    // remove snapshot message (not probe status)
-                                    item.Value.Replace("ScrubbedValue");
-                                }
-
-                                break;
-
-                            case "expr":
-                                if (value.StartsWith("Convert("))
-                                {
-                                    var stringToRemove = ", IConvertible";
-                                    var newValue = value.Replace(stringToRemove, string.Empty);
-                                    item.Value.Replace(newValue);
-                                }
-
-                                break;
-
-                            case "stacktrace":
-                                if (IsParentName(item, parentName: "throwable"))
-                                {
-                                    // take only the first frame of the exception stacktrace
-                                    var firstChild = item.Value.Children().FirstOrDefault();
-                                    if (firstChild != null)
-                                    {
-                                        item.Value.Replace(new JArray(firstChild));
-                                    }
-                                }
-
-                                break;
-
-                            case "StackTrace":
-                                if (IsParentName(item, parentName: ".@exception.fields"))
-                                {
-                                    item.Value.Replace("ScrubbedValue");
-                                }
-
-                                break;
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        Output.WriteLine($"Failed to sanitize snapshot. The part we are trying to sanitize: {item}");
-                        Output.WriteLine($"Complete snapshot: {json}");
-
-                        throw;
-                    }
-
-                    static bool IsParentName(KeyValuePair<string, JToken> item, string parentName)
-                    {
-                        return item.Value.Path.Substring(0, item.Value.Path.Length - $".{item.Key}".Length).EndsWith(parentName);
-                    }
-                }
-            }
-
-            foreach (var itemToRemove in toRemove)
-            {
-                itemToRemove.Remove();
-            }
-
-            input.Clear().Append(json);
-        }
-
-        string NormalizeLineEndings(string text) =>
-            text
-               .Replace(@"\r\n", @"\n")
-               .Replace(@"\n\r", @"\n")
-               .Replace(@"\r", @"\n")
-               .Replace(@"\n", @"\r\n");
-    }
-
-    private void AddRuntimeIdScrubber(VerifySettings settings)
-    {
-        var runtimeIdPattern = new Regex(@"(""runtimeId"": "")[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", RegexOptions.Compiled);
-        settings.AddRegexScrubber(runtimeIdPattern, "$1scrubbed");
+        return $"{nameof(ProbeTests)}.{testName}";
     }
 
     private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)

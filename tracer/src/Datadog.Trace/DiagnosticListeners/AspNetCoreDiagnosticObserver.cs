@@ -413,9 +413,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
+            var shouldSecure = security.AppsecEnabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -424,7 +423,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                HttpContext httpContext = requestStruct.HttpContext;
+                var httpContext = requestStruct.HttpContext;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
@@ -573,9 +572,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
-
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
+            var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure && !shouldUseIast)
@@ -672,6 +670,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
 
+            CoreHttpContextStore.Instance.Remove();
             // If we don't have a scope, no need to call Stop pipeline
         }
 

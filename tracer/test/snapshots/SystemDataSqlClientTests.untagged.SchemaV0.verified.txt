@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -11,9 +11,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -31,9 +33,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -51,9 +55,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -71,9 +77,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -91,9 +99,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -111,9 +121,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -131,9 +143,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -151,9 +165,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -171,9 +187,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -191,9 +209,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -211,9 +231,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -231,9 +253,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -251,9 +275,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -271,9 +297,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -291,9 +319,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -311,9 +341,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -331,9 +363,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -351,9 +385,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -371,9 +407,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -391,9 +429,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -411,9 +451,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -431,9 +473,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -451,9 +495,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -471,9 +517,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -491,9 +539,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -511,9 +561,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -531,9 +583,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -551,9 +605,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -571,9 +627,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -591,9 +649,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -611,9 +671,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -631,9 +693,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -651,9 +715,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -671,9 +737,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -691,9 +759,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -711,9 +781,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -731,9 +803,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -751,9 +825,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -771,9 +847,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -791,9 +869,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -811,9 +891,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -831,9 +913,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -851,9 +935,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -871,9 +957,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -891,9 +979,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -911,9 +1001,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -931,9 +1023,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -951,9 +1045,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -971,9 +1067,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -991,9 +1089,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1011,9 +1111,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1031,9 +1133,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1051,9 +1155,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1071,9 +1177,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1091,9 +1199,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1111,9 +1221,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1131,9 +1243,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1151,9 +1265,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1171,9 +1287,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1191,9 +1309,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1211,9 +1331,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1231,9 +1353,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1251,9 +1375,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1271,9 +1397,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1291,9 +1419,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1311,9 +1441,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1331,9 +1463,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1351,9 +1485,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1371,9 +1507,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1391,9 +1529,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1411,9 +1551,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1431,9 +1573,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1451,9 +1595,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1471,9 +1617,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1491,9 +1639,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1511,9 +1661,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1531,9 +1683,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1551,9 +1705,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1571,9 +1727,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1591,9 +1749,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1611,9 +1771,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1631,9 +1793,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1651,9 +1815,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1671,9 +1837,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1691,9 +1859,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1711,9 +1881,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1731,9 +1903,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1751,9 +1925,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1771,9 +1947,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1791,9 +1969,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1811,9 +1991,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1831,9 +2013,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1851,9 +2035,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1871,9 +2057,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1891,9 +2079,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1911,9 +2101,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1931,9 +2123,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1951,9 +2145,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1971,9 +2167,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1991,9 +2189,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2011,9 +2211,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2031,9 +2233,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2051,9 +2255,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2071,9 +2277,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2091,9 +2299,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2111,9 +2321,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2131,9 +2343,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2151,9 +2365,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2171,9 +2387,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2191,9 +2409,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2211,9 +2431,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2231,9 +2453,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2251,9 +2475,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2271,9 +2497,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2291,9 +2519,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2311,9 +2541,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2331,9 +2563,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2351,9 +2585,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2371,9 +2607,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2391,9 +2629,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2411,9 +2651,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2431,9 +2673,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2451,9 +2695,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2471,9 +2717,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2491,9 +2739,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2511,9 +2761,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2531,9 +2783,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2551,9 +2805,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2571,9 +2827,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2591,9 +2849,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2611,9 +2871,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2631,9 +2893,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2651,9 +2915,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2671,9 +2937,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2691,9 +2959,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2711,9 +2981,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2731,9 +3003,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2751,9 +3025,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2771,9 +3047,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2791,9 +3069,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2811,9 +3091,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2831,9 +3113,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2851,9 +3135,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2871,9 +3157,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2891,9 +3179,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2911,9 +3201,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2931,9 +3223,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2951,9 +3245,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2971,9 +3267,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2991,9 +3289,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3011,9 +3311,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3031,9 +3333,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3051,9 +3355,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3071,9 +3377,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3091,9 +3399,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3111,9 +3421,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3131,9 +3443,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3151,9 +3465,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3171,9 +3487,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3191,9 +3509,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3211,9 +3531,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3231,9 +3553,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3251,9 +3575,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3271,9 +3597,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3291,9 +3619,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3311,9 +3641,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3331,9 +3663,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3351,9 +3685,11 @@
       component: SqlClient,
       db.type: sql-server,
       env: integration_tests,
+      language: dotnet,
       out.host: sqlserver,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.SqlServer
     },
     Metrics: {
       _dd.top_level: 1.0

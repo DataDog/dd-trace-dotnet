@@ -194,6 +194,25 @@ public class AspNetCore2IastTestsFullSamplingEnabled : AspNetCore2IastTestsFullS
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastEmailHtmlInjectionRequest()
+    {
+        var filename = "Iast.EmailHtmlInjection.AspNetCore2.IastEnabled";
+        var url = $"/Iast/SendEmail?email=alice@aliceland.com&name=Alice&lastname=Stevens&escape=false";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore2IastTestsFullSamplingDisabled : AspNetCore2IastTestsFullSampling
@@ -214,6 +233,9 @@ public class AspNetCore2IastTestsFullSamplingRedactionEnabled : AspNetCore2IastT
 
 public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
 {
+    private static (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
+    private static (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
+
     public AspNetCore2IastTestsFullSampling(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? vulnerabilitiesPerRequest = null, bool redactionEnabled = false)
         : base(fixture, outputHelper, enableIast: enableIast, testName: testName, samplingRate: 100, isIastDeduplicationEnabled: isIastDeduplicationEnabled, vulnerabilitiesPerRequest: vulnerabilitiesPerRequest, redactionEnabled: redactionEnabled)
     {
@@ -509,9 +531,6 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
     [Trait("RunOnWindows", "True")]
     public async Task TestIastReflectedXssRequest()
     {
-        (Regex RegexPattern, string Replacement) pathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
-        (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": -953468592,"), "\"hash\": -623616875,");
-
         var filename = "Iast.ReflectedXss.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ReflectedXss?param=<b>RawValue</b>";
@@ -523,7 +542,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
-        settings.AddRegexScrubber(pathScrubber);
+        settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
@@ -536,6 +555,49 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
     {
         var filename = "Iast.ReflectedXssEscaped.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = "/Iast/ReflectedXssEscaped?param=<b>RawValue</b>";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastStoredXssRequest()
+    {
+        var filename = "Iast.StoredXss.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/StoredXss";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        settings.AddRegexScrubber(aspNetCorePathScrubber);
+        settings.AddRegexScrubber(hashScrubber);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastStoredXssEscapedRequest()
+    {
+        var filename = "Iast.StoredXssEscaped.AspNetCore2." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        var url = "/Iast/StoredXssEscaped";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -601,6 +663,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
         SamplingRate = samplingRate;
         IastTelemetryLevel = iastTelemetryLevel;
+        SetEnvironmentVariable(ConfigurationKeys.AppSec.StackTraceEnabled, "false");
     }
 
     protected AspNetCoreTestFixture Fixture { get; }

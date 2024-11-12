@@ -45,14 +45,31 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal SecurityCoordinator(Security security, Span span, HttpTransport? transport = null)
+    private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
-        _httpTransport = transport ?? new HttpTransport(HttpContext.Current);
+        _httpTransport = transport;
     }
 
     private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
+
+    internal static SecurityCoordinator? TryGet(Security security, Span span)
+    {
+        if (HttpContext.Current is not { } current)
+        {
+            Log.Warning("Can't instantiate SecurityCoordinator.Framework as no transport has been provided and HttpContext.Current null, make sure HttpContext is available");
+            return null;
+        }
+
+        var transport = new HttpTransport(current);
+
+        return new SecurityCoordinator(security, span, transport);
+    }
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpContext context) => new(security, span, new HttpTransport(context));
+
+    internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
     private static Action<IResult, HttpStatusCode, string, string>? CreateThrowHttpResponseExceptionDynMeth()
     {
@@ -232,22 +249,29 @@ internal readonly partial struct SecurityCoordinator
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool TryGetUsingIntegratedPipelineBool() => HttpRuntime.UsingIntegratedPipeline;
 
-    internal Dictionary<string, object> GetBodyFromRequest()
+    internal Dictionary<string, object>? GetBodyFromRequest()
     {
-        var formData = new Dictionary<string, object>(_httpTransport.Context.Request.Form.Keys.Count);
-        foreach (string key in _httpTransport.Context.Request.Form.Keys)
+        // When accessing the property Form of a HttpRequest might throw a ValidationException if regular validation is enabled.
+        // Granular validation would not throw an exception when accessing Form but it will throw it when accessing GetValues or Get.
+        // The keys property never throws any exception.
+        var form = RequestDataHelper.GetForm(_httpTransport.Context.Request);
+
+        if (form is null)
+        {
+            return null;
+        }
+
+        var formData = new Dictionary<string, object>(form.Keys.Count);
+        foreach (string key in form.Keys)
         {
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            try
+            var values = RequestDataHelper.GetNameValueCollectionValue(form, key);
+
+            if (values is not null)
             {
-                formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
-            }
-            catch (HttpRequestValidationException)
-            {
-                // We cannot retrieve the value of Form[key] because it triggers a validation exception,
-                // which happens when a dangerous value is detected in the request and validation is enabled.
+                formData[key ?? string.Empty] = values;
             }
         }
 
@@ -315,7 +339,8 @@ internal readonly partial struct SecurityCoordinator
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)
     {
-        var blockingAction = _security.GetBlockingAction([_httpTransport.Context.Request.Headers["Accept"]], blockInfo, redirectInfo);
+        var headers = RequestDataHelper.GetHeaders(_httpTransport.Context.Request) ?? new NameValueCollection();
+        var blockingAction = _security.GetBlockingAction([headers["Accept"]], blockInfo, redirectInfo);
         var isWebApiRequest = _httpTransport.Context.CurrentHandler?.GetType().FullName == WebApiControllerHandlerTypeFullname;
         if (isWebApiRequest)
         {
@@ -375,41 +400,11 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
-        var headerKeys = request.Headers.Keys;
-        foreach (string originalKey in headerKeys)
-        {
-            var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
-            if (keyForDictionary != "cookie")
-            {
-                if (!headersDic.ContainsKey(keyForDictionary))
-                {
-                    headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
-                }
-                else
-                {
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
-                }
-            }
-        }
+        var headers = RequestDataHelper.GetHeaders(request);
+        var headersDic = ExtractHeadersFromRequest(request.Headers);
+        var cookiesDic = ExtractCookiesFromRequest(request);
 
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.AllKeys.Length);
-        for (var i = 0; i < request.Cookies.Count; i++)
-        {
-            var cookie = request.Cookies[i];
-            var keyForDictionary = cookie.Name ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-            if (!keyExists)
-            {
-                cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
-            }
-            else
-            {
-                value.Add(cookie.Value);
-            }
-        }
-
-        var queryString = QueryStringHelper.GetQueryString(request);
+        var queryString = RequestDataHelper.GetQueryString(request);
         Dictionary<string, string[]>? queryDic = null;
 
         if (queryString is not null)
@@ -417,24 +412,27 @@ internal readonly partial struct SecurityCoordinator
             queryDic = new Dictionary<string, string[]>(queryString.AllKeys.Length);
             foreach (var originalKey in queryString.AllKeys)
             {
-                var values = queryString.GetValues(originalKey);
-                if (string.IsNullOrEmpty(originalKey))
+                var values = RequestDataHelper.GetNameValueCollectionValues(queryString, originalKey);
+                if (values is not null)
                 {
-                    foreach (var v in values)
+                    if (string.IsNullOrEmpty(originalKey))
                     {
-                        if (!queryDic.ContainsKey(v))
+                        foreach (var value in values)
                         {
-                            queryDic.Add(v, Array.Empty<string>());
+                            if (!queryDic.ContainsKey(value))
+                            {
+                                queryDic.Add(value, []);
+                            }
                         }
                     }
-                }
-                else if (!queryDic.ContainsKey(originalKey))
-                {
-                    queryDic.Add(originalKey, values);
-                }
-                else
-                {
-                    Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    else if (!queryDic.ContainsKey(originalKey))
+                    {
+                        queryDic.Add(originalKey, values);
+                    }
+                    else
+                    {
+                        Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    }
                 }
             }
         }
@@ -442,12 +440,25 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.RequestUriRaw, request.Url.PathAndQuery },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestHeaderNoCookies, headersDic },
-            { AddressesConstants.RequestCookies, cookiesDic },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
+
+        var url = RequestDataHelper.GetUrl(request);
+        if (url is not null)
+        {
+            dict[AddressesConstants.RequestUriRaw] = url.PathAndQuery;
+        }
+
+        if (headersDic is not null)
+        {
+            dict[AddressesConstants.RequestHeaderNoCookies] = headersDic;
+        }
+
+        if (cookiesDic is not null)
+        {
+            dict[AddressesConstants.RequestCookies] = cookiesDic;
+        }
 
         if (queryDic is not null)
         {
@@ -462,20 +473,33 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    public Dictionary<string, string[]> GetResponseHeadersForWaf()
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers) => ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
+
+    private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(RequestDataHelper.GetNameValueCollectionValues(headers, currentKey) ?? []);
+
+    private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies[i];
+        key = cookie.Name;
+        value = cookie.Value;
+    }
+
+    public Dictionary<string, object> GetResponseHeadersForWaf()
     {
         var response = _httpTransport.Context.Response;
-        var headersDic = new Dictionary<string, string[]>(response.Headers.Keys.Count);
+        var headersDic = new Dictionary<string, object>(response.Headers.Keys.Count);
         var headerKeys = response.Headers.Keys;
         foreach (string originalKey in headerKeys)
         {
             var keyForDictionary = originalKey ?? string.Empty;
-            if (!keyForDictionary.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            if (!keyForDictionary.Equals("cookie", StringComparison.OrdinalIgnoreCase))
             {
                 keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
-                    headersDic.Add(keyForDictionary, response.Headers.GetValues(originalKey));
+                    headersDic.Add(keyForDictionary, GetHeaderAsArray(response.Headers.GetValues(originalKey)));
                 }
                 else
                 {
@@ -510,8 +534,8 @@ internal readonly partial struct SecurityCoordinator
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
-            get => Context.Items["ReportedExternalWafsRequestHeaders"] is true;
-            set => Context.Items["ReportedExternalWafsRequestHeaders"] = value;
+            get => Context.Items[ReportedExternalWafsRequestHeadersStr] is true;
+            set => Context.Items[ReportedExternalWafsRequestHeadersStr] = value;
         }
 
         internal override void MarkBlocked() => Context.Items[BlockingAction.BlockDefaultActionName] = true;

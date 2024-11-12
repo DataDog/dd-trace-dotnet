@@ -105,25 +105,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
 
             // Inject session
-            var sessionId = RandomIdGenerator.Shared.NextSpanId();
-            var sessionCommand = "test command";
-            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
-
-            const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
-            const string gitBranch = "main";
-            const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+            InjectSession(
+                out var sessionId,
+                out var sessionCommand,
+                out var sessionWorkingDirectory,
+                out var gitRepositoryUrl,
+                out var gitBranch,
+                out var gitCommitSha);
 
             try
             {
-                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
                     agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
@@ -148,6 +139,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
 
                             var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                            ValidateMetadata(payload.Metadata, sessionCommand);
                             if (payload.Events?.Length > 0)
                             {
                                 foreach (var @event in payload.Events)
@@ -436,25 +428,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var testModules = new List<MockCIVisibilityTestModule>();
 
             // Inject session
-            var sessionId = RandomIdGenerator.Shared.NextSpanId();
-            var sessionCommand = "test command";
-            var sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
-            SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
-            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, sessionCommand);
-            SetEnvironmentVariable(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, sessionWorkingDirectory);
-
-            const string gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
-            const string gitBranch = "main";
-            const string gitCommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitRepository, gitRepositoryUrl);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitBranch, gitBranch);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.DDGitCommitSha, gitCommitSha);
+            InjectSession(
+                out var sessionId,
+                out var sessionCommand,
+                out var sessionWorkingDirectory,
+                out var gitRepositoryUrl,
+                out var gitBranch,
+                out var gitCommitSha);
 
             try
             {
-                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-
                 using var agent = EnvironmentHelper.GetMockAgent();
                 agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 

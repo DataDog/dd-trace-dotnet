@@ -7,8 +7,16 @@
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
 
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+    <!-- Control build output locations -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPivots Condition="'$(ApiVersion)'!=''">$(Configuration.ToLowerInvariant())_$(TargetFramework.ToLowerInvariant())_$(ApiVersion)</ArtifactsPivots>
+
+    <!-- This is to try to force NuGet to restore the packages to the correct location when we're doing a multi-package build -->
+    <DD_RestoreProjectName>$(MSBuildProjectName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(AssemblyName)' != '' ">$(AssemblyName)</DD_RestoreProjectName>
+    <DD_RestoreProjectName Condition="'$(PackageId)' != '' ">$(PackageId)</DD_RestoreProjectName>
+    <MSBuildProjectExtensionsPath Condition="'$(ApiVersion)'!='' ">$(ArtifactsPath)/obj/$(DD_RestoreProjectName)/$(ArtifactsPivots)</MSBuildProjectExtensionsPath>
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -49,6 +57,14 @@
       </PropertyGroup>
     </Otherwise>
   </Choose>
+
+  <!-- Ensure that we don't reference Datadog.Trace directly (unless explicitly handled) -->
+  <!-- Note that you need to ensure the buid logic is updated to exclude the project if you take this approach -->
+  <Target Name="ValidateDisallowedReferences" BeforeTargets="CoreCompile">
+    <Error
+      Condition="'%(ProjectReference.FileName)' == 'Datadog.Trace' AND '$(AllowDatadogTraceReference)' != 'true'"
+      Text="You should not directly reference Datadog.Trace in this project" />
+  </Target>
 
   <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" Condition="'$(IncludeSharedSampleHelpers)' != 'false'" />
 </Project>

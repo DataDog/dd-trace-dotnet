@@ -1,0 +1,238 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "27": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "TryCatchTest"
+                },
+                "this": {
+                  "type": "TryCatchTest",
+                  "value": "TryCatchTest"
+                }
+              },
+              "locals": {
+                "ret1": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "ret2": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryCatchTest.cs",
+            "lines": [
+              "27"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "31": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "TryCatchTest"
+                },
+                "this": {
+                  "type": "TryCatchTest",
+                  "value": "TryCatchTest"
+                }
+              },
+              "locals": {
+                "ret1": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "ret2": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryCatchTest.cs",
+            "lines": [
+              "31"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "32": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "TryCatchTest"
+                },
+                "this": {
+                  "type": "TryCatchTest",
+                  "value": "TryCatchTest"
+                }
+              },
+              "locals": {
+                "ret1": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "ret2": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryCatchTest.cs",
+            "lines": [
+              "32"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "35": {
+              "arguments": {
+                "arg": {
+                  "type": "String",
+                  "value": "TryCatchTest"
+                },
+                "this": {
+                  "type": "TryCatchTest",
+                  "value": "TryCatchTest"
+                }
+              },
+              "locals": {
+                "ret1": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "ret2": {
+                  "type": "Int32",
+                  "value": "2"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "TryCatchTest.cs",
+            "lines": [
+              "35"
+            ]
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Test",
+      "name": "Samples.Probes.TestRuns.SmokeTests.TryCatchTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
