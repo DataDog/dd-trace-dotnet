@@ -466,7 +466,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            if (Security.Instance.AppsecEnabled && model.IsLocalRoot)
+            if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeFamilyBytes);
@@ -662,7 +662,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
-            if (Security.Instance.AppsecEnabled && model.IsLocalRoot)
+            if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _appSecEnabledBytes);

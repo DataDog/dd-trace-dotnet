@@ -122,6 +122,11 @@ internal readonly partial struct SecurityCoordinator
             Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
         }
 
+        if (_localRootSpan.Context.TraceContext is not null)
+        {
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
+        }
+
         return result;
     }
 
