@@ -38,6 +38,11 @@ namespace Datadog.Trace.AppSec
         private readonly SecuritySettings _settings;
         private readonly ConfigurationState _configurationState;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
+
+        /// <summary>
+        /// _waf locker needs to have a longer lifecycle than the Waf object as it's used to dispose it as well
+        /// </summary>
+        private readonly Concurrency.ReaderWriterLock _wafLocker;
         private ISubscription? _rcmSubscription;
         private LibraryInitializationResult? _libraryInitializationResult;
         private IWaf? _waf;
@@ -56,6 +61,8 @@ namespace Datadog.Trace.AppSec
         public Security(SecuritySettings? settings = null, IWaf? waf = null, IRcmSubscriptionManager? rcmSubscriptionManager = null, ConfigurationState? configurationState = null)
         {
             _rcmSubscriptionManager = rcmSubscriptionManager ?? RcmSubscriptionManager.Instance;
+            _wafLocker = new Concurrency.ReaderWriterLock();
+
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
@@ -475,6 +482,7 @@ namespace Datadog.Trace.AppSec
         {
             _waf?.Dispose();
             Encoder.Pool.Dispose();
+            _wafLocker.Dispose();
         }
 
         private void SetRemoteConfigCapabilites()
