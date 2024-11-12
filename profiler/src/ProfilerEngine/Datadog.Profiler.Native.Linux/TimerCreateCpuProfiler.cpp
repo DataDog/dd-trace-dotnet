@@ -153,6 +153,35 @@ private:
     int _oldErrno;
 };
 
+struct StackWalkLock
+{
+public:
+    StackWalkLock(std::shared_ptr<ManagedThreadInfo> threadInfo) :
+        _threadInfo{std::move(threadInfo)}
+    {
+        // Do not call lock while being in the signal handler otherwise
+        // we might end in a deadlock situation (lock inversion...)
+        _lockTaken = _threadInfo->TryAcquireLock();
+    }
+
+    ~StackWalkLock()
+    {
+        if (_lockTaken)
+        {
+            _threadInfo->ReleaseLock();
+        }
+    }
+
+    bool IsLockAcquired() const
+    {
+        return _lockTaken;
+    }
+
+private:
+    std::shared_ptr<ManagedThreadInfo> _threadInfo;
+    bool _lockTaken;
+};
+
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
@@ -162,12 +191,19 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
-    ErrnoSaveAndRestore errnoScope;
+    StackWalkLock l(threadInfo);
+    if (!l.IsLockAcquired())
+    {
+        return false;
+    }
+
     if (!CanCollect(ctx))
     {
         return false;
     }
+
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    ErrnoSaveAndRestore errnoScope;
 
     auto callstack = _callstackProvider.Get();
 
