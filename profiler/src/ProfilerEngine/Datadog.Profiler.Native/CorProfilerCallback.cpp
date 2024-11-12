@@ -123,7 +123,7 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
-    
+
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
@@ -579,6 +579,11 @@ void CorProfilerCallback::InitializeServices()
         {
             _pSamplesCollector->Register(_pStopTheWorldProvider);
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
+        }
+
+        if (_pConfiguration->IsHttpProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pNetworkProvider);
         }
     }
     // CLR events-based providers for .NET Framework

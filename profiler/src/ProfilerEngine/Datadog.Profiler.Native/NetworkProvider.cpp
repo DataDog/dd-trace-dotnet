@@ -46,11 +46,11 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    // only requests emitted by managed threads with span ID are captured
-    if (!threadInfo->HasTraceContext())
-    {
-        return false;
-    }
+    // TODO: only requests emitted by managed threads with span ID are captured
+    //if (!threadInfo->HasTraceContext())
+    //{
+    //    return false;
+    //}
 
     // TODO: implement additional sampling strategy if needed
 
