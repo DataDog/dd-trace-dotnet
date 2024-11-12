@@ -75,7 +75,7 @@ public class W3CBaggagePropagatorTests
     [InlineData("abcd", new[] { 'x' }, "abcd")]                                      // encode a char that is not in the string
     [InlineData("abcd", new[] { 'b', 'd' }, "a%62c%64")]                             // encode chars that are in the string
     [InlineData("José 🐶\t我", new char[0], "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and unicode chars
-    public void EncodeAndAppend(string value, char[] charsToEncode, string expected)
+    public void EncodeStringAndAppend(string value, char[] charsToEncode, string expected)
     {
         var sb = new StringBuilder();
         W3CBaggagePropagator.EncodeStringAndAppend(sb, value, [..charsToEncode]);
