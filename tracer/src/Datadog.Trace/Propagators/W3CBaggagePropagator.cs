@@ -160,7 +160,20 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b))
             {
                 // encode byte as '%XX'
+#if NET6_0_OR_GREATER
+                Span<char> buffer = stackalloc char[2];
+                if (b.TryFormat(buffer, out var chars, format: "X2") && chars == 2)
+                {
+                    sb.Append('%').Append(buffer);
+                }
+                else
+                {
+                    // fallback
+                    sb.Append($"%{b:X2}");
+                }
+#else
                 sb.Append($"%{b:X2}");
+#endif                
             }
             else
             {
