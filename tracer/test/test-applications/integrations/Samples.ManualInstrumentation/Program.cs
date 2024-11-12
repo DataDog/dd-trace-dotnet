@@ -70,6 +70,11 @@ internal class Program
             // verify instrumentation
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
 
+            // baggage works even without an active span
+            var baggage = Baggage.Current;
+            baggage["key1"] = "value1";
+            Expect(baggage.TryGetValue("key1", out var baggageValue1) && baggageValue1 == "value1");
+
             // Manual + automatic before reconfiguration
             var firstOperationName = $"Manual-{++count}.Initial";
             using (var scope = _initialTracer.StartActive(firstOperationName))
@@ -83,7 +88,17 @@ internal class Program
                 Expect(scope.Span.GetTag("Temp") == "TempTest");
                 scope.Span.SetTag("Temp", null);
 
-                await SendHttpRequest("Initial");
+                // baggage keeps working with an active span
+                baggage["key2"] = "value2";
+                Expect(baggage.TryGetValue("key2", out var baggageValue2) && baggageValue2 == "value2");
+
+                var responseMessage = await SendHttpRequest("Initial");
+                var requestMessage = responseMessage.RequestMessage!;
+
+                // verify baggage in the request headers
+                Expect(
+                    requestMessage.Headers.TryGetValues("baggage", out var baggageValues) &&
+                    baggageValues.FirstOrDefault() == "key1=value1,key2=value2");
             }
 
             await _initialTracer.ForceFlushAsync();
@@ -207,12 +222,15 @@ internal class Program
             Environment.Exit(0);
             return;
 
-            async Task SendHttpRequest(string name)
+            async Task<HttpResponseMessage> SendHttpRequest(string name)
             {
                 var q = $"{count}.{name}";
                 using var scope = Tracer.Instance.StartActive($"Manual-{q}.HttpClient");
-                await client.GetAsync(url + $"?q={q}");
+                var responseMessage = await client.GetAsync(url + $"?q={q}");
+
                 Console.WriteLine("Received response for client.GetAsync(String)");
+
+                return responseMessage;
             }
 
             void HandleHttpRequests(HttpListenerContext context)
