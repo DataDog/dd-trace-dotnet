@@ -226,7 +226,7 @@
     <!-- Integration: MySqlConnector -->
     <!--    Assembly: MySqlConnector -->
     <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.3.7 -->
-    <PackageReference Include="MySqlConnector" Version="2.3.7" />
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
 
     <!-- Integration: NLog -->
     <!--    Assembly: NLog -->
