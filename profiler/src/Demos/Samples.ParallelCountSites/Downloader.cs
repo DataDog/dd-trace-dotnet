@@ -21,12 +21,13 @@ namespace Samples.ParallelCountSites
             "https://mvp.microsoft.com/fr-fr/PublicProfile/5003325?fullName=Christophe%20Nasarre",
             "https://mvp.microsoft.com/fr-fr/PublicProfile/5003493?fullName=Kevin%20Gosse",
             "https://mvp.microsoft.com/fr-fr/PublicProfile/5002437?fullName=Konrad%20Kokosa",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5001937?fullName=Adrien%20Clerbois",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5000999?fullName=Alexandre%20Mutel",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/4025637?fullName=Bruno%20Thierry%20Boucard",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5000641?fullName=Christophe%20Peugnet",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5536?fullName=Richard%20Clark",
-            "https://github.com/Maoni0",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5001937?fullName=Adrien%20Clerbois",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5000999?fullName=Alexandre%20Mutel",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/4025637?fullName=Bruno%20Thierry%20Boucard",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5000641?fullName=Christophe%20Peugnet",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5536?fullName=Richard%20Clark",
+            "http://this.does.not.exist.com/sorry",  // should be an error
+            "http://github.com/Maoni0",              // --> redirect to HTTPS
         };
 
         public async Task SumPagesSize(int iterations)

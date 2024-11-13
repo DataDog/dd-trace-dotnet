@@ -19,7 +19,7 @@ std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegis
 
     for (auto const& valueType : valueTypes)
     {
-        auto idx = GetOffset(valueType);
+        size_t idx = GetOffset(valueType);
         if (idx == -1)
         {
             idx = _sampleTypeDefinitions.size();

@@ -16,7 +16,8 @@ namespace Samples.ParallelCountSites
             await Console.Out.WriteLineAsync($"pid = {Process.GetCurrentProcess().Id}");
             await Console.Out.WriteLineAsync();
 
-            int iterations = 100;
+            int iterations = 5;
+
             var downloader = new Downloader();
             await downloader.SumPagesSize(iterations);
         }
