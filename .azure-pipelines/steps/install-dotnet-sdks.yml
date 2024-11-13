@@ -30,6 +30,10 @@ steps:
 
 - template: install-dotnet-sdk-manually.yml
   parameters:
+    channel: 8.0
+
+- template: install-dotnet-sdk-manually.yml
+  parameters:
     sdkVersion: $(dotnetCoreSdkLatestVersion)
 
 - ${{ if eq(parameters.includeX86, true) }}:
@@ -56,6 +60,10 @@ steps:
     - template: install-dotnet-sdk-manually.yml
       parameters:
         channel: 7.0
+        is64bit: false
+    - template: install-dotnet-sdk-manually.yml
+      parameters:
+        channel: 8.0
         is64bit: false
     - template: install-dotnet-sdk-manually.yml
       parameters:

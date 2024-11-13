@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     ParameterTypeNames = new[] { "!0" },
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     ParameterTypeNames = new[] { "!0" },
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]

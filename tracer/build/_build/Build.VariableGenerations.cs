@@ -433,6 +433,9 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -482,6 +485,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
@@ -508,6 +513,8 @@ partial class Build : NukeBuild
                         "alpine_musl",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
@@ -611,6 +618,9 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
@@ -635,6 +645,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -673,6 +685,7 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.18"),
@@ -702,6 +715,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
@@ -756,10 +771,11 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
@@ -792,6 +808,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
@@ -851,10 +869,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
@@ -871,6 +889,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.18"),
@@ -922,10 +942,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
@@ -956,7 +976,9 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"), 
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
@@ -1012,10 +1034,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim", runCrashTest: false),
@@ -1031,6 +1053,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.20"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.19-composite"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.18"),
@@ -1054,10 +1078,10 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
@@ -1072,6 +1096,8 @@ partial class Build : NukeBuild
                         "alpine",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-alpine3.20"),
+                            new (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
@@ -1120,6 +1146,7 @@ partial class Build : NukeBuild
                     };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
@@ -1153,6 +1180,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
@@ -1187,6 +1215,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
@@ -1221,6 +1250,7 @@ partial class Build : NukeBuild
                     var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
                     var runtimeImages = new SmokeTestImage[]
                     {
+                        new (publishFramework: TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022"),
                         new (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022"),
@@ -1255,14 +1285,17 @@ partial class Build : NukeBuild
                         { "macos-12_netcoreapp3.1", new { vmImage = "macos-12", publishFramework = "netcoreapp3.1" } },
                         { "macos-12_net6.0", new { vmImage = "macos-12", publishFramework = "net6.0" } },
                         { "macos-12_net8.0", new { vmImage = "macos-12", publishFramework = "net8.0" } },
+                        { "macos-12_net9.0", new { vmImage = "macos-12", publishFramework = "net9.0" } },
                         { "macos-13_netcoreapp3.1", new { vmImage = "macos-13", publishFramework = "netcoreapp3.1" } },
                         { "macos-13_net5.0", new { vmImage = "macos-13", publishFramework = "net5.0" } },
                         { "macos-13_net6.0", new { vmImage = "macos-13", publishFramework = "net6.0" } },
                         { "macos-13_net7.0", new { vmImage = "macos-13", publishFramework = "net7.0" } },
                         { "macos-13_net8.0", new { vmImage = "macos-13", publishFramework = "net8.0" } },
+                        { "macos-13_net9.0", new { vmImage = "macos-13", publishFramework = "net9.0" } },
                         { "macos-14_netcoreapp3.1", new { vmImage = "macos-14", publishFramework = "netcoreapp3.1" } },
                         { "macos-14_net6.0", new { vmImage = "macos-14", publishFramework = "net6.0" } },
                         { "macos-14_net8.0", new { vmImage = "macos-14", publishFramework = "net8.0" } },
+                        { "macos-14_net9.0", new { vmImage = "macos-14", publishFramework = "net9.0" } },
                     };
 
                     Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix MacOs");
