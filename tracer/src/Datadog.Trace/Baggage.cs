@@ -156,6 +156,19 @@ internal sealed class Baggage : IDictionary<string, string?>
         }
     }
 
+    public void AddOrReplace(IEnumerable<KeyValuePair<string, string>> sourceItems)
+    {
+        var destinationItems = EnsureListInitialized();
+
+        lock (destinationItems)
+        {
+            foreach (var sourceItem in sourceItems)
+            {
+                AddOrReplaceInternal(destinationItems, sourceItem.Key, sourceItem.Value);
+            }
+        }
+    }
+
     private static void AddOrReplaceInternal(List<KeyValuePair<string, string?>> items, string key, string? value)
     {
         for (int i = 0; i < items.Count; i++)
