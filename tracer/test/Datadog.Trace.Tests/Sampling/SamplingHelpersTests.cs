@@ -48,9 +48,9 @@ public class SamplingHelpersTests
         const int iterations = 50_000_000;
         const float samplingRate = 1e-6f;
 
-        const int expectedKeepRate = (int)(iterations * samplingRate);
-        const int lowerBound = expectedKeepRate - 1;
-        const int upperBound = expectedKeepRate + 1;
+        const int expectedKeepRate = (int)(iterations * samplingRate); // 50
+        const int lowerBound = (int)(expectedKeepRate * 0.9);          // 45
+        const int upperBound = (int)(expectedKeepRate * 1.1);          // 55
 
         int kept = 0;
 
