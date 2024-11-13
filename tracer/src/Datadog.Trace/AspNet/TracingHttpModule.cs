@@ -173,7 +173,6 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    Baggage.Current.AddOpenTelemetryBaggage();
                     var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
                     SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
                 }
