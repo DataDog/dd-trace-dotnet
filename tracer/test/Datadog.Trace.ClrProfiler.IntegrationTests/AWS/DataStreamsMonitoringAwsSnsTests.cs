@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -43,27 +44,30 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
 #if NETFRAMEWORK
-            // there is no snapshot for NetFramework so this test would fail if run
-            // but it is compiled, so it still needs to look legit for the CI
-            var expectedCount = 0;
+            var expectedCount = 10;
+            var expectedTaggedCount = 4;
+            var frameworkName = "NetFramework";
 #else
             var expectedCount = 5;
+            var expectedTaggedCount = 2;
+            var frameworkName = "NetCore";
 #endif
             var spans = agent.WaitForSpans(expectedCount);
+            spans.Should().HaveCount(expectedCount);
             var sqsSpans = spans.Where(
                 span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 
             sqsSpans.Should().NotBeEmpty();
 
             var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(expected: 2);
+            taggedSpans.Should().HaveCount(expected: expectedTaggedCount);
 
-            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: 2);
+            var dsPoints = agent.WaitForDataStreamsPoints(statsCount: expectedTaggedCount);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
-            var fileName = $"{nameof(DataStreamsMonitoringAwsSnsTests)}.{nameof(SubmitsDsmMetrics)}";
+            var fileName = $"{nameof(DataStreamsMonitoringAwsSnsTests)}.{frameworkName}.{nameof(SubmitsDsmMetrics)}";
             await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                           .UseFileName(fileName)
                           .DisableRequireUniquePrefix();
