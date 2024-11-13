@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -39,5 +40,30 @@ public class SamplingHelpersTests
     public void SampleByRate(ulong traceId, double rate, bool expected)
     {
         SamplingHelpers.SampleByRate(traceId, rate).Should().Be(expected);
+    }
+
+    [Fact]
+    public void VeryLowSamplingRate()
+    {
+        const int iterations = 50_000_000;
+        const float samplingRate = 1e-6f;
+
+        const int expectedKeepRate = (int)(iterations * samplingRate);
+        const int lowerBound = expectedKeepRate - 1;
+        const int upperBound = expectedKeepRate + 1;
+
+        int kept = 0;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: false);
+
+            if (SamplingHelpers.SampleByRate(traceId, samplingRate))
+            {
+                kept++;
+            }
+        }
+
+        kept.Should().BeInRange(lowerBound, upperBound);
     }
 }
