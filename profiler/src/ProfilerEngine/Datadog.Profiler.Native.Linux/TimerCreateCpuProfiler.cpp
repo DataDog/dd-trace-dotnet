@@ -35,7 +35,7 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
     _totalSampling = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_cpu_sampling_requests");
-    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_cpu_sample_discard");
+    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_cpu_sample_discarded");
 }
 
 TimerCreateCpuProfiler::~TimerCreateCpuProfiler()

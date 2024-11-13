@@ -47,7 +47,7 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
 
     // For now have one metric for both walltime and cpu (naive)
     _samplingRequest = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_walltime_cpu_sampling_requests");
-    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_walltime_cpu_sample_discard");
+    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_walltime_cpu_sample_discarded");
 
 }
 
@@ -366,12 +366,13 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
         // sampling in progress
         if (pCollector != nullptr)
         {
+            pCollector->MarkAsInterrupted();
+
             // There can be a race:
             // The sampling thread has sent the signal and is waiting, but another SIGUSR1 signal was sent
             // by another thread and is handled before the one sent by the sampling thread.
             if (pCollector->CanCollect(OpSysTools::GetThreadId(), info, context))
             {
-                pCollector->MarkAsInterrupted();
 
                 // In case it's the thread we want to sample, just get its callstack
                 auto errorCode = pCollector->CollectCallStackCurrentThread(context);
