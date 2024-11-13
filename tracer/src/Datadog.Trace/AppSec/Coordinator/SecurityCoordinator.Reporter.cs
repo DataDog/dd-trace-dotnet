@@ -146,7 +146,6 @@ internal readonly partial struct SecurityCoordinator
                 traceContext.Origin = "appsec";
             }
 
-            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             headers ??= _httpTransport.GetRequestHeaders();

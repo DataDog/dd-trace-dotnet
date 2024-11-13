@@ -266,22 +266,24 @@ partial class Build
 
     private void CreateLineProbesIfNeeded()
     {
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
-
-        if (!testDescription.LineProbesEnabled)
-        {
-            Logger.Information($"Skip line probes creation. The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
-            return;
-        }
-
+        ExplorationTestDescription testDescription = null;
         if (ExplorationTestName.HasValue)
         {
-            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            if (!testDescription.LineProbesEnabled)
+            {
+                Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+                return;
+            }
         }
         else
         {
-            Logger.Information("Exploration test name is not provided. Running protobuf test case");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
         }
+
+        Logger.Information($"Provided exploration test name is {testDescription.Name}.");
+
+        ExplorationTestDescription.GetAllExplorationTestDescriptions();
 
         var sw = new Stopwatch();
         sw.Start();
@@ -470,8 +472,7 @@ partial class Build
             throw new Exception("Can't determined the correct tracer framework version");
         }
 
-        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
-        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace." + extension;
+        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace.dll";
     }
 
     static string[] GetAllTestAssemblies(string rootPath)

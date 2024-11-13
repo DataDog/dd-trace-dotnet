@@ -670,6 +670,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, rootScope, httpContext);
             }
 
+            CoreHttpContextStore.Instance.Remove();
             // If we don't have a scope, no need to call Stop pipeline
         }
 

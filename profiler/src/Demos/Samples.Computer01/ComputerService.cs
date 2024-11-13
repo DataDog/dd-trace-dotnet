@@ -52,7 +52,6 @@ namespace Samples.Computer01
         private OpenLdapCrash _openldapCrash;
         private SocketTimeout _socketTest;
 #endif
-        private Obfuscation _obfuscation;
         private ThreadSpikes _threadSpikes;
         private StringConcat _stringConcat;
 
@@ -168,10 +167,6 @@ namespace Samples.Computer01
                     StartSocketTimeout();
                     break;
 #endif
-                case Scenario.Obfuscation:
-                    StartObfuscation();
-                    break;
-
                 case Scenario.ForceSigSegvHandler:
                     StartForceSigSegvHandler();
                     break;
@@ -304,10 +299,6 @@ namespace Samples.Computer01
                     StopSocketTimeout();
                     break;
 #endif
-
-                case Scenario.Obfuscation:
-                    StopObfuscation();
-                    break;
 
                 case Scenario.ForceSigSegvHandler:
                     StopForceSigSegvHandler();
@@ -447,10 +438,6 @@ namespace Samples.Computer01
 #endif
                     case Scenario.ForceSigSegvHandler:
                         RunForceSigSegvHandler();
-                        break;
-
-                    case Scenario.Obfuscation:
-                        RunObfuscation();
                         break;
 
                     case Scenario.ThreadSpikes:
@@ -642,12 +629,6 @@ namespace Samples.Computer01
         }
 #endif
 
-        private void StartObfuscation()
-        {
-            _obfuscation = new Obfuscation();
-            _obfuscation.Start();
-        }
-
         private void StopForceSigSegvHandler()
         {
             _sigsegvHandler.Stop();
@@ -746,11 +727,6 @@ namespace Samples.Computer01
             _socketTest.Stop();
         }
 #endif
-
-        private void StopObfuscation()
-        {
-            _obfuscation.Stop();
-        }
 
         private void StopGarbageCollections()
         {
@@ -980,12 +956,6 @@ namespace Samples.Computer01
         private void RunForceSigSegvHandler()
         {
             var test = new SigSegvHandlerExecution();
-            test.Run();
-        }
-
-        private void RunObfuscation()
-        {
-            var test = new Obfuscation();
             test.Run();
         }
 

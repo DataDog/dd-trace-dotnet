@@ -18,6 +18,7 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.appsec.event_rules.version: 1.13.1,
       _dd.runtime_family: dotnet
     },
     Metrics: {

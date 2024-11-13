@@ -27,7 +27,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::QueryInterface(REFIID riid, v
     {
         *ppvObject = this;
         this->AddRef();
-         
+
+        // We try to load the class factory of all target cor profilers.
+        if (FAILED(m_dispatcher->LoadClassFactory(riid)))
+        {
+            Log::Warn("Error loading all cor profiler class factories.");
+        }
+
         return S_OK;
     }
 
@@ -65,7 +71,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::CreateInstance(IUnknown* pUnk
 
     auto profiler = new datadog::shared::nativeloader::CorProfiler(m_dispatcher);
     HRESULT res = profiler->QueryInterface(riid, ppvObject);
-    if (FAILED(res))
+    if (SUCCEEDED(res))
+    {
+        m_dispatcher->LoadInstance(pUnkOuter, riid);
+    }
+    else
     {
         delete profiler;
     }

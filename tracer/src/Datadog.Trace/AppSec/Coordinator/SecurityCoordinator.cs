@@ -7,18 +7,19 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#else
+using System.Collections.Specialized;
+using System.Web;
+#endif
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -124,6 +125,7 @@ internal readonly partial struct SecurityCoordinator
         {
             // annotate span
             _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
+            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
         }
 
@@ -163,6 +165,76 @@ internal readonly partial struct SecurityCoordinator
         }
 
         _httpTransport.DisposeAdditiveContext();
+    }
+
+    internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
+    {
+        var cookies = RequestDataHelper.GetCookies(request);
+
+        if (cookies is not null)
+        {
+            var cookiesDic = new Dictionary<string, object>();
+            for (var i = 0; i < cookies.Count; i++)
+            {
+                GetCookieKeyValueFromIndex(cookies, i, out var keyForDictionary, out var cookieValue);
+
+                if (cookieValue is not null && keyForDictionary is not null)
+                {
+                    if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
+                    {
+                        cookiesDic.Add(keyForDictionary, cookieValue);
+                    }
+                    else
+                    {
+                        if (value is string stringValue)
+                        {
+                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookieValue };
+                        }
+                        else if (value is List<string> valueList)
+                        {
+                            valueList.Add(cookieValue);
+                        }
+                        else
+                        {
+                            Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
+                        }
+                    }
+                }
+            }
+
+            return cookiesDic;
+        }
+
+        return null;
+    }
+
+#if NETFRAMEWORK
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers)
+#else
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
+#endif
+    {
+        var headersDic = new Dictionary<string, object>(headers.Keys.Count);
+        foreach (string key in headers.Keys)
+        {
+            var currentKey = key ?? string.Empty;
+            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            {
+                currentKey = currentKey.ToLowerInvariant();
+                var value = GetHeaderValueForWaf(headers, currentKey);
+
+                if (!headersDic.ContainsKey(currentKey))
+                {
+                    headersDic.Add(currentKey, value);
+                }
+                else
+                {
+                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                }
+            }
+        }
+
+        return headersDic;
     }
 
     private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
