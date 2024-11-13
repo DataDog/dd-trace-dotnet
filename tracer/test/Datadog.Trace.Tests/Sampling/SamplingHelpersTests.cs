@@ -54,9 +54,9 @@ public class SamplingHelpersTests
 
         int kept = 0;
 
-        for (int i = 0; i < iterations; i++)
+        for (int i = 1; i < iterations; i++)
         {
-            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: false);
+            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: true);
 
             if (SamplingHelpers.SampleByRate(traceId, samplingRate))
             {
