@@ -4,7 +4,7 @@
 #include "TimerCreateCpuProfiler.h"
 
 #include "CpuTimeProvider.h"
-#include "DiscardMetrics.hpp"
+#include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
 #include "Log.h"
 #include "OpSysTools.h"

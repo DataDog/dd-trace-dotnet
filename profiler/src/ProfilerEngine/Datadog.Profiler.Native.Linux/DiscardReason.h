@@ -1,13 +1,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#pragma
-
-#include <list>
-#include <string>
-#include <utility>
-
-#include "MetricBase.h"
+#pragma once
 
 enum class DiscardReason
 {
@@ -59,40 +53,3 @@ static const char* to_string(DiscardReason type)
 #else
 #pragma warning(default : 4062)
 #endif
-
-class DiscardMetrics : public MetricBase
-{
-private:
-    static constexpr std::size_t array_size = static_cast<std::size_t>(DiscardReason::GuardItem);
-
-public:
-    DiscardMetrics(std::string name) :
-        MetricBase(std::move(name)), _metrics{0}
-    {
-    }
-
-    template <DiscardReason TType>
-    void Incr()
-    {
-        static_assert(TType != DiscardReason::GuardItem, "You must not use DiscardReason::GuardItem");
-        constexpr auto offset = static_cast<int>(TType);
-        static_assert(offset <= array_size, "");
-        _metrics[offset]++;
-    }
-
-    std::list<MetricBase::Metric> GetMetrics() override
-    {
-        std::list<MetricBase::Metric> result;
-        for (std::size_t idx = 0; idx < _metrics.size(); idx++)
-        {
-            auto& metric = _metrics[idx];
-            result.emplace_back(
-                std::make_pair(_name + to_string(static_cast<DiscardReason>(idx)),
-                metric.exchange(0)));
-        }
-        return result;
-    }
-
-private:
-    std::array<std::atomic<std::uint64_t>, array_size> _metrics;
-};

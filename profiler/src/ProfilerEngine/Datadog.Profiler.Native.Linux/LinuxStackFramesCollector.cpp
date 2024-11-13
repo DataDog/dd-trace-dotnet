@@ -13,7 +13,7 @@
 #include <unordered_map>
 
 #include "CallstackProvider.h"
-#include "DiscardMetrics.hpp"
+#include "DiscardMetrics.h"
 #include "IConfiguration.h"
 #include "Log.h"
 #include "ManagedThreadInfo.h"
