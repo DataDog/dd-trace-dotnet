@@ -1499,6 +1499,7 @@ partial class Build
                 };
 
                 DotNetPublish(config => config
+                   .SetDotnetPath(TargetPlatform)
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
                    .SetRuntime(rid)
