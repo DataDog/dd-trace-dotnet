@@ -25,13 +25,6 @@ public class AppTrimmingTests : TestHelper
     [SkippableFact]
     public async Task TrimmerTest()
     {
-        // FIXME: .NET 9 RC2 fails weirdly only on this combination
-        // I have a theory it's tied to the fact we're using MVC in our trimming app
-        // which I don't believe is officially supported for trimming, so we should
-        // probably migrate that, but going to do that separately.
-#if NET9_0
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
-#endif
         var httpPort = TcpPortProvider.GetOpenPort();
         Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
