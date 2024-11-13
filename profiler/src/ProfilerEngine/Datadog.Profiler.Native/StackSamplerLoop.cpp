@@ -122,11 +122,13 @@ bool StackSamplerLoop::StartImpl()
 bool StackSamplerLoop::StopImpl()
 {
     _shutdownRequested = true;
+
     if (_pLoopThread != nullptr)
     {
         try
         {
             _pLoopThread->join();
+            _pLoopThread.reset();
         }
         catch (const std::exception&)
         {
