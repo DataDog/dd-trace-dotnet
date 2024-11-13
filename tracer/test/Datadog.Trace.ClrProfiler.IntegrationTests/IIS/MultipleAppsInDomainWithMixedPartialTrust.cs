@@ -1,4 +1,4 @@
-﻿// <copyright file="MultipleAppsInDomainWithCustomConfigBuilder.cs" company="Datadog">
+﻿// <copyright file="MultipleAppsInDomainWithMixedPartialTrust.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,13 +10,13 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS;
 
-public class MultipleAppsInDomainWithCustomConfigBuilder(ITestOutputHelper output) : MultipleAppsInDomainBase(output)
+public class MultipleAppsInDomainWithMixedPartialTrust(ITestOutputHelper output) : MultipleAppsInDomainBase(output)
 {
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     [Trait("IIS", "True")]
     [Trait("MSI", "True")]
     public async Task ApplicationDoesNotReturnErrors()
-        => await RunTest(app1Port: 8081, app2Port: 8082, expectedOutput: "DummyValue1 - from custom config", logDirectoryName: "MultipleAppsInDomain");
+        => await RunTest(app1Port: 8083, app2Port: 8084, expectedOutput: "DummyKey1 value from web.config", logDirectoryName: "MultipleAppsInDomain");
 }
 #endif

@@ -2038,6 +2038,7 @@ stages:
         mkdir -Force ./artifacts/build_data/snapshots
         mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
         mkdir -Force ./artifacts/build_data/logs/MultipleAppsInDomain
+        mkdir -Force ./artifacts/build_data/logs/MixedPartialTrust
         docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
 
         docker compose -f docker-compose.windows.yml build `
@@ -2050,7 +2051,15 @@ stages:
             --build-arg ENABLE_32_BIT=$(enable32bit) `
             IntegrationTests.IIS.MultipleAppsInDomain
 
-        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup IntegrationTests.IIS.MultipleAppsInDomain
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.MixedPartialTrust
+
+        docker compose -f docker-compose.windows.yml up -d `
+            IntegrationTests.IIS.LoaderOptimizationStartup `
+            IntegrationTests.IIS.MultipleAppsInDomain `
+            IntegrationTests.IIS.MixedPartialTrust
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
