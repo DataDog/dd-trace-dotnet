@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "stdint.h"
+#include <cstdint>
 
 // Uniquely identify a network activity based on the GUID provided by the events payload
 // Only the first 12 bytes of the GUID are used to identify the activity
@@ -60,7 +60,7 @@ public:
     // from https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Diagnostics/Tracing/ActivityTracker.cs
     //
 
-    enum NumberListCodes : byte
+    enum NumberListCodes : uint8_t
     {
         End = 0x0,
         LastImmediateValue = 0xA,
@@ -75,12 +75,12 @@ public:
     /// Thus if it is non-zero it adds to the current byte, otherwise it advances and writes
     /// the new byte (in the high bits) of the next byte.
     /// </summary>
-    static void WriteNibble(byte*& ptr, byte* endPtr, uint32_t value)
+    static void WriteNibble(uint8_t*& ptr, uint8_t* endPtr, uint32_t value)
     {
         if (*ptr != 0)
-            *ptr++ |= (byte)value;
+            *ptr++ |= (uint8_t)value;
         else
-            *ptr = (byte)(value << 4);
+            *ptr = (uint8_t)(value << 4);
     }
 
 
@@ -89,10 +89,10 @@ public:
     /// is the maximum number of bytes that fit in a GUID) if the path did not fit.
     /// If 'overflow' is true, then the number is encoded as an 'overflow number (which has a
     /// special (longer prefix) that indicates that this ID is allocated differently
-    static int AddIdToGuid(byte* outPtr, int whereToAddId, uint32_t id, bool overflow = false)
+    static int AddIdToGuid(uint8_t* outPtr, int whereToAddId, uint32_t id, bool overflow = false)
     {
-        byte* ptr = (byte*)outPtr;
-        byte* endPtr = ptr + 12;
+        uint8_t* ptr = (uint8_t*)outPtr;
+        uint8_t* endPtr = ptr + 12;
         ptr += whereToAddId;
         if (endPtr <= ptr)
             return 13;                // 12 means we might exactly fit, 13 means we definitely did not fit
@@ -129,7 +129,7 @@ public:
                 if (id < 4096)
                 {
                     // Indicate this is a 1 byte multicode with 4 high order bits in the lower nibble.
-                    *ptr = (byte)(((uint32_t)NumberListCodes::MultiByte1 << 4) + (id >> 8));
+                    *ptr = (uint8_t)(((uint32_t)NumberListCodes::MultiByte1 << 4) + (id >> 8));
 
                     // FIX: it means that we now just need 1 byte to store the id instead of 2 as computed before
                     //      --> the previous line is overwriting the "NumberListCodes.MultiByte1 + (len - 1)" value
@@ -151,13 +151,13 @@ public:
                     ptr++;        // Indicate that we have overflowed
                     break;
                 }
-                *ptr++ = (byte)id;
+                *ptr++ = (uint8_t)id;
                 id >>= 8;
                 --len;
             }
         }
 
-        return (int)(ptr - ((byte*)outPtr));
+        return (int)(ptr - ((uint8_t*)outPtr));
     }
 
 
@@ -169,12 +169,12 @@ public:
         // Due to a bug in the encoding, we need to decode and then encode instead of directly copy the 12 bytes
         // of the GUID. The other solution would be to duplicate the encoding bug when the last element is not included.
         uint32_t elements[MAX_ELEMENTS] = { 0 };  // each element of the path is stored here
-        byte currentElement = 0;
+        uint8_t currentElement = 0;
         bool isOverflow = false;
 
         // decode the activity into path elements
-        byte* bytePtr = (byte*)pActivityGuid;
-        byte* endPtr = bytePtr + 12;
+        uint8_t* bytePtr = (uint8_t*)pActivityGuid;
+        uint8_t* endPtr = bytePtr + 12;
         while (bytePtr < endPtr)
         {
             uint32_t nibble = (uint32_t)(*bytePtr >> 4);
@@ -276,7 +276,7 @@ public:
         }
 
         // encode the path into the network activity
-        bytePtr = (byte*)&activity;
+        bytePtr = (uint8_t*)&activity;
         int activityPathGuidOffsetStart = 0;
 
         // skip the last element if needed
