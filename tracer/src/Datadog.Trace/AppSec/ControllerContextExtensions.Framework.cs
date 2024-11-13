@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec
             }
 
             // if neither iast or security is enabled leave
-            if (!security.Enabled && !runIast)
+            if (!security.AppsecEnabled && !runIast)
             {
                 return;
             }
@@ -77,7 +77,7 @@ namespace Datadog.Trace.AppSec
                 requestBody = ObjectExtractor.Extract(bodyDic);
             }
 
-            if (security.Enabled)
+            if (security.AppsecEnabled)
             {
                 var securityTransport = SecurityCoordinator.Get(security, scope.Span!, context);
                 if (!securityTransport.IsBlocked)

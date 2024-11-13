@@ -65,9 +65,11 @@ public class CoverageGetCoverageResultIntegration
             DotnetCommon.Log.Information("CoverageGetCoverageResult.Percentage: {Value}", percentage);
 
             // Extract session variables (from out of process sessions)
-            if (SpanContextPropagator.Instance.Extract(
-                    EnvironmentHelpers.GetEnvironmentVariables(),
-                    new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+            var context = SpanContextPropagator.Instance.Extract(
+                EnvironmentHelpers.GetEnvironmentVariables(),
+                new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (context.SpanContext is { } sessionContext)
             {
                 try
                 {

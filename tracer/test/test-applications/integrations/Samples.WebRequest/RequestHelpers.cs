@@ -551,7 +551,10 @@ namespace Samples.WebRequest
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+
+            // Prior to .NET 9, this toggle does nothing, but it defaults to "true"
+            // in .NET 9, setting this to false changes the behaviour significantly
+            request.AllowWriteStreamBuffering = true;
 
             if (tracingDisabled)
             {
@@ -594,7 +597,7 @@ namespace Samples.WebRequest
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+            request.AllowWriteStreamBuffering = true;
 
             if (tracingDisabled)
             {
@@ -630,7 +633,7 @@ namespace Samples.WebRequest
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+            request.AllowWriteStreamBuffering = true;
 
             if (tracingDisabled)
             {

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private const int MaxSizeBytes = 256 * 1024; // 256 KB
 
         // Loops through all entries of the EventBridge event and tries to inject Datadog context into each.
-        public static void InjectTracingContext<TPutEventsRequest>(TPutEventsRequest request, SpanContext context)
+        public static void InjectContext<TPutEventsRequest>(TPutEventsRequest request, PropagationContext context)
             where TPutEventsRequest : IPutEventsRequest, IDuckType
         {
             var entries = request.Entries.Value;
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
         // Tries to add Datadog trace context under the `_datadog` key at the top level of the `detail` field.
         // `detail` is a string, so we have to manually modify it using a StringBuilder.
-        private static void InjectHeadersIntoDetail(IPutEventsRequestEntry entry, SpanContext context)
+        private static void InjectHeadersIntoDetail(IPutEventsRequestEntry entry, PropagationContext context)
         {
             var detail = entry.Detail?.Trim() ?? "{}";
             if (!detail.EndsWith("}"))
@@ -54,14 +54,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 return;
             }
 
-            var detailBuilder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize).Append(detail);
+            var detailBuilder = Util.StringBuilderCache.Acquire().Append(detail);
             detailBuilder.Remove(detail.Length - 1, 1); // Remove last bracket
             if (detail.Length > 2)
             {
                 detailBuilder.Append(','); // Add comma if the original detail is not empty
             }
 
-            var traceContext = BuildTraceContextJson(context, entry.EventBusName);
+            var traceContext = BuildContextJson(context, entry.EventBusName);
             detailBuilder.Append($"\"{DatadogKey}\":{traceContext}").Append('}');
 
             // Check new detail size
@@ -77,11 +77,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         }
 
         // Builds a JSON string containing Datadog trace context
-        private static string BuildTraceContextJson(SpanContext context, string? eventBusName)
+        private static string BuildContextJson(PropagationContext context, string? eventBusName)
         {
             // Inject trace context
-            var jsonBuilder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var jsonBuilder = Util.StringBuilderCache.Acquire();
             jsonBuilder.Append('{');
+
             SpanContextPropagator.Instance.Inject(context, jsonBuilder, new StringBuilderCarrierSetter());
 
             // Inject start time and bus name

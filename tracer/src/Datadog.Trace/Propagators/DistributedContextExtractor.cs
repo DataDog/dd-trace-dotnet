@@ -19,10 +19,12 @@ namespace Datadog.Trace.Propagators
         {
         }
 
-        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
+        public PropagatorType PropagatorType => PropagatorType.TraceContext;
+
+        public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
-            spanContext = null;
+            context = default;
 
             if (carrier is not IReadOnlyDictionary<string, string?>)
             {
@@ -59,12 +61,13 @@ namespace Datadog.Trace.Propagators
             }
 
             // we don't consider contexts coming from this as "remote" as it could be from a version conflict scenario
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId, isRemote: false)
-                          {
-                              PropagatedTags = traceTags,
-                              AdditionalW3CTraceState = w3CTraceState,
-                          };
+            var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin, rawTraceId, rawSpanId, isRemote: false)
+                              {
+                                  PropagatedTags = traceTags,
+                                  AdditionalW3CTraceState = w3CTraceState,
+                              };
 
+            context = new PropagationContext(spanContext, baggage: null);
             return true;
         }
 

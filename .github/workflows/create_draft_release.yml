@@ -40,7 +40,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0.100'
+          dotnet-version: '9.0.100'
 
       - name: "Configure Git Credentials"
         run: |
@@ -110,7 +110,7 @@ jobs:
         shell: bash
         run: |
           mkdir debug_symbols
-          tar -zxcf linux-native-symbols.tar.gz -C debug_symbols
+          tar -zxvf linux-native-symbols.tar.gz -C debug_symbols
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols

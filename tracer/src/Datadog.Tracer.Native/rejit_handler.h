@@ -114,6 +114,9 @@ private:
 
     std::vector<Rejitter*> m_rejitters;
 
+    Lock m_rejit_history_lock;
+    std::vector<std::tuple<ModuleID, mdMethodDef>> m_rejit_history;
+    bool enable_rejit_tracking = false;
 public:
     RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
     RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -143,6 +146,9 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);
     void AddNGenInlinerModule(ModuleID moduleId);
+
+    void SetRejitTracking(bool enabled);
+    bool HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef);
 };
 
 } // namespace trace

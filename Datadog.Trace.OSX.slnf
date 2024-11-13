@@ -162,7 +162,6 @@
       "tracer\\test\\test-applications\\regression\\Sandbox.AutomaticInstrumentation\\Sandbox.AutomaticInstrumentation.csproj",
       "tracer\\test\\test-applications\\regression\\Sandbox.ManualTracing\\Sandbox.ManualTracing.csproj",
       "tracer\\test\\test-applications\\regression\\ServiceBus.Minimal.MassTransit\\ServiceBus.Minimal.MassTransit.csproj",
-      "tracer\\test\\test-applications\\regression\\ServiceBus.Minimal.NServiceBus\\ServiceBus.Minimal.NServiceBus.csproj",
       "tracer\\test\\test-applications\\regression\\ServiceBus.Minimal.Rebus\\ServiceBus.Minimal.Rebus.csproj",
       "tracer\\test\\test-applications\\regression\\StackExchange.Redis.AssemblyConflict.LegacyProject\\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj",
       "tracer\\test\\test-applications\\regression\\StackExchange.Redis.AssemblyConflict.SdkProject\\StackExchange.Redis.AssemblyConflict.SdkProject.csproj",

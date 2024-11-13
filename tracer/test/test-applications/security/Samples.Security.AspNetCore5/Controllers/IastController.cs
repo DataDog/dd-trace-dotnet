@@ -1032,7 +1032,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
                 return Content($"Result: " + rname);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500);
             }

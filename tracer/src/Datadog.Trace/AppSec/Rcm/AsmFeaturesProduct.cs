@@ -13,7 +13,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmFeaturesProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
@@ -30,19 +30,15 @@ internal class AsmFeaturesProduct : IAsmConfigUpdater
                     configurationStatus.AutoUserInstrumByFile[file.Path.Path] = asmFeatures.TypedFile.AutoUserInstrum;
                 }
             }
-
-            configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
             configurationStatus.AsmFeaturesByFile.Remove(removedConfig.Path);
             configurationStatus.AutoUserInstrumByFile.Remove(removedConfig.Path);
         }
-
-        configurationStatus.IncomingUpdateState.SignalSecurityStateChange();
     }
 }

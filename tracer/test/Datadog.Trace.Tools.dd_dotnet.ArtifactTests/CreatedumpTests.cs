@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -35,11 +36,6 @@ public class CreatedumpTests : ConsoleTestHelper
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
         SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            SetEnvironmentVariable("DD_CRASHTRACKING_ENABLED", "1");
-        }
     }
 
     private static (string Key, string Value) LdPreloadConfig
@@ -547,6 +543,51 @@ public class CreatedumpTests : ConsoleTestHelper
                 var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["names"][0]["name"].Value<string>()));
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var validatedModules = new HashSet<string>();
+
+                // Validate PDBs
+                foreach (var frame in frames)
+                {
+                    // Open the PE file
+                    var moduleName = frame["names"][0]["name"].Value<string>().Split('!').First();
+
+                    if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                    {
+                        if (!validatedModules.Add(moduleName))
+                        {
+                            continue;
+                        }
+
+                        var pdbNode = frame["normalized_ip"]["meta"]["Pdb"];
+
+                        var hash = ((JArray)pdbNode["guid"]).Select(g => g.Value<byte>()).ToArray();
+                        var age = pdbNode["age"].Value<uint>();
+
+                        using var file = File.OpenRead(moduleName);
+                        using var peReader = new PEReader(file);
+
+                        var debugDirectoryEntries = peReader.ReadDebugDirectory();
+                        var codeViewEntry = debugDirectoryEntries.Single(e => e.Type == DebugDirectoryEntryType.CodeView);
+                        var pdbInfo = peReader.ReadCodeViewDebugDirectoryData(codeViewEntry);
+
+                        age.Should().Be(unchecked((uint)pdbInfo.Age));
+                        hash.Should().Equal(pdbInfo.Guid.ToByteArray());
+                    }
+                }
+
+                validatedModules.Should().NotBeEmpty();
+
+#if NETFRAMEWORK
+                var clrModuleName = "clr.dll";
+#else
+                var clrModuleName = "coreclr.dll";
+#endif
+
+                validatedModules.Should().ContainMatch($@"*\{clrModuleName}");
             }
         }
     }

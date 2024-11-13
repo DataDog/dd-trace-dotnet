@@ -337,55 +337,13 @@ services:
       LDAP_ADMIN_PASSWORD: "Passw0rd"
       LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
 
-
-  # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
-  # and only after switching to run Windows containers
-  IntegrationTests.IIS:
-    build:
-      context: ./
-      args:
-        - ENABLE_32_BIT
-        - DOTNET_TRACER_MSI
-      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
-    image: datadog-iis-loaderoptimizationregkey
-    ports:
-    - "8080:80"
-    environment:
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - DD_LOGGER_DD_API_KEY
-      - DD_LOGGER_DD_SERVICE
-      - DD_LOGGER_DD_ENV
-      - DD_LOGGER_ENABLED
-      - DD_LOGGER_TF_BUILD=${TF_BUILD:-}
-      - DD_LOGGER_BUILD_BUILDID
-      - DD_LOGGER_BUILD_DEFINITIONNAME
-      - DD_LOGGER_BUILD_SOURCESDIRECTORY
-      - DD_LOGGER_BUILD_REPOSITORY_URI
-      - DD_LOGGER_BUILD_SOURCEVERSION
-      - DD_LOGGER_BUILD_SOURCEBRANCH
-      - DD_LOGGER_BUILD_SOURCEBRANCHNAME
-      - DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE
-      - DD_LOGGER_BUILD_REQUESTEDFORID
-      - DD_LOGGER_BUILD_REQUESTEDFOREMAIL
-      - DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI
-      - DD_LOGGER_SYSTEM_TEAMPROJECTID
-      - DD_LOGGER_SYSTEM_STAGEDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBDISPLAYNAME
-      - DD_LOGGER_SYSTEM_JOBID
-      - DD_LOGGER_SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
-      - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
-      - DD_LOGGER_DD_TAGS
-      - IS_SSI_RUN
-
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -435,8 +393,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -531,8 +489,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -582,8 +540,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -638,8 +596,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -713,8 +671,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -810,8 +768,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -871,7 +829,9 @@ services:
     environment:
     - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers #api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+    # network.client.ip and http.client_ip differs between docker compose v1 and v2 - once we're migrated to v2 completely we can remove it from here
+    # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers
 
   smoke-tests:
     build:

@@ -70,7 +70,6 @@ src/Datadog.Trace/AspNet/TracingHttpModule.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs
-src/Datadog.Trace/Ci/GitInfo.cs
 src/Datadog.Trace/Ci/IEvent.cs
 src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
@@ -267,8 +266,6 @@ src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
-src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
-src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
@@ -638,8 +635,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/CachedMessageHeadersHe
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IAmazonSQSRequestWithQueueUrl.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueResponse.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageBatchRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutionReason.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutorTryExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/FunctionInvocationMiddlewareInvokeIntegration.cs

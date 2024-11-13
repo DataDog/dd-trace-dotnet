@@ -107,7 +107,7 @@ internal class ProbeExpressionEvaluator
 
     private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
     {
-        var resultBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var resultBuilder = StringBuilderCache.Acquire();
         try
         {
             EnsureNotNull(_compiledTemplates);
@@ -266,7 +266,7 @@ internal class ProbeExpressionEvaluator
                 var tagsAndValues = current.Value;
 
                 List<EvaluationError> errors = null;
-                var resultBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var resultBuilder = StringBuilderCache.Acquire();
 
                 for (int j = 0; j < tagsAndValues.Length; j++)
                 {

@@ -134,14 +134,8 @@ public class FingerprintTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: newEncoder,
-            embeddedRulesetPath: ruleFile);
+        var initResult = CreateWaf(newEncoder);
         waf = initResult.Waf;
-        waf.Should().NotBeNull();
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");

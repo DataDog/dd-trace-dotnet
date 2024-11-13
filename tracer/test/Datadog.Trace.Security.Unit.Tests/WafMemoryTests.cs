@@ -46,9 +46,8 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public void RunMemoryLeakCheck()
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
 
             var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, "/.adsensepostnottherenonobook" } };
 
@@ -72,7 +71,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public void UpdateMemoryLeakCheck()
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
 
@@ -85,9 +84,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                 var ruleOverrides = new List<RuleOverride>();
                 var ruleOverride = new RuleOverride { Enabled = enabled, Id = "crs-913-120" };
                 ruleOverrides.Add(ruleOverride);
-                var configurationStatus = new ConfigurationStatus(string.Empty) { RulesOverridesByFile = { ["test"] = ruleOverrides!.ToArray() } };
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
-                var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+                var configurationStatus = UpdateConfigurationState(ruleOverrides: new() { ["test"] = [.. ruleOverrides] });
+                var result = waf!.Update(configurationStatus);
                 result.Success.Should().BeTrue();
                 result.HasErrors.Should().BeFalse();
 
@@ -121,7 +119,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private void Execute(string address, object value, string flow, string rule)
         {
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = CreateWaf();
             using var waf = initResult.Waf;
             Execute(waf, address, value, flow, rule);
         }

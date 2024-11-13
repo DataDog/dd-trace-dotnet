@@ -25,10 +25,14 @@ internal abstract class LambdaCommon
 
     internal static Scope CreatePlaceholderScope(Tracer tracer, NameValueHeadersCollection headers)
     {
-        var spanContext = SpanContextPropagator.Instance.Extract(headers);
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
+        var context = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
 
-        var span = spanContext != null ? tracer.StartSpan(PlaceholderOperationName, tags: null, parent: spanContext, serviceName: PlaceholderServiceName, addToTraceContext: false) : tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
+        var span = tracer.StartSpan(
+            PlaceholderOperationName,
+            tags: null,
+            parent: context.SpanContext,
+            serviceName: PlaceholderServiceName,
+            addToTraceContext: false);
 
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
         return tracer.TracerManager.ScopeManager.Activate(span, false);

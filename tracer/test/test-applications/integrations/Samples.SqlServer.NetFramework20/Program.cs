@@ -25,6 +25,7 @@ namespace Samples.SqlServer.NetFramework20
                     connection,
                     commandFactory,
                     cts.Token,
+                    useTransactionScope: true,
                     sqlCommandExecutor,
                     dbCommandClassExecutor,
                     dbCommandInterfaceExecutor,

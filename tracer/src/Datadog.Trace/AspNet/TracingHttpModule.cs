@@ -132,14 +132,15 @@ namespace Datadog.Trace.AspNet
                 HttpRequest httpRequest = httpContext.Request;
                 var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? new System.Collections.Specialized.NameValueCollection();
                 NameValueHeadersCollection? headers = null;
-                SpanContext propagatedContext = null;
+                PropagationContext extractedContext = default;
+
                 if (tracer.InternalActiveScope == null)
                 {
                     try
                     {
                         // extract propagated http headers
                         headers = requestHeaders.Wrap();
-                        propagatedContext = SpanContextPropagator.Instance.Extract(headers.Value);
+                        extractedContext = SpanContextPropagator.Instance.Extract(headers.Value).MergeBaggageInto(Baggage.Current);
                     }
                     catch (Exception ex)
                     {
@@ -152,7 +153,7 @@ namespace Datadog.Trace.AspNet
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
-                scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags);
                 if (headers is not null)
@@ -160,7 +161,7 @@ namespace Datadog.Trace.AspNet
                     SpanContextPropagator.Instance.AddHeadersToSpanAsTags(scope.Span, headers.Value, tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
-                if (tracer.Settings.IpHeaderEnabled || Security.Instance.Enabled)
+                if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                 {
                     Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => requestHeaders[key], tracer.Settings.IpHeader, tags);
                 }
@@ -172,7 +173,8 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, requestHeaders.Wrap());
+                    var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
+                    SpanContextPropagator.Instance.Inject(injectedContext, requestHeaders.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -181,7 +183,7 @@ namespace Datadog.Trace.AspNet
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var security = Security.Instance;
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                     var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
@@ -193,7 +195,10 @@ namespace Datadog.Trace.AspNet
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        if (bodyArgs is not null)
+                        {
+                            args.Add(AddressesConstants.RequestBody, bodyArgs);
+                        }
                     }
 
                     securityCoordinator.BlockAndReport(args);
@@ -243,7 +248,7 @@ namespace Datadog.Trace.AspNet
                         // the security needs to come before collecting the response code,
                         // since blocking will change the response code
                         var security = Security.Instance;
-                        if (security.Enabled)
+                        if (security.AppsecEnabled)
                         {
                             var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();

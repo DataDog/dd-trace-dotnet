@@ -25,9 +25,102 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Create(System.String)")]
     [AspectMethodInsertBefore("System.IO.File::CreateText(System.String)")]
     [AspectMethodInsertBefore("System.IO.File::Delete(System.String)")]
-    [AspectMethodInsertBefore("System.IO.File::OpenRead(System.String)")]
-    [AspectMethodInsertBefore("System.IO.File::OpenText(System.String)")]
     [AspectMethodInsertBefore("System.IO.File::OpenWrite(System.String)")]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.String)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.String,System.Text.Encoding)", 2)]
+#if NET6_0_OR_GREATER // .NET 9 actually
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+#endif
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.String,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::AppendText(System.String)")]
+#if NET6_0_OR_GREATER // .NET 9 actually
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,Byte[])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,System.ReadOnlySpan`1[System.Byte]))", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String, Byte[],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)", 2)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions)", 2)]
+#if NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions,System.Security.AccessControl.FileSecurity)", 3)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::SetAttributes(System.String,System.IO.FileAttributes)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytes(System.String,System.Byte[])", 1)]
+#if NET6_0_OR_GREATER // .NET 9 actually
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytes(System.String,System.ReadOnlySpan`1[System.Byte])", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)", 2)]
+#endif
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)", 2)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[],System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)", 2)]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)", 2)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)", 2)]
+#if NET6_0_OR_GREATER // .NET 9 actually
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+#endif
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String)", new int[] { 0, 1 })]
+    [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
+    [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String)", new int[] { 0, 1 })]
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
+#endif
+    [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String)", new int[] { 0, 1, 2 })]
+    [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
+    public static string ReviewPath(string path)
+    {
+        try
+        {
+            IastModule.OnPathTraversal(path);
+            return path;
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPath)}");
+            return path;
+        }
+    }
+
+    /// <summary>
+    /// Launches a path traversal vulnerability if the file is tainted
+    /// </summary>
+    /// <param name="path">the path or file</param>
+    /// <returns>the path parameter</returns>
+    [AspectMethodInsertBefore("System.IO.File::ReadLines(System.String,System.Text.Encoding)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::ReadAllText(System.String,System.Text.Encoding)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::ReadLines(System.String,System.Text.Encoding)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)", 3)]
+    [AspectMethodInsertBefore("System.IO.File::OpenText(System.String)")]
+#if NET6_0_OR_GREATER
+    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileStreamOptions)", 1)]
+    [AspectMethodInsertBefore("System.IO.File::OpenHandle(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.IO.FileOptions,System.Int64)", 5)]
+#endif
     [AspectMethodInsertBefore("System.IO.File::ReadAllBytes(System.String)")]
 #if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.IO.File::ReadAllBytesAsync(System.String,System.Threading.CancellationToken)", 1)]
@@ -48,60 +141,8 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::ReadLinesAsync(System.String,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.IO.File::ReadLinesAsync(System.String,System.Text.Encoding,System.Threading.CancellationToken)", 2)]
 #endif
-    [AspectMethodInsertBefore("System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.String)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.String,System.Text.Encoding)", 2)]
-#if !NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.String,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::AppendText(System.String)")]
-    [AspectMethodInsertBefore("System.IO.File::ReadLines(System.String,System.Text.Encoding)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::ReadAllText(System.String,System.Text.Encoding)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::ReadLines(System.String,System.Text.Encoding)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions)", 2)]
-#if NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32,System.IO.FileOptions,System.Security.AccessControl.FileSecurity)", 3)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare)", 3)]
-#if NET6_0_OR_GREATER
-    [AspectMethodInsertBefore("System.IO.File::Open(System.String,System.IO.FileStreamOptions)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::OpenHandle(System.String,System.IO.FileMode,System.IO.FileAccess,System.IO.FileShare,System.IO.FileOptions,System.Int64)", 5)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::SetAttributes(System.String,System.IO.FileAttributes)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllBytes(System.String,System.Byte[])", 1)]
-#if !NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::WriteAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)", 2)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[])", 1)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.String[],System.Text.Encoding)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLines(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding)", 2)]
-#if !NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllLinesAsync(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.Threading.CancellationToken)", 2)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String)", 1)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.String,System.Text.Encoding)", 2)]
-#if !NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)", 3)]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String)", new int[] { 0, 1 })]
-    [AspectMethodInsertBefore("System.IO.File::Copy(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String)", new int[] { 0, 1 })]
-#if !NETFRAMEWORK
-    [AspectMethodInsertBefore("System.IO.File::Move(System.String,System.String,System.Boolean)", new int[] { 1, 2 })]
-#endif
-    [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String)", new int[] { 0, 1, 2 })]
-    [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
-    public static string ReviewPath(string path)
+    [AspectMethodInsertBefore("System.IO.File::OpenRead(System.String)")]
+    public static string ReviewPathRead(string path)
     {
         try
         {
@@ -110,7 +151,7 @@ public class FileAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPath)}");
+            IastModule.Log.Error(ex, $"Error invoking {nameof(FileAspect)}.{nameof(ReviewPathRead)}");
             return path;
         }
     }

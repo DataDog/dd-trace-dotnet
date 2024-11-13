@@ -145,27 +145,24 @@ partial class Build
         {
             DeleteDirectory(NativeLoaderProject.Directory / "bin");
 
-            var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
+            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
+            EnsureExistingDirectory(buildDirectory);
 
-            var lstNativeBinaries = new List<string>();
-            foreach (var arch in finalArchs)
+            var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = finalArchs };
+
+            // Build native
+            CMake.Value(
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
+                environmentVariables: envVariables);
+            CMake.Value(
+                arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                environmentVariables: envVariables);
+
+            var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+
+            foreach (var arch in finalArchs.Split(';'))
             {
-                var buildDirectory = NativeBuildDirectory + "_" + arch;
-                EnsureExistingDirectory(buildDirectory);
-
-                var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
-
-                // Build native
-                CMake.Value(
-                    arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
-                    environmentVariables: envVariables);
-                CMake.Value(
-                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
-                    environmentVariables: envVariables);
-
-                var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
-                var destFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{arch}.dylib";
-
                 // Check the architecture of the build
                 var output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
                 var strOutput = string.Join('\n', output.Where(o => o.Type == OutputType.Std).Select(o => o.Text));
@@ -173,22 +170,7 @@ partial class Build
                 {
                     throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
                 }
-
-                // Copy binary to the temporal destination
-                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
-                DeleteFile(sourceFile);
-                DeleteFile(NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.static.a");
-
-                // Add library to the list
-                lstNativeBinaries.Add(destFile);
             }
-
-            // Create universal shared library with all architectures in a single file
-            var destination = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
-            DeleteFile(destination);
-            Console.WriteLine($"Creating universal binary for {destination}");
-            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
-            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target CppCheckNativeLoader => _ => _

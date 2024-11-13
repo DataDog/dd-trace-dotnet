@@ -5,13 +5,9 @@
 
 using System;
 using System.Net;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -27,7 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
         internal const string Major2 = "2";
         internal const string Major4 = "4";
-        internal const string Major8 = "8";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.WebRequest);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.WebRequest;
@@ -46,15 +41,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Since it is possible for users to manually propagate headers (which we should
                 // overwrite), check our cache which will be populated with header objects
                 // that we have injected context into
-                SpanContext spanContext = null;
+                PropagationContext cachedContext = default;
+
                 if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
                 {
-                    spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                    var headers = request.Headers.Wrap();
+                    cachedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
                 }
 
-                // If this operation creates the trace, then we need to re-apply the sampling priority
+                var cachedSpanContext = cachedContext.SpanContext;
                 var tracer = Tracer.Instance;
-                bool setSamplingPriority = spanContext?.SamplingPriority != null && tracer.ActiveScope == null;
+                int? cachedSamplingPriority = null;
+
+                // If this operation creates the trace, then we need to re-apply the sampling priority
+                if (tracer.ActiveScope == null)
+                {
+                    cachedSamplingPriority = cachedSpanContext?.SamplingPriority;
+                }
 
                 Scope scope = null;
 
@@ -66,21 +69,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         request.RequestUri,
                         IntegrationId,
                         out _,
-                        spanContext?.TraceId128 ?? TraceId.Zero,
-                        spanContext?.SpanId ?? 0);
+                        cachedSpanContext?.TraceId128 ?? TraceId.Zero,
+                        cachedSpanContext?.SpanId ?? 0);
 
                     if (scope != null)
                     {
-                        if (setSamplingPriority)
+                        if (cachedSamplingPriority is { } samplingPriority)
                         {
-                            scope.Span.Context.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
+                            scope.Span.Context.TraceContext.SetSamplingPriority(samplingPriority);
                         }
 
-                        // add distributed tracing headers to the HTTP request
-                        SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
+                        // add propagation headers to the HTTP request
+                        var context = new PropagationContext(scope.Span.Context, Baggage.Current);
+                        var headers = request.Headers.Wrap();
+                        SpanContextPropagator.Instance.Inject(context, headers);
 
                         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-
                         return new CallTargetState(scope);
                     }
                 }
