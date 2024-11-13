@@ -66,4 +66,60 @@ public class SamplingHelpersTests
 
         kept.Should().BeInRange(lowerBound, upperBound);
     }
+
+    // [Fact]
+    // public void EntireIdRange_FloatSamplingRate()
+    // {
+    //     const ulong iterations = ulong.MaxValue; // 18_446_744_073_709_551_615
+    //     const float samplingRate = 1e-6f;
+    //
+    //     // float:  18_446_744_027_136
+    //     // double: 18_446_744_073_709
+    //     const ulong expectedKeepRate = (ulong)(iterations * samplingRate);
+    //
+    //     ulong kept = 0;
+    //
+    //     Enumerate(0, ulong.MaxValue).AsParallel().ForAll(i =>
+    //     {
+    //         if (SamplingHelpers.SampleByRate(i, samplingRate))
+    //         {
+    //             Interlocked.Increment(ref kept);
+    //         }
+    //     });
+    //
+    //     kept.Should().Be(expectedKeepRate);
+    // }
+    //
+    // [Fact]
+    // public void EntireIdRange_DoubleSamplingRate()
+    // {
+    //     const ulong iterations = ulong.MaxValue; // 18_446_744_073_709_551_615
+    //     const double samplingRate = 1e-6;
+    //
+    //     // float:  18_446_744_027_136
+    //     // double: 18_446_744_073_709
+    //     const ulong expectedKeepRate = (ulong)(iterations * samplingRate);
+    //
+    //     ulong kept = 0;
+    //
+    //     Enumerate(0, ulong.MaxValue).AsParallel().ForAll(i =>
+    //     {
+    //         if (SamplingHelpers.SampleByRate(i, samplingRate))
+    //         {
+    //             Interlocked.Increment(ref kept);
+    //         }
+    //     });
+    //
+    //     kept.Should().Be(expectedKeepRate);
+    // }
+    //
+    // private static IEnumerable<ulong> Enumerate(ulong start, ulong count)
+    // {
+    //     ulong end = start + count;
+    //
+    //     for (ulong i = start; i < end; i++)
+    //     {
+    //         yield return i;
+    //     }
+    // }
 }
