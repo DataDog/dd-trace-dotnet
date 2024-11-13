@@ -12,6 +12,7 @@ enum class DiscardReason
     WrongManagedThread,
     UnsufficientSpace,
     EmptyBacktrace,
+    FailedAcquiringLock,
 
     // This item must be the last one
     GuardItem
@@ -42,6 +43,8 @@ static const char* to_string(DiscardReason type)
             return "_unsufficient_space";
         case DiscardReason::EmptyBacktrace:
             return "_empty_backtrace";
+        case DiscardReason::FailedAcquiringLock:
+            return "_failed_acquiring_lock";
         case DiscardReason::GuardItem:
             // pass through
             break;

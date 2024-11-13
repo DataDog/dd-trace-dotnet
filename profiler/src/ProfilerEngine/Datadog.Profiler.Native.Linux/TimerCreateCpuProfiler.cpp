@@ -203,6 +203,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     StackWalkLock l(threadInfo);
     if (!l.IsLockAcquired())
     {
+        _discardMetrics->Incr<DiscardReason::FailedAcquiringLock>();
         return false;
     }
 

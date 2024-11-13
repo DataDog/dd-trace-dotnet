@@ -4,7 +4,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "DiscardMetrics.hpp"
+#include "DiscardMetrics.h"
 #include "MetricsRegistry.h"
 
 TEST(DiscardMetricsTest, CheckDefaultValue)
@@ -13,7 +13,7 @@ TEST(DiscardMetricsTest, CheckDefaultValue)
 
     auto m = registry.GetOrRegister<DiscardMetrics>("my_discard_");
     auto metrics = m->GetMetrics();
-    ASSERT_EQ(metrics.size(), 7);
+    ASSERT_EQ(metrics.size(), 8);
 
     for (auto [name, value] : m->GetMetrics())
     {
@@ -59,10 +59,11 @@ TEST(DiscardMetricsTest, CheckAllDiscardReasons)
         m->Incr<DiscardReason::WrongManagedThread>();
         m->Incr<DiscardReason::UnsufficientSpace>();
         m->Incr<DiscardReason::EmptyBacktrace>();
+        m->Incr<DiscardReason::FailedAcquiringLock>();
     }
 
     auto metrics = m->GetMetrics();
-    ASSERT_EQ(7, metrics.size());
+    ASSERT_EQ(8, metrics.size());
 
     for (auto const& [_, value] : metrics)
     {
