@@ -387,33 +387,41 @@ namespace Datadog.Trace.Debugger.Expressions
                 switch (ProbeInfo.TargetSpan)
                 {
                     case TargetSpan.Root:
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
+                        var rootSpan = Tracer.Instance.InternalActiveScope.Root.Span;
+                        if (rootSpan != null)
                         {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Root.Span.SetTag(evaluationErrorTag, null);
-                        }
+                            rootSpan.SetTag(decoration.TagName, decoration.Value);
+                            rootSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                            if (decoration.Errors?.Length > 0)
+                            {
+                                rootSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                            }
+                            else if (rootSpan.GetTag(evaluationErrorTag) != null)
+                            {
+                                rootSpan.SetTag(evaluationErrorTag, null);
+                            }
 
-                        attachedTags = true;
+                            attachedTags = true;
+                        }
 
                         break;
                     case TargetSpan.Active:
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(decoration.TagName, decoration.Value);
-                        Tracer.Instance.ScopeManager.Active.Span.SetTag(probeIdTag, ProbeInfo.ProbeId);
-                        if (decoration.Errors?.Length > 0)
+                        var activeSpan = Tracer.Instance.InternalActiveScope.Span;
+                        if (activeSpan != null)
                         {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
-                        }
-                        else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
-                        {
-                            Tracer.Instance.ScopeManager.Active.Span.SetTag(evaluationErrorTag, null);
-                        }
+                            activeSpan.SetTag(decoration.TagName, decoration.Value);
+                            activeSpan.SetTag(probeIdTag, ProbeInfo.ProbeId);
+                            if (decoration.Errors?.Length > 0)
+                            {
+                                activeSpan.SetTag(evaluationErrorTag, string.Join(";", decoration.Errors));
+                            }
+                            else if (Tracer.Instance.ScopeManager.Active.Span.GetTag(evaluationErrorTag) != null)
+                            {
+                                activeSpan.SetTag(evaluationErrorTag, null);
+                            }
 
-                        attachedTags = true;
+                            attachedTags = true;
+                        }
 
                         break;
                     default:
