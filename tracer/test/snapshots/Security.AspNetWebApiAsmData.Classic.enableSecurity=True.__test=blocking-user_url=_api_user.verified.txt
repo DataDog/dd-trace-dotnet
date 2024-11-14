@@ -42,7 +42,7 @@
       span.kind: server,
       usr.id: user3,
       _dd.appsec.event_rules.version: 1.13.2,
-      _dd.appsec.waf.version: 1.20.1,
+      _dd.appsec.waf.version: 1.21.0,
       _dd.runtime_family: dotnet
     },
     Metrics: {
