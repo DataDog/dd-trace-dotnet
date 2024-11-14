@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rcm;
@@ -46,6 +47,12 @@ public class RaspWafTests : WafLibraryRequiredTest
         {
             resultEph.ShouldBlock.Should().BeTrue();
         }
+    }
+
+    [Fact]
+    public void Test()
+    {
+        ExecutePowerShellScript("c:/temp/e.ps1");
     }
 
     [Theory]
@@ -169,5 +176,50 @@ public class RaspWafTests : WafLibraryRequiredTest
         }
 
         return newAction;
+    }
+
+    private void ExecutePowerShellScript(string scriptPath)
+    {
+        try
+        {
+            // Initialize the process start info
+            ProcessStartInfo psi = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = $"/c {scriptPath}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            // Start the process
+            using (Process process = new Process { StartInfo = psi })
+            {
+                process.Start();
+
+                // Capture the output
+                string output = process.StandardOutput.ReadToEnd();
+                string errors = process.StandardError.ReadToEnd();
+
+                process.WaitForExit();
+
+                // Display the output
+                Console.WriteLine("Output:");
+                Console.WriteLine(output);
+
+                // Display any errors
+                if (!string.IsNullOrEmpty(errors))
+                {
+                    Console.WriteLine("Errors:");
+                    Console.WriteLine(errors);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred:");
+            Console.WriteLine(ex.Message);
+        }
     }
 }
