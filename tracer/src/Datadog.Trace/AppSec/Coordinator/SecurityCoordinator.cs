@@ -121,12 +121,10 @@ internal readonly partial struct SecurityCoordinator
 
             Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
         }
-        finally
+
+        if (_localRootSpan.Context.TraceContext is not null)
         {
-            // annotate span
-            _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
-            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
-            _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
         }
 
         return result;

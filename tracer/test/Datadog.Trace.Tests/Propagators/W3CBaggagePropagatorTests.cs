@@ -3,8 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -70,22 +69,23 @@ public class W3CBaggagePropagatorTests
         };
 
     [Theory]
-    [InlineData(null, new char[0], "")]                                              // null
-    [InlineData("", new char[0], "")]                                                // empty string
-    [InlineData("abcd", new char[0], "abcd")]                                        // no chars to encode
-    [InlineData("abcd", new[] { 'x' }, "abcd")]                                      // encode a char that is not in the string
-    [InlineData("abcd", new[] { 'b', 'd' }, "a%62c%64")]                             // encode chars that are in the string
-    [InlineData("José 🐶\t我", new char[0], "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and unicode chars
-    public void Encode(string value, char[] charsToEncode, string expected)
+    // keys
+    [InlineData(null, true, "")]                                                                     // null
+    [InlineData("", true, "")]                                                                       // empty string
+    [InlineData("abcd", true, "abcd")]                                                               // no chars to encode
+    [InlineData("José 🐶\t我", true, "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")]                         // always encode whitespace and Unicode chars
+    [InlineData("\",;\\()/:<=>?@[]{}", true, "%22%2C%3B%5C%28%29%2F%3A%3C%3D%3E%3F%40%5B%5D%7B%7D")] // other chars (NOTE: different from value)
+    // values
+    [InlineData(null, false, "")]                                             // null
+    [InlineData("", false, "")]                                               // empty string
+    [InlineData("abcd", false, "abcd")]                                       // no chars to encode
+    [InlineData("José 🐶\t我", false, "Jos%C3%A9%20%F0%9F%90%B6%09%E6%88%91")] // always encode whitespace and Unicode chars
+    [InlineData("\",;\\()/:<=>?@[]{}", false, "%22%2C%3B%5C()/:<=>?@[]{}")]   // other chars (NOTE: different from key)
+    public void EncodeStringAndAppend(string value, bool isKey, string expected)
     {
-        var result = W3CBaggagePropagator.Encode(value, [..charsToEncode]);
-        result.Should().Be(expected);
-
-        if (value == expected)
-        {
-            // ensure that the method returns the same string instance when no encoding is needed
-            ReferenceEquals(value, result).Should().BeTrue();
-        }
+        var sb = new StringBuilder();
+        W3CBaggagePropagator.EncodeStringAndAppend(sb, value, isKey);
+        sb.ToString().Should().Be(expected);
     }
 
     [Theory]
