@@ -5,9 +5,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Pdb;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
@@ -22,19 +26,93 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private readonly DebuggerSettings _settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
 
+        // replace cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
+        private readonly ConcurrentDictionary<string, DatadogMetadataReader.DatadogSequencePoint?> _typeToFileName = new();
+
         internal static SpanCodeOriginManager Instance { get; } = new();
 
-        internal void SetCodeOrigin(Span? span)
+        internal void SetCodeOriginForExitSpan(Span? span)
+        {
+            if (span == null ||
+                !_settings.CodeOriginForSpansEnabled)
+            {
+                return;
+            }
+
+            if (span.Tags is WebTags { SpanKind: SpanKinds.Server })
+            {
+                // entry span
+                Log.Debug("Skipping span {SpanID}, we will add entry span code origin for it later", span.SpanId);
+                return;
+            }
+
+            if (span.GetTag($"{CodeOriginTag}.type") != null)
+            {
+                Log.Debug("Span {SpanID} has already code origin tags", span.SpanId);
+                return;
+            }
+
+            AddExitSpanTags(span);
+        }
+
+        internal void SetCodeOriginForEntrySpan(Span? span, Type? type, MethodInfo? method)
         {
             if (span == null || !_settings.CodeOriginForSpansEnabled)
             {
                 return;
             }
 
-            AddExitSpanTag(span);
+            if (span.GetTag($"{CodeOriginTag}.type") != null)
+            {
+                Log.Debug("Span {SpanID} has already code origin tags", span.SpanId);
+                return;
+            }
+
+            AddEntrySpanTags(span, type, method);
         }
 
-        private void AddExitSpanTag(Span span)
+        private void AddEntrySpanTags(Span span, Type? type, MethodInfo? method)
+        {
+            var methodName = method?.Name;
+            var typeFullName = type?.FullName;
+            if (methodName == null || typeFullName == null)
+            {
+                return;
+            }
+
+            var assembly = type!.Assembly;
+            if (AssemblyFilter.ShouldSkipAssembly(assembly, _settings.ThirdPartyDetectionExcludes, _settings.ThirdPartyDetectionIncludes))
+            {
+                // use cache when this will be merged: https://github.com/DataDog/dd-trace-dotnet/pull/6093
+                return;
+            }
+
+            var sp = this._typeToFileName.GetOrAdd(typeFullName, s => GetFilePath(assembly, method!));
+            if (sp != null)
+            {
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.index", 0.ToString());
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.method", methodName);
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.type", typeFullName);
+
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.file", sp.Value.URL);
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.line", sp.Value.StartLine.ToString());
+                span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{0}.line", sp.Value.StartColumn.ToString());
+                span.Tags.SetTag($"{CodeOriginTag}.type", "entry");
+            }
+        }
+
+        private DatadogMetadataReader.DatadogSequencePoint? GetFilePath(Assembly assembly, MethodInfo method)
+        {
+            using var reader = DatadogMetadataReader.CreatePdbReader(assembly);
+            if (reader is { IsPdbExist: true })
+            {
+                return reader.GetMethodSourceLocation(method!.MetadataToken);
+            }
+
+            return null;
+        }
+
+        private void AddExitSpanTags(Span span)
         {
             var frames = ArrayPool<FrameInfo>.Shared.Rent(_settings.CodeOriginMaxUserFrames);
             try
@@ -42,11 +120,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 var framesLength = PopulateUserFrames(frames);
                 if (framesLength == 0)
                 {
-                    Log.Warning("No user frames were found");
                     return;
                 }
 
-                span.Tags.SetTag($"{CodeOriginTag}.type", "exit");
+                bool tagAdded = false;
                 for (var i = 0; i < framesLength; i++)
                 {
                     ref var info = ref frames[i];
@@ -59,28 +136,29 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                         continue;
                     }
 
+                    var fileName = info.Frame.GetFileName();
+                    if (!string.IsNullOrEmpty(fileName))
+                    {
+                        continue;
+                    }
+
                     span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.index", info.FrameIndex.ToString());
                     span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.method", method.Name);
                     span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.type", type);
 
-                    var fileName = info.Frame.GetFileName();
-                    if (!string.IsNullOrEmpty(fileName))
-                    {
-                        // todo: should we normalize?
-                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.file", fileName);
-                    }
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.file", fileName);
 
                     var line = info.Frame.GetFileLineNumber();
-                    if (line > 0)
-                    {
-                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.line", line.ToString());
-                    }
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.line", line.ToString());
 
                     var column = info.Frame.GetFileColumnNumber();
-                    if (column > 0)
-                    {
-                        span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.column", column.ToString());
-                    }
+                    span.Tags.SetTag($"{CodeOriginTag}.{FramesPrefix}.{i}.column", column.ToString());
+                    tagAdded = true;
+                }
+
+                if (tagAdded)
+                {
+                    span.Tags.SetTag($"{CodeOriginTag}.type", "exit");
                 }
             }
             catch (Exception ex)
@@ -111,7 +189,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             {
                 var frame = stackFrames[walkIndex];
 
-                var assembly = frame?.GetMethod()?.DeclaringType?.Module.Assembly;
+                var assembly = frame?.GetMethod()?.DeclaringType?.Assembly;
                 if (assembly == null)
                 {
                     continue;
