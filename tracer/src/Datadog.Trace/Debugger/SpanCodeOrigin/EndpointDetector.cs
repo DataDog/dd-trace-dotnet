@@ -1,0 +1,268 @@
+// <copyright file="EndpointDetector.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+
+namespace Datadog.Trace.Debugger.SpanCodeOrigin;
+
+internal static class EndpointDetector
+{
+    private static readonly HashSet<string> ControllerAttributes =
+    [
+        "Microsoft.AspNetCore.Mvc.ApiControllerAttribute",
+        "Microsoft.AspNetCore.Mvc.ControllerAttribute",
+        "Microsoft.AspNetCore.Mvc.RouteAttribute"
+    ];
+
+    private static readonly HashSet<string> ControllerBaseNames =
+    [
+        "Microsoft.AspNetCore.Mvc.Controller",
+        "Microsoft.AspNetCore.Mvc.ControllerBase"
+    ];
+
+    private static readonly HashSet<string> ActionAttributes =
+    [
+        "Microsoft.AspNetCore.Mvc.HttpGetAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpPostAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpPutAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpDeleteAttribute",
+        "Microsoft.AspNetCore.Mvc.HttpPatchAttribute"
+    ];
+
+    private static readonly HashSet<string> SignalRHubBaseNames =
+    [
+        "Microsoft.AspNetCore.SignalR.Hub",
+        "Microsoft.AspNetCore.SignalR.Hub`1"
+    ];
+
+    private static readonly HashSet<string> PageModelBaseNames = ["Microsoft.AspNetCore.Mvc.RazorPages.PageModel"];
+
+    public static ImmutableHashSet<int> GetEndpointMethodTokens(MetadataReader metadataReader)
+    {
+        var builder = ImmutableHashSet.CreateBuilder<int>();
+
+        foreach (var typeHandle in metadataReader.TypeDefinitions)
+        {
+            var typeDef = metadataReader.GetTypeDefinition(typeHandle);
+
+            if (!IsValidTypeKind(typeDef))
+            {
+                continue;
+            }
+
+            bool isPageModel = false, isSignalRHub = false;
+            var isController = IsInheritFromTypesOrHasAttribute(typeDef, metadataReader, ControllerAttributes, ControllerBaseNames);
+            if (!isController)
+            {
+                isPageModel = IsInheritFromTypes(typeDef, metadataReader, PageModelBaseNames);
+                if (!isPageModel)
+                {
+                    isSignalRHub = IsInheritFromTypes(typeDef, metadataReader, SignalRHubBaseNames);
+                    if (!isSignalRHub)
+                    {
+                        continue;
+                    }
+                }
+            }
+
+            foreach (var methodHandle in typeDef.GetMethods())
+            {
+                var methodDef = metadataReader.GetMethodDefinition(methodHandle);
+
+                if (!IsValidMethod(methodDef))
+                {
+                    continue;
+                }
+
+                if (isController && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, ActionAttributes))
+                {
+                    builder.Add(metadataReader.GetToken(methodHandle));
+                    continue;
+                }
+
+                if (isPageModel && IsPageModelHandler(methodDef, metadataReader))
+                {
+                    builder.Add(metadataReader.GetToken(methodHandle));
+                    continue;
+                }
+
+                if (isSignalRHub)
+                {
+                    builder.Add(metadataReader.GetToken(methodHandle));
+                    continue;
+                }
+
+                // minimal API endpoints
+                if (HasEndpointAttribute(methodDef, metadataReader))
+                {
+                    builder.Add(metadataReader.GetToken(methodHandle));
+                }
+            }
+        }
+
+        return builder.ToImmutable();
+    }
+
+    private static bool IsValidTypeKind(TypeDefinition typeDef)
+    {
+        var attributes = typeDef.Attributes;
+        return (attributes & TypeAttributes.Interface) == 0 &&
+               (attributes & TypeAttributes.Abstract) == 0;
+    }
+
+    private static bool IsValidMethod(MethodDefinition methodDef)
+    {
+        var attributes = methodDef.Attributes;
+        return (attributes & MethodAttributes.Public) != 0 &&
+               (attributes & MethodAttributes.Static) == 0;
+    }
+
+    private static bool IsInheritFromTypesOrHasAttribute(TypeDefinition typeDef, MetadataReader reader, HashSet<string> attributesNames, HashSet<string> baseTypeNames)
+    {
+        if (HasAttributeFromSet(typeDef.GetCustomAttributes(), reader, attributesNames))
+        {
+            return true;
+        }
+
+        var baseTypeHandle = typeDef.BaseType;
+        while (!baseTypeHandle.IsNil)
+        {
+            if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
+            {
+                if (baseTypeNames.Contains(baseTypeName!))
+                {
+                    return true;
+                }
+            }
+
+            if (baseTypeHandle.Kind != HandleKind.TypeDefinition)
+            {
+                break;
+            }
+
+            var baseType = reader.GetTypeDefinition((TypeDefinitionHandle)baseTypeHandle);
+            if (HasAttributeFromSet(baseType.GetCustomAttributes(), reader, attributesNames))
+            {
+                return true;
+            }
+
+            baseTypeHandle = nextBaseTypeHandle;
+        }
+
+        return false;
+    }
+
+    private static bool HasAttributeFromSet(CustomAttributeHandleCollection attributes, MetadataReader reader, HashSet<string> attributeNames)
+    {
+        foreach (var attributeHandle in attributes)
+        {
+            var attribute = reader.GetCustomAttribute(attributeHandle);
+            var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+            var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
+            var fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
+
+            if (attributeNames.Contains(fullName))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsInheritFromTypes(TypeDefinition typeDef, MetadataReader reader, HashSet<string> baseTypeNames)
+    {
+        var baseTypeHandle = typeDef.BaseType;
+        while (!baseTypeHandle.IsNil)
+        {
+            if (TryGetBaseTypeInfo(baseTypeHandle, reader, out var baseTypeName, out var nextBaseTypeHandle))
+            {
+                if (baseTypeNames.Contains(baseTypeName!))
+                {
+                    return true;
+                }
+            }
+
+            if (baseTypeHandle.Kind != HandleKind.TypeDefinition)
+            {
+                break;
+            }
+
+            baseTypeHandle = nextBaseTypeHandle;
+        }
+
+        return false;
+    }
+
+    private static bool IsPageModelHandler(MethodDefinition methodDef, MetadataReader reader)
+    {
+        var name = reader.GetString(methodDef.Name);
+        return name.StartsWith("On", StringComparison.Ordinal) &&
+               (name.Equals("OnGet", StringComparison.Ordinal) ||
+                name.Equals("OnGetAsync", StringComparison.Ordinal) ||
+                name.Equals("OnPost", StringComparison.Ordinal) ||
+                name.Equals("OnPostAsync", StringComparison.Ordinal) ||
+                name.Equals("OnPut", StringComparison.Ordinal) ||
+                name.Equals("OnPutAsync", StringComparison.Ordinal) ||
+                name.Equals("OnDelete", StringComparison.Ordinal) ||
+                name.Equals("OnDeleteAsync", StringComparison.Ordinal));
+    }
+
+    private static bool HasEndpointAttribute(MethodDefinition methodDef, MetadataReader reader)
+    {
+        foreach (var attributeHandle in methodDef.GetCustomAttributes())
+        {
+            var attribute = reader.GetCustomAttribute(attributeHandle);
+            var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+            var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
+            var attributeName = reader.GetString(attributeType.Name);
+
+            if (attributeName.Contains("Endpoint") ||
+                attributeName.Contains("Http"))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryGetBaseTypeInfo(EntityHandle typeHandle, MetadataReader reader, out string? baseTypeName, out EntityHandle baseType)
+    {
+        switch (typeHandle.Kind)
+        {
+            case HandleKind.TypeDefinition:
+                var typeDef = reader.GetTypeDefinition((TypeDefinitionHandle)typeHandle);
+                baseTypeName = GetFullTypeName(typeDef.Namespace, typeDef.Name, reader);
+                baseType = typeDef.BaseType;
+                return true;
+
+            case HandleKind.TypeReference:
+                var typeRef = reader.GetTypeReference((TypeReferenceHandle)typeHandle);
+                baseTypeName = GetFullTypeName(typeRef.Namespace, typeRef.Name, reader);
+                baseType = default;
+                return true;
+
+            default:
+                baseTypeName = null;
+                baseType = default;
+                return false;
+        }
+    }
+
+    private static string GetFullTypeName(StringHandle namespaceHandle, StringHandle nameHandle, MetadataReader reader)
+    {
+        var nameSpace = reader.GetString(namespaceHandle);
+        var name = reader.GetString(nameHandle);
+        return $"{nameSpace}.{name}";
+    }
+}
