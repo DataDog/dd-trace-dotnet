@@ -86,7 +86,7 @@ namespace Datadog.Trace.Debugger
         }
 
         public static LiveDebugger Instance { get; private set; }
-        
+
         public bool IsInitialized { get; private set; }
 
         public string ServiceName { get; }
