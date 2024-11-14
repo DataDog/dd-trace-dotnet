@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace DatadogDebugger.Util
 {
@@ -99,7 +100,7 @@ namespace DatadogDebugger.Util
             }
 
             var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
-            var sb = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
             sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
             for (var i = 1; i < prunedNodes.Count; i++)
             {
@@ -116,7 +117,7 @@ namespace DatadogDebugger.Util
                 sb.Append(snapshot.Substring(lastSegmentStart));
             }
 
-            return sb.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private IEnumerable<Node> GetLeaves(int minLevel)

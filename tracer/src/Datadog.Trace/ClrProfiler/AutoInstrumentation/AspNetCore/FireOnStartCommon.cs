@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "8.*.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 [InstrumentMethod(
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = "FireOnStarting",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "8.*.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 

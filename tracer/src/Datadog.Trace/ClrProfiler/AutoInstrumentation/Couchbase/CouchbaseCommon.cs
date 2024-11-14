@@ -140,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             }
 
             // Construct the normalized value from the list of hosts (each host will be {Host} or {Host}:{Port})
-            var sb = StringBuilderCache.Acquire(0);
+            var sb = StringBuilderCache.Acquire();
             IList<Uri> servers = clientConfiguration.Servers;
 
             for (int i = 0; i < servers.Count; i++)
@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             }
 
             // Construct the normalized value from the list of hosts (each host will be {Host} or {Host}:{Port})
-            var sb = StringBuilderCache.Acquire(0);
+            var sb = StringBuilderCache.Acquire();
             var firstIteration = true;
             foreach (var hostObj in connectionStringValue.Hosts)
             {

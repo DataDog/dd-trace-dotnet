@@ -123,6 +123,13 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/tags/1.0.0.zip",
                 pathToSrc: new[] { "dotnet-vendored-code-1.0.0", "System.Reflection.Metadata", "System.Runtime.CompilerServices.Unsafe" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
+
+            Add(
+                libraryName: "ICSharpCode.SharpZipLib",
+                version: "1.3.3",
+                downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
+                pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -161,6 +168,11 @@ namespace UpdateVendors
         private static string AddIfNetcoreapp31OrGreater(string filePath, string content)
         {
             return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
+        }
+
+        private static string AddIfNetFramework(string filePath, string content)
+        {
+            return "#if NETFRAMEWORK" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
 
         private static string AddNullableDirectiveTransform(string filePath, string content)
@@ -277,6 +289,13 @@ namespace UpdateVendors
                             builder.Replace("#if NETSTANDARD || NETFRAMEWORK\n        [System.Runtime.CompilerServices.MethodImpl", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP\n        [System.Runtime.CompilerServices.MethodImpl");
                         }
 
+                        // Special SharpZipLib processing
+                        if (originalNamespace.StartsWith("ICSharpCode"))
+                        {
+                            builder.Replace("#if NET45", "#if NETFRAMEWORK");
+                            builder.Replace("using static ICSharpCode.SharpZipLib", "using static Datadog.Trace.Vendors.ICSharpCode.SharpZipLib");
+                        }
+
                         // Debugger.Break() is a dangerous method that may crash the process. We don't
                         // want to take any risk of calling it, ever, so replace it with a noop.
                         builder.Replace("Debugger.Break();", "{}");
@@ -321,6 +340,7 @@ namespace UpdateVendors
             "CS1573, " +      // Parameter 'x' has no matching param tag in the XML comment for 'y' (but other parameters do)
             "CS8018, " +      // Within cref attributes, nested types of generic types should be qualified
             "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used.
+            "SYSLIB0023, " +  // RNGCryptoServiceProvider is obsolete. To generate a random number, use one of the RandomNumberGenerator static methods instead.
             "SYSLIB0032";     // Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored."
 
         static string AddIgnoreNullabilityWarningDisablePragma(string filePath, string content) =>
