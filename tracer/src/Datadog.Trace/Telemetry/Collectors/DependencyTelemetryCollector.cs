@@ -176,15 +176,19 @@ namespace Datadog.Trace.Telemetry
 
         private static bool IsZeroVersionAssemblyPattern(string assemblyName)
         {
-            return assemblyName.Length == 8
-                && IsBase32Char(assemblyName[0])
-                && IsBase32Char(assemblyName[1])
-                && IsBase32Char(assemblyName[2])
-                && IsBase32Char(assemblyName[3])
-                && IsBase32Char(assemblyName[4])
-                && IsBase32Char(assemblyName[5])
-                && IsBase32Char(assemblyName[6])
-                && IsBase32Char(assemblyName[7]);
+            // e.g.
+            //    454845b558934321ad350977dd095960
+            //    akkynf62
+            return (assemblyName.Length == 8
+                 && IsBase32Char(assemblyName[0])
+                 && IsBase32Char(assemblyName[1])
+                 && IsBase32Char(assemblyName[2])
+                 && IsBase32Char(assemblyName[3])
+                 && IsBase32Char(assemblyName[4])
+                 && IsBase32Char(assemblyName[5])
+                 && IsBase32Char(assemblyName[6])
+                 && IsBase32Char(assemblyName[7]))
+                || (assemblyName.Length == 32 && IsHexString(assemblyName, 0));
         }
 
         private static bool IsBase32Char(char c)
