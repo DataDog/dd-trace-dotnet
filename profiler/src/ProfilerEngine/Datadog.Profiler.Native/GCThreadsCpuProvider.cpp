@@ -73,7 +73,7 @@ std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
     };
 }
 
-void GCThreadsCpuProvider::OnCpuDuration(std::uint64_t cpuTime)
+void GCThreadsCpuProvider::OnCpuDuration(std::chrono::milliseconds cpuTime)
 {
-    _cpuDurationMetric->Add(static_cast<double>(cpuTime));
+    _cpuDurationMetric->Add(static_cast<double>(cpuTime.count()));
 }

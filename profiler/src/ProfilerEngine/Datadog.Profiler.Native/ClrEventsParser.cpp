@@ -74,11 +74,6 @@ void ClrEventsParser::ParseEvent(
     }
 }
 
-uint64_t ClrEventsParser::GetCurrentTimestamp()
-{
-    return OpSysTools::GetHighPrecisionTimestamp();
-}
-
 // TL;DR Deactivate the alignment check in the Undefined Behavior Sanitizers for the ParseGcEvent function
 // because events fields are not aligned in the bitstream sent by the CLR.
 //

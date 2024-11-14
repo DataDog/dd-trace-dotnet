@@ -100,7 +100,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     _pohSize = pohSize;
 
     RawGarbageCollectionSample rawSample;
-    rawSample.Timestamp = endTimestamp;
+    rawSample.Timestamp = std::chrono::nanoseconds(endTimestamp);
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;

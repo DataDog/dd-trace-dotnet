@@ -139,7 +139,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
-    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+    auto currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
     std::size_t nbSamples = 0;
 
     // OPTIM maybe use an allocator
@@ -152,7 +152,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
         sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);

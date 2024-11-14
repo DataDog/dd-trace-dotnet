@@ -53,7 +53,7 @@ void EventPipeEventsManager::ParseEvent(EVENTPIPE_PROVIDER provider,
     }
 
     // the events are expected to be processed synchronously so the current time is used as timestamp
-    _parser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
+    _parser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp().count(), version, keywords, id, cbEventData, eventData);
 }
 
 bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)

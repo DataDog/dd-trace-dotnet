@@ -291,8 +291,6 @@ private:
     GCDetails& GetCurrentGC();
     void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
     static void ResetGC(GCDetails& gc);
-    static uint64_t GetCurrentTimestamp();
-
 
 public:
     // Points to the UTF16, null terminated string from the given event data buffer
