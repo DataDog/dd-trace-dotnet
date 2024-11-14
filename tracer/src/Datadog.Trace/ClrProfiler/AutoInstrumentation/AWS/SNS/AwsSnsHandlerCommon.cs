@@ -33,7 +33,7 @@ internal static class AwsSnsHandlerCommon
             tags.TopicName = topicName;
         }
 
-        if (scope?.Span.Context is { } context)
+        if (scope?.Span.Context is { } context && !string.IsNullOrEmpty(topicName))
         {
             var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
             // avoid allocation if edgeTags are not going to be used

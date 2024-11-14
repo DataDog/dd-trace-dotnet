@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         [return: NotNullIfNotNull(nameof(topicArn))]
         public static string? GetTopicName(string? topicArn)
         {
-            if (topicArn is null)
+            if (string.IsNullOrEmpty(topicArn))
             {
                 return topicArn;
             }
