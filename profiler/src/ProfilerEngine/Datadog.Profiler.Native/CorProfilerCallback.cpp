@@ -122,7 +122,7 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
-    
+
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
@@ -318,9 +318,11 @@ void CorProfilerCallback::InitializeServices()
 
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
+            _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
-            _pStopTheWorldProvider
+            _pStopTheWorldProvider,
+            nullptr // TODO: add NetworkProvider later
         );
 
         if (_pGarbageCollectionProvider != nullptr)
