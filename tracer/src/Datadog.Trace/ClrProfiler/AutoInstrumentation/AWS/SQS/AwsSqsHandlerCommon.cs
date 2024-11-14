@@ -87,7 +87,7 @@ internal static class AwsSqsHandlerCommon
             var entry = e.DuckCast<IContainsMessageAttributes>();
             if (entry != null)
             {
-                // this has no effect is DSM is disabled
+                // this has no effect if DSM is disabled
                 scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
                 // this needs to be done for context propagation even when DSM is disabled
                 // (when DSM is enabled, it injects the pathway context on top of the trace context)

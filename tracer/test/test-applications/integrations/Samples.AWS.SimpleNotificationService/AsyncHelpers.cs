@@ -26,6 +26,9 @@ namespace Samples.AWS.SimpleNotificationService
                 await PublishMessageAsync(snsClient, topicArn);
 #if AWS_SNS_3_7_3
                 await PublishBatchAsync(snsClient, topicArn);
+#else
+                // do a second publish if batch is not available to keep a constant number of spans and make assertions simpler
+                await PublishMessageAsync(snsClient, topicArn);
 #endif
                 await DeleteTopicAsync(snsClient, topicArn);
 
