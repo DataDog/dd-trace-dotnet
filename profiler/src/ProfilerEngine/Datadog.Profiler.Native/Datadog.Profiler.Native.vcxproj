@@ -259,6 +259,9 @@
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
+    <ClInclude Include="NetworkActivity.h" />
+    <ClInclude Include="NetworkRequestInfo.h" />
+    <ClInclude Include="RawNetworkSample.h" />
     <ClInclude Include="RawSamples.hpp" />
     <ClInclude Include="SamplesEnumerator.h" />
     <ClInclude Include="ServiceBase.h" />
@@ -404,6 +407,7 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NetworkRequestInfo.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />
     <ClCompile Include="SsiManager.cpp" />
