@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
                 return topicArn;
             }
 
-            var lastSeparationIndex = topicArn.LastIndexOf(':') + 1;
+            var lastSeparationIndex = topicArn!.LastIndexOf(':') + 1;
             return topicArn.Substring(lastSeparationIndex);
         }
 
