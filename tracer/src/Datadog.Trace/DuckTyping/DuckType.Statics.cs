@@ -12,6 +12,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+
 // ReSharper disable InconsistentNaming
 
 namespace Datadog.Trace.DuckTyping
@@ -183,6 +185,74 @@ namespace Datadog.Trace.DuckTyping
                 var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
                 return assemblyBuilder.DefineDynamicModule("MainModule");
             }
+        }
+
+        private static Type? GetTypeFromPartialName(string partialName, bool throwOnError = false)
+        {
+            Type? type = null;
+            ExceptionDispatchInfo? loadException = null;
+
+            try
+            {
+                // Let's try to find the type using the partial name first.
+                type = Type.GetType(partialName, throwOnError: throwOnError);
+            }
+            catch (Exception ex)
+            {
+                // let's capture the exception
+                loadException = ExceptionDispatchInfo.Capture(ex);
+            }
+
+            // If the type cannot be found, and the name doesn't contain a version,
+            // we try to find the type in the current domain/alc using any assembly that has the same name.
+            if (type is null && !partialName.Contains("Version="))
+            {
+                var typePair = partialName.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (typePair.Length != 2)
+                {
+                    if (throwOnError)
+                    {
+                        DuckTypeException.Throw($"Invalid type name: {partialName}");
+                    }
+
+                    return null;
+                }
+
+                var typeValue = typePair[0].Trim();
+                var assemblyValue = typePair[1].Trim();
+
+                try
+                {
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        if (assembly.GetName().Name != assemblyValue)
+                        {
+                            continue;
+                        }
+
+                        type = assembly.GetType(typeValue, throwOnError: false);
+                        if (type is not null)
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                    // If we cannot get the assemblies, we just ignore them.
+                    // we are not interested in throwing an exception here.
+                    // we will just continue with an empty array.
+                    // And will throw later the original Type.GetType exception.
+                }
+            }
+
+            // If we were unable to load the type, and we have to throw an error, we do it now.
+            if (type is null && throwOnError)
+            {
+                loadException?.Throw();
+            }
+
+            return type;
         }
 
         /// <summary>
