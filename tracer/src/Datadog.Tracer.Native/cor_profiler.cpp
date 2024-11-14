@@ -1381,16 +1381,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     return S_OK;
 }
 
-void CorProfiler::DisableTracerCLRProfiler()
-{
-    // A full profiler detach request cannot be made because:
-    // 1. We use the COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST event mask (CORPROF_E_IMMUTABLE_FLAGS_SET)
-    // 2. We instrument code with SetILFunctionBody for the Loader injection. (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
-    // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
-    Logger::Info("Disabling Tracer CLR Profiler...");
-    Shutdown();
-}
-
 void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");

@@ -164,7 +164,7 @@
     "AssemblyName": "netstandard",
     "TargetTypeName": "System.Data.Common.DbDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -212,7 +212,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -259,7 +259,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -305,7 +305,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -513,7 +513,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.Common.DbDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -537,7 +537,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.Common.DbDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -585,7 +585,7 @@
     "AssemblyName": "System.Data.Common",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -632,7 +632,7 @@
     "AssemblyName": "System.Data.Common",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -678,7 +678,7 @@
     "AssemblyName": "System.Data.Common",
     "TargetTypeName": "System.Data.Common.DbCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -794,7 +794,7 @@
     "AssemblyName": "System.Data.Common",
     "TargetTypeName": "System.Data.Common.DbDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -864,8 +864,8 @@
     "TargetMethodName": "InvokePreStartInitMethodsCore",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.ICollection\u00601[System.Reflection.MethodInfo]",
-      "System.Func\u00601[System.IDisposable]"
+      "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]",
+      "System.Func`1[System.IDisposable]"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -1002,9 +1002,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.SignInResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -1029,9 +1029,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.SignInResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -1056,9 +1056,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.SignInResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
       "!0",
       "System.String",
@@ -1083,9 +1083,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.SignInResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -1297,9 +1297,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.Extensions.Identity.Core",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.UserManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.UserManager`1",
     "TargetMethodName": "CreateAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.IdentityResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     "TargetParameterTypes": [
       "!0"
     ],
@@ -1321,9 +1321,9 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.Extensions.Identity.Core",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.UserManager\u00601",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.UserManager`1",
     "TargetMethodName": "CreateAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.AspNetCore.Identity.IdentityResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     "TargetParameterTypes": [
       "!0"
     ],
@@ -1402,7 +1402,7 @@
     "TargetParameterTypes": [
       "System.Web.Mvc.ControllerContext",
       "System.Web.Mvc.ActionDescriptor",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -1424,7 +1424,7 @@
     "AssemblyName": "System.Web.Http",
     "TargetTypeName": "System.Web.Http.ApiController",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Web.Http.Controllers.HttpControllerContext",
       "System.Threading.CancellationToken"
@@ -1449,10 +1449,10 @@
     "AssemblyName": "System.Web.Http",
     "TargetTypeName": "System.Web.Http.Controllers.ReflectedHttpActionDescriptor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Web.Http.Controllers.HttpControllerContext",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
@@ -1475,7 +1475,7 @@
     "AssemblyName": "System.Web.Http",
     "TargetTypeName": "System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions",
     "TargetMethodName": "HandleAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Web.Http.ExceptionHandling.IExceptionHandler",
       "System.Web.Http.ExceptionHandling.ExceptionContext",
@@ -1525,7 +1525,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "BatchGetItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.BatchGetItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.BatchGetItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.BatchGetItemRequest",
       "System.Threading.CancellationToken"
@@ -1574,7 +1574,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "BatchWriteItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.BatchWriteItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.BatchWriteItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.BatchWriteItemRequest",
       "System.Threading.CancellationToken"
@@ -1623,7 +1623,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "DeleteItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.DeleteItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.DeleteItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.DeleteItemRequest",
       "System.Threading.CancellationToken"
@@ -1672,7 +1672,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "GetItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.GetItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.GetItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.GetItemRequest",
       "System.Threading.CancellationToken"
@@ -1721,7 +1721,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "PutItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.PutItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.PutItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.PutItemRequest",
       "System.Threading.CancellationToken"
@@ -1770,7 +1770,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "ScanAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.ScanResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.ScanResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.ScanRequest",
       "System.Threading.CancellationToken"
@@ -1819,7 +1819,7 @@
     "AssemblyName": "AWSSDK.DynamoDBv2",
     "TargetTypeName": "Amazon.DynamoDBv2.AmazonDynamoDBClient",
     "TargetMethodName": "UpdateItemAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.DynamoDBv2.Model.UpdateItemResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.DynamoDBv2.Model.UpdateItemResponse]",
     "TargetParameterTypes": [
       "Amazon.DynamoDBv2.Model.UpdateItemRequest",
       "System.Threading.CancellationToken"
@@ -1868,7 +1868,7 @@
     "AssemblyName": "AWSSDK.EventBridge",
     "TargetTypeName": "Amazon.EventBridge.AmazonEventBridgeClient",
     "TargetMethodName": "PutEventsAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.EventBridge.Model.PutEventsResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.EventBridge.Model.PutEventsResponse]",
     "TargetParameterTypes": [
       "Amazon.EventBridge.Model.PutEventsRequest",
       "System.Threading.CancellationToken"
@@ -1917,7 +1917,7 @@
     "AssemblyName": "AWSSDK.Kinesis",
     "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
     "TargetMethodName": "PutRecordAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.Kinesis.Model.PutRecordResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordResponse]",
     "TargetParameterTypes": [
       "Amazon.Kinesis.Model.PutRecordRequest",
       "System.Threading.CancellationToken"
@@ -1966,7 +1966,7 @@
     "AssemblyName": "AWSSDK.Kinesis",
     "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
     "TargetMethodName": "PutRecordsAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.Kinesis.Model.PutRecordsResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordsResponse]",
     "TargetParameterTypes": [
       "Amazon.Kinesis.Model.PutRecordsRequest",
       "System.Threading.CancellationToken"
@@ -2015,7 +2015,7 @@
     "AssemblyName": "AWSSDK.Core",
     "TargetTypeName": "Amazon.Runtime.Internal.RuntimePipeline",
     "TargetMethodName": "InvokeAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "Amazon.Runtime.IExecutionContext"
     ],
@@ -2087,7 +2087,7 @@
     "AssemblyName": "AWSSDK.SimpleNotificationService",
     "TargetTypeName": "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient",
     "TargetMethodName": "PublishAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SimpleNotificationService.Model.PublishResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SimpleNotificationService.Model.PublishResponse]",
     "TargetParameterTypes": [
       "Amazon.SimpleNotificationService.Model.PublishRequest",
       "System.Threading.CancellationToken"
@@ -2136,7 +2136,7 @@
     "AssemblyName": "AWSSDK.SimpleNotificationService",
     "TargetTypeName": "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient",
     "TargetMethodName": "PublishBatchAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SimpleNotificationService.Model.PublishBatchResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SimpleNotificationService.Model.PublishBatchResponse]",
     "TargetParameterTypes": [
       "Amazon.SimpleNotificationService.Model.PublishBatchRequest",
       "System.Threading.CancellationToken"
@@ -2185,7 +2185,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "CreateQueueAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.CreateQueueResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.CreateQueueResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.CreateQueueRequest",
       "System.Threading.CancellationToken"
@@ -2234,7 +2234,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "DeleteMessageAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.DeleteMessageResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.DeleteMessageResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.DeleteMessageRequest",
       "System.Threading.CancellationToken"
@@ -2283,7 +2283,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "DeleteMessageBatchAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.DeleteMessageBatchResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.DeleteMessageBatchResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.DeleteMessageBatchRequest",
       "System.Threading.CancellationToken"
@@ -2332,7 +2332,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "DeleteQueueAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.DeleteQueueResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.DeleteQueueResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.DeleteQueueRequest",
       "System.Threading.CancellationToken"
@@ -2381,7 +2381,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "ReceiveMessageAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.ReceiveMessageResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.ReceiveMessageResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.ReceiveMessageRequest",
       "System.Threading.CancellationToken"
@@ -2430,7 +2430,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "SendMessageAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.SendMessageResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.SendMessageResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.SendMessageRequest",
       "System.Threading.CancellationToken"
@@ -2479,7 +2479,7 @@
     "AssemblyName": "AWSSDK.SQS",
     "TargetTypeName": "Amazon.SQS.AmazonSQSClient",
     "TargetMethodName": "SendMessageBatchAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Amazon.SQS.Model.SendMessageBatchResponse]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.SQS.Model.SendMessageBatchResponse]",
     "TargetParameterTypes": [
       "Amazon.SQS.Model.SendMessageBatchRequest",
       "System.Threading.CancellationToken"
@@ -2528,7 +2528,7 @@
     "AssemblyName": "Microsoft.Azure.WebJobs.Host",
     "TargetTypeName": "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor",
     "TargetMethodName": "TryExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]",
     "TargetParameterTypes": [
       "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance",
       "System.Threading.CancellationToken"
@@ -2553,7 +2553,7 @@
     "AssemblyName": "Microsoft.Azure.WebJobs.Script.Grpc",
     "TargetTypeName": "Microsoft.Azure.WebJobs.Script.Grpc.GrpcMessageConversionExtensions",
     "TargetMethodName": "ToRpcHttp",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData]",
     "TargetParameterTypes": [
       "Microsoft.AspNetCore.Http.HttpRequest",
       "Microsoft.Extensions.Logging.ILogger",
@@ -2605,10 +2605,10 @@
     "TargetMethodName": "InstrumentMessage",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
       "System.String",
-      "System.String\u0026",
-      "System.String\u0026"
+      "System.String&",
+      "System.String&"
     ],
     "MinimumVersion": {
       "Item1": 7,
@@ -2681,7 +2681,7 @@
     "TargetMethodName": "CreateDiagnosticScope",
     "TargetReturnType": "Azure.Core.Pipeline.DiagnosticScope",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IReadOnlyCollection\u00601[Azure.Messaging.ServiceBus.ServiceBusMessage]",
+      "System.Collections.Generic.IReadOnlyCollection`1[Azure.Messaging.ServiceBus.ServiceBusMessage]",
       "System.String",
       "Azure.Core.Shared.MessagingDiagnosticOperation"
     ],
@@ -2705,7 +2705,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",
     "TargetMethodName": "GetItemQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2731,7 +2731,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",
     "TargetMethodName": "GetItemQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -2757,7 +2757,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",
     "TargetMethodName": "GetItemQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2783,7 +2783,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.ContainerCore",
     "TargetMethodName": "GetItemQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -2809,7 +2809,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.CosmosClient",
     "TargetMethodName": "GetDatabaseQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2835,7 +2835,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.CosmosClient",
     "TargetMethodName": "GetDatabaseQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -2861,7 +2861,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.CosmosClient",
     "TargetMethodName": "GetDatabaseQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2887,7 +2887,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.CosmosClient",
     "TargetMethodName": "GetDatabaseQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -2913,7 +2913,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetContainerQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2939,7 +2939,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetContainerQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -2965,7 +2965,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetContainerQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -2991,7 +2991,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetContainerQueryStreamIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -3017,7 +3017,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetUserQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "Microsoft.Azure.Cosmos.QueryDefinition",
       "System.String",
@@ -3043,7 +3043,7 @@
     "AssemblyName": "Microsoft.Azure.Cosmos.Client",
     "TargetTypeName": "Microsoft.Azure.Cosmos.DatabaseCore",
     "TargetMethodName": "GetUserQueryIterator",
-    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator\u00601\u003CT\u003E",
+    "TargetReturnType": "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
     "TargetParameterTypes": [
       "System.String",
       "System.String",
@@ -3273,7 +3273,7 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.MultiplexingIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
       "Couchbase.IO.Operations.IOperation"
     ],
@@ -3297,9 +3297,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.MultiplexingIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3321,9 +3321,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.MultiplexingIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3372,7 +3372,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3396,7 +3396,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3419,7 +3419,7 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.PooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
       "Couchbase.IO.Operations.IOperation"
     ],
@@ -3443,9 +3443,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.PooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3467,9 +3467,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.PooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3518,7 +3518,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3542,7 +3542,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3565,7 +3565,7 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.SharedPooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
       "Couchbase.IO.Operations.IOperation"
     ],
@@ -3589,9 +3589,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.SharedPooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3613,9 +3613,9 @@
     "AssemblyName": "Couchbase.NetClient",
     "TargetTypeName": "Couchbase.IO.Services.SharedPooledIOService",
     "TargetMethodName": "Execute",
-    "TargetReturnType": "Couchbase.IOperationResult\u003CT\u003E",
+    "TargetReturnType": "Couchbase.IOperationResult<T>",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3664,7 +3664,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]"
+      "Couchbase.IO.Operations.IOperation`1[!!0]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -3688,7 +3688,7 @@
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
-      "Couchbase.IO.Operations.IOperation\u00601[!!0]",
+      "Couchbase.IO.Operations.IOperation`1[!!0]",
       "Couchbase.IO.IConnection"
     ],
     "MinimumVersion": {
@@ -3738,7 +3738,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.String]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3789,7 +3789,7 @@
     "TargetParameterTypes": [
       "System.String",
       "System.Boolean",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.String]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3838,7 +3838,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.String]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.String]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3865,7 +3865,7 @@
       "Datadog.Trace.Ci.ITest",
       "Datadog.Trace.Ci.BenchmarkMeasureType",
       "System.String",
-      "Datadog.Trace.Ci.BenchmarkDiscreteStats\u0026"
+      "Datadog.Trace.Ci.BenchmarkDiscreteStats&"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3890,8 +3890,8 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "Datadog.Trace.Ci.ITest",
-      "Datadog.Trace.Ci.BenchmarkHostInfo\u0026",
-      "Datadog.Trace.Ci.BenchmarkJobInfo\u0026"
+      "Datadog.Trace.Ci.BenchmarkHostInfo&",
+      "Datadog.Trace.Ci.BenchmarkJobInfo&"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3943,7 +3943,7 @@
       "System.String",
       "System.String",
       "System.String",
-      "System.Nullable\u00601[System.DateTimeOffset]"
+      "System.Nullable`1[System.DateTimeOffset]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -3970,7 +3970,7 @@
       "System.String",
       "System.String",
       "System.String",
-      "System.Nullable\u00601[System.DateTimeOffset]",
+      "System.Nullable`1[System.DateTimeOffset]",
       "System.Boolean"
     ],
     "MinimumVersion": {
@@ -4017,7 +4017,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableIntegrationSettings",
     "TargetMethodName": "get_AnalyticsEnabled",
-    "TargetReturnType": "System.Nullable\u00601[System.Boolean]",
+    "TargetReturnType": "System.Nullable`1[System.Boolean]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4061,7 +4061,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableIntegrationSettings",
     "TargetMethodName": "get_Enabled",
-    "TargetReturnType": "System.Nullable\u00601[System.Boolean]",
+    "TargetReturnType": "System.Nullable`1[System.Boolean]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4239,7 +4239,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableTracerSettings",
     "TargetMethodName": "get_GlobalSamplingRate",
-    "TargetReturnType": "System.Nullable\u00601[System.Double]",
+    "TargetReturnType": "System.Nullable`1[System.Double]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4261,7 +4261,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableTracerSettings",
     "TargetMethodName": "get_GlobalTags",
-    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4283,7 +4283,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableTracerSettings",
     "TargetMethodName": "get_GrpcTags",
-    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4305,7 +4305,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.ImmutableTracerSettings",
     "TargetMethodName": "get_HeaderTags",
-    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4547,7 +4547,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.IntegrationSettings",
     "TargetMethodName": "get_AnalyticsEnabled",
-    "TargetReturnType": "System.Nullable\u00601[System.Boolean]",
+    "TargetReturnType": "System.Nullable`1[System.Boolean]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4591,7 +4591,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.IntegrationSettings",
     "TargetMethodName": "get_Enabled",
-    "TargetReturnType": "System.Nullable\u00601[System.Boolean]",
+    "TargetReturnType": "System.Nullable`1[System.Boolean]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4815,7 +4815,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.TracerSettings",
     "TargetMethodName": "get_DisabledIntegrationNames",
-    "TargetReturnType": "System.Collections.Generic.HashSet\u00601[System.String]",
+    "TargetReturnType": "System.Collections.Generic.HashSet`1[System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4881,7 +4881,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.TracerSettings",
     "TargetMethodName": "get_GlobalSamplingRate",
-    "TargetReturnType": "System.Nullable\u00601[System.Double]",
+    "TargetReturnType": "System.Nullable`1[System.Double]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4903,7 +4903,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.TracerSettings",
     "TargetMethodName": "get_GlobalTags",
-    "TargetReturnType": "System.Collections.Generic.IDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4925,7 +4925,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.TracerSettings",
     "TargetMethodName": "get_GrpcTags",
-    "TargetReturnType": "System.Collections.Generic.IDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -4947,7 +4947,7 @@
     "AssemblyName": "Datadog.Trace.Manual",
     "TargetTypeName": "Datadog.Trace.Configuration.TracerSettings",
     "TargetMethodName": "get_HeaderTags",
-    "TargetReturnType": "System.Collections.Generic.IDictionary\u00602[System.String,System.String]",
+    "TargetReturnType": "System.Collections.Generic.IDictionary`2[System.String,System.String]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 3,
@@ -5191,7 +5191,7 @@
     "TargetMethodName": "PopulateDictionary",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]",
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]",
       "System.Boolean"
     ],
     "MinimumVersion": {
@@ -5288,7 +5288,7 @@
     "TargetReturnType": "Datadog.Trace.ISpanContext",
     "TargetParameterTypes": [
       "!!0",
-      "System.Func\u00603[!!0,System.String,System.Collections.Generic.IEnumerable\u00601[System.String]]"
+      "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -5313,7 +5313,7 @@
     "TargetReturnType": "Datadog.Trace.ISpanContext",
     "TargetParameterTypes": [
       "!!0",
-      "System.Func\u00603[!!0,System.String,System.Collections.Generic.IEnumerable\u00601[System.String]]",
+      "System.Func`3[!!0,System.String,System.Collections.Generic.IEnumerable`1[System.String]]",
       "System.String",
       "System.String"
     ],
@@ -5362,7 +5362,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "!!0",
-      "System.Action\u00603[!!0,System.String,System.String]",
+      "System.Action`3[!!0,System.String,System.String]",
       "Datadog.Trace.ISpanContext"
     ],
     "MinimumVersion": {
@@ -5388,7 +5388,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "!!0",
-      "System.Action\u00603[!!0,System.String,System.String]",
+      "System.Action`3[!!0,System.String,System.String]",
       "Datadog.Trace.ISpanContext",
       "System.String",
       "System.String"
@@ -5417,7 +5417,7 @@
     "TargetParameterTypes": [
       "Datadog.Trace.ISpan",
       "System.String",
-      "System.Nullable\u00601[System.Double]"
+      "System.Nullable`1[System.Double]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -5473,7 +5473,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.Object",
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -5497,7 +5497,7 @@
     "TargetMethodName": "Configure",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -5524,7 +5524,7 @@
       "System.String",
       "Datadog.Trace.ISpanContext",
       "System.String",
-      "System.Nullable\u00601[System.DateTimeOffset]",
+      "System.Nullable`1[System.DateTimeOffset]",
       "System.Boolean"
     ],
     "MinimumVersion": {
@@ -5640,8 +5640,8 @@
       "System.String",
       "Datadog.Trace.ISpanContext",
       "System.String",
-      "System.Nullable\u00601[System.DateTimeOffset]",
-      "System.Nullable\u00601[System.Boolean]"
+      "System.Nullable`1[System.DateTimeOffset]",
+      "System.Nullable`1[System.Boolean]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -5786,9 +5786,9 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[System.String]",
-      "System.Collections.Generic.IEnumerable\u00601[System.String]",
-      "System.Collections.Generic.IEnumerable\u00601[System.String]",
+      "System.Collections.Generic.IEnumerable`1[System.String]",
+      "System.Collections.Generic.IEnumerable`1[System.String]",
+      "System.Collections.Generic.IEnumerable`1[System.String]",
       "System.Boolean",
       "System.String"
     ],
@@ -5814,7 +5814,7 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[System.String]",
+      "System.Collections.Generic.IEnumerable`1[System.String]",
       "System.Boolean",
       "System.String"
     ],
@@ -5911,7 +5911,7 @@
     "TargetReturnType": "System.Int32",
     "TargetParameterTypes": [
       "System.String[]",
-      "System.Collections.Generic.List\u00601[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]\u0026"
+      "System.Collections.Generic.List`1[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]&"
     ],
     "MinimumVersion": {
       "Item1": 15,
@@ -5960,7 +5960,7 @@
     "TargetReturnType": "System.Int32",
     "TargetParameterTypes": [
       "System.String[]",
-      "System.Collections.Generic.List\u00601[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]\u0026"
+      "System.Collections.Generic.List`1[Microsoft.VisualStudio.TestPlatform.CommandLine.Processors.IArgumentProcessor]&"
     ],
     "MinimumVersion": {
       "Item1": 15,
@@ -6006,7 +6006,7 @@
     "AssemblyName": "Elasticsearch.Net",
     "TargetTypeName": "Elasticsearch.Net.RequestPipeline",
     "TargetMethodName": "CallElasticsearch",
-    "TargetReturnType": "Elasticsearch.Net.ElasticsearchResponse\u00601[!0]",
+    "TargetReturnType": "Elasticsearch.Net.ElasticsearchResponse`1[!0]",
     "TargetParameterTypes": [
       "Elasticsearch.Net.RequestData"
     ],
@@ -6030,7 +6030,7 @@
     "AssemblyName": "Elasticsearch.Net",
     "TargetTypeName": "Elasticsearch.Net.RequestPipeline",
     "TargetMethodName": "CallElasticsearchAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "Elasticsearch.Net.RequestData",
       "System.Threading.CancellationToken"
@@ -6055,7 +6055,7 @@
     "AssemblyName": "Elasticsearch.Net",
     "TargetTypeName": "Elasticsearch.Net.RequestPipeline",
     "TargetMethodName": "CallElasticsearchAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Elasticsearch.Net.ElasticsearchResponse\u00601[!0]]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Elasticsearch.Net.ElasticsearchResponse`1[!0]]",
     "TargetParameterTypes": [
       "Elasticsearch.Net.RequestData",
       "System.Threading.CancellationToken"
@@ -6078,7 +6078,7 @@
   {
     "IntegrationName": "ElasticsearchNet",
     "AssemblyName": "Elasticsearch.Net",
-    "TargetTypeName": "Elasticsearch.Net.Transport\u00601",
+    "TargetTypeName": "Elasticsearch.Net.Transport`1",
     "TargetMethodName": "Request",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -6105,9 +6105,9 @@
   {
     "IntegrationName": "ElasticsearchNet",
     "AssemblyName": "Elasticsearch.Net",
-    "TargetTypeName": "Elasticsearch.Net.Transport\u00601",
+    "TargetTypeName": "Elasticsearch.Net.Transport`1",
     "TargetMethodName": "RequestAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "Elasticsearch.Net.HttpMethod",
       "System.String",
@@ -6135,7 +6135,7 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Execution.ExecutionStrategy",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CGraphQL.ExecutionResult\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
     "TargetParameterTypes": [
       "GraphQL.Execution.ExecutionContext"
     ],
@@ -6159,7 +6159,7 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Execution.ExecutionStrategy",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CGraphQL.ExecutionResult\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
     "TargetParameterTypes": [
       "GraphQL.Execution.ExecutionContext"
     ],
@@ -6183,7 +6183,7 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Execution.SubscriptionExecutionStrategy",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CGraphQL.ExecutionResult\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
     "TargetParameterTypes": [
       "GraphQL.Execution.ExecutionContext"
     ],
@@ -6207,7 +6207,7 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Execution.SubscriptionExecutionStrategy",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CGraphQL.ExecutionResult\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
     "TargetParameterTypes": [
       "GraphQL.Execution.ExecutionContext"
     ],
@@ -6236,7 +6236,7 @@
       "System.String",
       "GraphQL.Types.ISchema",
       "GraphQL.Language.AST.Document",
-      "System.Collections.Generic.IEnumerable\u00601[GraphQL.Validation.IValidationRule]",
+      "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]",
       "_",
       "GraphQL.Inputs"
     ],
@@ -6260,12 +6260,12 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Validation.DocumentValidator",
     "TargetMethodName": "ValidateAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "System.String",
       "GraphQL.Types.ISchema",
       "GraphQL.Language.AST.Document",
-      "System.Collections.Generic.IEnumerable\u00601[GraphQL.Validation.IValidationRule]",
+      "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]",
       "_",
       "GraphQL.Inputs"
     ],
@@ -6289,12 +6289,12 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Validation.DocumentValidator",
     "TargetMethodName": "ValidateAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "GraphQL.Types.ISchema",
       "GraphQL.Language.AST.Document",
       "GraphQL.Language.AST.VariableDefinitions",
-      "System.Collections.Generic.IEnumerable\u00601[GraphQL.Validation.IValidationRule]",
+      "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]",
       "_",
       "GraphQL.Inputs"
     ],
@@ -6318,10 +6318,10 @@
     "AssemblyName": "GraphQL",
     "TargetTypeName": "GraphQL.Validation.DocumentValidator",
     "TargetMethodName": "ValidateAsyncCoreAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "GraphQL.Validation.ValidationContext",
-      "System.Collections.Generic.IEnumerable\u00601[GraphQL.Validation.IValidationRule]"
+      "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]"
     ],
     "MinimumVersion": {
       "Item1": 5,
@@ -6343,7 +6343,7 @@
     "AssemblyName": "GraphQL.SystemReactive",
     "TargetTypeName": "GraphQL.Execution.SubscriptionExecutionStrategy",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CGraphQL.ExecutionResult\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
     "TargetParameterTypes": [
       "GraphQL.Execution.ExecutionContext"
     ],
@@ -6369,8 +6369,8 @@
     "TargetMethodName": "ReadRawString",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
-      "System.ReadOnlySpan\u00601[System.Byte]\u0026",
-      "Google.Protobuf.ParserInternalState\u0026",
+      "System.ReadOnlySpan`1[System.Byte]&",
+      "Google.Protobuf.ParserInternalState&",
       "System.Int32"
     ],
     "MinimumVersion": {
@@ -6391,7 +6391,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.AspNetCore.Server",
-    "TargetTypeName": "Grpc.AspNetCore.Server.Internal.CallHandlers.ServerCallHandlerBase\u00603",
+    "TargetTypeName": "Grpc.AspNetCore.Server.Internal.CallHandlers.ServerCallHandlerBase`3",
     "TargetMethodName": "HandleCallAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6466,9 +6466,9 @@
     "AssemblyName": "Grpc.Core",
     "TargetTypeName": "Grpc.Core.DefaultCallInvoker",
     "TargetMethodName": "CreateCall",
-    "TargetReturnType": "Grpc.Core.CallInvocationDetails\u00602[!!0,!!1]",
+    "TargetReturnType": "Grpc.Core.CallInvocationDetails`2[!!0,!!1]",
     "TargetParameterTypes": [
-      "Grpc.Core.Method\u00602[!!0,!!1]",
+      "Grpc.Core.Method`2[!!0,!!1]",
       "System.String",
       "Grpc.Core.CallOptions"
     ],
@@ -6490,7 +6490,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.AsyncCall\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.AsyncCall`2",
     "TargetMethodName": "HandleFinished",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
@@ -6515,7 +6515,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.AsyncCall\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.AsyncCall`2",
     "TargetMethodName": "HandleUnaryResponse",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
@@ -6542,7 +6542,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.AsyncCallServer\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.AsyncCallServer`2",
     "TargetMethodName": "SendInitialMetadataAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6566,13 +6566,13 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.AsyncCallServer\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.AsyncCallServer`2",
     "TargetMethodName": "SendStatusFromServerAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
       "Grpc.Core.Status",
       "Grpc.Core.Metadata",
-      "System.Nullable\u00601[ResponseWithFlags[!0,!1]]"
+      "System.Nullable`1[ResponseWithFlags[!0,!1]]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -6592,7 +6592,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.ClientStreamingServerCallHandler\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.ClientStreamingServerCallHandler`2",
     "TargetMethodName": "HandleCall",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6617,7 +6617,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.DuplexStreamingServerCallHandler\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.DuplexStreamingServerCallHandler`2",
     "TargetMethodName": "HandleCall",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6666,7 +6666,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.ServerStreamingServerCallHandler\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.ServerStreamingServerCallHandler`2",
     "TargetMethodName": "HandleCall",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6691,7 +6691,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Core",
-    "TargetTypeName": "Grpc.Core.Internal.UnaryServerCallHandler\u00602",
+    "TargetTypeName": "Grpc.Core.Internal.UnaryServerCallHandler`2",
     "TargetMethodName": "HandleCall",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
@@ -6716,7 +6716,7 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Net.Client",
-    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall\u00602",
+    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall`2",
     "TargetMethodName": "FinishCall",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
@@ -6743,14 +6743,14 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Net.Client",
-    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall\u00602",
+    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall`2",
     "TargetMethodName": "FinishCall",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Boolean",
       "System.Diagnostics.Activity",
-      "System.Nullable\u00601[Grpc.Core.Status]"
+      "System.Nullable`1[Grpc.Core.Status]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -6770,12 +6770,12 @@
   {
     "IntegrationName": "Grpc",
     "AssemblyName": "Grpc.Net.Client",
-    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall\u00602",
+    "TargetTypeName": "Grpc.Net.Client.Internal.GrpcCall`2",
     "TargetMethodName": "RunCall",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
-      "System.Nullable\u00601[System.TimeSpan]"
+      "System.Nullable`1[System.TimeSpan]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -6995,7 +6995,7 @@
     "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.Processing.MutationExecutor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[HotChocolate.Execution.IExecutionResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
     "TargetParameterTypes": [
       "HotChocolate.Execution.Processing.IOperationContext"
     ],
@@ -7019,7 +7019,7 @@
     "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.Processing.QueryExecutor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[HotChocolate.Execution.IExecutionResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
     "TargetParameterTypes": [
       "HotChocolate.Execution.Processing.IOperationContext"
     ],
@@ -7043,7 +7043,7 @@
     "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.Processing.QueryExecutor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[HotChocolate.Execution.IQueryResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IQueryResult]",
     "TargetParameterTypes": [
       "HotChocolate.Execution.Processing.OperationContext"
     ],
@@ -7067,7 +7067,7 @@
     "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.RequestExecutor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[HotChocolate.Execution.IExecutionResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
     "TargetParameterTypes": [
       "HotChocolate.Execution.IQueryRequest",
       "System.Threading.CancellationToken"
@@ -7092,7 +7092,7 @@
     "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.RequestExecutor",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[HotChocolate.Execution.IExecutionResult]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
     "TargetParameterTypes": [
       "HotChocolate.Execution.IQueryRequest",
       "System.Threading.CancellationToken"
@@ -7117,7 +7117,7 @@
     "AssemblyName": "System.Net.Http",
     "TargetTypeName": "System.Net.Http.CurlHandler",
     "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Threading.CancellationToken"
@@ -7167,7 +7167,7 @@
     "AssemblyName": "System.Net.Http",
     "TargetTypeName": "System.Net.Http.HttpClientHandler",
     "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Threading.CancellationToken"
@@ -7217,7 +7217,7 @@
     "AssemblyName": "System.Net.Http",
     "TargetTypeName": "System.Net.Http.SocketsHttpHandler",
     "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Threading.CancellationToken"
@@ -7242,7 +7242,7 @@
     "AssemblyName": "System.Net.Http",
     "TargetTypeName": "System.Net.Http.WinHttpHandler",
     "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Threading.CancellationToken"
@@ -7267,7 +7267,7 @@
     "AssemblyName": "System.Net.Http.WinHttpHandler",
     "TargetTypeName": "System.Net.Http.WinHttpHandler",
     "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Net.Http.HttpResponseMessage]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]",
     "TargetParameterTypes": [
       "System.Net.Http.HttpRequestMessage",
       "System.Threading.CancellationToken"
@@ -7370,8 +7370,8 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Logging.ILoggerProvider]",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerFilterOptions]"
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Logging.ILoggerProvider]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]"
     ],
     "MinimumVersion": {
       "Item1": 2,
@@ -7395,9 +7395,9 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Logging.ILoggerProvider]",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerFilterOptions]",
-      "Microsoft.Extensions.Options.IOptions\u00601[Microsoft.Extensions.Logging.LoggerFactoryOptions]"
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Logging.ILoggerProvider]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]",
+      "Microsoft.Extensions.Options.IOptions`1[Microsoft.Extensions.Logging.LoggerFactoryOptions]"
     ],
     "MinimumVersion": {
       "Item1": 5,
@@ -7421,9 +7421,9 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Logging.ILoggerProvider]",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerFilterOptions]",
-      "Microsoft.Extensions.Options.IOptions\u00601[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Logging.ILoggerProvider]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]",
+      "Microsoft.Extensions.Options.IOptions`1[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
       "Microsoft.Extensions.Logging.IExternalScopeProvider"
     ],
     "MinimumVersion": {
@@ -7448,7 +7448,7 @@
     "TargetMethodName": "ForEachScope",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Action\u00602[System.Object,!!0]",
+      "System.Action`2[System.Object,!!0]",
       "!!0"
     ],
     "MinimumVersion": {
@@ -7473,7 +7473,7 @@
     "TargetMethodName": "ForEachScope",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Action\u00602[System.Object,!!0]",
+      "System.Action`2[System.Object,!!0]",
       "!!0"
     ],
     "MinimumVersion": {
@@ -7498,14 +7498,14 @@
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Logging.ILoggerProvider]",
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Diagnostics.Enrichment.ILogEnricher]",
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.Extensions.Diagnostics.Enrichment.IStaticLogEnricher]",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerFilterOptions]",
-      "Microsoft.Extensions.Options.IOptions\u00601[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Logging.ILoggerProvider]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.ILogEnricher]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.Extensions.Diagnostics.Enrichment.IStaticLogEnricher]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerFilterOptions]",
+      "Microsoft.Extensions.Options.IOptions`1[Microsoft.Extensions.Logging.LoggerFactoryOptions]",
       "Microsoft.Extensions.Logging.IExternalScopeProvider",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerEnrichmentOptions]",
-      "Microsoft.Extensions.Options.IOptionsMonitor\u00601[Microsoft.Extensions.Logging.LoggerRedactionOptions]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerEnrichmentOptions]",
+      "Microsoft.Extensions.Options.IOptionsMonitor`1[Microsoft.Extensions.Logging.LoggerRedactionOptions]",
       "Microsoft.Extensions.Compliance.Redaction.IRedactorProvider"
     ],
     "MinimumVersion": {
@@ -7530,7 +7530,7 @@
     "TargetMethodName": "ForEachScope",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Action\u00602[System.Object,!!0]",
+      "System.Action`2[System.Object,!!0]",
       "!!0"
     ],
     "MinimumVersion": {
@@ -7551,11 +7551,11 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "Confluent.Kafka.ConsumerBuilder\u00602[!0,!1]"
+      "Confluent.Kafka.ConsumerBuilder`2[!0,!1]"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -7575,7 +7575,7 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Close",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [],
@@ -7597,9 +7597,9 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Commit",
-    "TargetReturnType": "System.Collections.Generic.IList\u00601[Confluent.Kafka.TopicPartitionOffset]",
+    "TargetReturnType": "System.Collections.Generic.IList`1[Confluent.Kafka.TopicPartitionOffset]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 1,
@@ -7619,11 +7619,11 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Commit",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.Collections.Generic.IEnumerable\u00601[Confluent.Kafka.TopicPartitionOffset]"
+      "System.Collections.Generic.IEnumerable`1[Confluent.Kafka.TopicPartitionOffset]"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -7643,9 +7643,9 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Consume",
-    "TargetReturnType": "Confluent.Kafka.ConsumeResult\u00602[!0,!1]",
+    "TargetReturnType": "Confluent.Kafka.ConsumeResult`2[!0,!1]",
     "TargetParameterTypes": [
       "System.Int32"
     ],
@@ -7667,7 +7667,7 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Dispose",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [],
@@ -7689,7 +7689,7 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Consumer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Consumer`2",
     "TargetMethodName": "Unsubscribe",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [],
@@ -7711,11 +7711,11 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Producer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Producer`2",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "Confluent.Kafka.ProducerBuilder\u00602[!0,!1]"
+      "Confluent.Kafka.ProducerBuilder`2[!0,!1]"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -7735,13 +7735,13 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Producer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Producer`2",
     "TargetMethodName": "Produce",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "Confluent.Kafka.TopicPartition",
-      "Confluent.Kafka.Message\u00602[!0,!1]",
-      "System.Action\u00601[Confluent.Kafka.DeliveryReport\u00602[!0,!1]]"
+      "Confluent.Kafka.Message`2[!0,!1]",
+      "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -7761,12 +7761,12 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Producer\u00602",
+    "TargetTypeName": "Confluent.Kafka.Producer`2",
     "TargetMethodName": "ProduceAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Confluent.Kafka.DeliveryReport\u00602[!0,!1]]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]",
     "TargetParameterTypes": [
       "Confluent.Kafka.TopicPartition",
-      "Confluent.Kafka.Message\u00602[!0,!1]",
+      "Confluent.Kafka.Message`2[!0,!1]",
       "System.Threading.CancellationToken"
     ],
     "MinimumVersion": {
@@ -7787,14 +7787,14 @@
   {
     "IntegrationName": "Kafka",
     "AssemblyName": "Confluent.Kafka",
-    "TargetTypeName": "Confluent.Kafka.Producer\u00602\u002BTypedDeliveryHandlerShim_Action",
+    "TargetTypeName": "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.String",
       "!0",
       "!1",
-      "System.Action\u00601[Confluent.Kafka.DeliveryReport\u00602[!0,!1]]"
+      "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -7882,7 +7882,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -7907,9 +7907,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -7932,7 +7932,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -7957,9 +7957,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -7982,7 +7982,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -8007,9 +8007,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -8032,7 +8032,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -8057,9 +8057,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -8132,7 +8132,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -8157,9 +8157,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -8182,7 +8182,7 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
     "TargetMethodName": "Execute",
     "TargetReturnType": "!0",
     "TargetParameterTypes": [
@@ -8207,9 +8207,9 @@
   {
     "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
-    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase\u00601",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
     "TargetParameterTypes": [
       "MongoDB.Driver.Core.Connections.IConnection",
       "System.Threading.CancellationToken"
@@ -8546,7 +8546,7 @@
     "TargetReturnType": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
     "TargetParameterTypes": [
       "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 14,
@@ -8571,7 +8571,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.IEnumerable\u00601[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]",
+      "System.Collections.Generic.IEnumerable`1[Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement]",
       "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.ITestCaseDiscoverySink",
       "Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter.IDiscoveryContext",
       "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"
@@ -8692,7 +8692,7 @@
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -8761,7 +8761,7 @@
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -8877,7 +8877,7 @@
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[MySql.Data.MySqlClient.MySqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior"
     ],
@@ -8901,7 +8901,7 @@
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[MySql.Data.MySqlClient.MySqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -8970,7 +8970,7 @@
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9018,7 +9018,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -9065,7 +9065,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9157,7 +9157,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9205,7 +9205,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySqlConnector.MySqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -9252,7 +9252,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySqlConnector.MySqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9322,7 +9322,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySqlConnector.MySqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[MySqlConnector.MySqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[MySqlConnector.MySqlDataReader]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9346,7 +9346,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySqlConnector.MySqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[MySqlConnector.MySqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[MySqlConnector.MySqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -9393,7 +9393,7 @@
     "AssemblyName": "MySqlConnector",
     "TargetTypeName": "MySqlConnector.MySqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9420,7 +9420,7 @@
     "TargetReturnType": "NLog.Internal.TargetWithFilterChain[]",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.List\u00601[NLog.Config.LoggingRule]"
+      "System.Collections.Generic.List`1[NLog.Config.LoggingRule]"
     ],
     "MinimumVersion": {
       "Item1": 5,
@@ -9570,7 +9570,7 @@
     "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -9617,7 +9617,7 @@
     "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9687,7 +9687,7 @@
     "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Npgsql.NpgsqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -9734,7 +9734,7 @@
     "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -9952,7 +9952,7 @@
       "System.String",
       "OpenTelemetry.Trace.SpanKind",
       "OpenTelemetry.Trace.SpanAttributes",
-      "System.Collections.Generic.IEnumerable\u00601[OpenTelemetry.Trace.Link]",
+      "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]",
       "System.DateTimeOffset"
     ],
     "MinimumVersion": {
@@ -9979,9 +9979,9 @@
     "TargetParameterTypes": [
       "System.String",
       "OpenTelemetry.Trace.SpanKind",
-      "OpenTelemetry.Trace.SpanContext\u0026",
+      "OpenTelemetry.Trace.SpanContext&",
       "OpenTelemetry.Trace.SpanAttributes",
-      "System.Collections.Generic.IEnumerable\u00601[OpenTelemetry.Trace.Link]",
+      "System.Collections.Generic.IEnumerable`1[OpenTelemetry.Trace.Link]",
       "System.DateTimeOffset"
     ],
     "MinimumVersion": {
@@ -10487,7 +10487,7 @@
       "System.Boolean",
       "System.Boolean",
       "System.Boolean",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -10517,7 +10517,7 @@
       "System.Boolean",
       "System.Boolean",
       "System.Boolean",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -10606,7 +10606,7 @@
       "System.String",
       "System.Boolean",
       "System.Boolean",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]",
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
       "RabbitMQ.Client.IBasicConsumer"
     ],
     "MinimumVersion": {
@@ -10659,7 +10659,7 @@
       "System.String",
       "System.String",
       "System.String",
-      "System.Collections.Generic.IDictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.IDictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -10711,9 +10711,9 @@
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Runtime.Remoting.Channels.ITransportHeaders",
       "System.IO.Stream",
-      "System.Runtime.Remoting.Messaging.IMessage\u0026",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Messaging.IMessage&",
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10739,8 +10739,8 @@
     "TargetParameterTypes": [
       "System.Runtime.Remoting.Channels.IServerResponseChannelSinkStack",
       "System.Runtime.Remoting.Messaging.IMessage",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10793,8 +10793,8 @@
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Runtime.Remoting.Channels.ITransportHeaders",
       "System.IO.Stream",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10819,7 +10819,7 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.Net.WebException",
-      "System.Net.HttpWebResponse\u0026"
+      "System.Net.HttpWebResponse&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10844,8 +10844,8 @@
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
       "System.Net.HttpWebResponse",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10872,8 +10872,8 @@
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Runtime.Remoting.Channels.ITransportHeaders",
       "System.IO.Stream",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10925,9 +10925,9 @@
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Runtime.Remoting.Channels.ITransportHeaders",
       "System.IO.Stream",
-      "System.Runtime.Remoting.Messaging.IMessage\u0026",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Messaging.IMessage&",
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10954,8 +10954,8 @@
       "System.Runtime.Remoting.Channels.IServerResponseChannelSinkStack",
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Boolean",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -10982,8 +10982,8 @@
       "System.Runtime.Remoting.Messaging.IMessage",
       "System.Runtime.Remoting.Channels.ITransportHeaders",
       "System.IO.Stream",
-      "System.Runtime.Remoting.Channels.ITransportHeaders\u0026",
-      "System.IO.Stream\u0026"
+      "System.Runtime.Remoting.Channels.ITransportHeaders&",
+      "System.IO.Stream&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -11032,7 +11032,7 @@
     "TargetReturnType": "OpenQA.Selenium.Remote.Response",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -11057,7 +11057,7 @@
     "TargetReturnType": "OpenQA.Selenium.Remote.Response",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 3,
@@ -11082,7 +11082,7 @@
     "TargetReturnType": "OpenQA.Selenium.Response",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -11107,7 +11107,7 @@
     "TargetReturnType": "OpenQA.Selenium.Response",
     "TargetParameterTypes": [
       "System.String",
-      "System.Collections.Generic.Dictionary\u00602[System.String,System.Object]"
+      "System.Collections.Generic.Dictionary`2[System.String,System.Object]"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -11202,8 +11202,8 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "System.Byte[][]",
-      "System.Func\u00601[!!0]",
-      "System.Action\u00601[System.Func\u00601[!!0]]",
+      "System.Func`1[!!0]",
+      "System.Action`1[System.Func`1[!!0]]",
       "System.Boolean"
     ],
     "MinimumVersion": {
@@ -11229,8 +11229,8 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "System.Byte[][]",
-      "System.Func\u00601[!!0]",
-      "System.Action\u00601[System.Func\u00601[!!0]]",
+      "System.Func`1[!!0]",
+      "System.Action`1[System.Func`1[!!0]]",
       "System.Boolean",
       "System.String"
     ],
@@ -11278,7 +11278,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -11325,7 +11325,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11395,7 +11395,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 1,
@@ -11417,7 +11417,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11441,7 +11441,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior"
     ],
@@ -11465,7 +11465,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -11512,7 +11512,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11628,7 +11628,7 @@
     "AssemblyName": "Microsoft.Data.SqlClient",
     "TargetTypeName": "Microsoft.Data.SqlClient.SqlDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11744,7 +11744,7 @@
     "AssemblyName": "Microsoft.Data.Sqlite",
     "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11792,7 +11792,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -11839,7 +11839,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -11909,7 +11909,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -11956,7 +11956,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12072,7 +12072,7 @@
     "AssemblyName": "System.Data",
     "TargetTypeName": "System.Data.SqlClient.SqlDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12120,7 +12120,7 @@
     "AssemblyName": "System.Data.SqlClient",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -12167,7 +12167,7 @@
     "AssemblyName": "System.Data.SqlClient",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteNonQueryAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Int32]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Int32]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12237,7 +12237,7 @@
     "AssemblyName": "System.Data.SqlClient",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.SqlClient.SqlDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.SqlClient.SqlDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -12284,7 +12284,7 @@
     "AssemblyName": "System.Data.SqlClient",
     "TargetTypeName": "System.Data.SqlClient.SqlCommand",
     "TargetMethodName": "ExecuteScalarAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12400,7 +12400,7 @@
     "AssemblyName": "System.Data.SqlClient",
     "TargetTypeName": "System.Data.SqlClient.SqlDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12516,7 +12516,7 @@
     "AssemblyName": "System.Data.SQLite",
     "TargetTypeName": "System.Data.SQLite.SQLiteDataReader",
     "TargetMethodName": "ReadAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Object]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
       "System.Threading.CancellationToken"
     ],
@@ -12564,7 +12564,7 @@
     "AssemblyName": "Microsoft.Data.Sqlite",
     "TargetTypeName": "Microsoft.Data.Sqlite.SqliteCommand",
     "TargetMethodName": "ExecuteDbDataReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Data.Common.DbDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Data.Common.DbDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -12657,7 +12657,7 @@
     "AssemblyName": "Microsoft.Data.Sqlite",
     "TargetTypeName": "Microsoft.Data.Sqlite.SqliteCommand",
     "TargetMethodName": "ExecuteReaderAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Microsoft.Data.Sqlite.SqliteDataReader]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.Data.Sqlite.SqliteDataReader]",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior",
       "System.Threading.CancellationToken"
@@ -12915,10 +12915,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.ConnectionMultiplexer",
     "TargetMethodName": "ExecuteAsyncImpl",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!!0]",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "System.Object",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -12942,10 +12942,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.ConnectionMultiplexer",
     "TargetMethodName": "ExecuteAsyncImpl",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!!0]",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "System.Object",
       "StackExchange.Redis.ServerEndPoint",
       "!!0"
@@ -12973,7 +12973,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -12999,7 +12999,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint",
       "!!0"
     ],
@@ -13047,10 +13047,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.RedisBase",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13076,7 +13076,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13099,10 +13099,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.RedisBatch",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13125,10 +13125,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.RedisBatch",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "!!0",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -13152,10 +13152,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.RedisTransaction",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13178,10 +13178,10 @@
     "AssemblyName": "StackExchange.Redis",
     "TargetTypeName": "StackExchange.Redis.RedisTransaction",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "!!0",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -13205,10 +13205,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.ConnectionMultiplexer",
     "TargetMethodName": "ExecuteAsyncImpl",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!!0]",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "System.Object",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -13232,10 +13232,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.ConnectionMultiplexer",
     "TargetMethodName": "ExecuteAsyncImpl",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[!!0]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!!0]",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "System.Object",
       "StackExchange.Redis.ServerEndPoint",
       "!!0"
@@ -13263,7 +13263,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13289,7 +13289,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint",
       "!!0"
     ],
@@ -13313,10 +13313,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.RedisBase",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13342,7 +13342,7 @@
     "TargetReturnType": "!!0",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13365,10 +13365,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.RedisBatch",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13391,10 +13391,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.RedisBatch",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "!!0",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -13418,10 +13418,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.RedisTransaction",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
@@ -13444,10 +13444,10 @@
     "AssemblyName": "StackExchange.Redis.StrongName",
     "TargetTypeName": "StackExchange.Redis.RedisTransaction",
     "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003C!!0\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
-      "StackExchange.Redis.ResultProcessor\u00601[!!0]",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
       "!!0",
       "StackExchange.Redis.ServerEndPoint"
     ],
@@ -13665,7 +13665,7 @@
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
       "System.Object",
-      "System.Object[]\u0026",
+      "System.Object[]&",
       "System.IAsyncResult"
     ],
     "MinimumVersion": {
@@ -13715,7 +13715,7 @@
     "TargetMethodName": "AfterReceiveRequest",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.ServiceModel.Dispatcher.MessageRpc\u0026"
+      "System.ServiceModel.Dispatcher.MessageRpc&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -13739,9 +13739,9 @@
     "TargetMethodName": "BeforeSendReply",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
-      "System.ServiceModel.Dispatcher.MessageRpc\u0026",
-      "System.Exception\u0026",
-      "System.Boolean\u0026"
+      "System.ServiceModel.Dispatcher.MessageRpc&",
+      "System.Exception&",
+      "System.Boolean&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -13767,7 +13767,7 @@
     "TargetParameterTypes": [
       "System.Object",
       "System.Object[]",
-      "System.Object[]\u0026"
+      "System.Object[]&"
     ],
     "MinimumVersion": {
       "Item1": 4,
@@ -13789,7 +13789,7 @@
     "AssemblyName": "System.ServiceModel",
     "TargetTypeName": "System.ServiceModel.Dispatcher.TaskMethodInvoker",
     "TargetMethodName": "InvokeAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Tuple\u00602[System.Object, System.Object[]]]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Tuple`2[System.Object, System.Object[]]]",
     "TargetParameterTypes": [
       "System.Object",
       "System.Object[]"
@@ -13932,7 +13932,7 @@
     "AssemblyName": "System",
     "TargetTypeName": "System.Net.WebRequest",
     "TargetMethodName": "GetResponseAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CSystem.Net.WebResponse\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<System.Net.WebResponse>",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 4,
@@ -14023,7 +14023,7 @@
     "AssemblyName": "System.Net.Requests",
     "TargetTypeName": "System.Net.WebRequest",
     "TargetMethodName": "GetResponseAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601\u003CSystem.Net.WebResponse\u003E",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<System.Net.WebResponse>",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 4,
@@ -14091,7 +14091,7 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "BeforeTestAssemblyFinishedAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [],
@@ -14113,7 +14113,7 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "BeforeTestAssemblyFinishedAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [],
@@ -14135,9 +14135,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14157,9 +14157,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestClassRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestClassRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14179,9 +14179,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestInvoker\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestInvoker`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Decimal]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Decimal]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14225,9 +14225,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.desktop",
-    "TargetTypeName": "Xunit.Sdk.TestRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14247,7 +14247,7 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "BeforeTestAssemblyFinishedAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [],
@@ -14269,7 +14269,7 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "BeforeTestAssemblyFinishedAsync",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [],
@@ -14291,9 +14291,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestAssemblyRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14313,9 +14313,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestClassRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestClassRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14361,9 +14361,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestInvoker\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestInvoker`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[System.Decimal]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Decimal]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,
@@ -14407,9 +14407,9 @@
   {
     "IntegrationName": "XUnit",
     "AssemblyName": "xunit.execution.dotnet",
-    "TargetTypeName": "Xunit.Sdk.TestRunner\u00601",
+    "TargetTypeName": "Xunit.Sdk.TestRunner`1",
     "TargetMethodName": "RunAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task\u00601[Xunit.Sdk.RunSummary]",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Xunit.Sdk.RunSummary]",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 2,

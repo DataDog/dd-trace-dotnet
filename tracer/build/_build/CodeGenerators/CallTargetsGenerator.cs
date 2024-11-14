@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Mono.Cecil;
+using Newtonsoft.Json;
 using Nuke.Common.IO;
 
 namespace CodeGenerators
@@ -566,7 +567,7 @@ namespace CodeGenerators
             var options = new JsonSerializerOptions();
             options.IncludeFields = true;
             options.WriteIndented = true;
-            string jsonString = System.Text.Json.JsonSerializer.Serialize(orderedDefinitions, options);
+            string jsonString = JsonConvert.SerializeObject(orderedDefinitions, Formatting.Indented);
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
             var fileName = outputPath / FileNames.DefinitionsJson;

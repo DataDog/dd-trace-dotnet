@@ -230,11 +230,6 @@ public:
     bool ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products);
 
     //
-    // Disable profiler
-    //
-    void DisableTracerCLRProfiler();
-
-    //
     // Propagate settings from RCM
     //
     void UpdateSettings(WCHAR* keys[], WCHAR* values[], int length);

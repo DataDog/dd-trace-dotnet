@@ -17,7 +17,7 @@ namespace PrepareRelease
 {
     public static class GenerateIntegrationDefinitions
     {
-        public static List<InstrumentedAssembly> GetAllIntegrations(ICollection<string> assemblyPaths, AbsolutePath dependabotJsonFile)
+        public static List<InstrumentedAssembly> GetAllIntegrations(ICollection<string> assemblyPaths, AbsolutePath definitionsJsonFile)
         {
             var callTargetIntegrations = Enumerable.Empty<InstrumentedAssembly>();
 
@@ -27,7 +27,7 @@ namespace PrepareRelease
                 var assemblyLoadContext = new CustomAssemblyLoadContext(Path.GetDirectoryName(path));
                 var assembly = assemblyLoadContext.LoadFromAssemblyPath(path);
 
-                callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(assembly, dependabotJsonFile));
+                callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(assembly, definitionsJsonFile));
 
                 assemblyLoadContext.Unload();
             }
@@ -35,9 +35,9 @@ namespace PrepareRelease
             return callTargetIntegrations.ToList();
         }
 
-        static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly, AbsolutePath dependabotJsonFile)
+        static IEnumerable<InstrumentedAssembly> GetCallTargetIntegrations(Assembly assembly, AbsolutePath definitionsJsonFile)
         {
-            var definitions = JsonConvert.DeserializeObject<CallTargetDefinitionSource[]>(File.ReadAllText(dependabotJsonFile));
+            var definitions = JsonConvert.DeserializeObject<CallTargetDefinitionSource[]>(File.ReadAllText(definitionsJsonFile));
             return definitions
                   .Select(x => new InstrumentedAssembly
                   {

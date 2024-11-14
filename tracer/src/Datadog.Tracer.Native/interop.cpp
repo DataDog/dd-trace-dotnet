@@ -156,17 +156,6 @@ EXTERN_C int STDAPICALLTYPE GetProbesStatuses(WCHAR** probeIds, int probeIdsLeng
     return trace::profiler->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
 }
 
-EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
-{
-    if (trace::profiler == nullptr)
-    {
-        trace::Logger::Error("Error in DisableTracerCLRProfiler call. Tracer CLR Profiler was not initialized.");
-        return;
-    }
-
-    trace::profiler->DisableTracerCLRProfiler();
-}
-
 EXTERN_C int STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 {
     if (trace::profiler == nullptr)

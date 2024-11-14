@@ -15,7 +15,6 @@ EXPORTS
     InitializeTraceMethods
     InstrumentProbes
     GetProbesStatuses
-    DisableTracerCLRProfiler
     RegisterIastAspects
     RegisterCallTargetDefinitions3
     EnableCallTargetDefinitions
