@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // Should not throw
             SpanCodeOriginManager spanCodeOriginManager = new();
-            spanCodeOriginManager.SetCodeOrigin(null);
+            spanCodeOriginManager.SetCodeOriginForExitSpan(null);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Debugger
             var span = new Span(new SpanContext(1, 2, SamplingPriority.UserKeep), DateTimeOffset.UtcNow);
 
             // Act
-            SpanCodeOriginManager.Instance.SetCodeOrigin(span);
+            SpanCodeOriginManager.Instance.SetCodeOriginForExitSpan(span);
 
             // Assert
             span.Tags.GetTag(CodeOriginTag + ".type").Should().BeNull();
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void TestMethod(SpanCodeOriginManager instance, Span span)
         {
-            instance.SetCodeOrigin(span);
+            instance.SetCodeOriginForExitSpan(span);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Debugger
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void DeepTestMethod3(Span span, SpanCodeOriginManager instance)
         {
-            instance.SetCodeOrigin(span);
+            instance.SetCodeOriginForExitSpan(span);
         }
 
         internal class CodeOriginSettingsSetter

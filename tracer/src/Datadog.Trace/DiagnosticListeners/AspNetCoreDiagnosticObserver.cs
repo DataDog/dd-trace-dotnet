@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
@@ -611,11 +612,33 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (span is not null)
                 {
                     CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+
+                    AddCodeOriginTags(typedArg, span);
                 }
 
                 if (shouldUseIast)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
+                }
+            }
+        }
+
+        private void AddCodeOriginTags(BeforeActionStruct typedArg, Span span)
+        {
+            if (typedArg.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
+            {
+                SpanCodeOriginManager.Instance.SetCodeOriginForEntrySpan(span, controllerActionDescriptor.ControllerTypeInfo, controllerActionDescriptor.MethodInfo);
+            }
+            else if (typedArg.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
+            {
+                foreach (var part in compiledPageActionDescriptor.HandlerMethods)
+                {
+                    if (part.TryDuckCast(out HandlerMethodDescriptorStruct method)
+                     && string.Equals(method.HttpMethod, typedArg.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
+                    {
+                        SpanCodeOriginManager.Instance.SetCodeOriginForEntrySpan(span, compiledPageActionDescriptor.HandlerTypeInfo, method.MethodInfo);
+                        break;
+                    }
                 }
             }
         }
@@ -733,6 +756,71 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public RouteData RouteData;
+        }
+
+        [DuckCopy]
+        internal struct ControllerActionDescriptorStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public string ControllerName;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public string ActionName;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public MethodInfo MethodInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public TypeInfo ControllerTypeInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public string DisplayName;
+        }
+
+        [DuckCopy]
+        internal struct CompiledPageActionDescriptorStruct
+        {
+            // [Duck(Name = "HandlerMethods", GenericParameterTypeNames = ["Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HandlerMethodDescriptorStruct"], BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            // public IList<HandlerMethodDescriptorStruct> HandlerMethods;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public IEnumerable HandlerMethods;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public TypeInfo HandlerTypeInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public TypeInfo DeclaredModelTypeInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public TypeInfo ModelTypeInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public TypeInfo PageTypeInfo;
+        }
+
+        [DuckCopy]
+        internal struct HandlerMethodDescriptorStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public MethodInfo MethodInfo;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public string HttpMethod;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public string Name;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            // [Duck(Name = "Parameters", GenericParameterTypeNames = ["Datadog.Trace.DiagnosticListeners.AspNetCoreDiagnosticObserver+HandlerParameterDescriptorStruct"], BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public IEnumerable Parameters;
+        }
+
+        [DuckCopy]
+        internal struct HandlerParameterDescriptorStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public ParameterInfo ParameterInfo;
         }
 
         [DuckCopy]
