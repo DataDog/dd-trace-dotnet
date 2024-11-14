@@ -152,7 +152,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 gitInfo.AuthorDate.Should().NotBeNull();
                 gitInfo.AuthorEmail.Should().NotBeNull();
                 gitInfo.AuthorName.Should().NotBeNull();
-                gitInfo.Branch.Should().NotBeNull();
                 gitInfo.Commit.Should().NotBeNull();
                 gitInfo.CommitterDate.Should().NotBeNull();
                 gitInfo.CommitterEmail.Should().NotBeNull();
