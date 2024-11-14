@@ -160,11 +160,11 @@ void EtwEventsManager::OnEvent(
                 pThreadInfo->ClearLastEventId();
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
-                    auto timestamp = TimestampToEpochNS(systemTimestamp); // systemTimestamp is in 100ns units
-                    auto duration = (systemTimestamp - pThreadInfo->ContentionStartTimestamp) * 100;
+                    auto timestamp = std::chrono::nanoseconds(TimestampToEpochNS(systemTimestamp));
+                    auto duration = (systemTimestamp - pThreadInfo->ContentionStartTimestamp) * 100;  // systemTimestamp is in 100ns units
                     pThreadInfo->ContentionStartTimestamp = 0;
 
-                    _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
+                    _pContentionListener->OnContention(timestamp, tid, std::chrono::nanoseconds(duration), pThreadInfo->ContentionCallStack);
                 }
             }
             else

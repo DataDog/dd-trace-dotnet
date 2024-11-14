@@ -33,10 +33,10 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
 {
 }
 
-void StopTheWorldGCProvider::OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration)
+void StopTheWorldGCProvider::OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration)
 {
     RawStopTheWorldSample rawSample;
-    rawSample.Timestamp = std::chrono::nanoseconds(timestamp);
+    rawSample.Timestamp = timestamp;
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID)nullptr;

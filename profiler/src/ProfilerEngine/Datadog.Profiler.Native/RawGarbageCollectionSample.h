@@ -43,7 +43,7 @@ public:
 
     inline int64_t GetValue() const override
     {
-        return TotalDuration;
+        return TotalDuration.count();
     }
 
     inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
@@ -60,8 +60,8 @@ public:
     GCReason Reason;
     GCType Type;
     bool IsCompacting;
-    uint64_t PauseDuration; // not used today
-    uint64_t TotalDuration;
+    std::chrono::nanoseconds PauseDuration; // not used today
+    std::chrono::nanoseconds TotalDuration;
 
 private:
     inline std::string GetReasonText() const
