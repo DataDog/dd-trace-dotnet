@@ -51,6 +51,9 @@
     <Filter Include="libdatadog">
       <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{6c3f1e16-c431-45e0-bfef-43a6c925f1f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -111,9 +114,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="ScopeFinalizer.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Semaphore.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="EnvironmentVariables.h">
@@ -465,6 +465,18 @@
     </ClInclude>
     <ClInclude Include="DeploymentMode.h" />
     <ClInclude Include="EnablementStatus.h" />
+    <ClInclude Include="INetworkListener.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="BclEventsParser.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="DotnetEventsProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="EventsParserHelper.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -712,6 +724,9 @@
     </ClCompile>
     <ClCompile Include="SkipProfileHeuristicType.h">
       <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="BclEventsParser.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

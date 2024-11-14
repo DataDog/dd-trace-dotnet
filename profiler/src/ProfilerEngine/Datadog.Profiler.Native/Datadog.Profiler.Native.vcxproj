@@ -235,12 +235,14 @@
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
+    <ClInclude Include="BclEventsParser.h" />
     <ClInclude Include="Callstack.h" />
     <ClInclude Include="CallstackProvider.h" />
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="CrashReporting.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="DeploymentMode.h" />
+    <ClInclude Include="DotnetEventsProvider.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnablementStatus.h" />
     <ClInclude Include="EncodedProfile.hpp" />
@@ -248,9 +250,11 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
+    <ClInclude Include="EventsParserHelper.h" />
     <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
+    <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />
     <ClInclude Include="LinkedList.hpp" />
     <ClInclude Include="MemoryResourceManager.h" />
@@ -379,6 +383,7 @@
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
+    <ClCompile Include="BclEventsParser.cpp" />
     <ClCompile Include="Callstack.cpp" />
     <ClCompile Include="CallstackProvider.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />

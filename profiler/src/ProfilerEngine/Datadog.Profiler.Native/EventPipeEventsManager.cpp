@@ -3,6 +3,7 @@
 
 #include "EventPipeEventsManager.h"
 
+#include "EventsParserHelper.h"
 #include "IAllocationsListener.h"
 #include "IContentionListener.h"
 #include "IGCSuspensionsListener.h"
@@ -14,7 +15,7 @@ EventPipeEventsManager::EventPipeEventsManager(
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener)
 {
-    _parser = std::make_unique<ClrEventsParser>(
+    _clrParser = std::make_unique<ClrEventsParser>(
         pAllocationListener,
         pContentionListener,
         pGCSuspensionsListener);
@@ -22,7 +23,7 @@ EventPipeEventsManager::EventPipeEventsManager(
 
 void EventPipeEventsManager::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
 {
-    _parser->Register(pGarbageCollectionsListener);
+    _clrParser->Register(pGarbageCollectionsListener);
 }
 
 void EventPipeEventsManager::ParseEvent(EVENTPIPE_PROVIDER provider,
@@ -53,7 +54,7 @@ void EventPipeEventsManager::ParseEvent(EVENTPIPE_PROVIDER provider,
     }
 
     // the events are expected to be processed synchronously so the current time is used as timestamp
-    _parser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
+    _clrParser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
 }
 
 bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
@@ -64,20 +65,20 @@ bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata
     }
 
     ULONG offset = 0;
-    if (!ClrEventsParser::Read(id, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(id, pMetadata, cbMetadata, offset))
     {
         return false;
     }
 
     // skip the name to read keyword and version
-    name = ClrEventsParser::ReadWideString(pMetadata, cbMetadata, &offset);
+    name = EventsParserHelper::ReadWideString(pMetadata, cbMetadata, &offset);
 
-    if (!ClrEventsParser::Read(keywords, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(keywords, pMetadata, cbMetadata, offset))
     {
         return false;
     }
 
-    if (!ClrEventsParser::Read(version, pMetadata, cbMetadata, offset))
+    if (!EventsParserHelper::Read(version, pMetadata, cbMetadata, offset))
     {
         return false;
     }

@@ -51,5 +51,5 @@ private:
 
 
 private:
-    std::unique_ptr<ClrEventsParser> _parser;
+    std::unique_ptr<ClrEventsParser> _clrParser;
 };

@@ -63,9 +63,16 @@ namespace Samples.ParallelCountSites
 
         private async Task<(string Output, int Size)> ProcessUrlAsync(string url, HttpClient client)
         {
-            byte[] byteArray = await client.GetByteArrayAsync(url);
-            var size = byteArray.Length;
-            return ($"{url,-90} {size,10:#,#}", size);
+            try
+            {
+                byte[] byteArray = await client.GetByteArrayAsync(url);
+                var size = byteArray.Length;
+                return ($"{url,-90} {size,10:#,#}", size);
+            }
+            catch (Exception ex)
+            {
+                return ($"{url,-90} failed: {ex.Message}", 0);
+            }
         }
     }
 }
