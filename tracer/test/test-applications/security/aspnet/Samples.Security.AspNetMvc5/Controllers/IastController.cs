@@ -775,8 +775,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             string OutputType,
             int SSRSReportID)
         {
-            // Get the value of the key the second item in Request.Query
-            var keyFirst = Request.QueryString.AllKeys.ElementAt(0);
             var key = Request.QueryString.AllKeys.ElementAt(1);
             var query1 = string.Format("\r\nDECLARE @{0}ID INT = (SELECT {0}ID FROM[Get{0}]('", key);
             var query2 = string.Format("'))\r\n\r\nSELECT SSRSReports FROM [ClientCentral].[dbo].[ClientDatabases] WHERE {0}ID = @{0}ID)", key);
