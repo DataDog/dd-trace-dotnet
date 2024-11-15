@@ -38,7 +38,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.event_rules.version": "1.13.2",
+        "_dd.appsec.event_rules.version": "1.13.3",
         "_dd.appsec.waf.version": "1.21.0",
         "_dd.runtime_family": "dotnet",
         "_dd.appsec.s.req.params": "H4sIAAAAAAAAA4uuVkrOzyspys/JSS1Ssoq2iNVRSkwuyczPA3NqYwH+CR9jIQAAAA==",
