@@ -64,6 +64,7 @@ private:
     IFrameStore* _pFrameStore;
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
+    MetricsRegistry& _metricsRegistry;
 
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 };

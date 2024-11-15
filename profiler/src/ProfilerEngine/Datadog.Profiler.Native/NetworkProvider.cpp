@@ -37,7 +37,8 @@ NetworkProvider::NetworkProvider(
     _pCorProfilerInfo{ pCorProfilerInfo },
     _pManagedThreadList{ pManagedThreadList },
     _pConfiguration{ pConfiguration },
-    _callstackProvider{ std::move(callstackProvider) }
+    _callstackProvider{ std::move(callstackProvider) },
+    _metricsRegistry{metricsRegistry}
 {
 }
 
@@ -59,7 +60,7 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
 
     // collect current call stack
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
