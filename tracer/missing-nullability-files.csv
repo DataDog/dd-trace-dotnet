@@ -28,7 +28,6 @@ src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
 src/Datadog.Trace/SpanKinds.cs
 src/Datadog.Trace/SpanTypes.cs
-src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
@@ -60,7 +59,6 @@ src/Datadog.Trace/Agent/TracesTransportType.cs
 src/Datadog.Trace/AppSec/AddressesConstants.cs
 src/Datadog.Trace/AppSec/AppSecRateLimiter.cs
 src/Datadog.Trace/AppSec/BlockingAction.cs
-src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
 src/Datadog.Trace/AppSec/IEvent.cs
 src/Datadog.Trace/AppSec/SecurityConstants.cs
