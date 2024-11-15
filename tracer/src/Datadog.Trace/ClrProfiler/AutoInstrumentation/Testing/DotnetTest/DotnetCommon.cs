@@ -69,9 +69,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                             continue;
                         }
 
-                        if (stackFrame.GetMethod()?.DeclaringType?.FullName?.Contains("Coverlet.MSbuild.Tasks") == true)
+                        if (stackFrame.GetMethod()?.DeclaringType?.FullName?.StartsWith("Coverlet.MSbuild.Tasks") == true)
                         {
-                            return (_isMsBuildTaskCache = true).Value;
+                            _isMsBuildTaskCache = true;
+                            return true;
                         }
                     }
 

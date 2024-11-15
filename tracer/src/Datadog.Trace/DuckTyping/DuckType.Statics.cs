@@ -189,24 +189,14 @@ namespace Datadog.Trace.DuckTyping
 
         private static Type? GetTypeFromPartialName(string partialName, bool throwOnError = false)
         {
-            Type? type = null;
-            ExceptionDispatchInfo? loadException = null;
+            // We configure it to throw in case throwOnError is true and the partial name contains a version (is not partial).
+            return Type.GetType(partialName, throwOnError: throwOnError && partialName.Contains("Version=")) ??
+                   GetTypeFromPartialNameSlow(partialName, throwOnError);
 
-            try
+            static Type? GetTypeFromPartialNameSlow(string partialName, bool throwOnError = false)
             {
-                // Let's try to find the type using the partial name first.
-                type = Type.GetType(partialName, throwOnError: throwOnError);
-            }
-            catch (Exception ex)
-            {
-                // let's capture the exception
-                loadException = ExceptionDispatchInfo.Capture(ex);
-            }
-
-            // If the type cannot be found, and the name doesn't contain a version,
-            // we try to find the type in the current domain/alc using any assembly that has the same name.
-            if (type is null && !partialName.Contains("Version="))
-            {
+                // If the type cannot be found, and the name doesn't contain a version,
+                // we try to find the type in the current domain/alc using any assembly that has the same name.
                 var typePair = partialName.Split([','], StringSplitOptions.RemoveEmptyEntries);
                 if (typePair.Length != 2)
                 {
@@ -230,29 +220,29 @@ namespace Datadog.Trace.DuckTyping
                             continue;
                         }
 
-                        type = assembly.GetType(typeValue, throwOnError: false);
+                        var type = assembly.GetType(typeValue, throwOnError: false);
                         if (type is not null)
                         {
-                            break;
+                            return type;
                         }
                     }
                 }
                 catch
                 {
-                    // If we cannot get the assemblies, we just ignore them.
-                    // we are not interested in throwing an exception here.
-                    // we will just continue with an empty array.
-                    // And will throw later the original Type.GetType exception.
+                    if (throwOnError)
+                    {
+                        throw;
+                    }
                 }
-            }
 
-            // If we were unable to load the type, and we have to throw an error, we do it now.
-            if (type is null && throwOnError)
-            {
-                loadException?.Throw();
-            }
+                // If we were unable to load the type, and we have to throw an error, we do it now.
+                if (throwOnError)
+                {
+                    DuckTypeException.Throw($"Type not found: {partialName}");
+                }
 
-            return type;
+                return null;
+            }
         }
 
         /// <summary>
