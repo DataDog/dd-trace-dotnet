@@ -763,5 +763,32 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content("Email sent");
         }
+        
+        [Route("Print")]
+        public ActionResult Print(
+            bool Encrypt,
+            string ClientDatabase,
+            int p,
+            int ID,
+            int EntityType,
+            bool Print,
+            string OutputType,
+            int SSRSReportID)
+        {
+            var key = Request.QueryString.AllKeys.ElementAt(1);
+            var query1 = string.Format("\r\nDECLARE @{0}ID INT = (SELECT {0}ID FROM[Get{0}]('", key);
+            var query2 = string.Format("'))\r\n\r\nSELECT SSRSReports FROM [ClientCentral].[dbo].[ClientDatabases] WHERE {0}ID = @{0}ID)", key);
+            var query = query1 + query2;
+
+            try
+            {
+                var rname = ExecuteQuery(query);
+                return Content($"Result: " + rname);
+            }
+            catch
+            {
+                return Content("Nothing to display.");
+            }
+        }
     }
 }

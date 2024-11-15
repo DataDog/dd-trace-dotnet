@@ -290,7 +290,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     {
                         result = Process.Start(file, argumentLine);
                     }
-                    
+
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -1056,7 +1056,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 ExecuteCommandInternal(i.ToString() + "-" + tainted, i.ToString() + "-" + tainted);
             }
-            
+
             return Content("TestJsonTagSizeExceeded");
         }
 
@@ -1151,6 +1151,33 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content(result, "text/html");
+        }
+
+        [HttpGet("Print")]
+        public ActionResult PrintReport(
+        [FromQuery] bool Encrypt,
+        [FromQuery] string ClientDatabase,
+        [FromQuery] int p,
+        [FromQuery] int ID,
+        [FromQuery] int EntityType,
+        [FromQuery] bool Print,
+        [FromQuery] string OutputType,
+        [FromQuery] int SSRSReportID)
+        {
+            var key = Request.Query.ElementAt(1).Key;
+            var query1 = string.Format("\r\nDECLARE @{0}ID INT = (SELECT {0}ID FROM[Get{0}]('", key);
+            var query2 = string.Format("'))\r\n\r\nSELECT SSRSReports FROM [ClientCentral].[dbo].[ClientDatabases] WHERE {0}ID = @{0}ID)", key);
+            var query = (query1 + query2);
+
+            try
+            { 
+                var rname = ExecuteQuery(query);
+                return Content($"Result: " + rname);
+            }
+            catch
+            {
+                return Content("Nothing to display.");
+            }
         }
     }
 }
