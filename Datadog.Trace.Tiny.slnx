@@ -1,0 +1,22 @@
+﻿<Solution>
+  <Folder Name="/deps/">
+    <Project Path="tracer\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" Type="Classic C#" />
+    <Project Path="tracer\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" Type="Classic C#" />
+    <Project Path="tracer\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj" />
+    <Project Path="tracer\src\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" />
+    <Project Path="tracer\src\Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" Type="Classic C#" />
+    <Project Path="tracer\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+    <Project Path="tracer\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="tracer\test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj" Type="Classic C#" />
+    <Project Path="tracer\test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj" Type="Classic C#" />
+    <Project Path="tracer\test\Datadog.Trace.IntegrationTests\Datadog.Trace.IntegrationTests.csproj" Type="Classic C#" />
+    <Project Path="tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" Type="Classic C#" />
+    <Project Path="tracer\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <Project Path="tracer\test\Datadog.Trace.Tests\Datadog.Trace.Tests.csproj" />
+  </Folder>
+</Solution>
