@@ -22,5 +22,6 @@ internal enum TargetFrameworks : uint
     NET5_0 = 64,
     NET6_0 = 128,
     NET7_0 = 256,
-    NET8_0 = 512
+    NET8_0 = 512,
+    NET9_0 = 1024,
 }
