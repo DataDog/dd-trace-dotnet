@@ -42,7 +42,7 @@
       process_id: 0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 158.0,
+      _dd.appsec.event_rules.loaded: 159.0,
       _dd.appsec.waf.duration: 0.0,
       _dd.appsec.waf.duration_ext: 0.0,
       _dd.top_level: 1.0,
