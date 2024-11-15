@@ -33,7 +33,7 @@ void ClrEventsParser::LogGcEvent(
         << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : ""))
         << GetCurrentGC().Number
         << " | ";
-    ((std::cout << args << ' '), ...);
+    (std::cout << ... << args);
     std::cout << std::endl;
 }
 
@@ -185,7 +185,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LogGcEvent("OnGCStart: ", payload.Count, payload.Depth, payload.Reason, payload.Type);
+        LogGcEvent("OnGCStart: ", payload.Count, " ", payload.Depth, " ", payload.Reason, " ", payload.Type);
         OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
@@ -197,7 +197,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LogGcEvent("OnGCEnd: ", payload.Count,  payload.Depth);
+        LogGcEvent("OnGCEnd: ", payload.Count, " ", payload.Depth);
 
         OnGCEnd(payload);
     }
@@ -315,7 +315,7 @@ void ClrEventsParser::NotifyGarbageCollectionStarted(std::chrono::nanoseconds ti
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        LogGcEvent("OnGarbageCollectionStart: ", number, generation, reason, type);
+        LogGcEvent("OnGarbageCollectionStart: ", number, " ", generation, " ", reason, " ", type);
 
         pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
@@ -336,7 +336,7 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        LogGcEvent("OnGarbageCollectionEnd: ", number, generation, reason,  type);
+        LogGcEvent("OnGarbageCollectionEnd: ", number, " ", generation, " ", reason, " ", type);
 
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
@@ -406,7 +406,8 @@ void ClrEventsParser::OnGCStart(std::chrono::nanoseconds timestamp, GCStartPaylo
         payload.Count,
         payload.Depth,
         static_cast<GCReason>(payload.Reason),
-        static_cast<GCType>(payload.Type));
+        static_cast<GCType>(payload.Type)
+    );
 
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
     {

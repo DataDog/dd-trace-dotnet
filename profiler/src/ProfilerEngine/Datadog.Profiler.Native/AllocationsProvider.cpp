@@ -24,13 +24,17 @@
 #include "shared/src/native-src/string.h"
 
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
-    {{"alloc-samples", "count"},
-     {"alloc-size", "bytes"}});
+    {
+        {"alloc-samples", "count"},
+        {"alloc-size", "bytes"}
+    }
+);
 
 std::vector<SampleValueType> AllocationsProvider::FrameworkSampleTypeDefinitions(
     {
         {"alloc-samples", "count"},
-    });
+    }
+);
 
 AllocationsProvider::AllocationsProvider(
     bool isFramework,
