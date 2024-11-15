@@ -79,7 +79,6 @@ src/Datadog.Trace/ClrProfiler/IAutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/ICommonTracer.cs
 src/Datadog.Trace/ClrProfiler/IDistributedTracer.cs
 src/Datadog.Trace/ClrProfiler/Instrumentation.cs
-src/Datadog.Trace/ClrProfiler/InstrumentationCategory.cs
 src/Datadog.Trace/ClrProfiler/InstrumentationDefinitions.cs
 src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs
 src/Datadog.Trace/ClrProfiler/IntegrationVersionRange.cs

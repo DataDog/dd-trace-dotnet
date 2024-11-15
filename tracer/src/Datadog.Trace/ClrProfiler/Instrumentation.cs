@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Instrumentation));
 
-        private static bool legacyMode = false;
+        private static TargetFrameworks _targetFramework = TargetFrameworks.None;
 
         /// <summary>
         /// Gets a value indicating whether Datadog's profiler is attached to the current process.
@@ -97,10 +97,11 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Initialization started.");
 
                 var sw = Stopwatch.StartNew();
-                legacyMode = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
-                if (legacyMode)
+
+                bool versionMismatch = GetNativeTracerVersion() != TracerConstants.ThreePartVersion;
+                if (versionMismatch)
                 {
-                    InitializeLegacy();
+                    Log.Error("Version mismatch detected. This scenario should not exist. Native: {Native} Managed: {Managed}", GetNativeTracerVersion(), TracerConstants.ThreePartVersion);
                 }
                 else
                 {
@@ -108,6 +109,8 @@ namespace Datadog.Trace.ClrProfiler
 
                     try
                     {
+                        _targetFramework = (TargetFrameworks)Enum.Parse(typeof(TargetFrameworks), ConfigTelemetryData.ManagedTracerTfmValue.ToUpper().Replace(".", "_"));
+
                         Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
@@ -138,14 +141,15 @@ namespace Datadog.Trace.ClrProfiler
                             if (raspEnabled)
                             {
                                 Log.Debug("Enabling Rasp");
+                                category |= InstrumentationCategory.Rasp;
                             }
 
-                            EnableTracerInstrumentations(category, raspEnabled: raspEnabled);
+                            EnableTracerInstrumentations(category);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error sending CallTarget integration definitions to native library");
+                        Log.Error(ex, "Error sending definitions to native library");
                     }
 
                     TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
@@ -210,68 +214,6 @@ namespace Datadog.Trace.ClrProfiler
                     return true;
                 }
             }
-        }
-
-        /// <summary>
-        /// Initializes global instrumentation values.
-        /// </summary>
-        public static void InitializeLegacy()
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                Log.Debug("Enabling by ref instrumentation.");
-                NativeMethods.EnableByRefInstrumentation();
-                Log.Information("ByRef instrumentation enabled.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
-            }
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.ByRefPinvoke, sw.ElapsedMilliseconds);
-            sw.Restart();
-
-            try
-            {
-                Log.Debug("Enabling calltarget state by ref.");
-                NativeMethods.EnableCallTargetStateByRef();
-                Log.Information("CallTarget State ByRef enabled.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
-            }
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetStateByRefPinvoke, sw.ElapsedMilliseconds);
-            sw.Restart();
-
-            try
-            {
-                Log.Debug("Initializing TraceAttribute instrumentation.");
-                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
-                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
-                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error initializing TraceAttribute instrumentation");
-            }
-
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.TraceAttributesPinvoke, sw.ElapsedMilliseconds);
-            sw.Restart();
-
-            InitializeNoNativeParts(sw);
-
-            InitializeInstrumentationsLegacy(InstrumentationCategory.Tracing, sw);
-
-            InitializeTracer(sw);
-
-            InitializeAppSecLegacy(sw);
-
-            InitializeIastLegacy(sw);
-
-            Log.Debug("Legacy Initialization finished.");
         }
 
         private static void RunShutdown(Exception ex)
@@ -478,35 +420,6 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void InitializeAppSecLegacy(Stopwatch sw)
-        {
-            if (!legacyMode) { return; }
-
-            if (!Security.Instance.Settings.AppsecEnabled)
-            {
-                Log.Debug("Skipping AppSec initialization because AppSec is disabled");
-            }
-            else
-            {
-                InitializeInstrumentationsLegacy(InstrumentationCategory.AppSec, sw);
-            }
-        }
-
-        private static void InitializeIastLegacy(Stopwatch sw)
-        {
-            if (!legacyMode) { return; }
-
-            if (!Iast.Iast.Instance.Settings.Enabled)
-            {
-                Log.Debug("Skipping Iast initialization because Iast is disabled");
-            }
-            else
-            {
-                Iast.Iast.Instance.InitAnalyzers();
-                InitializeInstrumentationsLegacy(InstrumentationCategory.Iast, sw);
-            }
-        }
-
 #if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
@@ -608,199 +521,49 @@ namespace Datadog.Trace.ClrProfiler
             TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.DynamicInstrumentation, sw.ElapsedMilliseconds);
         }
 
-        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null, bool raspEnabled = false)
+        internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
-            if (legacyMode)
-            {
-                InitializeInstrumentationsLegacy(categories, sw);
-            }
-            else
-            {
-                var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
-                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
-                EnableCallSiteInstrumentations(categories, sw, raspEnabled: raspEnabled);
-            }
+            var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
+            TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
+            EnableCallSiteInstrumentations(categories, sw);
         }
 
-        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw, bool raspEnabled = false)
+        private static void EnableCallSiteInstrumentations(InstrumentationCategory categories, Stopwatch sw)
         {
             // Since we have no RASP especific instrumentations for now, we will only filter callsite aspects if RASP is
             // enabled and IAST is disabled. We don't expect RASP only instrumentation to be used in the near future.
 
             var isIast = categories.HasFlag(InstrumentationCategory.Iast);
+            var raspEnabled = categories.HasFlag(InstrumentationCategory.Rasp);
 
             if (isIast || raspEnabled)
             {
-                string[] inputAspects = null;
+                var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
+                Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
 
-                inputAspects = isIast ? AspectDefinitions.GetAspects() : AspectDefinitions.GetRaspAspects();
+                var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, _targetFramework);
+                Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
 
-                if (inputAspects != null)
+                if (isIast)
                 {
-                    var debugMsg = (isIast && raspEnabled) ? "IAST/RASP" : (isIast ? "IAST" : "RASP");
-                    Log.Debug("Registering {DebugMsg} Callsite Dataflow Aspects into native library.", debugMsg);
+                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
+                }
 
-                    var aspects = NativeMethods.RegisterIastAspects(inputAspects);
-                    Log.Information<int, string>("{Aspects} {DebugMsg} Callsite Dataflow Aspects added to the profiler.", aspects, debugMsg);
-
+                if (sw != null)
+                {
                     if (isIast)
                     {
-                        TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
+                        TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
                     }
 
-                    if (sw != null)
-                    {
-                        if (isIast)
-                        {
-                            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
-                        }
-
-                        sw.Restart();
-                    }
+                    sw.Restart();
                 }
             }
         }
 
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
-            if (legacyMode)
-            {
-                RemoveTracerInstrumentationsLegacy(categories);
-            }
-            else
-            {
-                NativeMethods.DisableCallTargetDefinitions((uint)categories);
-            }
-        }
-
-        private static void InitializeInstrumentationsLegacy(InstrumentationCategory categories, Stopwatch sw = null)
-        {
-            if (categories.HasFlag(InstrumentationCategory.Tracing))
-            {
-                try
-                {
-                    Log.Debug("Sending CallTarget integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetAllDefinitions();
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                    Log.Information<int>("The profiler has been initialized with {Count} definitions.", payload.Definitions.Length);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, payload.Definitions.Length);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error sending CallTarget integration definitions to native library");
-                }
-
-                if (sw != null)
-                {
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
-                    sw.Restart();
-                }
-
-                try
-                {
-                    Log.Debug("Sending CallTarget derived integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetDerivedDefinitions();
-                    NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
-                    Log.Information<int>("The profiler has been initialized with {Count} derived definitions.", payload.Definitions.Length);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTargetDerived, payload.Definitions.Length);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error sending CallTarget derived integration definitions to native library");
-                }
-
-                if (sw != null)
-                {
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDerivedDefsPinvoke, sw.ElapsedMilliseconds);
-                    sw.Restart();
-                }
-
-                try
-                {
-                    Log.Debug("Sending CallTarget interface integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
-                    NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
-                    Log.Information<int>("The profiler has been initialized with {Count} interface definitions.", payload.Definitions.Length);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTargetInterfaces, payload.Definitions.Length);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error sending CallTarget interface integration definitions to native library");
-                }
-
-                if (sw != null)
-                {
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetInterfaceDefsPinvoke, sw.ElapsedMilliseconds);
-                    sw.Restart();
-                }
-            }
-
-            if (categories.HasFlag(InstrumentationCategory.AppSec))
-            {
-                int defs = 0, derived = 0;
-                try
-                {
-                    Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                    defs = payload.Definitions.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error adding CallTarget AppSec integration definitions to native library");
-                }
-
-                try
-                {
-                    Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                    derived = payload.Definitions.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error adding CallTarget appsec derived integration definitions to native library");
-                }
-
-                Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions added to the profiler.", defs, derived);
-            }
-
-            if (categories.HasFlag(InstrumentationCategory.Iast))
-            {
-                try
-                {
-                    int defs = 0, derived = 0;
-                    Log.Debug("Adding CallTarget IAST integration definitions to native library.");
-                    var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                    defs = payload.Definitions.Length;
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.Iast, defs);
-
-                    Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
-                    payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                    derived = payload.Definitions.Length;
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastDerived, derived);
-
-                    Log.Information<int, int>("{Defs} IAST definitions and {Derived} IAST derived definitions added to the profiler.", defs, derived);
-
-                    Log.Debug("Registering IAST Callsite Dataflow Aspects into native library.");
-                    var aspects = NativeMethods.RegisterIastAspects(AspectDefinitions.GetAspects());
-                    Log.Information<int>("{Aspects} IAST Callsite Dataflow Aspects added to the profiler.", aspects);
-                    TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
-                }
-                catch (Exception ex)
-                {
-                    Iast.Iast.Instance.Settings.Enabled = false;
-                    Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
-                }
-
-                if (sw != null)
-                {
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
-                    sw.Restart();
-                }
-            }
+            NativeMethods.DisableCallTargetDefinitions((uint)categories);
         }
 
         private static void RemoveTracerInstrumentationsLegacy(InstrumentationCategory categories)

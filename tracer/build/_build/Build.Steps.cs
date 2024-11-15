@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CodeGenerators;
 using Mono.Cecil;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -2559,6 +2560,16 @@ partial class Build
                 }
             }
         });
+
+    Target GenerateCallSites => _ => _
+       .Description("Generate CallSite native files")
+       //.DependsOn(CompileManagedSrc)
+       //.Before(CompileTracerNativeSrc)
+       .Executes(() =>
+       {
+            var outputPath = NativeTracerProject.Directory / "Generated";
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", outputPath);
+       });
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()

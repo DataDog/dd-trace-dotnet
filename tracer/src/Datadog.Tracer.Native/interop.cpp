@@ -9,6 +9,7 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
+#include "Generated/generated_definitions.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -212,6 +213,21 @@ EXTERN_C long STDAPICALLTYPE DisableCallTargetDefinitions(UINT32 disabledCategor
     return trace::profiler->DisableCallTargetDefinitions(disabledCategories);
 }
 
+EXTERN_C int InitEmbeddedCallSiteDefinitions(UINT32 enabledCategories, UINT32 platform)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallSiteDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    auto targets = trace::GeneratedDefinitions::GetCallSites();
+    if (targets)
+    {
+        return trace::profiler->RegisterIastAspects((WCHAR**) targets->data(), targets->size(), enabledCategories, platform);
+    }
+    return 0;
+}
 
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {

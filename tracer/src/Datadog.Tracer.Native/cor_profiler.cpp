@@ -2130,14 +2130,14 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
     return numReverts;
 }
 
-int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
     if (_dataflow != nullptr)
     {
         Logger::Info("Registering Callsite Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength);
+        _dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
         return aspectsLength;
     }
     else
