@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public abstract class GrpcTestsBase : TracingIntegrationTest
     {
         private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
-        private static readonly Version MinimumSupportedVersion = new("2.27.0");
+        private static readonly Version MinimumSupportedVersion = new("2.30.0");
         private static readonly HashSet<string> ExcludeTags = new HashSet<string>
         {
             "clientmeta",
