@@ -18,9 +18,9 @@ namespace Samples.ParallelCountSites
 
         private readonly IEnumerable<string> _urlList = new string[]
         {
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5003325?fullName=Christophe%20Nasarre",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5003493?fullName=Kevin%20Gosse",
-            "https://mvp.microsoft.com/fr-fr/PublicProfile/5002437?fullName=Konrad%20Kokosa",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5003325?fullName=Christophe%20Nasarre",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5003493?fullName=Kevin%20Gosse",
+            // "https://mvp.microsoft.com/fr-fr/PublicProfile/5002437?fullName=Konrad%20Kokosa",
             // "https://mvp.microsoft.com/fr-fr/PublicProfile/5001937?fullName=Adrien%20Clerbois",
             // "https://mvp.microsoft.com/fr-fr/PublicProfile/5000999?fullName=Alexandre%20Mutel",
             // "https://mvp.microsoft.com/fr-fr/PublicProfile/4025637?fullName=Bruno%20Thierry%20Boucard",

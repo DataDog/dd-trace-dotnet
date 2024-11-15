@@ -317,22 +317,22 @@ void CorProfilerCallback::InitializeServices()
             _pGarbageCollectionProvider = nullptr;
         }
 
-        //if (_pConfiguration->IsHttpProfilingEnabled())
-        //{
-        //    _pNetworkProvider = RegisterService<NetworkProvider>(
-        //        valueTypeProvider,
-        //        _pCorProfilerInfo,
-        //        _pManagedThreadList,
-        //        _pFrameStore.get(),
-        //        _pThreadsCpuManager,
-        //        _pAppDomainStore.get(),
-        //        _pRuntimeIdStore,
-        //        _pConfiguration.get(),
-        //        _metricsRegistry,
-        //        CallstackProvider(_memoryResourceManager.GetDefault()),
-        //        MemoryResourceManager::GetDefault()
-        //    );
-        //}
+        if (_pConfiguration->IsHttpProfilingEnabled())
+        {
+            _pNetworkProvider = RegisterService<NetworkProvider>(
+                valueTypeProvider,
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                _pRuntimeIdStore,
+                _pConfiguration.get(),
+                _metricsRegistry,
+                CallstackProvider(_memoryResourceManager.GetDefault()),
+                MemoryResourceManager::GetDefault()
+            );
+        }
 
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
@@ -340,7 +340,7 @@ void CorProfilerCallback::InitializeServices()
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            nullptr//_pNetworkProvider
+            _pNetworkProvider
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -581,10 +581,10 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
 
-        //if (_pConfiguration->IsHttpProfilingEnabled())
-        //{
-        //    _pSamplesCollector->Register(_pNetworkProvider);
-        //}
+        if (_pConfiguration->IsHttpProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pNetworkProvider);
+        }
     }
     // CLR events-based providers for .NET Framework
     else if (_pEtwEventsManager != nullptr)
@@ -1273,7 +1273,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[5]
+            // we also need to enable the TPL event source so the activities will be correlated
+            activatedKeywords |= ClrEventsParser::KEYWORD_TPL;
+
+            providerCount = 5;
+            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[providerCount]
             {
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
@@ -1306,8 +1310,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                     nullptr
                 }
             };
-
-            providerCount = 1 + 4;
         }
         else
         {

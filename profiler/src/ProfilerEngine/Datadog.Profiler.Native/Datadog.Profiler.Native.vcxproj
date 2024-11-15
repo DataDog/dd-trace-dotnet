@@ -383,6 +383,7 @@
     <ClInclude Include="dd_profiler_version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ActivityHelpers.cpp" />
     <ClCompile Include="AdaptiveSampler.cpp" />
     <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AllocationsRecorder.cpp" />

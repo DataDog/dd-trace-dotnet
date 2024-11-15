@@ -13,10 +13,21 @@ namespace Samples.ParallelCountSites
     {
         public static async Task Main(string[] args)
         {
+            int iterations = 5;
+            if (args.Length == 1)
+            {
+                if (int.TryParse(args[0], out int value))
+                {
+                    iterations = value;
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid iterations count: {args[0]}");
+                }
+            }
+
             await Console.Out.WriteLineAsync($"pid = {Process.GetCurrentProcess().Id}");
             await Console.Out.WriteLineAsync();
-
-            int iterations = 5;
 
             var downloader = new Downloader();
             await downloader.SumPagesSize(iterations);

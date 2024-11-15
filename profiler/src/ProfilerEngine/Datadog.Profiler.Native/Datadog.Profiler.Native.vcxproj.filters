@@ -749,6 +749,9 @@
     <ClCompile Include="NetworkProvider.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="ActivityHelpers.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

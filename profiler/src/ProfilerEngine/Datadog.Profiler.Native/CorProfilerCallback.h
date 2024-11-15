@@ -38,7 +38,6 @@
 #include "shared/src/native-src/string.h"
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
-//#include "NetworkProvider.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -55,7 +54,7 @@ class IConfiguration;
 class IExporter;
 class RuntimeIdStore;
 class TimerCreateCpuProfiler;
-//class NetworkProvider;
+class NetworkProvider;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -249,7 +248,7 @@ private :
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
-    //NetworkProvider* _pNetworkProvider = nullptr;
+    NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;

@@ -6,9 +6,7 @@
 NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
     :
     Url(std::move(url)),
-    StartTimestamp(startTimestamp),
-    EndTimestamp(0),
-    StatusCode(0)
+    StartTimestamp(startTimestamp)
 {
     AppDomainId = 0;
     LocalRootSpanID = 0;

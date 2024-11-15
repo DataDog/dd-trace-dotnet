@@ -17,7 +17,7 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <memory>
-//#include <unordered_map>
+#include <unordered_map>
 
 class SampleValueTypeProvider;
 class IManagedThreadList;
@@ -53,7 +53,7 @@ public:
     void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
 
 private:
-    //bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
+    bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
     bool CaptureThreadInfo(NetworkRequestInfo& info);
 
 private:
@@ -65,5 +65,5 @@ private:
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
 
-    //std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
+    std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 };

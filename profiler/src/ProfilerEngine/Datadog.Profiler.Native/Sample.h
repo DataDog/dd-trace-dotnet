@@ -172,6 +172,8 @@ public:
     static const std::string ObjectGenerationLabel;
     static const std::string RequestUrlLabel;
     static const std::string RequestTimeStampLabel;
+    static const std::string RequestStatusCodeLabel;
+    static const std::string RequestErrorLabel;
 
 private:
     uint64_t _timestamp;

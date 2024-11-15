@@ -23,8 +23,4 @@ public:
     AppDomainID AppDomainId;
     Callstack StartCallStack;
     std::shared_ptr<ManagedThreadInfo> StartThreadInfo;
-
-    // HTTP request end
-    uint64_t EndTimestamp;
-    int32_t StatusCode;
 };
