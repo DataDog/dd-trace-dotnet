@@ -21,13 +21,13 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOriginManager));
 
-        private readonly int _maxUserFrames;
-
-        private readonly bool _isCodeOriginEnabled;
-
         private readonly ConcurrentDictionary<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
 
         private readonly CodeOriginTags _tags;
+
+        private readonly int _maxUserFrames;
+
+        private readonly bool _isCodeOriginEnabled;
 
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
 
@@ -35,10 +35,10 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private SpanCodeOriginManager()
         {
+            _tags = new CodeOriginTags(_maxUserFrames);
             var settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
             _maxUserFrames = settings.CodeOriginMaxUserFrames;
             _isCodeOriginEnabled = settings.CodeOriginForSpansEnabled;
-            _tags = new CodeOriginTags(_maxUserFrames);
             _thirdPartyDetectionExcludes = settings.ThirdPartyDetectionExcludes;
             _thirdPartyDetectionIncludes = settings.ThirdPartyDetectionIncludes;
         }
