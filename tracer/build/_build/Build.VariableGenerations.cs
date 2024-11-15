@@ -460,7 +460,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"), // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "35-5.0"),
@@ -575,7 +575,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "9-9.0"),
+                            // new (publishFramework: TargetFramework.NET9_0, "9-9.0"), // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET6_0, "9-6.0"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -793,7 +793,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
@@ -964,7 +964,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
