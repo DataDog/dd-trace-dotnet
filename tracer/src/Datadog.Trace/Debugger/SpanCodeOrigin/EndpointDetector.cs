@@ -165,10 +165,24 @@ internal static class EndpointDetector
     {
         foreach (var attributeHandle in attributes)
         {
+            string fullName;
             var attribute = reader.GetCustomAttribute(attributeHandle);
-            var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
-            var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
-            var fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
+            if (attribute.Constructor.Kind == HandleKind.MemberReference)
+            {
+                var ctor = reader.GetMemberReference((MemberReferenceHandle)attribute.Constructor);
+                var attributeType = reader.GetTypeReference((TypeReferenceHandle)ctor.Parent);
+                fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
+            }
+            else if (attribute.Constructor.Kind == HandleKind.MethodDefinition)
+            {
+                var ctor = reader.GetMethodDefinition((MethodDefinitionHandle)attribute.Constructor);
+                var attributeType = reader.GetTypeDefinition(ctor.GetDeclaringType());
+                fullName = GetFullTypeName(attributeType.Namespace, attributeType.Name, reader);
+            }
+            else
+            {
+                continue;
+            }
 
             if (attributeNames.Contains(fullName))
             {
