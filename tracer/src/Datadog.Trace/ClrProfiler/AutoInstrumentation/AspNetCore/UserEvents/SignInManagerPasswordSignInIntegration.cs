@@ -83,7 +83,11 @@ public static class SignInManagerPasswordSignInIntegration
             if (security.IsAnonUserTrackingMode)
             {
                 var anonId = UserEventsCommon.GetAnonId(id);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                if (anonId is not null)
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                }
+
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else

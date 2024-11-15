@@ -88,7 +88,10 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                    if (anonId != null)
+                    {
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                    }
                 }
                 else
                 {
@@ -104,7 +107,10 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.User.Id, anonId);
+                    if (anonId != null)
+                    {
+                        tryAddTag(Tags.User.Id, anonId);
+                    }
                 }
                 else
                 {

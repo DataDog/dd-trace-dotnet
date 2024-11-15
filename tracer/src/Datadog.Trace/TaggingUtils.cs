@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 
 namespace Datadog.Trace;
@@ -14,9 +15,9 @@ internal class TaggingUtils
         return GetSpanSetter(span, out _);
     }
 
-    internal static Action<string, string> GetSpanSetter(ISpan span, out Span spanClass, bool replaceIfExists = true)
+    internal static Action<string, string> GetSpanSetter(ISpan span, out Span? spanClass, bool replaceIfExists = true)
     {
-        TraceContext traceContext = null;
+        TraceContext? traceContext = null;
         if (span is Span spanClassTemp)
         {
             spanClass = spanClassTemp;

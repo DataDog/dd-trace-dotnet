@@ -3,10 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Generic;
-using System.Web;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.Headers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -41,7 +40,7 @@ public static class EventTrackingSdk
         TrackUserLoginSuccessEvent(userId, metadata, Tracer.Instance);
     }
 
-    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string>? metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -55,13 +54,13 @@ public static class EventTrackingSdk
             ThrowHelper.ThrowException("Can't create a tracking event with no active span");
         }
 
-        var setTag = TaggingUtils.GetSpanSetter(span);
+        var setTag = TaggingUtils.GetSpanSetter(span, out var internalSpan);
 
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
         setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, "true");
         setTag(Tags.User.Id, userId);
 
-        if (metadata != null)
+        if (metadata is { Count: > 0 })
         {
             foreach (var kvp in metadata)
             {
@@ -69,23 +68,24 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(span);
+        if (internalSpan is not null)
+        {
+            FillUp(internalSpan);
+        }
     }
 
-    private static void FillUp(ISpan span)
+    private static void FillUp(Span span)
     {
-        if (span is Span internalSpan)
-        {
-            Security.Instance.SetTraceSamplingPriority(internalSpan);
+        span = span.Context.TraceContext?.RootSpan ?? span;
+        Security.Instance.SetTraceSamplingPriority(span);
 #if !NETFRAMEWORK
-            if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
-            {
-                SecurityCoordinator.CollectHeaders(internalSpan);
-            }
-#else
-            SecurityCoordinator.CollectHeaders(internalSpan);
-#endif
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+        {
+            SecurityCoordinator.CollectHeaders(span);
         }
+#else
+        SecurityCoordinator.CollectHeaders(span);
+#endif
     }
 
     /// <summary>
@@ -107,20 +107,20 @@ public static class EventTrackingSdk
     /// <param name="exists">If the userId associated with the login failure exists</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     [PublicApi]
-    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
+    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string>? metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
         TrackUserLoginFailureEvent(userId, exists, metadata, Tracer.Instance);
     }
 
-    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string>? metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
             ThrowHelper.ThrowArgumentNullException(nameof(userId));
         }
 
-        var span = tracer?.ActiveScope?.Span;
+        var span = tracer.ActiveScope?.Span;
 
         if (span is null)
         {
@@ -134,11 +134,12 @@ public static class EventTrackingSdk
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? "true" : "false");
 
-        if (metadata != null)
+        if (metadata is { Count: > 0 })
         {
+            var successTagPrefix = $"{Tags.AppSec.EventsUsers.LoginEvent.Failure}.";
             foreach (var kvp in metadata)
             {
-                setTag($"{Tags.AppSec.EventsUsers.LoginEvent.Failure}.{kvp.Key}", kvp.Value);
+                setTag(successTagPrefix + kvp.Key, kvp.Value);
             }
         }
 
@@ -165,38 +166,45 @@ public static class EventTrackingSdk
     /// <param name="eventName">the name of the event to be tracked</param>
     /// <param name="metadata">Metadata associated with the custom event</param>
     [PublicApi]
-    public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
+    public static void TrackCustomEvent(string eventName, IDictionary<string, string>? metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
         TrackCustomEvent(eventName, metadata, Tracer.Instance);
     }
 
-    internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
+    internal static void TrackCustomEvent(string eventName, IDictionary<string, string>? metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(eventName))
         {
             ThrowHelper.ThrowArgumentNullException(nameof(eventName));
         }
 
-        var span = tracer?.ActiveScope?.Span;
+        var span = tracer.ActiveScope?.Span;
 
         if (span is null)
         {
             ThrowHelper.ThrowException("Can't create a tracking event with no active span");
         }
 
-        var setTag = TaggingUtils.GetSpanSetter(span);
+        var setTag = TaggingUtils.GetSpanSetter(span, out var internalSpan);
 
         setTag(Tags.AppSec.Track(eventName), "true");
 
-        setTag($"_dd.{Tags.AppSec.Events}{eventName}.sdk", "true");
+        var eventPrefix = $"{Tags.AppSec.Events}{eventName}";
 
-        if (metadata != null)
+        setTag($"_dd.{eventPrefix}.sdk", "true");
+
+        if (metadata is { Count: > 0 })
         {
             foreach (var kvp in metadata)
             {
-                setTag($"{Tags.AppSec.Events}{eventName}.{kvp.Key}", kvp.Value);
+                setTag($"{eventPrefix}.{kvp.Key}", kvp.Value);
             }
+        }
+
+        if (internalSpan is not null)
+        {
+            FillUp(internalSpan);
         }
     }
 }
