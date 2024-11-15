@@ -460,6 +460,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "35-5.0"),
@@ -555,6 +556,8 @@ partial class Build : NukeBuild
                         "rhel",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9-9.0"),
+                            new (publishFramework: TargetFramework.NET9_0, "8-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "8-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -572,7 +575,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new SmokeTestImage[]
                         {
-                            // (publishFramework: TargetFramework.NET7_0, "9-7.0"), Not updated from RC1 yet
+                            new (publishFramework: TargetFramework.NET9_0, "9-9.0"),
                             new (publishFramework: TargetFramework.NET6_0, "9-6.0"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -590,6 +593,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
@@ -664,6 +668,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             // https://github.com/dotnet/runtime/issues/66707
@@ -788,6 +793,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
@@ -840,6 +846,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET7_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
@@ -957,6 +964,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
@@ -1006,6 +1014,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
