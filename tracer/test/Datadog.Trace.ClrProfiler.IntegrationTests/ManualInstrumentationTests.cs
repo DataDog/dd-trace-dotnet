@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -54,11 +56,15 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ReadyToRunManualAndAutomatic()
     {
-        // FIXME: .NET 9 RC2 doesn't seem to behave well with ReadyToRun in our CI
-        // I'm 99.9% sure it's an issue in our build but it's more hassle than it's worth to fix right now
-        // I'm hoping that we can just remove this skip for the GA of .NET 9
-#if NET9_0
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+#if NET9_0_OR_GREATER
+        // OK, I know, this is weird, but AFAICT they changed the host FX lookup logic in .NET 9,
+        // and for some reason it doesn't seem to work properly in this _one_specific case...
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+         && Environment.GetEnvironmentVariable("DOTNET_EXE_32") is { } dotnet32BitExe)
+        {
+            var root = Path.GetDirectoryName(dotnet32BitExe);
+            SetEnvironmentVariable("DOTNET_ROOT(x86)", root);
+        }
 #endif
 #if !NET6_0_OR_GREATER
         // osx-arm64 doesn't work with Ready2Run

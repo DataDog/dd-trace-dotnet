@@ -95,4 +95,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
     CallstackProvider _callstackProvider;
+    MetricsRegistry& _metricsRegistry;
 };

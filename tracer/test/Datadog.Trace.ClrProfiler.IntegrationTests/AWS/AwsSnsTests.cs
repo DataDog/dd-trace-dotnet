@@ -53,10 +53,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
 #if NETFRAMEWORK
-                var expectedCount = 8;
+                var expectedCount = 10;
                 var frameworkName = "NetFramework";
 #else
-                var expectedCount = 4;
+                var expectedCount = 5;
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
@@ -85,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.DisableRequireUniquePrefix();
 
                 // Note: http.request spans are expected for the following SNS APIs that don't have explicit support
+                // - CreateTopic
+                // - DeleteTopic
                 // - ListTopics
                 // - GetTopicAttributes
                 // - SetTopicAttributes
@@ -96,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     => packageVersion switch
                     {
                         // Lower versions than specified don't contain PublishBatch method
-                        null or "" => ".pre3.7.101.88",
-                        { } v when new Version(v) < new Version("3.7.101.88") => ".pre3.7.101.88",
+                        null or "" => string.Empty,
+                        { } v when new Version(v) < new Version("3.7.3") => ".pre3.7.3",
                         _ => string.Empty
                     };
             }

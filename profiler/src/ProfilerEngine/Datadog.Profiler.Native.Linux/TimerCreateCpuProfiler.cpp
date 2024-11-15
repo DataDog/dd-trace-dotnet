@@ -4,6 +4,7 @@
 #include "TimerCreateCpuProfiler.h"
 
 #include "CpuTimeProvider.h"
+#include "DiscardMetrics.h"
 #include "IManagedThreadList.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -22,7 +23,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     ProfilerSignalManager* pSignalManager,
     IManagedThreadList* pManagedThreadsList,
     CpuTimeProvider* pProvider,
-    CallstackProvider callstackProvider) noexcept
+    CallstackProvider callstackProvider,
+    MetricsRegistry& metricsRegistry) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
@@ -32,6 +34,8 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
+    _totalSampling = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_cpu_sampling_requests");
+    _discardMetrics = metricsRegistry.GetOrRegister<DiscardMetrics>("dotnet_cpu_sample_discarded");
 }
 
 TimerCreateCpuProfiler::~TimerCreateCpuProfiler()
@@ -122,6 +126,7 @@ bool TimerCreateCpuProfiler::CanCollect(void* ctx)
     // TODO (in another PR): add metrics about reasons we could not collect
     if (dd_inside_wrapped_functions != nullptr && dd_inside_wrapped_functions() != 0)
     {
+        _discardMetrics->Incr<DiscardReason::InsideWrappedFunction>();
         return false;
     }
 
@@ -131,6 +136,7 @@ bool TimerCreateCpuProfiler::CanCollect(void* ctx)
     // but that less likely)
     if (sigismember(&(context->uc_sigmask), SIGSEGV) == 1)
     {
+        _discardMetrics->Incr<DiscardReason::InSegvHandler>();
         return false;
     }
 
@@ -184,9 +190,12 @@ private:
 
 bool TimerCreateCpuProfiler::Collect(void* ctx)
 {
+    _totalSampling->Incr();
+
     auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (threadInfo == nullptr)
     {
+        _discardMetrics->Incr<DiscardReason::UnknownThread>();
         // Ooops should never happen
         return false;
     }
@@ -194,6 +203,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     StackWalkLock l(threadInfo);
     if (!l.IsLockAcquired())
     {
+        _discardMetrics->Incr<DiscardReason::FailedAcquiringLock>();
         return false;
     }
 
@@ -209,6 +219,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
 
     if (callstack.Capacity() <= 0)
     {
+        _discardMetrics->Incr<DiscardReason::UnsufficientSpace>();
         return false;
     }
 
@@ -219,12 +230,14 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
 
     if (count == 0)
     {
-        // TODO a metric on event without callstack ?
+        _discardMetrics->Incr<DiscardReason::EmptyBacktrace>();
         return false;
     }
 
     RawCpuSample rawCpuSample;
 
+    // TO FIX this breaks the CI Visibility.
+    // No Cpu samples will have the predefined span id, root local span id
     std::tie(rawCpuSample.LocalRootSpanId, rawCpuSample.SpanId) = threadInfo->GetTracingContext();
 
     rawCpuSample.Timestamp = OpSysTools::GetTimestampSafe();

@@ -2568,14 +2568,13 @@
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
     Type: http,
-    ParentId: Id_113,
+    ParentId: Id_111,
     Tags: {
-      component: HttpMessageHandler,
+      component: WebRequest,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
       http.method: POST,
       http.status_code: 200,
-      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync,
+      http.url: http://localhost:00000/Guid_4/?BeginGetRequestStream_NoBuffering,
       language: dotnet,
       out.host: localhost,
       runtime-id: Guid_1,
@@ -2593,7 +2592,7 @@
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
     Type: http,
-    ParentId: Id_114,
+    ParentId: Id_113,
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
@@ -2618,6 +2617,56 @@
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
     Type: http,
+    ParentId: Id_114,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_123,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_113,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_124,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
     ParentId: Id_115,
     Tags: {
       component: HttpMessageHandler,
@@ -2638,7 +2687,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_123,
+    SpanId: Id_125,
     Name: http.request,
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2665,7 +2714,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_124,
+    SpanId: Id_126,
     Name: http.request,
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2689,7 +2738,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_125,
+    SpanId: Id_127,
     Name: http.request,
     Resource: POST localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2713,7 +2762,31 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_126,
+    SpanId: Id_128,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_109,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetRequestStream_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_129,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2737,7 +2810,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_127,
+    SpanId: Id_130,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2761,7 +2834,31 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_128,
+    SpanId: Id_131,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_101,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponse_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_132,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2785,7 +2882,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_129,
+    SpanId: Id_133,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2809,7 +2906,7 @@
   },
   {
     TraceId: Id_99,
-    SpanId: Id_130,
+    SpanId: Id_134,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2838,7 +2935,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_99,
-    SpanId: Id_131,
+    SpanId: Id_135,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2868,7 +2965,7 @@ at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
   },
   {
     TraceId: Id_99,
-    SpanId: Id_132,
+    SpanId: Id_136,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2897,7 +2994,7 @@ at System.Net.HttpWebRequest.GetResponse(),
   },
   {
     TraceId: Id_99,
-    SpanId: Id_133,
+    SpanId: Id_137,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
@@ -2927,7 +3024,7 @@ at System.Net.HttpWebRequest.GetResponse(),
   },
   {
     TraceId: Id_99,
-    SpanId: Id_134,
+    SpanId: Id_138,
     Name: http.request,
     Resource: GET localhost:00000/?/,
     Service: Samples.WebRequest-http-client,
