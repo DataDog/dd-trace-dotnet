@@ -55,6 +55,7 @@ class IConfiguration;
 class IExporter;
 class RuntimeIdStore;
 class TimerCreateCpuProfiler;
+//class NetworkProvider;
 
 #ifdef LINUX
 class SystemCallsShield;

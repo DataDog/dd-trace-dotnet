@@ -233,6 +233,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ActivityHelpers.h" />
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="AllocationsRecorder.h" />
     <ClInclude Include="BclEventsParser.h" />
@@ -260,6 +261,7 @@
     <ClInclude Include="MemoryResourceManager.h" />
     <ClInclude Include="ISsiManager.h" />
     <ClInclude Include="NetworkActivity.h" />
+    <ClInclude Include="NetworkProvider.h" />
     <ClInclude Include="NetworkRequestInfo.h" />
     <ClInclude Include="RawNetworkSample.h" />
     <ClInclude Include="RawSamples.hpp" />
@@ -407,6 +409,7 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NetworkProvider.cpp" />
     <ClCompile Include="NetworkRequestInfo.cpp" />
     <ClCompile Include="ServiceBase.cpp" />
     <ClCompile Include="SkipProfileHeuristicType.h" />

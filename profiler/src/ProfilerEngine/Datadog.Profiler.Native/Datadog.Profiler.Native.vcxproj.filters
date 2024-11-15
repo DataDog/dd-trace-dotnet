@@ -486,6 +486,12 @@
     <ClInclude Include="NetworkRequestInfo.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="ActivityHelpers.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkProvider.h">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -738,6 +744,9 @@
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="NetworkRequestInfo.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkProvider.cpp">
       <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>

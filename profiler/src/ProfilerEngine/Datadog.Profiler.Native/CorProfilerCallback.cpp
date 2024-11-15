@@ -40,6 +40,7 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
+#include "NetworkProvider.h"  // TODO: crash if this is included
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfileExporter.h"
@@ -316,13 +317,30 @@ void CorProfilerCallback::InitializeServices()
             _pGarbageCollectionProvider = nullptr;
         }
 
+        //if (_pConfiguration->IsHttpProfilingEnabled())
+        //{
+        //    _pNetworkProvider = RegisterService<NetworkProvider>(
+        //        valueTypeProvider,
+        //        _pCorProfilerInfo,
+        //        _pManagedThreadList,
+        //        _pFrameStore.get(),
+        //        _pThreadsCpuManager,
+        //        _pAppDomainStore.get(),
+        //        _pRuntimeIdStore,
+        //        _pConfiguration.get(),
+        //        _metricsRegistry,
+        //        CallstackProvider(_memoryResourceManager.GetDefault()),
+        //        MemoryResourceManager::GetDefault()
+        //    );
+        //}
+
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider,
-            nullptr // TODO: add NetworkProvider later
+            nullptr//_pNetworkProvider
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -562,6 +580,11 @@ void CorProfilerCallback::InitializeServices()
             _pSamplesCollector->Register(_pStopTheWorldProvider);
             _pSamplesCollector->Register(_pGarbageCollectionProvider);
         }
+
+        //if (_pConfiguration->IsHttpProfilingEnabled())
+        //{
+        //    _pSamplesCollector->Register(_pNetworkProvider);
+        //}
     }
     // CLR events-based providers for .NET Framework
     else if (_pEtwEventsManager != nullptr)
@@ -1129,7 +1152,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsHeapProfilingEnabled() ||
         _pConfiguration->IsAllocationProfilingEnabled() ||
         _pConfiguration->IsContentionProfilingEnabled() ||
-        _pConfiguration->IsGarbageCollectionProfilingEnabled();
+        _pConfiguration->IsGarbageCollectionProfilingEnabled() ||
+        _pConfiguration->IsHttpProfilingEnabled()
+        ;
 
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
@@ -1241,7 +1266,52 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
         }
 
-        COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
+        COR_PRF_EVENTPIPE_PROVIDER_CONFIG* providers = nullptr;
+        uint32_t providerCount = 1; // Microsoft-Windows-DotNETRuntime
+
+        // for network related events, more providers are needed
+        //
+        if (_pConfiguration->IsHttpProfilingEnabled())
+        {
+            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[5]
+            {
+                {
+                    WStr("Microsoft-Windows-DotNETRuntime"),
+                    activatedKeywords,
+                    verbosity,
+                    nullptr
+                },
+                {
+                    WStr("System.Net.Http"),
+                    1,
+                    VerboseVerbosity,
+                    nullptr
+                },
+                {
+                    WStr("System.Net.Sockets"),
+                    0xFFFFFFFF,
+                    VerboseVerbosity,
+                    nullptr
+                },
+                {
+                    WStr("System.Net.NameResolution"),
+                    0xFFFFFFFF,
+                    VerboseVerbosity,
+                    nullptr
+                },
+                {
+                    WStr("System.Net.Security"),
+                    0xFFFFFFFF,
+                    VerboseVerbosity,
+                    nullptr
+                }
+            };
+
+            providerCount = 1 + 4;
+        }
+        else
+        {
+            providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[1]
             {
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
@@ -1250,17 +1320,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                     nullptr
                 }
             };
+        }
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
-            sizeof(providers) / sizeof(providers[0]),
-            providers,
-            false,
-            &_session);
+                providerCount, providers, false, &_session
+                );
+        delete[] providers;
 
         if (FAILED(hr))
         {
             _session = 0;
-            printf("Failed to start event pipe session with hr=0x%x\n", hr);
+            Log::Error("Failed to start event pipe session with hr=0x", std::hex, hr, std::dec, ".");
             return hr;
         }
     }
@@ -2058,5 +2128,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
 {
+    if (_pCorProfilerInfoEvents == nullptr)
+    {
+        return S_OK;
+    }
+
+    ULONG nameLength = 260;
+    WCHAR providerName[260];
+    HRESULT hr = _pCorProfilerInfoEvents->EventPipeGetProviderInfo(provider, nameLength, &nameLength, providerName);
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    Log::Debug("Event pipe provider: ", providerName);
     return S_OK;
 }

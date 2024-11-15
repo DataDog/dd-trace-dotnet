@@ -14,7 +14,12 @@ public:
     RawNetworkSample(RawNetworkSample&& other) noexcept
         :
         RawSample(std::move(other)),
-        Url(std::move(other.Url))
+        Url(std::move(other.Url)),
+        StartTimestamp(other.StartTimestamp),
+        EndTimestamp(other.EndTimestamp),
+        StatusCode(other.StatusCode),
+        Error(std::move(other.Error)),
+        EndThreadId(std::move(other.EndThreadId))
     {
     }
 
@@ -24,6 +29,11 @@ public:
         {
             RawSample::operator=(std::move(other));
             Url = std::move(other.Url);
+            StartTimestamp = other.StartTimestamp;
+            EndTimestamp = other.EndTimestamp;
+            StatusCode = other.StatusCode;
+            Error = std::move(other.Error);
+            EndThreadId = std::move(other.EndThreadId);
         }
         return *this;
     }
