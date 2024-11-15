@@ -309,8 +309,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnableAgentlessTelemetry(telemetry.Port, enableDependencies: true);
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.TelemetryLogsEnabled, "1");
-            // Create invalid sampling rules (invalid JSON) to trigger parsing error
-            SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRules, "[{\"sample_rate\":0.1");
+            SetEnvironmentVariable("SEND_ERROR_LOG", "1");
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -339,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allLogs.Should()
                    .ContainSingle()
                    .Which.Message.Should()
-                   .Be("Unable to parse the trace sampling rules.");
+                   .Be("Sending an error log using hacky reflection");
         }
 
         [SkippableFact]
