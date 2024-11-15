@@ -487,7 +487,8 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)));
+            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _metricsRegistry);
     }
 #endif
 

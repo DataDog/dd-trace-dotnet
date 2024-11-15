@@ -302,7 +302,6 @@ src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
 src/Datadog.Trace/Debugger/Expressions/ExpressionEvaluationResult.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeExpressionEvaluator.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
@@ -313,7 +312,6 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeInfo.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeProcessor.cs
 src/Datadog.Trace/Debugger/Expressions/ScopeMember.cs
 src/Datadog.Trace/Debugger/Expressions/UndefinedValue.cs
 src/Datadog.Trace/Debugger/Helpers/AsyncHelper.cs

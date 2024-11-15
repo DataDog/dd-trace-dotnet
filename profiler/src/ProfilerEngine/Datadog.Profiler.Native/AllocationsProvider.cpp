@@ -84,7 +84,8 @@ AllocationsProvider::AllocationsProvider(
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _pConfiguration(pConfiguration),
-    _callstackProvider{std::move(pool)}
+    _callstackProvider{std::move(pool)},
+    _metricsRegistry{metricsRegistry}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -119,7 +120,8 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
