@@ -433,9 +433,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -461,6 +460,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"), // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "35-5.0"),
@@ -556,6 +556,8 @@ partial class Build : NukeBuild
                         "rhel",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "9-9.0"),
+                            new (publishFramework: TargetFramework.NET9_0, "8-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "8-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -573,7 +575,7 @@ partial class Build : NukeBuild
                         "centos-stream",
                         new SmokeTestImage[]
                         {
-                            // (publishFramework: TargetFramework.NET7_0, "9-7.0"), Not updated from RC1 yet
+                            // new (publishFramework: TargetFramework.NET9_0, "9-9.0"), // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET6_0, "9-6.0"),
                             new (publishFramework: TargetFramework.NET6_0, "8-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "8-5.0"),
@@ -591,6 +593,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
@@ -618,9 +621,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled", runCrashTest: false),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble-chiseled-composite"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
@@ -645,8 +647,7 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
@@ -667,6 +668,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "40-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             // https://github.com/dotnet/runtime/issues/66707
@@ -771,9 +773,8 @@ partial class Build : NukeBuild
                         "debian",
                         new SmokeTestImage[]
                         {
-                            // FIXME: .NET 9 crash tracking hangs on x64 debian, we should investigate and enable this ASAP
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim", runCrashTest: false),
-                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble", runCrashTest: false),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-bookworm-slim"),
+                            new (publishFramework: TargetFramework.NET9_0, "9.0-noble"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
@@ -792,6 +793,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
@@ -844,6 +846,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET7_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
@@ -961,6 +964,7 @@ partial class Build : NukeBuild
                         "fedora",
                         new SmokeTestImage[]
                         {
+                            // new (publishFramework: TargetFramework.NET9_0, "40-9.0"),  // Not updated to GA .NET 9 yet
                             new (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "33-5.0"),
@@ -1010,6 +1014,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
