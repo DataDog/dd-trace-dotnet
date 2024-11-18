@@ -59,6 +59,7 @@ src/Datadog.Trace/Agent/TracesTransportType.cs
 src/Datadog.Trace/AppSec/AddressesConstants.cs
 src/Datadog.Trace/AppSec/AppSecRateLimiter.cs
 src/Datadog.Trace/AppSec/BlockingAction.cs
+src/Datadog.Trace/AppSec/EventTrackingSdk.cs
 src/Datadog.Trace/AppSec/IDatadogSecurity.cs
 src/Datadog.Trace/AppSec/IEvent.cs
 src/Datadog.Trace/AppSec/SecurityConstants.cs

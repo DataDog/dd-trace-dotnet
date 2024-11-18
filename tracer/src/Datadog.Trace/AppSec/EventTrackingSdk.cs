@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.SourceGenerators;
@@ -40,7 +39,7 @@ public static class EventTrackingSdk
         TrackUserLoginSuccessEvent(userId, metadata, Tracer.Instance);
     }
 
-    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string>? metadata, Tracer tracer)
+    internal static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -107,13 +106,13 @@ public static class EventTrackingSdk
     /// <param name="exists">If the userId associated with the login failure exists</param>
     /// <param name="metadata">Metadata associated with the login failure</param>
     [PublicApi]
-    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string>? metadata)
+    public static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackUserLoginFailureEvent_Metadata);
         TrackUserLoginFailureEvent(userId, exists, metadata, Tracer.Instance);
     }
 
-    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string>? metadata, Tracer tracer)
+    internal static void TrackUserLoginFailureEvent(string userId, bool exists, IDictionary<string, string> metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(userId))
         {
@@ -166,13 +165,13 @@ public static class EventTrackingSdk
     /// <param name="eventName">the name of the event to be tracked</param>
     /// <param name="metadata">Metadata associated with the custom event</param>
     [PublicApi]
-    public static void TrackCustomEvent(string eventName, IDictionary<string, string>? metadata)
+    public static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata)
     {
         TelemetryFactory.Metrics.Record(PublicApiUsage.EventTrackingSdk_TrackCustomEvent_Metadata);
         TrackCustomEvent(eventName, metadata, Tracer.Instance);
     }
 
-    internal static void TrackCustomEvent(string eventName, IDictionary<string, string>? metadata, Tracer tracer)
+    internal static void TrackCustomEvent(string eventName, IDictionary<string, string> metadata, Tracer tracer)
     {
         if (string.IsNullOrEmpty(eventName))
         {
