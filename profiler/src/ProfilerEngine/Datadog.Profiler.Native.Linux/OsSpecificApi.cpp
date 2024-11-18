@@ -60,9 +60,11 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration const* const pConfiguration,
-    CallstackProvider* callstackProvider)
+    CallstackProvider* callstackProvider,
+    MetricsRegistry& metricsRegistry)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider);
+    return std::make_unique<LinuxStackFramesCollector>(
+        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry);
 }
 
 // https://linux.die.net/man/5/proc

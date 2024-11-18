@@ -99,6 +99,16 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     {
         await TestStrictTransportSecurityHeaderMissingVulnerability(test, url);
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1")]
+    public async Task TestQueryParameterNameVulnerability(string test, string url)
+    {
+        await TestQueryParameterName(test, url);
+    }
 }
 
 [Collection("IisTests")]
@@ -647,6 +657,19 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{testName}.path={sanitisedUrl}")
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestQueryParameterName(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, [url]);
+        var filename = GetFileName("QueryParameterName");
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
 

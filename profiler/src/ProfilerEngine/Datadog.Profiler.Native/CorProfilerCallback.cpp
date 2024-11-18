@@ -82,6 +82,10 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
+#ifdef LINUX
+extern "C" void (*volatile dd_on_thread_routine_finished)() __attribute__((weak));
+#endif
+
 CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration) :
     _pConfiguration{std::move(pConfiguration)}
 {
@@ -94,6 +98,12 @@ CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfig
 #ifndef _WINDOWS
     CGroup::Initialize();
 #endif
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = CorProfilerCallback::OnThreadRoutineFinished;
+    }
+#endif
 }
 
 // Cleanup
@@ -105,6 +115,13 @@ CorProfilerCallback::~CorProfilerCallback()
 
 #ifndef _WINDOWS
     CGroup::Cleanup();
+#endif
+
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = nullptr;
+    }
 #endif
 }
 
@@ -470,7 +487,8 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)));
+            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _metricsRegistry);
     }
 #endif
 
@@ -1320,6 +1338,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->Stop();
+    }
+#endif
+
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
@@ -1545,6 +1570,31 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     return S_OK;
 }
 
+#ifdef LINUX
+void CorProfilerCallback::OnThreadRoutineFinished()
+{
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto myThis = _this;
+    if (myThis == nullptr)
+    {
+        return;
+    }
+
+    auto* cpuProfiler = myThis->_pCpuProfiler;
+    if (cpuProfiler == nullptr)
+    {
+        return;
+    }
+
+    cpuProfiler->UnregisterThread(threadInfo);
+}
+#endif
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
@@ -1554,6 +1604,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
+
+    ManagedThreadInfo::CurrentThreadInfo = nullptr;
 
     std::shared_ptr<ManagedThreadInfo> pThreadInfo;
     Log::Debug("Removing thread ", std::hex, threadId, " from the trace context threads list.");

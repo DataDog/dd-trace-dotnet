@@ -1,4 +1,3 @@
-version: '3.4'
 services:
   # ARM64 dependencies
   localstack_arm64:
@@ -342,8 +341,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -393,8 +392,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -489,8 +488,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -540,8 +539,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -596,8 +595,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests
     volumes:
       - ./:/project
@@ -671,8 +670,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests
     volumes:
       - ./:/project
@@ -768,8 +767,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-9.0.100}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-9.0.100}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests
     volumes:
       - ./:/project
@@ -844,6 +843,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -867,6 +867,7 @@ services:
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -890,6 +891,7 @@ services:
         # - RELATIVE_PROFILER_PATH=
         # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -911,6 +913,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -932,6 +935,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-self-instrument-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -953,6 +957,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - TOOL_VERSION=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-nuget-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
     - ./:/project
     - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -974,6 +979,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -995,6 +1001,7 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
     image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1017,6 +1024,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet
@@ -1039,6 +1047,7 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - RUNTIME_ID=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
+    init: true # Without this, crash tests hang, see https://github.com/dotnet/runtime/issues/109779
     volumes:
       - ./:/project
       - ./artifacts/build_data/logs:/var/log/datadog/dotnet

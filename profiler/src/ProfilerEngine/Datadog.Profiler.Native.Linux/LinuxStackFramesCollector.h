@@ -8,6 +8,8 @@
 #include "corprof.h"
 // end
 
+#include "CounterMetric.h"
+#include "MetricsRegistry.h"
 #include "StackFramesCollectorBase.h"
 
 #include <atomic>
@@ -22,12 +24,18 @@ class ProfilerSignalManager;
 class ProfilerSignalManager;
 class IConfiguration;
 class CallstackProvider;
+class DiscardMetrics;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* configuration, CallstackProvider* callstackProvider);
+    explicit LinuxStackFramesCollector(
+        ProfilerSignalManager* signalManager,
+        IConfiguration const* configuration,
+        CallstackProvider* callstackProvider,
+        MetricsRegistry& metricsRegistry);
     ~LinuxStackFramesCollector() override;
+
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
 
@@ -58,7 +66,7 @@ private:
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
     void UpdateErrorStats(std::int32_t errorCode);
     static bool ShouldLogStats();
-    bool CanCollect(int32_t threadId, pid_t processId) const;
+    bool CanCollect(int32_t threadId, siginfo_t* info, void* ucontext) const;
     std::int32_t CollectStackManually(void* ctx);
     std::int32_t CollectStackWithBacktrace2(void* ctx);
     void MarkAsInterrupted();
@@ -77,7 +85,6 @@ private:
 private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
 
-    static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
@@ -86,4 +93,7 @@ private:
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
+    std::shared_ptr<CounterMetric> _samplingRequest;
+
+    std::shared_ptr<DiscardMetrics> _discardMetrics;
 };

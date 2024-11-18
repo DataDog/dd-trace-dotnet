@@ -66,7 +66,11 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     return std::make_pair(errorCode, message);
 }
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration, CallstackProvider* callstackProvider)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IConfiguration const* const pConfiguration,
+    CallstackProvider* callstackProvider,
+    MetricsRegistry&)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
