@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
@@ -156,37 +157,51 @@ internal class GitInfo : IGitInfo
             return null;
         }
 
-        var dirInfo = new DirectoryInfo(innerFolder);
+        DirectoryInfo? dirInfo;
+
+        try
+        {
+            dirInfo = new DirectoryInfo(innerFolder);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Error getting directory info");
+            return null;
+        }
+
         while (dirInfo != null)
         {
-            DirectoryInfo[] gitDirectories;
             try
             {
-                gitDirectories = dirInfo.GetDirectories(".git");
+                var gitDirectories = dirInfo.GetDirectories(".git");
+                if (gitDirectories.Length > 0)
+                {
+                    foreach (var gitDir in gitDirectories)
+                    {
+                        if (gitDir.Name == ".git")
+                        {
+                            return gitDir;
+                        }
+                    }
+                }
+
+                dirInfo = dirInfo.Parent;
             }
             catch (DirectoryNotFoundException ex)
             {
-                Log.Error(ex, "Get directories failed with DirectoryNotFoundException");
+                Log.Warning(ex, "Get directories failed with DirectoryNotFoundException");
                 return null;
             }
             catch (UnauthorizedAccessException ex)
             {
-                Log.Error(ex, "Get directories failed with UnauthorizedAccessException");
+                Log.Warning(ex, "Get directories failed with UnauthorizedAccessException");
                 return null;
             }
-
-            if (gitDirectories.Length > 0)
+            catch (SecurityException ex)
             {
-                foreach (var gitDir in gitDirectories)
-                {
-                    if (gitDir.Name == ".git")
-                    {
-                        return gitDir;
-                    }
-                }
+                Log.Warning(ex, "Get directories or parent directory failed with SecurityException");
+                return null;
             }
-
-            dirInfo = dirInfo.Parent;
         }
 
         return null;
