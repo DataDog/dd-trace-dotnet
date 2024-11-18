@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">1.2.11</ApiVersion>
-    <ApiVersion Condition="'$(ApiVersion)' == '' AND !$(TargetFramework.StartsWith('net4')) ">2.0.12</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == '' AND !$(TargetFramework.StartsWith('net4')) ">3.0.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.0.5'">$(DefineConstants);LOG4NET_2_0_5</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- It appears that this works fine for V3 as well - re-using -->
     <None Update="log4net.205.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

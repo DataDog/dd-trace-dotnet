@@ -20,20 +20,47 @@ namespace Datadog.Profiler.IntegrationTests
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly ManualResetEventSlim _readinessNotifier = new();
+        private AgentEtwProxy _etwProxy = null;
 
         public event EventHandler<EventArgs<HttpListenerContext>> ProfilerRequestReceived;
         public event EventHandler<EventArgs<HttpListenerContext>> TracerRequestReceived;
         public event EventHandler<EventArgs<HttpListenerContext>> TelemetryMetricsRequestReceived;
+        public event EventHandler<EventArgs<int>> ProfilerRegistered;
+        public event EventHandler<EventArgs<int>> EventsSent;
+        public event EventHandler<EventArgs<int>> ProfilerUnregistered;
 
         public int NbCallsOnProfilingEndpoint { get; private set; }
 
         public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(30)); // wait for Agent being ready
+
+        public bool ProfilerHasRegistered { get => (_etwProxy != null) ? _etwProxy.ProfilerHasRegistered : false; }
+
+        public bool ProfilerHasUnregistered { get => (_etwProxy != null) ? _etwProxy.ProfilerHasUnregistered : false; }
+
+        public bool EventsHaveBeenSent { get => (_etwProxy != null) ? _etwProxy.EventsHaveBeenSent : false; }
 
         protected ITestOutputHelper Output { get; set; }
 
         public static HttpAgent CreateHttpAgent(ITestOutputHelper output, int retries = 5) => new HttpAgent(output, retries);
 
         public static NamedPipeAgent CreateNamedPipeAgent(ITestOutputHelper output) => new NamedPipeAgent(output);
+
+        public void StartEtwProxy(ITestOutputHelper output, string namedPipeEndpoint, string eventsFilename = null)
+        {
+            // simulate the Agent as an ETW proxy to replay events (if any)
+            // 1. create a named pipe server with the given endpoint to receive registration/unregistration commands from the profiler
+            //    --> keep track of the register/unregister to be able to validate the protocol in a test
+            // 2. read the events from the given file and send them to the profiler
+            //    --> keep track of any error
+            //    --> if no file is provided, don't send any event but accept registration/unregistration commands
+            // NOTE: this method must be called before calling Run() on the TestApplicationRunner
+            _etwProxy = new AgentEtwProxy(output, namedPipeEndpoint, eventsFilename);
+            _etwProxy.ProfilerRegistered += (sender, e) => ProfilerRegistered?.Invoke(this, e);
+            _etwProxy.EventsSent += (sender, e) => EventsSent?.Invoke(this, e);
+            _etwProxy.ProfilerUnregistered += (sender, e) => ProfilerUnregistered?.Invoke(this, e);
+
+            _etwProxy.StartServer();
+        }
 
         public virtual void Dispose()
         {
@@ -175,7 +202,8 @@ namespace Datadog.Profiler.IntegrationTests
                     // show only in error cases
                     if ((message != null) && (NbCallsOnProfilingEndpoint < 2))
                     {
-                        Console.WriteLine(message);
+                        // NOTE: we can't use ITestOutputHelper here because it will throw an exception about missing current test
+                        // Output.WriteLine(message);
                     }
                 }
             }

@@ -115,7 +115,6 @@ namespace BuggyBits
                             await Task.Delay(TimeSpan.FromMilliseconds(1000 + delay.TotalMilliseconds));
                             current++;
                         }
-
                     },
                     creationOptions: TaskCreationOptions.LongRunning);
             }

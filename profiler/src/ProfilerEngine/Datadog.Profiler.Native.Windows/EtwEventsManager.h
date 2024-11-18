@@ -110,6 +110,7 @@ private:
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler> _eventsHandler;
+    std::string _agentReplayEndpoint;
     std::unique_ptr<IpcServer> _IpcServer; // used to connect to the Windows Agent and register our process ID
     std::unique_ptr<IpcClient> _IpcClient; // used to receive ETW events from the Windows Agent
 

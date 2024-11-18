@@ -7,6 +7,7 @@ using System;
 #if NETFRAMEWORK
 using System.Collections.Specialized;
 using System.Web;
+using System.Web.ModelBinding;
 using Datadog.Trace.Logging;
 #else
 using Microsoft.AspNetCore.Http;
@@ -42,6 +43,49 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
+    // Get the values from a request NameValueCollection
+    internal static string[]? GetNameValueCollectionValues(NameValueCollection queryString, string key)
+    {
+        try
+        {
+            return queryString.GetValues(key);
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading NameValueCollection values from the request.");
+            return null;
+        }
+    }
+
+    internal static string? GetNameValueCollectionValue(NameValueCollection queryString, string key)
+    {
+        try
+        {
+            return queryString[key];
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading NameValueCollection value from the request.");
+            return null;
+        }
+    }
+
+    // Get form from a request
+    internal static NameValueCollection? GetForm(HttpRequest request)
+    {
+        try
+        {
+            return request.Form;
+        }
+        catch (HttpRequestValidationException)
+        {
+            Log.Debug("Error reading Form (body) from the request.");
+            return null;
+        }
+    }
+#endif
+
+#if NETFRAMEWORK
     // Get the cookies from a HttpRequest
     internal static HttpCookieCollection? GetCookies(HttpRequest request)
     {
@@ -63,7 +107,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the headers from a HttpRequest
     internal static NameValueCollection? GetHeaders(HttpRequest request)
     {
         try
@@ -84,7 +128,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the path from a HttpRequest
     internal static string? GetPath(HttpRequest request)
     {
         try
@@ -105,7 +149,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the cookies from a HttpRequest
+    // Get the url from a HttpRequest
     internal static Uri? GetUrl(HttpRequest request)
     {
         try

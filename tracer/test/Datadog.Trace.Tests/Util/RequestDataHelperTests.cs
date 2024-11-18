@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Collections.Generic;
+using System.Reflection;
 using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Coordinator;
@@ -14,7 +16,6 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
-using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -37,6 +38,90 @@ public class RequestDataHelperTests
             request2.ValidateInput();
             var queryString = RequestDataHelper.GetQueryString(request2);
             queryString.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GivenADangerousBody_WhenGetQueryString_HelperAvoidsException()
+    {
+        var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+
+        try
+        {
+            _ = request.Form;
+            Assert.True(false);
+        }
+        catch (HttpRequestValidationException)
+        {
+            var request2 = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+            var body = RequestDataHelper.GetForm(request2);
+            body.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GivenADangerousBody_WhenGetValue_HelperAvoidsException()
+    {
+        var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+
+        // We need to enable the granular validation for the request
+        // This translates validation to the HttpValueCollections contained in the query instead of being done at a HttpRequest level
+        EnableGranularValidation(request);
+
+        // Now, calling the Form property should not throw an exception
+        var form = request.Form;
+
+        try
+        {
+            // Calling Get would trigger the exception
+            _ = form["data"];
+            Assert.True(false);
+        }
+        catch (HttpRequestValidationException)
+        {
+            var request2 = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+            EnableGranularValidation(request2);
+            var value = RequestDataHelper.GetNameValueCollectionValue(request.Form, "data");
+            value.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GivenADangerousBody_WhenGetKeys_NoException()
+    {
+        var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } }, false);
+        var form = request.Form;
+        request.ValidateInput();
+        // Getting keys should not throw an exception
+        _ = form.Keys;
+        EnableGranularValidation(request);
+        _ = request.Form.Keys;
+    }
+
+    [Fact]
+    public void GivenADangerousBody_WhenGetValues_HelperAvoidsException()
+    {
+        var request = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+
+        // We need to enable the granular validation for the request
+        // This translates validation to the HttpValueCollections contained in the query instead of being done at a HttpRequest level
+        EnableGranularValidation(request);
+
+        // Now, calling the Form property should not throw an exception
+        var form = request.Form;
+
+        try
+        {
+            // Calling GetValues would trigger the exception
+            _ = form.GetValues("data");
+            Assert.True(false);
+        }
+        catch (HttpRequestValidationException)
+        {
+            var request2 = CreateRequestWithValidationAndBody(new Dictionary<string, string>() { { "data", "<script>alert(1)</script>" } });
+            EnableGranularValidation(request2);
+            var values = RequestDataHelper.GetNameValueCollectionValues(request.Form, "data");
+            values.Should().BeNull();
         }
     }
 
@@ -79,13 +164,41 @@ public class RequestDataHelperTests
         scope.Span.ServiceName = "service";
         HttpContext context = new HttpContext(request, new HttpResponse(new System.IO.StringWriter()));
         request.ValidateInput();
-        HttpTransport transport = new HttpTransport(context);
-        var securityCoordinator = new SecurityCoordinator(security, scope.Span, transport);
+        var transport = new SecurityCoordinator.HttpTransport(context);
+        var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, transport);
         // We should not launch any exception here
         var result = securityCoordinator.GetBasicRequestArgsForWaf();
         var iastContext = new IastRequestContext();
         iastContext.AddRequestData(request);
         result.Should().NotBeNull();
+    }
+
+    private static HttpRequest CreateRequestWithValidationAndBody(Dictionary<string, string> values, bool validate = true)
+    {
+        var request = new HttpRequest("file", "http://localhost/benchmarks", string.Empty);
+        var field = request.Form.GetType().BaseType.BaseType.GetField("_readOnly", BindingFlags.NonPublic | BindingFlags.Instance);
+        field.SetValue(request.Form, false);
+
+        foreach (var pair in values)
+        {
+            request.Form.Add(pair.Key, pair.Value);
+        }
+
+        if (validate)
+        {
+            request.ValidateInput();
+        }
+
+        return request;
+    }
+
+    private static void EnableGranularValidation(HttpRequest request)
+    {
+        var flagsType = request.GetType().GetField("_flags", BindingFlags.NonPublic | BindingFlags.Instance);
+        var flags = flagsType.GetValue(request);
+        var setMethod = flagsType.GetValue(request).GetType().GetMethod("Set", BindingFlags.NonPublic | BindingFlags.Instance);
+        setMethod.Invoke(flags, new object[] { 1073741824 | 2 });
+        flagsType.SetValue(request, flags);
     }
 }
 #endif

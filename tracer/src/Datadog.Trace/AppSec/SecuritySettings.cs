@@ -13,7 +13,6 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
 {
@@ -46,7 +45,7 @@ namespace Datadog.Trace.AppSec
                                .AsBoolResult();
 
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
-            Enabled = enabledEnvVar.WithDefault(false);
+            AppsecEnabled = enabledEnvVar.WithDefault(false);
 
             Rules = config.WithKeys(ConfigurationKeys.AppSec.Rules).AsString();
             CustomIpHeader = config.WithKeys(ConfigurationKeys.AppSec.CustomIpHeader).AsString();
@@ -135,7 +134,7 @@ namespace Datadog.Trace.AppSec
 
             // For now, RASP is enabled by default.
             RaspEnabled = config.WithKeys(ConfigurationKeys.AppSec.RaspEnabled)
-                                .AsBool(true) && Enabled;
+                                .AsBool(true) && AppsecEnabled;
 
             StackTraceEnabled = config.WithKeys(ConfigurationKeys.AppSec.StackTraceEnabled)
                                       .AsBool(true);
@@ -162,6 +161,8 @@ namespace Datadog.Trace.AppSec
             ScaEnabled = config
                              .WithKeys(ConfigurationKeys.AppSec.ScaEnabled)
                              .AsBool();
+
+            NoCustomLocalRules = Rules == null;
         }
 
         public double ApiSecuritySampleDelay { get; set; }
@@ -170,12 +171,15 @@ namespace Datadog.Trace.AppSec
 
         public int ApiSecurityMaxConcurrentRequests { get; }
 
-        public bool Enabled { get; }
+        public bool AppsecEnabled { get; }
 
         public bool UseUnsafeEncoder { get; }
 
         public bool WafDebugEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether appsec can be toggled, true if appsec_enabled is not set to true or false
+        /// </summary>
         public bool CanBeToggled { get; }
 
         public string? CustomIpHeader { get; }
@@ -254,6 +258,8 @@ namespace Datadog.Trace.AppSec
         /// It is not use locally, but ready by the backend.
         /// </summary>
         public bool? ScaEnabled { get; }
+
+        public bool NoCustomLocalRules { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

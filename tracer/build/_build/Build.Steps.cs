@@ -62,7 +62,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.19.1";
+    const string LibDdwafVersion = "1.20.1";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -180,11 +180,11 @@ partial class Build
 
     TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
-        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, },
+        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, },
+        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -328,35 +328,32 @@ partial class Build
         {
             DeleteDirectory(NativeTracerProject.Directory / "build");
 
-            var finalArchs = FastDevLoop ? new[]  { "arm64" } : OsxArchs;
+            var finalArchs = FastDevLoop ? "arm64" : string.Join(';', OsxArchs);
+            var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
+            EnsureExistingDirectory(buildDirectory);
 
-            var lstNativeBinaries = new List<string>();
-            foreach (var arch in finalArchs)
+            var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = finalArchs };
+
+            // Build native
+            CMake.Value(
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
+                environmentVariables: envVariables);
+            CMake.Value(
+                arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
+                environmentVariables: envVariables);
+
+            var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
+
+            // Check section with the manager loader
+            var output = OTool.Value(arguments: $"-s binary dll {sourceFile}", logOutput: false);
+            var outputCount = output.Select(o => o.Type == OutputType.Std).Count();
+            if (outputCount < 1000)
             {
-                var buildDirectory = NativeBuildDirectory + "_" + arch;
-                EnsureExistingDirectory(buildDirectory);
+                throw new ApplicationException("Managed loader section doesn't have the enough size > 1000");
+            }
 
-                var envVariables = new Dictionary<string, string> { ["CMAKE_OSX_ARCHITECTURES"] = arch };
-
-                // Build native
-                CMake.Value(
-                    arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}",
-                    environmentVariables: envVariables);
-                CMake.Value(
-                    arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
-                    environmentVariables: envVariables);
-
-                var sourceFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
-                var destFile = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{arch}.dylib";
-
-                // Check section with the manager loader
-                var output = OTool.Value(arguments: $"-s binary dll {sourceFile}", logOutput: false);
-                var outputCount = output.Select(o => o.Type == OutputType.Std).Count();
-                if (outputCount < 1000)
-                {
-                    throw new ApplicationException("Managed loader section doesn't have the enough size > 1000");
-                }
-
+            foreach (var arch in finalArchs.Split(';'))
+            {
                 // Check the architecture of the build
                 output = Lipo.Value(arguments: $"-archs {sourceFile}", logOutput: false);
                 var strOutput = string.Join('\n', output.Where(o => o.Type == OutputType.Std).Select(o => o.Text));
@@ -364,22 +361,7 @@ partial class Build
                 {
                     throw new ApplicationException($"Invalid architecture, expected: '{arch}', actual: '{strOutput}'");
                 }
-
-                // Copy binary to the temporal destination
-                CopyFile(sourceFile, destFile, FileExistsPolicy.Overwrite);
-                DeleteFile(sourceFile);
-                DeleteFile(NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.static.a");
-
-                // Add library to the list
-                lstNativeBinaries.Add(destFile);
             }
-
-            // Create universal shared library with all architectures in a single file
-            var destination = NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.dylib";
-            DeleteFile(destination);
-            Console.WriteLine($"Creating universal binary for {destination}");
-            var strNativeBinaries = string.Join(' ', lstNativeBinaries);
-            Lipo.Value(arguments: $"{strNativeBinaries} -create -output {destination}");
         });
 
     Target CompileTracerNativeSrc => _ => _
@@ -669,12 +651,12 @@ partial class Build
                 .SetOutput(MonitoringHomeDirectory / targetFramework)
             );
         });
-    
+
     Target PublishNativeSymbolsWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
         .After(CompileTracerNativeSrc, PublishManagedTracer)
-        .Executes(() => 
+        .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
@@ -757,7 +739,7 @@ partial class Build
         {
             // We don't produce an x86-only MSI any more
             var architectures = ArchitecturesForPlatformForTracer.Where(x => x != MSBuildTargetPlatform.x86);
-            
+
             MSBuild(s => s
                     .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
                     .SetConfiguration(BuildConfiguration)
@@ -985,7 +967,7 @@ partial class Build
                          homepage: "https://github.com/DataDog/dd-trace-dotnet"
                          # We were previously using "Apache License 2.0" but that's not technically correct
                          # As needs to be one of the standard fedora licences here: https://docs.fedoraproject.org/en-US/legal/allowed-licenses/
-                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html 
+                         # and is not used directly by the deb package format: https://www.debian.org/doc/debian-policy/ch-docs.html
                          license: "Apache-2.0"
                          priority: extra
                          section: default
@@ -995,8 +977,8 @@ partial class Build
                          rpm:
                              # The package group. This option is deprecated by most distros
                              # but we added it with fpm, so keeping it here for consistency
-                             group: default  
-                             prefixes: 
+                             group: default
+                             prefixes:
                              - /opt/datadog
                          contents:
                          - src: {assetsDirectory}/
@@ -1488,19 +1470,41 @@ partial class Build
                         .SetProjectFile(project)));
 
                 var projectsToPublish = includeIntegration
-                   .Select(x => Solution.GetProject(x))
-                   .Where(x => x.Name switch
+                   .Select(x =>
                     {
-                        "Samples.Trimming" => Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
-                        _ => false,
+                        var project = Solution.GetProject(x);
+                        return project?.Name switch
+                        {
+                            "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
+                            "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                            _ => (project, include: false, r2r: false),
+                        };
+                    })
+                   .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
+                    {
+                        ({include: false }, _, _) => false,
+                        _ when exclude.Contains(x.project.Path) => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
+                        (_, { } targets, _) => targets.Contains(Framework),
+                        _ => true,
                     });
 
-                var rid = IsArm64 ? "win-arm64" : "win-x64";
+                var rid = TargetPlatform.ToString() switch
+                {
+                    "x64" => "win-x64",
+                    "x86" => "win-x86",
+                    "ARM64" or "ARM64EC" => "win-arm64",
+                    _ => throw new InvalidOperationException("Unsupported architecture " + RuntimeInformation.ProcessArchitecture),
+                };
+
                 DotNetPublish(config => config
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
                    .SetRuntime(rid)
-                   .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
+                   .CombineWith(projectsToPublish, (s, project) => s
+                      .SetProject(project.project)
+                      .When(project.r2r, x => x.SetPublishReadyToRun(true))));
             }
         });
 
@@ -1912,20 +1916,25 @@ partial class Build
 
             // We have to explicitly publish the trimming sample separately (written so we can add to this later if needs be)
             var projectsToPublish = sampleProjects
-               .Select(x => Solution.GetProject(x))
-               .Where(x => x?.Name switch
+               .Select(x =>
                 {
-                    "Samples.Trimming" => x.TryGetTargetFrameworks().Contains(Framework),
-                    _ => false,
+                    var project = Solution.GetProject(x);
+                    return project?.Name switch
+                    {
+                        "Samples.Trimming" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
+                        "Samples.ManualInstrumentation" => (project, include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                        _ => (project, include: false, r2r: false),
+                    };
                 })
                .Where(x => (IncludeTestsRequiringDocker, x) switch
                 {
                     // filter out or to integration tests that have docker dependencies
+                    (_, {include: false }) => false,
                     (null, _) => true,
-                    (_, null) => true,
-                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
-                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
+                    (_, { project: null}) => true,
+                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.project.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                    (false, { } p) => p.project.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.project.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
             var rid = (IsLinux, IsArm64) switch
@@ -1939,7 +1948,9 @@ partial class Build
                .SetConfiguration(BuildConfiguration)
                .SetFramework(Framework)
                .SetRuntime(rid)
-               .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
+               .CombineWith(projectsToPublish, (s, project) => s
+                  .SetProject(project.project)
+                  .When(project.r2r, x => x.SetPublishReadyToRun(true))));
         });
 
     Target CompileMultiApiPackageVersionSamples => _ => _
@@ -2615,10 +2626,10 @@ partial class Build
            // This one is caused by the intentional crash in the crash tracking smoke test
            knownPatterns.Add(new("Application threw an unhandled exception: System.BadImageFormatException: Expected", RegexOptions.Compiled));
 
-           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12 
+           // We intentionally set the variables for smoke tests which means we get this warning on <= .NET Core 3.0 or <.NET 6.0.12
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET Core 3.0 or lower", RegexOptions.Compiled));
            knownPatterns.Add(new(".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 6.0.12 and earlier have known crashing bugs", RegexOptions.Compiled));
-           
+
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
@@ -2670,7 +2681,7 @@ partial class Build
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac 
+                             && (nativeProfilerFiles.Count > 0 || IsOsx) // profiler doesn't support mac
                              && nativeLoaderFiles.Count > 0);
 
         if (hasRequiredFiles
@@ -2989,7 +3000,7 @@ partial class Build
             {
                 Logger.Information("Moving file '{Dump}' to '{Root}'", dump, dumpFolder);
 
-                MoveFileToDirectory(dump, dumpFolder, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(dump, dumpFolder, FileExistsPolicy.OverwriteIfNewer);
             }
         }
 
@@ -3030,7 +3041,7 @@ partial class Build
                 Logger.Information($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
-        
+
         // set variables for subsequent tests
         var isSsiRun = Environment.GetEnvironmentVariable("IS_SSI_RUN");
         if (!string.IsNullOrEmpty(isSsiRun) && string.Equals(isSsiRun, "true", StringComparison.OrdinalIgnoreCase))

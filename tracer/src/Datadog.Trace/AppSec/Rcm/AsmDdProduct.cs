@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDdProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         var firstFile = files.First();
         var asmDd = new NamedRawFile(firstFile!.Path, firstFile.Contents);
@@ -34,16 +34,16 @@ internal class AsmDdProduct : IAsmConfigUpdater
             }
 
             configurationStatus.RulesByFile[firstFile.Path.Path] = ruleSet;
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         foreach (var removedConfig in removedConfigsForThisProduct)
         {
             configurationStatus.RulesByFile.Remove(removedConfig.Path);
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesKey);
         }
     }
 }

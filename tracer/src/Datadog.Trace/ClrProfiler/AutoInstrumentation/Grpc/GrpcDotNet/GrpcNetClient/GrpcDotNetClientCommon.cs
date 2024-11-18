@@ -55,7 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
                 // add distributed tracing headers to the HTTP request
                 // These will be overwritten by the HttpClient integration if that is enabled, per the RFC
-                SpanContextPropagator.Instance.Inject(span.Context, new HttpHeadersCollection(requestMessage.Headers));
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                SpanContextPropagator.Instance.Inject(context, new HttpHeadersCollection(requestMessage.Headers));
 
                 // Add the request metadata as tags
                 if (grpcCall.Options.Headers is { Count: > 0 })

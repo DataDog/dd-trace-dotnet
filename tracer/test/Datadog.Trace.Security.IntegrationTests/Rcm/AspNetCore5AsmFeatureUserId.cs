@@ -53,7 +53,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var active = ((object)new AsmFeatures { Asm = new AsmFeature { Enabled = true } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection) + "Activate");
             if (EnableSecurity is not true)
             {
-                var request0 = await agent.SetupRcmAndWait(Output, new[] { active }, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+                var request0 = await agent.SetupRcmAndWait(Output, [active], timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
                 request0.Should().NotBeNull();
             }
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             Output.WriteLine($"usr.id: {span.Tags["usr.id"]}");
 
             var anonMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "anon" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
-            var request1Files = EnableSecurity is true ? new[] { anonMode } : new[] { active, anonMode };
+            var request1Files = EnableSecurity is true ? [anonMode] : new[] { active, anonMode };
             var request1 = await agent.SetupRcmAndWait(Output, request1Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             await SendRequestsAsync(agent, "/account/logout");
 
             var disabledMode = ((object)new AsmFeatures { AutoUserInstrum = new AutoUserInstrum { Mode = "disabled" } }, "ASM_FEATURES", nameof(TestChangeUserIdCollection));
-            var request2Files = EnableSecurity is true ? new[] { disabledMode } : new[] { active, disabledMode };
+            var request2Files = EnableSecurity is true ? new[] { disabledMode } : [active, disabledMode];
             var request2 = await agent.SetupRcmAndWait(Output, request2Files, timeoutInMilliseconds: EnableSecurity is false ? 5000 : RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request2.Should().NotBeNull();
 

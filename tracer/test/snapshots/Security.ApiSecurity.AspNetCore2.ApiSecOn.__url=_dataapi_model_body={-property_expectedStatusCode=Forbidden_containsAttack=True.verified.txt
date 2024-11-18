@@ -51,8 +51,8 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-932-160","name":"Remote Command Execution: Unix Shell Code Found","tags":{"category":"attack_attempt","type":"command_injection"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.body","highlight":["dev/zero"],"key_path":["Property"],"value":"dev/zero"}]}]}]},
       _dd.appsec.s.req.body: [{"Property":[8],"Property2":[8],"Property3":[4],"Property4":[4]}],
-      _dd.appsec.s.req.headers: [{"connection":[[[8]],{"len":1}],"content-length":[[[8]],{"len":1}],"content-type":[[[8]],{"len":1}],"host":[[[8]],{"len":1}],"user-agent":[[[8]],{"len":1}],"x-forwarded-for":[[[8]],{"len":1}]}],
-      _dd.appsec.s.res.headers: [{"content-type":[[[8]],{"len":1}]}],
+      _dd.appsec.s.req.headers: [{"connection":[8],"content-length":[8],"content-type":[8],"host":[8],"user-agent":[8],"x-forwarded-for":[8]}],
+      _dd.appsec.s.res.headers: [{"content-type":[8]}],
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },

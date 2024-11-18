@@ -55,6 +55,7 @@ RUN ln -s `which clang-16` /usr/bin/clang  && \
 
 ENV \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
+    USE_NATIVE_SDK_VERSION=true \
     CXX=clang++ \
     CC=clang
 

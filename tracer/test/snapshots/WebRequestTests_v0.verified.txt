@@ -1,0 +1,3050 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: internal,
+    Resource: WebClient,
+    Service: Samples.WebRequest,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      runtime-id: Guid_1,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_7,
+    Name: internal,
+    Resource: DownloadData,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_8,
+    Name: internal,
+    Resource: DownloadDataAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_9,
+    Name: internal,
+    Resource: DownloadDataTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_10,
+    Name: internal,
+    Resource: DownloadFile,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_11,
+    Name: internal,
+    Resource: DownloadFileAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_12,
+    Name: internal,
+    Resource: DownloadFileTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_13,
+    Name: internal,
+    Resource: DownloadString,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_14,
+    Name: internal,
+    Resource: DownloadStringAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_15,
+    Name: internal,
+    Resource: DownloadStringTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_16,
+    Name: internal,
+    Resource: OpenRead,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_17,
+    Name: internal,
+    Resource: OpenReadAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_18,
+    Name: internal,
+    Resource: OpenReadTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_19,
+    Name: internal,
+    Resource: UploadData,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_20,
+    Name: internal,
+    Resource: UploadDataAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_21,
+    Name: internal,
+    Resource: UploadDataTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_22,
+    Name: internal,
+    Resource: UploadFile,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_23,
+    Name: internal,
+    Resource: UploadFileAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_24,
+    Name: internal,
+    Resource: UploadFileTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_25,
+    Name: internal,
+    Resource: UploadString,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_26,
+    Name: internal,
+    Resource: UploadStringAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_27,
+    Name: internal,
+    Resource: UploadStringTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_28,
+    Name: internal,
+    Resource: UploadValues,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_29,
+    Name: internal,
+    Resource: UploadValuesAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_30,
+    Name: internal,
+    Resource: UploadValuesTaskAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_6,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_31,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadData,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_32,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadData2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_33,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadDataAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_34,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadDataAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_35,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_9,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadDataTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_36,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_9,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadDataTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_37,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_10,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFile,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_38,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_10,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFile2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_39,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_11,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFileAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_40,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_11,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFileAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_41,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_12,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFileTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_42,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_12,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadFileTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_43,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_13,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadString,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_44,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_13,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadString2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_45,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_14,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadStringAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_46,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_14,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadStringAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_47,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_15,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadStringTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_48,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_15,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?DownloadStringTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_49,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_16,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenRead,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_50,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_16,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenRead2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_51,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenReadAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_52,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_17,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenReadAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_53,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_18,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenReadTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_54,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_18,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?OpenReadTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_55,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadData,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_56,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadData2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_57,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadData3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_58,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_19,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadData4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_59,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_20,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_60,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_20,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_61,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_20,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_62,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_21,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_63,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_21,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_64,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_21,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataTaskAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_65,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_21,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadDataTaskAsync4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_66,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_22,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFile,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_67,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_22,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFile2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_68,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_22,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFile3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_69,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_22,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFile4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_70,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_71,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_72,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_23,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_73,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_74,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_75,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileTaskAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_76,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_24,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadFileTaskAsync4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_77,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_25,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadString,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_78,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_25,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadString2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_79,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_25,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadString3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_80,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_25,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadString4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_81,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_26,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_82,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_26,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_83,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_26,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_84,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_27,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_85,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_27,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_86,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_27,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringTaskAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_87,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_27,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadStringTaskAsync4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_88,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_28,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValues,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_89,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_28,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValues2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_90,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_28,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValues3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_91,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_28,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValues4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_92,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_29,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_93,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_29,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_94,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_29,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_95,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesTaskAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_96,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesTaskAsync2,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_97,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesTaskAsync3,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_98,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_30,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?UploadValuesTaskAsync4,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_100,
+    Name: internal,
+    Resource: WebRequest,
+    Service: Samples.WebRequest,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      runtime-id: Guid_1,
+      span.kind: internal,
+      version: 1.0.0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_101,
+    Name: internal,
+    Resource: GetResponse,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_102,
+    Name: internal,
+    Resource: GetResponseWithDistributedTracingHeaders,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_103,
+    Name: internal,
+    Resource: GetResponseNotFound,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_104,
+    Name: internal,
+    Resource: GetResponseTeapot,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_105,
+    Name: internal,
+    Resource: GetResponseAsyncWithDistributedTracingHeaders,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_106,
+    Name: internal,
+    Resource: GetResponseAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_107,
+    Name: internal,
+    Resource: GetResponseAsyncNotFound,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_108,
+    Name: internal,
+    Resource: GetResponseAsyncTeapot,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_109,
+    Name: internal,
+    Resource: GetRequestStream,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_110,
+    Name: internal,
+    Resource: GetRequestStreamWithDistributedTracingHeaders,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_111,
+    Name: internal,
+    Resource: BeginGetRequestStream,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_112,
+    Name: internal,
+    Resource: BeginGetRequestStreamWithDistributedTracingHeaders,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_113,
+    Name: internal,
+    Resource: BeginGetResponse,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_114,
+    Name: internal,
+    Resource: BeginGetResponseWithDistributedTracingHeaders,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_115,
+    Name: internal,
+    Resource: BeginGetResponseNotFound,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_116,
+    Name: internal,
+    Resource: BeginGetResponseTeapot,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_117,
+    Name: internal,
+    Resource: BeginGetResponse TaskFactoryFromAsync,
+    Service: Samples.WebRequest,
+    Type: custom,
+    ParentId: Id_100,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.WebRequest,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_3,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_118,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_111,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_119,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_112,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_120,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_111,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetRequestStream_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_121,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_113,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_122,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_114,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_123,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_113,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseAsync_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_124,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_115,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 404,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseNotFoundAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_125,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_116,
+    Error: 1,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      error.msg: The HTTP response has status code 418.,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: POST,
+      http.status_code: 418,
+      http.url: http://localhost:00000/Guid_4/?BeginGetResponseTeapotAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_126,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_109,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_127,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_110,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetRequestStream,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_128,
+    Name: http.request,
+    Resource: POST localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_109,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetRequestStream_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_129,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_101,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponse,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_130,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_102,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponse,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_131,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_101,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponse_NoBuffering,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_132,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_105,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponseAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_133,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_106,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?GetResponseAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_134,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_107,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (404) Not Found.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (404) Not Found.
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.status_code: 404,
+      http.url: http://localhost:00000/Guid_4/?GetResponseAsyncNotFound,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_135,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_108,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (418) .,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (418) .
+at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.status_code: 418,
+      http.url: http://localhost:00000/Guid_4/?GetResponseAsyncTeapot,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_136,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_103,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (404) Not Found.,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (404) Not Found.
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.status_code: 404,
+      http.url: http://localhost:00000/Guid_4/?GetResponseNotFound,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_137,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_104,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      error.msg: The remote server returned an error: (418) .,
+      error.stack:
+System.Net.WebException: The remote server returned an error: (418) .
+at System.Net.HttpWebRequest.GetResponse(),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.status_code: 418,
+      http.url: http://localhost:00000/Guid_4/?GetResponseTeapot,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_138,
+    Name: http.request,
+    Resource: GET localhost:00000/?/,
+    Service: Samples.WebRequest-http-client,
+    Type: http,
+    ParentId: Id_117,
+    Tags: {
+      component: HttpMessageHandler,
+      env: integration_tests,
+      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http.method: GET,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Guid_4/?TaskFactoryFromAsync,
+      language: dotnet,
+      out.host: localhost,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.WebRequest
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]

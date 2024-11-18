@@ -1,4 +1,4 @@
-﻿// <copyright file="DelegateInstrumentation.cs" company="Datadog">
+// <copyright file="DelegateInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -404,7 +404,7 @@ internal static class DelegateInstrumentation
                     }
                 }
 
-                TInnerReturn? continuationResult = default;
+                TInnerReturn? continuationResult;
                 try
                 {
                     // *
@@ -415,6 +415,7 @@ internal static class DelegateInstrumentation
                 catch (Exception ex)
                 {
                     asyncCallback.OnException(sender, ex);
+                    continuationResult = taskResult;
                 }
 
                 // *

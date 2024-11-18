@@ -26,9 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.MicrosoftDataSqlClient
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               from dbmEnabled in new[] { true, false }
                from propagation in new[] { "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, dbmEnabled, propagation };
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
 
@@ -36,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, bool dbmEnabled, string propagation)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string propagation)
         {
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
@@ -70,7 +69,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
-            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, dbmEnabled ? "1" : "0");
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagation);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";

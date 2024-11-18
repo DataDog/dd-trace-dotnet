@@ -1,5 +1,5 @@
 # Change the default BuildId to not include a '.' in the name (use '_' instead)
-name: $(Date:yyyyMMdd)_$(Rev:rr)
+name: $(Date:yyyyMMdd)-$(Rev:rr)
 
 trigger:
   branches:
@@ -103,10 +103,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 8.0.100
+  dotnetCoreSdkLatestVersion: 9.0.100
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 8.0.100
+  dotnetCoreSdkLatestVersionShort: 9.0.100
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -141,7 +141,7 @@ variables:
   IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   IntegrationTestSampleName:  $(TEST_SAMPLE_NAME)
   IntegrationTestFilter:  $(TEST_FILTER)
-  DockerComposeProjectName: ddtrace_$(Build.BuildNumber)
+  DockerComposeProjectName: ddtrace-$(Build.BuildNumber)
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -171,7 +171,7 @@ variables:
   DD_COLLECTOR_CPU_USAGE: true
   # If we're doing an SSI run, set the indicator, the rest need to be set in the stage
   IS_SSI_RUN: $[ or(eq(variables['Build.CronSchedule.DisplayName'], 'Daily SSI Run'), eq(variables['force_ssi_run'], 'true')) ]
-  ToolVersion: 3.4.0
+  ToolVersion: 3.6.0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -240,7 +240,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -267,7 +267,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -309,7 +309,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -365,7 +365,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -428,7 +428,7 @@ stages:
       timeoutInMinutes: 60 #default value
       dependsOn: []
       pool:
-        name: azure-linux-scale-set-2
+        name: azure-linux-scale-set
       
       steps:
         - template: steps/clone-repo.yml
@@ -491,7 +491,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -504,7 +504,7 @@ stages:
         build: true
         target: builder
         baseImage: "universal"
-        useNativeSdkVersion: true
+        useNativeSdkVersion: false
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -542,7 +542,7 @@ stages:
           artifactSuffix: linux-musl-x64
           useNativeSdkVersion: ""
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -604,7 +604,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -978,7 +978,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -998,7 +998,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1023,7 +1023,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [native_tracer, native_loader_and_managed ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - checkout: none
 
@@ -1050,7 +1050,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-windows-scale-set-3
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1110,7 +1110,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -1153,7 +1153,7 @@ stages:
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -1253,7 +1253,7 @@ stages:
           useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
       - template: steps/clone-repo.yml
@@ -1289,7 +1289,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1325,7 +1325,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1344,7 +1344,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-2
+    name: azure-windows-scale-set-3
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1392,7 +1392,7 @@ stages:
   - job: managed
     timeoutInMinutes: 90
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1450,7 +1450,7 @@ stages:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -1547,7 +1547,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1626,7 +1626,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1688,7 +1688,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1748,7 +1748,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1807,7 +1807,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -1817,11 +1817,12 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
         
-    # Not using chocolatey as we're getting 429 Too Many Requests
     - template: steps/install-msi.yml
       parameters:
-        url: "https://functionscdn.azureedge.net/public/artifacts/v4/latest/func-cli-x64.msi"
-        filename: "func-cli-x64.msi"
+        # Pin to a specific version of Azure Functions, as beyond this requires Azurite
+        # TODO: Make this floating and use azurite if necessary down the line
+        url: "https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi"
+        filename: "func-cli-4.0.6280-x64.msi"
         addToPath: "C:\\Program Files\\Microsoft\\Azure Functions Core Tools"
 
     - script: func
@@ -1878,7 +1879,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -1897,7 +1898,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ ]
     pool:
-      vmImage: macos-12
+      vmImage: macos-13
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -1930,7 +1931,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     timeoutInMinutes: 60 #default value
 
     steps:
@@ -1965,7 +1966,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2009,9 +2010,9 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      relativeMsiOutputDirectory: /artifacts/msi/$(targetPlatform)/en-us
 
     steps:
     - template: steps/clone-repo.yml
@@ -2028,14 +2029,28 @@ stages:
       inputs:
         artifact: windows-msi-$(targetPlatform)
         patterns: '**/*-$(targetPlatform).msi'
-        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+        path: $(System.DefaultWorkingDirectory)$(relativeMsiOutputDirectory)
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - script: |
-        docker compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker compose up -d IntegrationTests.IIS
+    - powershell: |
+        mkdir -Force ./artifacts/build_data/snapshots
+        mkdir -Force ./artifacts/build_data/logs/LoaderOptimizationStartup
+        mkdir -Force ./artifacts/build_data/logs/MultipleAppsInDomain
+        docker compose -f docker-compose.windows.yml run --rm start-test-agent.windows
+
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.LoaderOptimizationStartup
+
+        docker compose -f docker-compose.windows.yml build `
+            --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi `
+            --build-arg ENABLE_32_BIT=$(enable32bit) `
+            IntegrationTests.IIS.MultipleAppsInDomain
+
+        docker compose -f docker-compose.windows.yml up -d IntegrationTests.IIS.LoaderOptimizationStartup IntegrationTests.IIS.MultipleAppsInDomain
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
@@ -2053,7 +2068,7 @@ stages:
         testResultsFiles: artifacts/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - script: docker compose down
+    - script: docker compose  -f docker-compose.windows.yml down
       displayName: docker-compose stop services
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2096,7 +2111,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2177,7 +2192,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2288,7 +2303,7 @@ stages:
           publishTargetFramework: "net8.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8"
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2473,7 +2488,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2573,7 +2588,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2651,7 +2666,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2745,7 +2760,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2791,7 +2806,7 @@ stages:
     condition: false
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -2833,7 +2848,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     steps:
 
@@ -2890,8 +2905,7 @@ stages:
         jobs: [Test, DockerTest]
 
     - job: Test
-      timeoutInMinutes: 60 #default value
-      # TODO: move this to GenerateVariables stage
+      timeoutInMinutes: 90 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
       workspace:
@@ -3163,7 +3177,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3179,11 +3193,11 @@ stages:
 
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
 
-    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: RunExplorationTest
+    - script: tracer\build.cmd RunExplorationTests --ExplorationTestUseCase $(explorationTestUseCase) --ExplorationTestName $(explorationTestName)
+      displayName: RunExplorationTest $(explorationTestUseCase) $(explorationTestName)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -3222,7 +3236,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-linux-scale-set-2
+      name: azure-linux-scale-set
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3526,7 +3540,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -3757,7 +3771,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set-2
+      name: azure-windows-scale-set-3
 
     steps:
     - template: steps/clone-repo.yml
@@ -3847,12 +3861,12 @@ stages:
         x64:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-linux-scale-set
           targetArch: x64
         alpine_x64:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set-2
+          poolName: azure-linux-scale-set
           targetArch: x64
         arm64:
           baseImage: debian
@@ -5027,6 +5041,12 @@ stages:
         integrations_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: INTEGRATIONS
+        integrations_aws_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: INTEGRATIONS_AWS
+        integrations_aws_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: INTEGRATIONS_AWS
         crossed_tracing_libraries_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: CROSSED_TRACING_LIBRARIES
@@ -6212,7 +6232,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      name: azure-windows-scale-set
+      name: azure-windows-scale-set-2
 
     steps:
     - template: steps/install-docker-compose-v1.yml
@@ -6623,7 +6643,7 @@ stages:
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - bash: dotnet tool install dd-trace --global --prerelease
+    - bash: dotnet tool install dd-trace --global --prerelease --allow-roll-forward
       displayName: "Install dd-trace"
       retryCountOnTaskFailure: 2
 

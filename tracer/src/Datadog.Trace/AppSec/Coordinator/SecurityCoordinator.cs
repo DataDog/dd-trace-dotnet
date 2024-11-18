@@ -7,18 +7,19 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.MessagePack;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
+#if !NETFRAMEWORK
+using Microsoft.AspNetCore.Http;
+#else
+using System.Collections.Specialized;
+using System.Web;
+#endif
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -27,6 +28,7 @@ namespace Datadog.Trace.AppSec.Coordinator;
 /// </summary>
 internal readonly partial struct SecurityCoordinator
 {
+    private const string ReportedExternalWafsRequestHeadersStr = "ReportedExternalWafsRequestHeaders";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecurityCoordinator>();
     private readonly Security _security;
     private readonly Span _localRootSpan;
@@ -67,23 +69,10 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public bool HasContext()
-    {
-        return _httpTransport.Context is not null;
-    }
-
-    public bool IsAdditiveContextDisposed()
-    {
-        return _httpTransport.IsAdditiveContextDisposed();
-    }
+    public bool IsAdditiveContextDisposed() => _httpTransport.IsAdditiveContextDisposed();
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
-        if (!HasContext())
-        {
-            return null;
-        }
-
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try
@@ -98,6 +87,11 @@ internal readonly partial struct SecurityCoordinator
                 {
                     _httpTransport.SetAdditiveContext(additiveContext);
                 }
+            }
+            else if (_httpTransport.IsAdditiveContextDisposed())
+            {
+                Log.Warning("Waf could not run as waf additive context is disposed");
+                return null;
             }
 
             _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
@@ -119,19 +113,18 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            var stringBuilder = new StringBuilder();
+            var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
                 stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
             }
 
-            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
         }
-        finally
+
+        if (_localRootSpan.Context.TraceContext is not null)
         {
-            // annotate span
-            _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
-            _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
         }
 
         return result;
@@ -170,6 +163,76 @@ internal readonly partial struct SecurityCoordinator
         }
 
         _httpTransport.DisposeAdditiveContext();
+    }
+
+    internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
+    {
+        var cookies = RequestDataHelper.GetCookies(request);
+
+        if (cookies is not null && cookies.Count is > 0)
+        {
+            var cookiesCount = cookies.Count;
+            var cookiesDic = new Dictionary<string, object>(cookiesCount);
+            for (var i = 0; i < cookiesCount; i++)
+            {
+                GetCookieKeyValueFromIndex(cookies, i, out var keyForDictionary, out var cookieValue);
+
+                if (cookieValue is not null && keyForDictionary is not null)
+                {
+                    if (!cookiesDic.TryGetValue(keyForDictionary, out var value))
+                    {
+                        cookiesDic.Add(keyForDictionary, cookieValue);
+                    }
+                    else
+                    {
+                        if (value is string stringValue)
+                        {
+                            cookiesDic[keyForDictionary] = new List<string> { stringValue, cookieValue };
+                        }
+                        else if (value is List<string> valueList)
+                        {
+                            valueList.Add(cookieValue);
+                        }
+                        else
+                        {
+                            Log.Warning("Cookie {Key} couldn't be added as argument to the waf", keyForDictionary);
+                        }
+                    }
+                }
+            }
+
+            return cookiesDic;
+        }
+
+        return null;
+    }
+
+    private static Dictionary<string, object> ExtractHeaders(ICollection<string> keys, Func<string, object> getHeaderValue)
+    {
+        var headersDic = new Dictionary<string, object>(keys.Count);
+        foreach (var key in keys)
+        {
+            var currentKey = key ?? string.Empty;
+            if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
+            {
+                currentKey = currentKey.ToLowerInvariant();
+                var value = getHeaderValue(currentKey);
+
+                if (value is not null)
+                {
+                    if (!headersDic.ContainsKey(currentKey))
+                    {
+                        headersDic.Add(currentKey, value);
+                    }
+                    else
+                    {
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                    }
+                }
+            }
+        }
+
+        return headersDic;
     }
 
     private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;

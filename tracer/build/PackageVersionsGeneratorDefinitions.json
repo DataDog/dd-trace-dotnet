@@ -80,6 +80,24 @@
     ]
   },
   {
+    "IntegrationName": "AwsEventBridge",
+    "SampleProjectName": "Samples.AWS.EventBridge",
+    "NugetPackageSearchName": "AWSSDK.EventBridge",
+    "MinVersion": "3.3.100",
+    "MaxVersionExclusive": "4.0.0",
+    "SpecificVersions": [
+      "3.3.*",
+      "3.5.*",
+      "3.7.*"
+    ],
+    "VersionConditions": [
+      {
+        "MaxVersionExclusive": "3.3.0",
+        "IncludeOnlyTargetFrameworks": ["net462"]
+      }
+    ]
+  },
+  {
     "IntegrationName": "MongoDB",
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
@@ -540,10 +558,11 @@
     "SampleProjectName": "LogsInjection.Log4Net",
     "NugetPackageSearchName": "log4net",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "1.*.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.6",

@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 internal sealed class AWSCodePipelineEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: AWS CodePipeline detected");
 

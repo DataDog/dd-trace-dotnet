@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
-            if (security.Enabled && returnValue is not null)
+            if (security.AppsecEnabled && returnValue is not null)
             {
                 if (returnValue.TryDuckCast<IJsonResultMvc>(out var actionResult))
                 {
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         var scope = SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
                         if (scope is not null)
                         {
-                            var securityTransport = new SecurityCoordinator(security, scope.Span);
+                            var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);
                             if (!securityTransport.IsBlocked)
                             {
                                 var extractedObject = ObjectExtractor.Extract(responseObject);

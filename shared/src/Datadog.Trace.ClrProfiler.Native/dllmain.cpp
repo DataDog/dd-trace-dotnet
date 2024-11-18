@@ -94,7 +94,8 @@ EXTERN_C BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_cal
         }
 #endif
 
-            dispatcher = new DynamicDispatcherImpl();
+        dispatcher = new DynamicDispatcherImpl();
+        dispatcher->LoadConfiguration(GetConfigurationFilePath());
 
         // *****************************************************************************************************************
         break;

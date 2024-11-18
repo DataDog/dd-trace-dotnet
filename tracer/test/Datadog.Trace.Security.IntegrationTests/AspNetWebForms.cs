@@ -4,8 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System.Net;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;

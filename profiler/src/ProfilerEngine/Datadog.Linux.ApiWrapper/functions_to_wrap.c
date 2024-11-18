@@ -375,14 +375,6 @@ int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void
  * dlopen, dladdr issue happens mainly on Alpine
  */
 
-__attribute__((visibility("hidden")))
-atomic_ullong __dd_dlopen_dlcose_calls_counter = 0;
-
-unsigned long long dd_nb_calls_to_dlopen_dlclose()
-{
-    return __dd_dlopen_dlcose_calls_counter;
-}
-
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
@@ -394,7 +386,7 @@ void* dlopen(const char* file, int mode)
 
     // call the real dlopen (libc/musl-libc)
     void* result = __real_dlopen(file, mode);
-    __dd_dlopen_dlcose_calls_counter++;
+    __dd_notify_libraries_cache_update();
 
     ((char*)&functions_entered_counter)[ENTERED_DL_OPEN]--;
 
@@ -410,7 +402,7 @@ int dlclose(void* handle)
 
     // call the real dlopen (libc/musl-libc)
     int result = __real_dlclose(handle);
-    __dd_dlopen_dlcose_calls_counter++;
+    __dd_notify_libraries_cache_update();
 
     return result;
 }
@@ -549,6 +541,24 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
 #ifdef DD_ALPINE
 
+struct pthread_wrapped_arg
+{
+    void* (*func)(void*);
+    void* orig_arg;
+};
+
+__attribute__((visibility("hidden")))
+static void* entry2(void* arg)
+{
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
+    void* result = new_arg->func(new_arg->orig_arg);
+    free(new_arg);
+    // Call into the profiler to do extra cleanup.
+    // This is *useful* at shutdown time to avoid crashing.
+    __dd_on_thread_routine_finished();
+    return result;
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
@@ -559,7 +569,11 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
 
     // call the real pthread_create (libc/musl-libc)
-    int result = __real_pthread_create(res, attrp, entry, arg);
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)malloc(sizeof(struct pthread_wrapped_arg));
+    new_arg->func = entry;
+    new_arg->orig_arg = arg;
+
+    int result = __real_pthread_create(res, attrp, entry2, new_arg);
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 

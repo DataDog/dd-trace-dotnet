@@ -22,41 +22,8 @@ namespace datadog::shared::nativeloader
     DynamicDispatcherImpl::DynamicDispatcherImpl() :
         m_continuousProfilerInstance(nullptr),
         m_tracerInstance(nullptr),
-        m_customInstance(nullptr),
-        m_initialized(false),
-        m_initializationResult(E_UNEXPECTED)
+        m_customInstance(nullptr)
     {
-    }
-
-    HRESULT DynamicDispatcherImpl::Initialize()
-    {
-        if (m_initialized)
-        {
-            return m_initializationResult;
-        }
-
-        m_initialized = true;
-
-        LoadConfiguration(GetConfigurationFilePath());
-
-        m_initializationResult = LoadClassFactory(IID_IClassFactory);
-
-        if (FAILED(m_initializationResult))
-        {
-            Log::Error("Error loading all cor profiler class factories.");
-            return m_initializationResult;
-        }
-
-        m_initializationResult = LoadInstance();
-
-        if (FAILED(m_initializationResult))
-        {
-            Log::Error("Error loading all cor profiler instances.");
-            return m_initializationResult;
-        }
-
-        m_initializationResult = S_OK;
-        return m_initializationResult;
     }
 
     void DynamicDispatcherImpl::LoadConfiguration(fs::path&& configFilePath)
@@ -79,13 +46,6 @@ namespace datadog::shared::nativeloader
         // Gets the configuration file folder
         fs::path configFolder = fs::path(configFilePath).remove_filename();
         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Config Folder: ", configFolder);
-
-        // Get the current path
-        fs::path oldCurrentPath = fs::current_path();
-        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: Current Path: ", oldCurrentPath);
-
-        // Set the current path to the configuration folder (to allow relative paths)
-        fs::current_path(configFolder);
 
         const auto isRunningOnAlpine = IsRunningOnAlpine();
         const auto currentOsArch = GetCurrentOsArch(isRunningOnAlpine);
@@ -128,9 +88,11 @@ namespace datadog::shared::nativeloader
                     {
                         // Convert possible relative paths to absolute paths using the configuration file folder as base
                         // (current_path)
-                        std::string absoluteFilepathValue = fs::absolute(filepathValue).string();
+                        std::string absoluteFilepathValue = (configFolder / filepathValue).string();
                         Log::Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"] (", currentOsArch, ")" );
-                        if (fs::exists(absoluteFilepathValue))
+                        
+                        ec.clear();
+                        if (fs::exists(absoluteFilepathValue, ec))
                         {
                             Log::Debug("[", type, "] Creating a new DynamicInstance object");
 
@@ -162,8 +124,17 @@ namespace datadog::shared::nativeloader
                         }
                         else
                         {
-                            Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
-                                 "' cannot be loaded, file doesn't exist.");
+                            if (ec)
+                            {
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, error code: ", ec.value(), ", message: ", ec.message());
+                            }
+                            else
+                            {
+
+                                Log::Warn("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Dynamic library for '", absoluteFilepathValue,
+                                    "' cannot be loaded, file doesn't exist.");
+                            }
                         }
                     }
                     else
@@ -182,15 +153,11 @@ namespace datadog::shared::nativeloader
             }
         }
         t.close();
-
-        // Set the current path to the original one
-        fs::current_path(oldCurrentPath);
     }
 
     HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)
     {
-        // We consider the loading a success if at least one class factory is properly loaded.
-        HRESULT GHR = E_FAIL;
+        HRESULT GHR = S_OK;
 
         if (m_continuousProfilerInstance != nullptr)
         {
@@ -198,19 +165,11 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
-                     m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
+                     m_continuousProfilerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_continuousProfilerInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 
@@ -219,20 +178,11 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_tracerInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ",
-                    m_tracerInstance->GetFilePath(), ", error code: ", result);
+                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 
@@ -241,94 +191,58 @@ namespace datadog::shared::nativeloader
             HRESULT result = m_customInstance->LoadClassFactory(riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ",
-                    m_customInstance->GetFilePath(), ", error code: ", result);
+                Log::Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 
         return GHR;
     }
 
-    HRESULT DynamicDispatcherImpl::LoadInstance()
+    HRESULT DynamicDispatcherImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
-        // We consider the loading a success if at least one class factory is properly loaded.
-        HRESULT GHR = E_FAIL;
+        HRESULT GHR = S_OK;
 
         if (m_continuousProfilerInstance != nullptr)
         {
-            HRESULT result = m_continuousProfilerInstance->LoadInstance();
+            HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
                 Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
-                    m_continuousProfilerInstance->GetFilePath(), ", error code: ", result);
+                     m_continuousProfilerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_continuousProfilerInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 
         if (m_tracerInstance != nullptr)
         {
-            HRESULT result = m_tracerInstance->LoadInstance();
+            HRESULT result = m_tracerInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ",
-                    m_tracerInstance->GetFilePath(), ", error code: ", result);
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_tracerInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 
         if (m_customInstance != nullptr)
         {
-            HRESULT result = m_customInstance->LoadInstance();
+            HRESULT result = m_customInstance->LoadInstance(pUnkOuter, riid);
             if (FAILED(result))
             {
-                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ",
-                    m_customInstance->GetFilePath(), ", error code: ", result);
+                Log::Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
 
                 // If we cannot load the class factory we release the instance.
                 m_customInstance.release();
-
-                if (GHR != S_OK)
-                {
-                    GHR = result;
-                }
-            }
-            else
-            {
-                GHR = S_OK;
+                GHR = result;
             }
         }
 

@@ -3,17 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+#if NETFRAMEWORK
+
 using System;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Concurrency;
 
 internal partial class ReaderWriterLock : IDisposable
 {
-    private const int TimeoutInMs = 4000;
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ReaderWriterLock>();
-#if NETFRAMEWORK
     private readonly System.Threading.ReaderWriterLock _readerWriterLock = new();
 
     internal bool IsReadLockHeld => _readerWriterLock.IsReaderLockHeld;
@@ -32,16 +31,16 @@ internal partial class ReaderWriterLock : IDisposable
         }
     }
 
-    internal bool EnterWriteLock()
+    internal bool EnterWriteLock(int timeout = TimeoutInMs)
     {
         try
         {
-            _readerWriterLock.AcquireWriterLock(TimeoutInMs);
+            _readerWriterLock.AcquireWriterLock(timeout);
             return true;
         }
         catch (ApplicationException)
         {
-            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", TimeoutInMs);
+            Log.Error<int>("Couldn't acquire writer lock in {Timeout} ms", timeout);
             return false;
         }
     }
@@ -74,5 +73,6 @@ internal partial class ReaderWriterLock : IDisposable
     public void Dispose()
     {
     }
-#endif
 }
+
+#endif

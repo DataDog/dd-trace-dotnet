@@ -39,8 +39,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             var initResult = obfuscate
-                                 ? Waf.Create(WafLibraryInvoker!, SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
-                                 : Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+                                 ? CreateWaf(obfuscationParameterKeyRegex: SecurityConstants.ObfuscationParameterKeyRegexDefault, obfuscationParameterValueRegex: SecurityConstants.ObfuscationParameterValueRegexDefault)
+                                 : CreateWaf();
             initResult.Success.Should().BeTrue();
             using (var waf = initResult.Waf)
             {

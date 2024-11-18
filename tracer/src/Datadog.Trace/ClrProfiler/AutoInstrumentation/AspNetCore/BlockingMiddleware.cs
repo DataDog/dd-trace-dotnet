@@ -76,11 +76,11 @@ internal class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.Enabled)
+        if (security.AppsecEnabled)
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
                 if (_endPipeline && !context.Response.HasStarted)
                 {
                     context.Response.StatusCode = 404;
@@ -119,11 +119,11 @@ internal class BlockingMiddleware
                 // Use blockinfo here
                 var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                if (security.Enabled)
+                if (security.AppsecEnabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
-                        var securityCoordinator = new SecurityCoordinator(security, span, new SecurityCoordinator.HttpTransport(context));
+                        var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
                         if (!blockException.Reported)
                         {
                             securityCoordinator.TryReport(blockException.Result, endedResponse);

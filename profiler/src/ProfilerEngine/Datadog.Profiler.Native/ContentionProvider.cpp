@@ -48,7 +48,8 @@ ContentionProvider::ContentionProvider(
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()},
     _pConfiguration{pConfiguration},
-    _callstackProvider{std::move(callstackProvider)}
+    _callstackProvider{std::move(callstackProvider)},
+    _metricsRegistry{metricsRegistry}
 {
     _lockContentionsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_lock_contentions");
     _lockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_lock_contentions_duration");
@@ -130,7 +131,8 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         std::shared_ptr<ManagedThreadInfo> threadInfo;
         CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
+        const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+            _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
         pStackFramesCollector->PrepareForNextCollection();
 
         uint32_t hrCollectStack = E_FAIL;

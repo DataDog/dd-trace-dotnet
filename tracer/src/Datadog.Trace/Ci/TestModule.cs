@@ -130,10 +130,10 @@ public sealed class TestModule
 
             // Extract session variables (from out of process sessions)
             var environmentVariables = EnvironmentHelpers.GetEnvironmentVariables();
-            var sessionContext = SpanContextPropagator.Instance.Extract(
+            var context = SpanContextPropagator.Instance.Extract(
                 environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
 
-            if (sessionContext is not null)
+            if (context.SpanContext is { } sessionContext)
             {
                 tags.SessionId = sessionContext.SpanId;
                 if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))

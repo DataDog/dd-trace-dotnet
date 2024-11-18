@@ -49,6 +49,7 @@ namespace Datadog.Trace.Configuration
             var config = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
             EnabledInternal = config
                      .WithKeys(
+                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName.ToUpperInvariant()),
                           string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
                           string.Format("DD_{0}_ENABLED", integrationName))
                      .AsBool();

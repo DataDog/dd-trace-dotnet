@@ -69,6 +69,7 @@ public:
     virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
     virtual bool IsEtwEnabled() const = 0;
     virtual bool IsEtwLoggingEnabled() const = 0;
+    virtual std::string const& GetEtwReplayEndpoint() const = 0;
     virtual EnablementStatus GetEnablementStatus() const = 0;
     virtual DeploymentMode GetDeploymentMode() const = 0;
     virtual CpuProfilerType GetCpuProfilerType() const = 0;

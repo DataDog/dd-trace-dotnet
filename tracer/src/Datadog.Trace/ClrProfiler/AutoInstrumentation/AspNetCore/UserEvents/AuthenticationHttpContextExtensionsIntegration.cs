@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         MethodName = "SignInAsync",
         ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
-        MaximumVersion = "8",
+        MaximumVersion = SupportedVersions.LatestDotNet,
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

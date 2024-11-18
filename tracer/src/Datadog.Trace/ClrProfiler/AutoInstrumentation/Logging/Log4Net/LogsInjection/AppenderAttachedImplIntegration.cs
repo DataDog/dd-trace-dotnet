@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         ReturnTypeName = ClrNames.Int32,
         ParameterTypeNames = new[] { "log4net.Core.LoggingEvent" },
         MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
+        MaximumVersion = "3.*.*",
         IntegrationName = "Log4Net")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

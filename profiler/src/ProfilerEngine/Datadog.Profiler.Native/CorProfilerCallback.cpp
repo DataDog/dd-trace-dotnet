@@ -56,6 +56,7 @@
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
+#include "LibrariesInfoCache.h"
 #endif
 
 #include "shared/src/native-src/environment_variables.h"
@@ -81,6 +82,10 @@ extern "C" __attribute__((visibility("default"))) const char* Profiler_Version =
 // Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
+#ifdef LINUX
+extern "C" void (*volatile dd_on_thread_routine_finished)() __attribute__((weak));
+#endif
+
 CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfiguration) :
     _pConfiguration{std::move(pConfiguration)}
 {
@@ -93,6 +98,12 @@ CorProfilerCallback::CorProfilerCallback(std::shared_ptr<IConfiguration> pConfig
 #ifndef _WINDOWS
     CGroup::Initialize();
 #endif
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = CorProfilerCallback::OnThreadRoutineFinished;
+    }
+#endif
 }
 
 // Cleanup
@@ -104,6 +115,13 @@ CorProfilerCallback::~CorProfilerCallback()
 
 #ifndef _WINDOWS
     CGroup::Cleanup();
+#endif
+
+#if defined(LINUX)
+    if (&dd_on_thread_routine_finished != nullptr)
+    {
+        dd_on_thread_routine_finished = nullptr;
+    }
 #endif
 }
 
@@ -121,6 +139,12 @@ void CorProfilerCallback::InitializeServices()
         // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
         _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
     }
+    
+    // Like the SystemCallsShield, this service must be started before any profiler.
+    // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
+    // (before it uses the default memory resource a.k.a new/delete for allocation)
+    // TODO add metrics to measure if it's ok or not
+    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
@@ -463,7 +487,8 @@ void CorProfilerCallback::InitializeServices()
             ProfilerSignalManager::Get(SIGPROF),
             _pManagedThreadList,
             _pCpuTimeProvider,
-            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)));
+            CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize, useMmap)),
+            _metricsRegistry);
     }
 #endif
 
@@ -1313,6 +1338,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 {
     Log::Info("CorProfilerCallback::Shutdown()");
 
+#ifdef LINUX
+    if (_pCpuProfiler != nullptr)
+    {
+        _pCpuProfiler->Stop();
+    }
+#endif
+
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
@@ -1538,6 +1570,31 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
     return S_OK;
 }
 
+#ifdef LINUX
+void CorProfilerCallback::OnThreadRoutineFinished()
+{
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto myThis = _this;
+    if (myThis == nullptr)
+    {
+        return;
+    }
+
+    auto* cpuProfiler = myThis->_pCpuProfiler;
+    if (cpuProfiler == nullptr)
+    {
+        return;
+    }
+
+    cpuProfiler->UnregisterThread(threadInfo);
+}
+#endif
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
@@ -1547,6 +1604,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
+
+    ManagedThreadInfo::CurrentThreadInfo = nullptr;
 
     std::shared_ptr<ManagedThreadInfo> pThreadInfo;
     Log::Debug("Removing thread ", std::hex, threadId, " from the trace context threads list.");
@@ -1622,8 +1681,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // is the same native thread assigned to the managed thread.
     ManagedThreadInfo::CurrentThreadInfo = threadInfo;
 
-#ifdef LINUX
+    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
+#ifdef LINUX
+    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    // Otherwise the threadInfo won't have it's OsThread field set and timer_create
+    // will have random behavior.
     if (_pCpuProfiler != nullptr)
     {
         _pCpuProfiler->RegisterThread(threadInfo);
@@ -1659,7 +1722,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         return S_OK;
     }
 #endif
-    _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;
 }
