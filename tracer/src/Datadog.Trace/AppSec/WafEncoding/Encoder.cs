@@ -635,23 +635,19 @@ namespace Datadog.Trace.AppSec.WafEncoding
         private static StringBuilder FormatList<T>(IEnumerable<T> objs, StringBuilder sb)
         {
             sb.Append("[ ");
-            using var enumerator = objs.GetEnumerator();
-            if (!enumerator.MoveNext())
-            {
-                sb.Append(" ]");
-                return sb;
-            }
 
-            if (enumerator.Current != null)
+            using var enumerator = objs.GetEnumerator();
+            if (enumerator.MoveNext() && enumerator.Current != null)
             {
                 FormatArgsInternal(enumerator.Current, sb);
-            }
 
-            while (enumerator.MoveNext())
-            {
-                if (enumerator.Current != null)
+                while (enumerator.MoveNext())
                 {
-                    FormatArgsInternal(enumerator.Current, sb);
+                    if (enumerator.Current != null)
+                    {
+                        sb.Append(", ");
+                        FormatArgsInternal(enumerator.Current, sb);
+                    }
                 }
             }
 
