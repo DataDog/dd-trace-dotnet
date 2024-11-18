@@ -165,7 +165,7 @@ internal class GitInfo : IGitInfo
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error getting directory info");
+            Log.Warning(ex, "Error getting directory info");
             return null;
         }
 
@@ -189,17 +189,17 @@ internal class GitInfo : IGitInfo
             }
             catch (DirectoryNotFoundException ex)
             {
-                Log.Error(ex, "Get directories failed with DirectoryNotFoundException");
+                Log.Warning(ex, "Get directories failed with DirectoryNotFoundException");
                 return null;
             }
             catch (UnauthorizedAccessException ex)
             {
-                Log.Error(ex, "Get directories failed with UnauthorizedAccessException");
+                Log.Warning(ex, "Get directories failed with UnauthorizedAccessException");
                 return null;
             }
             catch (SecurityException ex)
             {
-                Log.Error(ex, "Get directories or parent directory failed with SecurityException");
+                Log.Warning(ex, "Get directories or parent directory failed with SecurityException");
                 return null;
             }
         }
