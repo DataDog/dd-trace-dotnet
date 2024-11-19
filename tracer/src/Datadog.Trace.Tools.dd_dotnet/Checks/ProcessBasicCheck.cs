@@ -88,6 +88,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             var tracerModules = FindTracerModules(process).ToArray();
 
+            foreach (var module in tracerModules)
+            {
+                AnsiConsole.WriteLine($"Module: '{module}'");
+            }
+
             if (tracerModules.Length == 0)
             {
                 Utils.WriteWarning(TracerNotLoaded);
@@ -113,6 +118,16 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     if (version.FileMajorPart < 2)
                     {
                         areAllVersion2 = false;
+                    }
+                }
+
+                if (versions.Count == 1)
+                {
+                    AnsiConsole.WriteLine("Found the tracer multiple times with the same version");
+
+                    foreach (var module in tracerModules)
+                    {
+                        AnsiConsole.WriteLine($"Module: '{module}'");
                     }
                 }
 
