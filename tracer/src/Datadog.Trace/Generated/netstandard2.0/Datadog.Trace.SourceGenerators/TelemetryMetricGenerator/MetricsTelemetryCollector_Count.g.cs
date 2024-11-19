@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 569;
+    private const int CountLength = 571;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -584,7 +584,10 @@ internal partial class MetricsTelemetryCollector
             // instrum.user_auth.missing_user_id, index = 524
             new(new[] { "framework:aspnetcore_identity" }),
             new(new[] { "framework:unknown" }),
-            // executed.source, index = 526
+            // instrum.user_auth.missing_user_login, index = 526
+            new(new[] { "framework:aspnetcore_identity" }),
+            new(new[] { "framework:unknown" }),
+            // executed.source, index = 528
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -599,9 +602,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.uri" }),
             new(new[] { "source_type:grpc.request.body" }),
             new(new[] { "source_type:sql.row.value" }),
-            // executed.propagation, index = 540
+            // executed.propagation, index = 542
             new(null),
-            // executed.sink, index = 541
+            // executed.sink, index = 543
             new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
@@ -629,7 +632,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
-            // request.tainted, index = 568
+            // request.tainted, index = 570
             new(null),
         };
 
@@ -639,7 +642,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 4, 4, 4, 2, 14, 1, 27, 1, };
+        = new int[]{ 4, 77, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 5, 5, 2, 1, 22, 3, 90, 90, 2, 44, 6, 1, 1, 77, 1, 22, 3, 1, 1, 5, 3, 4, 4, 4, 2, 2, 14, 1, 27, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -865,25 +868,31 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
-    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
+    public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
     {
         var index = 526 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
+    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
+    {
+        var index = 528 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
     public void RecordCountIastExecutedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[540], increment);
+        Interlocked.Add(ref _buffer.Count[542], increment);
     }
 
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        var index = 541 + (int)tag;
+        var index = 543 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
     }
 
     public void RecordCountIastRequestTainted(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Count[568], increment);
+        Interlocked.Add(ref _buffer.Count[570], increment);
     }
 }

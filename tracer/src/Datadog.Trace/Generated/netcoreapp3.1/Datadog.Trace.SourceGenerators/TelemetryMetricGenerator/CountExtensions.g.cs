@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 43;
+    public const int Length = 44;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -61,6 +61,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "rasp.rule.match",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "rasp.timeout",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "instrum.user_auth.missing_user_id",
+            Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "instrum.user_auth.missing_user_login",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "executed.source",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "executed.propagation",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
@@ -107,6 +108,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.RaspRuleMatch => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.RaspTimeout => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.MissingUserId => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.MissingUserLogin => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "iast",
             Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "iast",
