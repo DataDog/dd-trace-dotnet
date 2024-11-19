@@ -6,7 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,44 +20,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             string dataFolder = DataHelpers.GetCiDataDirectory();
 
             // gitdata-01 => Git clone
-            yield return new object[]
-            {
+            yield return
+            [
                 new TestItem(Path.Combine(dataFolder, "gitdata-01"))
                 {
                     AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
-                    Branch = "refs/heads/master",
+                    Branch = "master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
                     CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
                     SourceRoot = dataFolder
-                },
-            };
+                }
+            ];
 
             // gitdata-02 => Git clone  + git gc (force packs files)
-            yield return new object[]
-            {
+            yield return
+            [
                 new TestItem(Path.Combine(dataFolder, "gitdata-02"))
                 {
                     AuthorDate = "2021-02-26 18:32:13Z",
                     AuthorEmail = "tony.redondo@datadoghq.com",
                     AuthorName = "Tony Redondo",
-                    Branch = "refs/heads/master",
+                    Branch = "master",
                     Commit = "5b6f3a6dab5972d73a56dff737bd08d995255c08",
                     CommitterDate = "2021-02-26 18:32:13Z",
                     CommitterEmail = "noreply@github.com",
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
                     SourceRoot = dataFolder
-                },
-            };
+                }
+            ];
 
             // gitdata-03 => Git clone + git checkout [sha]
-            yield return new object[]
-            {
+            yield return
+            [
                 new TestItem(Path.Combine(dataFolder, "gitdata-03"))
                 {
                     AuthorDate = "2021-02-26 18:32:13Z",
@@ -69,8 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
                     SourceRoot = dataFolder
-                },
-            };
+                }
+            ];
 
             // gitdata-04 => Git clone + git checkout [sha] + git gc (force packs files)
             yield return new object[]
@@ -91,8 +92,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
 
             // gitdata-05 => Git clone + git gc + git checkout tag
-            yield return new object[]
-            {
+            yield return
+            [
                 new TestItem(Path.Combine(dataFolder, "gitdata-05"))
                 {
                     AuthorDate = "2021-02-19 12:59:01Z",
@@ -105,30 +106,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     CommitterName = "GitHub",
                     Repository = "git@github.com:DataDog/dd-trace-dotnet.git",
                     SourceRoot = dataFolder
-                },
-            };
+                }
+            ];
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetData))]
         public void ExtractGitDataFromFolder(TestItem testItem)
         {
-            Assert.True(Directory.Exists(testItem.GitFolderPath));
+            Directory.Exists(testItem.GitFolderPath).Should().BeTrue();
 
-            var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
+            // Let's try with the git info provider based on manual parsing of the git folder
+            if (!ManualParserGitInfoProvider.Instance.TryGetFrom(testItem.GitFolderPath, out var gitInfo))
+            {
+                var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
+                throw new Exception($"Error parsing git info from provider: {nameof(ManualParserGitInfoProvider)}{Environment.NewLine}{errors}");
+            }
 
-            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
-            Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
-            Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
-            Assert.Equal(testItem.Branch, gitInfo.Branch);
-            Assert.Equal(testItem.Commit, gitInfo.Commit);
-            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
-            Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
-            Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
-            Assert.NotNull(gitInfo.Message);
-            Assert.NotNull(gitInfo.PgpSignature);
-            Assert.Equal(testItem.Repository, gitInfo.Repository);
-            Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
+            AssertGitInfo(testItem, gitInfo);
+            AssertGitInfo(testItem, GitInfo.GetFrom(testItem.GitFolderPath));
+
+            static void AssertGitInfo(TestItem testItem, IGitInfo gitInfo)
+            {
+                gitInfo.AuthorDate.Should().NotBeNull();
+                gitInfo.AuthorDate!.Value.ToString("u").Should().Be(testItem.AuthorDate);
+                gitInfo.AuthorEmail.Should().Be(testItem.AuthorEmail);
+                gitInfo.AuthorName.Should().Be(testItem.AuthorName);
+                gitInfo.Branch.Should().Be(testItem.Branch);
+                gitInfo.Commit.Should().Be(testItem.Commit);
+                gitInfo.CommitterDate.Should().NotBeNull();
+                gitInfo.CommitterDate!.Value.ToString("u").Should().Be(testItem.CommitterDate);
+                gitInfo.CommitterEmail.Should().Be(testItem.CommitterEmail);
+                gitInfo.CommitterName.Should().Be(testItem.CommitterName);
+                gitInfo.Message.Should().NotBeNull();
+                gitInfo.Repository.Should().Be(testItem.Repository);
+                gitInfo.SourceRoot.Should().Be(testItem.SourceRoot);
+            }
+        }
+
+        [SkippableFact]
+        public void GitCommandGitInfoProviderTest()
+        {
+            if (GitCommandGitInfoProvider.Instance.TryGetFrom(Environment.CurrentDirectory, out var gitInfo))
+            {
+                gitInfo.AuthorDate.Should().NotBeNull();
+                gitInfo.AuthorEmail.Should().NotBeNull();
+                gitInfo.AuthorName.Should().NotBeNull();
+                gitInfo.Commit.Should().NotBeNull();
+                gitInfo.CommitterDate.Should().NotBeNull();
+                gitInfo.CommitterEmail.Should().NotBeNull();
+                gitInfo.CommitterName.Should().NotBeNull();
+                gitInfo.Message.Should().NotBeNull();
+                gitInfo.Repository.Should().NotBeNull();
+                gitInfo.SourceRoot.Should().NotBeNull();
+            }
+            else
+            {
+                var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
+                throw new Exception($"Error parsing git info from provider: {nameof(GitCommandGitInfoProvider)}{Environment.NewLine}{errors}");
+            }
         }
 
         public class TestItem : IXunitSerializable

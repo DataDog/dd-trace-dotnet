@@ -113,20 +113,18 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            var stringBuilder = new StringBuilder();
+            var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
                 stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
             }
 
-            Log.Error(ex, "Call into the security module failed with arguments {Args}", stringBuilder.ToString());
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
         }
-        finally
+
+        if (_localRootSpan.Context.TraceContext is not null)
         {
-            // annotate span
-            _localRootSpan.SetMetric(Metrics.AppSecEnabled, 1.0);
-            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
-            _localRootSpan.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
         }
 
         return result;
@@ -220,13 +218,16 @@ internal readonly partial struct SecurityCoordinator
                 currentKey = currentKey.ToLowerInvariant();
                 var value = getHeaderValue(currentKey);
 
-                if (!headersDic.ContainsKey(currentKey))
+                if (value is not null)
                 {
-                    headersDic.Add(currentKey, value);
-                }
-                else
-                {
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                    if (!headersDic.ContainsKey(currentKey))
+                    {
+                        headersDic.Add(currentKey, value);
+                    }
+                    else
+                    {
+                        Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
+                    }
                 }
             }
         }

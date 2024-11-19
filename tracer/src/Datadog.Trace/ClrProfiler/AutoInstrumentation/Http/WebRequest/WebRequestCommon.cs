@@ -23,10 +23,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
         internal const string Major2 = "2";
         internal const string Major4 = "4";
-        internal const string Major8 = "8";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.WebRequest);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.WebRequest;
+
+        public static CallTargetState GetRequestStream_OnMethodBegin<TTarget>(TTarget instance)
+        {
+            TryInjectHeaders(instance);
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Try to inject distributed headers. If successfully injected, returns <c>true</c>.
+        /// </summary>
+        /// <param name="instance">The instance to inject into</param>
+        /// <returns>Returns <c>true</c> if injection was performed, and <c>/false</c> otherwise</returns>
+        public static bool TryInjectHeaders<TTarget>(TTarget instance)
+        {
+            if (instance is HttpWebRequest request && IsTracingEnabled(request))
+            {
+                var tracer = Tracer.Instance;
+
+                if (tracer.Settings.IsIntegrationEnabled(WebRequestCommon.IntegrationId))
+                {
+                    var span = ScopeFactory.CreateInactiveOutboundHttpSpan(
+                        tracer,
+                        request.Method,
+                        request.RequestUri,
+                        WebRequestCommon.IntegrationId,
+                        out _,
+                        traceId: TraceId.Zero,
+                        spanId: 0,
+                        startTime: null,
+                        addToTraceContext: false);
+
+                    if (span?.Context != null)
+                    {
+                        // Add distributed tracing headers to the HTTP request.
+                        // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
+                        // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
+                        // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
+                        // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
+                        // added by us, not the application
+                        var context = new PropagationContext(span?.Context, Baggage.Current);
+                        SpanContextPropagator.Instance.Inject(context, request.Headers.Wrap());
+                        HeadersInjectedCache.SetInjectedHeaders(request.Headers);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// OnMethodBegin callback

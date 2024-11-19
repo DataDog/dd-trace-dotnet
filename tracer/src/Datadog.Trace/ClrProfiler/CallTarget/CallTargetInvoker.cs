@@ -28,6 +28,7 @@ public static class CallTargetInvoker
 
 #if NETFRAMEWORK
     private const string NamedSlotName = "Datadog_IISPreInitStart";
+    private static readonly bool IsRunningInPartialTrust;
     private static bool _isIisPreStartInitComplete;
 
     static CallTargetInvoker()
@@ -36,7 +37,18 @@ public static class CallTargetInvoker
         // This is added to the startup hook by the CorProfiler in CorProfiler::AddIISPreStartInitFlags()
         // which sets the value to `false` when the InvokePreStartInitMethods() method starts, and sets it to
         // `true` after it's finished. Only once it returns to `true` can we start running CallTarget integrations.
-        var state = AppDomain.CurrentDomain.GetData(NamedSlotName);
+        var currentDomain = AppDomain.CurrentDomain;
+        IsRunningInPartialTrust = !IsFullyTrusted(currentDomain);
+        if (IsRunningInPartialTrust)
+        {
+            // if we're in partial trust, we never want to run the CallTargetInvoker
+            // so no need to do any of the other work in this method either.
+            // This scenario could occur when two apps are running the same app pool,
+            // one with full trust and one with partial trust.
+            return;
+        }
+
+        var state = currentDomain.GetData(NamedSlotName);
         if (state is bool boolState)
         {
             // we know we must be in IIS, so we need to check the app domain state
@@ -671,7 +683,7 @@ public static class CallTargetInvoker
         // in some scenarios that we definitely _shouldn't_ be running here, so
         // strictly checking _isIisPreStartInitComplete instead.
 #if NETFRAMEWORK
-        if (_isIisPreStartInitComplete)
+        if (!IsRunningInPartialTrust && _isIisPreStartInitComplete)
 #endif
         {
             IntegrationOptions<TIntegration, TTarget>.LogException(exception);
@@ -701,6 +713,12 @@ public static class CallTargetInvoker
 #if NETFRAMEWORK
     private static bool CanExecuteCallTargetIntegration<TIntegration>([CallerMemberName] string callerName = null!)
     {
+        if (IsRunningInPartialTrust)
+        {
+            // Never run any call target integrations
+            return false;
+        }
+
         if (_isIisPreStartInitComplete)
         {
             return true;
@@ -715,6 +733,24 @@ public static class CallTargetInvoker
         // but this was the simplest, easiest, and safest approach we could see generally.
         var returnValue = _isIisPreStartInitComplete || typeof(TIntegration) == typeof(HttpModule_Integration);
         return returnValue;
+    }
+
+    private static bool IsFullyTrusted(AppDomain appDomain)
+    {
+        try
+        {
+            if (appDomain.IsHomogenous && appDomain.IsFullyTrusted)
+            {
+                new System.Security.Permissions.SecurityPermission(System.Security.Permissions.PermissionState.Unrestricted).Demand();
+                return true;
+            }
+        }
+        catch
+        {
+            // Any sort of error here isn't good
+        }
+
+        return false;
     }
 
 #else

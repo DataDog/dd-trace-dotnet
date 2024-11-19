@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
     ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder"],
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.StaticFiles",
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles;
     ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
     ParameterTypeNames = ["Microsoft.AspNetCore.Builder.IApplicationBuilder", "Microsoft.AspNetCore.Builder.DirectoryBrowserOptions"],
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

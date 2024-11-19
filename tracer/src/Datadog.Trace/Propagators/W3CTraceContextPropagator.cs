@@ -152,7 +152,7 @@ namespace Datadog.Trace.Propagators
 
         internal static string CreateTraceStateHeader(SpanContext context)
         {
-            var sb = StringBuilderCache.Acquire(100);
+            var sb = StringBuilderCache.Acquire();
 
             try
             {
@@ -351,7 +351,7 @@ namespace Datadog.Trace.Propagators
             int? samplingPriority = null;
             string? origin = null;
             string? lastParent = null;
-            var propagatedTagsBuilder = StringBuilderCache.Acquire(50);
+            var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
             {
@@ -726,7 +726,7 @@ namespace Datadog.Trace.Propagators
                 }
             }
 
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
 
             switch (values)
             {

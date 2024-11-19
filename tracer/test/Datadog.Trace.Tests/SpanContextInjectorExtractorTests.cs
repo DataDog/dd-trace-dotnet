@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -197,15 +198,13 @@ public class SpanContextInjectorExtractorTests
             { "x-datadog-trace-id", "1" },
             { "x-datadog-parent-id", "2" },
             { "x-datadog-sampling-priority", "1" },
-            { "x-datadog-origin", "nowhere" },
-            { "x-datadog-tags", string.Empty },
             { "traceparent", "00-00000000000000000000000000000001-0000000000000002-01" },
             { "tracestate", string.Empty },
             { DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, "VGhlIHF1aWMWIGJyb3duIGZveCBqdW1wcyBvdmVyIDEzIGxhenkgZG9ncy4=" } // it's a semi-random base64 string that's good enough to pass the parsing checks
         };
         var extractor = new SpanContextExtractor();
 
-        var newContext = extractor.Extract(headers, (h, k) => [h[k]]);
+        var newContext = extractor.Extract(headers, (h, k) => [h.GetValueOrDefault(k)]);
 
         newContext.Should().NotBeNull();
         ((SpanContext)newContext).PathwayContext.Should().NotBeNull();

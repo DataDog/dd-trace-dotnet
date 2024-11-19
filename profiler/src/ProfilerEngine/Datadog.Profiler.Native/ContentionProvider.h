@@ -75,6 +75,6 @@ private:
     std::shared_ptr<CounterMetric> _sampledLockContentionsCountMetric;
     std::shared_ptr<MeanMaxMetric> _sampledLockContentionsDurationMetric;
     std::mutex _contentionsLock;
-
+    MetricsRegistry& _metricsRegistry;
     CallstackProvider _callstackProvider;
 };

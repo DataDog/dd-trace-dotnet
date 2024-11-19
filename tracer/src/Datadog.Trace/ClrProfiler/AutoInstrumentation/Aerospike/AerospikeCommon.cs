@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
                     bool isFirstKey = true;
-                    var sb = StringBuilderCache.Acquire(0);
+                    var sb = StringBuilderCache.Acquire();
 
                     foreach (var obj in hasKeys.Keys)
                     {

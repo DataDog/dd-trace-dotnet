@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
-            _jsonUnderlyingString = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            _jsonUnderlyingString = StringBuilderCache.Acquire();
             _jsonWriter = new JsonTextWriter(new StringWriter(_jsonUnderlyingString));
             MethodScopeMembers = default;
             _captureBehaviour = CaptureBehaviour.Capture;

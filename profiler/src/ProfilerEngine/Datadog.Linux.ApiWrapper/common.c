@@ -36,6 +36,18 @@ __attribute__((visibility("hidden"))) inline int is_interrupted_by_profiler(int 
     return rc == -1L && error_code == EINTR && interrupted_by_profiler != 0;
 }
 
+
+void (*volatile dd_on_thread_routine_finished)() = NULL;
+__attribute__((visibility("hidden"))) inline void __dd_on_thread_routine_finished()
+{
+    void (*volatile on_thread_routine_finished)() = dd_on_thread_routine_finished;
+
+    if (on_thread_routine_finished == NULL)
+        return;
+
+    on_thread_routine_finished();
+}
+
 char* dlerror(void) __attribute__((weak));
 static void* s_libdl_handle = NULL;
 static void* s_libpthread_handle = NULL;

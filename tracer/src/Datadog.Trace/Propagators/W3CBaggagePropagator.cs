@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -34,24 +33,6 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
     private const char KeyAndValueSeparator = '=';
 
     public static readonly W3CBaggagePropagator Instance = new();
-
-    private static readonly HashSet<char> KeyCharsToEncode;
-
-    private static readonly HashSet<char> ValueCharsToEncode;
-
-    static W3CBaggagePropagator()
-    {
-        // key may not contain whitespace or any of the following characters: " , ; \ ( ) / : < = > ? @ [ ] { }
-        KeyCharsToEncode = ['"', ',', ';', '\\', '(', ')', '/', ':', '<', '=', '>', '?', '@', '[', ']', '{', '}'];
-
-        // value may contain characters from the Basic Latin Unicode Block, except for the following:
-        //   U+0020 space ( )
-        //   U+0022 double quotation mark (")
-        //   U+002C comma (,)
-        //   U+003B semicolon (;)
-        //   U+005C backslash (\)
-        ValueCharsToEncode = [' ', '"', ',', ';', '\\'];
-    }
 
     private W3CBaggagePropagator()
     {
@@ -104,93 +85,118 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return baggage is { Count: > 0 };
     }
 
-    internal static string Encode(string source, HashSet<char> charsToEncode)
+    internal static void EncodeStringAndAppend(StringBuilder sb, string source, bool isKey)
     {
         if (string.IsNullOrEmpty(source))
         {
-            return string.Empty;
+            return;
         }
 
+        if (!AnyCharRequiresEncoding(source, isKey))
+        {
+            // no chars require encoding, append the source string directly
+            sb.Append(source);
+            return;
+        }
+
+        EncodeStringAndAppendSlow(sb, source, isKey);
+    }
+
+    private static void EncodeStringAndAppendSlow(StringBuilder sb, string source, bool isKey)
+    {
         // this is an upper bound and will almost always be more bytes than we need
         var maxByteCount = Encoding.UTF8.GetMaxByteCount(source.Length);
-        int byteCount;
 
 #if NETCOREAPP3_1_OR_GREATER
         if (maxByteCount < 256)
         {
             // allocate a buffer on the stack for the UTF-8 bytes
             Span<byte> stackBuffer = stackalloc byte[maxByteCount];
-            byteCount = Encoding.UTF8.GetBytes(source, stackBuffer);
+            var byteCount = Encoding.UTF8.GetBytes(source, stackBuffer);
 
             // slice the buffer down to the actual bytes written
             var stackBytes = stackBuffer[..byteCount];
-            return EncodeBytes(source, stackBytes, charsToEncode);
+            EncodeBytesAndAppend(sb, stackBytes, isKey);
+            return;
         }
 #endif
 
         // rent a buffer for the UTF-8 bytes
-        var buffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
-        string result;
+        var buffer = ArrayPool<byte>.Shared.Rent(minimumLength: maxByteCount);
 
         try
         {
-            byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
+            var byteCount = Encoding.UTF8.GetBytes(source, 0, source.Length, buffer, 0);
 
             // slice the buffer down to the actual bytes written
             var bytes = buffer.AsSpan(0, byteCount);
-            result = EncodeBytes(source, bytes, charsToEncode);
+            EncodeBytesAndAppend(sb, bytes, isKey);
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
+    }
 
-        return result;
+    private static void EncodeBytesAndAppend(StringBuilder sb, ReadOnlySpan<byte> bytes, bool isKey)
+    {
+        // allocate a buffer on the stack (or rent one) for hexadecimal strings
+#if NETCOREAPP3_1_OR_GREATER
+        Span<char> hexStringBuffer = stackalloc char[2];
+#else
+        var buffer = ArrayPool<char>.Shared.Rent(minimumLength: 2);
+        var hexStringBuffer = buffer.AsSpan(start: 0, length: 2);
+#endif
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static bool ByteRequiresEncoding(byte b, HashSet<char> charsToEncode)
+        for (var index = 0; index < bytes.Length; index++)
         {
-            return b < 0x20 || b > 0x7E || char.IsWhiteSpace((char)b) || charsToEncode.Contains((char)b);
+            var c = (char)bytes[index];
+
+            if (CharRequiresEncoding(c, isKey))
+            {
+                // encode byte as "%FF" (hexadecimal)
+                var byteToEncode = bytes.Slice(index, 1);
+                HexString.ToHexChars(byteToEncode, hexStringBuffer, lowerCase: false);
+
+                sb.Append('%').Append(hexStringBuffer);
+            }
+            else
+            {
+                // append the byte as a character
+                sb.Append(c);
+            }
         }
 
-        static bool AnyByteRequiresEncoding(Span<byte> bytes, HashSet<char> charsToEncode)
-        {
-            foreach (var b in bytes)
-            {
-                if (ByteRequiresEncoding(b, charsToEncode))
-                {
-                    return true;
-                }
-            }
+#if !NETCOREAPP3_1_OR_GREATER
+        ArrayPool<char>.Shared.Return(buffer);
+#endif
+    }
 
-            return false;
+    private static bool CharRequiresEncoding(char c, bool isKey)
+    {
+        // key or value may not contain whitespace, control characters, or characters outside the Basic Latin Unicode Block
+        // key   may not contain any of the following characters: " , ; \ ( ) / : < = > ? @ [ ] { }
+        // value may not contain any of the following characters: " , ; \
+        if (c < 0x20 || c > 0x7E || char.IsWhiteSpace(c) || c is '"' or ',' or ';' or '\\')
+        {
+            return true;
         }
 
-        static string EncodeBytes(string source, Span<byte> bytes, HashSet<char> charsToEncode)
+        // key is more restrictive than value
+        return isKey && c is '(' or ')' or '/' or ':' or '<' or '=' or '>' or '?' or '@' or '[' or ']' or '{' or '}';
+    }
+
+    private static bool AnyCharRequiresEncoding(string source, bool isKey)
+    {
+        foreach (var c in source)
         {
-            if (!AnyByteRequiresEncoding(bytes, charsToEncode))
+            if (CharRequiresEncoding(c, isKey))
             {
-                // no bytes require encoding, return original string
-                return source;
+                return true;
             }
-
-            var sb = StringBuilderCache.Acquire();
-
-            foreach (var b in bytes)
-            {
-                if (ByteRequiresEncoding(b, charsToEncode))
-                {
-                    // encode byte as '%XX'
-                    sb.Append($"%{b:X2}");
-                }
-                else
-                {
-                    sb.Append((char)b);
-                }
-            }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
+
+        return false;
     }
 
     internal static string Decode(string value)
@@ -278,14 +284,13 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
         return baggage;
     }
 
-    private struct W3CBaggageHeaderBuilder : ICancellableObserver<KeyValuePair<string, string>>
+    private struct W3CBaggageHeaderBuilder : ICancellableObserver<KeyValuePair<string, string?>>
     {
         private readonly int _maxBaggageItems;
         private readonly int _maxBaggageLength;
         private readonly StringBuilder _sb;
 
         private int _itemCount;
-        private int _totalLength;
 
         public W3CBaggageHeaderBuilder(int maxBaggageItems, int maxBaggageLength, StringBuilder sb)
         {
@@ -296,7 +301,7 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
 
         public bool CancellationRequested { get; private set; }
 
-        public void OnNext(KeyValuePair<string, string> item)
+        public void OnNext(KeyValuePair<string, string?> item)
         {
             if (string.IsNullOrWhiteSpace(item.Key) || string.IsNullOrEmpty(item.Value))
             {
@@ -315,27 +320,28 @@ internal class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 return;
             }
 
-            var key = Encode(item.Key, KeyCharsToEncode);
-            var value = Encode(item.Value, ValueCharsToEncode);
+            var currentLength = _sb.Length;
 
-            var keyValuePairString = _sb.Length > 0 ?
-                $"{PairSeparator}{key}{KeyAndValueSeparator}{value}" :
-                $"{key}{KeyAndValueSeparator}{value}";
+            if (currentLength > 0)
+            {
+                _sb.Append(PairSeparator);
+            }
+
+            EncodeStringAndAppend(_sb, item.Key, isKey: true);
+            _sb.Append(KeyAndValueSeparator);
+            EncodeStringAndAppend(_sb, item.Value!, isKey: false);
 
             // it's all ASCII here after encoding, so we can use the string
-            // length directly instead of using Encoding.UTF8.GetByteCount()
-            _totalLength += keyValuePairString.Length;
-
-            if (_totalLength > _maxBaggageLength)
+            // length directly instead of using Encoding.UTF8.GetByteCount().
+            if (_sb.Length > _maxBaggageLength)
             {
-                // reached the byte count limit, stop adding items
+                // reached the byte count limit, remove the pair we just added
+                // by restoring the previous string length and stop adding more items
+                _sb.Length = currentLength;
                 CancellationRequested = true;
 
                 TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
-                return;
             }
-
-            _sb.Append(keyValuePairString);
         }
 
         public void OnCompleted()
