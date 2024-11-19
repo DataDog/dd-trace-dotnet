@@ -26,28 +26,28 @@ public class UserEventsCommonTests
     }
 
     [Fact]
-    public void GetId_EmailIsSecondChoice()
+    public void GetLogin_UserNameIsFirstChoice()
     {
-        var user = new User()
+        var user = new User
         {
             Email = "my@email.com",
-            UserName = "my-username",
+            UserName = "my-username"
         };
-        var id = UserEventsCommon.GetId(user);
+        var login = UserEventsCommon.GetLogin(user);
 
-        id.Should().Be("my@email.com");
+        login.Should().Be("my-username");
     }
 
     [Fact]
-    public void GetId_UserNameIsThirdChoice()
+    public void GetLogin_EmailIsSecondChoice()
     {
-        var user = new User()
+        var user = new User
         {
-            UserName = "my-username",
+            Email = "my@email.com"
         };
-        var id = UserEventsCommon.GetId(user);
+        var login = UserEventsCommon.GetLogin(user);
 
-        id.Should().Be("my-username");
+        login.Should().Be("my@email.com");
     }
 
     [Theory]
@@ -56,7 +56,7 @@ public class UserEventsCommonTests
     [InlineData("bc98f685-9464-463d-ae66-e84b1ef7963e", "anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9")]
     public void GetAnonIdTests(string id, string expected)
     {
-        var anonId = UserEventsCommon.GetAnonId(id);
+        var anonId = UserEventsCommon.Anonymize(id);
 
         anonId.Should().Be(expected);
     }
