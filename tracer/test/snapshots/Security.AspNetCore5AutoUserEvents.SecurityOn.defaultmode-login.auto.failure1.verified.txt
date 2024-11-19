@@ -10,6 +10,7 @@
       appsec.events.users.login.failure.track: true,
       appsec.events.users.login.failure.usr.exists: true,
       appsec.events.users.login.failure.usr.id: Guid_1,
+      appsec.events.users.login.failure.usr.login: TestUser,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
@@ -30,6 +31,8 @@
       runtime-id: Guid_2,
       span.kind: server,
       _dd.appsec.events.users.login.failure.auto.mode: identification,
+      _dd.appsec.usr.id: Guid_1,
+      _dd.appsec.usr.login: TestUser,
       _dd.runtime_family: dotnet
     },
     Metrics: {
