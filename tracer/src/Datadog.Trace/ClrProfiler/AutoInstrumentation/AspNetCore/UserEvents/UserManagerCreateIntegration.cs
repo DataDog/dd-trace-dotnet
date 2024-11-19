@@ -66,55 +66,48 @@ public static class UserManagerCreateIntegration
     {
         var security = Security.Instance;
         var user = state.State as IIdentityUser;
-        if (security.IsTrackUserEventsEnabled
-            && state.Scope is { Span: { } span })
+        if (security.IsTrackUserEventsEnabled && state.Scope is { Span: { } span })
         {
-            var id = UserEventsCommon.GetId(user);
-            if (id is null)
-            {
-                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
-                return returnValue;
-            }
-
-            var setTag = TaggingUtils.GetSpanSetter(span, out _);
-            var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-
+            var userId = UserEventsCommon.GetId(user);
+            var userLogin = UserEventsCommon.GetLogin(user);
+            var foundUserId = !string.IsNullOrEmpty(userId);
+            var foundLogin = !string.IsNullOrEmpty(userLogin);
+            UserEventsCommon.RecordMetricsIfNotFound(foundUserId, foundLogin);
             if (returnValue.Succeeded)
             {
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessTrack, "true");
+                Func<string, string> processPii;
+                string successAutoMode;
                 if (security.IsAnonUserTrackingMode)
                 {
-                    var anonId = UserEventsCommon.GetAnonId(id);
-                    if (!string.IsNullOrEmpty(anonId))
-                    {
-                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId!);
-                    }
-
-                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
+                    processPii = UserEventsCommon.Anonymize;
+                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
                 }
                 else
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, id);
-                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
+                    processPii = val => val;
+                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
                 }
-            }
-            else
-            {
-                setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureTrack, "true");
-                if (security.IsAnonUserTrackingMode)
-                {
-                    var anonId = UserEventsCommon.GetAnonId(id);
-                    if (anonId != null)
-                    {
-                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
-                    }
 
-                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
-                }
-                else
+                var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+
+                setTag(Tags.AppSec.EventsUsers.SignUpEvent.Track, "true");
+                setTag(Tags.AppSec.EventsUsers.SignUpEvent.AutoMode, successAutoMode);
+                tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, userId!);
+                tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
+
+                if (foundUserId)
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, id);
-                    setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
+                    var processedUserId = processPii(userId!);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, processedUserId);
+                    tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, processedUserId);
+                }
+
+                if (foundLogin)
+                {
+                    var processedUserLogin = processPii(userLogin!);
+                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.Login, processedUserLogin);
+                    tryAddTag(Tags.AppSec.EventsUsers.InternalLogin, processedUserLogin);
                 }
             }
 
