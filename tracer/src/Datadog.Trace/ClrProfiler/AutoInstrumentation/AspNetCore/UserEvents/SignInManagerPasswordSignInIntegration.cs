@@ -65,12 +65,14 @@ public static class SignInManagerPasswordSignInIntegration
         where TReturn : ISignInResult
     {
         if (!returnValue.Succeeded
-            && Security.Instance is { IsTrackUserEventsEnabled: true } security
-            && state is { Scope: { Span: { } span } })
+         && Security.Instance is { IsTrackUserEventsEnabled: true } security
+         && state is { Scope.Span: { } span })
         {
-            if (state.State is not string id)
+            // the new user semantics events must only be collected if either the user login or the user ID are available
+            // here as it's the first login step, state.State is the username, db hasn't been hit yet.
+            if (state.State is not string login || string.IsNullOrEmpty(login))
             {
-                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                TelemetryFactory.Metrics.RecordCountMissingUserLogin(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
                 return returnValue;
             }
 
@@ -82,17 +84,15 @@ public static class SignInManagerPasswordSignInIntegration
 
             if (security.IsAnonUserTrackingMode)
             {
-                var anonId = UserEventsCommon.GetAnonId(id);
-                if (anonId is not null)
-                {
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
-                }
-
+                var loginAnon = UserEventsCommon.Anonymize(login);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, loginAnon!);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, loginAnon!);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
             {
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
