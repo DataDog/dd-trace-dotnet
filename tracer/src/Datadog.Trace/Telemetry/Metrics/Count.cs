@@ -219,9 +219,14 @@ internal enum Count
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
 
     /// <summary>
-    /// Counts the number of times a timeout was hit when evaluating a specific rule type.
+    /// Counts the number of times a user id hasn't been found  as part of the login success, login failure or signup event
     /// </summary>
-    [TelemetryMetric<AuthenticationFramework>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
+    [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
+
+    /// <summary>
+    /// Counts the number of times a user login (username or email in our case) hasn't been found as part of the login success, login failure or signup event
+    /// </summary>
+    [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_login", isCommon: true, NS.ASM)] MissingUserLogin,
 
 #endregion
 #region Iast Namespace

@@ -71,7 +71,7 @@ public static class SignInManagerPasswordSignInUserIntegration
             var user = state.State as IIdentityUser;
             if (user is null)
             {
-                UserEventsCommon.RecordMetricsIfNotFound(false, false);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(false, false);
                 return returnValue;
             }
 
@@ -116,7 +116,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login!);
                 }
 
-                UserEventsCommon.RecordMetricsIfNotFound(foundUserId, foundLogin);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
                 SecurityCoordinator.CollectHeaders(span);
             }

@@ -90,14 +90,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         continue;
                     }
 
-                    if (claim.Type is ClaimTypes.NameIdentifier)
+                    if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
                     {
                         foundUserId = true;
                         var userId = processPii(claim.Value);
                         tryAddTag(Tags.User.Id, userId);
                         setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
                     }
-                    else if (LoginsClaimsToTest.Contains(claim.Type))
+                    else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
                     {
                         foundLogin = true;
                         var login = processPii(claim.Value);
@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
                 }
 
-                UserEventsCommon.RecordMetricsIfNotFound(foundUserId, foundLogin);
+                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
                 SecurityCoordinator.CollectHeaders(span);
             }
 

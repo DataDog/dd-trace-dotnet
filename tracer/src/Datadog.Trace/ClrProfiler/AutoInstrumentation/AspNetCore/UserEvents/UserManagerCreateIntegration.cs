@@ -72,7 +72,7 @@ public static class UserManagerCreateIntegration
             var userLogin = UserEventsCommon.GetLogin(user);
             var foundUserId = !string.IsNullOrEmpty(userId);
             var foundLogin = !string.IsNullOrEmpty(userLogin);
-            UserEventsCommon.RecordMetricsIfNotFound(foundUserId, foundLogin);
+            UserEventsCommon.RecordMetricsSignupIfNotFound(foundUserId, foundLogin);
             if (returnValue.Succeeded)
             {
                 Func<string, string> processPii;
