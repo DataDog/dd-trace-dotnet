@@ -28,7 +28,8 @@ internal static class RaspModule
         AddressesConstants.FileAccess => RaspRuleType.Lfi,
         AddressesConstants.UrlAccess => RaspRuleType.Ssrf,
         AddressesConstants.DBStatement => RaspRuleType.SQlI,
-        AddressesConstants.ShellInjection => RaspRuleType.CommandInjection,
+        AddressesConstants.ShellInjection => RaspRuleType.CommandInjectionShell,
+        AddressesConstants.CommandInjection => RaspRuleType.CommandInjectionExec,
         _ => null,
     };
 
