@@ -483,6 +483,19 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
                                          .AsBool(false);
 
+            PropagationBehaviorExtract = config
+                                         .WithKeys(ConfigurationKeys.FeatureFlags.PropagationBehaviorExtract)
+                                         .GetAs(
+                                             () => new DefaultResult<ExtractBehavior>(ExtractBehavior.Continue, "continue"),
+                                             converter: x => x.ToLowerInvariant() switch
+                                             {
+                                                 "continue" => ExtractBehavior.Continue,
+                                                 "restart" => ExtractBehavior.Restart,
+                                                 "ignore" => ExtractBehavior.Ignore,
+                                                 _ => ParsingResult<ExtractBehavior>.Failure(),
+                                             },
+                                             validator: null);
+
             BaggageMaximumItems = config
                                  .WithKeys(ConfigurationKeys.BaggageMaximumItems)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageItems);
@@ -896,6 +909,11 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets a value indicating the behavior when extracting propagation headers.
+        /// </summary>
+        internal ExtractBehavior PropagationBehaviorExtract { get; }
 
         /// <summary>
         /// Gets the maximum number of items that can be
