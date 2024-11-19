@@ -181,6 +181,12 @@
     <ClCompile Include="EtwEventsManagerTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ClrEventsParserTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ChronoHelperTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

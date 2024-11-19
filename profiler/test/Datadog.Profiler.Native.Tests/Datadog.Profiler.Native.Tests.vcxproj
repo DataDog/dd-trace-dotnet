@@ -57,6 +57,7 @@
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
+    <ClCompile Include="ClrEventsParserTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
@@ -91,6 +92,7 @@
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
+    <ClCompile Include="ChronoHelperTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
@@ -103,7 +105,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
     <ClInclude Include="RuntimeInfoHelper.h" />
-    <ClInclude Include="ThreadsCpuManagerHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp" />
