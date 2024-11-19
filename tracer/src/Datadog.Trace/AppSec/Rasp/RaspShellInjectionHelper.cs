@@ -33,4 +33,22 @@ internal static class RaspShellInjectionHelper
             return file;
         }
     }
+
+    internal static string[]? BuildCommandInjectionCommandArray(string file, string argumentLine, Collection<string>? argumentList)
+    {
+        if (string.IsNullOrEmpty(file))
+        {
+            return null;
+        }
+
+        if (argumentList is not null && argumentList.Count > 0)
+        {
+            var result = new string[argumentList.Count + 1];
+            result[0] = file;
+            argumentList.CopyTo(result, 1);
+            return result;
+        }
+
+        return !string.IsNullOrEmpty(argumentLine) ? [file, argumentLine] : [file];
+    }
 }
