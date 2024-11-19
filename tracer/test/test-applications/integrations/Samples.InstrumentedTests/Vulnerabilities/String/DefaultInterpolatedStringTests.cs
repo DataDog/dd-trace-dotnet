@@ -17,7 +17,7 @@ public class DefaultInterpolatedStringTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnInterpolatedString_WhenInterpolatingString_GetString_Vulnerable()
     {
-        var test = new DefaultInterpolatedStringHandler();
+        var test = new DefaultInterpolatedStringHandler(1,1);
         test.AppendFormatted("Hello");
         test.AppendFormatted(taintedValue);
 

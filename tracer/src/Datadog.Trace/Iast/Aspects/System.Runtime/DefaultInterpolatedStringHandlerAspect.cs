@@ -11,7 +11,9 @@ using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects.System.Runtime;
 
-#pragma warning disable DD0004
+#pragma warning disable DD0005
+#pragma warning disable SA1642
+#pragma warning disable SA1107
 
 /// <summary> DefaultInterpolatedString class aspect </summary>
 [AspectClass("System.Runtime")]
@@ -24,20 +26,56 @@ public class DefaultInterpolatedStringHandlerAspect
     /// </summary>
     /// <param name="target"> target </param>
     /// <param name="value"> value </param>
-    /// <returns> DefaultInterpolatedStringHandler </returns>
-    [AspectMethodInsertBefore("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.String)", 0)]
-    public static DefaultInterpolatedStringHandler AppendFormatted(DefaultInterpolatedStringHandler target, string value)
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.String)", 0)]
+    public static void AppendFormatted(ref DefaultInterpolatedStringHandler target, string value)
     {
+        target.AppendFormatted(value);
+
         try
         {
-            target.AppendFormatted(value);
+            Console.WriteLine("AppendFormatted: " + value);
         }
         catch (Exception ex)
         {
             IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted)}");
         }
+    }
 
-        return target;
+    /// <summary> ctor aspect </summary>
+    /// <param name="target"> Init target </param>
+    /// <param name="value"> Init string </param>
+    /// <param name="value2"> Init string2 </param>
+    [AspectCtorReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::.ctor(System.Int32,System.Int32)")]
+    public static void Init(ref InterpolatedStringHandlerWrapper target, int value, int value2)
+    {
+        // Crashing the process
+        target = new InterpolatedStringHandlerWrapper();
+    }
+
+    /// <summary> InterpolatedStringHandlerWrapper ctor aspect </summary>
+    public ref struct InterpolatedStringHandlerWrapper
+    {
+        private DefaultInterpolatedStringHandler _handler;
+
+        /// <summary> Test </summary>
+        public Span<char> Test;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InterpolatedStringHandlerWrapper"/> struct.
+        /// </summary>
+        /// <param name="handler"> h </param>
+        public InterpolatedStringHandlerWrapper(DefaultInterpolatedStringHandler handler)
+        {
+            _handler = handler;
+            Test = new Span<char>("lol".ToCharArray());
+        }
+
+        /// <summary> AppendFormatted </summary>
+        /// <param name="value"> value </param>
+        public void AppendFormatted(string value)
+        {
+            _handler.AppendFormatted(value);
+        }
     }
 }
 
