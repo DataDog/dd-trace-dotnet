@@ -86,37 +86,34 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
-            var tracerModules = FindTracerModules(process).ToArray();
+            var tracerVersions = FindTracerModules(process)
+                .Select(FileVersionInfo.GetVersionInfo)
+                .Distinct()
+                .ToArray();
 
-            if (tracerModules.Length == 0)
+            if (tracerVersions.Length == 0)
             {
                 Utils.WriteWarning(TracerNotLoaded);
                 ok = false;
             }
-            else if (tracerModules.Length == 1)
+            else if (tracerVersions.Length == 1)
             {
-                var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                Utils.WriteSuccess(TracerVersion(version.FileVersion ?? "{empty}"));
+                Utils.WriteSuccess(TracerVersion(tracerVersions[0].FileVersion ?? "{empty}"));
             }
-            else if (tracerModules.Length > 1)
+            else if (tracerVersions.Length > 1)
             {
                 // There are too many tracers in there. Find out if it's bad or very bad
                 bool areAllVersion2 = true;
-                var versions = new HashSet<string>();
 
-                foreach (var tracer in tracerModules)
+                foreach (var version in tracerVersions)
                 {
-                    var version = FileVersionInfo.GetVersionInfo(tracer);
-
-                    versions.Add(version.FileVersion ?? "{empty}");
-
                     if (version.FileMajorPart < 2)
                     {
                         areAllVersion2 = false;
                     }
                 }
 
-                Utils.WriteWarning(MultipleTracers(versions));
+                Utils.WriteWarning(MultipleTracers(tracerVersions.Select(v => v.FileVersion ?? "{empty}")));
 
                 if (!areAllVersion2)
                 {
