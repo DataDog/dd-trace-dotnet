@@ -63,16 +63,42 @@ internal static class UserEventsCommon
         return string.Empty;
     }
 
-    internal static void RecordMetricsIfNotFound(bool foundUserId, bool foundLogin)
+    internal static void RecordMetricsLoginSuccessIfNotFound(bool foundUserId, bool foundLogin)
     {
         if (!foundUserId)
         {
-            TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+            TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentityLoginSuccess);
         }
 
         if (!foundLogin)
         {
-            TelemetryFactory.Metrics.RecordCountMissingUserLogin(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+            TelemetryFactory.Metrics.RecordCountMissingUserLogin(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentityLoginSuccess);
+        }
+    }
+
+    internal static void RecordMetricsLoginFailureIfNotFound(bool foundUserId, bool foundLogin)
+    {
+        if (!foundUserId)
+        {
+            TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentityLoginFailure);
+        }
+
+        if (!foundLogin)
+        {
+            TelemetryFactory.Metrics.RecordCountMissingUserLogin(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentityLoginFailure);
+        }
+    }
+
+    internal static void RecordMetricsSignupIfNotFound(bool foundUserId, bool foundLogin)
+    {
+        if (!foundUserId)
+        {
+            TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentitySignup);
+        }
+
+        if (!foundLogin)
+        {
+            TelemetryFactory.Metrics.RecordCountMissingUserLogin(MetricTags.AuthenticationFrameworkWithEventType.AspNetCoreIdentitySignup);
         }
     }
 
