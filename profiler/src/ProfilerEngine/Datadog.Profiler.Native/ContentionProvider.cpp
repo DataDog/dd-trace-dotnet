@@ -104,7 +104,13 @@ void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 // It means that the current thread will be stack walking itself.
 void ContentionProvider::OnContention(double contentionDurationNs)
 {
-    auto [blockingThreadId, blockingThreadName] = ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(0, WStr(""));
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (currentThreadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto [blockingThreadId, blockingThreadName] = currentThreadInfo->SetBlockingThread(0, WStr(""));
     AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
