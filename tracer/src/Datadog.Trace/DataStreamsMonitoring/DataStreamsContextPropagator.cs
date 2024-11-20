@@ -146,7 +146,7 @@ internal class DataStreamsContextPropagator
 
         headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Convert.ToBase64String(PathwayContextEncoder.Encode(context)));
     }
-    
+
     /// <summary>
     /// Extracts a <see cref="PathwayContext"/> from the values found in the specified headers.
     /// </summary>
