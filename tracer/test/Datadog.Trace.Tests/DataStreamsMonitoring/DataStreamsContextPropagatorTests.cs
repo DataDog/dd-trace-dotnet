@@ -27,7 +27,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             ResetTracerInstance();
         }
 
-
         [Fact]
         public void CanRoundTripPathwayContext()
         {
@@ -260,15 +259,15 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             }
         }
 
+        private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
+            => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
+
         private void ResetTracerInstance()
         {
             var tracerType = typeof(Tracer);
             var instanceField = tracerType.GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
             instanceField?.SetValue(null, null);
         }
-
-        private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
-            => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
 
         private bool IsBase64String(string base64)
         {
