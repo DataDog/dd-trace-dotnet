@@ -91,9 +91,12 @@ void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, dou
 void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 {
     std::shared_ptr<ManagedThreadInfo> info;
-    if (osThreadId != 0 && _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (osThreadId != 0 &&
+        currentThreadInfo != nullptr &&
+        _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
     {
-        ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
+        currentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
     }
 }
 
