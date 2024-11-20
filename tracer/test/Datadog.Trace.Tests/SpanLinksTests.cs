@@ -28,31 +28,36 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void AddLink_InCloseSpan()
+        public void AddLink_AfterSpanFinished_IsNoOp()
         {
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
 
             var parentSpan = parentScope.Span;
             var childSpan = childScope.Span;
+            var spanLink = new SpanLink(parentSpan.Context);
 
             childSpan.Finish();
-            Assert.Null(childSpan.AddSpanLink(parentSpan));
+
+            childSpan.AddSpanLink(spanLink);
+            childSpan.SpanLinks.Should().BeNullOrEmpty();
         }
 
         [Fact]
-        public void AddAttribute_Succeeds_AfterSpanFinished()
+        public void AddAttribute_BeforeSpanFinished_IsSuccessful()
         {
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
 
             var parentSpan = parentScope.Span;
             var childSpan = childScope.Span;
-            var spanLink = childSpan.AddSpanLink(parentSpan);
-            childSpan.Finish();
+            var spanLink = new SpanLink(parentSpan.Context);
+
+            childSpan.AddSpanLink(spanLink);
             spanLink.AddAttribute("key", "value");
 
             spanLink.Attributes.Should().BeEquivalentTo(new[] { new KeyValuePair<string, string>("key", "value") });
+            childSpan.Finish();
         }
     }
 }

@@ -254,8 +254,8 @@ namespace Datadog.Trace.Activity
                 spanContext.LastParentId = traceState.LastParent;
                 spanContext.PropagatedTags = traceTags;
 
-                var extractedSpan = new Span(spanContext, DateTimeOffset.Now, new CommonTags());
-                var spanLink = span.AddSpanLink(extractedSpan);
+                var spanLink = new SpanLink(spanContext);
+                span.AddSpanLink(spanLink);
 
                 if (duckLink.Tags is not null)
                 {

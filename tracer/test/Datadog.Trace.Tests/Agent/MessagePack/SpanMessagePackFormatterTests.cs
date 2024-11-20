@@ -141,11 +141,14 @@ public class SpanMessagePackFormatterTests
             new("pair", "false"),
             new("arbitrary", "56709")
         };
-        spans[0].AddSpanLink(spans[1], attributesToAdd);
-        var tmpSpanLink = spans[1].AddSpanLink(spans[2]);
+        spans[0].AddSpanLink(new SpanLink(spans[1].Context, attributesToAdd));
+
+        var tmpSpanLink = new SpanLink(spans[2].Context);
+        spans[1].AddSpanLink(tmpSpanLink);
         tmpSpanLink.AddAttribute("attribute1", "value1");
         tmpSpanLink.AddAttribute("attribute2", "value2");
-        spans[1].AddSpanLink(spans[0]);
+
+        spans[1].AddSpanLink(new SpanLink(spans[0].Context));
 
         foreach (var span in spans)
         {
