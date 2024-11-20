@@ -410,6 +410,7 @@
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />
+    <ClCompile Include="NetworkActivity.cpp" />
     <ClCompile Include="NetworkProvider.cpp" />
     <ClCompile Include="NetworkRequestInfo.cpp" />
     <ClCompile Include="ServiceBase.cpp" />

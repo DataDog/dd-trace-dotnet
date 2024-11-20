@@ -104,6 +104,9 @@ void NetworkProvider::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, st
     {
         _requests.erase(activity);
     }
+
+    slot.first->second.Url = std::move(url);
+    slot.first->second.StartTimestamp = timestamp;
 }
 
 void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode)
@@ -121,20 +124,8 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
         return;
     }
 
-    // compute the durations and close the request
-    auto duration = timestamp - requestInfo->second.StartTimestamp;
     RawNetworkSample rawSample;
-    rawSample.Timestamp = requestInfo->second.StartTimestamp;
-    rawSample.Url = std::move(requestInfo->second.Url);
-    rawSample.AppDomainId = requestInfo->second.AppDomainId;
-    rawSample.LocalRootSpanId = requestInfo->second.LocalRootSpanID;
-    rawSample.SpanId = requestInfo->second.SpanID;
-    rawSample.Stack = std::move(requestInfo->second.StartCallStack);
-    rawSample.ThreadInfo = std::move(requestInfo->second.StartThreadInfo);
-
-    rawSample.EndTimestamp = timestamp;
-    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-    rawSample.EndThreadId = currentThreadInfo->GetProfileThreadId();
+    FillRawSample(rawSample, requestInfo->second, timestamp);
     rawSample.StatusCode = statusCode;
 
     Add(std::move(rawSample));
@@ -157,26 +148,29 @@ void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, s
         return;
     }
 
-    // compute the durations and close the request
-    auto duration = timestamp - requestInfo->second.StartTimestamp;
     RawNetworkSample rawSample;
-    rawSample.Timestamp = requestInfo->second.StartTimestamp;
-    rawSample.Url = std::move(requestInfo->second.Url);
-    rawSample.AppDomainId = requestInfo->second.AppDomainId;
-    rawSample.LocalRootSpanId = requestInfo->second.LocalRootSpanID;
-    rawSample.SpanId = requestInfo->second.SpanID;
-    rawSample.Stack = std::move(requestInfo->second.StartCallStack);
-    rawSample.ThreadInfo = std::move(requestInfo->second.StartThreadInfo);
-
-    rawSample.EndTimestamp = timestamp;
-    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
-    rawSample.EndThreadId = currentThreadInfo->GetProfileThreadId();
+    FillRawSample(rawSample, requestInfo->second, timestamp);
     rawSample.Error = std::move(message);
 
     Add(std::move(rawSample));
 
     _requests.erase(activity);
 }
+
+void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp)
+{
+    sample.StartTimestamp = info.StartTimestamp;
+    sample.Timestamp = timestamp;
+    sample.Url = std::move(info.Url);
+    sample.AppDomainId = info.AppDomainId;
+    sample.LocalRootSpanId = info.LocalRootSpanID;
+    sample.SpanId = info.SpanID;
+    sample.Stack = std::move(info.StartCallStack);
+    sample.ThreadInfo = std::move(info.StartThreadInfo);
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    sample.EndThreadId = currentThreadInfo->GetProfileThreadId();
+}
+
 
 bool NetworkProvider::TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot)
 {

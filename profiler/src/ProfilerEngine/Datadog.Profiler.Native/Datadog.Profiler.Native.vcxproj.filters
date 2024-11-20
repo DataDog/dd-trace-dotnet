@@ -752,6 +752,9 @@
     <ClCompile Include="ActivityHelpers.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="NetworkActivity.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

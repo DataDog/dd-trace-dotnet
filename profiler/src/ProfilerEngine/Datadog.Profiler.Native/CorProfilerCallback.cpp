@@ -40,7 +40,7 @@
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "MetadataProvider.h"
-#include "NetworkProvider.h"  // TODO: crash if this is included
+#include "NetworkProvider.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
 #include "ProfileExporter.h"
@@ -2195,6 +2195,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
         return hr;
     }
 
-    Log::Debug("Event pipe provider: ", providerName);
+    Log::Debug("Event pipe provider: ", shared::ToString(providerName));
     return S_OK;
 }

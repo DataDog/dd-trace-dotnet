@@ -87,29 +87,29 @@ void EventPipeEventsManager::ParseEvent(
         dotnetProvider = DotnetEventsProvider::Clr;
     }
     else
-        // BCL events: "System.Net.Http"
-        //             "System.Net.Sockets"
-        //             "System.Net.NameResolution"
-        //             "System.Net.Security"
-        if (WStrCmp(providerName, WStr("System.Net.Http")) == 0)
-        {
-            dotnetProvider = DotnetEventsProvider::Http;
-        }
-        else
-            if (WStrCmp(providerName, WStr("System.Net.Sockets")) == 0)
-            {
-                dotnetProvider = DotnetEventsProvider::Sockets;
-            }
-            else
-                if (WStrCmp(providerName, WStr("System.Net.NameResolution")) == 0)
-                {
-                    dotnetProvider = DotnetEventsProvider::NameResolution;
-                }
-                else
-                    if (WStrCmp(providerName, WStr("System.Net.Security")) == 0)
-                    {
-                        dotnetProvider = DotnetEventsProvider::NetSecurity;
-                    }
+    // BCL events: "System.Net.Http"
+    //             "System.Net.Sockets"
+    //             "System.Net.NameResolution"
+    //             "System.Net.Security"
+    if (WStrCmp(providerName, WStr("System.Net.Http")) == 0)
+    {
+        dotnetProvider = DotnetEventsProvider::Http;
+    }
+    else
+    if (WStrCmp(providerName, WStr("System.Net.Sockets")) == 0)
+    {
+        dotnetProvider = DotnetEventsProvider::Sockets;
+    }
+    else
+    if (WStrCmp(providerName, WStr("System.Net.NameResolution")) == 0)
+    {
+        dotnetProvider = DotnetEventsProvider::NameResolution;
+    }
+    else
+    if (WStrCmp(providerName, WStr("System.Net.Security")) == 0)
+    {
+        dotnetProvider = DotnetEventsProvider::NetSecurity;
+    }
 
     // Also, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe"
     if (dotnetProvider == DotnetEventsProvider::Clr)
@@ -118,11 +118,11 @@ void EventPipeEventsManager::ParseEvent(
         _clrParser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
     }
     else
-        if (dotnetProvider != DotnetEventsProvider::Unknown)
-        {
-            // The events are expected to be processed synchronously so the current time is used as timestamp
-            _bclParser->ParseEvent(dotnetProvider, provider, OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, eventData, cbEventData, pActivityId, pRelatedActivityId, eventThread);
-        }
+    if (dotnetProvider != DotnetEventsProvider::Unknown)
+    {
+        // The events are expected to be processed synchronously so the current time is used as timestamp
+        _bclParser->ParseEvent(dotnetProvider, provider, OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, eventData, cbEventData, pActivityId, pRelatedActivityId, eventThread);
+    }
 }
 
 bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)

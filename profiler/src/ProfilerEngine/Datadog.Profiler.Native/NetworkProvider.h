@@ -55,6 +55,7 @@ public:
 private:
     bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
     bool CaptureThreadInfo(NetworkRequestInfo& info);
+    void FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;

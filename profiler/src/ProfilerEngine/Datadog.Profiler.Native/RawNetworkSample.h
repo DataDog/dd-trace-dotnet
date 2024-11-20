@@ -16,7 +16,6 @@ public:
         RawSample(std::move(other)),
         Url(std::move(other.Url)),
         StartTimestamp(other.StartTimestamp),
-        EndTimestamp(other.EndTimestamp),
         StatusCode(other.StatusCode),
         Error(std::move(other.Error)),
         EndThreadId(std::move(other.EndThreadId))
@@ -30,7 +29,6 @@ public:
             RawSample::operator=(std::move(other));
             Url = std::move(other.Url);
             StartTimestamp = other.StartTimestamp;
-            EndTimestamp = other.EndTimestamp;
             StatusCode = other.StatusCode;
             Error = std::move(other.Error);
             EndThreadId = std::move(other.EndThreadId);
@@ -41,7 +39,7 @@ public:
     inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         auto networkCountIndex = valueOffsets[0];
-        sample->AddValue(EndTimestamp - StartTimestamp, networkCountIndex);
+        sample->AddValue(Timestamp - StartTimestamp, networkCountIndex);
 
         sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
         sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp));
@@ -57,7 +55,6 @@ public:
 
     std::string Url;
     uint64_t StartTimestamp;
-    uint64_t EndTimestamp;
     int32_t StatusCode;
     std::string Error;
     std::string EndThreadId;
