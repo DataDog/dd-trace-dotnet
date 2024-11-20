@@ -11696,7 +11696,7 @@
   {
     "IntegrationName": "SqlClient",
     "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
     "TargetMethodName": "Close",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [],
@@ -11706,7 +11706,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -11718,7 +11718,7 @@
   {
     "IntegrationName": "SqlClient",
     "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
     "TargetMethodName": "GetString",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
@@ -11730,7 +11730,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -11742,7 +11742,7 @@
   {
     "IntegrationName": "SqlClient",
     "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -11754,7 +11754,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -11766,7 +11766,7 @@
   {
     "IntegrationName": "SqlClient",
     "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -11776,7 +11776,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -11788,7 +11788,7 @@
   {
     "IntegrationName": "SqlClient",
     "AssemblyName": "Microsoft.Data.Sqlite",
-    "TargetTypeName": "Microsoft.Data.Sqlite.SQLiteDataReader",
+    "TargetTypeName": "Microsoft.Data.Sqlite.SqliteDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
@@ -11800,7 +11800,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12596,7 +12596,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12621,7 +12621,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12643,7 +12643,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12665,7 +12665,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12689,7 +12689,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12714,7 +12714,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12736,7 +12736,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 8,
+      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -12820,7 +12820,7 @@
     "AssemblyName": "System.Data.SQLite",
     "TargetTypeName": "System.Data.SQLite.SQLiteCommand",
     "TargetMethodName": "ExecuteReader",
-    "TargetReturnType": "System.Data.SQLite.SqliteDataReader",
+    "TargetReturnType": "System.Data.SQLite.SQLiteDataReader",
     "TargetParameterTypes": [],
     "MinimumVersion": {
       "Item1": 1,
@@ -12842,7 +12842,7 @@
     "AssemblyName": "System.Data.SQLite",
     "TargetTypeName": "System.Data.SQLite.SQLiteCommand",
     "TargetMethodName": "ExecuteReader",
-    "TargetReturnType": "System.Data.SQLite.SqliteDataReader",
+    "TargetReturnType": "System.Data.SQLite.SQLiteDataReader",
     "TargetParameterTypes": [
       "System.Data.CommandBehavior"
     ],
