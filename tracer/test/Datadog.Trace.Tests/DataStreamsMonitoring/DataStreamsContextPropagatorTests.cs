@@ -230,8 +230,15 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
         private bool IsBase64String(string base64)
         {
-            System.Span<byte> buffer = new System.Span<byte>(new byte[base64.Length]);
-            return Convert.TryFromBase64String(base64, buffer, out _);
+            try
+            {
+                Convert.FromBase64String(base64);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
