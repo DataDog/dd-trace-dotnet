@@ -37,7 +37,7 @@ struct ThreadInfo
 
     // Lock contentions
     std::vector<uintptr_t> ContentionCallStack;
-    etw_timestamp ContentionStartTimestamp = etw_timestamp(0);
+    etw_timestamp ContentionStartTimestamp = etw_timestamp::zero();
 
     // Allocations
     std::vector<uintptr_t> AllocationCallStack;

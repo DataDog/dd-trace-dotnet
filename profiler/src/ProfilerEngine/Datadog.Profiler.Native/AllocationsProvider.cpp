@@ -205,7 +205,7 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
 
     // We know that we don't have any span ID nor end point details
 
-    rawSample.Timestamp = std::chrono::nanoseconds(timestamp);
+    rawSample.Timestamp = timestamp;
     auto cs = _callstackProvider.Get();
     const auto nbFrames = std::min(stack.size(), static_cast<std::size_t>(cs.Capacity()));
     auto end_stack = stack.begin() + nbFrames;
