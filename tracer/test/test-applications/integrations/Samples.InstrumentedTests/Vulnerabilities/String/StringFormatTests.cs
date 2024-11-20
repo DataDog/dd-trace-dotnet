@@ -54,7 +54,7 @@ public class StringFormatTests : InstrumentationTestsBase
         string str = "Literal with tainteds {0}{1} and untainted {2} and tainted {3} and another untainted {4}";
         AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds taintedcustomformatTAINTED2customformat and untainted UntaintedStringcustomformat and tainted TAINTED2customformat and another untainted OtherUntaintedStringcustomformat-+:",
             String.Format(new FormatProviderForTest(), str, _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString),
-            () => String.Format(new FormatProviderForTest(), str, new object[] { _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString }));
+            () => String.Format(new FormatProviderForTest(), str, _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString));
     }
 
     [Fact]
