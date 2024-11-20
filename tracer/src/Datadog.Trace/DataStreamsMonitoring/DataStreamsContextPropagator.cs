@@ -19,7 +19,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal class DataStreamsContextPropagator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsContextPropagator>();
-    
+
     public static DataStreamsContextPropagator Instance { get; } = new();
 
     /// <summary>
