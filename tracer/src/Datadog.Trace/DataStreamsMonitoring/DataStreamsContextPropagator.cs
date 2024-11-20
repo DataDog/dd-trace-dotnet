@@ -2,9 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
-
 using System;
 using System.Text;
 using Datadog.Trace.Headers;
@@ -21,7 +19,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal class DataStreamsContextPropagator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsContextPropagator>();
-
+    
     public static DataStreamsContextPropagator Instance { get; } = new();
 
     /// <summary>
@@ -36,6 +34,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
+        headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
         var encodedBytes = PathwayContextEncoder.Encode(context);
 
         // Calculate the maximum length of the base64 encoded data
@@ -147,7 +146,7 @@ internal class DataStreamsContextPropagator
 
         headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Convert.ToBase64String(PathwayContextEncoder.Encode(context)));
     }
-
+    
     /// <summary>
     /// Extracts a <see cref="PathwayContext"/> from the values found in the specified headers.
     /// </summary>

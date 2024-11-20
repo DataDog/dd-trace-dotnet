@@ -1,9 +1,11 @@
-﻿// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
+﻿// tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/DataStreamsContextPropagatorTests.cs
+// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -13,8 +15,25 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring
 {
-    public class DataStreamsContextPropagatorTests
+    public class DataStreamsContextPropagatorTests : IDisposable
     {
+        public DataStreamsContextPropagatorTests()
+        {
+            ResetTracerInstance();
+        }
+
+        public void Dispose()
+        {
+            ResetTracerInstance();
+        }
+
+        private void ResetTracerInstance()
+        {
+            var tracerType = typeof(Tracer);
+            var instanceField = tracerType.GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
+            instanceField?.SetValue(null, null);
+        }
+
         [Fact]
         public void CanRoundTripPathwayContext()
         {
@@ -45,6 +64,8 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
             try
             {
+                ResetTracerInstance();
+
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(1234),
@@ -61,6 +82,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
+                ResetTracerInstance();
             }
         }
 
@@ -101,6 +123,8 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
         [Fact]
         public void InjectedHeaders_HaveCorrectFormat()
         {
+            ResetTracerInstance();
+
             var headers = new TestHeadersCollection();
             var context = new PathwayContext(
                 new PathwayHash(0x12345678),
@@ -143,6 +167,8 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
             try
             {
+                ResetTracerInstance();
+
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(4321),
@@ -159,6 +185,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
+                ResetTracerInstance();
             }
         }
 
@@ -168,6 +195,8 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "true");
             try
             {
+                ResetTracerInstance();
+
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(7890),
@@ -200,29 +229,41 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
+                ResetTracerInstance();
             }
         }
 
         [Fact]
         public void Extract_WhenBase64HeaderIsMalformed_ReturnsFallbackToBinary()
         {
-            var headers = new TestHeadersCollection();
+            Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "true");
+            try
+            {
+                ResetTracerInstance();
 
-            headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes("InvalidBase64=="));
+                var headers = new TestHeadersCollection();
 
-            var binaryContext = new PathwayContext(
-                new PathwayHash(5678),
-                DateTimeOffset.UtcNow.AddSeconds(-10).ToUnixTimeNanoseconds(),
-                DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds());
-            var encodedBinaryContextBytes = PathwayContextEncoder.Encode(binaryContext);
-            headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBinaryContextBytes);
+                headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes("InvalidBase64=="));
 
-            var extractedContext = DataStreamsContextPropagator.Instance.Extract(headers);
+                var binaryContext = new PathwayContext(
+                    new PathwayHash(5678),
+                    DateTimeOffset.UtcNow.AddSeconds(-10).ToUnixTimeNanoseconds(),
+                    DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds());
+                var encodedBinaryContextBytes = PathwayContextEncoder.Encode(binaryContext);
+                headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBinaryContextBytes);
 
-            extractedContext.Should().NotBeNull();
-            extractedContext.Value.Hash.Value.Should().Be(binaryContext.Hash.Value);
-            extractedContext.Value.PathwayStart.Should().Be(binaryContext.PathwayStart);
-            extractedContext.Value.EdgeStart.Should().Be(binaryContext.EdgeStart);
+                var extractedContext = DataStreamsContextPropagator.Instance.Extract(headers);
+
+                extractedContext.Should().NotBeNull();
+                extractedContext.Value.Hash.Value.Should().Be(binaryContext.Hash.Value);
+                extractedContext.Value.PathwayStart.Should().Be(binaryContext.PathwayStart);
+                extractedContext.Value.EdgeStart.Should().Be(binaryContext.EdgeStart);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
+                ResetTracerInstance();
+            }
         }
 
         private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
