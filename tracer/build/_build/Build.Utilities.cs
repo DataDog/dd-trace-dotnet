@@ -264,12 +264,14 @@ partial class Build
 
     Target GenerateMarkdownTable => _ => _
    .Description("Generates the Markdown Table")
-   .Executes(() =>
+   .Executes(async () =>
    {
-       var outputPath = TracerDirectory / "build" / "supported_versions.json";
+       var supportedVersionsJson = TracerDirectory / "build" / "supported_versions.json";
 
-       GenerateIntegrationMarkdownTable.GenerateTable(outputPath, TracerDirectory / "build" / "integrations.md");
-
+       GenerateIntegrationMarkdownTable.GenerateTable(supportedVersionsJson, TracerDirectory / "build" / "integrations.md");
+       await GenerateIntegrationMarkdownTable.GenerateEnhancedTable(supportedVersionsJson, TracerDirectory / "build", TracerDirectory, TracerDirectory / "build" / "integrations4.md");
+       await GenerateIntegrationMarkdownTable.GenerateTableWithMethods(supportedVersionsJson, TracerDirectory / "build", TracerDirectory, TracerDirectory / "build" / "integrations5.md");
+       GenerateIntegrationMarkdownTable.GenerateTableFromProps(TracerDirectory / "build", TracerDirectory / "build" / "integrations3.md");
    });
 
     Target GenerateSpanDocumentation => _ => _
