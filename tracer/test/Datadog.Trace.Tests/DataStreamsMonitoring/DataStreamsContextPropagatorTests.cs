@@ -27,12 +27,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             ResetTracerInstance();
         }
 
-        private void ResetTracerInstance()
-        {
-            var tracerType = typeof(Tracer);
-            var instanceField = tracerType.GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
-            instanceField?.SetValue(null, null);
-        }
 
         [Fact]
         public void CanRoundTripPathwayContext()
@@ -264,6 +258,13 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
                 ResetTracerInstance();
             }
+        }
+
+        private void ResetTracerInstance()
+        {
+            var tracerType = typeof(Tracer);
+            var instanceField = tracerType.GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
+            instanceField?.SetValue(null, null);
         }
 
         private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
