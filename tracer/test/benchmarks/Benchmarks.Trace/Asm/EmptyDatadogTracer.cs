@@ -19,15 +19,15 @@ namespace Benchmarks.Trace.Asm
     {
         public string DefaultServiceName => "My Service Name";
 
-        public ImmutableTracerSettings Settings => throw new NotImplementedException();
+        public ImmutableTracerSettings Settings => new(new NullConfigurationSource());
 
-        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => throw new NotImplementedException();
+        IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => new NullGitMetadataProvider();
 
-        PerTraceSettings IDatadogTracer.PerTraceSettings => throw new NotImplementedException();
+        PerTraceSettings IDatadogTracer.PerTraceSettings => null;
 
         void IDatadogTracer.Write(ArraySegment<Span> span)
         {
-            throw new NotImplementedException();
+           
         }
     }
 }
