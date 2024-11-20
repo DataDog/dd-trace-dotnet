@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             var tracerVersions = FindTracerModules(process)
                 .Select(FileVersionInfo.GetVersionInfo)
-                .Distinct()
+                .DistinctBy(v => v.FileVersion)
                 .ToArray();
 
             if (tracerVersions.Length == 0)
