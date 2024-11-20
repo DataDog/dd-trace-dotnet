@@ -172,7 +172,7 @@ namespace Datadog.Trace.Propagators
 
             if (_extractBehavior == ExtractBehavior.Ignore)
             {
-                return default;
+                return new PropagationContext(spanContext: null, baggage: null);
             }
 
             // as we extract values from the carrier using multiple extractors,
