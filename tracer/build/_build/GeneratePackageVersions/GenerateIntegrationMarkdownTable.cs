@@ -49,7 +49,7 @@ namespace GeneratePackageVersions
             public List<Package> Packages { get; set; }
         }
 
-        public static async Task GenerateEnhancedTable(
+        public static void GenerateEnhancedTable(
            string supportedVersionsPath,
            string propsDirectory,
            string sourcePath,
