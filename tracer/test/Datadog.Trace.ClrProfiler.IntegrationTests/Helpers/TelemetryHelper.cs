@@ -47,11 +47,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+
+        public static void AssertIntegrationDisabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+
+        public static void AssertIntegration(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            AssertIntegration(allData, integrationId, true, true);
+            AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
         public static void AssertIntegration(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)

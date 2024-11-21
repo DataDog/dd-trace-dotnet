@@ -90,6 +90,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
+            runner.Environment.SetVariable("COMPlus_CreateDumpDiagnostics", "1");
 
             using var processHelper = runner.LaunchProcess();
 

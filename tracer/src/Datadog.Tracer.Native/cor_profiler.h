@@ -211,8 +211,7 @@ public:
     //
     // Register Aspects into Dataflow
     //
-    int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
-
+    int RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories = 0xFFFFFFFF, UINT32 platform = 0xFFFFFFFF);
 
     //
     // Live Debugger Integration methods
