@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
@@ -14,7 +15,7 @@ namespace Datadog.Trace.Iast.Aspects;
 
 #if !NETFRAMEWORK
 /// <summary> EntityFrameworkCoreAspect class aspect </summary>
-[AspectClass("Microsoft.EntityFrameworkCore.Relational", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
+[AspectClass("Microsoft.EntityFrameworkCore.Relational", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class EntityFrameworkCoreAspect
