@@ -207,6 +207,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         tracer_integration_definition.cpp
         tracer_method_rewriter.cpp
         tracer_rejit_preprocessor.cpp
+        Generated/generated_definitions.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")

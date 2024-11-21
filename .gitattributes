@@ -66,3 +66,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Stop hiding the build subfolders in the github file search
+# https://docs.github.com/en/search-github/searching-on-github/finding-files-on-github#customizing-excluded-files
+build/** linguist-generated=false
