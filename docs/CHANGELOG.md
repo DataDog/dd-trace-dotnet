@@ -8,6 +8,84 @@
 
 
 
+
+## [Release 3.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.6.0)
+
+## Summary
+
+* Adds support for .NET 9
+* Adds DSM support for AWS SNS
+* Add support for baggage propagation
+*  [CI Visibility] Add support for coverlet.msbuild coverage reporting
+* [Dynamic Instrumentation] Collect code origin for exit spans
+* [ASM] Fix shutdown bug
+* [Continuous Profiler] Fix crash at shutdown
+
+## Changes
+
+### Tracer
+* Baggage part 3/3: add public api to `Datadog.Trace.Manual` (#6190)
+* Baggage part 2/3: propagation (#6158)
+* Remove dependency on System.IO.Compression for .NET Framework build (#6192)
+* Add default value to StringBuilderCache, and use in more places (#6232)
+* Enable baggage propagator by default (#6258)
+* Add support for `AllowWriteStreamBuffering=false` in `WebRequest` for .NET 9 (#6271)
+* Add initial support for .NET 9 (#6265)
+* Ensure that we never run any call target instrumentations in partial trust (#6290)
+
+### CI Visibility
+* [CI Visibility] Add more checks for the object pack files (#6256)
+* [CI Visibility] GitInfoProvider refactor (#6259)
+* [CI Visibility] Add support for coverlet.msbuild coverage reporting (#6284)
+* [CI Visibility] Fix GitCommandParser test (#6289)
+* [CI Visibility] Catch some gitinfo exceptions. (#6297)
+
+### ASM
+* [ASM] Avoid HttpRequestValidationException when reading body or namevalueCollection values (#6185)
+* [ASM] Fix issue with waf disposing while it might concurrently be updating  (#6250)
+* [ASM] Serialize ASM tags and metrics (#6272)
+* [ASM] Fix benchmarks AppSecBodyBenchmarks: have a trace context to avoid null reference exceptions (#6274)
+* [ASM] IAST: Add web form tests (#6276)
+* [ASM] iast: Fix `Microsoft.Data.Sqlite` database tainting (#6295)
+* [IAST] Minor cleanup in IAST aspects (#6293)
+* [IAST] Updated CallSite IL Dump (#6240)
+
+### Continuous Profiler
+* [Profiler] CPU profiler: Check if the stackwalk lock was not already taken (#6198)
+* [Profiler] Prevent `StackSamplerLoop` from crashing at shutdown (#6238)
+* [Profiler] Add metrics for cpu and walltime profilers (#6267)
+* [Profiler] Fix crash at shutdown with the `timer_create`-based CPU profiler (#6268)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-2916 Stabilize the probe processor (#6077)
+* [Dynamic Instrumentation] DEBUG-3088 Add object pool (#6105)
+* [Dynamic Instrumentation] DEBUG-2913 Fix runtime reflection exceptions when getting field value (#6078)
+* [Dynamic Instrumentation] DEBUG-2602 Collection expressions fixes (#6087)
+* [Dynamic Instrumentation] DEBUG-3076 Code origin for exit spans (#6216)
+* [Dynamic Instrumentation] DEBUG-3110 Fix how we access span in probe processor (#6242)
+
+### Miscellaneous
+* Add DSM support for AWS SNS (#6253)
+* Downgrade error to warning (#6263)
+* Improve docs for building on mac (APMSP-1425) (#6254)
+* baggage propagator clean up (#6266)
+* Add additional exclusions for dependency collection (#6282)
+
+### Build / Test
+* [IAST] Macos compilation warning fix (#6255)
+* [refacto] Unify SNS and SQS instrumentation code (#6199)
+* Add additional exclusions to for obsolete libraries (#6231)
+* Fix typo in create_draft_release.yml (#6246)
+* [Test Package Versions Bump] Updating package versions (#6249)
+* Make snapshot tests compatible with running on Docker v2 (#6260)
+* Fix R2R build for OSX-ARM64 (#6264)
+* Small fixes for .NET 9 (#6277)
+* Exclude Paket from exploration tests for now (#6283)
+* Fix r2r manual instrumentation issue in .NET 9 x86 (#6286)
+* Add more smoke testing for .NET 9 (#6296)
+
+[Changes since 3.5.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.5.0...v3.6.0)
+
 ## [Release 3.5.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.5.0)
 
 ## Summary

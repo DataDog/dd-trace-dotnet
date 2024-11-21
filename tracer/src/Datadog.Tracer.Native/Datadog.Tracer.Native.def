@@ -24,3 +24,4 @@ EXPORTS
     ShouldHeal
     ReportSuccessfulInstrumentation
     GetUserStrings
+    InitEmbeddedCallSiteDefinitions

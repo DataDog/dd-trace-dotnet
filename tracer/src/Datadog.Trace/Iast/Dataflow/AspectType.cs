@@ -21,7 +21,4 @@ internal enum AspectType
 
     /// <summary> Source aspect </summary>
     Source,
-
-    /// <summary> Rasp and Iast Sink aspect </summary>
-    RaspIastSink,
 }

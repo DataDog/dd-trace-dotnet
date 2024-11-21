@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CodeGenerators;
 using Mono.Cecil;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -62,7 +63,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.20.1";
+    const string LibDdwafVersion = "1.21.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -369,7 +370,8 @@ partial class Build
         .Description("Compiles the native tracer assets")
         .DependsOn(CompileTracerNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
-        .DependsOn(CompileTracerNativeSrcLinux);
+        .DependsOn(CompileTracerNativeSrcLinux)
+        .After(CompileManagedSrc);
 
     Target CompileTracerNativeTests => _ => _
         .Unlisted()
@@ -432,6 +434,9 @@ partial class Build
             var toBuild = include.Except(exclude);
 
             DotnetBuild(toBuild, noDependencies: false);
+
+            var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
         });
 
 

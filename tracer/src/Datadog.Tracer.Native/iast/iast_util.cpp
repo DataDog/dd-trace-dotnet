@@ -647,17 +647,25 @@ static thread_local std::unordered_map<void *, bool> locked;
         return str.substr(indexFrom, indexTo - indexFrom + 1);
     }
 
-    bool TryParseInt(const WSTRING& str, int* pValue)
+    int ConvertToInt(const WSTRING& str, int defaultValue)
     {
-        return TryParseInt(ToString(str), pValue);
+        return ConvertToInt(ToString(str), defaultValue);
     }
-    int ConvertToInt(const WSTRING& str)
+    UINT32 ConvertToUint(const WSTRING& str, UINT32 defaultValue)
     {
-        return ConvertToInt(ToString(str));
+        return ConvertToUint(ToString(str), defaultValue);
     }
     bool ConvertToBool(const WSTRING& str)
     {
         return ConvertToBool(ToString(str));
+    }
+    bool TryParseInt(const WSTRING& str, int* pValue)
+    {
+        return TryParseInt(ToString(str), pValue);
+    }
+    bool TryParseUint(const WSTRING& str, UINT32* pValue)
+    {
+        return TryParseUint(ToString(str), pValue);
     }
 
     bool TryParseInt(const std::string& str, int* pValue)
@@ -672,12 +680,33 @@ static thread_local std::unordered_map<void *, bool> locked;
         }
         return res;
     }
-    int ConvertToInt(const std::string& str)
+    int ConvertToInt(const std::string& str, int defaultValue)
     {
-        int res = 0;
+        int res = defaultValue;
         TryParseInt(str, &res);
         return res;
     }
+
+    bool TryParseUint(const std::string& str, UINT32* pValue)
+    {
+        std::istringstream stream(Trim(str));
+        UINT32 value = 0;
+        stream >> value;
+        bool res = !stream.fail();
+        if (res && pValue)
+        {
+            *pValue = value;
+        }
+        return res;
+    }
+    UINT32 ConvertToUint(const std::string& str, UINT32 defaultValue)
+    {
+        auto res = defaultValue;
+        TryParseUint(str, &res);
+        return res;
+    }
+
+
     unsigned int ConvertHexToInt(const std::string& str)
     {
         std::stringstream stream;

@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
+#if NET9_0_OR_GREATER
 
 using System.Threading.Tasks;
 using Xunit;
