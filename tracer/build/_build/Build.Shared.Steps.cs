@@ -267,6 +267,50 @@ partial class Build
                 true);
         });
 
+    Target PublishLibdatadog => _ => _
+        .Unlisted()
+        .DependsOn(PublishLibdatadogWindows)
+        .DependsOn(PublishLibdatadogLinux);
+
+    Target PublishLibdatadogWindows => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .After(CompileProfilerNativeSrc)
+        .Executes(() =>
+        {
+            const string fileName = "datadog_profiling_ffi";
+            foreach (var architecture in ArchitecturesForPlatformForProfiler)
+            {
+                var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
+                var source = sourceDir / $"{fileName}.dll";
+                var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = sourceDir / $"{fileName}.pdb";
+                dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+            }
+        });
+
+    Target PublishLibdatadogLinux => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileProfilerNativeSrc)
+        .Executes(() =>
+        {
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            var sourceDir = ProfilerDeployDirectory / arch;
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+
+            var files = new[] { "libdatadog_profiling.so" };
+            foreach (var file in files)
+            {
+                var source = sourceDir / file;
+                var dest = MonitoringHomeDirectory / arch / file;
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+            }
+        });
+
     Target ValidateNativeTracerGlibcCompatibility => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
