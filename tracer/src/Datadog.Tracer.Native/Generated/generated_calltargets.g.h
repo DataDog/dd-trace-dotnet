@@ -8,7 +8,7 @@
 
 namespace trace
 {
-WCHAR* assemblyName = (WCHAR*)WStr("Datadog.Trace, Version=3.6.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+WCHAR* assemblyName = (WCHAR*)WStr("Datadog.Trace, Version=3.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 WCHAR* g_callTargets_Sig_000[]={(WCHAR*)WStr("!!0"),(WCHAR*)WStr("StackExchange.Redis.Message"),(WCHAR*)WStr("StackExchange.Redis.ResultProcessor`1[!!0]"),(WCHAR*)WStr("StackExchange.Redis.ServerEndPoint"),};
 WCHAR* g_callTargets_Sig_001[]={(WCHAR*)WStr("!!0"),(WCHAR*)WStr("StackExchange.Redis.Message"),(WCHAR*)WStr("StackExchange.Redis.ResultProcessor`1[!!0]"),(WCHAR*)WStr("StackExchange.Redis.ServerEndPoint"),(WCHAR*)WStr("!!0"),};
