@@ -168,7 +168,7 @@ namespace Datadog.Trace.DuckTyping
                         DuckTypeTargetMethodNotFoundException.Throw(proxyMethodDefinition);
                     }
 
-                    targetMethod = targetMethod.MakeGenericMethod(proxyDuckAttribute.GenericParameterTypeNames.Select(name => Type.GetType(name, throwOnError: true)!).ToArray());
+                    targetMethod = targetMethod.MakeGenericMethod(proxyDuckAttribute.GenericParameterTypeNames.Select(name => GetTypeFromPartialName(name, throwOnError: true)!).ToArray());
                 }
 
                 // Gets target method parameters
@@ -383,7 +383,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 Type[] parameterTypes = proxyMethodDuckAttributeParameterTypeNames
-                                                                .Select(pName => Type.GetType(pName, throwOnError: false))
+                                                                .Select(pName => GetTypeFromPartialName(pName))
                                                                 .Where(type => type is not null)
                                                                 .ToArray()!;
                 if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)

@@ -220,14 +220,17 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredXssRequest(string database)
     {
         var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/StoredXss?param=<b>RawValue</b>";
+        var url = $"/Iast/StoredXss?param=<b>RawValue</b>&useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -238,18 +241,23 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
+        settings.AddRegexScrubber((new Regex(@"&useMicrosoftDataDb=(True|False)"), "&useMicrosoftDataDb=..."));
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssEscapedRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredXssEscapedRequest(string database)
     {
         var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/StoredXssEscaped";
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+        var url = $"/Iast/StoredXssEscaped?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -259,22 +267,24 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
 
-        // Add a scrubber to remove the "?param=<value>" from the a single line
-        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
-        settings.AddRegexScrubber(scrubber);
+        // Add a scrubber to remove the useMicrosoftDataDb value
+        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
 
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredSqliRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredSqliRequest(string database)
     {
         var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/StoredSqli";
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+        var url = $"/Iast/StoredSqli?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -285,6 +295,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
+
+        // Add a scrubber to remove the useMicrosoftDataDb value
+        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
