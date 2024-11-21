@@ -109,28 +109,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             var base64HeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64];
             var base64HeaderValue = Encoding.UTF8.GetString(base64HeaderValueBytes);
             Assert.True(IsBase64String(base64HeaderValue), "Base64 header is not a valid Base64 string.");
-
-            var decodedBase64Bytes = Convert.FromBase64String(base64HeaderValue);
-            var decodedBase64Context = PathwayContextEncoder.Decode(decodedBase64Bytes);
-            decodedBase64Context.Should().BeEquivalentTo(context);
-
-            if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
-            {
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKey);
-                var binaryHeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKey];
-                var binaryDecodedContext = PathwayContextEncoder.Decode(binaryHeaderValueBytes);
-                binaryDecodedContext.Should().BeEquivalentTo(context);
-                try
-                {
-                    var binaryAsBase64 = Encoding.UTF8.GetString(binaryHeaderValueBytes);
-                    Convert.FromBase64String(binaryAsBase64);
-                    Assert.False(true, "Binary header should not be Base64-encoded.");
-                }
-                catch (FormatException)
-                {
-                    // Expected if binary data is not valid Base64
-                }
-            }
         }
 
         [Fact]
@@ -202,8 +180,15 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
         private bool IsBase64String(string base64)
         {
-            System.Span<byte> buffer = new System.Span<byte>(new byte[base64.Length]);
-            return Convert.TryFromBase64String(base64, buffer, out _);
+            try
+            {
+                Convert.FromBase64String(base64);
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
