@@ -55,12 +55,7 @@ internal static class StackWalker
     public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
     {
         targetFrame = null;
-        var frames = stackTrace.GetFrames();
-        if (frames is null)
-        {
-            return false;
-        }
-
+        var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
