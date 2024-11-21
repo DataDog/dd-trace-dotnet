@@ -708,11 +708,23 @@ namespace Datadog.Trace.Ci
                 var settings = Settings;
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
-                Task<long>? uploadRepositoryChangesTask = null;
+                Task? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
-                    uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
+                    async Task UploadRepositoryChangesAsync()
+                    {
+                        try
+                        {
+                            await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "CIVisibility: Error uploading repository git metadata.");
+                        }
+                    }
+
+                    uploadRepositoryChangesTask = Task.Run(UploadRepositoryChangesAsync);
                 }
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
