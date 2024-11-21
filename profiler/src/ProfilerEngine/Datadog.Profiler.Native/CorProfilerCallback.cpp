@@ -1291,10 +1291,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //
         if (_pConfiguration->IsHttpProfilingEnabled())
         {
-            // we also need to enable the TPL event source so the activities will be correlated
-            activatedKeywords |= ClrEventsParser::KEYWORD_TPL;
 
-            providerCount = 5;
+            providerCount = 6;
             providers = new COR_PRF_EVENTPIPE_PROVIDER_CONFIG[providerCount]
             {
                 {
@@ -1324,6 +1322,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 {
                     WStr("System.Net.Security"),
                     0xFFFFFFFF,
+                    VerboseVerbosity,
+                    nullptr
+                },
+                // we also need to enable the TPL event source so the activities will be correlated
+                {
+                    WStr("System.Threading.Tasks.TplEventSource"),
+                    0x80,
                     VerboseVerbosity,
                     nullptr
                 }
@@ -1423,6 +1428,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
+    // TODO: maybe move the following 2 lines AFTER stopping the providers
+    // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
 
     // wait until the last .pprof is generated to send the telemetry metrics

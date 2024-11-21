@@ -48,6 +48,8 @@ bool SamplesCollector::StartImpl()
 
 bool SamplesCollector::StopImpl()
 {
+    Log::Info("Stopping the samples collector");
+
     _workerThreadPromise.set_value();
     _workerThread.join();
 
@@ -120,7 +122,7 @@ void SamplesCollector::Export(bool lastCall)
     catch (std::exception const& ex)
     {
         SendHeartBeatMetric(false);
-        Log::Error("An exception occured during export: ", ex.what());
+        Log::Error("An exception occurred during export: ", ex.what());
     }
 
     SendHeartBeatMetric(success);
@@ -148,7 +150,7 @@ void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvid
         }
         catch (std::exception const& ex)
         {
-            Log::Error("An exception occured while collecting samples: ", ex.what());
+            Log::Error("An exception occurred while collecting samples: ", ex.what());
         }
     }
 }

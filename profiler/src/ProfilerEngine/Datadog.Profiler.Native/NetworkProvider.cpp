@@ -5,6 +5,7 @@
 
 #include "COMHelpers.h"
 #include "IManagedThreadList.h"
+#include "Log.h"
 #include "OsSpecificApi.h"
 
 std::vector<SampleValueType> NetworkProvider::SampleTypeDefinitions(
@@ -104,9 +105,6 @@ void NetworkProvider::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, st
     {
         _requests.erase(activity);
     }
-
-    slot.first->second.Url = std::move(url);
-    slot.first->second.StartTimestamp = timestamp;
 }
 
 void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode)
@@ -127,6 +125,7 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
     RawNetworkSample rawSample;
     FillRawSample(rawSample, requestInfo->second, timestamp);
     rawSample.StatusCode = statusCode;
+    rawSample.Error = std::move(requestInfo->second.Error);
 
     Add(std::move(rawSample));
 
@@ -148,13 +147,7 @@ void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, s
         return;
     }
 
-    RawNetworkSample rawSample;
-    FillRawSample(rawSample, requestInfo->second, timestamp);
-    rawSample.Error = std::move(message);
-
-    Add(std::move(rawSample));
-
-    _requests.erase(activity);
+    requestInfo->second.Error = std::move(message);
 }
 
 void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp)

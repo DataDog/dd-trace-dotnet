@@ -15,7 +15,6 @@ public:
     NetworkRequestInfo(std::string url, uint64_t startTimestamp);
 
 public:
-    // HTTP request start
     std::string Url;
     uint64_t StartTimestamp;
     uint64_t LocalRootSpanID;
@@ -23,4 +22,5 @@ public:
     AppDomainID AppDomainId;
     Callstack StartCallStack;
     std::shared_ptr<ManagedThreadInfo> StartThreadInfo;
+    std::string Error;
 };

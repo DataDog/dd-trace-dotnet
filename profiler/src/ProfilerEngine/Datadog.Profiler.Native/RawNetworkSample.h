@@ -43,11 +43,8 @@ public:
 
         sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
         sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp));
-        if (Error.empty())
-        {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
-        }
-        else
+        sample->AddNumericLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
+        if (!Error.empty())
         {
             sample->AddLabel(Label(Sample::RequestErrorLabel, Error));
         }

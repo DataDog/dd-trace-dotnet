@@ -232,7 +232,6 @@ class ClrEventsParser
 {
 public:
     static const int KEYWORD_GC = 0x1;
-    static const int KEYWORD_TPL = 0x80;
     static const int KEYWORD_CONTENTION = 0x4000;
 
 public:
