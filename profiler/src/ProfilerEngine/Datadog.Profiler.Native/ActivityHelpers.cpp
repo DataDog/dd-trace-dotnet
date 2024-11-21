@@ -42,8 +42,8 @@ uint64_t ActivityHelpers::GetActivityKey(const GUID* pActivityId, int processID)
     uint32_t highPart = 0;
     uint32_t lowPart = 0;
 
-    byte* bytePtr = (byte*)pActivityId;
-    byte* endPtr = bytePtr + 12;
+    uint8_t* bytePtr = (uint8_t*)pActivityId;
+    uint8_t* endPtr = bytePtr + 12;
     while (bytePtr < endPtr)
     {
         uint32_t nibble = (uint32_t)(*bytePtr >> 4);
