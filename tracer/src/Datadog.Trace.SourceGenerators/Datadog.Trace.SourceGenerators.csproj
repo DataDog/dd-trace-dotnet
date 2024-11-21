@@ -13,12 +13,8 @@
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectType.cs" Link="AspectsDefinitions\Sources\AspectType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\Dataflow\AspectFilter.cs" Link="AspectsDefinitions\Sources\AspectFilter.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityType.cs" Link="AspectsDefinitions\Sources\VulnerabilityType.cs" />
-    <Compile Include="..\Datadog.Trace\Iast\VulnerabilityTypeName.cs" Link="AspectsDefinitions\Sources\VulnerabilityTypeName.cs" />    
+  <ItemGroup>    
+    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />    
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
       <Link>MessagePack\Attributes.cs</Link>
     </Compile>
@@ -277,8 +273,5 @@
     <Content Include="..\Datadog.Trace\Vendors\MessagePack\_last_downloaded_source_url.txt">
       <Link>MessagePack\_last_downloaded_source_url.txt</Link>
     </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="AspectsDefinitions\Sources\" />
   </ItemGroup>
 </Project>

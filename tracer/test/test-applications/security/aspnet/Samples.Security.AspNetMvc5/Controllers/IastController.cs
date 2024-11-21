@@ -77,7 +77,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                dbConnection = dbConnection ?? IastControllerHelper.CreateDatabase();
+                dbConnection = dbConnection ?? IastControllerHelper.CreateSystemDataDatabase();
                 return Content("OK");
             }
             catch (SQLiteException ex)
@@ -93,7 +93,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (dbConnection is null)
                 {
-                    dbConnection = IastControllerHelper.CreateDatabase();
+                    dbConnection = IastControllerHelper.CreateSystemDataDatabase();
                 }
 
                 if (!string.IsNullOrEmpty(username))
@@ -204,7 +204,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (dbConnection is null)
                 {
-                    dbConnection = IastControllerHelper.CreateDatabase();
+                    dbConnection = IastControllerHelper.CreateSystemDataDatabase();
                 }
 
                 return Query(queryInstance);

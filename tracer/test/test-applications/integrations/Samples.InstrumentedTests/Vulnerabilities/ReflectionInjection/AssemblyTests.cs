@@ -64,14 +64,18 @@ public class AssemblyTests : InstrumentationTestsBase
     [Fact]
     public void GivenAnAssembly_LoadFromTaintedHash_VulnerabilityIsReported()
     {
+#pragma warning disable SYSLIB0056 // Type or member is obsolete
         try { Assembly.LoadFrom(taintedAssembly, null, System.Configuration.Assemblies.AssemblyHashAlgorithm.SHA1); } catch { /* ignore */ }
+#pragma warning restore SYSLIB0056 // Type or member is obsolete
         AssertVulnerable();
     }
     
     [Fact]
     public void GivenAnAssembly_LoadFromNotTaintedHash_NotVulnerable()
     {
+#pragma warning disable SYSLIB0056 // Type or member is obsolete
         try { Assembly.LoadFrom(notTaintedAssembly, null, System.Configuration.Assemblies.AssemblyHashAlgorithm.SHA1); } catch { /* ignore */ }
+#pragma warning restore SYSLIB0056 // Type or member is obsolete
         AssertNotVulnerable();
     }
     

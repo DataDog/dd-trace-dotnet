@@ -91,9 +91,12 @@ void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, dou
 void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 {
     std::shared_ptr<ManagedThreadInfo> info;
-    if (osThreadId != 0 && _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (osThreadId != 0 &&
+        currentThreadInfo != nullptr &&
+        _pManagedThreadList->TryGetThreadInfo(static_cast<uint32_t>(osThreadId), info))
     {
-        ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
+        currentThreadInfo->SetBlockingThread(osThreadId, info->GetThreadName());
     }
 }
 
@@ -101,7 +104,13 @@ void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 // It means that the current thread will be stack walking itself.
 void ContentionProvider::OnContention(double contentionDurationNs)
 {
-    auto [blockingThreadId, blockingThreadName] = ManagedThreadInfo::CurrentThreadInfo->SetBlockingThread(0, WStr(""));
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (currentThreadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto [blockingThreadId, blockingThreadName] = currentThreadInfo->SetBlockingThread(0, WStr(""));
     AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 

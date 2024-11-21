@@ -1447,7 +1447,7 @@ internal enum CallTargetKind
 }
 
 [Flags]
-internal enum InstrumentationCategory
+internal enum InstrumentationCategory : uint
 {
     /// <summary>
     /// Default calltarget integration
