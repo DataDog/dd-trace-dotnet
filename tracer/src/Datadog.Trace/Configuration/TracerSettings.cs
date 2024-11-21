@@ -487,7 +487,7 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
                                      () => new DefaultResult<DbmPropagationLevel>(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
-                                     converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
+                                     converter: x => ToDbmPropagationInput(x.Trim()) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
             TraceId128BitGenerationEnabled = config
