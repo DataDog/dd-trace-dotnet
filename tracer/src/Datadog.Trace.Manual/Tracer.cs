@@ -16,14 +16,16 @@ namespace Datadog.Trace
     public sealed class Tracer : ITracer, IDatadogOpenTracingTracer
     {
         private static Tracer? _instance;
+        // we use this object to track when they have changed, so we know whether or not we need to update the values
+        private object? _automaticSettings;
+        private ImmutableTracerSettings? _settings;
 
-        [Instrumented]
-        private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
+        private Tracer(object? automaticTracer)
         {
             AutomaticTracer = automaticTracer;
-            Settings = new ImmutableTracerSettings(initialValues);
         }
 
+        // Not null when the automatic tracer is available
         [DuckTypeTarget]
         private object? AutomaticTracer { get; }
 
@@ -37,19 +39,17 @@ namespace Datadog.Trace
                 var automaticTracer = GetAutomaticTracerInstance();
                 var current = Volatile.Read(ref _instance);
 
-                if (current is not null)
+                // check that the automatic tracer is still the current instance
+                // very unlikely to change, but not impossible
+                if (current is not null && current.AutomaticTracer == automaticTracer)
                 {
-                    // check that the automatic tracer is still the current instance
-                    if (current.AutomaticTracer == automaticTracer)
-                    {
-                        // they're the same, nothing more to do
-                        return current;
-                    }
+                    // they're the same, nothing more to do
+                    return current;
                 }
 
                 // need a new tracer instance, because either the automatic tracer has changed
                 // or this is the first time fetching it
-                var instance = new Tracer(automaticTracer, new());
+                var instance = new Tracer(automaticTracer);
                 _instance = instance;
                 return instance;
             }
@@ -70,7 +70,27 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings { get; }
+        public ImmutableTracerSettings Settings
+        {
+            get
+            {
+                // check to see if the settings have changed since last time
+                var settings = GetUpdatedImmutableTracerSettings(AutomaticTracer, ref _automaticSettings);
+
+                if (settings is not null)
+                {
+                    // the settings have changed
+                    _settings = new ImmutableTracerSettings(settings);
+                }
+                else if (_settings is null)
+                {
+                    // in manual only mode
+                    _settings = new ImmutableTracerSettings(new());
+                }
+
+                return _settings;
+            }
+        }
 
         /// <summary>
         /// Replaces the global Tracer settings used by all <see cref="Tracer"/> instances,
@@ -115,6 +135,13 @@ namespace Datadog.Trace
         /// </summary>
         [Instrumented]
         private static object? GetAutomaticTracerInstance() => null;
+
+        /// <summary>
+        /// Automatic instrumentation intercepts this method and returns a dictionary populated with updated
+        /// settings, only if the ImmutableTracerSettings (automatic) provided is different to the current one.
+        /// </summary>
+        [Instrumented]
+        private Dictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings) => null;
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.

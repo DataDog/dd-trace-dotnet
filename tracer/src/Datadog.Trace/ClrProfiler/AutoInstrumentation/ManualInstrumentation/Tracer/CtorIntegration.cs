@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.Object, "System.Collections.Generic.Dictionary`2[System.String,System.Object]"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
-    MaximumVersion = ManualInstrumentationConstants.MaxVersion,
+    MaximumVersion = "3.6.*", // Removed in 3.7.0
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
