@@ -7,13 +7,14 @@
 
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects.NHibernate;
 
 /// <summary> NHibernate class aspect </summary>
-[AspectClass("NHibernate", AspectType.RaspIastSink, VulnerabilityType.SqlInjection)]
+[AspectClass("NHibernate", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class ISessionAspect

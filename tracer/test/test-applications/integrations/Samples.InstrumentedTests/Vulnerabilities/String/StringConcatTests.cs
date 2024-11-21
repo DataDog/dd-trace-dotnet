@@ -83,7 +83,7 @@ public class StringConcatTests : InstrumentationTestsBase
     [Fact]
     public void GivenAStringConcatOneString_WhenPerformed_ResultIsOK()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(taintedValue), () => String.Concat(new[] { taintedValue }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(taintedValue), () => String.Concat(taintedValue));
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class StringConcatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingConcat_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(taintedValue), () => String.Concat(new[] { taintedValue }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Concat(taintedValue), () => String.Concat(taintedValue));
     }
 
     [Fact]
@@ -419,7 +419,7 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedObject-+:UntaintedObject:+-OtherTaintedObject-+:OtherUntaintedObject",
             String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject),
-            () => String.Concat(new [] { TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject }));
+            () => String.Concat(TaintedObject, UntaintedObject, OtherTaintedObject, OtherUntaintedObject));
 
     }
 
@@ -429,7 +429,7 @@ public class StringConcatTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(
             "UntaintedObject:+-TaintedObject-+:OtherUntaintedObject:+-OtherTaintedObject-+:",
             String.Concat(UntaintedObject, TaintedObject, OtherUntaintedObject, OtherTaintedObject),
-            () => String.Concat(new [] { UntaintedObject, TaintedObject, OtherUntaintedObject, OtherTaintedObject }));
+            () => String.Concat(UntaintedObject, TaintedObject, OtherUntaintedObject, OtherTaintedObject));
     }
 
     [Fact]
@@ -493,7 +493,7 @@ public class StringConcatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingConcatWith4ObjectParams_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:concat2", String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"), () => String.Concat(new object[] { taintedValue2, (object)"concat", taintedValue, (object)"concat2" }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-TAINTED2-+:concat:+-tainted-+:concat2", String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"), () => String.Concat(taintedValue2, (object)"concat", taintedValue, (object)"concat2"));
     }
 
     [Fact]
@@ -637,7 +637,7 @@ public class StringConcatTests : InstrumentationTestsBase
     [Fact]
     public void GivenAListOfObjects_WhenCallingConcat_ThenNoExceptionIsThrown()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:4str2", String.Concat(taintedValue, 4, null, "str2"), () => String.Concat(new object[] { taintedValue, 4, null, "str2" }));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:4str2", String.Concat(taintedValue, 4, null, "str2"), () => String.Concat(taintedValue, 4, null, "str2"));
     }
 
     [Fact]

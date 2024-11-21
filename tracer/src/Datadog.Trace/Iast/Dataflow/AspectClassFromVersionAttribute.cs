@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
 
 namespace Datadog.Trace.Iast.Dataflow;
 
@@ -19,18 +20,18 @@ internal sealed class AspectClassFromVersionAttribute : AspectClassAttribute
     {
     }
 
-    public AspectClassFromVersionAttribute(string version, string defaultAssembly)
-        : base(defaultAssembly)
+    public AspectClassFromVersionAttribute(string version, string defaultAssembly, InstrumentationCategory category = InstrumentationCategory.Iast)
+        : base(defaultAssembly, category)
     {
     }
 
-    public AspectClassFromVersionAttribute(string version, string defaultAssembly, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : base(defaultAssembly, defaultAspectType, defaultVulnerabilityTypes)
+    public AspectClassFromVersionAttribute(string version, string defaultAssembly, InstrumentationCategory category, AspectType defaultAspectType, params VulnerabilityType[] defaultVulnerabilityTypes)
+        : base(defaultAssembly, category, defaultAspectType, defaultVulnerabilityTypes)
     {
     }
 
-    public AspectClassFromVersionAttribute(string version, string defaultAssembly, AspectFilter[] filters, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
-        : base(defaultAssembly, filters, defaultAspectType, defaultVulnerabilityTypes)
+    public AspectClassFromVersionAttribute(string version, string defaultAssembly, AspectFilter[] filters, InstrumentationCategory category, AspectType defaultAspectType = AspectType.Propagation, params VulnerabilityType[] defaultVulnerabilityTypes)
+        : base(defaultAssembly, filters, category, defaultAspectType, defaultVulnerabilityTypes)
     {
     }
 }

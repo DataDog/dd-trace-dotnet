@@ -846,7 +846,7 @@ partial class Build : NukeBuild
                         "opensuse",
                         new SmokeTestImage[]
                         {
-                            new (publishFramework: TargetFramework.NET7_0, "15-9.0"),
+                            new (publishFramework: TargetFramework.NET9_0, "15-9.0"),
                             new (publishFramework: TargetFramework.NET7_0, "15-7.0"),
                             new (publishFramework: TargetFramework.NET6_0, "15-6.0"),
                             new (publishFramework: TargetFramework.NET5_0, "15-5.0"),
