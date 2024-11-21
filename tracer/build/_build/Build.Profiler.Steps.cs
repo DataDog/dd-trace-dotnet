@@ -390,7 +390,7 @@ partial class Build
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", "libdatadog_profiling.so" };
+            var files = new[] { "Datadog.Profiler.Native.so" };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
