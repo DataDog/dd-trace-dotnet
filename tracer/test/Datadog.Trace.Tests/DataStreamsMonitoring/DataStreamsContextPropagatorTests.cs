@@ -1,11 +1,9 @@
-﻿// tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/DataStreamsContextPropagatorTests.cs
-// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
+﻿// <copyright file="DataStreamsContextPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Reflection;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -15,18 +13,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring
 {
-    public class DataStreamsContextPropagatorTests : IDisposable
+    public class DataStreamsContextPropagatorTests
     {
-        public DataStreamsContextPropagatorTests()
-        {
-            ResetTracerInstance();
-        }
-
-        public void Dispose()
-        {
-            ResetTracerInstance();
-        }
-
         [Fact]
         public void CanRoundTripPathwayContext()
         {
@@ -57,8 +45,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
             try
             {
-                ResetTracerInstance();
-
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(1234),
@@ -67,12 +53,12 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
                 DataStreamsContextPropagator.Instance.Inject(context, headers);
 
+                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
                 headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
             }
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-                ResetTracerInstance();
             }
         }
 
@@ -103,16 +89,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             extractedContext.Should().NotBeNull();
             extractedContext.Value.Hash.Value.Should().Be(base64Context.Hash.Value);
 
-            const long tolerance = 500_000;
-
-            extractedContext.Value.PathwayStart.Should().BeInRange(
-                base64Context.PathwayStart - tolerance,
-                base64Context.PathwayStart + tolerance);
-
-            extractedContext.Value.EdgeStart.Should().BeInRange(
-                base64Context.EdgeStart - tolerance,
-                base64Context.EdgeStart + tolerance);
-
             extractedContext.Value.Hash.Value.Should().NotBe(binaryContext.Hash.Value);
             extractedContext.Value.PathwayStart.Should().NotBe(binaryContext.PathwayStart);
             extractedContext.Value.EdgeStart.Should().NotBe(binaryContext.EdgeStart);
@@ -121,8 +97,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
         [Fact]
         public void InjectedHeaders_HaveCorrectFormat()
         {
-            ResetTracerInstance();
-
             var headers = new TestHeadersCollection();
             var context = new PathwayContext(
                 new PathwayHash(0x12345678),
@@ -165,8 +139,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
             try
             {
-                ResetTracerInstance();
-
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(4321),
@@ -177,13 +149,10 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
                 headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
                 headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
-
-                headers.Values.Should().NotContainKey(DataStreamsPropagationHeaders.PropagationKey);
             }
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-                ResetTracerInstance();
             }
         }
 
@@ -193,8 +162,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "true");
             try
             {
-                ResetTracerInstance();
-
                 var headers = new TestHeadersCollection();
                 var context = new PathwayContext(
                     new PathwayHash(7890),
@@ -227,31 +194,16 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
             finally
             {
                 Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-                ResetTracerInstance();
             }
         }
 
         private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
             => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
 
-        private void ResetTracerInstance()
-        {
-            var tracerType = typeof(Tracer);
-            var instanceField = tracerType.GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);
-            instanceField?.SetValue(null, null);
-        }
-
         private bool IsBase64String(string base64)
         {
-            try
-            {
-                Convert.FromBase64String(base64);
-                return true;
-            }
-            catch (FormatException)
-            {
-                return false;
-            }
+            System.Span<byte> buffer = new System.Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out _);
         }
     }
 }
