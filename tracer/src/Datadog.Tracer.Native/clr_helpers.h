@@ -671,6 +671,43 @@ HRESULT IsTypeByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMetadat
 
 HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMetadataBase& module_metadata, mdToken typeDefOrRefOrSpecToken,
                              bool& isTypeIsByRefLike);
+
+template<class MetaInterface>
+class COMPtrHolder {
+public:
+    COMPtrHolder() {
+        m_ptr = NULL;
+    }
+
+    COMPtrHolder(MetaInterface *ptr) {
+        if (ptr != NULL) {
+            ptr->AddRef();
+        }
+        m_ptr = ptr;
+    }
+
+    ~COMPtrHolder() {
+        if (m_ptr != NULL) {
+            m_ptr->Release();
+            m_ptr = NULL;
+        }
+    }
+
+    MetaInterface *operator->() {
+        return m_ptr;
+    }
+
+    MetaInterface **operator&() {
+        return &m_ptr;
+    }
+
+    operator MetaInterface *() {
+        return m_ptr;
+    }
+
+private:
+    MetaInterface *m_ptr;
+};
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_
