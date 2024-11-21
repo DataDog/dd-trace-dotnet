@@ -19,7 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="..\..\..\..\..\Temp\Datadog.Trace.Manual.dll" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp">
