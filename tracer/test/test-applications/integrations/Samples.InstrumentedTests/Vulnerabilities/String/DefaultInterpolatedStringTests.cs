@@ -8,6 +8,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
 public class DefaultInterpolatedStringTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
+    protected string untaintedValue = "untainted";
 
     public DefaultInterpolatedStringTests()
     {
@@ -15,7 +16,7 @@ public class DefaultInterpolatedStringTests : InstrumentationTestsBase
     }
     
     [Fact]
-    public void GivenAnInterpolatedString_WhenInterpolatingString_GetString_Vulnerable()
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValue_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler(1,1);
         test.AppendFormatted("Hello");
@@ -24,6 +25,23 @@ public class DefaultInterpolatedStringTests : InstrumentationTestsBase
         var str = test.ToStringAndClear();
         AssertTainted(str);
     }
+
+    [Fact]
+    public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValue_GetString_Vulnerable()
+    {
+        var number = 5;
+        var str = $"Hello {taintedValue} {number}";
+        AssertTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnImplicitInterpolatedString_WhenAddingUntaintedValue_GetString_NonVulnerable()
+    {
+        var number = 5;
+        var str = $"Hello {untaintedValue} {number}";
+        AssertNotTainted(str);
+    }
+
 }
 
 #endif
