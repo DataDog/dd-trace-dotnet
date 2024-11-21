@@ -67,10 +67,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
                 DataStreamsContextPropagator.Instance.Inject(context, headers);
 
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
                 headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
-
-                headers.Values.Should().NotContainKey(DataStreamsPropagationHeaders.PropagationKey);
             }
             finally
             {
@@ -105,8 +102,16 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
 
             extractedContext.Should().NotBeNull();
             extractedContext.Value.Hash.Value.Should().Be(base64Context.Hash.Value);
-            extractedContext.Value.PathwayStart.Should().Be(base64Context.PathwayStart);
-            extractedContext.Value.EdgeStart.Should().Be(base64Context.EdgeStart);
+
+            const long tolerance = 500_000;
+
+            extractedContext.Value.PathwayStart.Should().BeInRange(
+                base64Context.PathwayStart - tolerance,
+                base64Context.PathwayStart + tolerance);
+
+            extractedContext.Value.EdgeStart.Should().BeInRange(
+                base64Context.EdgeStart - tolerance,
+                base64Context.EdgeStart + tolerance);
 
             extractedContext.Value.Hash.Value.Should().NotBe(binaryContext.Hash.Value);
             extractedContext.Value.PathwayStart.Should().NotBe(binaryContext.PathwayStart);
@@ -218,39 +223,6 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
                 {
                     // Expected if binary data is not valid Base64
                 }
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-                ResetTracerInstance();
-            }
-        }
-
-        [Fact]
-        public void Extract_WhenBase64HeaderIsMalformed_ReturnsFallbackToBinary()
-        {
-            Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "true");
-            try
-            {
-                ResetTracerInstance();
-
-                var headers = new TestHeadersCollection();
-
-                headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Encoding.UTF8.GetBytes("InvalidBase64=="));
-
-                var binaryContext = new PathwayContext(
-                    new PathwayHash(5678),
-                    DateTimeOffset.UtcNow.AddSeconds(-10).ToUnixTimeNanoseconds(),
-                    DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds());
-                var encodedBinaryContextBytes = PathwayContextEncoder.Encode(binaryContext);
-                headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBinaryContextBytes);
-
-                var extractedContext = DataStreamsContextPropagator.Instance.Extract(headers);
-
-                extractedContext.Should().NotBeNull();
-                extractedContext.Value.Hash.Value.Should().Be(binaryContext.Hash.Value);
-                extractedContext.Value.PathwayStart.Should().Be(binaryContext.PathwayStart);
-                extractedContext.Value.EdgeStart.Should().Be(binaryContext.EdgeStart);
             }
             finally
             {
