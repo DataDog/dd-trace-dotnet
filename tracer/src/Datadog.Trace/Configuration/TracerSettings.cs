@@ -487,7 +487,7 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
                                      () => new DefaultResult<DbmPropagationLevel>(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
-                                     converter: x => ToDbmPropagationInput(x.Trim()) ?? ParsingResult<DbmPropagationLevel>.Failure(),
+                                     converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
             TraceId128BitGenerationEnabled = config
@@ -1303,6 +1303,7 @@ namespace Datadog.Trace.Configuration
 
         internal static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
+            inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
                 return DbmPropagationLevel.Disabled;
