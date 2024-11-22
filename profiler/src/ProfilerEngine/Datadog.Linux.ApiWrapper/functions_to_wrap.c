@@ -547,8 +547,8 @@ struct pthread_wrapped_arg
     void* orig_arg;
 };
 
-__attribute__((visibility("hidden")))
-static void* entry2(void* arg)
+// This symbol must be public for crashtracking filtering mechanism
+void* dd_pthread_entry(void* arg)
 {
     struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
     void* result = new_arg->func(new_arg->orig_arg);
@@ -573,7 +573,7 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     new_arg->func = entry;
     new_arg->orig_arg = arg;
 
-    int result = __real_pthread_create(res, attrp, entry2, new_arg);
+    int result = __real_pthread_create(res, attrp, dd_pthread_entry, new_arg);
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 
