@@ -17,12 +17,12 @@ namespace Datadog.Trace.Iast.Propagation;
 
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
-    public static unsafe void AppendFormatted(IntPtr target, string value)
+    public static unsafe void Append(IntPtr target, string? value)
     {
         FullTaintIfAnyTainted(target, value);
     }
 
-    public static unsafe void FullTaintIfAnyTainted(IntPtr target, object? firstInput = null, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
+    public static unsafe void FullTaintIfAnyTainted(IntPtr target, object? input = null)
     {
         try
         {
@@ -36,20 +36,14 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
             var tainted = PropagationModuleImpl.GetTainted(taintedObjects, target);
-            bool targetIsTainted = tainted is not null;
+            var targetIsTainted = tainted is not null;
 
-            if (!targetIsTainted)
+            if (!targetIsTainted && (tainted = GetTaintedWithRanges(taintedObjects, input)) is null)
             {
-                if (((tainted = GetTaintedWithRanges(taintedObjects, firstInput)) is null) &&
-                    ((tainted = GetTaintedWithRanges(taintedObjects, secondInput)) is null) &&
-                    ((tainted = GetTaintedWithRanges(taintedObjects, thirdInput)) is null) &&
-                    ((tainted = GetTaintedWithRanges(taintedObjects, fourthInput)) is null))
-                {
-                    return;
-                }
+                return;
             }
 
-            var rangesResult = new Range[] { new Range(0, -1, tainted!.Ranges[0].Source) };
+            var rangesResult = new[] { new Range(0, -1, tainted!.Ranges[0].Source) };
             if (!targetIsTainted)
             {
                 taintedObjects.Taint(target, rangesResult);
