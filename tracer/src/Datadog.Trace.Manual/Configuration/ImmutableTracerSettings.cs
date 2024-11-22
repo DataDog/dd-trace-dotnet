@@ -19,7 +19,7 @@ public sealed class ImmutableTracerSettings
     /// <summary>
     /// Initializes a new instance of the <see cref="ImmutableTracerSettings"/> class.
     /// </summary>
-    internal ImmutableTracerSettings(Dictionary<string, object?> initialValues)
+    internal ImmutableTracerSettings(IDictionary<string, object?> initialValues)
     {
         AgentUri = GetValue<Uri?>(initialValues, TracerSettingKeyConstants.AgentUriKey, null) ?? new Uri("http://127.0.0.1:8126");
         CustomSamplingRules = GetValue<string?>(initialValues, TracerSettingKeyConstants.CustomSamplingRules, null);
@@ -45,7 +45,7 @@ public sealed class ImmutableTracerSettings
 
         Integrations = IntegrationSettingsHelper.ParseImmutableFromAutomatic(initialValues);
 
-        static T GetValue<T>(Dictionary<string, object?> results, string key, T defaultValue)
+        static T GetValue<T>(IDictionary<string, object?> results, string key, T defaultValue)
         {
             if (results.TryGetValue(key, out var value)
              && value is T t)
