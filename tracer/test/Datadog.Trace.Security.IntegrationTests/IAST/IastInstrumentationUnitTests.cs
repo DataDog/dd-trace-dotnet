@@ -24,6 +24,7 @@ using System.Xml.XPath;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Equivalency.Tracing;
 using Xunit;
 using Xunit.Abstractions;
 using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
@@ -32,6 +33,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 public class IastInstrumentationUnitTests : TestHelper
 {
+    private List<string> _aspects = null;
+
     private List<Type> _taintedTypes = new List<Type>()
     {
         typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
@@ -42,6 +45,33 @@ public class IastInstrumentationUnitTests : TestHelper
     public IastInstrumentationUnitTests(ITestOutputHelper output)
         : base("InstrumentedTests", output)
     {
+    }
+
+    public List<string> GetAspects()
+    {
+        if (_aspects == null)
+        {
+            var tfm = (uint)Telemetry.ConfigTelemetryData.TargetFramework;
+            var aspects = new List<string>();
+            // Read aspects from the native definitions file
+            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.h");
+            foreach (var line in File.ReadAllLines(path))
+            {
+                if (!line.Contains("Aspect")) { continue; }
+                var aspect = line.Substring(14, line.Length - 17).Replace("\\\"", "\"");
+
+                // Get TFMs from the aspect
+                int index = aspect.LastIndexOf(' ');
+                uint tfms = Convert.ToUInt32(aspect.Substring(index + 1));
+                if ((tfm & tfms) == 0) { continue; }
+
+                aspects.Add(aspect);
+            }
+
+            _aspects = aspects;
+        }
+
+        return _aspects;
     }
 
     [SkippableTheory]
@@ -385,7 +415,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
+        var aspects = GetAspects().Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :
@@ -425,7 +455,7 @@ public class IastInstrumentationUnitTests : TestHelper
     {
         var aspectsToExcludeNormalized = aspectsToExclude?.Select(NormalizeName).ToList();
 
-        foreach (var aspect in ClrProfiler.AspectDefinitions.GetAspects())
+        foreach (var aspect in GetAspects())
         {
             if (aspectsToExcludeNormalized?.FirstOrDefault(x => NormalizeName(x).Contains(x)) is null)
             {
