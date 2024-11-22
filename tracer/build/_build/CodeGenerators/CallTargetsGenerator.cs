@@ -7,6 +7,7 @@ using System.Text.Json;
 using Mono.Cecil;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 namespace CodeGenerators
 {
@@ -498,7 +499,7 @@ namespace CodeGenerators
             var fileName = outputPath / "generated_calltargets.g.h";
             File.WriteAllText(fileName, sb.ToString());
 
-            Serilog.Log.Information("CallTarget definitions File saved: {File}", fileName);
+            Logger.Information("CallTarget definitions File saved: {File}", fileName);
 
             static string GetSignature(CallTargetDefinitionSource definition)
             {

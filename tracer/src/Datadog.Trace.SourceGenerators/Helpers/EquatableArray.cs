@@ -69,7 +69,7 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
-        return obj is EquatableArray<T> array && Equals(this, array);
+        return obj is EquatableArray<T> array && this.Equals(array);
     }
 
     /// <inheritdoc/>

@@ -2434,7 +2434,7 @@ partial class Build
 
             var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
             File.WriteAllText(csvFilePath, sb.ToString());
-            Serilog.Log.Information("File ordered and saved: {File}", csvFilePath);
+            Logger.Information("File ordered and saved: {File}", csvFilePath);
         });
 
     Target CreateRootDescriptorsFile => _ => _
@@ -2486,7 +2486,7 @@ partial class Build
             var projectFolder = Solution.GetProject(Projects.DatadogTraceTrimming).Directory;
             var descriptorFilePath = projectFolder / "build" / $"{Projects.DatadogTraceTrimming}.xml";
             File.WriteAllText(descriptorFilePath, sb.ToString());
-            Serilog.Log.Information("File saved: {File}", descriptorFilePath);
+            Logger.Information("File saved: {File}", descriptorFilePath);
 
             static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
             {

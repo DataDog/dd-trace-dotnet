@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Mono.Cecil;
 using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 namespace CodeGenerators
 {
@@ -14,7 +15,7 @@ namespace CodeGenerators
 
         public static void GenerateCallSites(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath) 
         {
-            Serilog.Log.Debug("Generating CallSite definitions file ...");
+            Logger.Debug("Generating CallSite definitions file ...");
 
             var aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
@@ -274,7 +275,7 @@ namespace CodeGenerators
             var fileName = outputPath / "generated_callsites.g.h";
             File.WriteAllText(fileName, sb.ToString());
 
-            Serilog.Log.Information("CallSite definitions File saved: {File}", fileName);
+            Logger.Information("CallSite definitions File saved: {File}", fileName);
 
             string Format(string line)
             {
