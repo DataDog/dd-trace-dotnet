@@ -1,41 +1,42 @@
-// <copyright file="NativeCallTargetDefinition2.cs" company="Datadog">
+// <copyright file="NativeCallTargetDefinition3.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Datadog.Trace.ClrProfiler
 {
- // !                                         ██
- //                                         ██░░██
- //                                       ██░░░░░░██
- //                                     ██░░░░░░░░░░██
- //                                     ██░░░░░░░░░░██
- //                                   ██░░░░░░░░░░░░░░██
- //                                 ██░░░░░░██████░░░░░░██
- //                                 ██░░░░░░██████░░░░░░██
- //                               ██░░░░░░░░██████░░░░░░░░██
- //                               ██░░░░░░░░██████░░░░░░░░██
- //                             ██░░░░░░░░░░██████░░░░░░░░░░██
- //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
- //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
- //                         ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██
- //                         ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
- //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
- //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
- //                     ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██
- //                     ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
- //                       ██████████████████████████████████████████
- //
- // If you happen to change the layout of this structure,
- // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
- // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
+    // !                                         ██
+    //                                         ██░░██
+    //                                       ██░░░░░░██
+    //                                     ██░░░░░░░░░░██
+    //                                     ██░░░░░░░░░░██
+    //                                   ██░░░░░░░░░░░░░░██
+    //                                 ██░░░░░░██████░░░░░░██
+    //                                 ██░░░░░░██████░░░░░░██
+    //                               ██░░░░░░░░██████░░░░░░░░██
+    //                               ██░░░░░░░░██████░░░░░░░░██
+    //                             ██░░░░░░░░░░██████░░░░░░░░░░██
+    //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+    //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+    //                         ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██
+    //                         ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+    //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+    //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+    //                     ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██
+    //                     ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+    //                       ██████████████████████████████████████████
+    //
+    // If you happen to change the layout of this structure,
+    // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
+    // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    internal struct NativeCallTargetDefinition2
+    internal struct NativeCallTargetDefinition3
     {
         public readonly IntPtr TargetAssembly;
 
@@ -67,7 +68,9 @@ namespace Datadog.Trace.ClrProfiler
 
         public readonly uint Categories;
 
-        public NativeCallTargetDefinition2(
+        public readonly uint Platforms = 0xFFFFFFFF;
+
+        public NativeCallTargetDefinition3(
                 IntPtr targetAssembly,
                 IntPtr targetType,
                 IntPtr targetMethod,
@@ -101,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler
             Categories = categories;
         }
 
-        public NativeCallTargetDefinition2(
+        public NativeCallTargetDefinition3(
                 string targetAssembly,
                 string targetType,
                 string targetMethod,
@@ -134,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler
             Categories = categories;
         }
 
-        public static implicit operator NativeCallTargetDefinition(NativeCallTargetDefinition2 callTarget)
+        public static implicit operator NativeCallTargetDefinition(NativeCallTargetDefinition3 callTarget)
         {
             return new NativeCallTargetDefinition(
                 callTarget.TargetAssembly,

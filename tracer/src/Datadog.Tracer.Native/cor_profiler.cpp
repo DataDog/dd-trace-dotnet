@@ -1385,7 +1385,8 @@ void CorProfiler::DisableTracerCLRProfiler()
 {
     // A full profiler detach request cannot be made because:
     // 1. We use the COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST event mask (CORPROF_E_IMMUTABLE_FLAGS_SET)
-    // 2. We instrument code with SetILFunctionBody for the Loader injection. (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
+    // 2. We instrument code with SetILFunctionBody for the Loader injection.
+    // (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
     Logger::Info("Disabling Tracer CLR Profiler...");
     Shutdown();
@@ -1971,7 +1972,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, int size, UINT32 enabledCategories, UINT32 platform)
 {
     long numReJITs = 0;
     long enabledTargets = 0;
@@ -1993,6 +1994,12 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
         for (int i = 0; i < size; i++)
         {
             const auto& current = items[i];
+
+            // Filter out integrations that are not for the current platform
+            if ((current.tfms & platform) == 0)
+            {
+                continue;
+            }
 
             const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
             const shared::WSTRING& targetType = shared::WSTRING(current.targetType);

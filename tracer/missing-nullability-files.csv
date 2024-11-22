@@ -83,8 +83,6 @@ src/Datadog.Trace/ClrProfiler/InstrumentationDefinitions.cs
 src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs
 src/Datadog.Trace/ClrProfiler/IntegrationVersionRange.cs
 src/Datadog.Trace/ClrProfiler/ManualTracer.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition2.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs
 src/Datadog.Trace/ClrProfiler/NativeMethods.cs
 src/Datadog.Trace/ClrProfiler/ScopeFactory.cs
