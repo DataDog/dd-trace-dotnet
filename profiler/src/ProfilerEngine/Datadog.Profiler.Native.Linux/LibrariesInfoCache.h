@@ -13,6 +13,7 @@
 #include <atomic>
 #include <libunwind.h>
 #include <link.h>
+#include <memory>
 #include <shared_mutex>
 #include <thread>
 #include <vector>
@@ -48,7 +49,7 @@ public:
 #ifdef DD_TEST
 private:
 #endif
-    void Work(AutoResetEvent& startEvent);
+    void Work(std::shared_ptr<AutoResetEvent> startEvent);
 
     static LibrariesInfoCache* s_instance;
 
