@@ -32,6 +32,8 @@ public class CtorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? automaticTracer, Dictionary<string, object?> values)
     {
+        // In earlier versions of the automatic tracer, the settings were passed in as a dictionary
+        // but in 3.7.0 we don't need to instrument them
         if (automaticTracer is Datadog.Trace.Tracer tracer)
         {
             PopulateSettings(values, tracer.Settings);
@@ -43,6 +45,7 @@ public class CtorIntegration
     internal static void PopulateSettings(Dictionary<string, object?> values, ImmutableTracerSettings settings)
     {
         // record all the settings in the dictionary
+        // This key is used to detect if the settings have been populated _at all_, so should always be sent
         values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;
 #pragma warning disable CS0618 // Type or member is obsolete
         values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabledInternal;

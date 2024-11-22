@@ -23,13 +23,9 @@ public abstract class InstrumentationTests<T>
     {
         var manualAssembly = typeof(T).Assembly;
         var assemblyName = manualAssembly.GetName().Name;
-        var assemblyVersion = manualAssembly.GetName().Version!;
 
         // find all types in Datadog.Trace that instrument methods in the target assembly
-        // exclude the ones that don't target older versions
-        var instrumentations = GetAllInstrumentations(assemblyName)
-                              .Where(x => GetMaxVersion(x.Attribute.MaximumVersion) >= assemblyVersion)
-                              .GroupBy(x => x.Attribute.TypeName);
+        var instrumentations = GetAllInstrumentations(assemblyName).GroupBy(x => x.Attribute.TypeName);
 
         var attributedMembers = manualAssembly
                                .GetTypes()
@@ -95,27 +91,6 @@ public abstract class InstrumentationTests<T>
               .Where(x => x.Attribute.AssemblyNames is { } names
                               ? names.Contains(assemblyName)
                               : x.Attribute.AssemblyName == assemblyName);
-    }
-
-    private static Version GetMaxVersion(string version)
-    {
-        // handle our version numbers with * etc
-        var splits = version.Split('.');
-        var major = splits.Length > 0 ? ToVersion(splits[0]) : ushort.MaxValue;
-        var minor = splits.Length > 1 ? ToVersion(splits[1]) : ushort.MaxValue;
-        var patch = splits.Length > 2 ? ToVersion(splits[2]) : ushort.MaxValue;
-
-        return new Version(major, minor, patch);
-
-        static ushort ToVersion(string number)
-        {
-            if (!string.IsNullOrEmpty(number) && ushort.TryParse(number, out var value))
-            {
-                return value;
-            }
-
-            return ushort.MaxValue;
-        }
     }
 
     private static bool IsTarget(MemberInfo memberInfo, string methodName, List<Type> expectedParams)

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     MethodName = "GetUpdatedImmutableTracerSettings",
     ReturnTypeName = "System.Collections.Generic.Dictionary`2[System.String,System.Object]",
     ParameterTypeNames = [ClrNames.Object, "System.Object&"],
-    MinimumVersion = "3.6.*", // added in 3.7.0
+    MinimumVersion = "3.7.0", // added in 3.7.0
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]

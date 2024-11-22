@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.SourceGenerators;
@@ -20,9 +21,22 @@ namespace Datadog.Trace
         private object? _automaticSettings;
         private ImmutableTracerSettings? _settings;
 
-        private Tracer(object? automaticTracer)
+        [Instrumented] // This is only _actually_ instrumented up to 3.6.0 (automatic)
+        private Tracer(object? automaticTracer, Dictionary<string, object?> initialValues)
         {
             AutomaticTracer = automaticTracer;
+
+            // In 3.7.0+ we don't bother populating the dictionary with the settings
+            // seeing as the whole _settings object is going to be thrown away and
+            // repopulated if the customer calls Settings. Kind of annoying...
+            // so to avoid the extra work/allocation we check whether the initial values contains the
+            // agent key, as an easy way of detecting if we're running in this version-conflict mode.
+            // If we're not in version conflict, we can delay allocating the settings object until
+            // its actually requested.
+            if (initialValues.ContainsKey(TracerSettingKeyConstants.AgentUriKey))
+            {
+                _settings = new ImmutableTracerSettings(initialValues);
+            }
         }
 
         // Not null when the automatic tracer is available
@@ -49,7 +63,7 @@ namespace Datadog.Trace
 
                 // need a new tracer instance, because either the automatic tracer has changed
                 // or this is the first time fetching it
-                var instance = new Tracer(automaticTracer);
+                var instance = new Tracer(automaticTracer, new());
                 _instance = instance;
                 return instance;
             }
@@ -141,7 +155,12 @@ namespace Datadog.Trace
         /// settings, only if the ImmutableTracerSettings (automatic) provided is different to the current one.
         /// </summary>
         [Instrumented]
-        private Dictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings) => null;
+        private Dictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings)
+        {
+            _ = automaticTracer;
+            _ = automaticSettings;
+            return null;
+        }
 
         /// <summary>
         /// Automatic instrumentation intercepts this method and returns a duck-typed Scope from Datadog.Trace.
