@@ -114,7 +114,7 @@ namespace CodeGenerators
                             parameterTypeNames = GetStringArray(namedArgument.Argument.Value);
                             break;
                         case nameof(InstrumentAttributeProperties.CallTargetType):
-                            //callTargetType = (namedArgument.Argument.Value as INamedTypeSymbol)?.ToDisplayString();
+                            callTargetType = namedArgument.Argument.Value?.ToString();
                             break;
                         case nameof(InstrumentAttributeProperties.CallTargetIntegrationKind):
                             integrationKind = namedArgument.Argument.Value as int?;
@@ -537,14 +537,6 @@ namespace CodeGenerators
 
             static string GetCallTargetKind(int kind)
             {
-                /*
-                 enum class CallTargetKind : UINT8
-                {
-                    Default = 0,
-                    Derived = 1,
-                    Interface = 2
-                };
-                 */
                 return kind switch
                 {
                     0 => "CallTargetKind::Default",
