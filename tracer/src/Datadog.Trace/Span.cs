@@ -539,16 +539,17 @@ namespace Datadog.Trace
         /// Adds a SpanLink to the current Span if the Span is active.
         /// </summary>
         /// <param name="spanLink">The SpanLink to add</param>
-        internal void AddSpanLink(SpanLink spanLink)
+        internal Span AddLink(SpanLink spanLink)
         {
             if (IsFinished)
             {
-                Log.Warning("AddSpanLink should not be called after the span was closed");
-                return;
+                Log.Warning("AddLink should not be called after the span was closed");
+                return this;
             }
 
             SpanLinks ??= new List<SpanLink>();
             SpanLinks.Add(spanLink);
+            return this;
         }
     }
 }
