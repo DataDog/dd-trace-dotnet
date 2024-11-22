@@ -65,7 +65,7 @@ internal class Program
 
             // Manually enable debug logs
             GlobalSettings.SetDebugEnabled(true);
-            LogCurrentSettings(_initialTracer, "Initial");
+            LogAndAssertCurrentSettings(_initialTracer, "Initial");
 
             // verify instrumentation
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
@@ -109,7 +109,7 @@ internal class Program
             settings.Environment = "updated-env";
             settings.GlobalTags = new Dictionary<string, string> { { "Updated-key", "Updated Value" } };
             Tracer.Configure(settings);
-            LogCurrentSettings(Tracer.Instance, "Reconfigured");
+            LogAndAssertCurrentSettings(Tracer.Instance, "Reconfigured", settings);
 
             // Manual + automatic
             using (Tracer.Instance.StartActive($"Manual-{++count}.Reconfigured"))
@@ -132,7 +132,7 @@ internal class Program
             httpIntegration.AnalyticsEnabled = false; // just setting them because why not
             httpIntegration.AnalyticsSampleRate = 1.0;
             Tracer.Configure(settings);
-            LogCurrentSettings(Tracer.Instance, "HttpDisabled");
+            LogAndAssertCurrentSettings(Tracer.Instance, "HttpDisabled", settings);
 
             // send a trace with it disabled
             using (Tracer.Instance.StartActive($"Manual-{++count}.HttpDisabled"))
@@ -143,8 +143,9 @@ internal class Program
             await Tracer.Instance.ForceFlushAsync();
 
             // go back to the defaults
-            Tracer.Configure(TracerSettings.FromDefaultSources());
-            LogCurrentSettings(Tracer.Instance, "DefaultsReinstated");
+            settings = TracerSettings.FromDefaultSources();
+            Tracer.Configure(settings);
+            LogAndAssertCurrentSettings(Tracer.Instance, "DefaultsReinstated", settings);
             using (Tracer.Instance.StartActive($"Manual-{++count}.DefaultsReinstated"))
             {
                 await SendHttpRequest("DefaultsReinstated");
@@ -265,7 +266,7 @@ internal class Program
                 }
             }
 
-            static void LogCurrentSettings(Tracer tracer, string step)
+            void LogAndAssertCurrentSettings(Tracer tracer, string step, TracerSettings expected = null)
             {
                 var settings = tracer.Settings;
                 Console.WriteLine($"Current tracer settings for {step}: ");
@@ -275,6 +276,14 @@ internal class Program
                 WriteLog(settings.ServiceVersion);
                 var globalTags = string.Join(". ", settings.GlobalTags.Select(x => $"{x.Key}:{x.Value}"));
                 WriteLog(globalTags);
+
+                if (expected is not null)
+                {
+                    Expect(settings.Environment == expected.Environment);
+                    Expect(settings.ServiceName == expected.ServiceName);
+                    Expect(settings.ServiceVersion == expected.ServiceVersion);
+                    Expect(settings.GlobalTags.Count == expected.GlobalTags.Count);
+                }
 
                 static void WriteLog(object argument, [CallerArgumentExpression(nameof(argument))] string paramName = null)
                 {
