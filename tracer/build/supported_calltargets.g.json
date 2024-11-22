@@ -5528,7 +5528,7 @@
     },
     "MaximumVersion": {
       "Item1": 3,
-      "Item2": 65535,
+      "Item2": 6,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration",
@@ -5672,6 +5672,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetAutomaticTracerInstanceIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DatadogTraceManual",
+    "AssemblyName": "Datadog.Trace.Manual",
+    "TargetTypeName": "Datadog.Trace.Tracer",
+    "TargetMethodName": "GetUpdatedImmutableTracerSettings",
+    "TargetReturnType": "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
+    "TargetParameterTypes": [
+      "System.Object",
+      "System.Object&"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 7,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.GetUpdatedImmutableTracerSettingsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
