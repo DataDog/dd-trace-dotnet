@@ -20,7 +20,7 @@ internal sealed class IntegrationSettingsHelper
             => new(name, enabled, analyticsEnabled, analyticsSampleRate);
     }
 
-    public static ImmutableIntegrationSettingsCollection ParseImmutableFromAutomatic(Dictionary<string, object?> initialValues)
+    public static ImmutableIntegrationSettingsCollection ParseImmutableFromAutomatic(IDictionary<string, object?> initialValues)
     {
         var settings = Populate(initialValues, CreateSettingFunc);
         return new ImmutableIntegrationSettingsCollection(settings);
@@ -30,7 +30,7 @@ internal sealed class IntegrationSettingsHelper
     }
 
     private static Dictionary<string, T> Populate<T>(
-        Dictionary<string, object?> initialValues,
+        IDictionary<string, object?> initialValues,
         Func<string, bool?, bool?, double, T> createSettingFunc)
     {
         if (!initialValues.TryGetValue(TracerSettingKeyConstants.IntegrationSettingsKey, out var raw)
