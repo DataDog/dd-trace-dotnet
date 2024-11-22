@@ -89,11 +89,6 @@ internal class DataStreamsManager
         }
 
         DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
-
-        // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
-        // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
-        // you will hit this code path
-        Log.Debug("Attempted to inject null pathway context");
     }
 
     public void TrackBacklog(string tags, long value)
