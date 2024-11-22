@@ -42,24 +42,16 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
         [Fact]
         public void Inject_WhenLegacyHeadersDisabled_DoesNotIncludeBinaryHeader()
         {
-            Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
-            try
-            {
-                var headers = new TestHeadersCollection();
-                var context = new PathwayContext(
-                    new PathwayHash(1234),
-                    DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
-                    DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+            var headers = new TestHeadersCollection();
+            var context = new PathwayContext(
+                new PathwayHash(1234),
+                DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
+                DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
-                DataStreamsContextPropagator.Instance.Inject(context, headers);
+            DataStreamsContextPropagator.Instance.Inject(context, headers, isDataStreamsLegacyHeadersEnabled: false);
 
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
-                headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-            }
+            headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
+            headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
         }
 
         [Fact]
@@ -114,64 +106,48 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring
         [Fact]
         public void InjectHeaders_WhenLegacyHeadersDisabled_DoesNotIncludeLegacyHeader()
         {
-            Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "false");
-            try
-            {
-                var headers = new TestHeadersCollection();
-                var context = new PathwayContext(
-                    new PathwayHash(4321),
-                    DateTimeOffset.UtcNow.AddSeconds(-15).ToUnixTimeNanoseconds(),
-                    DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+            var headers = new TestHeadersCollection();
+            var context = new PathwayContext(
+                new PathwayHash(4321),
+                DateTimeOffset.UtcNow.AddSeconds(-15).ToUnixTimeNanoseconds(),
+                DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
-                DataStreamsContextPropagator.Instance.Inject(context, headers);
+            DataStreamsContextPropagator.Instance.Inject(context, headers, isDataStreamsLegacyHeadersEnabled: false);
 
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
-                headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
-            }
+            headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
+            headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64].Should().NotBeNullOrEmpty();
         }
 
         [Fact]
         public void Inject_WhenLegacyHeadersEnabled_IncludesBothHeaders()
         {
-            Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", "true");
+            var headers = new TestHeadersCollection();
+            var context = new PathwayContext(
+                new PathwayHash(7890),
+                DateTimeOffset.UtcNow.AddSeconds(-20).ToUnixTimeNanoseconds(),
+                DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+            DataStreamsContextPropagator.Instance.Inject(context, headers, isDataStreamsLegacyHeadersEnabled: true);
+
+            headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
+            var base64HeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64];
+            var base64HeaderValue = Encoding.UTF8.GetString(base64HeaderValueBytes);
+            Assert.True(IsBase64String(base64HeaderValue), "Base64 header is not a valid Base64 string.");
+
+            headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKey);
+            var binaryHeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKey];
+            binaryHeaderValueBytes.Should().NotBeNullOrEmpty();
+
             try
             {
-                var headers = new TestHeadersCollection();
-                var context = new PathwayContext(
-                    new PathwayHash(7890),
-                    DateTimeOffset.UtcNow.AddSeconds(-20).ToUnixTimeNanoseconds(),
-                    DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
-
-                DataStreamsContextPropagator.Instance.Inject(context, headers);
-
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKeyBase64);
-                var base64HeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKeyBase64];
-                var base64HeaderValue = Encoding.UTF8.GetString(base64HeaderValueBytes);
-                Assert.True(IsBase64String(base64HeaderValue), "Base64 header is not a valid Base64 string.");
-
-                headers.Values.Should().ContainKey(DataStreamsPropagationHeaders.PropagationKey);
-                var binaryHeaderValueBytes = headers.Values[DataStreamsPropagationHeaders.PropagationKey];
-                binaryHeaderValueBytes.Should().NotBeNullOrEmpty();
-
-                try
-                {
-                    var binaryAsBase64 = Encoding.UTF8.GetString(binaryHeaderValueBytes);
-                    Convert.FromBase64String(binaryAsBase64);
-                    // If no exception then the binary header was incorrectly Base64-encoded
-                    Assert.False(true, "Binary header should not be Base64-encoded.");
-                }
-                catch (FormatException)
-                {
-                    // Expected if binary data is not valid Base64
-                }
+                var binaryAsBase64 = Encoding.UTF8.GetString(binaryHeaderValueBytes);
+                Convert.FromBase64String(binaryAsBase64);
+                // If no exception then the binary header was incorrectly Base64-encoded
+                Assert.False(true, "Binary header should not be Base64-encoded.");
             }
-            finally
+            catch (FormatException)
             {
-                Environment.SetEnvironmentVariable("DD_DATA_STREAMS_LEGACY_HEADERS", null);
+                // Expected if binary data is not valid Base64
             }
         }
 

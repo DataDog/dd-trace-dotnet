@@ -31,6 +31,11 @@ internal class DataStreamsContextPropagator
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
     public void Inject<TCarrier>(PathwayContext context, TCarrier headers)
         where TCarrier : IBinaryHeadersCollection
+        => Inject(context, headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
+
+    // Internal for testing
+    internal void Inject<TCarrier>(PathwayContext context, TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
+        where TCarrier : IBinaryHeadersCollection
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
@@ -59,7 +64,7 @@ internal class DataStreamsContextPropagator
             headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, base64EncodedContextBytes.AsSpan(0, bytesWritten).ToArray());
         }
 
-        if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
+        if (isDataStreamsLegacyHeadersEnabled)
         {
             headers.Add(DataStreamsPropagationHeaders.PropagationKey, encodedBytes);
         }
@@ -72,6 +77,11 @@ internal class DataStreamsContextPropagator
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
     /// <returns>A new <see cref="PathwayContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
     public PathwayContext? Extract<TCarrier>(TCarrier headers)
+        where TCarrier : IBinaryHeadersCollection
+        => Extract(headers, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
+
+    // internal for testing
+    internal PathwayContext? Extract<TCarrier>(TCarrier headers, bool isDataStreamsLegacyHeadersEnabled)
         where TCarrier : IBinaryHeadersCollection
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
@@ -113,7 +123,7 @@ internal class DataStreamsContextPropagator
             }
         }
 
-        if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
+        if (isDataStreamsLegacyHeadersEnabled)
         {
             var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
             if (binaryBytes is { Length: > 0 })
