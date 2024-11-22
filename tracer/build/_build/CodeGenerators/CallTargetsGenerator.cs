@@ -16,7 +16,7 @@ namespace CodeGenerators
 
         public static void GenerateCallTargets(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath, string version, AbsolutePath dependabotPath) 
         {
-            Serilog.Log.Debug("Generating CallTarget definitions file ...");
+            Logger.Debug("Generating CallTarget definitions file ...");
 
             var callTargets = new Dictionary<CallTargetDefinitionSource, TargetFrameworks>();
             foreach(var tfm in targetFrameworks)
@@ -573,7 +573,7 @@ namespace CodeGenerators
             var fileName = outputPath / FileNames.DefinitionsJson;
             File.WriteAllText(fileName, jsonString);
 
-            Serilog.Log.Information("CallTarget definitions File saved: {File}", fileName);
+            Logger.Information("CallTarget definitions File saved: {File}", fileName);
         }
 
 
