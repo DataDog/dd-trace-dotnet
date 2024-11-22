@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using Castle.Core.Internal;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void AddAttribute_ToLink_InCloseSpan()
+        public void AddAttribute_Succeeds_AfterSpanFinished()
         {
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
@@ -48,8 +50,9 @@ namespace Datadog.Trace.Tests
             var childSpan = childScope.Span;
             var spanLink = childSpan.AddSpanLink(parentSpan);
             childSpan.Finish();
-            spanLink.AddAttribute("should", "return null");
-            Assert.Null(spanLink.Attributes);
+            spanLink.AddAttribute("key", "value");
+
+            spanLink.Attributes.Should().BeEquivalentTo(new[] { new KeyValuePair<string, string>("key", "value") });
         }
     }
 }

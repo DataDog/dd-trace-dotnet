@@ -550,7 +550,7 @@ namespace Datadog.Trace
             }
 
             SpanLinks ??= new List<SpanLink>();
-            var spanLink = new SpanLink(spanLinkToAdd, this, attributes);
+            var spanLink = new SpanLink(spanLinkToAdd, attributes);
             SpanLinks.Add(spanLink);
             return spanLink;
         }
