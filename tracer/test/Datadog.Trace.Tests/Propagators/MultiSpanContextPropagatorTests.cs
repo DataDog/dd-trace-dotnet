@@ -372,6 +372,93 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void Extract_Behavior_Continue()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var result = Propagator.Extract(headers.Object);
+
+            result.SpanContext
+                  .Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                      new SpanContextMock
+                      {
+                          TraceId128 = (TraceId)123456789,
+                          TraceId = 123456789,
+                          SpanId = 987654321,
+                          RawTraceId = "000000000000000000000000075bcd15",
+                          RawSpanId = "000000003ade68b1",
+                          Origin = null,
+                          SamplingPriority = SamplingPriorityValues.AutoKeep,
+                          PropagatedTags = EmptyPropagatedTags,
+                          IsRemote = true,
+                          LastParentId = ZeroLastParentId,
+                      });
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Extract_Behavior_Ignore()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var names = new[] { ContextPropagationHeaderStyle.W3CTraceContext };
+            var ignorePropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: true, ExtractBehavior.Ignore);
+            var result = ignorePropagator.Extract(headers.Object);
+
+            result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void Extract_Behavior_Restart()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            var names = new[] { ContextPropagationHeaderStyle.W3CTraceContext };
+            var restartPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: true, ExtractBehavior.Restart);
+            var result = restartPropagator.Extract(headers.Object);
+
+            result.SpanContext.Should().BeNull();
+            result.Baggage.Should().BeNull();
+            result.Links
+                  .Should().BeEquivalentTo(
+                        new SpanLinkMock[]
+                        {
+                            new SpanLinkMock
+                            {
+                                Context = new SpanContextMock
+                                {
+                                    TraceId128 = (TraceId)123456789,
+                                    TraceId = 123456789,
+                                    SpanId = 987654321,
+                                    RawTraceId = "000000000000000000000000075bcd15",
+                                    RawSpanId = "000000003ade68b1",
+                                    Origin = null,
+                                    SamplingPriority = SamplingPriorityValues.AutoKeep,
+                                    PropagatedTags = EmptyPropagatedTags,
+                                    IsRemote = true,
+                                    LastParentId = ZeroLastParentId,
+                                }
+                            }
+                        });
+        }
+
+        [Fact]
         public void Extract_B3SingleHeader_IHeadersCollection()
         {
             var headers = new Mock<IHeadersCollection>();

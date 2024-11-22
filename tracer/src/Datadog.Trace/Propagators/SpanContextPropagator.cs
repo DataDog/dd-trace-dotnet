@@ -24,13 +24,16 @@ namespace Datadog.Trace.Propagators
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
         private readonly bool _propagationExtractFirstOnly;
+        private readonly ExtractBehavior _extractBehavior;
 
         internal SpanContextPropagator(
             IEnumerable<IContextInjector>? injectors,
             IEnumerable<IContextExtractor>? extractors,
-            bool propagationExtractFirstValue)
+            bool propagationExtractFirstValue,
+            ExtractBehavior extractBehavior = default)
         {
             _propagationExtractFirstOnly = propagationExtractFirstValue;
+            _extractBehavior = extractBehavior;
             _injectors = injectors?.ToArray() ?? [];
             _extractors = extractors?.ToArray() ?? [];
         }
@@ -125,10 +128,16 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            if (_extractBehavior == ExtractBehavior.Ignore)
+            {
+                return new PropagationContext(spanContext: null, baggage: null);
+            }
+
             // as we extract values from the carrier using multiple extractors,
             // we will accumulate them in this context
             SpanContext? cumulativeSpanContext = null;
             Baggage? cumulativeBaggage = null;
+            List<SpanLink> spanLinks = new();
 
             foreach (var extractor in _extractors)
             {
@@ -171,7 +180,13 @@ namespace Datadog.Trace.Propagators
                 }
             }
 
-            return new PropagationContext(cumulativeSpanContext, cumulativeBaggage);
+            return _extractBehavior switch
+            {
+                ExtractBehavior.Restart when cumulativeSpanContext is not null => new PropagationContext(default, cumulativeBaggage, [new SpanLink(cumulativeSpanContext)]),
+                ExtractBehavior.Restart => new PropagationContext(default, cumulativeBaggage, []),
+                _ => new PropagationContext(cumulativeSpanContext, cumulativeBaggage, spanLinks),
+
+            };
         }
 
         /// <summary>
