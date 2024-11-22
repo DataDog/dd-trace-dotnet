@@ -461,8 +461,8 @@ void ClrEventsParser::OnGCRestartEEEnd(std::chrono::nanoseconds timestamp)
     // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
     if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp);
-        LogGcEvent("   end of GC #", gc.Number, "-", duration);
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
         NotifyGarbageCollectionEnd(
             gc.Number,
@@ -496,8 +496,8 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
 
     if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp);
-        LogGcEvent("   end of GC #", gc.Number, "-", duration);
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
         NotifyGarbageCollectionEnd(
             gc.Number,
@@ -532,8 +532,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
 
     if (gc.HasHeapStatsBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp);
-        LogGcEvent("   end of GC #", gc.Number, "-", duration);
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
         NotifyGarbageCollectionEnd(
             gc.Number,
