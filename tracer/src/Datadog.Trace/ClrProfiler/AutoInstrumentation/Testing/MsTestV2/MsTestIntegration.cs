@@ -278,17 +278,16 @@ internal static class MsTestIntegration
                     {
                         if (File.Exists(assemblyName))
                         {
-                            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
+                            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name;
                         }
                         else
                         {
-                            assemblyName = new AssemblyName(assemblyName).Name ?? string.Empty;
+                            assemblyName = new AssemblyName(assemblyName).Name;
                         }
                     }
                     catch (Exception ex)
                     {
                         Common.Log.Warning(ex, "Error getting assembly name from {AssemblyName}", assemblyName);
-                        assemblyName = string.Empty;
                     }
                 }
 
