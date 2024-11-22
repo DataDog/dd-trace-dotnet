@@ -6,9 +6,14 @@
 #if NET6_0_OR_GREATER
 
 using System;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
+using InlineIL;
+using static InlineIL.IL.Emit;
+
+#nullable enable
 
 namespace Datadog.Trace.Iast.Aspects.System.Runtime;
 
@@ -26,15 +31,14 @@ public class DefaultInterpolatedStringHandlerAspect
     /// System.Reflection Assembly.Load aspects
     /// </summary>
     /// <param name="target"> target </param>
-    /// <param name="targetPtr"> target pointer </param>
     /// <param name="value"> value </param>
     [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.String)")]
-    public static void AppendFormatted(ref DefaultInterpolatedStringHandler target, IntPtr targetPtr, string value)
+    public static void AppendFormatted(ref DefaultInterpolatedStringHandler target, string value)
     {
         target.AppendFormatted(value);
         try
         {
-            DefaultInterpolatedStringHandlerModuleImpl.AppendFormatted(targetPtr, value);
+            DefaultInterpolatedStringHandlerModuleImpl.AppendFormatted(ToPointer(ref target), value);
         }
         catch (Exception ex)
         {
@@ -46,15 +50,14 @@ public class DefaultInterpolatedStringHandlerAspect
     /// System.Reflection Assembly.Load aspects
     /// </summary>
     /// <param name="target"> target </param>
-    /// <param name="targetPtr"> target pointer </param>
     /// <returns> string value </returns>
     [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::ToStringAndClear()")]
-    public static string ToStringAndClear(ref DefaultInterpolatedStringHandler target, IntPtr targetPtr)
+    public static string ToStringAndClear(ref DefaultInterpolatedStringHandler target)
     {
         var result = target.ToStringAndClear();
         try
         {
-            DefaultInterpolatedStringHandlerModuleImpl.PropagateTaint(targetPtr, result);
+            DefaultInterpolatedStringHandlerModuleImpl.PropagateTaint(ToPointer(ref target), result);
         }
         catch (Exception ex)
         {
@@ -62,6 +65,12 @@ public class DefaultInterpolatedStringHandlerAspect
         }
 
         return result;
+    }
+
+    private static unsafe IntPtr ToPointer(ref DefaultInterpolatedStringHandler ts)
+    {
+        Ldarg(nameof(ts));
+        return IL.Return<IntPtr>();
     }
 }
 

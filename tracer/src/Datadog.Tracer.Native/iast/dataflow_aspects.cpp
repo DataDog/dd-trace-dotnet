@@ -111,20 +111,12 @@ namespace iast
             }
         }
 
-        // TODO : For POC only
-        _isRefStruct = _aspectTypeName == WStr("Datadog.Trace.Iast.Aspects.System.Runtime.DefaultInterpolatedStringHandlerAspect");
-
         _isValid = true;
     }
 
     bool DataflowAspectClass::IsValid()
     {
         return _isValid;
-    }
-
-    bool DataflowAspectClass::IsRefStruct()
-    {
-        return _isRefStruct;
     }
 
     bool DataflowAspectClass::IsTargetModule(ModuleInfo* module)
@@ -622,15 +614,6 @@ namespace iast
                                 iInfo->ConvertToNonAddressLoad();
                             }
                         }
-                    }
-
-                    if (_aspect->_aspectClass->IsRefStruct()) 
-                    {
-                        // Duplicate first param as IntPtr
-                        auto firstParam = processor->StackAnalysis()->LocateCallParamInstructions(instruction, 0).front();
-                        processor->InsertAfter(firstParam->_instruction,
-                                               processor->NewILInstr(CEE_DUP, 0, true));
-
                     }
 
                     aspectInstruction = instructionToProcess.instruction;

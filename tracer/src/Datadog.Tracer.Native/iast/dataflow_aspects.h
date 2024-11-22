@@ -41,7 +41,6 @@ namespace iast
     protected:
         WSTRING _line = EmptyWStr;
         bool _isValid = false;
-        bool _isRefStruct = false;
 
     public:
         Dataflow* _dataflow;
@@ -55,7 +54,6 @@ namespace iast
         std::vector<DataflowAspectFilterValue> _filters;
 
         bool IsValid();
-        bool IsRefStruct();
         bool IsTargetModule(ModuleInfo* module);
 
         WSTRING ToString();
