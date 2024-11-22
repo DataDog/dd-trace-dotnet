@@ -16,7 +16,6 @@ using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
@@ -153,9 +152,9 @@ public class RaspWafTests : WafLibraryRequiredTest
     {
         return new Dictionary<string, object>
         {
-            { AddressesConstants.RequestUriRaw, "http://localhost:54587/?" + "param=" + requestParam },
-            { AddressesConstants.RequestPathParams, new[] { "param", requestParam } },
-            { AddressesConstants.RequestMethod, "POST" }
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+            { AddressesConstants.RequestBody, new[] { "param", requestParam } },
+            { AddressesConstants.RequestMethod, "GET" }
         };
     }
 
