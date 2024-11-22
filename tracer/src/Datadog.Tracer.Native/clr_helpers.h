@@ -680,9 +680,6 @@ public:
     }
 
     COMPtrHolder(MetaInterface *ptr) {
-        if (ptr != NULL) {
-            ptr->AddRef();
-        }
         m_ptr = ptr;
     }
 
