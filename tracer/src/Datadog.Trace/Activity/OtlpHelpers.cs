@@ -255,7 +255,7 @@ namespace Datadog.Trace.Activity
                 spanContext.PropagatedTags = traceTags;
 
                 var spanLink = new SpanLink(spanContext);
-                span.AddSpanLink(spanLink);
+                span.AddLink(spanLink);
 
                 if (duckLink.Tags is not null)
                 {

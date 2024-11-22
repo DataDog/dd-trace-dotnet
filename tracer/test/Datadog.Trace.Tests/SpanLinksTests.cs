@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
 
             childSpan.Finish();
 
-            childSpan.AddSpanLink(spanLink);
+            childSpan.AddLink(spanLink);
             childSpan.SpanLinks.Should().BeNullOrEmpty();
         }
 
@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tests
             var childSpan = childScope.Span;
             var spanLink = new SpanLink(parentSpan.Context);
 
-            childSpan.AddSpanLink(spanLink);
+            childSpan.AddLink(spanLink);
             spanLink.AddAttribute("key", "value");
 
             spanLink.Attributes.Should().BeEquivalentTo(new[] { new KeyValuePair<string, string>("key", "value") });
