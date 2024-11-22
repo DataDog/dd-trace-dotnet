@@ -539,6 +539,7 @@ namespace Datadog.Trace
         /// Adds a SpanLink to the current Span if the Span is active.
         /// </summary>
         /// <param name="spanLink">The SpanLink to add</param>
+        /// <returns>This span to allow method chaining.</returns>
         internal Span AddLink(SpanLink spanLink)
         {
             if (IsFinished)
