@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     AssemblyName = "Datadog.Trace.Manual",
     TypeName = "Datadog.Trace.Tracer",
     MethodName = "GetUpdatedImmutableTracerSettings",
-    ReturnTypeName = "System.Collections.Generic.Dictionary`2[System.String,System.Object]",
+    ReturnTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]",
     ParameterTypeNames = [ClrNames.Object, "System.Object&"],
     MinimumVersion = "3.7.0", // added in 3.7.0
     MaximumVersion = ManualInstrumentationConstants.MaxVersion,
@@ -41,8 +41,8 @@ public class GetUpdatedImmutableTracerSettingsIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static CallTargetReturn<Dictionary<string, object?>?> OnMethodEnd<TTarget>(TTarget instance, Dictionary<string, object?>? returnValue, Exception? exception, in CallTargetState state)
+    internal static CallTargetReturn<IDictionary<string, object?>?> OnMethodEnd<TTarget>(TTarget instance, IDictionary<string, object?>? returnValue, Exception? exception, in CallTargetState state)
     {
-        return new CallTargetReturn<Dictionary<string, object?>?>(state.State as Dictionary<string, object?>);
+        return new CallTargetReturn<IDictionary<string, object?>?>(state.State as Dictionary<string, object?>);
     }
 }

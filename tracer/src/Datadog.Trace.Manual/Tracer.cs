@@ -99,7 +99,7 @@ namespace Datadog.Trace
                 else if (_settings is null)
                 {
                     // in manual only mode
-                    _settings = new ImmutableTracerSettings(new());
+                    _settings = new ImmutableTracerSettings(new Dictionary<string, object?>());
                 }
 
                 return _settings;
@@ -155,7 +155,7 @@ namespace Datadog.Trace
         /// settings, only if the ImmutableTracerSettings (automatic) provided is different to the current one.
         /// </summary>
         [Instrumented]
-        private Dictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings)
+        private IDictionary<string, object?>? GetUpdatedImmutableTracerSettings(object? automaticTracer, ref object? automaticSettings)
         {
             _ = automaticTracer;
             _ = automaticSettings;
