@@ -139,6 +139,31 @@ namespace CodeGenerators
                     throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for maximum: '{maximumVersion}'");
                 }
 
+                if (assemblyNames is null or { Length: 0 } && assemblyName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for assemblyNames: '{assemblyNames}'");
+                }
+
+                if (typeNames is null or { Length: 0 } && typeName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for typeNames: '{typeNames}'");
+                }
+
+                if (integrationName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for integrationName: '{integrationName}'");
+                }
+
+                if (methodName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for methodName: '{methodName}'");
+                }
+
+                if (returnTypeName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for returnTypeName: '{returnTypeName}'");
+                }
+
                 foreach (var assembly in assemblyNames ?? new[] { assemblyName })
                 {
                     foreach (var t in typeNames ?? new[] { typeName })
@@ -234,6 +259,21 @@ namespace CodeGenerators
                     }
                 }
 
+                if (methodName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for methodName: '{methodName}'");
+                }
+
+                if (callTargetType is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for callTargetType: '{callTargetType}'");
+                }
+
+                if (returnType is 0 && returnTypeName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{type}' has invalid value for returnType: '{returnType}'");
+                }
+
                 return new AdoNetSignature(
                     className: type.FullName,
                     targetMethodName: methodName!,
@@ -299,6 +339,36 @@ namespace CodeGenerators
                 if (!TryGetVersion(maximumVersion, ushort.MaxValue, out maxVersion))
                 {
                     throw new InvalidOperationException($"Error: Assembly ADO Attribute Integration '{attribute}' has invalid value for maximum: '{maximumVersion}'");
+                }
+
+                if (string.IsNullOrEmpty(assemblyName))
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for assemblyName: '{assemblyName}'");
+                }
+
+                if (string.IsNullOrEmpty(typeName))
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for typeName: '{typeName}'");
+                }
+
+                if (integrationName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for integrationName: '{integrationName}'");
+                }
+
+                if (dataReaderTypeName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for dataReaderTypeName: '{dataReaderTypeName}'");
+                }
+
+                if (dataReaderTaskTypeName is null)
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for dataReaderTaskTypeName: '{dataReaderTaskTypeName}'");
+                }
+
+                if (signatureAttributeTypes is null or { Length: 0 })
+                {
+                    throw new InvalidOperationException($"Error: Integration type  '{attribute}' has invalid value for signatureAttributeTypes: '{signatureAttributeTypes}'");
                 }
 
                 foreach (var signatureAttributeName in signatureAttributeTypes!)
@@ -542,7 +612,7 @@ namespace CodeGenerators
                     0 => "CallTargetKind::Default",
                     1 => "CallTargetKind::Derived",
                     2 => "CallTargetKind::Interface",
-                    _ => throw new InvalidOperationException($"Invalid call target kind: {kind}" );
+                    _ => throw new InvalidOperationException($"Invalid call target kind: {kind}" ),
                 };
             }
         }
