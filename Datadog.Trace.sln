@@ -587,6 +587,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{
 		tracer\build\PackageVersionsLatestMajors.g.props = tracer\build\PackageVersionsLatestMajors.g.props
 		tracer\build\PackageVersionsLatestMinors.g.props = tracer\build\PackageVersionsLatestMinors.g.props
 		tracer\build\PackageVersionsLatestSpecific.g.props = tracer\build\PackageVersionsLatestSpecific.g.props
+		tracer\build\supported_calltargets.g.json = tracer\build\supported_calltargets.g.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.EventBridge", "tracer\test\test-applications\integrations\Samples.AWS.EventBridge\Samples.AWS.EventBridge.csproj", "{D6155F26-8245-4B66-8944-79C3DF9F9DA3}"
@@ -1712,6 +1713,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{536f1d82-d40c-4e33-b7fa-76a0f17bf672}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{560e1104-9a6e-41e7-ab3d-85ba2740a0f7}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{56de0d44-e9e5-48da-baea-2934b1e28d4e}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5a806f4b-39e7-4f38-b36f-f5cfc4f8760a}*SharedItemsImports = 13
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5c2829c2-ed0d-414c-b5a0-2bfdca07b493}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5e290fa1-e87b-4782-b977-eb5fa6c96efe}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{5ee6b6eb-b768-47ec-882b-8dcaca2b1360}*SharedItemsImports = 5
