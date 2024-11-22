@@ -9,7 +9,9 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
@@ -31,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     public class PutRecordAsyncIntegration
     {
         private const string Operation = "PutRecord";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PutRecordAsyncIntegration>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -44,10 +47,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static CallTargetState OnMethodBegin<TTarget, TPutRecordRequest>(TTarget instance, TPutRecordRequest request, CancellationToken cancellationToken)
             where TPutRecordRequest : IPutRecordRequest, IDuckType
         {
+            Log.Warning("PutRecordAsync onmethodbegin 1");
             if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
+
+            Log.Warning("PutRecordAsync onmethodbegin 2");
 
             var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
             if (tags is not null)
@@ -55,8 +61,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
+            Log.Warning("PutRecordAsync onmethodbegin 3");
+            Log.Warning("PutRecordAsync onmethodbegin streamName {0}", request.StreamName);
+            Log.Warning("PutRecordAsync onmethodbegin 4");
+
+            if (scope?.Span.Context != null && !string.IsNullOrEmpty(request.StreamName))
+            {
+                Log.Warning("PutRecordAsync onmethodbegin 5");
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
+                {
+                    Log.Warning("PutRecordAsync onmethodbegin 6");
+
+                    var edgeTags = new[] { "direction:out", $"topic:{request.StreamName}", "type:kinesis" };
+                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                }
+
+                Log.Warning("PutRecordAsync onmethodbegin 7");
+            }
+
+            Log.Warning("PutRecordAsync onmethodbegin 8");
+
             var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
             ContextPropagation.InjectTraceIntoData(request, context);
+            Log.Warning("PutRecordAsync onmethodbegin 9");
 
             return new CallTargetState(scope);
         }
