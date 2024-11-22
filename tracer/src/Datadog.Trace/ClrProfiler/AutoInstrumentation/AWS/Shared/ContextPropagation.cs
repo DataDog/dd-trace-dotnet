@@ -29,13 +29,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
                 var encodedBytes = PathwayContextEncoder.Encode(context.SpanContext.PathwayContext.Value);
                 var base64EncodedContext = Convert.ToBase64String(encodedBytes);
                 sb.Append($"\"{DataStreamsPropagationHeaders.PropagationKeyBase64}\":\"")
-                  .Append(base64EncodedContext)
-                  .Append('"');
+                .Append(base64EncodedContext)
+                .Append('"');
 
                 if (Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled)
                 {
                     // Both PropagationKeyBase64 and PropagationKey use the Base64 encoded context
-                    sb.AppendFormat("\"{0}\":\"{1}\",", DataStreamsPropagationHeaders.PropagationKey, base64EncodedContext);
+                    sb.Append($"\"{DataStreamsPropagationHeaders.PropagationKey}\":\"");
+                    .Append(base64EncodedContext)
+                    .Append('"');
                 }
             }
 
