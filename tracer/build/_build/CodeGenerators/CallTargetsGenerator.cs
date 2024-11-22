@@ -542,7 +542,7 @@ namespace CodeGenerators
                     0 => "CallTargetKind::Default",
                     1 => "CallTargetKind::Derived",
                     2 => "CallTargetKind::Interface",
-                    _ => "ERROR"
+                    _ => throw new InvalidOperationException($"Invalid call target kind: {kind}" );
                 };
             }
         }
