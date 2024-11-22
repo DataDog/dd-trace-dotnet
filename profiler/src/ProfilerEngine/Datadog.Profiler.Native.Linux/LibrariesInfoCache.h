@@ -48,7 +48,7 @@ public:
 #ifdef DD_TEST
 private:
 #endif
-    void Work();
+    void Work(AutoResetEvent& startEvent);
 
     static LibrariesInfoCache* s_instance;
 
