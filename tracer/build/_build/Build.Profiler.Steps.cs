@@ -955,16 +955,14 @@ partial class Build
             var (arch, extension) = GetUnixArchitectureAndExtension();
             var dest = ProfilerDeployDirectory / arch / $"{FileNames.NativeProfiler}.{extension}";
 
-            // The profiler has a different minimum glibc version to the tracer.
-            // The _overall_ minimum is the highest of the two, but as we don't
-            // currently enable the profiler on ARM64, we take the .NET runtime's minimum
-            // glibc as our actual minimum in practice. Before we can enable the profiler
-            // on arm64 we must first ensure we bring this glibc version down to 2.23.
+            // If we need to increase this version on arm64 later, that is ok as long
+            // as it doesn't go above 2.23. Just update the version below. We must
+            // NOT increase it beyond 2.23, or increase the version on x64.
             //
             // See also the ValidateNativeTracerGlibcCompatibility Nuke task and the checks
             // in shared/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L1279
             var expectedGlibcVersion = IsArm64
-                ? new Version(2, 28)
+                ? new Version(2, 18)
                 : new Version(2, 17);
 
             ValidateNativeLibraryGlibcCompatibility(dest, expectedGlibcVersion);
