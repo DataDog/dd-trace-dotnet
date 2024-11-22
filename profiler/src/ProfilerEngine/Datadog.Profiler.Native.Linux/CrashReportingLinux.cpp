@@ -248,7 +248,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         {
             const auto moduleFilename = modulePath.stem().string();
 
-            if (moduleFilename.rfind("Datadog", 0) == 0
+            if ((moduleFilename.rfind("Datadog", 0) == 0 && stackFrame.method != "dd_pthread_entry")
                 || moduleFilename == "libdatadog"
                 || moduleFilename == "datadog"
                 || moduleFilename == "libddwaf"
