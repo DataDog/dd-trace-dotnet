@@ -1,4 +1,4 @@
-// <copyright file="PutRecordsAsyncIntegration.cs" company="Datadog">
+// <copyright file="GetRecordsAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,59 +6,60 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// AWSSDK.Kinesis PutRecordsAsync CallTarget instrumentation
+    /// AWSSDK.Kinesis GetRecordsAsync CallTarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.Kinesis",
         TypeName = "Amazon.Kinesis.AmazonKinesisClient",
-        MethodName = "PutRecordsAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordsResponse]",
-        ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordsRequest", ClrNames.CancellationToken },
+        MethodName = "GetRecordsAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.GetRecordsResponse]",
+        ParameterTypeNames = new[] { "Amazon.Kinesis.Model.GetRecordsRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PutRecordsAsyncIntegration
+    public class GetRecordsAsyncIntegration
     {
-        private const string Operation = "PutRecords";
+        private const string Operation = "GetRecords";
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TPutRecordsRequest">Type of the request object</typeparam>
+        /// <typeparam name="TGetRecordsRequest">Type of the request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
         /// <param name="request">The request for the Kinesis operation</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TPutRecordsRequest>(TTarget instance, TPutRecordsRequest request, CancellationToken cancellationToken)
-            where TPutRecordsRequest : IPutRecordsRequest, IDuckType
+        internal static CallTargetState OnMethodBegin<TTarget, TGetRecordsRequest>(TTarget instance, TGetRecordsRequest request, CancellationToken cancellationToken)
+            where TGetRecordsRequest : IGetRecordsRequest, IDuckType
         {
             if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
-            if (tags is not null)
+            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Consumer, null, out var tags);
+
+            string? streamName = AwsKinesisCommon.StreamNameFromARN(request.StreamARN);
+            if (tags is not null && streamName is not null)
             {
-                tags.StreamName = request.StreamName;
+                tags.StreamName = streamName;
             }
 
-            ContextPropagation.InjectTraceIntoRecords(request, scope, request.StreamName);
-
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, streamName);
         }
 
         /// <summary>
@@ -72,7 +73,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         /// <param name="state">CallTarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
+            where TResponse : IGetRecordsResponse, IDuckType
         {
+            if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
+            {
+                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
+                if (dataStreamsManager is { IsEnabled: true })
+                {
+                    var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
+                    foreach (var o in response.Records)
+                    {
+                        var record = o.DuckCast<IRecord>();
+                        if (record == null)
+                        {
+                            continue; // should not happen
+                        }
+
+                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
+                    }
+                }
+            }
+
             state.Scope.DisposeWithException(exception);
             return response;
         }

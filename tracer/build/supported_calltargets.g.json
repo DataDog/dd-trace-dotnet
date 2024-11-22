@@ -1892,6 +1892,55 @@
     "IntegrationName": "AwsKinesis",
     "AssemblyName": "AWSSDK.Kinesis",
     "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "GetRecords",
+    "TargetReturnType": "Amazon.Kinesis.Model.GetRecordsResponse",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.GetRecordsRequest"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
+    "TargetMethodName": "GetRecordsAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.GetRecordsResponse]",
+    "TargetParameterTypes": [
+      "Amazon.Kinesis.Model.GetRecordsRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 3,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "AssemblyName": "AWSSDK.Kinesis",
+    "TargetTypeName": "Amazon.Kinesis.AmazonKinesisClient",
     "TargetMethodName": "PutRecord",
     "TargetReturnType": "Amazon.Kinesis.Model.PutRecordResponse",
     "TargetParameterTypes": [
