@@ -25,25 +25,21 @@ internal class SpanLink
     /// in OpenTelemetry that's called a Span Context, which may also include tracestate and trace flags.
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
-    /// <param name="decoratedSpan">Reference to the span you're adding SpanLinks to</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    public SpanLink(SpanContext spanLinkContext, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
+    public SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, string>>? attributes = null)
     {
         Context = spanLinkContext;
-        DecoratedSpan = decoratedSpan;
         Attributes = attributes;
     }
 
-    public SpanLink(Span spanToLink, Span decoratedSpan, List<KeyValuePair<string, string>>? attributes = null)
-        : this(spanToLink.Context, decoratedSpan, attributes)
+    public SpanLink(Span spanToLink, List<KeyValuePair<string, string>>? attributes = null)
+        : this(spanToLink.Context, attributes)
     {
     }
 
     public List<KeyValuePair<string, string>>? Attributes { get; private set; }
 
     public SpanContext Context { get;  }
-
-    public Span DecoratedSpan { get; }
 
     /// <summary>
     /// Adds an Attribute to the SpanLink.
@@ -52,12 +48,6 @@ internal class SpanLink
     /// <param name="value">value of attribute</param>
     public void AddAttribute(string name, string value)
     {
-        if (DecoratedSpan.IsFinished)
-        {
-            Log.Warning("AddAttribute should not be called after the decorated span was closed");
-            return;
-        }
-
         var newAttribute = new KeyValuePair<string, string>(name, value);
         Attributes ??= [];
 
