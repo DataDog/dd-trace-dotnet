@@ -59,42 +59,6 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void EnableByRefInstrumentation()
-        {
-            if (IsWindows)
-            {
-                Windows.EnableByRefInstrumentation();
-            }
-            else
-            {
-                NonWindows.EnableByRefInstrumentation();
-            }
-        }
-
-        public static void EnableCallTargetStateByRef()
-        {
-            if (IsWindows)
-            {
-                Windows.EnableCallTargetStateByRef();
-            }
-            else
-            {
-                NonWindows.EnableCallTargetStateByRef();
-            }
-        }
-
-        public static void DisableTracerCLRProfiler()
-        {
-            if (IsWindows)
-            {
-                Windows.DisableTracerCLRProfiler();
-            }
-            else
-            {
-                NonWindows.DisableTracerCLRProfiler();
-            }
-        }
-
         public static void AddDerivedInstrumentations(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (methodArrays is null || methodArrays.Length == 0)
@@ -126,24 +90,6 @@ namespace Datadog.Trace.ClrProfiler
             else
             {
                 NonWindows.AddInterfaceInstrumentations(id, methodArrays, methodArrays.Length);
-            }
-        }
-
-        public static void AddTraceAttributeInstrumentation(string id, string assemblyName, string typeName)
-        {
-            if (string.IsNullOrWhiteSpace(assemblyName)
-                || string.IsNullOrWhiteSpace(typeName))
-            {
-                return;
-            }
-
-            if (IsWindows)
-            {
-                Windows.AddTraceAttributeInstrumentation(id, assemblyName, typeName);
-            }
-            else
-            {
-                NonWindows.AddTraceAttributeInstrumentation(id, assemblyName, typeName);
             }
         }
 
@@ -183,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition2[] items, uint enabledCategories)
+        public static int RegisterCallTargetDefinitions(string id, NativeCallTargetDefinition3[] items, uint enabledCategories)
         {
             if (items == null || items.Length == 0)
             {
@@ -192,11 +138,11 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                return Windows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+                return Windows.RegisterCallTargetDefinitions3(id, items, items.Length, enabledCategories);
             }
             else
             {
-                return NonWindows.RegisterCallTargetDefinitions(id, items, items.Length, enabledCategories);
+                return NonWindows.RegisterCallTargetDefinitions3(id, items, items.Length, enabledCategories);
             }
         }
 
@@ -251,20 +197,20 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void UpdateSettings(string[] keys, string[] values)
+        public static int InitEmbeddedCallTargetDefinitions(InstrumentationCategory enabledCategories, TargetFrameworks platform)
         {
-            if (keys.Length != values.Length)
+            if (enabledCategories == 0 || platform == 0)
             {
-                throw new ArgumentException("keys and values must have the same length");
+                return 0;
             }
 
             if (IsWindows)
             {
-                Windows.UpdateSettings(keys, values, keys.Length);
+                return Windows.InitEmbeddedCallTargetDefinitions((uint)enabledCategories, (uint)platform);
             }
             else
             {
-                NonWindows.UpdateSettings(keys, values, keys.Length);
+                return NonWindows.InitEmbeddedCallTargetDefinitions((uint)enabledCategories, (uint)platform);
             }
         }
 
@@ -295,31 +241,19 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void RemoveCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void EnableByRefInstrumentation();
-
-            [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void EnableCallTargetStateByRef();
-
-            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void AddInterfaceInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
-
-            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
-
-            [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+            public static extern int RegisterCallTargetDefinitions3([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition3[] methodArrays, int size, uint enabledCategories);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int EnableCallTargetDefinitions(uint enabledCategories);
@@ -331,10 +265,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern int InitEmbeddedCallSiteDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void UpdateSettings(
-                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
-                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
-                int length);
+            public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
@@ -354,31 +285,19 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void RemoveCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void EnableByRefInstrumentation();
-
-            [DllImport("Datadog.Tracer.Native")]
-            public static extern void EnableCallTargetStateByRef();
-
-            [DllImport("Datadog.Tracer.Native")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void AddInterfaceInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
-
-            [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
-
-            [DllImport("Datadog.Tracer.Native")]
-            public static extern void DisableTracerCLRProfiler();
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int RegisterIastAspects([In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] aspects, int aspectsLength);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern int RegisterCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition2[] methodArrays, int size, uint enabledCategories);
+            public static extern int RegisterCallTargetDefinitions3([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition3[] methodArrays, int size, uint enabledCategories);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int EnableCallTargetDefinitions(uint enabledCategories);
@@ -390,10 +309,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern int InitEmbeddedCallSiteDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void UpdateSettings(
-                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
-                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
-                int length);
+            public static extern int InitEmbeddedCallTargetDefinitions(uint enabledCategories, uint platform);
 
             [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
             public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
