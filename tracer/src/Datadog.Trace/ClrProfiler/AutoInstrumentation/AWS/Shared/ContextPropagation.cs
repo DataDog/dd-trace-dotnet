@@ -17,31 +17,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
     {
         internal const string InjectionKey = "_datadog";
 
-        private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper, bool isLegacyHeaderNamesEnabled)
+        private static void Inject(PropagationContext context, IDictionary messageAttributes, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire();
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, default(StringBuilderCarrierSetter));
-
-            if (dataStreamsManager != null && dataStreamsManager.IsEnabled && context.SpanContext?.PathwayContext != null)
-            {
-                var encodedBytes = PathwayContextEncoder.Encode(context.SpanContext.PathwayContext.Value);
-                var base64EncodedContext = Convert.ToBase64String(encodedBytes);
-                const string ddPathwayCtxBase64 = $"\"{DataStreamsPropagationHeaders.PropagationKeyBase64}\":\"";
-                sb.Append(ddPathwayCtxBase64)
-                  .Append(base64EncodedContext)
-                  .Append('"');
-
-                if (isLegacyHeaderNamesEnabled)
-                {
-                    // Both PropagationKeyBase64 and PropagationKey use the Base64 encoded context
-                    const string ddPathwayCtx = $"\"{DataStreamsPropagationHeaders.PropagationKey}\":\"";
-                    sb.Append(ddPathwayCtx)
-                      .Append(base64EncodedContext)
-                      .Append('"');
-                }
-            }
 
             if (context.SpanContext?.PathwayContext is { } pathwayContext)
             {
@@ -55,11 +36,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             messageAttributes[InjectionKey] = messageHeadersHelper.CreateMessageAttributeValue(resultString);
         }
 
-        public static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
-            => InjectHeadersIntoMessage(carrier, spanContext, dataStreamsManager, messageHeadersHelper, Tracer.Instance.Settings.IsDataStreamsLegacyHeadersEnabled);
-
         // Internal for testing only
-        internal static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper, bool isLegacyHeaderNamesEnabled)
+        internal static void InjectHeadersIntoMessage(IContainsMessageAttributes carrier, SpanContext spanContext, DataStreamsManager? dataStreamsManager, IMessageHeadersHelper messageHeadersHelper)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -104,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared
             if (carrier.MessageAttributes.Count < 10)
             {
                 var context = new PropagationContext(spanContext, Baggage.Current);
-                Inject(context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper, isLegacyHeaderNamesEnabled);
+                Inject(context, carrier.MessageAttributes, dataStreamsManager, messageHeadersHelper);
             }
         }
 
