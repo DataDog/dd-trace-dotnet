@@ -161,7 +161,7 @@ void EtwEventsManager::OnEvent(
                 if (pThreadInfo->ContentionStartTimestamp != 0)
                 {
                     auto timestamp = TimestampToEpochNS(systemTimestamp); // systemTimestamp is in 100ns units
-                    auto duration = (systemTimestamp - pThreadInfo->ContentionStartTimestamp) * 100;
+                    double duration = static_cast<double>((systemTimestamp - pThreadInfo->ContentionStartTimestamp)) * 100;
                     pThreadInfo->ContentionStartTimestamp = 0;
 
                     _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);

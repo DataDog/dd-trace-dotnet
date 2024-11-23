@@ -47,6 +47,11 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
             _enabledProfilers |= RuntimeProfiler::Allocations;
         }
 
+        if (pConfiguration->IsHttpProfilingEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::Network;
+        }
+
         // TODO: add new CLR event driven profilers
     }
 }
