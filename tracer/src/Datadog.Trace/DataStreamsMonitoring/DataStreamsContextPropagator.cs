@@ -39,7 +39,6 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
         var encodedBytes = PathwayContextEncoder.Encode(context);
 
         // Calculate the maximum length of the base64 encoded data
