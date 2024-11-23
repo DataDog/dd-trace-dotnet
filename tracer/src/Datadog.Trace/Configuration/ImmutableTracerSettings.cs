@@ -138,6 +138,7 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
+            IsDataStreamsLegacyHeadersEnabled = settings.IsDataStreamsLegacyHeadersEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
