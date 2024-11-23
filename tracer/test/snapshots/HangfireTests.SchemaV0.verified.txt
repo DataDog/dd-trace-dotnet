@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -16,11 +16,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_2,
       runtime-id: Guid_3,
-      service.name: Samples.Hangfire,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
@@ -46,11 +42,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_5,
       runtime-id: Guid_3,
-      service.name: Samples.Hangfire,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     },
     Metrics: {
       process_id: 0,
