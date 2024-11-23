@@ -1,0 +1,62 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: internal,
+    Resource: JOB Program.FireAndForget,
+    Service: Samples.Hangfire,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      job.createdat: DateTimeOffset_1,
+      job.id: Guid_1,
+      language: dotnet,
+      otel.library.name: OpenTelemetry.Instrumentation.Hangfire,
+      otel.library.version: 1.6.0.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
+      runtime-id: Guid_3,
+      service.name: Samples.Hangfire,
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: internal,
+    Resource: JOB Program.FireDelayedMesssage,
+    Service: Samples.Hangfire,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      job.createdat: DateTimeOffset_2,
+      job.id: Guid_4,
+      language: dotnet,
+      otel.library.name: OpenTelemetry.Instrumentation.Hangfire,
+      otel.library.version: 1.6.0.1,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_5,
+      runtime-id: Guid_3,
+      service.name: Samples.Hangfire,
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

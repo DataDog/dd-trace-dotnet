@@ -595,6 +595,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoadContextResolve"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet.MultipleAppsInDomain", "tracer\test\test-applications\aspnet\Samples.AspNet.MultipleAppsInDomain\Samples.AspNet.MultipleAppsInDomain.csproj", "{A82EB6F8-D8D0-4763-B252-08CA3F39D153}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Hangfire", "tracer\test\test-applications\integrations\Samples.Hangfire\Samples.Hangfire.csproj", "{047EDF97-ECBB-490B-96E6-B0E8790FA9A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1427,6 +1429,10 @@ Global
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Release|Any CPU.Build.0 = Release|Any CPU
+		{047EDF97-ECBB-490B-96E6-B0E8790FA9A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{047EDF97-ECBB-490B-96E6-B0E8790FA9A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{047EDF97-ECBB-490B-96E6-B0E8790FA9A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{047EDF97-ECBB-490B-96E6-B0E8790FA9A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1659,12 +1665,14 @@ Global
 		{D6155F26-8245-4B66-8944-79C3DF9F9DA3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{A82EB6F8-D8D0-4763-B252-08CA3F39D153} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
+		{047EDF97-ECBB-490B-96E6-B0E8790FA9A9} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{021efba6-c4ba-4de5-bf3f-c263ee9e20db}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{047edf97-ecbb-490b-96e6-b0e8790fa9a9}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{061ab58b-8235-4dae-8d56-5f081dd78f5e}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{086ff8a0-9cee-470a-9751-78b0f1340649}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{0980bcdd-a231-42d1-b689-41a41bba161a}*SharedItemsImports = 5
