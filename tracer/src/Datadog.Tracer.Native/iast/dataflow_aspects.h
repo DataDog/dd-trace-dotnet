@@ -41,7 +41,7 @@ namespace iast
     protected:
         WSTRING _line = EmptyWStr;
         bool _isValid = false;
-
+        mdTypeDef _aspectTypeDef = 0;
     public:
         Dataflow* _dataflow;
         WSTRING _aspectsAssembly;
@@ -122,7 +122,7 @@ namespace iast
     class DataflowAspectReference
     {
     public:
-        DataflowAspectReference(ModuleAspects* moduleAspects, DataflowAspect* aspect, mdMemberRef targetMethod, mdTypeRef targetType, bool isRefStruct, const std::vector<mdTypeRef>& paramType);
+        DataflowAspectReference(ModuleAspects* moduleAspects, DataflowAspect* aspect, mdMemberRef targetMethod, mdTypeRef targetType, const std::vector<mdTypeRef>& paramType);
 
     public:
         DataflowAspect* _aspect = nullptr;
@@ -130,7 +130,6 @@ namespace iast
         ModuleInfo* _module = nullptr;
         mdMemberRef _targetMethodRef = 0;
         mdTypeRef _targetTypeRef = 0;
-        bool _isRefStruct = false;
         std::vector<mdTypeRef> _targetParamTypeToken;
         std::vector<AspectFilter*> _filters;
 

@@ -271,7 +271,6 @@ namespace iast
         mdTypeRef targetMethodTypeRef = 0; 
         mdMemberRef targetMethodRef = 0;
         mdTypeRef targetTypeRef = 0; 
-        bool isRefStruct = false;
         std::vector<mdTypeRef> paramTypeRefs; 
         std::vector<mdMemberRef> targetMethodRefCandidates;
         hr = module->FindTypeRefByName(_targetMethodType.c_str(), &targetMethodTypeRef);
@@ -341,7 +340,7 @@ namespace iast
 
             if (targetMethodRef != 0)
             {
-                return new DataflowAspectReference(moduleAspects, this, targetMethodRef, targetTypeRef, isRefStruct, paramTypeRefs);
+                return new DataflowAspectReference(moduleAspects, this, targetMethodRef, targetTypeRef, paramTypeRefs);
             }
         }
         return nullptr;
@@ -354,7 +353,7 @@ namespace iast
 
     //------------------------------
 
-    DataflowAspectReference::DataflowAspectReference(ModuleAspects* moduleAspects, DataflowAspect* aspect, mdMemberRef method, mdTypeRef type, bool isRefStruct, const std::vector<mdTypeRef>& paramType)
+    DataflowAspectReference::DataflowAspectReference(ModuleAspects* moduleAspects, DataflowAspect* aspect, mdMemberRef method, mdTypeRef type, const std::vector<mdTypeRef>& paramType)
     {
         this->_moduleAspects = moduleAspects;
         this->_module = moduleAspects->_module;
@@ -362,7 +361,6 @@ namespace iast
         this->_targetMethodRef = method;
         this->_targetTypeRef = type;
         this->_targetParamTypeToken = paramType;
-        this->_isRefStruct = isRefStruct;
         if (this->_targetParamTypeToken.size() == 0) { this->_targetParamTypeToken.push_back(0); }
 
         std::vector<DataflowAspectFilterValue> filterValues;
@@ -576,7 +574,7 @@ namespace iast
                         context.instruction = inserted;
                     }
                 }
-                else // Replace
+                else //Replace
                 {
                     if (_aspect->_paramShift.size() > 0)
                     {
@@ -587,8 +585,7 @@ namespace iast
                                 continue;
                             }
 
-                            auto instructionInfo =
-                                processor->StackAnalysis()->GetInstruction(instructionToProcess.instruction);
+                            auto instructionInfo = processor->StackAnalysis()->GetInstruction(instructionToProcess.instruction);
                             auto methodSig = instructionInfo->GetArgumentSignature();
                             int paramCount = methodSig->GetEffectiveParamCount();
                             for (auto iInfo : processor->StackAnalysis()->LocateCallParamInstructions(
@@ -596,8 +593,7 @@ namespace iast
                                      paramCount - _aspect->_paramShift[x] - 1)) // Locate param load instruction
                             {
                                 auto paramType = _targetParamTypeToken[x];
-                                processor->InsertAfter(iInfo->_instruction,
-                                                       processor->NewILInstr(CEE_BOX, paramType, true));
+                                processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_BOX, paramType, true));
 
                                 // Figure out if param is byref
                                 if (iInfo->IsArgument())
@@ -606,8 +602,7 @@ namespace iast
                                     auto param = sig->_params[iInfo->_instruction->m_Arg32];
                                     if (param->IsByRef())
                                     {
-                                        processor->InsertAfter(iInfo->_instruction,
-                                                               processor->NewILInstr(CEE_LDOBJ, paramType, true));
+                                        processor->InsertAfter(iInfo->_instruction, processor->NewILInstr(CEE_LDOBJ, paramType, true));
                                     }
                                 }
 
