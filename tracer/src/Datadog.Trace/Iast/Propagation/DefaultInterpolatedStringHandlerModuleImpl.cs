@@ -22,11 +22,16 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         FullTaintIfAnyTainted(target, value);
     }
 
-    public static unsafe void FullTaintIfAnyTainted(IntPtr target, object? input = null)
+    public static unsafe void FullTaintIfAnyTainted(IntPtr target, string? input)
     {
         try
         {
             IastModule.OnExecutedPropagationTelemetry();
+
+            if (input is null)
+            {
+                return;
+            }
 
             var iastContext = IastModule.GetIastContext();
             if (iastContext is null)
@@ -43,7 +48,8 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return;
             }
 
-            var rangesResult = new[] { new Range(0, -1, tainted!.Ranges[0].Source) };
+            // The start and length here are not correct, but we don't currently have a way to get the correct values
+            var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source) };
             if (!targetIsTainted)
             {
                 taintedObjects.Taint(target, rangesResult);
@@ -55,18 +61,15 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         }
         catch (Exception error)
         {
-            IastModule.Log.Error(error, $"{nameof(StringBuilderModuleImpl)}.{nameof(FullTaintIfAnyTainted)} exception");
+            IastModule.Log.Error(error, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(FullTaintIfAnyTainted)} exception");
         }
     }
 
-    public static object? PropagateTaint(object? input, object? result, int offset = 0, bool addTelemetry = true)
+    public static object? PropagateTaint(object? input, object? result)
     {
         try
         {
-            if (addTelemetry)
-            {
-                IastModule.OnExecutedPropagationTelemetry();
-            }
+            IastModule.OnExecutedPropagationTelemetry();
 
             if (result is null || input is null)
             {
@@ -87,20 +90,11 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return result;
             }
 
-            if (offset != 0)
-            {
-                var newRanges = new Range[taintedSelf.Ranges.Length];
-                Ranges.CopyShift(taintedSelf.Ranges, newRanges, 0, offset);
-                taintedObjects.Taint(result, newRanges);
-            }
-            else
-            {
-                taintedObjects.Taint(result, taintedSelf.Ranges);
-            }
+            taintedObjects.Taint(result, taintedSelf.Ranges);
         }
         catch (Exception err)
         {
-            IastModule.Log.Error(err, "PropagationModuleImpl.PropagateTaint exception");
+            IastModule.Log.Error(err, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)} exception");
         }
 
         return result;
