@@ -30,8 +30,7 @@
       "location": {
         "spanId": XXX,
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
-        "method": "InterpolatedSqlString",
-        "line": XXX
+        "method": "InterpolatedSqlString"
       },
       "evidence": {
         "valueParts": [
@@ -43,7 +42,7 @@
             "source": 0
           },
           {
-            "value": "'3','32,38','Vins et alcools Chevalier','John',"
+            "value": "'3','32.38','Vins et alcools Chevalier','John',"
           },
           {
             "value": "",
