@@ -804,7 +804,7 @@
         "minVersionTestedInclusive": "2.0.2",
         "maxVersionSupportedInclusive": "2.30.0",
         "maxVersionAvailableInclusive": "3.0.0",
-        "maxVersionTestedInclusive": "2.30.0"
+        "maxVersionTestedInclusive": "3.0.0"
       },
       {
         "name": "MongoDB.Driver.Core",
