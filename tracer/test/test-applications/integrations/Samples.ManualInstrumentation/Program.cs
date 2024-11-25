@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
@@ -38,6 +39,8 @@ internal class Program
 
         async Task OtherStuff()
         {
+            var mutex = new ManualResetEventSlim();
+
             var shouldBeAttached = Environment.GetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED") == "1";
             var runInstrumentationChecks = shouldBeAttached;
 
@@ -225,11 +228,17 @@ internal class Program
 
             async Task<HttpResponseMessage> SendHttpRequest(string name)
             {
+                mutex.Reset();
                 var q = $"{count}.{name}";
                 using var scope = Tracer.Instance.StartActive($"Manual-{q}.HttpClient");
                 var responseMessage = await client.GetAsync(url + $"?q={q}");
 
                 Console.WriteLine("Received response for client.GetAsync(String)");
+
+                if (!mutex.Wait(30_000))
+                {
+                    throw new Exception($"Timed out waiting for response to request: Manual-{q}.HttpClient");
+                }
 
                 return responseMessage;
             }
@@ -239,29 +248,34 @@ internal class Program
                 try
                 {
                     var query = context.Request.QueryString["q"];
-                    using var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener");
-                    Console.WriteLine("[HttpListener] received request");
-
-                    // read request content and headers
-                    using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                    using (var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener"))
                     {
-                        string requestContent = reader.ReadToEnd();
-                        Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                        Console.WriteLine("[HttpListener] received request");
+
+                        // read request content and headers
+                        using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                        {
+                            string requestContent = reader.ReadToEnd();
+                            Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                        }
+
+                        // write response content
+                        scope.Span.SetTag("content", "PONG");
+                        var responseBytes = Encoding.UTF8.GetBytes("PONG");
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = responseBytes.Length;
+                        context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+                        // we must close the response
+                        context.Response.Close();
                     }
 
-                    // write response content
-                    scope.Span.SetTag("content", "PONG");
-                    var responseBytes = Encoding.UTF8.GetBytes("PONG");
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentLength64 = responseBytes.Length;
-                    context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-                    // we must close the response
-                    context.Response.Close();
+                    mutex.Set();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                     context.Response.Close();
+                    mutex.Set();
                     throw;
                 }
             }
