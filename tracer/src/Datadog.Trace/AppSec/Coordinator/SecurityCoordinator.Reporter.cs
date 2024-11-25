@@ -63,6 +63,11 @@ internal readonly partial struct SecurityCoordinator
 
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };
 
+    private static void AddRequestHeaders(Span span, IHeadersCollection headers)
+    {
+        AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+    }
+
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix)
     {
         SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
@@ -146,7 +151,6 @@ internal readonly partial struct SecurityCoordinator
                 traceContext.Origin = "appsec";
             }
 
-            _localRootSpan.SetTag(Tags.AppSecRuleFileVersion, _security.WafRuleFileVersion);
             _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             headers ??= _httpTransport.GetRequestHeaders();

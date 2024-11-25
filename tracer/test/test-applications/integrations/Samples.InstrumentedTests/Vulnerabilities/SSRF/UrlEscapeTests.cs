@@ -9,11 +9,6 @@ public class UrlEscapeTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
     private string _taintedValue2 = "/tainted?p1=t1&p2=t2";
-    private string _taintedFormat2Args = "format{0}{1}";
-    private string _taintedFormat3Args = "format{0}{1}{2}";
-    private string _taintedFormat1Arg = "format{0}";
-    private string _untaintedString = "UntaintedString";
-    private string _otherUntaintedString = "OtherUntaintedString";
 
     public UrlEscapeTests()
     {

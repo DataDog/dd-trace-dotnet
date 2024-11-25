@@ -15,5 +15,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Pr
 [DuckType("Datadog.Trace.Tracer", "Datadog.Trace.Manual")]
 internal interface ITracerProxy
 {
-    public object AutomaticTracer { get; }
+    public object? AutomaticTracer { get; }
 }

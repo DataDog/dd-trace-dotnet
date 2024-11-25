@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Rcm;
 
 internal class AsmDataProduct : IAsmConfigUpdater
 {
-    public void ProcessUpdates(ConfigurationStatus configurationStatus, List<RemoteConfiguration> files)
+    public void ProcessUpdates(ConfigurationState configurationStatus, List<RemoteConfiguration> files)
     {
         foreach (var file in files)
         {
@@ -22,19 +22,19 @@ internal class AsmDataProduct : IAsmConfigUpdater
             if (rulesData != null)
             {
                 configurationStatus.RulesDataByFile[rawFile.Path.Path] = rulesData;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
             }
 
             var exclusionsData = asmDataConfig.TypedFile?.ExclusionsData;
             if (exclusionsData != null)
             {
                 configurationStatus.ExclusionsDataByFile[rawFile.Path.Path] = exclusionsData;
-                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsDataKey);
+                configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsDataKey);
             }
         }
     }
 
-    public void ProcessRemovals(ConfigurationStatus configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
+    public void ProcessRemovals(ConfigurationState configurationStatus, List<RemoteConfigurationPath> removedConfigsForThisProduct)
     {
         var removedRulesData = false;
         var removedExclusionsData = false;
@@ -46,12 +46,12 @@ internal class AsmDataProduct : IAsmConfigUpdater
 
         if (removedRulesData)
         {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafRulesDataKey);
         }
 
         if (removedExclusionsData)
         {
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafExclusionsDataKey);
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafExclusionsDataKey);
         }
     }
 }

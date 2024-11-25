@@ -68,7 +68,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans5);
             spans.AddRange(spans6);
 
-            await VerifySpans(spans.ToImmutableList(), settings);
+            // We want to test that the remote rules version tag gets updated through RC
+            await VerifySpans(spans.ToImmutableList(), settings, showRulesVersion: true);
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmRemoteRules);

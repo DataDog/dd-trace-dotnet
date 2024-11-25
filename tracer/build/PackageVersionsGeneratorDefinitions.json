@@ -275,8 +275,13 @@
     "SpecificVersions": [
       "4.1.*",
       "4.5.*",
+      "4.8.*",
       "4.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.9.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    }]
   },
   {
     "IntegrationName": "MicrosoftDataSqlClient",
@@ -592,11 +597,15 @@
     "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
     "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
     "MinVersion": "8.0.0",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "10.0.0",
     "SpecificVersions": [
-      "8.*.*"
+      "8.*.*",
+      "9.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "9.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    },{
       "MinVersion": "8.0.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]

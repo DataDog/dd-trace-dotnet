@@ -16,15 +16,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 internal static class IbmMqHelper
 {
     private const string MessagingType = "ibmmq";
-    private static readonly IbmMqHeadersAdapterNoop NoopAdapter = new();
 
-    internal static IHeadersCollection GetHeadersAdapter(IMqMessage message)
+    internal static IbmMqHeadersAdapterNoop GetHeadersAdapter(IMqMessage message)
     {
-        // we temporary switch to noop adapter, since
+        // we temporarily switch to noop adapter, since
         // multiple customers reported issues with context propagation.
         // The goal is to allow context injection only when we have a way of configuring
         // this on per-instrumentation basis.
-        return NoopAdapter;
+        return new IbmMqHeadersAdapterNoop();
     }
 
     internal static Scope? CreateProducerScope(Tracer tracer, IMqQueue queue, IMqMessage message)
@@ -57,7 +56,8 @@ internal static class IbmMqHelper
             span.ResourceName = resourceName;
             span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
-            SpanContextPropagator.Instance.Inject(span.Context, GetHeadersAdapter(message));
+            var context = new PropagationContext(span.Context, Baggage.Current);
+            SpanContextPropagator.Instance.Inject(context, GetHeadersAdapter(message));
         }
         catch (Exception ex)
         {
@@ -92,11 +92,12 @@ internal static class IbmMqHelper
                 return null;
             }
 
-            SpanContext? propagatedContext = null;
+            PropagationContext extractedContext = default;
 
             try
             {
-                propagatedContext = SpanContextPropagator.Instance.Extract(GetHeadersAdapter(message));
+                var headers = GetHeadersAdapter(message);
+                extractedContext = SpanContextPropagator.Instance.Extract(headers).MergeBaggageInto(Baggage.Current);
             }
             catch (Exception ex)
             {
@@ -109,7 +110,7 @@ internal static class IbmMqHelper
             scope = tracer.StartActiveInternal(
                 operationName,
                 tags: tags,
-                parent: propagatedContext,
+                parent: extractedContext.SpanContext,
                 serviceName: serviceName,
                 finishOnClose: true,
                 startTime: spanStartTime);

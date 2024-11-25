@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -24,20 +25,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
@@ -76,13 +77,17 @@ public static class SignInManagerPasswordSignInIntegration
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
 
             if (security.IsAnonUserTrackingMode)
             {
                 var anonId = UserEventsCommon.GetAnonId(id);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                if (anonId is not null)
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                }
+
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
@@ -91,6 +96,7 @@ public static class SignInManagerPasswordSignInIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
+            SecurityCoordinator.CollectHeaders(span);
             security.SetTraceSamplingPriority(span);
         }
 

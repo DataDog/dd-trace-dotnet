@@ -1,0 +1,14 @@
+{
+  "dsl": "any(ref HashIntLocal, { @it > 10 })",
+  "all": [
+    {
+      "ref": "HashIntLocal"
+    },
+    {
+      "gt": [
+        "@it",
+        10
+      ]
+    }
+  ]
+}

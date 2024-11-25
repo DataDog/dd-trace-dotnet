@@ -9,24 +9,17 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-internal class MethodScopeMembers
+internal class MethodScopeMembers : IPoolable<MethodScopeMembersParameters>
 {
-    private readonly int _initialSize;
     private int _index;
 
-    internal MethodScopeMembers(int numberOfLocals, int numberOfArguments)
+    public MethodScopeMembers()
     {
-        _initialSize = numberOfLocals + numberOfArguments;
-        if (_initialSize == 0)
-        {
-            _initialSize = 1;
-        }
+    }
 
-        Members = ArrayPool<ScopeMember>.Shared.Rent(_initialSize);
-        Array.Clear(Members, 0, Members.Length);
-        Exception = null;
-        Return = default;
-        InvocationTarget = default;
+    internal MethodScopeMembers(MethodScopeMembersParameters parameters)
+    {
+        Set(parameters);
     }
 
     internal ScopeMember[] Members { get; private set; }
@@ -34,7 +27,7 @@ internal class MethodScopeMembers
     internal Exception Exception { get; set; }
 
     // food for thought:
-    // we can save Return and InvocationTarget as T if we will change the native side so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState.
+    // we can save Return and InvocationTarget as T if we will change the native side, so we will have MethodDebuggerState<T, TReturn> instead MethodDebuggerState.
     internal ScopeMember Return { get; set; }
 
     internal ScopeMember InvocationTarget { get; set; }
@@ -58,5 +51,27 @@ internal class MethodScopeMembers
         {
             ArrayPool<ScopeMember>.Shared.Return(Members);
         }
+    }
+
+    public void Set(MethodScopeMembersParameters parameters)
+    {
+        var initialSize = parameters.NumberOfLocals + parameters.NumberOfArguments;
+        if (initialSize == 0)
+        {
+            initialSize = 1;
+        }
+
+        Members = ArrayPool<ScopeMember>.Shared.Rent(initialSize * 2);
+        Array.Clear(Members, 0, Members.Length);
+        Exception = null;
+        Duration = default;
+        Return = default;
+        InvocationTarget = default;
+        _index = 0;
+    }
+
+    public void Reset()
+    {
+        Dispose();
     }
 }

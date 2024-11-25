@@ -39,6 +39,8 @@ EtwEventsManager::EtwEventsManager(
         nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
         pGCSuspensionsListener);
     _logger = std::make_unique<ProfilerLogger>();
+    _IpcClient = nullptr;
+    _IpcServer = nullptr;
 }
 
 
@@ -388,25 +390,28 @@ bool EtwEventsManager::Start()
 
 void EtwEventsManager::Stop()
 {
-    // unregister our process ID to the Datadog Agent
-    if (SendRegistrationCommand(false))
-    {
-        Log::Info("Unregistered from the Datadog Agent");
-    }
-    else
-    {
-        Log::Warn("Fail to unregister from the Datadog Agent...");
-    }
-
     if (_IpcClient != nullptr)
     {
-        if (_IpcClient->Disconnect())
+        // unregister our process ID to the Datadog Agent
+        if (SendRegistrationCommand(false))
         {
-            Log::Info("Disconnected from the Datadog Agent named pipe");
+            Log::Info("Unregistered from the Datadog Agent");
         }
         else
         {
-            Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+            Log::Warn("Fail to unregister from the Datadog Agent...");
+        }
+
+        if (_IpcClient != nullptr)
+        {
+            if (_IpcClient->Disconnect())
+            {
+                Log::Info("Disconnected from the Datadog Agent named pipe");
+            }
+            else
+            {
+                Log::Warn("Failed to disconnect from the Datadog Agent named pipe...");
+            }
         }
     }
 
@@ -428,6 +433,7 @@ bool EtwEventsManager::SendRegistrationCommand(bool add)
     {
         return false;
     }
+
     auto pClient = _IpcClient.get();
     DWORD pid = ::GetCurrentProcessId();
 

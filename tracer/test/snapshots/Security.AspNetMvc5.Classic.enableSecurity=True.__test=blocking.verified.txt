@@ -26,7 +26,6 @@
       _dd.appsec.fp.http.endpoint: http-get-0587c50e--,
       _dd.appsec.fp.http.header: hdr-0000000000-197358b8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.fp.session: ssn----,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -71,7 +70,6 @@
       _dd.appsec.fp.http.endpoint: http-get-0587c50e--,
       _dd.appsec.fp.http.header: hdr-0000000000-197358b8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.fp.session: ssn----,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -116,7 +114,6 @@
       _dd.appsec.fp.http.endpoint: http-get-0587c50e--,
       _dd.appsec.fp.http.header: hdr-0000000000-197358b8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.fp.session: ssn----,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -161,7 +158,6 @@
       _dd.appsec.fp.http.endpoint: http-get-0587c50e--,
       _dd.appsec.fp.http.header: hdr-0000000000-197358b8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.fp.session: ssn----,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
@@ -206,7 +202,6 @@
       _dd.appsec.fp.http.endpoint: http-get-0587c50e--,
       _dd.appsec.fp.http.header: hdr-0000000000-197358b8-1-4740ae63,
       _dd.appsec.fp.http.network: net-1-1000000000,
-      _dd.appsec.fp.session: ssn----,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
       _dd.runtime_family: dotnet

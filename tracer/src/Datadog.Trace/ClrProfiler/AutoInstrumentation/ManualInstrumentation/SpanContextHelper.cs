@@ -34,7 +34,7 @@ internal static class SpanContextHelper
     {
         var context = parent.DuckCast<ISpanContextProxy>();
         return new SpanContext(
-            new TraceId(Upper: 0, Lower: context.TraceId),
+            (TraceId)context.TraceId,
             context.SpanId,
             samplingPriority: null,
             context.ServiceName,

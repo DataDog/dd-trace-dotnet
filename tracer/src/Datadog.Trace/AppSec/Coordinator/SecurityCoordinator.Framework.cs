@@ -249,22 +249,29 @@ internal readonly partial struct SecurityCoordinator
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool TryGetUsingIntegratedPipelineBool() => HttpRuntime.UsingIntegratedPipeline;
 
-    internal Dictionary<string, object> GetBodyFromRequest()
+    internal Dictionary<string, object>? GetBodyFromRequest()
     {
-        var formData = new Dictionary<string, object>(_httpTransport.Context.Request.Form.Keys.Count);
-        foreach (string key in _httpTransport.Context.Request.Form.Keys)
+        // When accessing the property Form of a HttpRequest might throw a ValidationException if regular validation is enabled.
+        // Granular validation would not throw an exception when accessing Form but it will throw it when accessing GetValues or Get.
+        // The keys property never throws any exception.
+        var form = RequestDataHelper.GetForm(_httpTransport.Context.Request);
+
+        if (form is null)
+        {
+            return null;
+        }
+
+        var formData = new Dictionary<string, object>(form.Keys.Count);
+        foreach (string key in form.Keys)
         {
             // key could be null, but it's not a valid key in a dictionary
             // Using [] instead of Add to avoid potential duplicate key
             // but it does mean there's a (tiny) chance of overwriting the key
-            try
+            var values = RequestDataHelper.GetNameValueCollectionValue(form, key);
+
+            if (values is not null)
             {
-                formData[key ?? string.Empty] = _httpTransport.Context.Request.Form[key];
-            }
-            catch (HttpRequestValidationException)
-            {
-                // We cannot retrieve the value of Form[key] because it triggers a validation exception,
-                // which happens when a dangerous value is detected in the request and validation is enabled.
+                formData[key ?? string.Empty] = values;
             }
         }
 
@@ -394,50 +401,8 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headers = RequestDataHelper.GetHeaders(request);
-        Dictionary<string, object>? headersDic = null;
-
-        if (headers is not null)
-        {
-            var headerKeys = headers.Keys;
-            headersDic = new Dictionary<string, object>(headerKeys.Count);
-            foreach (string originalKey in headerKeys)
-            {
-                var keyForDictionary = originalKey?.ToLowerInvariant() ?? string.Empty;
-                if (keyForDictionary != "cookie")
-                {
-                    if (!headersDic.ContainsKey(keyForDictionary))
-                    {
-                        headersDic.Add(keyForDictionary, GetHeaderValueForWaf(headers.GetValues(originalKey)));
-                    }
-                    else
-                    {
-                        Log.Warning("Header {Key} couldn't be added as argument to the waf", keyForDictionary);
-                    }
-                }
-            }
-        }
-
-        var cookies = RequestDataHelper.GetCookies(request);
-        Dictionary<string, List<string>>? cookiesDic = null;
-
-        if (cookies != null)
-        {
-            cookiesDic = new(cookies.AllKeys.Length);
-            for (var i = 0; i < cookies.Count; i++)
-            {
-                var cookie = cookies[i];
-                var keyForDictionary = cookie.Name ?? string.Empty;
-                var keyExists = cookiesDic.TryGetValue(keyForDictionary, out var value);
-                if (!keyExists)
-                {
-                    cookiesDic.Add(keyForDictionary, new List<string> { cookie.Value ?? string.Empty });
-                }
-                else
-                {
-                    value.Add(cookie.Value);
-                }
-            }
-        }
+        var headersDic = ExtractHeadersFromRequest(request.Headers);
+        var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
         Dictionary<string, string[]>? queryDic = null;
@@ -447,24 +412,27 @@ internal readonly partial struct SecurityCoordinator
             queryDic = new Dictionary<string, string[]>(queryString.AllKeys.Length);
             foreach (var originalKey in queryString.AllKeys)
             {
-                var values = queryString.GetValues(originalKey);
-                if (string.IsNullOrEmpty(originalKey))
+                var values = RequestDataHelper.GetNameValueCollectionValues(queryString, originalKey);
+                if (values is not null)
                 {
-                    foreach (var v in values)
+                    if (string.IsNullOrEmpty(originalKey))
                     {
-                        if (!queryDic.ContainsKey(v))
+                        foreach (var value in values)
                         {
-                            queryDic.Add(v, Array.Empty<string>());
+                            if (!queryDic.ContainsKey(value))
+                            {
+                                queryDic.Add(value, []);
+                            }
                         }
                     }
-                }
-                else if (!queryDic.ContainsKey(originalKey))
-                {
-                    queryDic.Add(originalKey, values);
-                }
-                else
-                {
-                    Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    else if (!queryDic.ContainsKey(originalKey))
+                    {
+                        queryDic.Add(originalKey, values);
+                    }
+                    else
+                    {
+                        Log.Warning("Query string {Key} couldn't be added as argument to the waf", originalKey);
+                    }
                 }
             }
         }
@@ -505,9 +473,17 @@ internal readonly partial struct SecurityCoordinator
         return dict;
     }
 
-    private static object GetHeaderValueForWaf(string[] value)
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers) => ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
+
+    private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(NameValueCollection headers, string currentKey) => GetHeaderAsArray(RequestDataHelper.GetNameValueCollectionValues(headers, currentKey) ?? []);
+
+    private static void GetCookieKeyValueFromIndex(HttpCookieCollection cookies, int i, out string key, out string value)
     {
-        return (value.Count() == 1 ? value[0] : value);
+        var cookie = cookies[i];
+        key = cookie.Name;
+        value = cookie.Value;
     }
 
     public Dictionary<string, object> GetResponseHeadersForWaf()
@@ -518,12 +494,12 @@ internal readonly partial struct SecurityCoordinator
         foreach (string originalKey in headerKeys)
         {
             var keyForDictionary = originalKey ?? string.Empty;
-            if (!keyForDictionary.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+            if (!keyForDictionary.Equals("cookie", StringComparison.OrdinalIgnoreCase))
             {
                 keyForDictionary = keyForDictionary.ToLowerInvariant();
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
-                    headersDic.Add(keyForDictionary, GetHeaderValueForWaf(response.Headers.GetValues(originalKey)));
+                    headersDic.Add(keyForDictionary, GetHeaderAsArray(response.Headers.GetValues(originalKey)));
                 }
                 else
                 {
@@ -533,6 +509,17 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return headersDic;
+    }
+
+    internal static void CollectHeaders(Span internalSpan)
+    {
+        var context = HttpContext.Current;
+
+        if (context != null)
+        {
+            var headers = new NameValueHeadersCollection(context.Request.Headers);
+            AddRequestHeaders(internalSpan, headers);
+        }
     }
 
     internal class HttpTransport : HttpTransportBase

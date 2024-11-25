@@ -96,7 +96,7 @@ namespace iast
         HRESULT ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo = nullptr);
         HRESULT ModuleUnloaded(ModuleID moduleId);
 
-        void LoadAspects(WCHAR** aspects, int aspectsLength);
+        void LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform);
 
         ICorProfilerInfo* GetCorProfilerInfo();
 

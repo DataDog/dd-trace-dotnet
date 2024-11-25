@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# 17
+# Visual Studio Version 17
 VisualStudioVersion = 17.1.31903.286
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
@@ -587,6 +587,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{
 		tracer\build\PackageVersionsLatestMajors.g.props = tracer\build\PackageVersionsLatestMajors.g.props
 		tracer\build\PackageVersionsLatestMinors.g.props = tracer\build\PackageVersionsLatestMinors.g.props
 		tracer\build\PackageVersionsLatestSpecific.g.props = tracer\build\PackageVersionsLatestSpecific.g.props
+		tracer\build\supported_calltargets.g.json = tracer\build\supported_calltargets.g.json
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.EventBridge", "tracer\test\test-applications\integrations\Samples.AWS.EventBridge\Samples.AWS.EventBridge.csproj", "{D6155F26-8245-4B66-8944-79C3DF9F9DA3}"
@@ -594,6 +595,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoadContextResolve", "tracer\test\test-applications\regression\AssemblyLoadContextResolve\AssemblyLoadContextResolve.csproj", "{8B1AF6A7-DD41-4347-B637-90C23D69B50E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.StepFunctions", "tracer\test\test-applications\integrations\Samples.AWS.StepFunctions\Samples.AWS.StepFunctions.csproj", "{882A255B-94EC-4947-96F1-F565EBD8F8FD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet.MultipleAppsInDomain", "tracer\test\test-applications\aspnet\Samples.AspNet.MultipleAppsInDomain\Samples.AspNet.MultipleAppsInDomain.csproj", "{A82EB6F8-D8D0-4763-B252-08CA3F39D153}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1427,6 +1430,10 @@ Global
 		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{882A255B-94EC-4947-96F1-F565EBD8F8FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A82EB6F8-D8D0-4763-B252-08CA3F39D153}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1659,6 +1666,7 @@ Global
 		{D6155F26-8245-4B66-8944-79C3DF9F9DA3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8B1AF6A7-DD41-4347-B637-90C23D69B50E} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{882A255B-94EC-4947-96F1-F565EBD8F8FD} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{A82EB6F8-D8D0-4763-B252-08CA3F39D153} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
@@ -1754,6 +1762,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{959e9599-8d99-43bc-8038-b91f76179c1c}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{9d5935cb-2df2-46cb-a5e1-98be134cafcc}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{a82eb6f8-d8d0-4763-b252-08ca3f39d153}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{a996927a-9222-43f4-8552-810b69ff04df}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{aa88952e-9393-4a4b-85b5-cc7f03629ce1}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{aad9038b-8f16-4e09-93af-b13e9f7acd66}*SharedItemsImports = 5

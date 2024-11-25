@@ -28,7 +28,6 @@ src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
 src/Datadog.Trace/SpanKinds.cs
 src/Datadog.Trace/SpanTypes.cs
-src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
@@ -70,7 +69,6 @@ src/Datadog.Trace/AspNet/TracingHttpModule.cs
 src/Datadog.Trace/Ci/CITracerManager.cs
 src/Datadog.Trace/Ci/CITracerManagerFactory.cs
 src/Datadog.Trace/Ci/CodeOwners.cs
-src/Datadog.Trace/Ci/GitInfo.cs
 src/Datadog.Trace/Ci/IEvent.cs
 src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
@@ -80,13 +78,10 @@ src/Datadog.Trace/ClrProfiler/IAutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/ICommonTracer.cs
 src/Datadog.Trace/ClrProfiler/IDistributedTracer.cs
 src/Datadog.Trace/ClrProfiler/Instrumentation.cs
-src/Datadog.Trace/ClrProfiler/InstrumentationCategory.cs
 src/Datadog.Trace/ClrProfiler/InstrumentationDefinitions.cs
 src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs
 src/Datadog.Trace/ClrProfiler/IntegrationVersionRange.cs
 src/Datadog.Trace/ClrProfiler/ManualTracer.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition2.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs
 src/Datadog.Trace/ClrProfiler/NativeMethods.cs
 src/Datadog.Trace/ClrProfiler/ScopeFactory.cs
@@ -268,8 +263,6 @@ src/Datadog.Trace/Agent/Transports/HttpStreamRequest.cs
 src/Datadog.Trace/Agent/Transports/HttpStreamRequestFactory.cs
 src/Datadog.Trace/Agent/Transports/MimeTypes.cs
 src/Datadog.Trace/Agent/Transports/SocketHandlerRequestFactory.cs
-src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Core.cs
-src/Datadog.Trace/AppSec/Concurrency/ReaderWriterLock.Framework.cs
 src/Datadog.Trace/AppSec/Waf/WafConstants.cs
 src/Datadog.Trace/AppSec/Waf/WafReturnCode.cs
 src/Datadog.Trace/Ci/Agent/ApmAgentWriter.cs
@@ -306,7 +299,6 @@ src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
 src/Datadog.Trace/Debugger/Expressions/ExpressionEvaluationResult.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeExpressionEvaluator.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
@@ -317,7 +309,6 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeInfo.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeProcessor.cs
 src/Datadog.Trace/Debugger/Expressions/ScopeMember.cs
 src/Datadog.Trace/Debugger/Expressions/UndefinedValue.cs
 src/Datadog.Trace/Debugger/Helpers/AsyncHelper.cs
@@ -639,8 +630,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/CachedMessageHeadersHe
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/IAmazonSQSRequestWithQueueUrl.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ICreateQueueResponse.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageBatchRequest.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AWS/SQS/ISendMessageRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutionReason.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsExecutorTryExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/FunctionInvocationMiddlewareInvokeIntegration.cs

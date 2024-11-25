@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -11,7 +11,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.AspNetCore.Mvc;
 
 /// <summary> ControllerBaseAspect class aspect </summary>
-[AspectClass("Microsoft.AspNetCore.Mvc", AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
+[AspectClass("Microsoft.AspNetCore.Mvc", InstrumentationCategory.Iast, AspectType.Sink, VulnerabilityType.UnvalidatedRedirect)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class ControllerBaseAspect

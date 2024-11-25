@@ -19,6 +19,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
+      _dd.appsec.event_rules.version: 1.13.3,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -55,7 +56,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
-      _dd.appsec.event_rules.version: 1.13.1,
+      _dd.appsec.event_rules.version: 1.13.3,
       _dd.appsec.fp.http.endpoint: http-get-c9ffce19--,
       _dd.appsec.fp.http.header: hdr-0000000000-3626b5f8-3-98425651,
       _dd.appsec.fp.http.network: net-1-1000000000,

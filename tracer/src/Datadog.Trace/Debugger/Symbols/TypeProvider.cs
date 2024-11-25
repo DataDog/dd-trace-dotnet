@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Text;
+using Datadog.Trace.Util;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
@@ -61,7 +62,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public string GetArrayType(string elementType, ArrayShape shape)
         {
-            var builder = new StringBuilder();
+            var builder = StringBuilderCache.Acquire();
 
             builder.Append(elementType);
             builder.Append('[');
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             builder.Append(']');
-            return builder.ToString();
+            return StringBuilderCache.GetStringAndRelease(builder);
         }
 
         public string GetByReferenceType(string elementType)
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var requiredParameterCount = signature.RequiredParameterCount;
 
-            var builder = new StringBuilder();
+            var builder = StringBuilderCache.Acquire();
             builder.Append("method ");
             builder.Append(signature.ReturnType);
             builder.Append(" *(");

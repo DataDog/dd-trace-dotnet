@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,6 +23,12 @@ namespace Samples.Telemetry
 
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
+
+            // Need to send an error log, but no easy way to do that on purpose.
+            if (Environment.GetEnvironmentVariable("SEND_ERROR_LOG") == "1")
+            {
+                SendErrorLog();
+            }
 
             using (var server = WebServer.Start(port, out var url))
             {
@@ -83,6 +91,25 @@ namespace Samples.Telemetry
             {
                 activity?.Dispose();
             }
+        }
+
+        private static void SendErrorLog([CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
+        {
+            if (!SampleHelpers.IsProfilerAttached())
+            {
+                throw new Exception("Can't send error log unless profiler is attached");
+            }
+
+            // grab the log field from TracerSettings, as it's an easy way to get an instance
+            var settingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace")!;
+            var settings = Activator.CreateInstance(settingsType);
+            var logField = settingsType.GetField("Log", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+            var logger = logField.GetValue(settings);
+
+            var loggerType = Type.GetType("Datadog.Trace.Logging.DatadogSerilogLogger, Datadog.Trace")!;
+            var errorMethod = loggerType.GetMethod("Error", [typeof(string), typeof(int), typeof(string)])!;
+
+            errorMethod.Invoke(logger, ["Sending an error log using hacky reflection", sourceLine, sourceFile]);
         }
     }
 }

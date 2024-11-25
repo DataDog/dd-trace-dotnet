@@ -56,14 +56,16 @@ namespace Datadog.Trace.ServiceFabric
             }
 
             ServiceRemotingHelpers.GetMessageHeaders(e, out var eventArgs, out var messageHeaders);
-            SpanContext? spanContext = null;
+            PropagationContext extractedContext = default;
 
             try
             {
                 // extract propagation context from message headers for distributed tracing
                 if (messageHeaders != null)
                 {
-                    spanContext = SpanContextPropagator.Instance.Extract(messageHeaders, default(ServiceRemotingRequestMessageHeaderGetter));
+                    extractedContext = SpanContextPropagator.Instance
+                                                            .Extract(messageHeaders, default(ServiceRemotingRequestMessageHeaderGetter))
+                                                            .MergeBaggageInto(Baggage.Current);
                 }
             }
             catch (Exception ex)
@@ -74,7 +76,7 @@ namespace Datadog.Trace.ServiceFabric
             try
             {
                 var tags = new ServiceRemotingServerTags();
-                var span = ServiceRemotingHelpers.CreateSpan(tracer, spanContext, tags, eventArgs, messageHeaders);
+                var span = ServiceRemotingHelpers.CreateSpan(tracer, extractedContext.SpanContext, tags, eventArgs, messageHeaders);
                 tracer.ActivateSpan(span);
             }
             catch (Exception ex)

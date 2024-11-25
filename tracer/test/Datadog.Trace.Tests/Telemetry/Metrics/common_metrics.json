@@ -280,7 +280,7 @@
       ],
       "metric_type": "count",
       "data_type": "instances",
-      "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`, `header_style:baggage`)",
       "send_to_user": false,
       "user_tags": []
     },
@@ -290,7 +290,17 @@
       ],
       "metric_type": "count",
       "data_type": "instances",
-      "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`, `header_style:baggage`)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "context_header.truncated": {
+      "tags": [
+        "truncation_reason"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:string_too_long`, `truncation_reason:list_or_map_too_large`)",
       "send_to_user": false,
       "user_tags": []
     },

@@ -80,10 +80,11 @@ namespace Datadog.Trace
             if (messageType != null && source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
             else if (messageType == null && source != null) { ThrowHelper.ThrowArgumentNullException(nameof(messageType)); }
 
-            var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
+            var context = SpanContextPropagator.Instance.Extract(carrier, getter);
 
-            if (spanContext is not null
-             && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
+            // DSM
+            if (context.SpanContext is { } spanContext
+                && Tracer.Instance.TracerManager.DataStreamsManager is { IsEnabled: true } dsm)
             {
                 if (getter(carrier, DataStreamsPropagationHeaders.TemporaryBase64PathwayContext).FirstOrDefault() is { Length: > 0 } base64PathwayContext)
                 {
@@ -101,7 +102,7 @@ namespace Datadog.Trace
                 }
             }
 
-            return spanContext;
+            return context.SpanContext;
         }
 
         private static PathwayContext? TryGetPathwayContext(string? base64PathwayContext)

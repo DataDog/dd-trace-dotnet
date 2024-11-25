@@ -6,7 +6,10 @@
 
 #include <memory>
 #include <stdlib.h>
-#include <tuple>
+#include <string.h>
+#include <functional>
+
+#include "shared/src/native-src/dd_memory_resource.hpp"
 
 // This class copy-wraps dl_phdr_info
 // Why? We do not own dl_phdr_info objects when called-back by dl_iterate_phdr.
@@ -17,17 +20,19 @@
 class DlPhdrInfoWrapper
 {
 public:
-    DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size);
+    DlPhdrInfoWrapper(struct dl_phdr_info const* info, std::size_t size, shared::pmr::memory_resource* allocator);
 
     std::pair<struct dl_phdr_info*, std::size_t> Get();
 
     bool IsSame(struct dl_phdr_info const * other) const;
 
 private:
+    struct dl_phdr_info _info;
     void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info const * source);
 
-    struct dl_phdr_info _info;
-    std::unique_ptr<ElfW(Phdr)[]> _phdr;
-    std::unique_ptr<char, decltype(&std::free)> _name;
+    using custom_deleter = std::function<void(void*)>;
+    std::unique_ptr<ElfW(Phdr), custom_deleter> _phdr;
+    std::unique_ptr<char, custom_deleter> _name;
     std::size_t _size;
+    shared::pmr::memory_resource* _allocator;
 };

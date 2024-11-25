@@ -22,7 +22,7 @@ public class AppTrimmingTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task TrimmerTest()
     {
         var httpPort = TcpPortProvider.GetOpenPort();

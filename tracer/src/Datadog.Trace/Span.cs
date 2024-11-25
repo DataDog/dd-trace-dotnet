@@ -152,7 +152,7 @@ namespace Datadog.Trace
         /// </returns>
         public override string ToString()
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");

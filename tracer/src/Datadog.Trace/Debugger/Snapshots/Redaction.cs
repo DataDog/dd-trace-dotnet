@@ -13,7 +13,8 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using Datadog.Trace.Debugger.Configurations;
-using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Util;
+using TypeExtensions = Datadog.Trace.Debugger.Helpers.TypeExtensions;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -281,7 +282,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var isRemovable = IsRemovableChar(c);
                 if (isUpper || isRemovable || sb != null)
                 {
-                    sb ??= new StringBuilder(name.Substring(0, i));
+                    if (sb == null)
+                    {
+                        sb = StringBuilderCache.Acquire();
+                        sb.Append(name.Substring(startIndex: 0, i));
+                    }
 
                     if (isUpper)
                     {
@@ -294,7 +299,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
             }
 
-            return sb != null ? sb.ToString() : name;
+            return sb != null ? StringBuilderCache.GetStringAndRelease(sb) : name;
         }
 
         private static bool IsRemovableChar(char c)

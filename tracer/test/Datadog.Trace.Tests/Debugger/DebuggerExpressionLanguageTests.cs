@@ -39,7 +39,11 @@ namespace Datadog.Trace.Tests.Debugger
         {
             TestObject = new TestStruct
             {
-                Collection = new List<string> { "hello", "1st Item", "2nd item", "3rd item" },
+                Collection = ["hello", "1st Item", "2nd item", "3rd item"],
+                CollectionInt = [1, 2, 3],
+                HashInt = [1, 2, 3],
+                Array = ["first", "second"],
+                CustomArray = [new TestStruct.NestedObject() { NestedString = "Nested" }, new TestStruct.ChildNestedObject() { NestedString = "Nested Child" }],
                 Dictionary = new Dictionary<string, string> { { "hello", "world" } },
                 IntNumber = 42,
                 DoubleNumber = 3.14159,
@@ -128,23 +132,23 @@ namespace Datadog.Trace.Tests.Debugger
             var json = GetJsonPart(jsonExpression);
             var scopeMembers = CreateScopeMembers();
             DebuggerExpression? condition = null;
-            DebuggerExpression[] templates;
+            DebuggerExpression?[] templates;
             DebuggerExpression? metrics = null;
-            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression[]>[]>[] spanDecorations = null;
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations = null;
             var dirName = new DirectoryInfo(Path.GetDirectoryName(expressionTestFilePath)).Name;
             if (dirName == ConditionsFolder)
             {
                 condition = new DebuggerExpression(dsl, json, null);
-                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+                templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
             else if (dirName == TemplatesFolder)
             {
-                templates = new DebuggerExpression[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
+                templates = new DebuggerExpression?[] { new(null, null, "The result of the expression is: "), new(dsl, json, null) };
             }
             else if (dirName == MetricsFolder)
             {
                 metrics = new DebuggerExpression(dsl, json, null);
-                templates = new DebuggerExpression[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
+                templates = new DebuggerExpression?[] { new(DefaultDslTemplate, DefaultJsonTemplate, null) };
             }
             else
             {
@@ -192,13 +196,17 @@ namespace Datadog.Trace.Tests.Debugger
 
         private MethodScopeMembers CreateScopeMembers()
         {
-            var scope = new MethodScopeMembers(10, 5);
-
+            var scope = new MethodScopeMembers();
+            scope.Set(new MethodScopeMembersParameters(10, 5));
             // Add locals
             scope.AddMember(new ScopeMember("IntLocal", TestObject.IntNumber.GetType(), TestObject.IntNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DoubleLocal", TestObject.DoubleNumber.GetType(), TestObject.DoubleNumber, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("StringLocal", TestObject.String.GetType(), TestObject.String, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("CollectionLocal", TestObject.Collection.GetType(), TestObject.Collection, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CollectionIntLocal", TestObject.CollectionInt.GetType(), TestObject.CollectionInt, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("HashIntLocal", TestObject.HashInt.GetType(), TestObject.HashInt, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("ArrayLocal", TestObject.Array.GetType(), TestObject.Array, ScopeMemberKind.Local));
+            scope.AddMember(new ScopeMember("CustomArrayLocal", TestObject.CustomArray.GetType(), TestObject.CustomArray, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("DictionaryLocal", TestObject.Dictionary.GetType(), TestObject.Dictionary, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NestedObjectLocal", TestObject.Nested.GetType(), TestObject.Nested, ScopeMemberKind.Local));
             scope.AddMember(new ScopeMember("NullLocal", TestObject.Nested.GetType(), TestObject.Null, ScopeMemberKind.Local));
@@ -247,10 +255,10 @@ namespace Datadog.Trace.Tests.Debugger
                 builder.AppendLine($"Result: {evaluationResult.Condition}");
             }
 
-            if (evaluator.Templates.Any(t => t.Dsl != DefaultDslTemplate))
+            if (evaluator.Templates.Any(t => t?.Dsl != DefaultDslTemplate))
             {
                 builder.AppendLine("Template:");
-                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t.Json))}");
+                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t?.Json))}");
                 builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
                 builder.AppendLine($"Result: {SanitizeEvaluationResult(evaluationResult.Template)}");
             }
@@ -331,6 +339,14 @@ namespace Datadog.Trace.Tests.Debugger
             public int IntNumber;
 
             public List<string> Collection;
+
+            public List<int> CollectionInt;
+
+            public HashSet<int> HashInt;
+
+            public string[] Array;
+
+            public NestedObject[] CustomArray;
 
             public Dictionary<string, string> Dictionary;
 

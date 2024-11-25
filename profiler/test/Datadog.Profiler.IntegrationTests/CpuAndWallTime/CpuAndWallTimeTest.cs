@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -47,7 +47,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -61,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             EnvironmentHelper.DisableDefaultProfilers(runner);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -76,7 +76,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -89,6 +89,26 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            runner.Run(agent);
+
+            // Ensure that we don't count too much CPU like when that nano/milli sec bug was introduced
+            var cpuDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
+            // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)
+            // --> could be flacky otherwise
+            var totalDuration = runner.TotalTestDurationInMilliseconds * 1000000L;
+            Assert.True(cpuDuration <= totalDuration);
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckCpuDurationInSamplesForNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
@@ -110,7 +130,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -129,7 +149,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

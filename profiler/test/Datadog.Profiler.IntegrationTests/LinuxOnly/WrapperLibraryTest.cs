@@ -33,7 +33,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -53,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -72,7 +72,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -90,58 +90,60 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Environment.SetVariable("COMPlus_DbgEnableMiniDump", "1");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpName", "/dev/null");
             runner.Environment.SetVariable("COMPlus_DbgMiniDumpType", string.Empty);
+            runner.Environment.SetVariable("COMPlus_CreateDumpDiagnostics", "1");
 
             using var processHelper = runner.LaunchProcess();
 
             var success = runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000);
-
             if (!success)
             {
+                var logger = runner.XUnitLogger;
+
                 // Note: we don't drain because the process hasn't exited, but it means the output may be incomplete
-                _output.WriteLine("Standard output:");
-                _output.WriteLine(processHelper.StandardOutput);
+                logger.WriteLine("Standard output:");
+                logger.WriteLine(processHelper.StandardOutput);
 
                 var pid = processHelper.Process.Id;
 
                 var status = File.ReadAllText($"/proc/{pid}/status");
 
-                _output.WriteLine("Process status:");
-                _output.WriteLine(status);
+                logger.WriteLine("Process status:");
+                logger.WriteLine(status);
 
-                _output.WriteLine("************************");
+                logger.WriteLine("************************");
 
                 // Enumerating status for each thread
-                var threads = Directory.GetFiles($"/proc/{pid}/task");
+                var threads = Directory.GetDirectories($"/proc/{pid}/task");
 
                 foreach (var thread in threads)
                 {
-                    _output.WriteLine($"**** {thread}:");
+                    logger.WriteLine($"**** {thread}:");
                     try
                     {
                         var threadStatus = File.ReadAllText($"{thread}/status");
-                        _output.WriteLine(threadStatus);
+                        logger.WriteLine(threadStatus);
                     }
                     catch (Exception ex)
                     {
-                        _output.WriteLine(ex.Message);
+                        logger.WriteLine(ex.Message);
                     }
                 }
 
-                _output.WriteLine("************************");
+                logger.WriteLine("************************");
 
                 var processes = Process.GetProcesses();
 
-                _output.WriteLine("Processes:");
+                logger.WriteLine("Processes:");
 
                 foreach (var process in processes)
                 {
-                    _output.WriteLine($"Process: {process.ProcessName} ({process.Id})");
+                    logger.WriteLine($"Process: {process.ProcessName} ({process.Id})");
 
                     if (process.ProcessName == "createdump")
                     {
                         var testBaseOutputDir = runner.Environment.GetTestOutputPath();
-                        process.GetAllThreadsStack(testBaseOutputDir, _output);
-                        process.TakeMemoryDump(testBaseOutputDir, _output);
+                        process.GetAllThreadsStack(testBaseOutputDir, logger);
+                        process.TakeMemoryDump(testBaseOutputDir, logger);
                     }
                 }
             }

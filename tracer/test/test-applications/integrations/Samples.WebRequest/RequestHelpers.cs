@@ -331,6 +331,18 @@ namespace Samples.WebRequest
 
                     request.GetResponse().Close();
                     Console.WriteLine("Received response for request.GetResponse()");
+
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest requestNoBuffer = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponse_NoBuffering", url));
+                    request.AllowWriteStreamBuffering = false;
+                    if (tracingDisabled)
+                    {
+                        requestNoBuffer.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    requestNoBuffer.GetResponse().Close();
+                    Console.WriteLine("Received response for request.GetResponse()");
+
                 }
 
                 using (_sampleHelpers.CreateScope("GetResponseWithDistributedTracingHeaders"))
@@ -476,7 +488,8 @@ namespace Samples.WebRequest
 
                 using (_sampleHelpers.CreateScope("GetRequestStream"))
                 {
-                    GetRequestStream(tracingDisabled, url);
+                    GetRequestStream(tracingDisabled, url, allowWriteStreamBuffering: true);
+                    GetRequestStream(tracingDisabled, url, allowWriteStreamBuffering: false);
                 }
 
                 using (_sampleHelpers.CreateScope("GetRequestStreamWithDistributedTracingHeaders"))
@@ -489,7 +502,8 @@ namespace Samples.WebRequest
 
                 using (_sampleHelpers.CreateScope("BeginGetRequestStream"))
                 {
-                    BeginGetRequestStream(tracingDisabled, url);
+                    BeginGetRequestStream(tracingDisabled, url, allowWriteStreamBuffering: true);
+                    BeginGetRequestStream(tracingDisabled, url, allowWriteStreamBuffering: false);
                 }
 
                 using (_sampleHelpers.CreateScope("BeginGetRequestStreamWithDistributedTracingHeaders"))
@@ -502,7 +516,8 @@ namespace Samples.WebRequest
 
                 using (_sampleHelpers.CreateScope("BeginGetResponse"))
                 {
-                    BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url);
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url, allowWriteStreamBuffering: true);
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url, allowWriteStreamBuffering: false);
                 }
 
                 using (_sampleHelpers.CreateScope("BeginGetResponseWithDistributedTracingHeaders"))
@@ -545,13 +560,17 @@ namespace Samples.WebRequest
 
         }
 
-        private static void BeginGetResponse(bool tracingDisabled, string testName, string url, NameValueCollection additionalHeaders = null)
+        private static void BeginGetResponse(bool tracingDisabled, string testName, string url, NameValueCollection additionalHeaders = null, bool allowWriteStreamBuffering = true)
         {
             // Create separate request objects since .NET Core asserts only one response per request
+            testName = allowWriteStreamBuffering ? testName : $"{testName}_NoBuffering";
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+
+            // Prior to .NET 9, this toggle does nothing, but it defaults to "true"
+            // in .NET 9, setting this to false changes the behaviour significantly
+            request.AllowWriteStreamBuffering = allowWriteStreamBuffering;
 
             if (tracingDisabled)
             {
@@ -588,13 +607,15 @@ namespace Samples.WebRequest
             _allDone.WaitOne();
         }
 
-        private static void BeginGetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null)
+        private static void BeginGetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null, bool allowWriteStreamBuffering = true)
         {
             // Create separate request objects since .NET Core asserts only one response per request
-            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
+            var testName = "BeginGetRequestStream";
+            testName = allowWriteStreamBuffering ? testName : $"{testName}_NoBuffering";
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+            request.AllowWriteStreamBuffering = allowWriteStreamBuffering;
 
             if (tracingDisabled)
             {
@@ -624,13 +645,15 @@ namespace Samples.WebRequest
             _allDone.WaitOne();
         }
 
-        private static void GetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null)
+        private static void GetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null, bool allowWriteStreamBuffering = true)
         {
             // Create separate request objects since .NET Core asserts only one response per request
-            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
+            var testName = "GetRequestStream";
+            testName = allowWriteStreamBuffering ? testName : $"{testName}_NoBuffering";
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
             request.Method = "POST";
             request.ContentLength = 1;
-            request.AllowWriteStreamBuffering = false;
+            request.AllowWriteStreamBuffering = allowWriteStreamBuffering;
 
             if (tracingDisabled)
             {
