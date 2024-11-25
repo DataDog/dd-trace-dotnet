@@ -61,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilingInterval, samplingInterval);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -85,7 +85,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
