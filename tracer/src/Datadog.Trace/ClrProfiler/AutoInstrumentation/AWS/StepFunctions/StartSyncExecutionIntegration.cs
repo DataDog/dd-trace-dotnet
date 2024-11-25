@@ -10,6 +10,7 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 {
@@ -54,8 +55,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 tags.StateMachineName = AwsStepFunctionsCommon.GetStateMachineName(request.StateMachineArn);
             }
 
-            if (request.Input is not null && scope?.Span.Context is { } context)
+            if (request.Input is not null && scope?.Span.Context is { } spanContext)
             {
+                var context = new PropagationContext(spanContext, Baggage.Current);
                 ContextPropagation.InjectContextIntoInput<TTarget, TStartSyncExecutionRequest>(request, context);
             }
 

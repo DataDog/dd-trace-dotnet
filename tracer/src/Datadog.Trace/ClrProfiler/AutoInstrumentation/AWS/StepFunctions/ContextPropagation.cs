@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     {
         private const string StepFunctionsKey = "_datadog";
 
-        public static void InjectContextIntoInput<TClientMarker, TExecutionRequest>(TExecutionRequest carrier, SpanContext context)
+        public static void InjectContextIntoInput<TClientMarker, TExecutionRequest>(TExecutionRequest carrier, PropagationContext context)
             where TExecutionRequest : IContainsInput
         {
             // Inject the tracing headers
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
             carrier.Input = input;
         }
 
-        private static void Inject<TExecutionRequest>(SpanContext context, ref string input)
+        private static void Inject<TExecutionRequest>(PropagationContext context, ref string input)
         {
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append(input);
