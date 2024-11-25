@@ -113,9 +113,6 @@
     <ClInclude Include="ScopeFinalizer.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Semaphore.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="EnvironmentVariables.h">
       <Filter>Utils</Filter>
     </ClInclude>
