@@ -257,8 +257,13 @@
     "SpecificVersions": [
       "4.1.*",
       "4.5.*",
+      "4.8.*",
       "4.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.9.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    }]
   },
   {
     "IntegrationName": "MicrosoftDataSqlClient",
