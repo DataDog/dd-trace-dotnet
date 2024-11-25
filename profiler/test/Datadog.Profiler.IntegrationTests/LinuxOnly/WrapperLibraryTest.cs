@@ -94,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             using var processHelper = runner.LaunchProcess();
 
-            var success = runner.WaitForExitOrCaptureDump(processHelper.Process, milliseconds: 30_000);
+            var success = processHelper.Process.WaitForExit(30_000);
             if (!success)
             {
                 var logger = runner.XUnitLogger;
@@ -102,6 +102,9 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 // Note: we don't drain because the process hasn't exited, but it means the output may be incomplete
                 logger.WriteLine("Standard output:");
                 logger.WriteLine(processHelper.StandardOutput);
+
+                logger.WriteLine("Error output:");
+                logger.WriteLine(processHelper.ErrorOutput);
 
                 var pid = processHelper.Process.Id;
 
@@ -138,13 +141,6 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 foreach (var process in processes)
                 {
                     logger.WriteLine($"Process: {process.ProcessName} ({process.Id})");
-
-                    if (process.ProcessName == "createdump")
-                    {
-                        var testBaseOutputDir = runner.Environment.GetTestOutputPath();
-                        process.GetAllThreadsStack(testBaseOutputDir, logger);
-                        process.TakeMemoryDump(testBaseOutputDir, logger);
-                    }
                 }
             }
 
