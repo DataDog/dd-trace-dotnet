@@ -1099,7 +1099,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 new SqliteCommand(sql, DbConnectionSystemDataMicrosoftData).ExecuteScalar();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // ignored
             }

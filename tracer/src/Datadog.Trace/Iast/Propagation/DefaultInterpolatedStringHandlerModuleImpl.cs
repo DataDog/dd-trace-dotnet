@@ -48,8 +48,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return;
             }
 
-            // The start and length here are not correct, but we don't currently have a way to get the correct values
-            var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source) };
+            var rangesResult = new[] { new Range(0, 0, tainted!.Ranges[0].Source, tainted.Ranges[0].SecureMarks) };
             if (!targetIsTainted)
             {
                 taintedObjects.Taint(target, rangesResult);
@@ -65,7 +64,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         }
     }
 
-    public static object? PropagateTaint(object? input, object? result)
+    public static object? PropagateTaint(object? input, string? result)
     {
         try
         {
@@ -90,7 +89,8 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
                 return result;
             }
 
-            taintedObjects.Taint(result, taintedSelf.Ranges);
+            var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
+            taintedObjects.Taint(result, [range]);
         }
         catch (Exception err)
         {

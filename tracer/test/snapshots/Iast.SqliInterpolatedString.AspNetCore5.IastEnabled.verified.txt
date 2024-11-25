@@ -38,18 +38,15 @@
             "value": "INSERT INTO Orders (CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, ShipCity, ShipPostalCode, ShipCountry) VALUES ('VINET','5','2021-01-01','2021-01-01',"
           },
           {
-            "value": "",
+            "value": "'3','32.38','Vins et alcools Chevalier','John',",
             "source": 0
           },
           {
-            "value": "'3','32.38','Vins et alcools Chevalier','John',"
-          },
-          {
-            "value": "",
+            "value": "'Reims','51100','France')",
             "source": 0
           },
           {
-            "value": "'Reims','51100','France');\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;"
+            "value": ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;"
           }
         ]
       }
