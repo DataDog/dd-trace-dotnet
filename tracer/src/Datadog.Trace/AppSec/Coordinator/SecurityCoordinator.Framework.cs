@@ -511,6 +511,17 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
+    internal static void CollectHeaders(Span internalSpan)
+    {
+        var context = HttpContext.Current;
+
+        if (context != null)
+        {
+            var headers = new NameValueHeadersCollection(context.Request.Headers);
+            AddRequestHeaders(internalSpan, headers);
+        }
+    }
+
     internal class HttpTransport : HttpTransportBase
     {
         private const string WafKey = "waf";

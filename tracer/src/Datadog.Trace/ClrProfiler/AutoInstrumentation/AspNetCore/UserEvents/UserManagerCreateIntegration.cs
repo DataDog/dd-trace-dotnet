@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.UserManager`1",
     MethodName = "CreateAsync",
-    ParameterTypeNames = new[] { "!0" },
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -33,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.UserManager`1",
     MethodName = "CreateAsync",
-    ParameterTypeNames = new[] { "!0" },
+    ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.IdentityResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -84,7 +85,11 @@ public static class UserManagerCreateIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId);
+                    if (!string.IsNullOrEmpty(anonId))
+                    {
+                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId!);
+                    }
+
                     setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
                 else
@@ -99,7 +104,11 @@ public static class UserManagerCreateIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
+                    if (anonId != null)
+                    {
+                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureUserId, anonId);
+                    }
+
                     setTag(Tags.AppSec.EventsUsers.SignUpEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
                 }
                 else
@@ -110,6 +119,7 @@ public static class UserManagerCreateIntegration
             }
 
             security.SetTraceSamplingPriority(span);
+            SecurityCoordinator.CollectHeaders(span);
         }
 
         return returnValue;
