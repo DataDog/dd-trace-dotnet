@@ -253,6 +253,8 @@ partial class Build
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
+
+           GenerateIntegrationMarkdownTable.GenerateTable(outputPath, TracerDirectory / "build" / "integrations.md");
            
            Logger.Information("Verifying that updated dependabot file is valid...");
 
@@ -260,7 +262,18 @@ partial class Build
            CopyFile(dependabotProj, tempProjectFile, FileExistsPolicy.Overwrite);
            DotNetRestore(x => x.SetProjectFile(tempProjectFile));
        });
-    
+
+    Target GenerateMarkdownTable => _ => _
+   .Description("Generates the Markdown Table")
+   .Executes(() =>
+   {
+       var supportedVersionsJson = TracerDirectory / "build" / "supported_versions.json";
+
+       GenerateIntegrationMarkdownTable.GenerateTable(supportedVersionsJson, TracerDirectory / "build" / "integrations.md");
+       GenerateIntegrationMarkdownTable.GenerateEnhancedTable(supportedVersionsJson, TracerDirectory / "build", TracerDirectory, TracerDirectory / "build" / "integrations4.md");
+       GenerateIntegrationMarkdownTable.GenerateTableFromProps(TracerDirectory / "build", TracerDirectory / "build" / "integrations3.md");
+   });
+
     Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>

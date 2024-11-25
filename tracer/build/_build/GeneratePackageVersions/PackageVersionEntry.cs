@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GeneratePackageVersions
 {
@@ -59,6 +60,21 @@ namespace GeneratePackageVersions
             /// If true, packages in the range will not built on Alpine
             /// </summary>
             public bool SkipAlpine { get; set; }
+        }
+
+        /// <summary>
+        /// Gets the integration names as an array, splitting on commas if multiple are specified
+        /// </summary>
+        public string[] GetIntegrationNames()
+        {
+            if (string.IsNullOrWhiteSpace(IntegrationName))
+            {
+                return Array.Empty<string>();
+            }
+
+            return IntegrationName.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => x.Trim())
+                                .ToArray();
         }
     }
 }
