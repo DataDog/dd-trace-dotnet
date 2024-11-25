@@ -81,16 +81,16 @@ public static class SignInManagerPasswordSignInUserIntegration
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
             if (!returnValue.Succeeded)
             {
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
 
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    if (anonId != null)
+                    if (!string.IsNullOrEmpty(anonId))
                     {
-                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId!);
                     }
                 }
                 else
@@ -107,9 +107,9 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    if (anonId != null)
+                    if (!string.IsNullOrEmpty(anonId))
                     {
-                        tryAddTag(Tags.User.Id, anonId);
+                        tryAddTag(Tags.User.Id, anonId!);
                     }
                 }
                 else

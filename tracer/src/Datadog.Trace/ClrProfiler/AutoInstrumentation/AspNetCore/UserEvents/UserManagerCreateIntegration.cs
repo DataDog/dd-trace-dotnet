@@ -85,9 +85,9 @@ public static class UserManagerCreateIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    if (anonId != null)
+                    if (!string.IsNullOrEmpty(anonId))
                     {
-                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId);
+                        tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessUserId, anonId!);
                     }
 
                     setTag(Tags.AppSec.EventsUsers.SignUpEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);

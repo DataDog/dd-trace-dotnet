@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -77,8 +77,8 @@ public static class SignInManagerPasswordSignInIntegration
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
 
             if (security.IsAnonUserTrackingMode)
             {

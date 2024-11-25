@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -26,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
     [InstrumentMethod(
         AssemblyName = AssemblyName,
         TypeName = HttpContextExtensionsTypeName,
-        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties" },
+        ParameterTypeNames = ["Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties"],
         MethodName = "SignInAsync",
         ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
@@ -42,10 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
         // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-        private static readonly HashSet<string> ClaimsToTest = new HashSet<string>
-        {
-            ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
-        };
+        private static readonly HashSet<string> ClaimsToTest = [ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email, ClaimTypes.Name];
 
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
@@ -96,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 if (foundUserId)
                 {
                     security.SetTraceSamplingPriority(span);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
                 }
                 else
                 {

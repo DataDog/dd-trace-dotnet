@@ -55,8 +55,8 @@ public static class EventTrackingSdk
 
         var setTag = TaggingUtils.GetSpanSetter(span, out var internalSpan);
 
-        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
-        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, "true");
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessSdkSource, Tags.AppSec.EventsUsers.True);
         setTag(Tags.User.Id, userId);
 
         if (metadata is { Count: > 0 })
@@ -128,17 +128,16 @@ public static class EventTrackingSdk
 
         var setTag = TaggingUtils.GetSpanSetter(span, out var spanInternal);
 
-        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureSdkSource, "true");
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureSdkSource, Tags.AppSec.EventsUsers.True);
         setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId);
-        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? "true" : "false");
+        setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, exists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
 
         if (metadata is { Count: > 0 })
         {
-            var successTagPrefix = $"{Tags.AppSec.EventsUsers.LoginEvent.Failure}.";
             foreach (var kvp in metadata)
             {
-                setTag(successTagPrefix + kvp.Key, kvp.Value);
+                setTag($"{Tags.AppSec.EventsUsers.LoginEvent.Failure}.{kvp.Key}", kvp.Value);
             }
         }
 
@@ -187,17 +186,14 @@ public static class EventTrackingSdk
 
         var setTag = TaggingUtils.GetSpanSetter(span, out var internalSpan);
 
-        setTag(Tags.AppSec.Track(eventName), "true");
-
-        var eventPrefix = $"{Tags.AppSec.Events}{eventName}";
-
-        setTag($"_dd.{eventPrefix}.sdk", "true");
+        setTag(Tags.AppSec.Track(eventName), Tags.AppSec.EventsUsers.True);
+        setTag($"_dd.{Tags.AppSec.Events}{eventName}.sdk", Tags.AppSec.EventsUsers.True);
 
         if (metadata is { Count: > 0 })
         {
             foreach (var kvp in metadata)
             {
-                setTag($"{eventPrefix}.{kvp.Key}", kvp.Value);
+                setTag($"{Tags.AppSec.Events}{eventName}.{kvp.Key}", kvp.Value);
             }
         }
 
