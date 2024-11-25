@@ -2,7 +2,7 @@
   "enableDatadog": true,
   "jsonExporterFilePath": "$(CWD)\\results_Samples.HttpMessageHandler.windows.net80.json",
   "warmUpCount": 5,
-  "count": 100,
+  "count": 110,
   "services": [
     {
       "name": "Execute",
