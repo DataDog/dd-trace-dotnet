@@ -62,12 +62,21 @@ internal readonly partial struct SecurityCoordinator
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static void CollectHeaders(Span internalSpan)
     {
-        var context = CoreHttpContextStore.Instance.Get();
-        internalSpan = TryGetRoot(internalSpan);
-        if (context != null)
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
         {
-            var headers = new HeadersCollectionAdapter(context.Request.Headers);
-            AddRequestHeaders(internalSpan, headers);
+            CollectHeadersImpl(internalSpan);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void CollectHeadersImpl(Span internalSpan)
+        {
+            var context = CoreHttpContextStore.Instance.Get();
+            internalSpan = TryGetRoot(internalSpan);
+            if (context is not null)
+            {
+                var headers = new HeadersCollectionAdapter(context.Request.Headers);
+                AddRequestHeaders(internalSpan, headers);
+            }
         }
     }
 
@@ -146,11 +155,9 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal class HttpTransport : HttpTransportBase
+    internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
-        public HttpTransport(HttpContext context) => Context = context;
-
-        public override HttpContext Context { get; }
+        public override HttpContext Context { get; } = context;
 
         internal override bool IsBlocked
         {

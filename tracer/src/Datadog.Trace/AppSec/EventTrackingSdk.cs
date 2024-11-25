@@ -77,14 +77,7 @@ public static class EventTrackingSdk
     {
         span = span.Context.TraceContext?.RootSpan ?? span;
         Security.Instance.SetTraceSamplingPriority(span);
-#if !NETFRAMEWORK
-        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
-        {
-            SecurityCoordinator.CollectHeaders(span);
-        }
-#else
         SecurityCoordinator.CollectHeaders(span);
-#endif
     }
 
     /// <summary>
