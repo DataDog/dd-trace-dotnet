@@ -8,9 +8,12 @@
 #include <string>
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include "cor.h"
 #include "corprof.h"
+
+#include "shared/src/native-src/dd_span.hpp"
 
 extern "C"
 {
@@ -30,6 +33,46 @@ struct ResolveMethodData
     char symbolName[1024];
 };
 
+#ifdef LINUX
+class ElfBuildId
+{
+private:
+    struct ElfBuildIdImpl {
+        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr, 0) {}
+        ElfBuildIdImpl(std::uint8_t* ptr, std::size_t size) : _ptr{ptr}, _size{size} {};
+        ~ElfBuildIdImpl()
+        {
+            auto* ptr = std::exchange(_ptr, nullptr);
+            if (ptr != nullptr && _size != 0)
+            {
+                _size = 0;
+                ::free(ptr);
+            }
+        }
+
+        ElfBuildIdImpl(ElfBuildIdImpl const&) = delete;
+        ElfBuildIdImpl(ElfBuildIdImpl&&) = delete;
+        ElfBuildIdImpl& operator=(ElfBuildIdImpl const&) = delete;
+        ElfBuildIdImpl& operator=(ElfBuildIdImpl&&) = delete;
+
+        std::uint8_t* _ptr;
+        std::size_t _size;
+    };
+public:
+    ElfBuildId() : ElfBuildId(nullptr, 0) {}
+    ElfBuildId(std::uint8_t* ptr, std::size_t size)
+    : _impl{std::make_shared<ElfBuildIdImpl>(ptr, size)} {}
+
+    shared::span<std::uint8_t> AsSpan() const
+    {
+        return shared::span(_impl->_ptr, _impl->_size);
+    }
+
+private:
+    std::shared_ptr<ElfBuildIdImpl> _impl;
+};
+#endif
+
 struct StackFrame 
 {
     uint64_t ip;    
@@ -38,9 +81,13 @@ struct StackFrame
     uint64_t symbolAddress;
     uint64_t moduleAddress;
     bool isSuspicious;
+#ifdef _WINDOWS
     bool hasPdbInfo;
     DWORD pdbAge;
     GUID pdbSig;
+#else
+    ElfBuildId buildId;
+#endif
 };
 
 struct Tag

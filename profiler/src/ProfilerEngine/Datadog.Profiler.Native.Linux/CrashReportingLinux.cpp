@@ -5,26 +5,27 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <vector>
 #include <dirent.h>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include <libunwind.h>
+#include "FfiHelper.h"
+#include <fstream>
 #include <libunwind-ptrace.h>
+#include <libunwind.h>
+#include <map>
+#include <sstream>
+#include <string.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
-#include <fstream>
-#include <sstream>
-#include <map>
-#include <string.h>
-#include "FfiHelper.h"
 
 extern "C"
 {
+#include "datadog/blazesym.h"
 #include "datadog/common.h"
-#include "datadog/profiling.h"
 #include "datadog/crashtracker.h"
+#include "datadog/profiling.h"
 }
 
 #include <shared/src/native-src/dd_filesystem.hpp>
@@ -35,8 +36,8 @@ CrashReporting* CrashReporting::Create(int32_t pid)
     return (CrashReporting*)crashReporting;
 }
 
-CrashReportingLinux::CrashReportingLinux(int32_t pid)
-    : CrashReporting(pid)
+CrashReportingLinux::CrashReportingLinux(int32_t pid) :
+    CrashReporting(pid)
 {
 }
 
@@ -67,17 +68,17 @@ int32_t CrashReportingLinux::Initialize()
     return result;
 }
 
-std::pair<std::string_view, uintptr_t> CrashReportingLinux::FindModule(uintptr_t ip)
+const ModuleInfo* CrashReportingLinux::FindModule(uintptr_t ip)
 {
     for (auto const& module : _modules)
     {
         if (ip >= module.startAddress && ip < module.endAddress)
         {
-            return std::make_pair(module.path, module.baseAddress);
+            return &module;
         }
     }
 
-    return std::make_pair("", 0);
+    return nullptr;
 }
 
 std::vector<ModuleInfo> CrashReportingLinux::GetModules()
@@ -97,10 +98,9 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
         std::getline(iss, path); // Skip whitespace at the start
 
         // Trim path
-        path.erase(path.begin(), std::find_if(path.begin(), path.end(), [](int ch)
-            {
-                return !std::isspace(ch);
-            }));
+        path.erase(path.begin(), std::find_if(path.begin(), path.end(), [](int ch) {
+                       return !std::isspace(ch);
+                   }));
 
         if (path.empty())
         {
@@ -133,7 +133,9 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path) });
+        std::size_t len = 0;
+        auto* buffer = blaze_read_elf_build_id(path.data(), &len);
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), ElfBuildId(buffer, len)});
     }
 
     return modules;
@@ -196,66 +198,75 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         stackFrame.sp = sp;
         stackFrame.isSuspicious = false;
 
-        ResolveMethodData methodData;
 
-        auto [moduleName, moduleAddress] = FindModule(ip);
-        stackFrame.moduleAddress = moduleAddress;
-
-        bool hasName = false;
-
-        unw_proc_info_t procInfo;
-        result = unw_get_proc_info(&cursor, &procInfo);
-
-        if (result == 0)
+        auto* module = FindModule(ip);
+        if (module != nullptr)
         {
-            stackFrame.symbolAddress = procInfo.start_ip;
+            stackFrame.moduleAddress = module->baseAddress;
 
-            unw_word_t offset;
-            result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
+            bool hasName = false;
+
+            unw_proc_info_t procInfo;
+            result = unw_get_proc_info(&cursor, &procInfo);
 
             if (result == 0)
             {
-                stackFrame.method = std::string(methodData.symbolName);
-                hasName = true;
+                stackFrame.symbolAddress = procInfo.start_ip;
 
-                auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
+                ResolveMethodData methodData;
+                unw_word_t offset;
+                result = unw_get_proc_name(&cursor, methodData.symbolName, sizeof(methodData.symbolName), &offset);
 
-                if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
+                if (result == 0)
                 {
-                    // TODO: There is currently no safe way to free the StringWrapper
-                    auto stringWrapper = demangleResult.ok;
+                    stackFrame.method = std::string(methodData.symbolName);
+                    hasName = true;
 
-                    if (stringWrapper.message.len > 0)
+                    auto demangleResult = ddog_crasht_demangle(libdatadog::to_char_slice(stackFrame.method), DDOG_CRASHT_DEMANGLE_OPTIONS_COMPLETE);
+
+                    if (demangleResult.tag == DDOG_CRASHT_STRING_WRAPPER_RESULT_OK)
                     {
-                        stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);                        
+                        // TODO: There is currently no safe way to free the StringWrapper
+                        auto stringWrapper = demangleResult.ok;
+
+                        if (stringWrapper.message.len > 0)
+                        {
+                            stackFrame.method = std::string((char*)stringWrapper.message.ptr, stringWrapper.message.len);
+                        }
                     }
                 }
             }
-        }
 
-        if (!hasName)
-        {
-            std::ostringstream unknownModule;
-            unknownModule << moduleName << "!<unknown>+" << std::hex << (ip - moduleAddress);
-            stackFrame.method = unknownModule.str();
-        }
-
-        stackFrame.isSuspicious = false;
-
-        fs::path modulePath(moduleName);
-
-        if (modulePath.has_filename())
-        {
-            const auto moduleFilename = modulePath.stem().string();
-
-            if ((moduleFilename.rfind("Datadog", 0) == 0 && stackFrame.method != "dd_pthread_entry")
-                || moduleFilename == "libdatadog"
-                || moduleFilename == "datadog"
-                || moduleFilename == "libddwaf"
-                || moduleFilename == "ddwaf" )
+            if (!hasName)
             {
-                stackFrame.isSuspicious = true;
+                std::ostringstream unknownModule;
+                unknownModule << module->path << "!<unknown>+" << std::hex << (ip - module->baseAddress);
+                stackFrame.method = unknownModule.str();
             }
+
+            stackFrame.isSuspicious = false;
+
+            stackFrame.buildId = module->build_id;
+
+            fs::path modulePath(module->path);
+
+            if (modulePath.has_filename())
+            {
+                const auto moduleFilename = modulePath.stem().string();
+
+                if ((moduleFilename.rfind("Datadog", 0) == 0 && stackFrame.method != "dd_pthread_entry")
+                    || moduleFilename == "libdatadog"
+                    || moduleFilename == "datadog"
+                    || moduleFilename == "libddwaf"
+                    || moduleFilename == "ddwaf" )
+                {
+                    stackFrame.isSuspicious = true;
+                }
+            }
+        }
+        else
+        {
+            stackFrame.method = "<unknown>";
         }
 
         frames.push_back(std::move(stackFrame));
@@ -325,5 +336,5 @@ std::string CrashReportingLinux::GetThreadName(int32_t tid)
     std::string threadName;
     std::getline(commFile, threadName);
     commFile.close();
-    return threadName;    
+    return threadName;
 }
