@@ -227,8 +227,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredXssRequest(string database)
     {
-        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = $"/Iast/StoredXss?param=<b>RawValue</b>&useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
@@ -255,8 +262,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
-        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = $"/Iast/StoredXssEscaped?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
@@ -282,8 +296,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredSqliRequest(string database)
     {
-        var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = $"/Iast/StoredSqli?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
