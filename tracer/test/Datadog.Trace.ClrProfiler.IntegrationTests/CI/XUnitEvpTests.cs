@@ -203,6 +203,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
 
+                // Remove user provided service tag
+                targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
                 // check the name
                 Assert.Equal("xunit.test", targetTest.Name);
 
