@@ -379,7 +379,7 @@ public class CreatedumpTests : ConsoleTestHelper
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
-                               "crash-thread",
+                               "crash-thread-datadog",
                                enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
@@ -445,16 +445,20 @@ public class CreatedumpTests : ConsoleTestHelper
         agent.WaitForLatestTelemetry(IsCrashReport).Should().NotBeNull();
     }
 
-    [SkippableFact]
-    public async Task IgnoreNonDatadogCrashes()
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IgnoreNonDatadogCrashes(bool mainThread)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
+        var arg = mainThread ? "crash" : "crash-thread";
+
         using var helper = await StartConsoleWithArgs(
-                               "crash",
+                               arg,
                                enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 

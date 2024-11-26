@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using Mono.Cecil;
 using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 namespace CodeGenerators
 {
@@ -14,16 +15,16 @@ namespace CodeGenerators
 
         public static void GenerateCallSites(IEnumerable<TargetFramework> targetFrameworks, Func<string, string> getDllPath, AbsolutePath outputPath) 
         {
-            Serilog.Log.Debug("Generating CallSite definitions file ...");
+            Logger.Debug("Generating CallSite definitions file ...");
 
-            Dictionary<string, AspectClass> aspectClasses = new Dictionary<string, AspectClass>();
+            var aspectClasses = new Dictionary<string, AspectClass>();
             foreach(var tfm in targetFrameworks)
             {
                 var dllPath = getDllPath(tfm);
                 RetrieveCallSites(aspectClasses, dllPath, tfm);
             }
 
-            GenerateCallSites(aspectClasses, outputPath);
+            GenerateFile(aspectClasses, outputPath);
         }
 
         internal static void RetrieveCallSites(Dictionary<string, AspectClass> aspectClasses, string dllPath, TargetFramework tfm)
@@ -37,17 +38,17 @@ namespace CodeGenerators
             var tfmCategory = GetCategory(tfm);
 
             // Open dll to extract all AspectsClass attributes.
-            using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
+            using var asmDefinition = AssemblyDefinition.ReadAssembly(dllPath);
 
-            foreach (var aspectClassType in asmDefinition.MainModule.Types)
+            foreach (var type in asmDefinition.MainModule.Types)
             {
-                var aspectClassAttribute = aspectClassType.CustomAttributes.FirstOrDefault(IsAspectClass);
+                var aspectClassAttribute = type.CustomAttributes.FirstOrDefault(IsAspectClass);
                 if (aspectClassAttribute is null)
                 {
                     continue;
                 }
 
-                var aspectClassLine = $"{GetAspectLine(aspectClassAttribute, out var category)} {aspectClassType.FullName}";
+                var aspectClassLine = $"{GetAspectLine(aspectClassAttribute, out var category)} {type.FullName}";
                 if (!aspectClasses.TryGetValue(aspectClassLine, out var aspectClass))
                 {
                     aspectClass = new AspectClass();
@@ -56,7 +57,7 @@ namespace CodeGenerators
                 }
 
                 // Retrieve aspects
-                foreach(var method in aspectClassType.Methods)
+                foreach(var method in type.Methods)
                 {
                     foreach(var aspectAttribute in method.CustomAttributes.Where(IsAspect))
                     {
@@ -235,7 +236,7 @@ namespace CodeGenerators
             }
         }
 
-        internal static void GenerateCallSites(Dictionary<string, AspectClass> aspectClasses, AbsolutePath outputPath)
+        internal static void GenerateFile(Dictionary<string, AspectClass> aspectClasses, AbsolutePath outputPath)
         {
             var sb = new StringBuilder();
             sb.AppendLine("""
@@ -254,11 +255,11 @@ namespace CodeGenerators
                 {
                 """);
 
-            foreach (var aspectClass in aspectClasses.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+            foreach (var aspectClass in aspectClasses.OrderBy(static k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine(Format(aspectClass.Key + aspectClass.Value.Subfix()));
 
-                foreach (var method in aspectClass.Value.Aspects.OrderBy(k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
+                foreach (var method in aspectClass.Value.Aspects.OrderBy(static k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
                 {
                     sb.AppendLine(Format("  " + method.Key + method.Value.Subfix()));
                 }
@@ -274,7 +275,7 @@ namespace CodeGenerators
             var fileName = outputPath / "generated_callsites.g.h";
             File.WriteAllText(fileName, sb.ToString());
 
-            Serilog.Log.Information("CallSite definitions File saved: {File}", fileName);
+            Logger.Information("CallSite definitions File saved: {File}", fileName);
 
             string Format(string line)
             {
@@ -287,7 +288,7 @@ namespace CodeGenerators
             return (TargetFrameworks)Enum.Parse<TargetFrameworks>(tfm.ToString().ToUpper().Replace('.', '_'));
         }
 
-        internal struct AspectClass
+        internal record AspectClass
         {
             public AspectClass() {}
 
@@ -300,7 +301,7 @@ namespace CodeGenerators
             }
         }
 
-        internal struct Aspect
+        internal record Aspect
         {
             public Aspect() { }
 
