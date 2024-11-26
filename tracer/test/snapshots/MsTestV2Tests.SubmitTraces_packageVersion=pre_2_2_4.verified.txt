@@ -53,7 +53,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -115,7 +116,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -177,7 +179,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -239,7 +242,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -301,7 +305,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -368,7 +373,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -435,7 +441,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -502,7 +509,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -568,7 +576,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -631,7 +640,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -694,7 +704,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -757,7 +768,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -819,7 +831,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -883,7 +896,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -948,7 +962,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -1012,7 +1027,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -1079,7 +1095,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -1142,7 +1159,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -1207,7 +1225,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
@@ -1269,7 +1288,8 @@
       test.working_directory: CommandWorkingDirectory,
       version: 1.0.0,
       _dd.ci.env_vars: {"SYSTEM_TEAMPROJECTID":"TeamProjectId","BUILD_BUILDID":"BuildId","SYSTEM_JOBID":"JobId"},
-      _dd.origin: ciapp-test
+      _dd.origin: ciapp-test,
+      _dd.test.is_user_provided_service: true
     },
     Metrics: {
       process_id: 0,
