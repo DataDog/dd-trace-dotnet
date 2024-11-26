@@ -2,7 +2,8 @@
   "enableDatadog": true,
   "jsonExporterFilePath": "$(CWD)\\results_Samples.FakeDbCommand.windows.net80.json",
   "warmUpCount": 5,
-  "count": 110,
+  "count": 150,
+  "acceptableRelativeWidth": 0.008,
   "services": [
     {
       "name": "Execute",
