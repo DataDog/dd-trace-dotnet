@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=all");

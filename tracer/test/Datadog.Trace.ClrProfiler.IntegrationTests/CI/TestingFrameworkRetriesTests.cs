@@ -94,7 +94,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
             using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                           agent,
-                                          packageVersion: packageVersion);
+                                          packageVersion: packageVersion,
+                                          expectedExitCode: 1);
 
             // 1 Module
             testModules.Should().HaveCount(1);

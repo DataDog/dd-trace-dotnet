@@ -158,7 +158,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       arguments: "--collect:\"XPlat Code Coverage\"",
-                                      packageVersion: packageVersion);
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 1);
 
         // Check the tests, suites and modules count
         Assert.Equal(ExpectedTestCount, tests.Count);

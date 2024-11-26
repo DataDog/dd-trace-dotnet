@@ -110,12 +110,12 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0)
         {
             var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
 
             using var helper = new ProcessHelper(process);
-            return WaitForProcessResult(helper, expectedExitCode: 1);
+            return WaitForProcessResult(helper, expectedExitCode);
         }
 
         public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
