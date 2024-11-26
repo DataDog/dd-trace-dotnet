@@ -136,6 +136,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsSqs,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartExecutionAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions.StartSyncExecutionAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.AwsStepFunctions,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionExecutionMiddlewareInvokeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.GrpcMessageConversionExtensionsToRpcHttpIntegration"
