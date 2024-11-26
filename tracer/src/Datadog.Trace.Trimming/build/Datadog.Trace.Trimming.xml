@@ -109,6 +109,7 @@
    <assembly fullname="Microsoft.Win32.Primitives">
       <type fullname="System.ComponentModel.Win32Exception" />
    </assembly>
+   <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
