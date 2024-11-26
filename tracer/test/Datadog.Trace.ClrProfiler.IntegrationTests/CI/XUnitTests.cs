@@ -72,6 +72,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsNew);
                     targetSpan.Tags.Remove(EarlyFlakeDetectionTags.TestIsRetry);
 
+                    // Remove user provided service tag
+                    targetSpan.Tags.Remove(CommonTags.UserProvidedTestServiceTag);
+
                     // check the name
                     Assert.Equal("xunit.test", targetSpan.Name);
 

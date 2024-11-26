@@ -198,6 +198,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
 
+                            // Remove user provided service tag
+                            targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
                             // check the name
                             Assert.Equal("mstestv2.test", targetTest.Name);
 
