@@ -5,6 +5,8 @@
 
 #if NET6_0_OR_GREATER
 
+#nullable enable
+
 using System;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -12,8 +14,6 @@ using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 using InlineIL;
 using static InlineIL.IL.Emit;
-
-#nullable enable
 
 namespace Datadog.Trace.Iast.Aspects.System.Runtime;
 
@@ -38,7 +38,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted1)}");
         }
     }
 
@@ -61,7 +61,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
         }
     }
 
@@ -82,7 +82,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
         }
     }
 
@@ -101,7 +101,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted4)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted5)}");
         }
     }
 
@@ -120,7 +120,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendLiteral)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendLiteral)}");
         }
     }
 
@@ -139,7 +139,7 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(ToStringAndClear)}");
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(ToStringAndClear)}");
         }
 
         return result;
