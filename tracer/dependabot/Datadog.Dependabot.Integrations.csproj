@@ -276,7 +276,7 @@
     <!-- Integration: ServiceStack.Redis -->
     <!--    Assembly: ServiceStack.Redis -->
     <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/8.4.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="8.4.0" />
+    <PackageReference Include="ServiceStack.Redis" Version="8.5.0" />
 
     <!-- Integration: StackExchange.Redis -->
     <!--    Assembly: StackExchange.Redis -->
