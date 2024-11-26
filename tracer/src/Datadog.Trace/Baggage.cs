@@ -32,6 +32,11 @@ internal sealed class Baggage : IDictionary<string, string?>
     {
     }
 
+    public Baggage(int capacity)
+    {
+        _items = new List<KeyValuePair<string, string?>>(capacity);
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Baggage"/> class using the specified items.
     /// </summary>
@@ -153,6 +158,19 @@ internal sealed class Baggage : IDictionary<string, string?>
         lock (items)
         {
             AddOrReplaceInternal(items, key, value);
+        }
+    }
+
+    public void AddOrReplace(IEnumerable<KeyValuePair<string, string>> sourceItems)
+    {
+        var destinationItems = EnsureListInitialized();
+
+        lock (destinationItems)
+        {
+            foreach (var sourceItem in sourceItems)
+            {
+                AddOrReplaceInternal(destinationItems, sourceItem.Key, sourceItem.Value);
+            }
         }
     }
 

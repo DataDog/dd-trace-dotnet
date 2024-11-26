@@ -1281,7 +1281,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal object CreateInstance(object instance)
+            internal object CreateInstance(object? instance)
             {
                 if (_activator is null)
                 {
