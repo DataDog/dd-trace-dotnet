@@ -426,7 +426,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
     #endif
-}
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
