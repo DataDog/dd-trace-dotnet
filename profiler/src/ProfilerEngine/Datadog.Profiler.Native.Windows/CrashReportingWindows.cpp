@@ -6,6 +6,7 @@
 #include "CrashReportingWindows.h"
 #include "TlHelp32.h"
 #include "DbgHelp.h"
+#include "OpSysTools.h"
 #include "Psapi.h"
 
 #include <shared/src/native-src/string.h>
@@ -75,15 +76,8 @@ std::vector<std::pair<int32_t, std::string>> CrashReportingWindows::GetThreads()
 
                 if (thread.IsValid())
                 {
-                    std::string threadName;
-                    PWSTR description;
-
-                    if (SUCCEEDED(GetThreadDescription(thread, &description)))
-                    {
-                        threadName = shared::ToString(description);
-                    }
-
-                    threads.push_back({ threadEntry.th32ThreadID, std::move(threadName) });
+                    auto wThreadName = OpSysTools::GetNativeThreadName(thread);
+                    threads.push_back({ threadEntry.th32ThreadID, shared::ToString(wThreadName) });
                 }
             }
         } while (Thread32Next(threadSnapshot, &threadEntry));
