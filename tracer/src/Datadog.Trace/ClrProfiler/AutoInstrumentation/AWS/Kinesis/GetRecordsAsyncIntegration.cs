@@ -12,7 +12,6 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
@@ -34,7 +33,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     public class GetRecordsAsyncIntegration
     {
         private const string Operation = "GetRecords";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<GetRecordsAsyncIntegration>();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -48,17 +46,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static CallTargetState OnMethodBegin<TTarget, TGetRecordsRequest>(TTarget instance, TGetRecordsRequest request, CancellationToken cancellationToken)
             where TGetRecordsRequest : IGetRecordsRequest, IDuckType
         {
-            Log.Warning("GetRecordsAsync onmethodbegin 1");
             if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            Log.Warning("GetRecordsAsync onmethodbegin 2");
-
             var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
 
             string? streamName = null;
+            // clean this up before commit
             var arnComponents = request.StreamARN.Split('/');
             if (arnComponents.Length == 2)
             {
@@ -69,8 +65,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             {
                 tags.StreamName = streamName;
             }
-
-            Log.Warning("GetRecordsAsync onmethodbegin 3");
 
             return new CallTargetState(scope, streamName);
         }
@@ -88,51 +82,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
             where TResponse : IGetRecordsResponse, IDuckType
         {
-            Log.Warning("GetRecordsAsync onasyncmethodend 1");
-
-            if (response.Instance != null)
-            {
-                Log.Warning("GetRecordsAsync has instance");
-                if (response.Records is { Count: > 0 })
-                {
-                    Log.Warning<int>("GetRecordsAsync has count {Count}", response.Records.Count);
-                    if (state is { State: not null })
-                    {
-                        Log.Warning("GetRecordsAsync state not null");
-                    }
-                }
-                else
-                {
-                    Log.Warning("GetRecordsAsync has zero count");
-                }
-            }
-
             if (response.Instance != null && response.Records is { Count: > 0 } && state is { State: not null, Scope.Span: { } span })
             {
-                Log.Warning("GetRecordsAsync onasyncmethodend 2");
                 var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
                 if (dataStreamsManager is { IsEnabled: true })
                 {
-                    Log.Warning("GetRecordsAsync onasyncmethodend 3");
                     var edgeTags = new[] { "direction:in", $"topic:{(string)state.State}", "type:kinesis" };
                     foreach (var o in response.Records)
                     {
-                        Log.Warning("GetRecordsAsync onasyncmethodend 4");
                         var record = o.DuckCast<IRecord>();
                         if (record == null)
                         {
-                            Log.Warning("GetRecordsAsync onasyncmethodend 5");
                             continue; // should not happen
                         }
 
-                        Log.Warning("GetRecordsAsync onasyncmethodend 6");
                         span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                        Log.Warning("GetRecordsAsync onasyncmethodend 7");
                     }
                 }
             }
 
-            Log.Warning("GetRecordsAsync onasyncmethodend 8");
             state.Scope.DisposeWithException(exception);
             return response;
         }
