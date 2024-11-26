@@ -30,6 +30,7 @@ const shared::WSTRING default_exclude_assemblies[]{
     WStr("dd-trace.exe"),
     WStr("devenv.exe"),
     WStr("iisexpresstray.exe"),
+    WStr("InetMgr.exe"),
     WStr("Microsoft.ServiceHub.Controller.exe"),
     WStr("MSBuild.exe"),
     WStr("MsDtsSrvr.exe"),
