@@ -114,7 +114,7 @@ uint64_t Write(std::uint8_t* buffer, std::uint64_t offset, T const& value)
     return offset + sizeof(T);
 }
 
-std::pair<std::unique_ptr<std::uint8_t[]>, std::size_t> CreateAllockationTickEvent(
+std::pair<std::unique_ptr<std::uint8_t[]>, std::size_t> CreateAllocationTickEvent(
     WCHAR const* typeName,
     std::uint32_t kind,
     std::uint64_t allocationAmount,
@@ -153,7 +153,7 @@ TEST(ClrEventsParserTest, AllocationTickV4)
 
     auto typeName = WStr("MyType");
 
-    auto [buffer, eventSize] = CreateAllockationTickEvent(typeName, 0x0, 42, 12, 123456789, 999);
+    auto [buffer, eventSize] = CreateAllocationTickEvent(typeName, 0x0, 42, 12, 123456789, 999);
 
     EXPECT_CALL(mockAllocationListener, OnAllocation(0, 12, GenericStrEq(typeName), 123456789, 999, 42)).Times(1);
 

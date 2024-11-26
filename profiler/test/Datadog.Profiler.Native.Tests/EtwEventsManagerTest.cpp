@@ -81,7 +81,7 @@ TEST(EtwEventsManagerTest, AllocationTickEventWithCallstack)
     payload->AllocationAmount = 21;
     payload->AllocationKind = 0x0;
     payload->ClrInstanceId = 1;
-    payload->AllocationAmount64 = 42;
+    payload->AllocationAmount64 = 21;
     memcpy(&payload->FirstCharInName, typeName, typeNbBytes);
     (&payload->FirstCharInName)[typeNbBytes] = WStr('\0');
 
@@ -120,7 +120,7 @@ TEST(EtwEventsManagerTest, AllocationTickEventWithoutCallstack)
     payload->AllocationAmount = 21;
     payload->AllocationKind = 0x0;
     payload->ClrInstanceId = 1;
-    payload->AllocationAmount64 = 42;
+    payload->AllocationAmount64 = 21;
     memcpy(&payload->FirstCharInName, typeName, typeNbBytes);
     (&payload->FirstCharInName)[typeNbBytes] = WStr('\0');
 

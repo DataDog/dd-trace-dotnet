@@ -48,7 +48,7 @@ public:
         shared::pmr::memory_resource* memoryResource);
 
     // IContentionListener implementation
-    void OnContention(std::chrono::nanoseconds contentionDurationNs) override;
+    void OnContention(std::chrono::nanoseconds contentionDuration) override;
     void OnContention(
         std::chrono::nanoseconds timestamp,
         uint32_t threadId,
