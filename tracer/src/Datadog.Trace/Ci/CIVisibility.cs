@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -134,6 +135,11 @@ namespace Datadog.Trace.Ci
             {
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "false";
+            }
+            else
+            {
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "true";
             }
 
             // Normalize the service name
@@ -203,6 +209,11 @@ namespace Datadog.Trace.Ci
             {
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "false";
+            }
+            else
+            {
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "true";
             }
 
             // Normalize the service name
