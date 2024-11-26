@@ -108,7 +108,8 @@ partial class Build
            .Requires(() => TargetBranch)
            .Executes(async () =>
            {
-               var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, include both the original code and your recommended change. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
+               var extensions = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp" };
+               var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
                // This assumes that we're running in a pull request, so we compare against the target branch
                var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
 
@@ -129,6 +130,11 @@ partial class Build
                string changesText = string.Empty;
                foreach (var file in pullRequestFiles)
                {
+                   if (!extensions.Any(ext => file.FileName.EndsWith(ext)))
+                   {
+                       continue;
+                   }
+
                    changesText += ($"Filename: {file.FileName}" + Environment.NewLine);
                    changesText += ($"Changes:\n{file.Patch}");
                    changesText += (new string('-', 40)) + Environment.NewLine + Environment.NewLine; 

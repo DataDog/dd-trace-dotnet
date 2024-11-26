@@ -15,13 +15,17 @@ public class OpenAiApiCall
     public static async Task<string> GetResponseAsync(string prompt, string key)
     {
         var url = "https://api.openai.com/v1/chat/completions";
+        int maxTokensForResponse = 10000;
+
         var requestContent = new
         {
             model = "gpt-4o",
-            messages = new[] {
-               new { role = "system", content = "You are a helpful assistant." },
-               new { role = "user", content = prompt }
-           }
+            messages = new[] 
+            {
+                new { role = "system", content = "You are a helpful assistant." },
+                new { role = "user", content = prompt }
+            },
+            max_tokens = maxTokensForResponse
         };
 
         var jsonContent = JsonSerializer.Serialize(requestContent);
