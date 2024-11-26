@@ -33,9 +33,16 @@ const std::string Sample::ObjectGenerationLabel = "object generation";
 
 // network requests related labels
 const std::string Sample::RequestUrlLabel = "request url";
-const std::string Sample::RequestTimeStampLabel = "request start time";
+const std::string Sample::RequestTimeStampLabel = "start_timestamp_ns";
 const std::string Sample::RequestStatusCodeLabel = "request status code";
 const std::string Sample::RequestErrorLabel = "request error";
+const std::string Sample::RequestRedirectUrlLabel = "redirect url";
+const std::string Sample::RequestDnsDurationLabel = "dns.duration";
+const std::string Sample::RequestDnsSuccessLabel = "dns.success";
+const std::string Sample::RequestHandshakeDurationLabel = "sec.duration";
+const std::string Sample::RequestHandshakeErrorLabel = "sec.error";
+const std::string Sample::RequestSocketDurationLabel = "socket.duration";
+const std::string Sample::RequestResponseThreadIdLabel = "response.thread_id";
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

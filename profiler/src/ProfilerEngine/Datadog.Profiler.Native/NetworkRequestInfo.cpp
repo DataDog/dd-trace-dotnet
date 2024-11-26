@@ -11,4 +11,11 @@ NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
     AppDomainId = 0;
     LocalRootSpanID = 0;
     SpanID = 0;
+    DnsStartTime = 0;
+    DnsDuration = 0;
+    DnsResolutionSuccess = false;
+    HandshakeStartTime = 0;
+    HandshakeDuration = 0;
+    SocketConnectStartTime = 0;
+    SocketDuration = 0;
 }

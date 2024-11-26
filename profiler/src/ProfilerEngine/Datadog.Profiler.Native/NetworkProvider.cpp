@@ -125,7 +125,20 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
     RawNetworkSample rawSample;
     FillRawSample(rawSample, requestInfo->second, timestamp);
     rawSample.StatusCode = statusCode;
-    rawSample.Error = std::move(requestInfo->second.Error);
+    if (!requestInfo->second.Error.empty())
+    {
+        rawSample.Error = std::move(requestInfo->second.Error);
+    }
+
+    if (!requestInfo->second.RedirectUrl.empty())
+    {
+        rawSample.RedirectUrl = std::move(requestInfo->second.RedirectUrl);
+    }
+
+    if (!requestInfo->second.HandshakeError.empty())
+    {
+        rawSample.HandshakeError = std::move(requestInfo->second.HandshakeError);
+    }
 
     Add(std::move(rawSample));
 
@@ -150,6 +163,101 @@ void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, s
     requestInfo->second.Error = std::move(message);
 }
 
+void NetworkProvider::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::string redirectUrl)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.RedirectUrl = std::move(redirectUrl);
+}
+
+void NetworkProvider::OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+    requestInfo->second.DnsStartTime = timestamp;
+}
+void NetworkProvider::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, bool success)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+    requestInfo->second.DnsDuration = timestamp - requestInfo->second.DnsStartTime;
+    requestInfo->second.DnsResolutionSuccess = success;
+}
+
+void NetworkProvider::OnConnectStart(uint64_t timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.SocketConnectStartTime = timestamp;
+}
+
+void NetworkProvider::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+    requestInfo->second.SocketDuration = timestamp - requestInfo->second.SocketConnectStartTime;
+}
+
+void NetworkProvider::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+    requestInfo->second.SocketDuration = timestamp - requestInfo->second.SocketConnectStartTime;
+    requestInfo->second.Error = std::move(message);
+}
+
+
+
 void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp)
 {
     sample.StartTimestamp = info.StartTimestamp;
@@ -162,6 +270,11 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
     sample.ThreadInfo = std::move(info.StartThreadInfo);
     auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
     sample.EndThreadId = currentThreadInfo->GetProfileThreadId();
+    sample.DnsStartTimestamp = info.DnsStartTime;
+    sample.DnsDuration = info.DnsDuration;
+    sample.DnsSuccess = info.DnsResolutionSuccess;
+    sample.HandshakeDuration = info.HandshakeDuration;
+    sample.SocketConnectDuration = info.SocketDuration;
 }
 
 

@@ -12,6 +12,14 @@ public:
     virtual void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url) = 0;
     virtual void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode) = 0;
     virtual void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) = 0;
+    virtual void OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::string redirectUrl) = 0;
+    virtual void OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, bool Success) = 0;
+    virtual void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) = 0;
+
+
 
     virtual ~INetworkListener() = default;
 };

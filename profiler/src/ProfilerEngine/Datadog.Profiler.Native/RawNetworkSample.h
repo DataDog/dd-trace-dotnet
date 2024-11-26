@@ -18,7 +18,14 @@ public:
         StartTimestamp(other.StartTimestamp),
         StatusCode(other.StatusCode),
         Error(std::move(other.Error)),
-        EndThreadId(std::move(other.EndThreadId))
+        EndThreadId(std::move(other.EndThreadId)),
+        RedirectUrl(std::move(other.RedirectUrl)),
+        DnsStartTimestamp(other.DnsStartTimestamp),
+        DnsDuration(other.DnsDuration),
+        DnsSuccess(other.DnsSuccess),
+        HandshakeDuration(other.HandshakeDuration),
+        HandshakeError(std::move(other.HandshakeError)),
+        SocketConnectDuration(other.SocketConnectDuration)
     {
     }
 
@@ -32,6 +39,13 @@ public:
             StatusCode = other.StatusCode;
             Error = std::move(other.Error);
             EndThreadId = std::move(other.EndThreadId);
+            RedirectUrl = std::move(other.RedirectUrl);
+            DnsStartTimestamp = other.DnsStartTimestamp;
+            DnsDuration = other.DnsDuration;
+            DnsSuccess = other.DnsSuccess;
+            HandshakeDuration = other.HandshakeDuration;
+            HandshakeError = std::move(other.HandshakeError);
+            SocketConnectDuration = other.SocketConnectDuration;
         }
         return *this;
     }
@@ -48,6 +62,25 @@ public:
         {
             sample->AddLabel(Label(Sample::RequestErrorLabel, Error));
         }
+        if (!RedirectUrl.empty())
+        {
+            sample->AddLabel(Label(Sample::RequestRedirectUrlLabel, RedirectUrl));
+        }
+        if (DnsDuration != 0)
+        {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration));
+            sample->AddLabel(Label(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
+        }
+        if (HandshakeDuration != 0)
+        {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration));
+        }
+        if (!HandshakeError.empty())
+        {
+            sample->AddLabel(Label(Sample::RequestHandshakeErrorLabel, HandshakeError));
+        }
+        sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration));
+        sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
     }
 
     std::string Url;
@@ -55,5 +88,16 @@ public:
     int32_t StatusCode;
     std::string Error;
     std::string EndThreadId;
+    std::string RedirectUrl;
+
+    uint64_t DnsStartTimestamp;
+    uint64_t DnsDuration;
+    bool DnsSuccess;
+
+    uint64_t HandshakeDuration;
+    std::string HandshakeError;
+
+    uint64_t SocketConnectDuration;
+
     // TODO: check with BE if we also need the thread name
 };

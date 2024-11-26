@@ -69,6 +69,9 @@ private:
         LPCGUID pActivityId,
         LPCGUID pRelatedActivityId
     );
+    void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId);
+    void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId);
+    void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
 
     void ParseNameResolutionEvent(
         uint64_t timestamp,
@@ -80,6 +83,8 @@ private:
         LPCGUID pActivityId,
         LPCGUID pRelatedActivityId
     );
+    void OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData);
+    void OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData, bool success);
 
     void ParseNetSecurityEvent(
         uint64_t timestamp,

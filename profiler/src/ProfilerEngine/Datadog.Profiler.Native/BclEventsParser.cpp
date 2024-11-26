@@ -194,6 +194,7 @@ void BclEventsParser::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, L
 
 void BclEventsParser::OnRequestFailedDetailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+   // we don't need the exception callstack
 }
 
 void BclEventsParser::OnConnectionEstablished(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
@@ -242,6 +243,20 @@ void BclEventsParser::OnResponseContentStop(uint64_t timestamp, LPCGUID pActivit
 
 void BclEventsParser::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // string redirectUrl
+    ULONG offset = 0;
+    WCHAR* redirectUrl = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+
+    if (redirectUrl == nullptr)
+    {
+        return;
+    }
+
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnRedirect(timestamp, pActivityId, shared::ToString(shared::WSTRING(redirectUrl)));
+    }
+
 }
 
 
@@ -257,8 +272,63 @@ void BclEventsParser::ParseSocketsEvent(
     LPCGUID pRelatedActivityId
 )
 {
-    // Method implementation goes here
+    switch (id)
+    {
+    case 1: // ConnectStart
+        OnConnectStart(timestamp, pActivityId, pRelatedActivityId);
+        break;
+    case 2: // ConnectStop
+        OnConnectStop(timestamp, pActivityId, pRelatedActivityId);
+        break;
+    case 3: // ConnectFailed
+        OnConnectFailed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        break;
+
+    // the following events are related to incoming requests that we don't monitor
+    //
+    case 4: // AcceptStart
+        break;
+    case 5: // AcceptStop
+        break;
+    case 6: // AcceptFailed
+        break;
+    default:
+        break;
+    }
 }
+
+void BclEventsParser::OnConnectStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnConnectStart(timestamp, pActivityId);
+    }
+}
+void BclEventsParser::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnConnectStop(timestamp, pActivityId);
+    }
+}
+
+void BclEventsParser::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+{
+    // string exception message
+
+    ULONG offset = 0;
+    WCHAR* message = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+    if (message == nullptr)
+    {
+        return;
+    }
+
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnConnectFailed(timestamp, pActivityId, shared::ToString(shared::WSTRING(message)));
+    }
+}
+
 
 void BclEventsParser::ParseNameResolutionEvent(
     uint64_t timestamp,
@@ -271,8 +341,37 @@ void BclEventsParser::ParseNameResolutionEvent(
     LPCGUID pRelatedActivityId
 )
 {
-    // Method implementation goes here
+    switch (id)
+    {
+        case 1: // DnsResolutionStart
+            OnDnsResolutionStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+            break;
+        case 2: // DnsResolutionStop
+            OnDnsResolutionStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData, true);
+            break;
+        case 3: // DnsResolutionFailed
+            OnDnsResolutionStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData, false);
+            break;
+        default:
+            break;
+    }
 }
+
+void BclEventsParser::OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnDnsResolutionStart(timestamp, pActivityId);
+    }
+}
+void BclEventsParser::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData, bool success)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnDnsResolutionStop(timestamp, pActivityId, success);
+    }
+}
+
 
 void BclEventsParser::ParseNetSecurityEvent(
     uint64_t timestamp,

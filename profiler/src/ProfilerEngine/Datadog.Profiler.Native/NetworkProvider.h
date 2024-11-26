@@ -51,6 +51,12 @@ public:
     void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url) override;
     void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
     void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
+    void OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::string redirectUrl) override;
+    void OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId) override;
+    void OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, bool Success) override;
+    void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId) override;
+    void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId) override;
+    void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
 
 private:
     bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);

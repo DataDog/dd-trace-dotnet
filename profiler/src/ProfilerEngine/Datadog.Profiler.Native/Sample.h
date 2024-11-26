@@ -174,6 +174,13 @@ public:
     static const std::string RequestTimeStampLabel;
     static const std::string RequestStatusCodeLabel;
     static const std::string RequestErrorLabel;
+    static const std::string RequestRedirectUrlLabel;
+    static const std::string RequestDnsDurationLabel;
+    static const std::string RequestDnsSuccessLabel;
+    static const std::string RequestHandshakeDurationLabel;
+    static const std::string RequestHandshakeErrorLabel;
+    static const std::string RequestSocketDurationLabel;
+    static const std::string RequestResponseThreadIdLabel;
 
 private:
     uint64_t _timestamp;
