@@ -25,7 +25,9 @@ public:
         DnsSuccess(other.DnsSuccess),
         HandshakeDuration(other.HandshakeDuration),
         HandshakeError(std::move(other.HandshakeError)),
-        SocketConnectDuration(other.SocketConnectDuration)
+        SocketConnectDuration(other.SocketConnectDuration),
+        ReqRespStartTimestamp(other.ReqRespStartTimestamp),
+        ReqRespDuration(other.ReqRespDuration)
     {
     }
 
@@ -46,6 +48,8 @@ public:
             HandshakeDuration = other.HandshakeDuration;
             HandshakeError = std::move(other.HandshakeError);
             SocketConnectDuration = other.SocketConnectDuration;
+            ReqRespStartTimestamp = other.ReqRespStartTimestamp;
+            ReqRespDuration = other.ReqRespDuration;
         }
         return *this;
     }
@@ -79,8 +83,15 @@ public:
         {
             sample->AddLabel(Label(Sample::RequestHandshakeErrorLabel, HandshakeError));
         }
-        sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration));
+        if (SocketConnectDuration != 0)
+        {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration));
+        }
         sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
+        if (ReqRespDuration != 0)  // could be 0 in case of error
+        {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestResponseDurationLabel, ReqRespDuration));
+        }
     }
 
     std::string Url;
@@ -98,6 +109,9 @@ public:
     std::string HandshakeError;
 
     uint64_t SocketConnectDuration;
+
+    uint64_t ReqRespStartTimestamp;
+    uint64_t ReqRespDuration;
 
     // TODO: check with BE if we also need the thread name
 };

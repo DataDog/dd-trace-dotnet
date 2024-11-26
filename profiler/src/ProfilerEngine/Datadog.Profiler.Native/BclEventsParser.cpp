@@ -211,6 +211,10 @@ void BclEventsParser::OnRequestLeftQueue(uint64_t timestamp, LPCGUID pActivityId
 
 void BclEventsParser::OnRequestHeadersStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnRequestHeaderStart(timestamp, pActivityId);
+    }
 }
 
 void BclEventsParser::OnRequestHeadersStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
@@ -239,6 +243,10 @@ void BclEventsParser::OnResponseContentStart(uint64_t timestamp, LPCGUID pActivi
 
 void BclEventsParser::OnResponseContentStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnRequestContentStop(timestamp, pActivityId);
+    }
 }
 
 void BclEventsParser::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)

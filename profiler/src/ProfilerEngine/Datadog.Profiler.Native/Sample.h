@@ -181,6 +181,7 @@ public:
     static const std::string RequestHandshakeErrorLabel;
     static const std::string RequestSocketDurationLabel;
     static const std::string RequestResponseThreadIdLabel;
+    static const std::string RequestResponseDurationLabel;
 
 private:
     uint64_t _timestamp;

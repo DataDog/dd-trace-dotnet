@@ -23,6 +23,8 @@ public:
     AppDomainID AppDomainId;
     Callstack StartCallStack;
     std::shared_ptr<ManagedThreadInfo> StartThreadInfo;
+    uint64_t ReqRespStartTime;
+    uint64_t ReqRespDuration;
 
     // DNS
     uint64_t DnsStartTime;

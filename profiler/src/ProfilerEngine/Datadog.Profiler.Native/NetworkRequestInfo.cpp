@@ -18,4 +18,6 @@ NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
     HandshakeDuration = 0;
     SocketConnectStartTime = 0;
     SocketDuration = 0;
+    ReqRespStartTime = 0;
+    ReqRespDuration = 0;
 }

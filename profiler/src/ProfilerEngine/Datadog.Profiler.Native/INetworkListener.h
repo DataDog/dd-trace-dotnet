@@ -18,8 +18,8 @@ public:
     virtual void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId) = 0;
     virtual void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId) = 0;
     virtual void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) = 0;
-
-
+    virtual void OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId) = 0;
 
     virtual ~INetworkListener() = default;
 };

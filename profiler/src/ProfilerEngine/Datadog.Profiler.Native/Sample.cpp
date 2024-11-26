@@ -43,6 +43,7 @@ const std::string Sample::RequestHandshakeDurationLabel = "sec.duration";
 const std::string Sample::RequestHandshakeErrorLabel = "sec.error";
 const std::string Sample::RequestSocketDurationLabel = "socket.duration";
 const std::string Sample::RequestResponseThreadIdLabel = "response.thread_id";
+const std::string Sample::RequestResponseDurationLabel = "response.duration";
 
 // TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created

@@ -57,6 +57,8 @@ public:
     void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId) override;
     void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId) override;
     void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
+    void OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivityId) override;
+    void OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId) override;
 
 private:
     bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);

@@ -256,6 +256,37 @@ void NetworkProvider::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, s
     requestInfo->second.Error = std::move(message);
 }
 
+void NetworkProvider::OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.ReqRespStartTime = timestamp;
+}
+
+void NetworkProvider::OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.ReqRespDuration = timestamp - requestInfo->second.ReqRespStartTime;
+}
 
 
 void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp)
@@ -275,6 +306,7 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
     sample.DnsSuccess = info.DnsResolutionSuccess;
     sample.HandshakeDuration = info.HandshakeDuration;
     sample.SocketConnectDuration = info.SocketDuration;
+    sample.ReqRespDuration = info.ReqRespDuration;
 }
 
 
