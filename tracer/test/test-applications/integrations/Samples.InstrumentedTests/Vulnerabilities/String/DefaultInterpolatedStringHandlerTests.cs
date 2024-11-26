@@ -71,6 +71,15 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     }
     
     [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormattedTObject_GetString_Vulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)TaintedValue);
+
+        AssertTainted(test.ToStringAndClear());
+    }
+    
+    [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendLiteral_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
@@ -114,6 +123,14 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         var number = 5;
         var str = $"Hello {UntaintedValue} {number}";
         AssertNotTainted(str);
+    }
+    
+    [Fact]
+    public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValueAsObject_GetString_Vulnerable()
+    {
+        var number = 5;
+        var str = $"Hello {(object)TaintedValue} {number}";
+        AssertTainted(str);
     }
     
     [Fact]
