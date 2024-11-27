@@ -45,11 +45,12 @@ public class DefaultInterpolatedStringHandlerAspect
     /// <summary>
     /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T, String) aspect
     /// </summary>
+    /// <typeparam name="T">The first generic type parameter.</typeparam>
     /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
     /// <param name="value"> the string value </param>
     /// <param name="alignment"> the alignment value </param>
     [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0,System.Int32)")]
-    public static void AppendFormatted2(ref DefaultInterpolatedStringHandler target, object value, int alignment)
+    public static void AppendFormatted2<T>(ref DefaultInterpolatedStringHandler target, T value, int alignment)
     {
         target.AppendFormatted(value, alignment);
         try
@@ -92,7 +93,7 @@ public class DefaultInterpolatedStringHandlerAspect
     /// <typeparam name="T">The first generic type parameter.</typeparam>
     /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
     /// <param name="value"> the string value </param>
-    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted<!!0>(!!0)")]
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0)")]
     public static void AppendFormatted4<T>(ref DefaultInterpolatedStringHandler target, T value)
     {
         target.AppendFormatted<T>(value);
