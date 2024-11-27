@@ -15,13 +15,11 @@ namespace Samples.HotChocolate
     public class Query
     {
         public Book GetBook() =>
-    new Book
-    {
-        Title = "C# in depth.",
-        Author = new Author
+            new() { Title = "C# in depth.", Author = new Author { Name = "Jon Skeet" } };
+
+        public string ThrowException()
         {
-            Name = "Jon Skeet"
+            throw new System.Exception("Something went wrong");
         }
-    };
     }
 }
