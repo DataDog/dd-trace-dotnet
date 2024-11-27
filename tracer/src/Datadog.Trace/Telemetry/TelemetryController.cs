@@ -11,6 +11,8 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
@@ -117,6 +119,11 @@ internal class TelemetryController : ITelemetryController
     {
         _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
         _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
+    }
+
+    public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
+    {
+        // CI Vis records the settings _directly_ in the global config so don't need to record them again here
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
