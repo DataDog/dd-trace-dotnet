@@ -25,60 +25,65 @@ internal static class GitCommandManager
     private static readonly Regex DiffHeaderRegex = new Regex(@"^diff --git a/(?<file>.+) b/(?<file2>.+)$");
     private static readonly Regex LineChangeRegex = new Regex(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@");
 
-    public static List<string> GetGitDiffFiles(string folder, string baseCommit)
+    public static FileCoverageInfo[] GetGitDiffFiles(string folder)
     {
-        List<string> res = new List<string>();
         try
         {
             // Retrieve PR list of modified files
             var modifiedFiles = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     cmd: "git",
-                    arguments: $"diff --name-only {baseCommit}",
+                    arguments: $"diff --name-only",
                     workingDirectory: folder,
                     useWhereIsIfFileNotFound: true));
             if (modifiedFiles?.ExitCode != 0)
             {
                 Log.Information("Error calling git diff");
-                return res;
+                return Array.Empty<FileCoverageInfo>();
             }
 
-            res = modifiedFiles.Output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).ToList();
+            var res = modifiedFiles.Output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).Select(s => new FileCoverageInfo(s)).ToArray();
+            Log.Information<int>("Modified files: {Files}", res.Length);
+            foreach (var file in res)
+            {
+                Log.Information("  {File} ...", file.Path);
+            }
+
+            return res;
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error calling git diff");
         }
 
-        return res;
+        return Array.Empty<FileCoverageInfo>();
     }
 
-    public static List<FileCoverageInfo> GetGitDiffFilesAndLines(string folder, string baseCommit)
+    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string folder, string baseCommit)
     {
-        List<FileCoverageInfo> res = new List<FileCoverageInfo>();
         try
         {
             // Retrieve PR list of modified files
             var modifiedFiles = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     cmd: "git",
-                    arguments: $"diff --name-only {baseCommit}",
+                    arguments: $"diff -U0 --word-diff=porcelain {baseCommit}",
                     workingDirectory: folder,
                     useWhereIsIfFileNotFound: true));
             if (modifiedFiles?.ExitCode != 0)
             {
                 Log.Information("Error calling git diff");
-                return res;
+                return Array.Empty<FileCoverageInfo>();
             }
 
-            res = ParseGitDiff(modifiedFiles.Output);
+            return ParseGitDiff(modifiedFiles.Output).ToArray();
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error calling git diff");
         }
 
-        return res;
+        return Array.Empty<FileCoverageInfo>();
 
         // Parses the Git diff output to extract modified files and their changed lines
         static List<FileCoverageInfo> ParseGitDiff(string diffOutput)
@@ -105,6 +110,8 @@ internal static class GitCommandManager
                     }
 
                     currentFile = new FileCoverageInfo(headerMatch.Groups["file"].Value);
+                    Log.Information("Processing {File} ...", currentFile.Path);
+
                     continue;
                 }
 
@@ -120,6 +127,8 @@ internal static class GitCommandManager
                     }
 
                     modifiedLines.Add(new Tuple<int, int>(startLine, startLine + lineCount));
+                    var range = modifiedLines[modifiedLines.Count - 1];
+                    Log.Information<int, int>("  {From}..{To} ...", range.Item1, range.Item2);
                     continue;
                 }
             }
