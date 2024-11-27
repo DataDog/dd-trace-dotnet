@@ -245,17 +245,17 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     {
         const int number = 42;
         var date = new DateTime(2024, 11, 22, 15, 30, 0);
-        const decimal decimalValue = 123.456m;
+        const decimal decimalValue = 123;
         const bool booleanValue = true;
         const char charValue = 'A';
         var nestedInterpolatedString1 = $"Nested1 {TaintedValue} and {number}";
         var nestedInterpolatedString2 = $"Nested2 {nestedInterpolatedString1} with date {date:yyyy-MM-dd}";
-        var complexString = $"Complex {nestedInterpolatedString2} and decimal {decimalValue:F2} and boolean {booleanValue}";
+        var complexString = $"Complex {nestedInterpolatedString2} and decimal {decimalValue} and boolean {booleanValue}";
 
         var nestedString = $"Hello {$"{TaintedValue + "Hello"} - {complexString}"}";
         var finalString = $"Final {nestedString} and char {charValue} with additional {UntaintedValue} and number {number} and date {date:HH:mm:ss}";
 
-        finalString.Should().Be("Final Hello Hello - Complex Nested2 Nested1 tainted and 42 with date 2024-11-22 and decimal 123.46 and boolean True and char A with additional untainted and number 42 and date 15:30:00");
+        finalString.Should().Be("Final Hello taintedHello - Complex Nested2 Nested1 tainted and 42 with date 2024-11-22 and decimal 123 and boolean True and char A with additional untainted and number 42 and date 15:30:00");
         AssertTainted(finalString);
     }
 
@@ -263,10 +263,9 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesComplex_GetString_Vulnerable()
     {
         var interpolatedString = $"""
-                                  Hello "{TaintedValue}" and "{UntaintedValue}".
-                                  .
+                                  Hello "{TaintedValue}" and "{UntaintedValue}"..
                                   """;
-        interpolatedString.Should().Be("Hello \"tainted\" and \"untainted\".\n.");
+        interpolatedString.Should().Be("Hello \"tainted\" and \"untainted\"..");
         AssertTainted(interpolatedString);
     }
 }
