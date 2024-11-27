@@ -609,9 +609,9 @@ namespace Datadog.Trace.Configuration
             public const string TotalFlakyRetryCount = "DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT";
 
             /// <summary>
-            /// Configuration key for enabling Test Impat Analysis.
+            /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
-            public const string TestImpactAnalysis = "DD_CIVISIBILITY_TEST_IMPACT_ANALYSIS";
+            public const string ImpactedTestsDetection = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION";
         }
 
         /// <summary>

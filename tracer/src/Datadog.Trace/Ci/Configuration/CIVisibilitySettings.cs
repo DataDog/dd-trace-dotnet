@@ -122,7 +122,7 @@ namespace Datadog.Trace.Ci.Configuration
             TotalFlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount).AsInt32(defaultValue: 1_000, validator: val => val >= 1) ?? 1_000;
 
             // Test Impact Analysis enablement
-            TestImpactAnalysisEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.TestImpactAnalysis).AsBool(false);
+            ImpactedTestsDetection = config.WithKeys(ConfigurationKeys.CIVisibility.ImpactedTestsDetection).AsBool(false);
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// </summary>
         public int TotalFlakyRetryCount { get; private set; }
 
-        public bool TestImpactAnalysisEnabled { get; private set; }
+        public bool ImpactedTestsDetection { get; private set; }
 
         /// <summary>
         /// Gets the tracer settings
