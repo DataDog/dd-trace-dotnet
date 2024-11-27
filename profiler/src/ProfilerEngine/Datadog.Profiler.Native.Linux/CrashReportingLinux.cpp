@@ -132,7 +132,8 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), ElfBuildId(path.data())});
+        auto buildId = ElfBuildId(path.data());
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), std::move(buildId) });
     }
 
     return modules;

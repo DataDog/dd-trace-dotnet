@@ -17,7 +17,9 @@
 
 extern "C"
 {
+#ifdef LINUX
 #include "datadog/blazesym.h"
+#endif
 #include "datadog/common.h"
 #include "datadog/profiling.h"
 }
@@ -39,7 +41,7 @@ class ElfBuildId
 {
 private:
     struct ElfBuildIdImpl {
-        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}
+        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}   
         ElfBuildIdImpl(const char* path) : _ptr{nullptr}, _size{0} {
             if (path != nullptr)
             {
