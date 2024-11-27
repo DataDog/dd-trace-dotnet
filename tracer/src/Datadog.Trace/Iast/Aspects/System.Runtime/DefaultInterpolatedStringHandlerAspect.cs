@@ -43,16 +43,37 @@ public class DefaultInterpolatedStringHandlerAspect
     }
 
     /// <summary>
-    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T, String) aspect
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(String, Int32, String) aspect
     /// </summary>
-    /// <typeparam name="T">The first generic type parameter.</typeparam>
     /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
     /// <param name="value"> the string value </param>
     /// <param name="alignment"> the alignment value </param>
-    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0,System.Int32)")]
-    public static void AppendFormatted2<T>(ref DefaultInterpolatedStringHandler target, T value, int alignment)
+    /// <param name="format"> the format value </param>
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.String,System.Int32,System.String)")]
+    public static void AppendFormatted2(ref DefaultInterpolatedStringHandler target, string? value, int alignment, string? format)
     {
-        target.AppendFormatted(value, alignment);
+        target.AppendFormatted(value, alignment, format);
+        try
+        {
+            DefaultInterpolatedStringHandlerModuleImpl.Append(ToPointer(ref target), value);
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
+        }
+    }
+
+    /// <summary>
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(Object, Int32, String) aspect
+    /// </summary>
+    /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
+    /// <param name="value"> the object value </param>
+    /// <param name="alignment"> the alignment value </param>
+    /// <param name="format"> the format value </param>
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.Object,System.Int32,System.String)")]
+    public static void AppendFormatted3(ref DefaultInterpolatedStringHandler target, object? value, int alignment, string? format)
+    {
+        target.AppendFormatted(value, alignment, format);
         try
         {
             if (value is string str)
@@ -62,33 +83,12 @@ public class DefaultInterpolatedStringHandlerAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted2)}");
-        }
-    }
-
-    /// <summary>
-    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(String, Int32, String) aspect
-    /// </summary>
-    /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
-    /// <param name="value"> the string value </param>
-    /// <param name="alignment"> the alignment value </param>
-    /// <param name="format"> the format value </param>
-    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(System.String,System.Int32,System.String)")]
-    public static void AppendFormatted3(ref DefaultInterpolatedStringHandler target, string? value, int alignment, string? format)
-    {
-        target.AppendFormatted(value, alignment, format);
-        try
-        {
-            DefaultInterpolatedStringHandlerModuleImpl.Append(ToPointer(ref target), value);
-        }
-        catch (Exception ex)
-        {
             IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted3)}");
         }
     }
 
     /// <summary>
-    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(!!0) aspect
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T) aspect
     /// </summary>
     /// <typeparam name="T">The first generic type parameter.</typeparam>
     /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
@@ -107,6 +107,79 @@ public class DefaultInterpolatedStringHandlerAspect
         catch (Exception ex)
         {
             IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted4)}");
+        }
+    }
+
+    /// <summary>
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T, String) aspect
+    /// </summary>
+    /// <typeparam name="T">The first generic type parameter.</typeparam>
+    /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
+    /// <param name="value"> the string value </param>
+    /// <param name="alignment"> the alignment value </param>
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0,System.Int32)")]
+    public static void AppendFormatted5<T>(ref DefaultInterpolatedStringHandler target, T value, int alignment)
+    {
+        target.AppendFormatted(value, alignment);
+        try
+        {
+            if (value is string str)
+            {
+                DefaultInterpolatedStringHandlerModuleImpl.Append(ToPointer(ref target), str);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted5)}");
+        }
+    }
+
+    /// <summary>
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T, String) aspect
+    /// </summary>
+    /// <typeparam name="T">The first generic type parameter.</typeparam>
+    /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
+    /// <param name="value"> the string value </param>
+    /// <param name="format"> the format value </param>
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0,System.String)")]
+    public static void AppendFormatted6<T>(ref DefaultInterpolatedStringHandler target, T value, string? format)
+    {
+        target.AppendFormatted(value, format);
+        try
+        {
+            if (value is string str)
+            {
+                DefaultInterpolatedStringHandlerModuleImpl.Append(ToPointer(ref target), str);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted6)}");
+        }
+    }
+
+    /// <summary>
+    /// System.Runtime DefaultInterpolatedStringHandler.AppendFormatted(T, String) aspect
+    /// </summary>
+    /// <typeparam name="T">The first generic type parameter.</typeparam>
+    /// <param name="target"> the ref DefaultInterpolatedStringHandler </param>
+    /// <param name="value"> the string value </param>
+    /// <param name="alignment"> the alignment value </param>
+    /// <param name="format"> the format value </param>
+    [AspectMethodReplace("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler::AppendFormatted(!!0,System.Int32,System.String)")]
+    public static void AppendFormatted7<T>(ref DefaultInterpolatedStringHandler target, T value, int alignment, string? format)
+    {
+        target.AppendFormatted(value, alignment, format);
+        try
+        {
+            if (value is string str)
+            {
+                DefaultInterpolatedStringHandlerModuleImpl.Append(ToPointer(ref target), str);
+            }
+        }
+        catch (Exception ex)
+        {
+            IastModule.Log.Warning(ex, $"Error invoking {nameof(DefaultInterpolatedStringHandlerAspect)}.{nameof(AppendFormatted7)}");
         }
     }
 

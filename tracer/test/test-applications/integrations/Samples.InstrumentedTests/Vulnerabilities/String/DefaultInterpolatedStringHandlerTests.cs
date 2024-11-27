@@ -3,6 +3,7 @@
 using System;
 using Xunit;
 using System.Runtime.CompilerServices;
+using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
 
@@ -15,86 +16,159 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     {
         AddTainted(TaintedValue);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted1_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(TaintedValue);
 
-        AssertTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted1_GetString_NonVulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted(UntaintedValue);
 
-        AssertNotTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted2_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendFormatted(TaintedValue, 0);
+        test.AppendFormatted(TaintedValue, 0, string.Empty);
 
-        AssertTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted2_GetString_NonVulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendFormatted(UntaintedValue, 0);
+        test.AppendFormatted(UntaintedValue, 0, string.Empty);
 
-        AssertNotTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted3_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendFormatted(TaintedValue, 0, null);
+        test.AppendFormatted((object)TaintedValue, 0, string.Empty);
 
-        AssertTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted3_GetString_NonVulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendFormatted(UntaintedValue, 0, null);
+        test.AppendFormatted((object)UntaintedValue, 0, string.Empty);
 
-        AssertNotTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
     }
-    
+
     [Fact]
-    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormattedTObject_GetString_Vulnerable()
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted4_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
         test.AppendFormatted((object)TaintedValue);
 
-        AssertTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted4_GetString_NonVulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)UntaintedValue);
+
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted5_GetString_Vulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)TaintedValue, 0);
+
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted5_GetString_NonVulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)UntaintedValue, 0);
+
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted6_GetString_Vulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)TaintedValue, string.Empty);
+
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
+    }
+
+    [Fact]
+    public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted6_GetString_NonVulnerable()
+    {
+        var test = new DefaultInterpolatedStringHandler();
+        test.AppendFormatted((object)UntaintedValue, string.Empty);
+
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
     }
     
     [Fact]
-    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendLiteral_GetString_Vulnerable()
+    public void GivenAnExplicitInterpolatedString_WhenAddingTaintedValueAppendFormatted7_GetString_Vulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendLiteral(TaintedValue);
+        test.AppendFormatted((object)TaintedValue, 0, string.Empty);
 
-        AssertTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(TaintedValue);
+        AssertTainted(str);
     }
-    
+
     [Fact]
-    public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendLiteral_GetString_NonVulnerable()
+    public void GivenAnExplicitInterpolatedString_WhenAddingUntaintedValueAppendFormatted7_GetString_NonVulnerable()
     {
         var test = new DefaultInterpolatedStringHandler();
-        test.AppendFormatted(UntaintedValue);
+        test.AppendFormatted((object)UntaintedValue, 0, string.Empty);
 
-        AssertNotTainted(test.ToStringAndClear());
+        var str = test.ToStringAndClear();
+        str.Should().Be(UntaintedValue);
+        AssertNotTainted(str);
     }
 
     [Fact]
@@ -108,12 +182,13 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
 
         AssertTainted(test.ToStringAndClear());
     }
-    
+
     [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValue_GetString_Vulnerable()
     {
         var number = 5;
         var str = $"Hello {TaintedValue} {number}";
+        str.Should().Be("Hello " + TaintedValue + " " + number);
         AssertTainted(str);
     }
 
@@ -122,17 +197,19 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
     {
         var number = 5;
         var str = $"Hello {UntaintedValue} {number}";
+        str.Should().Be("Hello " + UntaintedValue + " " + number);
         AssertNotTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingTaintedValueAsObject_GetString_Vulnerable()
     {
         var number = 5;
         var str = $"Hello {(object)TaintedValue} {number}";
+        str.Should().Be("Hello " + TaintedValue + " " + number);
         AssertTainted(str);
     }
-    
+
     [Fact]
     public void GivenAnImplicitInterpolatedString_WhenAddingMultipleValuesWithTaintedValues_GetString_Vulnerable()
     {
@@ -143,7 +220,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
             OrderDate = new DateTime(2021, 1, 1),
             RequiredDate = new DateTime(2021, 1, 1),
             ShipVia = 3,
-            Freight = 32.38M,
+            Freight = 32,
             ShipName = "Vins et alcools Chevalier",
             ShipAddress = TaintedValue,
             ShipCity = "Reims",
@@ -159,9 +236,10 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
                   $"'{order.ShipVia}','{order.Freight}','{order.ShipName}','{order.ShipAddress}'," +
                   $"'{order.ShipCity}','{order.ShipPostalCode}','{order.ShipCountry}')";
         
+        sql.Should().Be("INSERT INTO Orders (CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, ShipCity, ShipPostalCode, ShipCountry) VALUES ('VINET','5','2021-01-01','2021-01-01','3','32','Vins et alcools Chevalier','tainted','Reims','51100','France')");
         AssertTainted(sql);
     }
-    
+
     [Fact]
     public void GivenImplicitInterpolatedString_WhenAddingTaintedValuesNested_GetString_Vulnerable()
     {
@@ -177,6 +255,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
         var nestedString = $"Hello {$"{TaintedValue + "Hello"} - {complexString}"}";
         var finalString = $"Final {nestedString} and char {charValue} with additional {UntaintedValue} and number {number} and date {date:HH:mm:ss}";
 
+        finalString.Should().Be("Final Hello Hello - Complex Nested2 Nested1 tainted and 42 with date 2024-11-22 and decimal 123.46 and boolean True and char A with additional untainted and number 42 and date 15:30:00");
         AssertTainted(finalString);
     }
 
@@ -187,6 +266,7 @@ public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
                                   Hello "{TaintedValue}" and "{UntaintedValue}".
                                   .
                                   """;
+        interpolatedString.Should().Be("Hello \"tainted\" and \"untainted\".\n.");
         AssertTainted(interpolatedString);
     }
 }
