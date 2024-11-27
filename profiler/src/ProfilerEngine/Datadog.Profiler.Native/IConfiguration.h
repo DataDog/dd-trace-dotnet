@@ -79,4 +79,5 @@ public:
     virtual bool IsSsiTelemetryEnabled() const = 0;
     virtual bool IsHttpProfilingEnabled() const = 0;
     virtual std::chrono::milliseconds GetHttpRequestDurationThreshold() const = 0;
+    virtual bool ForceHttpSampling() const = 0;
 };

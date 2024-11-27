@@ -101,6 +101,7 @@ Configuration::Configuration()
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
     _isHttpProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HttpProfilingEnabled, false);
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
+    _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -752,6 +753,11 @@ bool Configuration::IsSsiTelemetryEnabled() const
 bool Configuration::IsHttpProfilingEnabled() const
 {
     return _isHttpProfilingEnabled;
+}
+
+bool Configuration::ForceHttpSampling() const
+{
+    return _forceHttpSampling;
 }
 
 

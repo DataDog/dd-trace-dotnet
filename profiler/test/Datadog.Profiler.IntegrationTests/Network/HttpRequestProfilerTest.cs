@@ -26,11 +26,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
         }
 
         [TestAppFact("Samples.ParallelCountSites", new[] { "net5.0", "net6.0" })]
-        public void ShouldNotGetHttpSamples(string appName, string framework, string appAssembly)
+        public void ShouldNotGetHttpSamplesInOldRuntimeVersions(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -42,11 +43,28 @@ namespace Datadog.Profiler.IntegrationTests.Network
         }
 
         [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0" })]
+        public void ShouldNotGetHttpSamplesWhenDefaultSampling(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            // EnvironmentVariables.ForceHttpSamplingEnabled is not set --> need span + min duration to be sampled
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
+            samples.Should().BeEmpty();
+        }
+
+        [TestAppFact("Samples.ParallelCountSites", new[] { "net7.0", "net8.0", "net9.0" })]
         public void ShouldGetHttpSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: All);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -64,6 +82,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Redirect);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -109,6 +128,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Error);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
@@ -148,6 +168,7 @@ namespace Datadog.Profiler.IntegrationTests.Network
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Blog);
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.HttpProfilingEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ForceHttpSamplingEnabled, "1");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 

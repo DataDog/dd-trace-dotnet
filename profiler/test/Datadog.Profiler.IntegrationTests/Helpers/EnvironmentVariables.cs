@@ -36,5 +36,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string SsiTelemetryEnabled = "DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED";
         public const string HttpProfilingEnabled = "DD_INTERNAL_PROFILING_HTTP_ENABLED";
         public const string HttpRequestDurationThreshold = "DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD";
+        public const string ForceHttpSamplingEnabled = "DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING";
     }
 }

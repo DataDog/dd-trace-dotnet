@@ -41,6 +41,7 @@ NetworkProvider::NetworkProvider(
     _callstackProvider{ std::move(callstackProvider) },
     _metricsRegistry{metricsRegistry}
 {
+    _requestDurationThreshold = pConfiguration->GetHttpRequestDurationThreshold().count() * 1000000;
 }
 
 bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
@@ -48,16 +49,15 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
 
-    // TODO: add a DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING environment variable to force sampling
-    //       for the integration tests (no need to have a span nor a minimum duration)
-    //
-    // TODO: only requests emitted by managed threads with span ID are captured
-    //if (!threadInfo->HasTraceContext())
-    //{
-    //    return false;
-    //}
-
-    // TODO: implement additional sampling strategy if needed
+    // sampling can be forced for tests
+    if (!_pConfiguration->ForceHttpSampling())
+    {
+        // only requests emitted by managed threads with span ID are captured
+        if (!threadInfo->HasTraceContext())
+        {
+            return false;
+        }
+    }
 
     // collect current call stack
     uint32_t hrCollectStack = E_FAIL;
@@ -120,6 +120,21 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
     {
         // TODO: this should never happen; i.e. a request with the same activity is not in progress
         return;
+    }
+
+    // sampling can be forced for tests
+    if (!_pConfiguration->ForceHttpSampling())
+    {
+        // only requests lasting more than a threshold are captured
+        if ((timestamp - requestInfo->second.StartTimestamp) > _requestDurationThreshold)
+        {
+            // skip this request
+            _requests.erase(activity);
+            return;
+        }
+
+        // TODO: add additional filtering to avoid too many samples
+        //       e.g. requests with specific status codes, min duration per phase, dynamic such as for exceptions, etc.
     }
 
     RawNetworkSample rawSample;

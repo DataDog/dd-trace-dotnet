@@ -84,6 +84,7 @@ public:
     MOCK_METHOD(bool, IsSsiTelemetryEnabled, (), (const override));
     MOCK_METHOD(bool, IsHttpProfilingEnabled, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetHttpRequestDurationThreshold, (), (const override));
+    MOCK_METHOD(bool, ForceHttpSampling, (), (const override));
 };
 
 class MockExporter : public IExporter

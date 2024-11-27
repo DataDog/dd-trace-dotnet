@@ -74,6 +74,7 @@ private:
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
     MetricsRegistry& _metricsRegistry;
+    uint64_t _requestDurationThreshold;
 
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 };

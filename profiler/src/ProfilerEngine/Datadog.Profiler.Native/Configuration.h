@@ -83,6 +83,7 @@ public:
     std::chrono::milliseconds GetCpuProfilingInterval() const override;
     bool IsHttpProfilingEnabled() const override;
     std::chrono::milliseconds GetHttpRequestDurationThreshold() const override;
+    bool ForceHttpSampling() const override;
 
 private:
     static tags ExtractUserTags();
@@ -180,6 +181,7 @@ private:
     bool _isSsiTelemetryEnabled;
     bool _isHttpProfilingEnabled;
     std::chrono::milliseconds _httpRequestDurationThreshold;
+    bool _forceHttpSampling;
 
     CpuProfilerType _cpuProfilerType;
     std::chrono::milliseconds _cpuProfilingInterval;
