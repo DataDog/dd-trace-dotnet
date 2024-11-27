@@ -17,6 +17,7 @@
 
 extern "C"
 {
+#include "datadog/blazesym.h"
 #include "datadog/common.h"
 #include "datadog/profiling.h"
 }
@@ -38,8 +39,13 @@ class ElfBuildId
 {
 private:
     struct ElfBuildIdImpl {
-        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr, 0) {}
-        ElfBuildIdImpl(std::uint8_t* ptr, std::size_t size) : _ptr{ptr}, _size{size} {};
+        ElfBuildIdImpl() : ElfBuildIdImpl(nullptr) {}
+        ElfBuildIdImpl(const char* path) : _ptr{nullptr}, _size{0} {
+            if (path != nullptr)
+            {
+                _ptr = blaze_read_elf_build_id(path, &_size);
+            }
+        };
         ~ElfBuildIdImpl()
         {
             auto* ptr = std::exchange(_ptr, nullptr);
@@ -59,9 +65,9 @@ private:
         std::size_t _size;
     };
 public:
-    ElfBuildId() : ElfBuildId(nullptr, 0) {}
-    ElfBuildId(std::uint8_t* ptr, std::size_t size)
-    : _impl{std::make_shared<ElfBuildIdImpl>(ptr, size)} {}
+    ElfBuildId() : ElfBuildId(nullptr) {}
+    ElfBuildId(const char* path)
+    : _impl{std::make_shared<ElfBuildIdImpl>(path)} {}
 
     shared::span<std::uint8_t> AsSpan() const
     {

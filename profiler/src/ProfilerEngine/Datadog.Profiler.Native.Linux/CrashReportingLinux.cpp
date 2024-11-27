@@ -22,7 +22,6 @@
 
 extern "C"
 {
-#include "datadog/blazesym.h"
 #include "datadog/common.h"
 #include "datadog/crashtracker.h"
 #include "datadog/profiling.h"
@@ -133,9 +132,7 @@ std::vector<ModuleInfo> CrashReportingLinux::GetModules()
             moduleBaseAddresses[path] = baseAddress;
         }
 
-        std::size_t len = 0;
-        auto* buffer = blaze_read_elf_build_id(path.data(), &len);
-        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), ElfBuildId(buffer, len)});
+        modules.push_back(ModuleInfo{ start, end, baseAddress, std::move(path), ElfBuildId(path.data())});
     }
 
     return modules;
