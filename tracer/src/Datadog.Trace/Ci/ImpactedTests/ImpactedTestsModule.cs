@@ -30,14 +30,14 @@ internal static class ImpactedTestsModule
 
     public static bool IsEnabled => CIVisibility.Settings.ImpactedTestsDetection;
 
-    public static void Analyze(Test test, MethodSymbolResolver.MethodSymbol methodSymbol, TestSpanTags tags)
+    public static void Analyze(Test test, TestSpanTags tags)
     {
         if (IsEnabled)
         {
             Log.Information("Impacted Tests Detection is enabled for {TestName}", test.Name);
 
             bool modified = false;
-            var testFiles = GetTestCoverage(methodSymbol);
+            var testFiles = GetTestCoverage(tags);
             var modifiedFiles = GetModifiedFiles();
 
             foreach (var testFile in testFiles)
@@ -74,19 +74,25 @@ internal static class ImpactedTestsModule
         }
     }
 
-    private static FileCoverageInfo[] GetTestCoverage(MethodSymbolResolver.MethodSymbol methodSymbol)
+    private static FileCoverageInfo[] GetTestCoverage(TestSpanTags tags)
     {
+        if (tags.SourceFile is null || tags.SourceStart is null || tags.SourceEnd is null)
+        {
+            Log.Information("No test definition file found for {TestName}", tags.Name);
+            return Array.Empty<FileCoverageInfo>();
+        }
+
         // Milestone 1 : Return only the test definition file
-        var file = new FileCoverageInfo(methodSymbol.File);
+        var file = new FileCoverageInfo(tags.SourceFile);
 
         // Milestone 1.5 : Return the test definition lines
         if (CIEnvironmentValues.Instance.PrBaseBranch is { } prBaseBranch)
         {
-            var executedBitmap = new FileBitmap(methodSymbol.StartLine, methodSymbol.EndLine);
+            var executedBitmap = new FileBitmap((int)tags.SourceStart, (int)tags.SourceEnd);
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
         }
 
-        Log.Information<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", methodSymbol.File, methodSymbol.StartLine, methodSymbol.EndLine);
+        Log.Information<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
 
         return [file];
     }
@@ -95,18 +101,24 @@ internal static class ImpactedTestsModule
     {
         if (modifiedFiles is null)
         {
-            // Milestone 1.5 : Return the test definition lines
-            if (CIEnvironmentValues.Instance.PrBaseBranch is not { } prBaseBranch)
+            lock (Log)
             {
-                Log.Information("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
-                // TODO : Milestone 1 : Retrieve diff files from Backend
-                modifiedFiles = GitCommandManager.GetGitDiffFiles(CIEnvironmentValues.Instance.WorkspacePath!);
-            }
-            else
-            {
-                Log.Information("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
-                // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                if (modifiedFiles is null)
+                {
+                    // Milestone 1.5 : Return the test definition lines
+                    if (CIEnvironmentValues.Instance.PrBaseBranch is not { } prBaseBranch)
+                    {
+                        Log.Information("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
+                        // TODO : Milestone 1 : Retrieve diff files from Backend
+                        modifiedFiles = GitCommandManager.GetGitDiffFiles(CIEnvironmentValues.Instance.WorkspacePath!);
+                    }
+                    else
+                    {
+                        Log.Information("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                        // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
+                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                    }
+                }
             }
         }
 

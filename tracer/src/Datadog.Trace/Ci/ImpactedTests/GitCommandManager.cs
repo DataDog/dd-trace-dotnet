@@ -7,11 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -24,6 +23,7 @@ internal static class GitCommandManager
     // Regex patterns for parsing the diff output
     private static readonly Regex DiffHeaderRegex = new Regex(@"^diff --git a/(?<file>.+) b/(?<file2>.+)$");
     private static readonly Regex LineChangeRegex = new Regex(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@");
+    private static char[] lineSeparators = { '\n', '\r' };
 
     public static FileCoverageInfo[] GetGitDiffFiles(string folder)
     {
@@ -42,11 +42,16 @@ internal static class GitCommandManager
                 return Array.Empty<FileCoverageInfo>();
             }
 
-            var res = modifiedFiles.Output.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries).Select(s => new FileCoverageInfo(s)).ToArray();
-            Log.Information<int>("Modified files: {Files}", res.Length);
-            foreach (var file in res)
+            var res = SplitLines(modifiedFiles.Output).Select(s => new FileCoverageInfo(s)).ToArray();
+            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
             {
-                Log.Information("  {File} ...", file.Path);
+                Log.Debug("Git command : {Command}", "git diff --name-only");
+                Log.Debug("     output : {Output}", modifiedFiles.Output);
+                Log.Debug<int>("Modified files: {Files}", res.Length);
+                foreach (var file in res)
+                {
+                    Log.Debug("  {File} ...", file.Path);
+                }
             }
 
             return res;
@@ -76,6 +81,12 @@ internal static class GitCommandManager
                 return Array.Empty<FileCoverageInfo>();
             }
 
+            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+            {
+                Log.Debug("Git command : {Command}", $"git diff -U0 --word-diff=porcelain {baseCommit}");
+                Log.Debug("     output : {Output}", modifiedFiles.Output);
+            }
+
             return ParseGitDiff(modifiedFiles.Output).ToArray();
         }
         catch (Exception ex)
@@ -93,7 +104,7 @@ internal static class GitCommandManager
             List<Tuple<int, int>> modifiedLines = new List<Tuple<int, int>>(100);
 
             // Split the diff output into lines for processing
-            var lines = diffOutput.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = SplitLines(diffOutput);
 
             foreach (var line in lines)
             {
@@ -110,7 +121,7 @@ internal static class GitCommandManager
                     }
 
                     currentFile = new FileCoverageInfo(headerMatch.Groups["file"].Value);
-                    Log.Information("Processing {File} ...", currentFile.Path);
+                    Log.Debug("  Processing {File} ...", currentFile.Path);
 
                     continue;
                 }
@@ -128,7 +139,7 @@ internal static class GitCommandManager
 
                     modifiedLines.Add(new Tuple<int, int>(startLine, startLine + lineCount));
                     var range = modifiedLines[modifiedLines.Count - 1];
-                    Log.Information<int, int>("  {From}..{To} ...", range.Item1, range.Item2);
+                    Log.Debug<int, int>("    {From}..{To} ...", range.Item1, range.Item2);
                     continue;
                 }
             }
@@ -164,5 +175,11 @@ internal static class GitCommandManager
                 return bitmap.GetInternalArrayOrToArrayAndDispose();
             }
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static string[] SplitLines(string text, StringSplitOptions options = StringSplitOptions.RemoveEmptyEntries)
+    {
+        return text.Split(lineSeparators, options);
     }
 }
