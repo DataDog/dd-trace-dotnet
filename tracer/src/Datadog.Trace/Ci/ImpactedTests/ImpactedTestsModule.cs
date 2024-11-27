@@ -34,7 +34,7 @@ internal static class ImpactedTestsModule
     {
         if (IsEnabled)
         {
-            Log.Information("Impacted Tests Detection is enabled for {TestName}", test.Name);
+            Log.Debug("Impacted Tests Detection is enabled for {TestName}", test.Name);
 
             bool modified = false;
             var testFiles = GetTestCoverage(tags);
@@ -45,11 +45,11 @@ internal static class ImpactedTestsModule
                 var modifiedFile = modifiedFiles.FirstOrDefault(x => x.Path == testFile.Path);
                 if (modifiedFile is not null)
                 {
-                    Log.Information("DiffFile found {File} ...", modifiedFile.Path);
+                    Log.Debug("DiffFile found {File} ...", modifiedFile.Path);
 
                     if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
                     {
-                        Log.Information(" No line info");
+                        Log.Debug(" No line info");
                         modified = true;
                         break;
                     }
@@ -59,7 +59,7 @@ internal static class ImpactedTestsModule
 
                     if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
                     {
-                        Log.Information(" Intersecting lines");
+                        Log.Debug(" Intersecting lines");
                         modified = true;
                         break;
                     }
@@ -78,7 +78,7 @@ internal static class ImpactedTestsModule
     {
         if (tags.SourceFile is null || tags.SourceStart is null || tags.SourceEnd is null)
         {
-            Log.Information("No test definition file found for {TestName}", tags.Name);
+            Log.Warning("No test definition file found for {TestName}", tags.Name);
             return Array.Empty<FileCoverageInfo>();
         }
 
@@ -92,7 +92,7 @@ internal static class ImpactedTestsModule
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
         }
 
-        Log.Information<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
+        Log.Debug<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
 
         return [file];
     }
@@ -106,17 +106,17 @@ internal static class ImpactedTestsModule
                 if (modifiedFiles is null)
                 {
                     // Milestone 1.5 : Return the test definition lines
-                    if (CIEnvironmentValues.Instance.PrBaseBranch is not { } prBaseBranch)
+                    if (CIEnvironmentValues.Instance.PrBaseBranch is not null)
                     {
-                        Log.Information("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
+                        Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
                         // TODO : Milestone 1 : Retrieve diff files from Backend
                         modifiedFiles = GitCommandManager.GetGitDiffFiles(CIEnvironmentValues.Instance.WorkspacePath!);
                     }
                     else
                     {
-                        Log.Information("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                        Log.Debug("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(CIEnvironmentValues.Instance.WorkspacePath!, prBaseBranch);
                     }
                 }
             }
