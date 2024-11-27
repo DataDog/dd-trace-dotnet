@@ -129,7 +129,7 @@ internal class TelemetryController : ITelemetryController
     public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
     {
         // CI Vis records the settings _directly_ in the global config so don't need to record them again here
-        _logTagBuilder.Update(settings);
+        _logTagBuilder.Update(settings, CIVisibility.Enabled);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
@@ -386,12 +386,12 @@ internal class TelemetryController : ITelemetryController
             _isUpdateRequired = true;
         }
 
-        public void Update(CIVisibilitySettings settings)
+        public void Update(CIVisibilitySettings settings, bool enabled)
         {
             // We don't actually need to record these, because they're added to the global config
             // This isn't nice, as it calls the static property,
             // but we don't have a better way of getting this info right now
-            _isCiVisEnabled = CIVisibility.Enabled;
+            _isCiVisEnabled = enabled;
             _isUpdateRequired = true;
         }
 
