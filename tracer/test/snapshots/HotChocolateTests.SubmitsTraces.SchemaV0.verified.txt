@@ -290,7 +290,7 @@ errors: [
     TraceId: Id_10,
     SpanId: Id_15,
     Name: graphql.execute,
-    Resource: Uncompleted operation,
+    Resource: Query ErrorQuery,
     Service: Samples.HotChocolate-graphql,
     Type: graphql,
     ParentId: Id_11,
@@ -304,17 +304,20 @@ errors: [
 {
 "message": "Unexpected Execution Error",
 "locations": [
+{
+"line": 1,
+"column": 18
+},
 ]
 },
 ]
 ,
       error.type: HotChocolate.Error,
-      graphql.operation.type: Uncompleted,
+      graphql.operation.name: ErrorQuery,
+      graphql.operation.type: Query,
       graphql.source:
-subscription NotImplementedSub {
-  throwNotImplementedException {
-    name
-  }
+query ErrorQuery {
+  throwException
 },
       language: dotnet,
       runtime-id: Guid_1,

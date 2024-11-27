@@ -172,7 +172,7 @@ mutation m {
     TraceId: Id_5,
     SpanId: Id_11,
     Name: graphql.execute,
-    Resource: Uncompleted operation,
+    Resource: Query ErrorQuery,
     Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_6,
@@ -186,17 +186,20 @@ errors: [
 {
 "message": "Unexpected Execution Error",
 "locations": [
+{
+"line": 1,
+"column": 18
+},
 ]
 },
 ]
 ,
       error.type: HotChocolate.Error,
-      graphql.operation.type: Uncompleted,
+      graphql.operation.name: ErrorQuery,
+      graphql.operation.type: Query,
       graphql.source:
-subscription NotImplementedSub {
-  throwNotImplementedException {
-    name
-  }
+query ErrorQuery {
+  throwException
 },
       language: dotnet,
       span.kind: server,
