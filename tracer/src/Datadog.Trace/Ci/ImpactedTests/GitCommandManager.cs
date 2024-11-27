@@ -132,7 +132,7 @@ internal static class GitCommandManager
                 {
                     int startLine = int.Parse(lineChangeMatch.Groups["start"].Value); // Start tracking new lines
                     int lineCount = 0;
-                    if (lineChangeMatch.Groups["count"].Value is string countTxt)
+                    if (lineChangeMatch.Groups["count"].Value is string countTxt && countTxt.Length > 0)
                     {
                         lineCount = int.Parse(countTxt); // Start tracking new lines
                     }
@@ -160,13 +160,12 @@ internal static class GitCommandManager
                     return null;
                 }
 
-                var last = modifiedLines[modifiedLines.Count - 1];
                 var maxCount = modifiedLines[modifiedLines.Count - 1].Item2;
 
                 var bitmap = new FileBitmap(maxCount);
                 foreach (var tuple in modifiedLines)
                 {
-                    for (int i = tuple.Item1; i < tuple.Item2; i++)
+                    for (int i = tuple.Item1; i <= tuple.Item2; i++)
                     {
                         bitmap.Set(i);
                     }
