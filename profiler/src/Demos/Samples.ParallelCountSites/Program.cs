@@ -9,28 +9,59 @@ using System.Threading.Tasks;
 
 namespace Samples.ParallelCountSites
 {
+    [Flags]
+    public enum Scenario
+    {
+        Redirect = 1,
+        Invalid = 2,
+        Blog = 4,
+
+        All = Redirect | Invalid | Blog
+    }
+
     internal class Program
     {
         public static async Task Main(string[] args)
         {
-            int iterations = 5;
-            if (args.Length == 1)
-            {
-                if (int.TryParse(args[0], out int value))
-                {
-                    iterations = value;
-                }
-                else
-                {
-                    Console.WriteLine($"Invalid iterations count: {args[0]}");
-                }
-            }
+            ParseCommandLine(args, out var iterations, out var scenario);
 
             await Console.Out.WriteLineAsync($"pid = {Process.GetCurrentProcess().Id}");
             await Console.Out.WriteLineAsync();
 
-            var downloader = new Downloader();
+            var downloader = new Downloader(scenario);
             await downloader.SumPagesSize(iterations);
+        }
+
+        private static void ParseCommandLine(string[] args, out int iterations, out Scenario scenario)
+        {
+            iterations = 5;
+            scenario = Scenario.All;
+            for (int i = 0; i < args.Length; i++)
+            {
+                var arg = args[i];
+                if ("--scenario".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    int valueOffset = i + 1;
+                    if (valueOffset < args.Length && int.TryParse(args[valueOffset], out var number))
+                    {
+                        scenario = (Scenario)number;
+                    }
+                }
+                else
+                if ("--iterations".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    int valueOffset = i + 1;
+                    if (valueOffset < args.Length && int.TryParse(args[valueOffset], out var number))
+                    {
+                        if (number <= 0)
+                        {
+                            throw new ArgumentOutOfRangeException($"Invalid iterations count '{number}': must be > 0");
+                        }
+
+                        iterations = number;
+                    }
+                }
+            }
         }
     }
 }
