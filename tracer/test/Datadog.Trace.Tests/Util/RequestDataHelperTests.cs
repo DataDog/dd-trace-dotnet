@@ -4,9 +4,12 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Web;
+using System.Web.Hosting;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.Configuration;
@@ -16,6 +19,7 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -126,6 +130,93 @@ public class RequestDataHelperTests
     }
 
     [Fact]
+    public void GetUrl_WhenUrlHasNotBeenAccessed_ShouldReturnUrlAndResetUrlField()
+    {
+        var request = CreateHttpRequest("GET");
+        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Ensure _url is null before the test
+        // this will mean that Url will need to be built
+        urlField.GetValue(request).Should().BeNull();
+
+        var url = RequestDataHelper.GetUrl(request);
+
+        url.Should().NotBeNull();
+        url.ToString().Should().Be("http://127.0.0.1/test/test.aspx");
+
+        // Verify that _url was reset to null
+        var urlValueAfter = urlField.GetValue(request) as Uri;
+        urlValueAfter.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetUrl_WhenUrlIsResetAndHttpRequestIsModified_ShouldReturnUpdatedUrl()
+    {
+        var initialHost = "localhost";
+        var newHost = "example.com";
+
+        // Create a TestWorkerRequest with the initial host
+        var workerRequest = new TestWorkerRequest("/test", null, new StringWriter(), initialHost);
+        var context = new HttpContext(workerRequest);
+        var request = context.Request;
+
+        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Ensure _url is null before the test
+        // this will mean that Url will need to be built
+        urlField.SetValue(request, null);
+
+        // simulate tracer calling HttpRequest.Url
+        // Call GetUrl to get the initial URL and reset _url
+        var initialUrl = RequestDataHelper.GetUrl(request);
+
+        // Modify the HttpRequest object by changing the host
+        // This is emulating some middleware that is running after us
+        workerRequest.SetHost(newHost);
+
+        // Reset _url to ensure the URL will be rebuilt
+        urlField.SetValue(request, null);
+
+        // Call request.Url to get the updated URL
+        // This is emulating someone access the HttpRequest.Url directly
+        // after they have modified it and after we have already accessed it
+        // this means that there will be a disconnect between the values
+        // that we get and that they get
+        // we get old outdated values that may not perfectly represent their URL
+        // but they don't have to worry about their URL not having the changes take effect
+        var updatedUrl = request.Url;
+        var updatedUrlString = updatedUrl?.ToString();
+
+        initialUrl.Should().NotBeNull(); // what tracer would get:   http://localhost/test/test.aspx
+        updatedUrl.Should().NotBeNull(); // what customer would get: http://example.com/test/test.aspx
+        initialUrl.ToString().Should().NotBe(updatedUrlString);
+        updatedUrl.ToString().Should().Contain(newHost);
+    }
+
+    [Fact]
+    public void GetUrl_WhenUrlHasBeenAccessed_ShouldReturnCachedUrlAndNotResetUrlField()
+    {
+        var request = CreateHttpRequest("GET");
+        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Access request.Url to set _url
+        var initialUrl = request.Url;
+
+        // Verify that _url is set before we call as we'd expect
+        var urlBeforeRequestDataHelper = urlField.GetValue(request) as Uri;
+        urlBeforeRequestDataHelper.Should().NotBeNull();
+
+        var url = RequestDataHelper.GetUrl(request);
+
+        url.Should().NotBeNull();
+        url.Should().BeSameAs(initialUrl);
+
+        // Verify that _url is still set
+        var urlValueAfter = urlField.GetValue(request) as Uri;
+        urlValueAfter.Should().NotBeNull();
+    }
+
+    [Fact]
     public void GivenADangerousQueryString_WhenCallingASMAndIAST_NoExceptionIsThrown()
     {
         var request = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
@@ -199,6 +290,43 @@ public class RequestDataHelperTests
         var setMethod = flagsType.GetValue(request).GetType().GetMethod("Set", BindingFlags.NonPublic | BindingFlags.Instance);
         setMethod.Invoke(flags, new object[] { 1073741824 | 2 });
         flagsType.SetValue(request, flags);
+    }
+
+    private HttpRequest CreateHttpRequest(string httpMethod)
+    {
+        var workerRequest = new SimpleWorkerRequest("/test", "/test", "test.aspx", null, new StringWriter());
+        var context = new HttpContext(workerRequest);
+        var request = context.Request;
+
+        return request;
+    }
+
+    public class TestWorkerRequest : SimpleWorkerRequest
+    {
+        private readonly string _protocol;
+        private string _host;
+
+        public TestWorkerRequest(string page, string query, TextWriter output, string host, string protocol = "http")
+            : base(page, page, "test.aspx", query, output)
+        {
+            _host = host;
+            _protocol = protocol;
+        }
+
+        public override string GetServerName()
+        {
+            return _host;
+        }
+
+        public override string GetProtocol()
+        {
+            return _protocol;
+        }
+
+        public void SetHost(string host)
+        {
+            _host = host;
+        }
     }
 }
 #endif
