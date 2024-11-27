@@ -114,7 +114,7 @@ public:
     // with std::shared_ptr<Sample> as out parameter (avoid alloc/dealloc and add up overhead)
     std::shared_ptr<Sample> TransformRawSample(const TRawSample& rawSample)
     {
-        auto sample = std::make_shared<Sample>(0, std::string_view(), rawSample.Stack.Size());
+        auto sample = std::make_shared<Sample>(0ms, std::string_view(), rawSample.Stack.Size());
 
         TransformRawSample(rawSample, sample);
 
@@ -127,7 +127,7 @@ public:
     }
 
 protected:
-    uint64_t GetCurrentTimestamp()
+    std::chrono::nanoseconds GetCurrentTimestamp()
     {
         return OpSysTools::GetHighPrecisionTimestamp();
     }

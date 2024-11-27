@@ -6,6 +6,7 @@
 #include "IFrameStore.h"
 
 #include <array>
+#include <chrono>
 #include <iostream>
 #include <list>
 #include <string>
@@ -27,13 +28,15 @@ typedef std::pair<std::string_view, int64_t> NumericLabel;
 typedef std::pair<std::string_view, uint64_t> SpanLabel;
 typedef std::vector<NumericLabel> NumericLabels;
 
+using namespace std::chrono_literals;
+
 class Sample
 {
 public:
     static size_t ValuesCount;
 
 public:
-    Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
+    Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount);
     Sample(std::string_view runtimeId); // only for tests
 
 #ifndef DD_TEST
@@ -46,7 +49,7 @@ private:
     Sample& operator=(Sample&& other) noexcept = default;
 
 public:
-    uint64_t GetTimeStamp() const;
+    std::chrono::nanoseconds GetTimeStamp() const;
     const Values& GetValues() const;
     const std::vector<FrameInfoView>& GetCallstack() const;
     const Labels& GetLabels() const;
@@ -127,7 +130,7 @@ public:
         AddLabel(Label{ThreadNameLabel, std::forward<T>(name)});
     }
 
-    void SetTimestamp(std::uint64_t timestamp)
+    void SetTimestamp(std::chrono::nanoseconds timestamp)
     {
         _timestamp = timestamp;
     }
@@ -139,7 +142,7 @@ public:
 
     void Reset()
     {
-        _timestamp = 0;
+        _timestamp = 0ns;
         _callstack.clear();
         _runtimeId = {};
         _numericLabels.clear();
@@ -172,7 +175,7 @@ public:
     static const std::string ObjectGenerationLabel;
 
 private:
-    uint64_t _timestamp;
+    std::chrono::nanoseconds _timestamp;
     std::vector<FrameInfoView> _callstack;
     Values _values;
     Labels _labels;

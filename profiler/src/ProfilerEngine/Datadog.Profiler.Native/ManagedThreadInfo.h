@@ -61,18 +61,10 @@ public:
     inline const shared::WSTRING& GetThreadName() const override;
     inline void SetThreadName(shared::WSTRING pThreadName);
 
-    inline std::uint64_t GetLastSampleHighPrecisionTimestampNanoseconds() const;
-    inline std::uint64_t SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value);
-    inline std::uint64_t GetCpuConsumptionMilliseconds() const;
-    inline std::uint64_t SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp);
-    inline std::int64_t GetCpuTimestamp() const;
-
-    inline void GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const;
-    inline void SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate);
-
-    inline std::uint64_t GetSnapshotsPerformedSuccessCount() const;
-    inline std::uint64_t GetSnapshotsPerformedFailureCount() const;
-    inline std::uint64_t IncSnapshotsPerformedCount(bool isStackSnapshotSuccessful);
+    inline std::chrono::nanoseconds SetLastSampleTimestamp(std::chrono::nanoseconds value);
+    inline std::chrono::milliseconds GetCpuConsumption() const;
+    inline std::chrono::milliseconds SetCpuConsumption(std::chrono::milliseconds value, std::chrono::nanoseconds timestamp);
+    inline std::chrono::nanoseconds GetCpuTimestamp() const;
 
     inline void GetOrResetDeadlocksCount(std::uint64_t deadlocksAggregationPeriodIndex,
                                          std::uint64_t* pPrevCount,
@@ -82,7 +74,6 @@ public:
                                   std::uint64_t* deadlockDetectionsInAggregationPeriodCount,
                                   std::uint64_t* usedDeadlockDetectionsAggregationPeriodIndex) const;
 
-    inline bool IsThreadDestroyed();
     inline bool IsDestroyed();
     inline void SetThreadDestroyed();
     inline std::pair<uint64_t, shared::WSTRING> SetBlockingThread(uint64_t osThreadId, shared::WSTRING name);
@@ -123,14 +114,9 @@ private:
     ScopedHandle _osThreadHandle;
     shared::WSTRING _pThreadName;
 
-    std::uint64_t _lastSampleHighPrecisionTimestampNanoseconds;
-    std::uint64_t _cpuConsumptionMilliseconds;
-    std::int64_t _timestamp;
-    std::uint64_t _lastKnownSampleUnixTimeUtc;
-    std::int64_t _highPrecisionNanosecsAtLastUnixTimeUpdate;
-
-    std::uint64_t _snapshotsPerformedSuccessCount;
-    std::uint64_t _snapshotsPerformedFailureCount;
+    std::chrono::nanoseconds _lastSampleHighPrecisionTimestamp;
+    std::chrono::milliseconds _cpuConsumption;
+    std::chrono::nanoseconds _timestamp;
 
     std::uint64_t _deadlockTotalCount;
     std::uint64_t _deadlockInPeriodCount;
@@ -289,76 +275,30 @@ inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
     }
 }
 
-inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds() const
+inline std::chrono::nanoseconds ManagedThreadInfo::SetLastSampleTimestamp(std::chrono::nanoseconds value)
 {
-    return _lastSampleHighPrecisionTimestampNanoseconds;
-}
-
-inline std::uint64_t ManagedThreadInfo::SetLastSampleHighPrecisionTimestampNanoseconds(std::uint64_t value)
-{
-    std::uint64_t prevValue = _lastSampleHighPrecisionTimestampNanoseconds;
-    _lastSampleHighPrecisionTimestampNanoseconds = value;
+    auto prevValue = _lastSampleHighPrecisionTimestamp;
+    _lastSampleHighPrecisionTimestamp = value;
     return prevValue;
 }
 
-inline std::uint64_t ManagedThreadInfo::GetCpuConsumptionMilliseconds() const
+inline std::chrono::milliseconds ManagedThreadInfo::GetCpuConsumption() const
 {
-    return _cpuConsumptionMilliseconds;
+    return _cpuConsumption;
 }
 
-inline std::int64_t ManagedThreadInfo::GetCpuTimestamp() const
+inline std::chrono::nanoseconds ManagedThreadInfo::GetCpuTimestamp() const
 {
     return _timestamp;
 }
 
-inline std::uint64_t ManagedThreadInfo::SetCpuConsumptionMilliseconds(std::uint64_t value, std::int64_t timestamp)
+inline std::chrono::milliseconds ManagedThreadInfo::SetCpuConsumption(std::chrono::milliseconds value, std::chrono::nanoseconds timestamp)
 {
     _timestamp = timestamp;
 
-    std::uint64_t prevValue = _cpuConsumptionMilliseconds;
-    _cpuConsumptionMilliseconds = value;
+    auto prevValue = _cpuConsumption;
+    _cpuConsumption = value;
     return prevValue;
-}
-
-inline void ManagedThreadInfo::GetLastKnownSampleUnixTimestamp(std::uint64_t* realUnixTimeUtc, std::int64_t* highPrecisionNanosecsAtLastUnixTimeUpdate) const
-{
-    if (realUnixTimeUtc != nullptr)
-    {
-        *realUnixTimeUtc = _lastKnownSampleUnixTimeUtc;
-    }
-
-    if (highPrecisionNanosecsAtLastUnixTimeUpdate != nullptr)
-    {
-        *highPrecisionNanosecsAtLastUnixTimeUpdate = _highPrecisionNanosecsAtLastUnixTimeUpdate;
-    }
-}
-
-inline void ManagedThreadInfo::SetLastKnownSampleUnixTimestamp(std::uint64_t realUnixTimeUtc, std::int64_t highPrecisionNanosecsAtThisUnixTimeUpdate)
-{
-    _lastKnownSampleUnixTimeUtc = realUnixTimeUtc;
-    _highPrecisionNanosecsAtLastUnixTimeUpdate = highPrecisionNanosecsAtThisUnixTimeUpdate;
-}
-
-inline std::uint64_t ManagedThreadInfo::GetSnapshotsPerformedSuccessCount() const
-{
-    return _snapshotsPerformedSuccessCount;
-}
-
-inline std::uint64_t ManagedThreadInfo::GetSnapshotsPerformedFailureCount() const
-{
-    return _snapshotsPerformedFailureCount;
-}
-
-inline std::uint64_t ManagedThreadInfo::IncSnapshotsPerformedCount(const bool isStackSnapshotSuccessful)
-{
-    if (isStackSnapshotSuccessful)
-    {
-        return _snapshotsPerformedSuccessCount++;
-    }
-    else
-    {
-        return _snapshotsPerformedFailureCount++;
-    }
 }
 
 inline void ManagedThreadInfo::GetOrResetDeadlocksCount(
@@ -401,13 +341,6 @@ inline void ManagedThreadInfo::GetDeadlocksCount(std::uint64_t* deadlockTotalCou
     {
         *deadlockDetectionPeriod = _deadlockDetectionPeriod;
     }
-}
-
-// TODO: this does not seem to be needed
-inline bool ManagedThreadInfo::IsThreadDestroyed()
-{
-    std::unique_lock l(_objLock);
-    return _isThreadDestroyed;
 }
 
 // This is not synchronized and must be called under the _stackWalkLock lock

@@ -244,7 +244,7 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
     rawCpuSample.AppDomainId = threadInfo->GetAppDomainId();
     rawCpuSample.Stack = std::move(callstack);
     rawCpuSample.ThreadInfo = std::move(threadInfo);
-    rawCpuSample.Duration = _samplingInterval.count();
+    rawCpuSample.Duration = _samplingInterval;
     _pProvider->Add(std::move(rawCpuSample));
 
     return true;
