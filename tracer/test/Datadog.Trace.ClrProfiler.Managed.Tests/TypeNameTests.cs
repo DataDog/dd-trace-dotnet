@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.Ignore, "_" };
             yield return new object[] { ClrNames.Void, typeof(void) };
             yield return new object[] { ClrNames.Object, typeof(object) };
+            yield return new object[] { ClrNames.Guid, typeof(Guid) };
             yield return new object[] { ClrNames.Bool, typeof(bool) };
             yield return new object[] { ClrNames.String, typeof(string) };
             yield return new object[] { ClrNames.SByte, typeof(sbyte) };
