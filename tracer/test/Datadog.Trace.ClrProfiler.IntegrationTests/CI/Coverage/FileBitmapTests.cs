@@ -224,6 +224,7 @@ public class FileBitmapTests
     [InlineData(1, 10, 8, 15, true)]
     [InlineData(8, 15, 10, 15, true)]
     [InlineData(8, 15, 15, 16, true)]
+    [InlineData(30, 36, 35, 35, true)]
     public void GivenTwoRanges_WhenIntersectingFileBitmaps_ResultIsExpected(int from1, int to1, int from2, int to2, bool intersects)
     {
         var bitmap1 = new FileBitmap(from1, to1);
