@@ -3,7 +3,6 @@
 
 #pragma once
 
-
 class IGarbageCollectionsListener;
 
 

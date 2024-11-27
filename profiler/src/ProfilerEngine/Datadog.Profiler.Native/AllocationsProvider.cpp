@@ -18,6 +18,8 @@
 #include "OsSpecificApi.h"
 #include "SampleValueTypeProvider.h"
 
+#include <chrono>
+
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -167,7 +169,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
 
-void AllocationsProvider::OnAllocation(uint64_t timestamp,
+void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
                                        uint32_t threadId,
                                        uint32_t allocationKind,
                                        ClassID classId,

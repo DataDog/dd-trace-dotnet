@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "IFrameStore.h"
 #include "ISamplesProvider.h"
 #include "IThreadInfo.h"
@@ -17,7 +19,7 @@ public:
     NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider);
 
 protected:
-    virtual void OnCpuDuration(std::uint64_t cpuTime);
+    virtual void OnCpuDuration(std::chrono::milliseconds cpuTime);
 
 private:
 
@@ -26,5 +28,5 @@ private:
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
 
     CpuTimeProvider* _cpuTimeProvider;
-    std::uint64_t _previousTotalCpuTime;
+    std::chrono::milliseconds _previousTotalCpuTime;
 };
