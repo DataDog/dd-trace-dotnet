@@ -200,7 +200,7 @@ public sealed class Test
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
-            ImpactedTestsModule.Analyze(this, methodSymbol, tags);
+            ImpactedTestsModule.Analyze(this, tags);
 
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
             {

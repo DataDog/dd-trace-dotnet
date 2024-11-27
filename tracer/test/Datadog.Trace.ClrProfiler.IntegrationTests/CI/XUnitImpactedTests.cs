@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -36,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public virtual async Task SubmitTraces(string packageVersion)
         {
+            // TODO :  Get test source file path, modify, launch test and restore
+
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetection, "True");
