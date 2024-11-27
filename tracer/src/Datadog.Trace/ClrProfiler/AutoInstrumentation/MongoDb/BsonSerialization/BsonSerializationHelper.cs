@@ -182,7 +182,7 @@ internal static class BsonSerializationHelper
             }
 
             // in v3+ IBsonWriter has extra methods, so we need to handle that differently
-            var isV3Bson = ibsonWriterType.GetMethod(nameof(IBsonWriterProxyV3.WriteGuid), [typeof(Guid)]) is not null;
+            var isV3Bson = ibsonWriterType.Assembly.GetName().Version?.Major >= 3;
 
             // We found all the required types, now try to create the proxies/activators
             var proxyResult = DuckType.GetOrCreateProxyType(typeof(IBsonSerializerLookupProxy), bsonSerializerType);
