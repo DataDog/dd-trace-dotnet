@@ -11,7 +11,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
 /// <summary>
-/// Reverse duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v3.0.x/src/MongoDB.Bson/IO/IBsonWriter.cs
+/// Reverse duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/5edf5ba9941f170ecc6956005398a8736f12e38a/src/MongoDB.Bson/IO/IBsonWriter.cs
 /// </summary>
 internal class MongoBsonWriterV3
 {
