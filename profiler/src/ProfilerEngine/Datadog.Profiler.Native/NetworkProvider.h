@@ -48,22 +48,22 @@ public:
 
 public:
     // Inherited via INetworkListener
-    void OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url) override;
-    void OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
-    void OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
-    void OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::string redirectUrl) override;
-    void OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId) override;
-    void OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, bool Success) override;
-    void OnConnectStart(uint64_t timestamp, LPCGUID pActivityId) override;
-    void OnConnectStop(uint64_t timestamp, LPCGUID pActivityId) override;
-    void OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message) override;
-    void OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivityId) override;
-    void OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId) override;
+    void OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string url) override;
+    void OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
+    void OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
+    void OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string redirectUrl) override;
+    void OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, bool Success) override;
+    void OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
+    void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
 
 private:
     bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
     bool CaptureThreadInfo(NetworkRequestInfo& info);
-    void FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp);
+    void FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, std::chrono::nanoseconds timestamp);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -74,7 +74,7 @@ private:
     IConfiguration const* const _pConfiguration;
     CallstackProvider _callstackProvider;
     MetricsRegistry& _metricsRegistry;
-    uint64_t _requestDurationThreshold;
+    double _requestDurationThreshold;
 
     std::unordered_map<NetworkActivity, NetworkRequestInfo> _requests;
 };

@@ -13,7 +13,7 @@ BclEventsParser::BclEventsParser(INetworkListener* pNetworkListener)
 void BclEventsParser::ParseEvent(
     DotnetEventsProvider dotnetProvider,
     EVENTPIPE_PROVIDER provider,
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
@@ -44,7 +44,7 @@ void BclEventsParser::ParseEvent(
 }
 
 void BclEventsParser::ParseHttpEvent(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
@@ -109,7 +109,7 @@ void BclEventsParser::ParseHttpEvent(
     }
 }
 
-void BclEventsParser::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // string scheme
     // string host
@@ -158,7 +158,7 @@ void BclEventsParser::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, LP
         _pNetworkListener->OnRequestStart(timestamp, pActivityId, url);
     }
 }
-void BclEventsParser::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // int statusCode
 
@@ -175,7 +175,7 @@ void BclEventsParser::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, LPC
     }
 }
 
-void BclEventsParser::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // string exception message
 
@@ -192,24 +192,24 @@ void BclEventsParser::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, L
     }
 }
 
-void BclEventsParser::OnRequestFailedDetailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestFailedDetailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
    // we don't need the exception callstack
 }
 
-void BclEventsParser::OnConnectionEstablished(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnConnectionEstablished(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnConnectionClosed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnConnectionClosed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnRequestLeftQueue(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestLeftQueue(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnRequestHeadersStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestHeadersStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     if (_pNetworkListener != nullptr)
     {
@@ -217,31 +217,31 @@ void BclEventsParser::OnRequestHeadersStart(uint64_t timestamp, LPCGUID pActivit
     }
 }
 
-void BclEventsParser::OnRequestHeadersStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestHeadersStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnRequestContentStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
+void BclEventsParser::OnRequestContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
 {
 }
 
-void BclEventsParser::OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnResponseHeadersStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnResponseHeadersStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnResponseHeadersStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnResponseHeadersStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnResponseContentStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
 }
 
-void BclEventsParser::OnResponseContentStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     if (_pNetworkListener != nullptr)
     {
@@ -249,7 +249,7 @@ void BclEventsParser::OnResponseContentStop(uint64_t timestamp, LPCGUID pActivit
     }
 }
 
-void BclEventsParser::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // string redirectUrl
     ULONG offset = 0;
@@ -270,7 +270,7 @@ void BclEventsParser::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, LPCGUI
 
 
 void BclEventsParser::ParseSocketsEvent(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
@@ -305,14 +305,14 @@ void BclEventsParser::ParseSocketsEvent(
     }
 }
 
-void BclEventsParser::OnConnectStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
+void BclEventsParser::OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
 {
     if (_pNetworkListener != nullptr)
     {
         _pNetworkListener->OnConnectStart(timestamp, pActivityId);
     }
 }
-void BclEventsParser::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
+void BclEventsParser::OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
 {
     if (_pNetworkListener != nullptr)
     {
@@ -320,7 +320,7 @@ void BclEventsParser::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId, LPC
     }
 }
 
-void BclEventsParser::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+void BclEventsParser::OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // string exception message
 
@@ -339,7 +339,7 @@ void BclEventsParser::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, L
 
 
 void BclEventsParser::ParseNameResolutionEvent(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
@@ -365,14 +365,14 @@ void BclEventsParser::ParseNameResolutionEvent(
     }
 }
 
-void BclEventsParser::OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData)
+void BclEventsParser::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData)
 {
     if (_pNetworkListener != nullptr)
     {
         _pNetworkListener->OnDnsResolutionStart(timestamp, pActivityId);
     }
 }
-void BclEventsParser::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData, bool success)
+void BclEventsParser::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData, bool success)
 {
     if (_pNetworkListener != nullptr)
     {
@@ -382,7 +382,7 @@ void BclEventsParser::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityI
 
 
 void BclEventsParser::ParseNetSecurityEvent(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,

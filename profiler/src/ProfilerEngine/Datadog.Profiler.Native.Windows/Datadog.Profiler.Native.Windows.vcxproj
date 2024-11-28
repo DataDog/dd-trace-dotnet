@@ -219,6 +219,7 @@
   <ItemGroup>
     <ClInclude Include="..\Datadog.Profiler.Native\DllMain.h" />
     <ClInclude Include="..\Datadog.Profiler.Native.Windows\resource.h" />
+    <ClInclude Include="chrono_helper.hpp" />
     <ClInclude Include="CrashReportingWindows.h" />
     <ClInclude Include="EtwEventsManager.h" />
     <ClInclude Include="ETW\EtwEventsHandler.h" />

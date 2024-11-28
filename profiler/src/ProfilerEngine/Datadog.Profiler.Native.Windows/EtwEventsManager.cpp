@@ -10,6 +10,8 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
+#include "chrono_helper.hpp"
+
 #include "Windows.h"
 
 #include <memory>
@@ -43,11 +45,11 @@ EtwEventsManager::EtwEventsManager(
     _IpcServer = nullptr;
 }
 
-
-uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
+static std::chrono::nanoseconds TimestampToEpochNS(etw_timestamp evtTimestamp)
 {
     // the event timestamp is in 100ns units since 1601-01-01 in UTC
     FILETIME ft;
+    auto eventTimestamp = evtTimestamp.count();
     ft.dwLowDateTime = eventTimestamp & 0xFFFFFFFF;
     ft.dwHighDateTime = eventTimestamp >> 32;
 
@@ -69,11 +71,12 @@ uint64_t TimestampToEpochNS(uint64_t eventTimestamp)
     t.tm_isdst = -1; // don't mess with daylight saving time (already done by SystemTimeToTzSpecificLocalTime)
     time_t timeSinceEpoch = mktime(&t);
 
-    return timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
+    auto timestampNs = timeSinceEpoch * 1000'000'000 + st.wMilliseconds * 1'000'000;  // don't loose the milliseconds accuracy
+    return std::chrono::nanoseconds(timestampNs);
 }
 
 void EtwEventsManager::OnEvent(
-    uint64_t systemTimestamp,
+    etw_timestamp systemTimestamp,
     uint32_t tid,
     uint32_t version,
     uint64_t keyword,
@@ -158,11 +161,11 @@ void EtwEventsManager::OnEvent(
             if (pThreadInfo != nullptr)
             {
                 pThreadInfo->ClearLastEventId();
-                if (pThreadInfo->ContentionStartTimestamp != 0)
+                if (pThreadInfo->ContentionStartTimestamp != etw_timestamp::zero())
                 {
-                    auto timestamp = TimestampToEpochNS(systemTimestamp); // systemTimestamp is in 100ns units
-                    double duration = static_cast<double>((systemTimestamp - pThreadInfo->ContentionStartTimestamp)) * 100;
-                    pThreadInfo->ContentionStartTimestamp = 0;
+                    auto timestamp = TimestampToEpochNS(systemTimestamp);
+                    std::chrono::nanoseconds duration = systemTimestamp - pThreadInfo->ContentionStartTimestamp;
+                    pThreadInfo->ContentionStartTimestamp = etw_timestamp::zero();
 
                     _pContentionListener->OnContention(timestamp, tid, duration, pThreadInfo->ContentionCallStack);
                 }
@@ -214,7 +217,7 @@ void EtwEventsManager::OnEvent(
             // Since the events are received asynchronously, it is not even possible
             // to assume that the object that was stored at the received Adress field
             // is still there: it could have been moved by a garbage collection
-            AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
+            auto* pPayload = reinterpret_cast<AllocationTickV3Payload const*>(pEventData);
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
 
@@ -226,7 +229,7 @@ void EtwEventsManager::OnEvent(
             }
             else
             {
-                pThreadInfo->AllocationClassId = (uintptr_t)pPayload->TypeId;
+                pThreadInfo->AllocationClassId = pPayload->TypeId;
             }
 
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;

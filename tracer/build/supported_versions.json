@@ -922,7 +922,7 @@
         "minVersionTestedInclusive": "4.1.14",
         "maxVersionSupportedInclusive": "8.0.6",
         "maxVersionAvailableInclusive": "9.0.1",
-        "maxVersionTestedInclusive": "8.0.6"
+        "maxVersionTestedInclusive": "9.0.1"
       }
     ]
   },

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <string>
 
 #include "Callstack.h"
@@ -12,33 +13,33 @@
 class NetworkRequestInfo
 {
 public:
-    NetworkRequestInfo(std::string url, uint64_t startTimestamp);
+    NetworkRequestInfo(std::string url, std::chrono::nanoseconds startTimestamp);
 
 public:
     // request start
-    uint64_t StartTimestamp;
+    std::chrono::nanoseconds StartTimestamp;
     std::string Url;
     uint64_t LocalRootSpanID;
     uint64_t SpanID;
     AppDomainID AppDomainId;
     Callstack StartCallStack;
     std::shared_ptr<ManagedThreadInfo> StartThreadInfo;
-    uint64_t ReqRespStartTime;
-    uint64_t ReqRespDuration;
+    std::chrono::nanoseconds ReqRespStartTime;
+    std::chrono::nanoseconds ReqRespDuration;
 
     // DNS
-    uint64_t DnsStartTime;
-    uint64_t DnsDuration;
+    std::chrono::nanoseconds DnsStartTime;
+    std::chrono::nanoseconds DnsDuration;
     bool DnsResolutionSuccess;
 
     // HTTPS
-    uint64_t HandshakeStartTime;
-    uint64_t HandshakeDuration;
+    std::chrono::nanoseconds HandshakeStartTime;
+    std::chrono::nanoseconds HandshakeDuration;
     std::string HandshakeError;
 
     // socket connection
-    uint64_t SocketConnectStartTime;
-    uint64_t SocketDuration;
+    std::chrono::nanoseconds SocketConnectStartTime;
+    std::chrono::nanoseconds SocketDuration;
 
     // redirect
     std::string RedirectUrl;

@@ -41,7 +41,8 @@ NetworkProvider::NetworkProvider(
     _callstackProvider{ std::move(callstackProvider) },
     _metricsRegistry{metricsRegistry}
 {
-    _requestDurationThreshold = pConfiguration->GetHttpRequestDurationThreshold().count() * 1000000;
+    // all other durations in the code are in nanoseconds but the config is in milliseconds
+    _requestDurationThreshold = static_cast<double>(pConfiguration->GetHttpRequestDurationThreshold().count() * 1000000);
 }
 
 bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
@@ -84,7 +85,7 @@ bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
     return true;
 }
 
-void NetworkProvider::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, std::string url)
+void NetworkProvider::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string url)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity))
@@ -107,7 +108,7 @@ void NetworkProvider::OnRequestStart(uint64_t timestamp, LPCGUID pActivityId, st
     }
 }
 
-void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uint32_t statusCode)
+void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity))
@@ -126,7 +127,7 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
     if (!_pConfiguration->ForceHttpSampling())
     {
         // only requests lasting more than a threshold are captured
-        if ((timestamp - requestInfo->second.StartTimestamp) > _requestDurationThreshold)
+        if ((timestamp - requestInfo->second.StartTimestamp).count() > _requestDurationThreshold)
         {
             // skip this request
             _requests.erase(activity);
@@ -160,7 +161,7 @@ void NetworkProvider::OnRequestStop(uint64_t timestamp, LPCGUID pActivityId, uin
     _requests.erase(activity);
 }
 
-void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message)
+void NetworkProvider::OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity))
@@ -178,7 +179,7 @@ void NetworkProvider::OnRequestFailed(uint64_t timestamp, LPCGUID pActivityId, s
     requestInfo->second.Error = std::move(message);
 }
 
-void NetworkProvider::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::string redirectUrl)
+void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string redirectUrl)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity))
@@ -194,7 +195,7 @@ void NetworkProvider::OnRedirect(uint64_t timestamp, LPCGUID pActivityId, std::s
     requestInfo->second.RedirectUrl = std::move(redirectUrl);
 }
 
-void NetworkProvider::OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -208,7 +209,7 @@ void NetworkProvider::OnDnsResolutionStart(uint64_t timestamp, LPCGUID pActivity
     }
     requestInfo->second.DnsStartTime = timestamp;
 }
-void NetworkProvider::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityId, bool success)
+void NetworkProvider::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, bool success)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -224,7 +225,7 @@ void NetworkProvider::OnDnsResolutionStop(uint64_t timestamp, LPCGUID pActivityI
     requestInfo->second.DnsResolutionSuccess = success;
 }
 
-void NetworkProvider::OnConnectStart(uint64_t timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -240,7 +241,7 @@ void NetworkProvider::OnConnectStart(uint64_t timestamp, LPCGUID pActivityId)
     requestInfo->second.SocketConnectStartTime = timestamp;
 }
 
-void NetworkProvider::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -255,7 +256,7 @@ void NetworkProvider::OnConnectStop(uint64_t timestamp, LPCGUID pActivityId)
     requestInfo->second.SocketDuration = timestamp - requestInfo->second.SocketConnectStartTime;
 }
 
-void NetworkProvider::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, std::string message)
+void NetworkProvider::OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -271,7 +272,7 @@ void NetworkProvider::OnConnectFailed(uint64_t timestamp, LPCGUID pActivityId, s
     requestInfo->second.Error = std::move(message);
 }
 
-void NetworkProvider::OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -287,7 +288,7 @@ void NetworkProvider::OnRequestHeaderStart(uint64_t timestamp, LPCGUID pActivity
     requestInfo->second.ReqRespStartTime = timestamp;
 }
 
-void NetworkProvider::OnRequestContentStop(uint64_t timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -304,7 +305,7 @@ void NetworkProvider::OnRequestContentStop(uint64_t timestamp, LPCGUID pActivity
 }
 
 
-void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, uint64_t timestamp)
+void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, std::chrono::nanoseconds timestamp)
 {
     sample.StartTimestamp = info.StartTimestamp;
     sample.Timestamp = timestamp;

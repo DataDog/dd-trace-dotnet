@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "RawSample.h"
 #include "Sample.h"
 
@@ -57,10 +59,10 @@ public:
     inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         auto networkCountIndex = valueOffsets[0];
-        sample->AddValue(Timestamp - StartTimestamp, networkCountIndex);
+        sample->AddValue((Timestamp - StartTimestamp).count(), networkCountIndex);
 
         sample->AddLabel(Label(Sample::RequestUrlLabel, Url));
-        sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp));
+        sample->AddNumericLabel(NumericLabel(Sample::RequestTimeStampLabel, StartTimestamp.count()));
         sample->AddNumericLabel(NumericLabel(Sample::RequestStatusCodeLabel, StatusCode));
         if (!Error.empty())
         {
@@ -70,48 +72,48 @@ public:
         {
             sample->AddLabel(Label(Sample::RequestRedirectUrlLabel, RedirectUrl));
         }
-        if (DnsDuration != 0)
+        if (DnsDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration));
+            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration.count()));
             sample->AddLabel(Label(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
         }
-        if (HandshakeDuration != 0)
+        if (HandshakeDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration));
+            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration.count()));
         }
         if (!HandshakeError.empty())
         {
             sample->AddLabel(Label(Sample::RequestHandshakeErrorLabel, HandshakeError));
         }
-        if (SocketConnectDuration != 0)
+        if (SocketConnectDuration != std::chrono::nanoseconds::zero())
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration));
+            sample->AddNumericLabel(NumericLabel(Sample::RequestSocketDurationLabel, SocketConnectDuration.count()));
         }
         sample->AddLabel(Label(Sample::RequestResponseThreadIdLabel, EndThreadId));
-        if (ReqRespDuration != 0)  // could be 0 in case of error
+        if (ReqRespDuration != std::chrono::nanoseconds::zero())  // could be 0 in case of error
         {
-            sample->AddNumericLabel(NumericLabel(Sample::RequestResponseDurationLabel, ReqRespDuration));
+            sample->AddNumericLabel(NumericLabel(Sample::RequestResponseDurationLabel, ReqRespDuration.count()));
         }
     }
 
     std::string Url;
-    uint64_t StartTimestamp;
+    std::chrono::nanoseconds StartTimestamp;
     int32_t StatusCode;
     std::string Error;
     std::string EndThreadId;
     std::string RedirectUrl;
 
-    uint64_t DnsStartTimestamp;
-    uint64_t DnsDuration;
+    std::chrono::nanoseconds DnsStartTimestamp;
+    std::chrono::nanoseconds DnsDuration;
     bool DnsSuccess;
 
-    uint64_t HandshakeDuration;
+    std::chrono::nanoseconds HandshakeDuration;
     std::string HandshakeError;
 
-    uint64_t SocketConnectDuration;
+    std::chrono::nanoseconds SocketConnectDuration;
 
-    uint64_t ReqRespStartTimestamp;
-    uint64_t ReqRespDuration;
+    std::chrono::nanoseconds ReqRespStartTimestamp;
+    std::chrono::nanoseconds ReqRespDuration;
 
     // TODO: check with BE if we also need the thread name
 };

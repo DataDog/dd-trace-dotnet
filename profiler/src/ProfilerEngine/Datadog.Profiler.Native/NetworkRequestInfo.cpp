@@ -3,7 +3,7 @@
 
 #include "NetworkRequestInfo.h"
 
-NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
+NetworkRequestInfo::NetworkRequestInfo(std::string url, std::chrono::nanoseconds startTimestamp)
     :
     Url(std::move(url)),
     StartTimestamp(startTimestamp)
@@ -11,13 +11,13 @@ NetworkRequestInfo::NetworkRequestInfo(std::string url, uint64_t startTimestamp)
     AppDomainId = 0;
     LocalRootSpanID = 0;
     SpanID = 0;
-    DnsStartTime = 0;
-    DnsDuration = 0;
+    DnsStartTime = std::chrono::nanoseconds::zero();
+    DnsDuration = std::chrono::nanoseconds::zero();
     DnsResolutionSuccess = false;
-    HandshakeStartTime = 0;
-    HandshakeDuration = 0;
-    SocketConnectStartTime = 0;
-    SocketDuration = 0;
-    ReqRespStartTime = 0;
-    ReqRespDuration = 0;
+    HandshakeStartTime = std::chrono::nanoseconds::zero();
+    HandshakeDuration = std::chrono::nanoseconds::zero();
+    SocketConnectStartTime = std::chrono::nanoseconds::zero();
+    SocketDuration = std::chrono::nanoseconds::zero();
+    ReqRespStartTime = std::chrono::nanoseconds::zero();
+    ReqRespDuration = std::chrono::nanoseconds::zero();
 }

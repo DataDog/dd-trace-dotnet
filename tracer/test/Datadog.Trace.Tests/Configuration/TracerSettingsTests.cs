@@ -1052,12 +1052,21 @@ namespace Datadog.Trace.Tests.Configuration
         // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
-        [InlineData("", DbmPropagationLevel.Disabled)]
-        [InlineData(null, DbmPropagationLevel.Disabled)]
-        [InlineData("invalid", DbmPropagationLevel.Disabled)]
-        [InlineData("Disabled", DbmPropagationLevel.Disabled)]
-        [InlineData("full", DbmPropagationLevel.Full)]
-        [InlineData("SERVICE", DbmPropagationLevel.Service)]
+        [InlineData("", DbmPropagationLevel.Disabled)]              // empty string defaults to disabled
+        [InlineData(null, DbmPropagationLevel.Disabled)]            // null defaults to disabled
+        [InlineData("      ", DbmPropagationLevel.Disabled)]        // whitespace defaults to disabled
+        [InlineData("invalid", DbmPropagationLevel.Disabled)]       // invalid input
+        [InlineData("full", DbmPropagationLevel.Full)]              // exact match
+        [InlineData("service", DbmPropagationLevel.Service)]        // exact match
+        [InlineData("disabled", DbmPropagationLevel.Disabled)]      // exact match
+        [InlineData("Disabled", DbmPropagationLevel.Disabled)]      // case insenstive
+        [InlineData("SERVICE", DbmPropagationLevel.Service)]        // case insensitive
+        [InlineData("FuLl", DbmPropagationLevel.Full)]              // case insensitive
+        [InlineData(" service", DbmPropagationLevel.Service)]       // trim whitespace
+        [InlineData("service ", DbmPropagationLevel.Service)]       // trim whitespace
+        [InlineData("full   ", DbmPropagationLevel.Full)]           // trim whitespace
+        [InlineData("     disabled", DbmPropagationLevel.Disabled)] // trim whitespace
+        [InlineData("s e r v i c e", DbmPropagationLevel.Disabled)] // invalid input
         public void DbmPropagationMode(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DbmPropagationMode, value));

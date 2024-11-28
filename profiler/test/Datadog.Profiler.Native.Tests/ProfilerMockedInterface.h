@@ -2,11 +2,16 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "cor.h"
+#include "corprof.h"
+
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
+#include "IAllocationsListener.h"
 #include "IApplicationStore.h"
+#include "IContentionListener.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
@@ -19,6 +24,7 @@
 #include "SamplesEnumerator.h"
 #include "TagsHelper.h"
 
+#include <chrono>
 #include <memory>
 
 class MockConfiguration : public IConfiguration
@@ -194,6 +200,36 @@ public:
 
 private:
     bool _hasBeenStarted = false;
+};
+
+class MockContentionListener : public IContentionListener
+{
+public:
+    MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds contentionDurationNs), (override));
+    MOCK_METHOD(void, OnContention, (std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDurationNs, const std::vector<uintptr_t>& stack), (override));
+    MOCK_METHOD(void, SetBlockingThread, (uint64_t osThreadId), (override));
+};
+
+class MockAllocationListener : public IAllocationsListener
+{
+public:
+    MOCK_METHOD(void, OnAllocation, (uint32_t allocationKind,
+                              ClassID classId,
+                              const WCHAR* typeName,
+                              uintptr_t address,
+                              uint64_t objectSize,
+                              uint64_t allocationAmount), (override));
+
+    // for .NET Framework, events are received asynchronously
+    // and the callstack is received as a sibling event
+    // --> we cannot walk the stack of the current thread
+    MOCK_METHOD(void, OnAllocation, (std::chrono::nanoseconds timestamp,
+                              uint32_t threadId,
+                              uint32_t allocationKind,
+                              ClassID classId,
+                              const std::string& typeName,
+                              uint64_t allocationAmount,
+                              const std::vector<uintptr_t>& stack), (override));
 };
 
 template <typename T, typename U, typename... Args>

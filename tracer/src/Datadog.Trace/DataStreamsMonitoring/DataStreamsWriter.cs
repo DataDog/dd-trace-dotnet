@@ -13,7 +13,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -26,7 +25,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly Task _processTask;
-    private readonly ManualResetEventSlim _processingMutex = new(initialState: false, spinCount: 0);
+    private readonly AsyncManualResetEvent _processingMutex = new(set: false);
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
@@ -238,7 +237,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 continue;
             }
 
-            _processingMutex.Wait();
+            await _processingMutex.WaitAsync().ConfigureAwait(false);
             _processingMutex.Reset();
         }
     }
