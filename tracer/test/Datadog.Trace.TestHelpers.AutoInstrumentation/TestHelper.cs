@@ -110,52 +110,12 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false)
+        public async Task<ProcessResult> RunDotnetTestSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", bool forceVsTestParam = false, int expectedExitCode = 0)
         {
             var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
 
             using var helper = new ProcessHelper(process);
-
-            process.WaitForExit();
-            helper.Drain();
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"Exit Code: " + exitCode);
-
-            if (helper.EnvironmentVariables is { } environmentVariables)
-            {
-                var strEnvironmentVariables = new StringBuilder();
-                foreach (var envVar in environmentVariables)
-                {
-                    strEnvironmentVariables.AppendLine($"\t{envVar.Key}={envVar.Value}");
-                }
-
-                Output.WriteLine($"Environment Variables:{Environment.NewLine}{strEnvironmentVariables}");
-            }
-
-            var standardOutput = helper.StandardOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardOutput))
-            {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            }
-            else
-            {
-                Output.WriteLine($"StandardOutput: (empty)");
-            }
-
-            var standardError = helper.ErrorOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-            }
-            else
-            {
-                Output.WriteLine($"StandardError: (empty)");
-            }
-
-            return new ProcessResult(process, standardOutput, standardError, exitCode);
+            return WaitForProcessResult(helper, expectedExitCode);
         }
 
         public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false)
