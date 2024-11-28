@@ -191,7 +191,7 @@ std::vector<StackFrame> CrashReportingLinux::GetThreadFrames(int32_t tid, Resolv
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
         unw_get_reg(&cursor, UNW_REG_SP, &sp);
 
-        StackFrame stackFrame;
+        StackFrame stackFrame{};
         stackFrame.ip = ip;
         stackFrame.sp = sp;
         stackFrame.isSuspicious = false;
