@@ -105,8 +105,9 @@ internal static class ImpactedTestsModule
             {
                 if (modifiedFiles is null)
                 {
+                    var prBaseBranch = CIEnvironmentValues.Instance.PrBaseBranch;
                     // Milestone 1.5 : Return the test definition lines
-                    if (CIEnvironmentValues.Instance.PrBaseBranch is not null)
+                    if (prBaseBranch is null)
                     {
                         Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
                         // TODO : Milestone 1 : Retrieve diff files from Backend
