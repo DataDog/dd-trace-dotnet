@@ -66,10 +66,6 @@ src/Datadog.Trace/AppSec/SecurityConstants.cs
 src/Datadog.Trace/AppSec/SpanExtensions.cs
 src/Datadog.Trace/AspNet/MimeTypes.cs
 src/Datadog.Trace/AspNet/TracingHttpModule.cs
-src/Datadog.Trace/Ci/CITracerManager.cs
-src/Datadog.Trace/Ci/CITracerManagerFactory.cs
-src/Datadog.Trace/Ci/CodeOwners.cs
-src/Datadog.Trace/Ci/IEvent.cs
 src/Datadog.Trace/ClrProfiler/AutomaticTracer.cs
 src/Datadog.Trace/ClrProfiler/CallTargetKind.cs
 src/Datadog.Trace/ClrProfiler/ClrNames.cs
@@ -403,13 +399,6 @@ src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/Rule.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/RuleMatch.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/Tags.cs
 src/Datadog.Trace/AppSec/Waf/ReturnTypes.Managed/WafMatch.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/CIFormatterResolver.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/CIVisibilityEventMessagePackFormatter.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/CoveragePayloadMessagePackFormatter.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/EventMessagePackFormatter.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/IEventMessagePackFormatter.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/SpanMessagePackFormatter.cs
-src/Datadog.Trace/Ci/Agent/MessagePack/TestCoverageMessagePackFormatter.cs
 src/Datadog.Trace/Ci/Agent/Payloads/CICodeCoveragePayload.cs
 src/Datadog.Trace/Ci/Agent/Payloads/CITestCyclePayload.cs
 src/Datadog.Trace/Ci/Agent/Payloads/CIVisibilityProtocolPayload.cs

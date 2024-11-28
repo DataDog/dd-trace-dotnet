@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using Datadog.Trace.Logging;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         protected static readonly byte[] VersionBytes = StringEncoding.UTF8.GetBytes("version");
         protected static readonly byte[] ContentBytes = StringEncoding.UTF8.GetBytes("content");
 
-        public EventMessagePackFormatter()
+        protected EventMessagePackFormatter()
         {
             _log = DatadogLogging.GetLoggerFor(GetType());
         }

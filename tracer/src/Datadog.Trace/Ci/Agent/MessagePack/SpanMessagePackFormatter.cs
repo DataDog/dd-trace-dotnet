@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -58,7 +59,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly byte[][] _samplingPriorityValueBytes;
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
-        private readonly byte[] _processIdValueBytes;
+        private readonly byte[]? _processIdValueBytes;
 
         private SpanMessagePackFormatter()
         {
@@ -190,7 +191,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
             offset += MessagePackBinary.WriteByte(ref bytes, offset, (byte)(value.Error ? 1 : 0));
 
-            ITagProcessor[] tagProcessors = null;
+            ITagProcessor[]? tagProcessors = null;
             if (context.TraceContext?.Tracer is Tracer tracer)
             {
                 tagProcessors = tracer.TracerManager.TagProcessors;
@@ -201,7 +202,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             return offset - originalOffset;
         }
 
-        private int SerializeTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
+        private int SerializeTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[]? tagProcessors)
         {
             int originalOffset = offset;
 
@@ -213,7 +214,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[]? tagProcessors)
         {
             int originalOffset = offset;
             var traceContext = span.Context.TraceContext;
@@ -293,7 +294,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteTag(ref byte[] bytes, ref int offset, string key, string value, ITagProcessor[] tagProcessors)
+        private void WriteTag(ref byte[] bytes, ref int offset, string key, string value, ITagProcessor[]? tagProcessors)
         {
             if (tagProcessors is not null)
             {
@@ -308,11 +309,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteTag(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, string value, ITagProcessor[] tagProcessors)
+        private void WriteTag(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, string value, ITagProcessor[]? tagProcessors)
         {
             if (tagProcessors is not null)
             {
-                string key = null;
+                string? key = null;
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
                     tagProcessors[i]?.ProcessMeta(ref key, ref value);
@@ -326,7 +327,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         // METRICS
 
-        private int WriteMetrics(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
+        private int WriteMetrics(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[]? tagProcessors)
         {
             int originalOffset = offset;
 
@@ -385,7 +386,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteMetric(ref byte[] bytes, ref int offset, string key, double value, ITagProcessor[] tagProcessors)
+        private void WriteMetric(ref byte[] bytes, ref int offset, string key, double value, ITagProcessor[]? tagProcessors)
         {
             if (tagProcessors is not null)
             {
@@ -400,11 +401,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteMetric(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, double value, ITagProcessor[] tagProcessors)
+        private void WriteMetric(ref byte[] bytes, ref int offset, ReadOnlySpan<byte> keyBytes, double value, ITagProcessor[]? tagProcessors)
         {
             if (tagProcessors is not null)
             {
-                string key = null;
+                string? key = null;
                 for (var i = 0; i < tagProcessors.Length; i++)
                 {
                     tagProcessors[i]?.ProcessMetric(ref key, ref value);
@@ -424,14 +425,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>
         {
             private readonly SpanMessagePackFormatter _formatter;
-            private readonly ITagProcessor[] _tagProcessors;
+            private readonly ITagProcessor[]? _tagProcessors;
 
             public byte[] Bytes;
             public int Offset;
             public int Count;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal TagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
+            internal TagWriter(SpanMessagePackFormatter formatter, ITagProcessor[]? tagProcessors, byte[] bytes, int offset)
             {
                 _formatter = formatter;
                 _tagProcessors = tagProcessors;
@@ -474,14 +475,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         internal struct TraceTagWriter : TraceTagCollection.ITagEnumerator
         {
             private readonly SpanMessagePackFormatter _formatter;
-            private readonly ITagProcessor[] _tagProcessors;
+            private readonly ITagProcessor[]? _tagProcessors;
 
             public byte[] Bytes;
             public int Offset;
             public int Count;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal TraceTagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
+            internal TraceTagWriter(SpanMessagePackFormatter formatter, ITagProcessor[]? tagProcessors, byte[] bytes, int offset)
             {
                 _formatter = formatter;
                 _tagProcessors = tagProcessors;
