@@ -87,8 +87,7 @@ namespace Datadog.Trace.Ci
             ];
         }
 
-        [return:NotNullIfNotNull(nameof(span))]
-        private Span? ProcessSpan(Span? span)
+        private Span? ProcessSpan(Span span)
         {
             if (span is null)
             {
@@ -104,7 +103,14 @@ namespace Datadog.Trace.Ci
 
                 try
                 {
-                    span = processor.Process(span);
+                    if (processor.Process(span) is { } nSpan)
+                    {
+                        span = nSpan;
+                    }
+                    else
+                    {
+                        return null;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -120,11 +126,17 @@ namespace Datadog.Trace.Ci
         {
             if (@event is TestEvent { Content: { } test } testEvent)
             {
-                testEvent.Content = ProcessSpan(test);
+                if (ProcessSpan(test) is { } content)
+                {
+                    testEvent.Content = content;
+                }
             }
             else if (@event is SpanEvent { Content: { } span } spanEvent)
             {
-                spanEvent.Content = ProcessSpan(span);
+                if (ProcessSpan(span) is { } content)
+                {
+                    spanEvent.Content = content;
+                }
             }
 
             ((IEventWriter)AgentWriter).WriteEvent(@event);

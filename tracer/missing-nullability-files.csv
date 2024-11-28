@@ -147,7 +147,6 @@ src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
 src/Datadog.Trace/PlatformHelpers/PlatformStrategy.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
 src/Datadog.Trace/Processors/ITagProcessor.cs
-src/Datadog.Trace/Processors/ITraceProcessor.cs
 src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
 src/Datadog.Trace/Processors/ObfuscatorTagsProcessor.cs
 src/Datadog.Trace/Processors/ObfuscatorTraceProcessor.cs
@@ -266,9 +265,6 @@ src/Datadog.Trace/Ci/Agent/CIWriterFileSender.cs
 src/Datadog.Trace/Ci/Agent/CIWriterHttpSender.cs
 src/Datadog.Trace/Ci/Agent/ICIVisibilityProtocolWriterSender.cs
 src/Datadog.Trace/Ci/Agent/IEventWriter.cs
-src/Datadog.Trace/Ci/Processors/OriginTagTraceProcessor.cs
-src/Datadog.Trace/Ci/Processors/TestSuiteVisibilityProcessor.cs
-src/Datadog.Trace/Ci/Sampling/CISampler.cs
 src/Datadog.Trace/Ci/Tagging/TestModuleSpanTags.cs
 src/Datadog.Trace/Ci/Tagging/TestSessionSpanTags.cs
 src/Datadog.Trace/Ci/Tagging/TestSpanTags.cs
@@ -279,7 +275,6 @@ src/Datadog.Trace/Ci/Tags/CodeCoverageTags.cs
 src/Datadog.Trace/Ci/Tags/CommonTags.cs
 src/Datadog.Trace/Ci/Tags/IntelligentTestRunnerTags.cs
 src/Datadog.Trace/Ci/Tags/TestTags.cs
-src/Datadog.Trace/Ci/Telemetry/TelemetryHelper.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AutoInstrumentationExtensions.cs
 src/Datadog.Trace/ClrProfiler/Helpers/HttpBypassHelper.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
