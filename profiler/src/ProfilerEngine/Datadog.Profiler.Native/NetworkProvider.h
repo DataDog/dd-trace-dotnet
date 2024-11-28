@@ -57,8 +57,12 @@ public:
     void OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
+    void OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string targetHost) override;
+    void OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
+
     void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
-    void OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
 
 private:
     bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);

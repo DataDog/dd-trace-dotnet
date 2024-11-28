@@ -54,6 +54,7 @@ void BclEventsParser::ParseHttpEvent(
     LPCGUID pRelatedActivityId
 )
 {
+    // OnXXX methods not used are commented out to avoid unnecessary calls
     switch (id)
     {
     case 1: // RequestStart
@@ -66,40 +67,40 @@ void BclEventsParser::ParseHttpEvent(
         OnRequestFailed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 4: // ConnectionEstablished
-        OnConnectionEstablished(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnConnectionEstablished(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 5: // ConnectionClosed
-        OnConnectionClosed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnConnectionClosed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 6: // RequestLeftQueue
-        OnRequestLeftQueue(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnRequestLeftQueue(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 7: // RequestHeadersStart
         OnRequestHeadersStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 8: // RequestHeadersStop
-        OnRequestHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnRequestHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 9: // RequestContentStart
-        OnRequestContentStart(timestamp, pActivityId, pRelatedActivityId);
+        // OnRequestContentStart(timestamp, pActivityId, pRelatedActivityId);
         break;
     case 10: // RequestContentStop
-        OnRequestContentStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnRequestContentStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 11: // ResponseHeadersStart
-        OnResponseHeadersStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnResponseHeadersStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 12: // ResponseHeadersStop
-        OnResponseHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnResponseHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 13: // ResponseContentStart
-        OnResponseContentStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnResponseContentStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 14: // ResponseContentStop
         OnResponseContentStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 15: // RequestFailedDetailed
-        OnRequestFailedDetailed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        // OnRequestFailedDetailed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
         break;
     case 16: // Redirect
         OnRedirect(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
@@ -158,6 +159,7 @@ void BclEventsParser::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID
         _pNetworkListener->OnRequestStart(timestamp, pActivityId, url);
     }
 }
+
 void BclEventsParser::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     // int statusCode
@@ -245,7 +247,7 @@ void BclEventsParser::OnResponseContentStop(std::chrono::nanoseconds timestamp, 
 {
     if (_pNetworkListener != nullptr)
     {
-        _pNetworkListener->OnRequestContentStop(timestamp, pActivityId);
+        _pNetworkListener->OnResponseContentStop(timestamp, pActivityId);
     }
 }
 
@@ -266,7 +268,6 @@ void BclEventsParser::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pAc
     }
 
 }
-
 
 
 void BclEventsParser::ParseSocketsEvent(
@@ -312,6 +313,7 @@ void BclEventsParser::OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID
         _pNetworkListener->OnConnectStart(timestamp, pActivityId);
     }
 }
+
 void BclEventsParser::OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId)
 {
     if (_pNetworkListener != nullptr)
@@ -365,14 +367,15 @@ void BclEventsParser::ParseNameResolutionEvent(
     }
 }
 
-void BclEventsParser::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData)
+void BclEventsParser::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
     if (_pNetworkListener != nullptr)
     {
         _pNetworkListener->OnDnsResolutionStart(timestamp, pActivityId);
     }
 }
-void BclEventsParser::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE eventData, ULONG cbEventData, bool success)
+
+void BclEventsParser::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData, bool success)
 {
     if (_pNetworkListener != nullptr)
     {
@@ -392,5 +395,81 @@ void BclEventsParser::ParseNetSecurityEvent(
     LPCGUID pRelatedActivityId
 )
 {
-    // Method implementation goes here
+    switch (id)
+    {
+    case 1: // HandshakeStart
+        OnHandshakeStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        break;
+    case 2: // HandshakeStop
+        OnHandshakeStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        break;
+    case 3: // HandshakeFailed
+        OnHandshakeFailed(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+        break;
+    default:
+        break;
+    }
+}
+
+void BclEventsParser::OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        // bool IsServer
+        // string targetHost
+
+        ULONG offset = 0;
+        uint32_t isServer = 0;
+        if (!EventsParserHelper::Read(isServer, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        WCHAR* targetHost = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+        if (targetHost == nullptr)
+        {
+            return;
+        }
+
+        _pNetworkListener->OnHandshakeStart(timestamp, pActivityId, shared::ToString(shared::WSTRING(targetHost)));
+    }
+}
+
+void BclEventsParser::OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        _pNetworkListener->OnHandshakeStop(timestamp, pActivityId);
+    }
+}
+
+void BclEventsParser::OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
+{
+    if (_pNetworkListener != nullptr)
+    {
+        // bool IsServer
+        // double elapsedMilliseconds
+        // string exceptionMessage
+
+        ULONG offset = 0;
+        uint32_t isServer = 0;
+        if (!EventsParserHelper::Read(isServer, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        double elapsedMilliseconds = 0;
+        if (!EventsParserHelper::Read(elapsedMilliseconds, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        WCHAR* message = EventsParserHelper::ReadWideString(pEventData, cbEventData, &offset);
+        if (message == nullptr)
+        {
+            return;
+        }
+
+        _pNetworkListener->OnHandshakeFailed(timestamp, pActivityId, shared::ToString(shared::WSTRING(message)));
+    }
 }

@@ -18,8 +18,11 @@ public:
     virtual void OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
     virtual void OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
     virtual void OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) = 0;
+    virtual void OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string targetHost) = 0;
+    virtual void OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) = 0;
     virtual void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
-    virtual void OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
+    virtual void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) = 0;
 
     virtual ~INetworkListener() = default;
 };

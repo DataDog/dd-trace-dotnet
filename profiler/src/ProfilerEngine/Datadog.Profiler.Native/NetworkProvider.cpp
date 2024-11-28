@@ -288,7 +288,7 @@ void NetworkProvider::OnRequestHeaderStart(std::chrono::nanoseconds timestamp, L
     requestInfo->second.ReqRespStartTime = timestamp;
 }
 
-void NetworkProvider::OnRequestContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
+void NetworkProvider::OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
     NetworkActivity activity;
     if (!TryGetActivity(pActivityId, activity, false))
@@ -302,6 +302,55 @@ void NetworkProvider::OnRequestContentStop(std::chrono::nanoseconds timestamp, L
     }
 
     requestInfo->second.ReqRespDuration = timestamp - requestInfo->second.ReqRespStartTime;
+}
+
+void NetworkProvider::OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string targetHost)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.HandshakeStartTime = timestamp;
+}
+
+void NetworkProvider::OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.HandshakeDuration = timestamp - requestInfo->second.HandshakeStartTime;
+}
+
+void NetworkProvider::OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, false))
+    {
+        return;
+    }
+    auto requestInfo = _requests.find(activity);
+    if (requestInfo == _requests.end())
+    {
+        return;
+    }
+
+    requestInfo->second.HandshakeDuration = timestamp - requestInfo->second.HandshakeStartTime;
+    requestInfo->second.HandshakeError = std::move(message);
 }
 
 

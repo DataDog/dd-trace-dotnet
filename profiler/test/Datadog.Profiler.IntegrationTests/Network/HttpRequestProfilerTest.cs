@@ -212,6 +212,10 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
+                var SecurityDurationLabel = labels.FirstOrDefault(l => l.Name == "sec.duration");
+                SecurityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                SecurityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+
                 var requestResponseDurationLabel = labels.FirstOrDefault(l => l.Name == "response.duration");
                 requestResponseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 requestResponseDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
