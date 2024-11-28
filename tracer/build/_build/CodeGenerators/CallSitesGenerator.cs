@@ -75,7 +75,9 @@ namespace CodeGenerators
 
             static string GetMethodName(MethodDefinition method)
             {
-                var fullName = method.FullName;
+                var parameters = string.Join(",", method.Parameters.Select(GetParameter));
+                var fullName = $"{method.FullName.Substring(0, method.FullName.IndexOf('('))}({parameters})";
+
                 var methodNameStart = fullName.IndexOf("::");
                 if (methodNameStart < 0)
                 {
@@ -83,6 +85,16 @@ namespace CodeGenerators
                 }
 
                 return fullName.Substring(methodNameStart + 2).Replace("<T>", "<!!0>").Replace("&", "");
+
+                static string GetParameter(ParameterDefinition parameter)
+                {
+                    var paramType = parameter.ParameterType.FullName;
+                    return paramType switch
+                    {
+                        "T" => "!!0",
+                        _ => paramType.Replace("<T>", "<!!0>"),
+                    };
+                }
             }
 
             static bool IsAspectClass(Mono.Cecil.CustomAttribute attribute)
