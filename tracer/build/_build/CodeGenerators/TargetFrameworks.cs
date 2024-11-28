@@ -16,16 +16,9 @@ internal enum TargetFrameworks : uint
     // NOTE : When modifying this file make sure to update the TargetFrameworks enum in the ClrProfiler folder inside the Datadog.Trace project
 
     NET461 = 1,
-    NET462 = 2,
-    NETSTANDARD2_0 = 4,
-    NETCOREAPP2_1 = 8,
-    NETCOREAPP3_0 = 16,
-    NETCOREAPP3_1 = 32,
-    NET5_0 = 64,
-    NET6_0 = 128,
-    NET7_0 = 256,
-    NET8_0 = 512,
-    NET0_0 = 1024,
+    NETSTANDARD2_0 = 2,
+    NETCOREAPP3_1 = 4,
+    NET6_0 = 8,
 }
 
 
@@ -33,6 +26,6 @@ internal static class TargetFrameworksExtensions
 { 
     public static bool IsNetFxOnly(this TargetFrameworks tfm)
     {
-        return ((uint)(tfm & (~(TargetFrameworks.NET461 | TargetFrameworks.NET462)))) == 0;
+        return tfm == TargetFrameworks.NET461;
     }
 }
