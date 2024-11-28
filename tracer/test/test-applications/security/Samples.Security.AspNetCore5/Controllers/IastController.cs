@@ -1017,7 +1017,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 database switch
                 {
                     "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                    "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
                     "Microsoft.Data.Sqlite" => DbConnectionSystemData,
                     null => DbConnectionSystemData,
                     _ => throw new Exception($"unknown db type: {database}")
@@ -1036,7 +1036,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 database switch
                 {
                     "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                    "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
                     "Microsoft.Data.Sqlite" => DbConnectionSystemData,
                     null => DbConnectionSystemData,
                     _ => throw new Exception($"unknown db type: {database}")
@@ -1060,7 +1060,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     database switch
                     {
                         "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                        "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                        "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
                         "Microsoft.Data.Sqlite" => DbConnectionSystemData,
                         null => DbConnectionSystemData,
                         _ => throw new Exception($"unknown db type: {database}")
