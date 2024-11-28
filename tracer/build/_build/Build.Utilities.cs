@@ -323,7 +323,6 @@ partial class Build
     Target PrintSnapshotsDiff  => _ => _
       .Description("Prints snapshots differences from the current tests")
       .AssuredAfterFailure()
-      .OnlyWhenStatic(() => IsServerBuild)
       .Executes(() =>
       {
           var snapshotsDirectory = TestsDirectory / "snapshots";
