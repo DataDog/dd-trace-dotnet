@@ -1,4 +1,5 @@
 using System;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Text;
 #if NETCOREAPP
@@ -20,6 +21,26 @@ namespace Samples.Security.Data
             "INSERT INTO Persons(Id, Name, Surname, Married, Gender, DateOfBirth, Email, FlattedAddress, Mobile, NIF, Phone, PostalCode, Details, CityIniqueId, CountryUniqueId, ImagePath) VALUES('D305C1EB-B72E-4340-B5BA-A19D0105A6C1', 'Name1', 'Surname1', 0, 'Female    ', CAST(0x00006A1000000000 AS DateTime), 'name1.surname1@gmail.com', 'Address1', 'Mob1', 'N1', 'Phone1', 'Zip1', '<script language=''javascript'' type=''text/javascript''>alert(''Stored XSS attack'');</script>', NULL, NULL, NULL)",
             "INSERT INTO Books (Id, Title, Price, ISBN, Pages, PublicationDate, Author, Editorial, Prologue, Format) VALUES ('026decfd-bba3-4aa8-85d4-1c71ffcfe8e9', 'CLR via C#', CAST(50.00 AS Decimal(18, 2)), '0735669954', 894, CAST(0x0000A03100000000 AS DateTime), ' Jeffrey Richter', 'Microsoft Press', 'bla bla bla', 0)"
         ];
+
+        public static SqlConnection CreateSqlServerDatabase()
+        {
+            // assumes the sqlserver docker image is running...
+            using (var masterConnection = new SqlConnection("Server=sqlserver;Database=master;User Id=sa;Password=Strong!Passw0rd;"))
+            {
+                masterConnection.Open();
+                new SqlCommand("CREATE DATABASE books;", masterConnection).ExecuteNonQuery();
+            }
+
+            var connection = new SqlConnection("Server=sqlserver;Database=books;User Id=sa;Password=Strong!Passw0rd;");
+            connection.Open();
+
+            foreach (var command in PopulateCommands)
+            {
+                new SqlCommand(command, connection).ExecuteReader();
+            }
+
+            return connection;
+        }
 
         public static SQLiteConnection CreateSystemDataDatabase()
         {

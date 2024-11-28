@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
@@ -73,6 +74,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         private static SQLiteConnection _dbConnectionSystemData = null;
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
+        private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
@@ -88,6 +90,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqliteConnection DbConnectionSystemDataMicrosoftData
         {
             get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+
+        private static SqlConnection DbConnectionSystemDataSqlClient
+        {
+            get { return _dbConnectionSystemDataSqlClient ??= IastControllerHelper.CreateSqlServerDatabase(); }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -996,9 +1003,18 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StoredXss")]
         [Route("StoredXss")]
-        public IActionResult StoredXss(bool useMicrosoftDataDb = false)
+        public IActionResult StoredXss(string database = null)
         {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+            IDbConnection db =
+                database switch
+                {
+                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
+                    null => DbConnectionSystemData,
+                    _ => throw new Exception($"unknown db type: {database}")
+                };
+
             var param = GetDbValue(db);
             ViewData["XSS"] = param + "<b>More Text</b>";
             return View("Xss");
@@ -1006,9 +1022,18 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StoredXssEscaped")]
         [Route("StoredXssEscaped")]
-        public IActionResult StoredXssEscaped(bool useMicrosoftDataDb = false)
+        public IActionResult StoredXssEscaped(string database = null)
         {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+            IDbConnection db =
+                database switch
+                {
+                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
+                    null => DbConnectionSystemData,
+                    _ => throw new Exception($"unknown db type: {database}")
+                };
+
             var param = GetDbValue(db);
             var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
                             + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
@@ -1019,11 +1044,20 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StoredSqli")]
         [Route("StoredSqli")]
-        public IActionResult StoredSqli(bool useMicrosoftDataDb = false)
+        public IActionResult StoredSqli(string database = null)
         {
             try
             {
-                IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+                IDbConnection db =
+                    database switch
+                    {
+                        "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
+                        "System.Data.SqlClient" => DbConnectionSystemDataMicrosoftData,
+                        "Microsoft.Data.Sqlite" => DbConnectionSystemData,
+                        null => DbConnectionSystemData,
+                        _ => throw new Exception($"unknown db type: {database}")
+                    };
+
                 var details = GetDbValue(db, "Michael");
                 var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
 
@@ -1031,6 +1065,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
                     SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
+                    SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
                     _ => null
                 };
 
@@ -1050,6 +1085,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
                 SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
+                SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
                 _ => throw new ArgumentException("Invalid db connection")
             };
 
