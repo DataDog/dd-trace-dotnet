@@ -17,10 +17,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     /// </summary>
 #pragma warning disable SA1118 // parameter shouldn't span multiple lines
     [InstrumentMethod(
-        AssemblyName = MongoDbIntegration.MongoDbClientAssembly,
+        AssemblyNames = [MongoDbIntegration.MongoDbClientV2Assembly, MongoDbIntegration.MongoDbClientV3Assembly],
         IntegrationName = MongoDbIntegration.IntegrationName,
         MinimumVersion = MongoDbIntegration.Major2Minor2,
-        MaximumVersion = MongoDbIntegration.Major2,
+        MaximumVersion = MongoDbIntegration.Major3,
         MethodName = "Execute",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
         ReturnTypeName = "!0",
