@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -192,7 +192,7 @@ mutation m {
       error.stack:
 errors: [
 {
-"message": "The specified root type `Subscription` is not supported by this server.",
+"message": "Unexpected Execution Error",
 "locations": [
 ]
 },

@@ -7136,6 +7136,30 @@
   {
     "IntegrationName": "HotChocolate",
     "AssemblyName": "HotChocolate.Execution",
+    "TargetTypeName": "HotChocolate.Execution.Processing.QueryExecutor",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IOperationResult]",
+    "TargetParameterTypes": [
+      "HotChocolate.Execution.Processing.OperationContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV14",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "HotChocolate",
+    "AssemblyName": "HotChocolate.Execution",
     "TargetTypeName": "HotChocolate.Execution.RequestExecutor",
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
@@ -7179,6 +7203,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV13",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "HotChocolate",
+    "AssemblyName": "HotChocolate.Execution",
+    "TargetTypeName": "HotChocolate.Execution.RequestExecutor",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+    "TargetParameterTypes": [
+      "HotChocolate.Execution.IOperationRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

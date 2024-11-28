@@ -286,7 +286,7 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "The specified root type `Subscription` is not supported by this server.",
+"message": "Unexpected Execution Error",
 "locations": [
 ]
 },

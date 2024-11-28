@@ -34,7 +34,7 @@
     SpanId: Id_3,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -51,12 +51,8 @@
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -184,7 +180,7 @@
     SpanId: Id_12,
     Name: graphql.execute,
     Resource: Query Book,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_5,
     Tags: {
@@ -202,12 +198,8 @@ query Book {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -215,7 +207,7 @@ query Book {
     SpanId: Id_13,
     Name: graphql.execute,
     Resource: Mutation m,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_7,
     Tags: {
@@ -232,12 +224,8 @@ mutation m {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -245,7 +233,7 @@ mutation m {
     SpanId: Id_14,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_9,
     Error: 1,
@@ -278,12 +266,8 @@ errors: [
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -291,7 +275,7 @@ errors: [
     SpanId: Id_15,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_11,
     Error: 1,
@@ -302,7 +286,7 @@ errors: [
       error.stack:
 errors: [
 {
-"message": "Unexpected Execution Error",
+"message": "The specified root type `Subscription` is not supported by this server.",
 "locations": [
 ]
 },
@@ -317,12 +301,8 @@ subscription NotImplementedSub {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   }
 ]
