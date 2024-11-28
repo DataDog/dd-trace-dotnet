@@ -163,9 +163,9 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings(source);
             var immutableTracerSettings = tracerSettings.Build();
 
-            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
-            immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
-            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
+            immutableTracerSettings.Environment.Should().Be("datadog_env");
+            immutableTracerSettings.ServiceVersion.Should().Be("datadog_version");
+            immutableTracerSettings.ServiceName.Should().Be("datadog_service");
         }
 
         [Fact]
@@ -179,9 +179,9 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings(source);
             var immutableTracerSettings = tracerSettings.Build();
 
-            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
-            immutableTracerSettings.ServiceVersionInternal.Should().Be("datadog_version");
-            immutableTracerSettings.ServiceNameInternal.Should().Be("datadog_service");
+            immutableTracerSettings.Environment.Should().Be("datadog_env");
+            immutableTracerSettings.ServiceVersion.Should().Be("datadog_version");
+            immutableTracerSettings.ServiceName.Should().Be("datadog_service");
         }
 
         [Fact]
@@ -197,11 +197,11 @@ namespace Datadog.Trace.Tests.Configuration
             var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var immutableTracerSettings = tracerSettings.Build();
 
-            immutableTracerSettings.EnvironmentInternal.Should().Be("datadog_env");
+            immutableTracerSettings.Environment.Should().Be("datadog_env");
 
             // Since the DD_TAGS config is set, the OTEL_RESOURCE_ATTRIBUTES config is ignored
-            immutableTracerSettings.ServiceVersionInternal.Should().NotBe("datadog_version");
-            immutableTracerSettings.ServiceNameInternal.Should().NotBe("datadog_service");
+            immutableTracerSettings.ServiceVersion.Should().NotBe("datadog_version");
+            immutableTracerSettings.ServiceName.Should().NotBe("datadog_service");
             errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
         }
     }

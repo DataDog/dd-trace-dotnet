@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     if (headers is not null)
                     {
-                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTagsInternal, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers.Value, tracer.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                     }
 
                     if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
