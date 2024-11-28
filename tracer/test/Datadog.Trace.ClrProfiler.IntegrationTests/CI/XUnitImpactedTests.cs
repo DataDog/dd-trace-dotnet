@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.TestHelpers.Ci;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -20,9 +18,9 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
-    public class XUnitImpactedTests : TestingFrameworkTest
+    public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
-        private const int ExpectedSpanCount = 16;
+        private const int ExpectedSpanCount = 41;
 
         public XUnitImpactedTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -35,29 +33,91 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public virtual async Task SubmitTraces(string packageVersion)
+        public Task BaseShaFromPr(string packageVersion)
         {
-            // TODO :  Get test source file path, modify, launch test and restore
+            InjectGitHubActionsSession();
+            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+        }
 
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetection, "True");
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public Task BaseShaFromBackend(string packageVersion)
+        {
+            InjectGitHubActionsSession(false);
+            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+        }
 
-            using var agent = EnvironmentHelper.GetMockAgent();
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public Task FilesFromBackend(string packageVersion)
+        {
+            InjectGitHubActionsSession(false);
+            Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = (request, receivedTests) =>
+            {
+                if (request.PathAndQuery.EndsWith("ci/tests/diffs"))
+                {
+                    request.Response = new MockTracerResponse(GetDiffFilesJson(false), 200);
+                    return;
+                }
 
-            // We remove the evp_proxy endpoint to force the APM protocol compatibility
-            agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2") && !e.Contains("evp_proxy/v4")).ToArray();
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = agent.WaitForSpans(ExpectedSpanCount)
-                         .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
-                         .ToList();
-            var spansCopy = JsonConvert.DeserializeObject<List<MockSpan>>(JsonConvert.SerializeObject(spans));
+                ProcessAgentRequest(request, receivedTests);
+            };
+            return SubmitTests(packageVersion, $"baseShaFromPr", 12, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true", agentRequestProcessor);
+        }
 
-            // Snapshot testing
-            var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings("all");
-            settings.DisableRequireUniquePrefix();
-            settings.UseTypeName(nameof(XUnitImpactedTests));
-            await Verifier.Verify(spansCopy.OrderBy(s => s.Resource).ThenBy(s => s.Tags.GetValueOrDefault(TestTags.Parameters)), settings);
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public Task Disabled(string packageVersion)
+        {
+            InjectGitHubActionsSession(true, false);
+            return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
+        }
+
+        private void InjectGitHubActionsSession(bool setupPr = true, bool enabled = true)
+        {
+            // Reset all the envVars for spawned process (override possibly existing env vars)
+            foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
+            {
+                var fieldName = field.GetValue(null) as string;
+                SetEnvironmentVariable(fieldName, string.Empty);
+            }
+
+            // Set relevant GitHub variables
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubRepository, repo);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubBaseRef, branch);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, buildDir);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubSha, GitHubSha);
+            if (setupPr)
+            {
+                SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubEventPath, GetEventJsonFile());
+            }
+
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled ? "True" : "False");
+
+            static string GetEventJsonFile()
+            {
+                string content = $$"""
+                {
+                  "pull_request": {
+                    "head": {
+                      "sha": "{{GitHubSha}}"
+                    },
+                    "base": {
+                      "sha": "{{GitHubBaseSha}}"
+                    }
+                  }
+                }
+                """;
+                var tmpFileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + "_event.json");
+                File.WriteAllText(tmpFileName, content);
+                return tmpFileName;
+            }
         }
     }
 }

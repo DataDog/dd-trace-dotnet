@@ -10,7 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.ImpactedTests;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
@@ -200,7 +199,7 @@ public sealed class Test
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
-            ImpactedTestsModule.Analyze(this, tags);
+            ImpactedTestsModule.Analyze(this);
 
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
             {

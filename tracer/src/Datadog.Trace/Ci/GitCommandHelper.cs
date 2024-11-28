@@ -1,4 +1,4 @@
-// <copyright file="GitCommandManager.cs" company="Datadog">
+// <copyright file="GitCommandHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,90 +8,92 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Ci.ImpactedTests;
+namespace Datadog.Trace.Ci;
 
-internal static class GitCommandManager
+internal static class GitCommandHelper
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandManager));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GitCommandHelper));
 
     // Regex patterns for parsing the diff output
     private static readonly Regex DiffHeaderRegex = new Regex(@"^diff --git a/(?<file>.+) b/(?<file2>.+)$");
     private static readonly Regex LineChangeRegex = new Regex(@"^@@ -\d+(,\d+)? \+(?<start>\d+)(,(?<count>\d+))? @@");
     private static char[] lineSeparators = { '\n', '\r' };
 
-    public static FileCoverageInfo[] GetGitDiffFiles(string folder)
+    public static async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string? workingDirectory, string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
-            // Retrieve PR list of modified files
-            var modifiedFiles = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: $"diff --name-only",
-                    workingDirectory: folder,
-                    useWhereIsIfFileNotFound: true));
-            if (modifiedFiles?.ExitCode != 0)
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var gitOutput = await ProcessHelpers.RunCommandAsync(
+                                new ProcessHelpers.Command(
+                                    "git",
+                                    arguments,
+                                    workingDirectory,
+                                    outputEncoding: Encoding.Default,
+                                    errorEncoding: Encoding.Default,
+                                    inputEncoding: Encoding.Default,
+                                    useWhereIsIfFileNotFound: true),
+                                input).ConfigureAwait(false);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
+            if (gitOutput is null)
             {
-                Log.Information("Error calling git diff");
-                return Array.Empty<FileCoverageInfo>();
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
+                Log.Warning("GitCommand: 'git {Arguments}' command is null", arguments);
+            }
+            else if (gitOutput.ExitCode != 0)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
             }
 
-            var res = SplitLines(modifiedFiles.Output).Select(s => new FileCoverageInfo(s)).ToArray();
-            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
-            {
-                Log.Debug("Git command : {Command}", "git diff --name-only");
-                Log.Debug("     output : {Output}", modifiedFiles.Output);
-                Log.Debug<int>("Modified files: {Files}", res.Length);
-                foreach (var file in res)
-                {
-                    Log.Debug("  {File} ...", file.Path);
-                }
-            }
-
-            return res;
+            return gitOutput;
         }
-        catch (Exception ex)
+        catch (System.ComponentModel.Win32Exception ex)
         {
-            Log.Information(ex, "Error calling git diff");
+            Log.Warning(ex, "GitCommand: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
+            return null;
         }
-
-        return Array.Empty<FileCoverageInfo>();
     }
 
-    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string folder, string baseCommit)
+    public static async Task<FileCoverageInfo[]> GetGitDiffFilesAndLinesAsync(string workingDirectory, string baseCommit, string? headCommit = null)
     {
         try
         {
             // Retrieve PR list of modified files
-            var modifiedFiles = ProcessHelpers.RunCommand(
-                new ProcessHelpers.Command(
-                    cmd: "git",
-                    arguments: $"diff -U0 --word-diff=porcelain {baseCommit}",
-                    workingDirectory: folder,
-                    useWhereIsIfFileNotFound: true));
-            if (modifiedFiles?.ExitCode != 0)
+            var arguments = $"diff -U0 --word-diff=porcelain {baseCommit}";
+            if (!string.IsNullOrEmpty(headCommit))
             {
-                Log.Information("Error calling git diff");
-                return Array.Empty<FileCoverageInfo>();
+                arguments += $" {headCommit}";
             }
 
-            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+            var output = await RunGitCommandAsync(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff).ConfigureAwait(false);
+            if (output is not null)
             {
-                Log.Debug("Git command : {Command}", $"git diff -U0 --word-diff=porcelain {baseCommit}");
-                Log.Debug("     output : {Output}", modifiedFiles.Output);
-            }
+                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                {
+                    Log.Debug("Git command : {Command}", $"git {arguments}");
+                    Log.Debug("     output : {Output}", output.Output);
+                }
 
-            return ParseGitDiff(modifiedFiles.Output).ToArray();
+                return ParseGitDiff(output.Output).ToArray();
+            }
         }
         catch (Exception ex)
         {
             Log.Information(ex, "Error calling git diff");
+            throw;
         }
 
         return Array.Empty<FileCoverageInfo>();
@@ -101,7 +103,7 @@ internal static class GitCommandManager
         {
             var fileChanges = new List<FileCoverageInfo>();
             FileCoverageInfo? currentFile = null;
-            List<Tuple<int, int>> modifiedLines = new List<Tuple<int, int>>(100);
+            var modifiedLines = new List<Tuple<int, int>>(100);
 
             // Split the diff output into lines for processing
             var lines = SplitLines(diffOutput);
@@ -162,7 +164,7 @@ internal static class GitCommandManager
 
                 var maxCount = modifiedLines[modifiedLines.Count - 1].Item2;
 
-                var bitmap = new FileBitmap(maxCount);
+                var bitmap = FileBitmap.FromLineCount(maxCount);
                 foreach (var tuple in modifiedLines)
                 {
                     for (int i = tuple.Item1; i <= tuple.Item2; i++)

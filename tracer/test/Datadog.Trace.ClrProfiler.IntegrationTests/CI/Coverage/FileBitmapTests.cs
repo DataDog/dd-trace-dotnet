@@ -202,11 +202,11 @@ public class FileBitmapTests
     {
         if (shouldThrow)
         {
-            Assert.Throws<ArgumentException>(() => _ = new FileBitmap(from, to));
+            Assert.Throws<ArgumentException>(() => _ = FileBitmap.FromActiveRange(from, to));
         }
         else
         {
-            using var bitmap = new FileBitmap(from, to);
+            using var bitmap = FileBitmap.FromActiveRange(from, to);
 
             bitmap.BitCount.Should().BeGreaterThanOrEqualTo(to);
 
@@ -227,8 +227,8 @@ public class FileBitmapTests
     [InlineData(30, 36, 35, 35, true)]
     public void GivenTwoRanges_WhenIntersectingFileBitmaps_ResultIsExpected(int from1, int to1, int from2, int to2, bool intersects)
     {
-        var bitmap1 = new FileBitmap(from1, to1);
-        var bitmap2 = new FileBitmap(from2, to2);
+        var bitmap1 = FileBitmap.FromActiveRange(from1, to1);
+        var bitmap2 = FileBitmap.FromActiveRange(from2, to2);
 
         bitmap1.IntersectsWith(ref bitmap2).Should().Be(intersects);
     }

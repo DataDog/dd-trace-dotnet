@@ -112,8 +112,8 @@ internal partial class TestSpanTags : TestSuiteSpanTags
     public string? BrowserVersion { get; set; }
 
     [Tag(BrowserTags.IsRumActive)]
-    public string IsRumActive { get; set; }
+    public string? IsRumActive { get; set; }
 
     [Tag(BrowserTags.IsModified)]
-    public string IsModified { get; set; }
+    public string? IsModified { get; set; }
 }

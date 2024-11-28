@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 30;
+    public const int Length = 32;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -51,7 +51,9 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "code_coverage.errors",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "early_flake_detection.request",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "early_flake_detection.request_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests.is_modified",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "impacted_tests_detection.request",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "impacted_tests_detection.request_errors",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests_detection.is_modified",
             _ => null!,
         };
 
@@ -103,6 +105,8 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "civisibility",
             _ => null,
         };

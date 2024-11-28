@@ -616,7 +616,7 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key for enabling Impacted Tests Detection.
             /// </summary>
-            public const string ImpactedTestsDetection = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION";
+            public const string ImpactedTestsDetectionEnabled = "DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED";
         }
 
         /// <summary>
