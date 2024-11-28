@@ -7952,6 +7952,306 @@
   },
   {
     "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.GetMoreWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
+    "TargetMethodName": "Execute",
+    "TargetReturnType": "!0",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 2,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
+    "AssemblyName": "MongoDB.Driver",
+    "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "MongoDB.Driver.Core.Connections.IConnection",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 1,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MongoDb",
     "AssemblyName": "MongoDB.Driver.Core",
     "TargetTypeName": "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1",
     "TargetMethodName": "Execute",
@@ -7966,7 +8266,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -7991,7 +8291,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8016,7 +8316,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8041,7 +8341,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8066,7 +8366,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8091,7 +8391,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8116,7 +8416,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8141,7 +8441,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8216,7 +8516,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8241,7 +8541,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8266,7 +8566,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8291,7 +8591,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },

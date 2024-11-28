@@ -102,14 +102,18 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.5.*",
       "2.14.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "3.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1"]
+    },{
       "MaxVersionExclusive": "2.3.0",
       "IncludeOnlyTargetFrameworks": ["net462"]
     }]
