@@ -33,6 +33,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Npgsql;
 using Samples.Security.Data;
 
 #pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
@@ -75,6 +76,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SQLiteConnection _dbConnectionSystemData = null;
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
         private static SqlConnection _dbConnectionSystemDataSqlClient = null;
+        private static NpgsqlConnection _dbConnectionNpgsql = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
@@ -90,6 +92,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqliteConnection DbConnectionSystemDataMicrosoftData
         {
             get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
+        }
+
+        private static NpgsqlConnection DbConnectionNpgsql
+        {
+            get { return _dbConnectionNpgsql ??= IastControllerHelper.CreatePostgresDatabase(); }
         }
 
         private static SqlConnection DbConnectionSystemDataSqlClient
@@ -1005,15 +1012,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StoredXss")]
         public IActionResult StoredXss(string database = null)
         {
-            IDbConnection db =
-                database switch
-                {
-                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
-                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
-                    null => DbConnectionSystemData,
-                    _ => throw new Exception($"unknown db type: {database}")
-                };
+            var db = GetDbConnectionFromName(database);
 
             var param = GetDbValue(db);
             ViewData["XSS"] = param + "<b>More Text</b>";
@@ -1024,15 +1023,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("StoredXssEscaped")]
         public IActionResult StoredXssEscaped(string database = null)
         {
-            IDbConnection db =
-                database switch
-                {
-                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
-                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
-                    null => DbConnectionSystemData,
-                    _ => throw new Exception($"unknown db type: {database}")
-                };
+            var db = GetDbConnectionFromName(database);
 
             var param = GetDbValue(db);
             var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
@@ -1048,15 +1039,8 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                IDbConnection db =
-                    database switch
-                    {
-                        "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
-                        "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
-                        "Microsoft.Data.Sqlite" => DbConnectionSystemData,
-                        null => DbConnectionSystemData,
-                        _ => throw new Exception($"unknown db type: {database}")
-                    };
+
+                var db = GetDbConnectionFromName(database);
 
                 var details = GetDbValue(db, "Michael");
                 var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
@@ -1065,27 +1049,45 @@ namespace Samples.Security.AspNetCore5.Controllers
                 {
                     SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
                     SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
-                    SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
+                    SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteScalar(),
                     _ => null
                 };
 
                 return Content($"Result: " + name);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 return StatusCode(500);
             }
+        }
+
+        private static IDbConnection GetDbConnectionFromName(string database)
+        {
+            IDbConnection db =
+                database switch
+                {
+                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
+                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
+                    "Npgsql" => DbConnectionNpgsql,
+                    null => DbConnectionSystemData,
+                    _ => throw new Exception($"unknown db type: {database}")
+                };
+            return db;
         }
 
         private static string GetDbValue(IDbConnection db, string name = "Name1")
         {
             var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
 
-            IDataReader reader = db switch
+            using IDataReader reader = db switch
             {
                 SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
                 SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
                 SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
+                NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
                 _ => throw new ArgumentException("Invalid db connection")
             };
 

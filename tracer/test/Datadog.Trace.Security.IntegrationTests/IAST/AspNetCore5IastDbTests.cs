@@ -27,6 +27,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
+    [InlineData("Npgsql")]
     public async Task TestIastStoredXssRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -60,6 +61,8 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
+    [InlineData("System.Data.SqlClient")]
+    [InlineData("Npgsql")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -93,6 +96,8 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [Trait("RunOnWindows", "True")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
+    [InlineData("System.Data.SqlClient")]
+    [InlineData("Npgsql")]
     public async Task TestIastStoredSqliRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -120,7 +125,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+                             .DisableRequireUniquePrefix();
     }
 }
 
