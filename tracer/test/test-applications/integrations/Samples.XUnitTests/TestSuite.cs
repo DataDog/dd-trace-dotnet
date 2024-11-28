@@ -32,7 +32,6 @@ namespace Samples.XUnitTests
         {
             _output.WriteLine("Test:SimpleErrorTest");
             int i = 0;
-
             int z = 0 / i;
         }
 
@@ -63,8 +62,6 @@ namespace Samples.XUnitTests
         {
             _output.WriteLine("Test:TraitErrorTest");
             int i = 0;
-
-
             int z = 0 / i;
         }
 
