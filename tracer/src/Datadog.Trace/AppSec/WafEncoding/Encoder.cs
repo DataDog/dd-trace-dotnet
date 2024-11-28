@@ -637,17 +637,14 @@ namespace Datadog.Trace.AppSec.WafEncoding
             sb.Append("[ ");
 
             using var enumerator = objs.GetEnumerator();
-            if (enumerator.MoveNext() && enumerator.Current != null)
+            var canMoveNext = enumerator.MoveNext();
+            while (canMoveNext && enumerator.Current != null)
             {
                 FormatArgsInternal(enumerator.Current, sb);
-
-                while (enumerator.MoveNext())
+                canMoveNext = enumerator.MoveNext();
+                if (canMoveNext)
                 {
-                    if (enumerator.Current != null)
-                    {
-                        sb.Append(", ");
-                        FormatArgsInternal(enumerator.Current, sb);
-                    }
+                    sb.Append(", ");
                 }
             }
 
