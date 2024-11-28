@@ -21,7 +21,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
 
-namespace Datadog.Trace.Ci.ImpactedTests;
+namespace Datadog.Trace.Ci;
 
 internal static class ImpactedTestsModule
 {
@@ -120,13 +120,13 @@ internal static class ImpactedTestsModule
                     {
                         Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", workspacePath);
                         // TODO : Milestone 1 : Retrieve diff files from Backend
-                        modifiedFiles = GitCommandManager.GetGitDiffFiles(workspacePath);
+                        modifiedFiles = Array.Empty<FileCoverageInfo>();
                     }
                     else
                     {
                         Log.Debug("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", workspacePath, prBase);
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(workspacePath, prBase, commit);
+                        modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase, commit).Result;
                     }
                 }
             }

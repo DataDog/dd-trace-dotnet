@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1167,41 +1168,10 @@ internal class IntelligentTestRunnerClient
         return gitSha;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
-        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
-        try
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            var gitOutput = await ProcessHelpers.RunCommandAsync(
-                                new ProcessHelpers.Command(
-                                    "git",
-                                    arguments,
-                                    _workingDirectory,
-                                    outputEncoding: Encoding.Default,
-                                    errorEncoding: Encoding.Default,
-                                    inputEncoding: Encoding.Default,
-                                    useWhereIsIfFileNotFound: true),
-                                input).ConfigureAwait(false);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
-            if (gitOutput is null)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
-                Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
-            }
-            else if (gitOutput.ExitCode != 0)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
-            }
-
-            return gitOutput;
-        }
-        catch (System.ComponentModel.Win32Exception ex)
-        {
-            Log.Warning(ex, "ITR: 'git {Arguments}' threw Win32Exception - git is likely not available", arguments);
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Missing);
-            return null;
-        }
+        return await GitCommandHelper.RunGitCommandAsync(_workingDirectory, arguments, ciVisibilityCommand, input).ConfigureAwait(false);
     }
 
     private readonly struct SearchCommitResponse
