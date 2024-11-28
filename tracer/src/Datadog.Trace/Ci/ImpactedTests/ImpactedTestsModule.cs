@@ -15,6 +15,7 @@ using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Ci.Coverage.Util;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -32,45 +33,52 @@ internal static class ImpactedTestsModule
 
     public static void Analyze(Test test, TestSpanTags tags)
     {
-        if (IsEnabled)
+        try
         {
-            Log.Debug("Impacted Tests Detection is enabled for {TestName}", test.Name);
-
-            bool modified = false;
-            var testFiles = GetTestCoverage(tags);
-            var modifiedFiles = GetModifiedFiles();
-
-            foreach (var testFile in testFiles)
+            if (IsEnabled)
             {
-                var modifiedFile = modifiedFiles.FirstOrDefault(x => x.Path == testFile.Path);
-                if (modifiedFile is not null)
+                Log.Debug("Impacted Tests Detection is enabled for {TestName}", test.Name);
+
+                bool modified = false;
+                var testFiles = GetTestCoverage(tags);
+                var modifiedFiles = GetModifiedFiles();
+
+                foreach (var testFile in testFiles)
                 {
-                    Log.Debug("DiffFile found {File} ...", modifiedFile.Path);
-
-                    if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
+                    var modifiedFile = modifiedFiles.FirstOrDefault(x => x.Path == testFile.Path);
+                    if (modifiedFile is not null)
                     {
-                        Log.Debug(" No line info");
-                        modified = true;
-                        break;
-                    }
+                        Log.Debug("DiffFile found {File} ...", modifiedFile.Path);
 
-                    var testFileBitmap = new FileBitmap(testFile.ExecutedBitmap);
-                    var modifiedFileBitmap = new FileBitmap(modifiedFile.ExecutedBitmap);
+                        if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
+                        {
+                            Log.Debug(" No line info");
+                            modified = true;
+                            break;
+                        }
 
-                    if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
-                    {
-                        Log.Debug(" Intersecting lines");
-                        modified = true;
-                        break;
+                        var testFileBitmap = new FileBitmap(testFile.ExecutedBitmap);
+                        var modifiedFileBitmap = new FileBitmap(modifiedFile.ExecutedBitmap);
+
+                        if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
+                        {
+                            Log.Debug(" Intersecting lines");
+                            modified = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            if (modified)
-            {
-                tags.IsModified = "true";
-                TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
+                if (modified)
+                {
+                    tags.IsModified = "true";
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
+                }
             }
+        }
+        catch (Exception err)
+        {
+            Log.Error(err, "Error analyzing impacted tests for {TestName}", tags.Name);
         }
     }
 
@@ -86,7 +94,7 @@ internal static class ImpactedTestsModule
         var file = new FileCoverageInfo(tags.SourceFile);
 
         // Milestone 1.5 : Return the test definition lines
-        if (CIEnvironmentValues.Instance.PrBaseBranch is { } prBaseBranch)
+        if (CIEnvironmentValues.Instance.PrBaseCommit is { } prBase)
         {
             var executedBitmap = new FileBitmap((int)tags.SourceStart, (int)tags.SourceEnd);
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
@@ -105,19 +113,20 @@ internal static class ImpactedTestsModule
             {
                 if (modifiedFiles is null)
                 {
-                    var prBaseBranch = CIEnvironmentValues.Instance.PrBaseBranch;
-                    // Milestone 1.5 : Return the test definition lines
-                    if (prBaseBranch is null)
+                    var workspacePath = CIEnvironmentValues.Instance.WorkspacePath ?? string.Empty;
+                    var prBase = CIEnvironmentValues.Instance.PrBaseCommit;
+                    var commit = CIEnvironmentValues.Instance.HeadCommit;
+                    if (prBase is null)
                     {
-                        Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", CIEnvironmentValues.Instance.WorkspacePath!);
+                        Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", workspacePath);
                         // TODO : Milestone 1 : Retrieve diff files from Backend
-                        modifiedFiles = GitCommandManager.GetGitDiffFiles(CIEnvironmentValues.Instance.WorkspacePath!);
+                        modifiedFiles = GitCommandManager.GetGitDiffFiles(workspacePath);
                     }
                     else
                     {
-                        Log.Debug("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", CIEnvironmentValues.Instance.WorkspacePath!, CIEnvironmentValues.Instance.PrBaseBranch);
+                        Log.Debug("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", workspacePath, prBase);
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(CIEnvironmentValues.Instance.WorkspacePath!, prBaseBranch);
+                        modifiedFiles = GitCommandManager.GetGitDiffFilesAndLines(workspacePath, prBase, commit);
                     }
                 }
             }

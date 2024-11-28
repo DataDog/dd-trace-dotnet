@@ -64,15 +64,21 @@ internal static class GitCommandManager
         return Array.Empty<FileCoverageInfo>();
     }
 
-    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string folder, string baseCommit)
+    public static FileCoverageInfo[] GetGitDiffFilesAndLines(string folder, string baseCommit, string? headCommit = null)
     {
         try
         {
             // Retrieve PR list of modified files
+            var arguments = $"diff -U0 --word-diff=porcelain {baseCommit}";
+            if (!string.IsNullOrEmpty(headCommit))
+            {
+                arguments += $" {headCommit}";
+            }
+
             var modifiedFiles = ProcessHelpers.RunCommand(
                 new ProcessHelpers.Command(
                     cmd: "git",
-                    arguments: $"diff -U0 --word-diff=porcelain {baseCommit}",
+                    arguments: arguments,
                     workingDirectory: folder,
                     useWhereIsIfFileNotFound: true));
             if (modifiedFiles?.ExitCode != 0)
@@ -83,7 +89,7 @@ internal static class GitCommandManager
 
             if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
             {
-                Log.Debug("Git command : {Command}", $"git diff -U0 --word-diff=porcelain {baseCommit}");
+                Log.Debug("Git command : {Command}", $"git {arguments}");
                 Log.Debug("     output : {Output}", modifiedFiles.Output);
             }
 
