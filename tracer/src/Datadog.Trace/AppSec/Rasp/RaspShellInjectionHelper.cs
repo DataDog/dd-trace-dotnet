@@ -41,7 +41,7 @@ internal static class RaspShellInjectionHelper
             return null;
         }
 
-        if (argumentList is not null && argumentList.Count > 0)
+        if (argumentList is { Count: > 0 })
         {
             var result = new string[argumentList.Count + 1];
             result[0] = file;
