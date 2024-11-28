@@ -14,7 +14,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectionsProfilerTest
     {
         private const string ScenarioGenerics = "--scenario 12";
-        private const string ScenarioWithoutGC = "--scenario 25 --threads 2 --param 1000";
+        private const string ScenarioWithoutGC = "--scenario 6 --threads 1";
         private const string GcRootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
 
         private readonly ITestOutputHelper _output;
@@ -62,6 +62,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
         public void ShouldGetGarbageCollectionSamplesViaEtw(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+            // allow agent proxy to send the recorded events
+            runner.TestDurationInSeconds = 30;
 
             // disable default profilers except GC
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
