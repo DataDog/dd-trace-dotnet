@@ -1065,6 +1065,48 @@ namespace Samples.Security.AspNetCore5.Controllers
             var res = reader.GetString(0);
             return res;
         }
+        
+        #if NET6_0_OR_GREATER
+        [HttpGet("InterpolatedSqlString")]
+        [Route("InterpolatedSqlString")]
+        public IActionResult InterpolatedSqlString(string name)
+        {
+            var order = new
+            {
+                CustomerId = "VINET",
+                EmployeeId = 5,
+                OrderDate = new DateTime(2021, 1, 1),
+                RequiredDate = new DateTime(2021, 1, 1),
+                ShipVia = 3,
+                Freight = 32.38M,
+                ShipName = "Vins et alcools Chevalier",
+                ShipAddress = name,
+                ShipCity = "Reims",
+                ShipPostalCode = "51100",
+                ShipCountry = "France"
+            };
+        
+            var sql = "INSERT INTO Orders (" +
+                      "CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, " +
+                      "ShipCity, ShipPostalCode, ShipCountry" +
+                      ") VALUES (" +
+                      $"'{order.CustomerId}','{order.EmployeeId}','{order.OrderDate:yyyy-MM-dd}','{order.RequiredDate:yyyy-MM-dd}'," +
+                      $"'{order.ShipVia}','{order.Freight}','{order.ShipName}','{order.ShipAddress}'," +
+                      $"'{order.ShipCity}','{order.ShipPostalCode}','{order.ShipCountry}')";
+            sql += ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;";
+
+            try
+            {
+                new SqliteCommand(sql, DbConnectionSystemDataMicrosoftData).ExecuteScalar();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            return Content("Yey");
+        }
+        #endif
 
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
