@@ -49,20 +49,6 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values,
-        /// or initializes the configuration from environment variables and configuration files.
-        /// Calling <c>new TracerSettings(true)</c> is equivalent to calling <c>TracerSettings.FromDefaultSources()</c>
-        /// </summary>
-        /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
-        /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
-        [PublicApi]
-        public TracerSettings(bool useDefaultSources)
-            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null, new ConfigurationTelemetry(), new OverrideErrorLog())
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_UseDefaultSources);
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
