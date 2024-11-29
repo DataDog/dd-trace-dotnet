@@ -560,22 +560,22 @@ namespace Datadog.Trace.Configuration
         internal IConfigurationTelemetry Telemetry => _telemetry;
 
         /// <summary>
-        /// Gets or sets the default environment name applied to all spans.
+        /// Gets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        public string? Environment { get; set; }
+        public string? Environment { get; }
 
         /// <summary>
-        /// Gets or sets the service name applied to top-level spans and used to build derived service names.
+        /// Gets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        public string? ServiceName { get; set; }
+        public string? ServiceName { get; }
 
         /// <summary>
-        /// Gets or sets the version tag applied to all spans.
+        /// Gets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        public string? ServiceVersion { get; set; }
+        public string? ServiceVersion { get; }
 
         /// <summary>
         /// Gets the application's git repository url.
@@ -597,11 +597,11 @@ namespace Datadog.Trace.Configuration
         internal bool GitMetadataEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether tracing is enabled.
+        /// Gets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
-        public bool TraceEnabled { get; set; }
+        public bool TraceEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether Appsec standalone is enabled.
@@ -618,28 +618,28 @@ namespace Datadog.Trace.Configuration
         internal bool ProfilingEnabledInternal { get; }
 
         /// <summary>
-        /// Gets or sets the names of disabled integrations.
+        /// Gets the names of disabled integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
-        public HashSet<string> DisabledIntegrationNames { get; set; }
+        public HashSet<string> DisabledIntegrationNames { get; }
 
         /// <summary>
-        /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
+        /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public ExporterSettings Exporter { get; set; }
+        public ExporterSettings Exporter { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether default Analytics are enabled.
+        /// Gets a value indicating whether default Analytics are enabled.
         /// Settings this value is a shortcut for setting
         /// <see cref="Configuration.IntegrationSettings.AnalyticsEnabled"/> on some predetermined integrations.
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
         [Obsolete(DeprecationMessages.AppAnalytics)]
-        public bool AnalyticsEnabled { get; set; }
+        public bool AnalyticsEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether correlation identifiers are
+        /// Gets a value indicating whether correlation identifiers are
         /// automatically injected into the logging context.
         /// Default is <c>false</c>, unless <see cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations"/>
         /// enables Direct Log Submission.
@@ -649,27 +649,20 @@ namespace Datadog.Trace.Configuration
         public bool LogsInjectionEnabled
         {
             get => LogSubmissionSettings.LogsInjectionEnabled;
-
-            set
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_LogsInjectionEnabled_Set);
-                _telemetry.Record(ConfigurationKeys.LogsInjectionEnabled, value, ConfigurationOrigins.Code);
-                LogSubmissionSettings.LogsInjectionEnabled = value;
-            }
         }
 
         /// <summary>
-        /// Gets or sets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
+        /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
-        public int MaxTracesSubmittedPerSecond { get; set; }
+        public int MaxTracesSubmittedPerSecond { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating custom sampling rules.
+        /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        public string? CustomSamplingRules { get; set; }
+        public string? CustomSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
@@ -685,10 +678,10 @@ namespace Datadog.Trace.Configuration
         internal string? SpanSamplingRules { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating a global rate for sampling.
+        /// Gets a value indicating a global rate for sampling.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-        public double? GlobalSamplingRate { get; set; }
+        public double? GlobalSamplingRate { get; }
 
         /// <summary>
         /// Gets a collection of <see cref="IntegrationSettings"/> keyed by integration name.
@@ -696,15 +689,15 @@ namespace Datadog.Trace.Configuration
         public IntegrationSettingsCollection Integrations { get; }
 
         /// <summary>
-        /// Gets or sets the global tags, which are applied to all <see cref="Span"/>s.
+        /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        public IDictionary<string, string> GlobalTags { get; set; }
+        public IDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
-        /// Gets or sets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
+        /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing HTTP requests.
         /// </summary>
-        public IDictionary<string, string> HeaderTags { get; set; }
+        public IDictionary<string, string> HeaderTags { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -717,24 +710,24 @@ namespace Datadog.Trace.Configuration
         internal bool IpHeaderEnabled { get; }
 
         /// <summary>
-        /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
+        /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
         /// </summary>
-        public IDictionary<string, string> GrpcTags { get; set; }
+        public IDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether internal metrics
+        /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        public bool TracerMetricsEnabled { get; set; }
+        public bool TracerMetricsEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether stats are computed on the tracer side
+        /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
-        public bool StatsComputationEnabled { get; set; }
+        public bool StatsComputationEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the use
+        /// Gets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
         /// Default is <c>true</c>.
         /// </summary>
@@ -751,19 +744,14 @@ namespace Datadog.Trace.Configuration
                 TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Get);
                 return GlobalSettings.Instance.DiagnosticSourceEnabled;
             }
-
-            set
-            {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_DiagnosticSourceEnabled_Set);
-            }
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether a span context should be created on exiting a successful Kafka
+        /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
         /// Consumer.Consume() call, and closed on entering Consumer.Consume().
         /// </summary>
         /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
-        public bool KafkaCreateConsumerScopeEnabled { get; set; }
+        public bool KafkaCreateConsumerScopeEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
@@ -808,9 +796,9 @@ namespace Datadog.Trace.Configuration
         internal double ObfuscationQueryStringRegexTimeout { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
+        /// Gets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
-        public bool StartupDiagnosticLogEnabled { get; set; }
+        public bool StartupDiagnosticLogEnabled { get; }
 
         /// <summary>
         /// Gets the time interval (in seconds) for sending stats
@@ -875,18 +863,18 @@ namespace Datadog.Trace.Configuration
         /// Gets the HTTP status code that should be marked as errors for server integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
-        internal bool[] HttpServerErrorStatusCodes { get; private set; }
+        internal bool[] HttpServerErrorStatusCodes { get; }
 
         /// <summary>
         /// Gets the HTTP status code that should be marked as errors for client integrations.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
-        internal bool[] HttpClientErrorStatusCodes { get; private set; }
+        internal bool[] HttpClientErrorStatusCodes { get; }
 
         /// <summary>
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
-        internal IDictionary<string, string>? ServiceNameMappings { get; private set; }
+        internal IDictionary<string, string>? ServiceNameMappings { get; }
 
         /// <summary>
         /// Gets configuration values for changing peer service names based on configuration
@@ -1015,58 +1003,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
-        /// <summary>
-        /// Create a <see cref="TracerSettings"/> populated from the default sources
-        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
-        /// </summary>
-        /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
-        [PublicApi]
-        public static TracerSettings FromDefaultSources()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_FromDefaultSources);
-            return FromDefaultSourcesInternal();
-        }
-
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
-
-        /// <summary>
-        /// Sets the HTTP status code that should be marked as errors for client integrations.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpClientErrorStatusCodes"/>
-        /// <param name="statusCodes">Status codes that should be marked as errors</param>
-        [PublicApi]
-        public void SetHttpClientErrorStatusCodes(IEnumerable<int> statusCodes)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpClientErrorStatusCodes);
-            SetHttpClientErrorStatusCodesInternal(statusCodes);
-        }
-
-        /// <summary>
-        /// Sets the HTTP status code that should be marked as errors for server integrations.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
-        /// <param name="statusCodes">Status codes that should be marked as errors</param>
-        [PublicApi]
-        public void SetHttpServerErrorStatusCodes(IEnumerable<int> statusCodes)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetHttpServerErrorStatusCodes);
-            SetHttpServerErrorStatusCodesInternal(statusCodes);
-        }
-
-        /// <summary>
-        /// Sets the mappings to use for service names within a <see cref="Span"/>
-        /// </summary>
-        /// <param name="mappings">Mappings to use from original service name (e.g. <code>sql-server</code> or <code>graphql</code>)
-        /// as the <see cref="KeyValuePair{TKey, TValue}.Key"/>) to replacement service names as <see cref="KeyValuePair{TKey, TValue}.Value"/>).</param>
-        [PublicApi]
-        public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_SetServiceNameMappings);
-            // Could optimise this to remove allocations/linq, but leave that for later if we find it's used a lot
-            var dictionary = mappings.ToDictionary(x => x.Key, x => x.Value);
-            SetServiceNameMappingsInternal(dictionary);
-        }
 
         /// <summary>
         /// Create an instance of <see cref="ImmutableTracerSettings"/> that can be used to build a <see cref="Tracer"/>
@@ -1174,6 +1112,20 @@ namespace Datadog.Trace.Configuration
             return list.ToArray();
         }
 
+        internal static bool[] ParseHttpCodesToArray(IEnumerable<int> httpStatusErrorCodes)
+        {
+            var httpErrorCodesArray = new bool[600];
+            foreach (var errorCode in httpStatusErrorCodes)
+            {
+                if (errorCode >= 0 && errorCode < httpErrorCodesArray.Length)
+                {
+                    httpErrorCodesArray[errorCode] = true;
+                }
+            }
+
+            return httpErrorCodesArray;
+        }
+
         internal static bool[] ParseHttpCodesToArray(string httpStatusErrorCodes)
         {
             bool[] httpErrorCodesArray = new bool[600];
@@ -1250,31 +1202,6 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry(), new());
-
-        internal void SetHttpClientErrorStatusCodesInternal(IEnumerable<int> statusCodes)
-        {
-            var httpStatusErrorCodes = string.Join(",", statusCodes);
-            _telemetry.Record(ConfigurationKeys.HttpClientErrorStatusCodes, httpStatusErrorCodes, recordValue: true, origin: ConfigurationOrigins.Code);
-            HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpStatusErrorCodes);
-        }
-
-        internal void SetHttpServerErrorStatusCodesInternal(IEnumerable<int> statusCodes)
-        {
-            var httpStatusErrorCodes = string.Join(",", statusCodes);
-            _telemetry.Record(ConfigurationKeys.HttpServerErrorStatusCodes, httpStatusErrorCodes, recordValue: true, origin: ConfigurationOrigins.Code);
-            HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpStatusErrorCodes);
-        }
-
-        internal void SetServiceNameMappingsInternal(Dictionary<string, string> dictionary)
-        {
-            _telemetry.Record(
-                ConfigurationKeys.ServiceNameMappings,
-                string.Join("'", dictionary.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
-                recordValue: true,
-                origin: ConfigurationOrigins.Code);
-
-            ServiceNameMappings = dictionary;
-        }
 
         internal void CollectTelemetry(IConfigurationTelemetry destination)
         {
