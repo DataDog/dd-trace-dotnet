@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using ELFSharp.ELF;
+using ELFSharp.ELF.Sections;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Newtonsoft.Json.Linq;
@@ -549,28 +552,27 @@ public class CreatedumpTests : ConsoleTestHelper
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            var validatedModules = new HashSet<string>();
+
+            foreach (var frame in frames)
             {
-                var validatedModules = new HashSet<string>();
+                var moduleName = frame["names"][0]["name"].Value<string>().Split('!').First();
 
-                // Validate PDBs
-                foreach (var frame in frames)
+                if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
                 {
-                    // Open the PE file
-                    var moduleName = frame["names"][0]["name"].Value<string>().Split('!').First();
-
-                    if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                    if (!validatedModules.Add(moduleName))
                     {
-                        if (!validatedModules.Add(moduleName))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        // Validate PDBs
                         var pdbNode = frame["normalized_ip"]["meta"]["Pdb"];
-
                         var hash = ((JArray)pdbNode["guid"]).Select(g => g.Value<byte>()).ToArray();
                         var age = pdbNode["age"].Value<uint>();
 
+                        // Open the PE file
                         using var file = File.OpenRead(moduleName);
                         using var peReader = new PEReader(file);
 
@@ -581,17 +583,38 @@ public class CreatedumpTests : ConsoleTestHelper
                         age.Should().Be(unchecked((uint)pdbInfo.Age));
                         hash.Should().Equal(pdbInfo.Guid.ToByteArray());
                     }
-                }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        // Validate sofile
+                        if (frame["normalized_ip"] == null)
+                        {
+                            // On linux we can face cases where the build_id is not available:
+                            // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
+                            // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
+                            continue;
+                        }
 
-                validatedModules.Should().NotBeEmpty();
+                        var elfNode = frame["normalized_ip"]["meta"]["Elf"];
+                        var buildId = ((JArray)elfNode["build_id"]).Select(g => g.Value<byte>()).ToArray();
+
+                        using var elf = ELFReader.Load(moduleName);
+                        var buildIdNote = elf.GetSection(".note.gnu.build-id") as INoteSection;
+                        buildId.Should().Equal(buildIdNote.Description);
+                    }
+                }
+            }
+
+            validatedModules.Should().NotBeEmpty();
 
 #if NETFRAMEWORK
-                var clrModuleName = "clr.dll";
+            var clrModuleName = "clr.dll";
 #else
-                var clrModuleName = "coreclr.dll";
+            var clrModuleName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcoreclr.so" : "coreclr.dll";
 #endif
 
-                validatedModules.Should().ContainMatch($@"*\{clrModuleName}");
+            if (!Utils.IsAlpine())
+            {
+                validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
             }
         }
     }
