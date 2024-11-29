@@ -226,6 +226,7 @@ public class DefaultInterpolatedStringHandlerAspect
     private static IntPtr ToPointer(ref DefaultInterpolatedStringHandler ts)
     {
         Ldarg(nameof(ts));
+        Conv_U();
         return IL.Return<IntPtr>();
     }
 }

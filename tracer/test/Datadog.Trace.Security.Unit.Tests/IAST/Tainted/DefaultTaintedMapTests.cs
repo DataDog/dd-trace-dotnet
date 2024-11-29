@@ -329,6 +329,190 @@ public class DefaultTaintedMapTests
         }
     }
 
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopExistingObject_ObjectIsRemovedAndReturned()
+    {
+        var map = new DefaultTaintedMap();
+        var testString = "test";
+        var source = new Source(SourceType.RequestBody, "name", "value");
+        var tainted = new TaintedObject(testString, [new Range(0, 4, source)]);
+        map.Put(tainted);
+
+        var popped = map.Pop(testString);
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString);
+        map.Get(testString).Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopNonExistingObject_NullIsReturned()
+    {
+        var map = new DefaultTaintedMap();
+        var testString = "test";
+        var nonExistingString = "nonexistent";
+        var source = new Source(SourceType.RequestBody, "name", "value");
+        var tainted = new TaintedObject(testString, [new Range(0, 4, source)]);
+        map.Put(tainted);
+
+        var popped = map.Pop(nonExistingString);
+
+        popped.Should().BeNull();
+        map.Get(testString).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopMultipleTimes_ObjectIsRemovedOnlyOnce()
+    {
+        var map = new DefaultTaintedMap();
+        var testString = "test";
+        var source = new Source(SourceType.RequestBody, "name", "value");
+        var tainted = new TaintedObject(testString, [new Range(0, 4, source)]);
+        map.Put(tainted);
+
+        var firstPop = map.Pop(testString);
+        var secondPop = map.Pop(testString);
+
+        firstPop.Should().NotBeNull();
+        secondPop.Should().BeNull();
+        map.Get(testString).Should().BeNull();
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopWithMultipleEntriesSameHash_ObjectIsRemoved()
+    {
+        var map = new DefaultTaintedMap();
+        var testString1 = new StringForTest("test1") { Hash = 42 };
+        var testString2 = new StringForTest("test2") { Hash = 42 };
+        var source = new Source(SourceType.RequestBody, "name", "value");
+
+        var tainted1 = new TaintedForTest(testString1, [new Range(0, 5, source)]);
+        var tainted2 = new TaintedForTest(testString2, [new Range(0, 5, source)]);
+
+        map.Put(tainted1);
+        map.Put(tainted2);
+
+        var popped = map.Pop(testString1);
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString1);
+        map.Get(testString1).Should().BeNull();
+        map.Get(testString2).Should().NotBeNull();
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopMiddleEntryInChain_OtherEntriesRemainAccessible()
+    {
+        var map = new DefaultTaintedMap();
+        var source = new Source(SourceType.RequestBody, "name", "value");
+
+        var testString1 = new StringForTest("test1") { Hash = 42 }; // Tail of the chain
+        var testString2 = new StringForTest("test2") { Hash = 42 }; // Middle of the chain
+        var testString3 = new StringForTest("test3") { Hash = 42 }; // Head of the chain
+
+        var tainted1 = new TaintedForTest(testString1, [new Range(0, 5, source)]);
+        var tainted2 = new TaintedForTest(testString2, [new Range(0, 5, source)]);
+        var tainted3 = new TaintedForTest(testString3, [new Range(0, 5, source)]);
+
+        map.Put(tainted1); // This will be at the tail
+        map.Put(tainted2); // Middle
+        map.Put(tainted3); // Head
+
+        var popped = map.Pop(testString2); // Remove the middle entry
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString2);
+
+        map.Get(testString1).Should().NotBeNull();
+        map.Get(testString3).Should().NotBeNull();
+        map.Get(testString2).Should().BeNull();
+
+        map.Get(testString1)!.Value.Should().Be(testString1);
+        map.Get(testString3)!.Value.Should().Be(testString3);
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopTailEntryInChain_OtherEntriesRemainAccessible()
+    {
+        var map = new DefaultTaintedMap();
+        var source = new Source(SourceType.RequestBody, "name", "value");
+
+        var testString1 = new StringForTest("test1") { Hash = 42 }; // Tail of the chain
+        var testString2 = new StringForTest("test2") { Hash = 42 }; // Middle
+        var testString3 = new StringForTest("test3") { Hash = 42 }; // Head
+
+        var tainted1 = new TaintedForTest(testString1, [new Range(0, 5, source)]);
+        var tainted2 = new TaintedForTest(testString2, [new Range(0, 5, source)]);
+        var tainted3 = new TaintedForTest(testString3, [new Range(0, 5, source)]);
+
+        map.Put(tainted1); // Tail
+        map.Put(tainted2); // Middle
+        map.Put(tainted3); // Head
+
+        var popped = map.Pop(testString1); // Remove the tail entry
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString1);
+
+        map.Get(testString2).Should().NotBeNull();
+        map.Get(testString3).Should().NotBeNull();
+        map.Get(testString1).Should().BeNull();
+
+        map.Get(testString2)!.Value.Should().Be(testString2);
+        map.Get(testString3)!.Value.Should().Be(testString3);
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopHeadEntryInChain_ChainHeadIsUpdatedAndOtherEntriesRemainAccessible()
+    {
+        var map = new DefaultTaintedMap();
+        var source = new Source(SourceType.RequestBody, "name", "value");
+
+        var testString1 = new StringForTest("test1") { Hash = 42 }; // Tail
+        var testString2 = new StringForTest("test2") { Hash = 42 }; // Middle
+        var testString3 = new StringForTest("test3") { Hash = 42 }; // Head
+
+        var tainted1 = new TaintedForTest(testString1, [new Range(0, 5, source)]);
+        var tainted2 = new TaintedForTest(testString2, [new Range(0, 5, source)]);
+        var tainted3 = new TaintedForTest(testString3, [new Range(0, 5, source)]);
+
+        map.Put(tainted1); // Tail
+        map.Put(tainted2); // Middle
+        map.Put(tainted3); // Head
+
+        var popped = map.Pop(testString3); // Remove the head entry
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString3);
+
+        map.Get(testString1).Should().NotBeNull();
+        map.Get(testString2).Should().NotBeNull();
+        map.Get(testString3).Should().BeNull();
+
+        map.Get(testString1)!.Value.Should().Be(testString1);
+        map.Get(testString2)!.Value.Should().Be(testString2);
+    }
+
+    [Fact]
+    public void GivenATaintedObjectMap_WhenPopLastEntryInChain_MapDoesNotContainTheObjectAnymore()
+    {
+        var map = new DefaultTaintedMap();
+        var testString = "test";
+        var source = new Source(SourceType.RequestBody, "name", "value");
+        var tainted = new TaintedObject(testString, [new Range(0, 4, source)]);
+
+        map.Put(tainted);
+
+        var popped = map.Pop(testString);
+
+        popped.Should().NotBeNull();
+        popped!.Value.Should().Be(testString);
+
+        map.Get(testString).Should().BeNull();
+
+        map.GetEstimatedSize().Should().Be(0);
+    }
+
     private static void AssertNotContained(DefaultTaintedMap map, List<string> objects)
     {
         foreach (var item in objects)

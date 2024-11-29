@@ -87,6 +87,75 @@ internal class DefaultTaintedMap : ITaintedMap
         return null;
     }
 
+    public ITaintedObject? Pop(object objectToFind)
+    {
+        if (objectToFind is null)
+        {
+            return null;
+        }
+
+        var index = IndexObject(objectToFind);
+
+        _map.TryGetValue(index, out var entry);
+
+        var current = entry;
+        ITaintedObject? previous = null;
+        var isString = objectToFind is string;
+
+        while (current != null)
+        {
+            if (isString)
+            {
+                if (objectToFind == current.Value)
+                {
+                    return RemoveEntry(previous, current);
+                }
+            }
+            else
+            {
+                if (objectToFind.Equals(current.Value))
+                {
+                    return RemoveEntry(previous, current);
+                }
+            }
+
+            previous = current;
+            current = current.Next;
+        }
+
+        return null;
+
+        ITaintedObject RemoveEntry(ITaintedObject? p, ITaintedObject c)
+        {
+            if (p == null)
+            {
+                // Removing the head of the chain
+                if (c.Next == null)
+                {
+                    // No more entries in the chain, remove the key
+                    _map.TryRemove(index, out _);
+                }
+                else
+                {
+                    // Update the map with the new head of the chain
+                    _map[index] = c.Next;
+                }
+            }
+            else
+            {
+                // Removing an entry in the middle or end of the chain
+                p.Next = c.Next;
+            }
+
+            if (!IsFlat)
+            {
+                Interlocked.Decrement(ref _entriesCount);
+            }
+
+            return c;
+        }
+    }
+
     /// <summary>
     /// Put a new TaintedObject in the dictionary.
     /// </summary>
