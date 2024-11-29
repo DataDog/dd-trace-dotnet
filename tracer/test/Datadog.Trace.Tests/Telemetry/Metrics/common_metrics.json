@@ -1358,6 +1358,14 @@
       "description": "The number of known tests returned by the endpoint",
       "send_to_user": false,
       "user_tags": []
+    },
+    "impacted_tests.is_modified": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "tests",
+      "description": "The number of tests detected as modified",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "profilers": {
