@@ -61,7 +61,6 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var mutableProperties = typeof(TracerSettings)
                                    .GetProperties(Flags)
-                                   .Where(x => !x.HasAttribute<GeneratePublicApiAttribute>())
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
