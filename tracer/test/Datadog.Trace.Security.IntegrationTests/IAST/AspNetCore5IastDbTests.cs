@@ -28,6 +28,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
+    [InlineData("MySql.Data")]
     public async Task TestIastStoredXssRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -63,6 +64,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
+    [InlineData("MySql.Data")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -98,6 +100,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
+    [InlineData("MySql.Data")]
     public async Task TestIastStoredSqliRequest(string database)
     {
 #if NETCOREAPP3_0
