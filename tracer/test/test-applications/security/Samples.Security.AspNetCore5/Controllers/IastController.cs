@@ -31,6 +31,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
@@ -77,6 +78,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
         private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static NpgsqlConnection _dbConnectionNpgsql = null;
+        private static MySqlConnection _dbConnectionMySql = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
@@ -102,6 +104,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqlConnection DbConnectionSystemDataSqlClient
         {
             get { return _dbConnectionSystemDataSqlClient ??= IastControllerHelper.CreateSqlServerDatabase(); }
+        }
+
+        private static MySqlConnection DbConnectionMySql
+        {
+            get { return _dbConnectionMySql ??= IastControllerHelper.CreateMySqlDatabase(); }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -1072,6 +1079,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
                     "Microsoft.Data.Sqlite" => DbConnectionSystemData,
                     "Npgsql" => DbConnectionNpgsql,
+                    "MySql.Data" => DbConnectionMySql,
                     null => DbConnectionSystemData,
                     _ => throw new Exception($"unknown db type: {database}")
                 };
@@ -1088,6 +1096,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
                 SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
                 NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
+                MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteReader(),
                 _ => throw new ArgumentException("Invalid db connection")
             };
 

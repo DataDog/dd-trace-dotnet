@@ -45,6 +45,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
     <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
     <PackageReference Include="Moq" Version="4.16.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.30" />
     <PackageReference Include="NHibernate" Version="5.5.0" />
     <PackageReference Include="Npgsql" Version="7.0.4" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
