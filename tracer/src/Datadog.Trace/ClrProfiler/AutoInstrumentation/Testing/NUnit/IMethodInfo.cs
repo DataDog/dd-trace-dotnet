@@ -2,19 +2,19 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Reflection;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+
+/// <summary>
+/// DuckTyping interface for NUnit.Framework.Interfaces.IMethodInfo
+/// </summary>
+internal interface IMethodInfo
 {
     /// <summary>
-    /// DuckTyping interface for NUnit.Framework.Interfaces.IMethodInfo
+    /// Gets the MethodInfo for this method.
     /// </summary>
-    internal interface IMethodInfo
-    {
-        /// <summary>
-        /// Gets the MethodInfo for this method.
-        /// </summary>
-        MethodInfo MethodInfo { get; }
-    }
+    MethodInfo MethodInfo { get; }
 }

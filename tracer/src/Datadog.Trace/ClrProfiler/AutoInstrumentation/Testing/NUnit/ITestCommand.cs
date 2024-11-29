@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
 
 internal interface ITestCommand : IDuckType
 {
-    ITest Test { get; }
+    ITest? Test { get; }
 
-    ITestResult Execute(ITestExecutionContext context);
+    ITestResult Execute(ITestExecutionContext? context);
 }
