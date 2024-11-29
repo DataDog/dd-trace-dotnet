@@ -238,7 +238,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             if (methodParameters?.Length > 0)
             {
                 var testParameters = new TestParameters();
-                testParameters.Metadata = new Dictionary<string, object>();
+                testParameters.Metadata = new Dictionary<string, object?>();
                 testParameters.Arguments = new Dictionary<string, object>();
                 testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
 

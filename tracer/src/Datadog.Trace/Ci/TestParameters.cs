@@ -18,7 +18,7 @@ namespace Datadog.Trace.Ci
         /// Gets or sets the test parameters metadata
         /// </summary>
         [JsonProperty("metadata")]
-        public Dictionary<string, object>? Metadata { get; set; }
+        public Dictionary<string, object?>? Metadata { get; set; }
 
         /// <summary>
         /// Gets or sets the test arguments

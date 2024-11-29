@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -25,10 +26,10 @@ internal static class MsTestIntegration
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-    internal static readonly ThreadLocal<MethodInfoCacheItem> IsTestMethodRunnableThreadLocal = new();
+    internal static readonly ThreadLocal<MethodInfoCacheItem?> IsTestMethodRunnableThreadLocal = new();
 
-    internal static readonly ConditionalWeakTable<object, TestModule> TestModuleByTestAssemblyInfos = new();
-    internal static readonly ConditionalWeakTable<object, TestSuite> TestSuiteByTestClassInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestModule?> TestModuleByTestAssemblyInfos = new();
+    internal static readonly ConditionalWeakTable<object, TestSuite?> TestSuiteByTestClassInfos = new();
 
     private static readonly Dictionary<string, string> MsTestVersionByModuleId = new()
     {
@@ -66,11 +67,11 @@ internal static class MsTestIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
+    internal static Test? OnMethodBegin<TTestMethod>(TTestMethod testMethodInstance, Type type, bool isRetry, DateTimeOffset? startDate = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
-        var testName = testMethodInstance.TestMethodName;
+        var testName = testMethodInstance.TestMethodName ?? string.Empty;
 
         var suite = TestSuite.Current;
         if (suite is null && testMethodInstance.Instance.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
@@ -117,13 +118,16 @@ internal static class MsTestIntegration
         Common.SetFlakyRetryTags(test, isRetry);
 
         // Set test method
-        test.SetTestMethodInfo(testMethod);
+        if (testMethod is not null)
+        {
+            test.SetTestMethodInfo(testMethod);
+        }
 
         test.ResetStartTime();
         return test;
     }
 
-    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string displayName = null)
+    internal static void UpdateTestParameters<TTestMethod>(Test test, TTestMethod testMethodInstance, string? displayName = null)
         where TTestMethod : ITestMethod
     {
         var testMethod = testMethodInstance.MethodInfo;
@@ -131,12 +135,12 @@ internal static class MsTestIntegration
         var testName = testMethodInstance.TestMethodName;
 
         // Get test parameters
-        var methodParameters = testMethod.GetParameters();
+        var methodParameters = testMethod?.GetParameters();
         if (methodParameters?.Length > 0)
         {
             var testParameters = new TestParameters
             {
-                Metadata = new Dictionary<string, object>(),
+                Metadata = new Dictionary<string, object?>(),
                 Arguments = new Dictionary<string, object>()
             };
 
@@ -161,9 +165,14 @@ internal static class MsTestIntegration
         }
     }
 
-    private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)
+    private static Dictionary<string, List<string>>? GetTraits(MethodInfo? methodInfo)
     {
-        Dictionary<string, List<string>> testProperties = null;
+        if (methodInfo is null)
+        {
+            return null;
+        }
+
+        Dictionary<string, List<string>>? testProperties = null;
         try
         {
             var testAttributes = methodInfo.GetCustomAttributes(true);
@@ -177,13 +186,13 @@ internal static class MsTestIntegration
                     testProperties ??= new Dictionary<string, List<string>>();
                     if (!testProperties.TryGetValue("Category", out var categoryList))
                     {
-                        categoryList = new List<string>();
+                        categoryList = [];
                         testProperties["Category"] = categoryList;
                     }
 
                     if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
                     {
-                        categoryList.AddRange(tattrStruct.TestCategories);
+                        categoryList.AddRange(tattrStruct.TestCategories ?? []);
                     }
                 }
 
@@ -194,7 +203,7 @@ internal static class MsTestIntegration
                     {
                         if (!testProperties.TryGetValue(tattrStruct.Name, out var propertyList))
                         {
-                            propertyList = new List<string>();
+                            propertyList = [];
                             testProperties[tattrStruct.Name] = propertyList;
                         }
 
@@ -214,13 +223,13 @@ internal static class MsTestIntegration
                         testProperties ??= new Dictionary<string, List<string>>();
                         if (!testProperties.TryGetValue("Category", out var categoryList))
                         {
-                            categoryList = new List<string>();
+                            categoryList = [];
                             testProperties["Category"] = categoryList;
                         }
 
                         if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
                         {
-                            categoryList.AddRange(tattrStruct.TestCategories);
+                            categoryList.AddRange(tattrStruct.TestCategories ?? []);
                         }
                     }
                 }
@@ -234,7 +243,7 @@ internal static class MsTestIntegration
         return testProperties;
     }
 
-    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>> traits = null)
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
         where TTestMethod : ITestMethod
     {
         isUnskippable = false;
@@ -254,10 +263,10 @@ internal static class MsTestIntegration
         return itrShouldSkip && !isUnskippable;
     }
 
-    internal static TestModule GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo testAssemblyInfo, string assemblyName = null)
+    internal static TestModule? GetOrCreateTestModuleFromTestAssemblyInfo<TAsmInfo>(TAsmInfo? testAssemblyInfo, string? assemblyName = null)
         where TAsmInfo : ITestAssemblyInfo
     {
-        if (testAssemblyInfo.Instance is not { } objTestAssemblyInfo)
+        if (testAssemblyInfo?.Instance is not { } objTestAssemblyInfo)
         {
             return default;
         }
@@ -312,10 +321,10 @@ internal static class MsTestIntegration
             });
     }
 
-    internal static TestSuite GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo testClassInfo)
+    internal static TestSuite? GetOrCreateTestSuiteFromTestClassInfo<TClassInfo>(TClassInfo? testClassInfo)
         where TClassInfo : ITestClassInfo
     {
-        if (testClassInfo.Instance is not { } objTestClassInfo)
+        if (testClassInfo?.Instance is not { } objTestClassInfo)
         {
             return default;
         }
@@ -324,7 +333,7 @@ internal static class MsTestIntegration
             objTestClassInfo,
             key =>
             {
-                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType.Assembly.FullName);
+                var module = TestModule.Current ?? GetOrCreateTestModuleFromTestAssemblyInfo(testClassInfo.Parent, testClassInfo.ClassType?.Assembly.FullName);
                 if (module is null)
                 {
                     Common.Log.Error("There is no current module, a new suite cannot be created.");

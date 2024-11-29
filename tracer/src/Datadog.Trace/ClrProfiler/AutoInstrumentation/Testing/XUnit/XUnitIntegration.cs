@@ -42,7 +42,7 @@ internal static class XUnitIntegration
         if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
         {
             var testParameters = new TestParameters();
-            testParameters.Metadata = new Dictionary<string, object>();
+            testParameters.Metadata = new Dictionary<string, object?>();
             testParameters.Arguments = new Dictionary<string, object>();
             testParameters.Metadata[TestTags.MetadataTestName] = runnerInstance.TestCase.DisplayName ?? string.Empty;
 
