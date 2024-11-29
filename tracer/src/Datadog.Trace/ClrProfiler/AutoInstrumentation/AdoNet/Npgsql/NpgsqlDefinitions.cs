@@ -37,3 +37,21 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // object Npgsql.NpgsqlCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
     })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "Npgsql",
+    TypeName = "Npgsql.NpgsqlCommand",
+    MinimumVersion = "4.0.0",
+    MaximumVersion = "8.*.*",
+    IntegrationName = nameof(IntegrationId.Npgsql),
+    DataReaderType = "Npgsql.NpgsqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Npgsql.NpgsqlDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
