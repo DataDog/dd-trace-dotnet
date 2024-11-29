@@ -793,16 +793,33 @@
   },
   {
     "integrationName": "MongoDb",
-    "assemblyName": "MongoDB.Driver.Core",
+    "assemblyName": "MongoDB.Driver",
     "minAssemblyVersionInclusive": "2.1.0",
-    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
     "packages": [
       {
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
         "minVersionTestedInclusive": "2.0.2",
-        "maxVersionSupportedInclusive": "2.30.0",
+        "maxVersionSupportedInclusive": "3.0.0",
+        "maxVersionAvailableInclusive": "3.0.0",
+        "maxVersionTestedInclusive": "3.0.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "MongoDb",
+    "assemblyName": "MongoDB.Driver.Core",
+    "minAssemblyVersionInclusive": "2.1.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "MongoDB.Driver",
+        "minVersionAvailableInclusive": "1.0.3744.30075",
+        "minVersionSupportedInclusive": "2.1.0",
+        "minVersionTestedInclusive": "2.0.2",
+        "maxVersionSupportedInclusive": "3.0.0",
         "maxVersionAvailableInclusive": "3.0.0",
         "maxVersionTestedInclusive": "3.0.0"
       },
@@ -1120,7 +1137,7 @@
         "minVersionTestedInclusive": "2.2.6",
         "maxVersionSupportedInclusive": "9.0.0",
         "maxVersionAvailableInclusive": "9.0.0",
-        "maxVersionTestedInclusive": "8.0.11"
+        "maxVersionTestedInclusive": "9.0.0"
       }
     ]
   },
