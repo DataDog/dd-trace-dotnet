@@ -69,7 +69,7 @@
     <!-- Integration: Google.Protobuf -->
     <!--    Assembly: Google.Protobuf -->
     <!-- Latest package https://www.nuget.org/packages/Google.Protobuf/3.28.3 -->
-    <PackageReference Include="Google.Protobuf" Version="3.28.3" />
+    <PackageReference Include="Google.Protobuf" Version="3.29.0" />
 
     <!-- Integration: GraphQL -->
     <!--    Assembly: GraphQL -->
