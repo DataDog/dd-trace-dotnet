@@ -45,9 +45,9 @@ public class FileAspect
 #endif
     [AspectMethodInsertBefore("System.IO.File::AppendText(System.String)")]
 #if NET6_0_OR_GREATER // .NET 9 actually
-    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,Byte[])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,System.Byte[])", 1)]
     [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,System.ReadOnlySpan`1[System.Byte]))", 1)]
-    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String, Byte[],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)", 2)]
 #endif
     [AspectMethodInsertBefore("System.IO.File::Create(System.String,System.Int32)", 1)]

@@ -710,6 +710,126 @@ public class FileTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    /* Cover all these aspects:
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytes(System.String,System.ReadOnlySpan`1[System.Byte])", 2)]
+    [AspectMethodInsertBefore("System.IO.File::WriteAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,System.Byte[])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytes(System.String,System.ReadOnlySpan`1[System.Byte]))", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllBytesAsync(System.String,System.ReadOnlyMemory`1[System.Byte],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char])", 1)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllText(System.String,System.ReadOnlySpan`1[System.Char],System.Text.Encoding)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.IO.File::AppendAllTextAsync(System.String,System.ReadOnlyMemory`1[System.Char],System.Text.Encoding,System.Threading.CancellationToken)", 3)]
+    */
+
+#if NET9_0_OR_GREATER
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllTextTaintedSpan_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue.AsSpan()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllTextTaintedSpan_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.WriteAllText(taintedPathValue, notTaintedValue.AsSpan(), Encoding.UTF8); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllTextAsyncTaintedMemory_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.WriteAllTextAsync(taintedPathValue, notTaintedValue.AsMemory(), CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllTextAsyncTaintedMemory_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.WriteAllTextAsync(taintedPathValue, notTaintedValue.AsMemory(), Encoding.UTF8, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllBytesTaintedSpan_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.WriteAllBytes(taintedPathValue, new byte[] { 6 }.AsSpan()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllBytesAsyncTaintedMemory_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.WriteAllBytesAsync(taintedPathValue, new byte[] { 6 }.AsMemory(), CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenWriteAllBytesAsyncTaintedMemory_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.WriteAllBytesAsync(taintedPathValue, new byte[] { 6 }.AsMemory()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllBytesTaintedSpan_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllBytes(taintedPathValue, new byte[] { 6 }.AsSpan()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllBytesAsyncTaintedMemory_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllBytesAsync(taintedPathValue, new byte[] { 6 }.AsMemory(), CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllBytesAsyncTaintedMemory_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllBytesAsync(taintedPathValue, new byte[] { 6 }.AsMemory()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllTextTaintedSpan_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllText(taintedPathValue, notTaintedValue.AsSpan()); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllTextTaintedSpan_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllText(taintedPathValue, notTaintedValue.AsSpan(), Encoding.UTF8); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllTextAsyncTaintedMemory_VulnerabilityIsLogged()
+    {
+        ExecuteAction(() => { File.AppendAllTextAsync(taintedPathValue, notTaintedValue.AsMemory(), CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenAFile_WhenAppendAllTextAsyncTaintedMemory_VulnerabilityIsLogged2()
+    {
+        ExecuteAction(() => { File.AppendAllTextAsync(taintedPathValue, notTaintedValue.AsMemory(), Encoding.UTF8, CancellationToken.None); });
+        AssertVulnerable();
+    }
+
+#endif
+
+
     void ExecuteAction(Action c)
     {
         try
