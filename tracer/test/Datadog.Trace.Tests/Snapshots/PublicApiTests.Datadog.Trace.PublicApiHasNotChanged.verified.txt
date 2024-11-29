@@ -103,7 +103,7 @@ namespace Datadog.Trace.Ci
     {
         public TestParameters() { }
         public System.Collections.Generic.Dictionary<string, object>? Arguments { get; set; }
-        public System.Collections.Generic.Dictionary<string, object>? Metadata { get; set; }
+        public System.Collections.Generic.Dictionary<string, object?>? Metadata { get; set; }
     }
     public sealed class TestSession
     {
