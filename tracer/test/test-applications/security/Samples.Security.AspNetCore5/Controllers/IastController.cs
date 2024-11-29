@@ -35,6 +35,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
+using Oracle.ManagedDataAccess.Client;
 using Samples.Security.Data;
 
 #pragma warning disable ASP0019 // warning ASP0019: Use IHeaderDictionary.Append or the indexer to append or set headers. IDictionary.Add will throw an ArgumentException when attempting to add a duplicate key
@@ -79,6 +80,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static NpgsqlConnection _dbConnectionNpgsql = null;
         private static MySqlConnection _dbConnectionMySql = null;
+        private static OracleConnection _dbConnectionOracle = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
@@ -109,6 +111,11 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static MySqlConnection DbConnectionMySql
         {
             get { return _dbConnectionMySql ??= IastControllerHelper.CreateMySqlDatabase(); }
+        }
+
+        private static OracleConnection DbConnectionOracle
+        {
+            get { return _dbConnectionOracle ??= IastControllerHelper.CreateOracleDatabase(); }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -1080,6 +1087,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     "Microsoft.Data.Sqlite" => DbConnectionSystemData,
                     "Npgsql" => DbConnectionNpgsql,
                     "MySql.Data" => DbConnectionMySql,
+                    "Oracle" => DbConnectionOracle,
                     null => DbConnectionSystemData,
                     _ => throw new Exception($"unknown db type: {database}")
                 };
@@ -1097,6 +1105,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
                 NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
                 MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteReader(),
+                OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteReader(),
                 _ => throw new ArgumentException("Invalid db connection")
             };
 
