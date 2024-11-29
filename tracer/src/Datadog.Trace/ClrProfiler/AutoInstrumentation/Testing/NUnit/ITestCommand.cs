@@ -12,5 +12,5 @@ internal interface ITestCommand : IDuckType
 {
     ITest? Test { get; }
 
-    ITestResult Execute(ITestExecutionContext? context);
+    ITestResult Execute(ITestExecutionContext context);
 }

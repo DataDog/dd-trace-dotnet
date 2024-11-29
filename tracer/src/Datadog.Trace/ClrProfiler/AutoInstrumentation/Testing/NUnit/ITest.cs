@@ -56,7 +56,7 @@ internal interface ITest : IDuckType
     /// Gets a MethodInfo for the method implementing this test.
     /// Returns null if the test is not implemented as a method.
     /// </summary>
-    IMethodInfo Method { get; }
+    IMethodInfo? Method { get; }
 
     /// <summary>
     /// Gets or sets whether or not the test should be run

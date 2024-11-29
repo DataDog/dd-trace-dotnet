@@ -141,7 +141,7 @@ internal static class MsTestIntegration
             var testParameters = new TestParameters
             {
                 Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object>()
+                Arguments = new Dictionary<string, object?>()
             };
 
             if (!string.IsNullOrEmpty(displayName) && displayName != testName)
@@ -227,9 +227,9 @@ internal static class MsTestIntegration
                             testProperties["Category"] = categoryList;
                         }
 
-                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct))
+                        if (tattr.TryDuckCast<TestCategoryAttributeStruct>(out var tattrStruct) && tattrStruct.TestCategories != null)
                         {
-                            categoryList.AddRange(tattrStruct.TestCategories ?? []);
+                            categoryList.AddRange(tattrStruct.TestCategories);
                         }
                     }
                 }

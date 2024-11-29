@@ -14,5 +14,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 internal struct TestContextStruct
 {
     [DuckField(Name = "testMethod,_testMethod")]
-    public TestMethodContextStruct TestMethod;
+    public TestMethodContextStruct? TestMethod;
 }

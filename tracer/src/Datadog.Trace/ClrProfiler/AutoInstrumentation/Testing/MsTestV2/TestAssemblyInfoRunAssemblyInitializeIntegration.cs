@@ -59,7 +59,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
         }
 
-        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod.AssemblyName));
+        return new CallTargetState(null, MsTestIntegration.GetOrCreateTestModuleFromTestAssemblyInfo(instance, context.TestMethod?.AssemblyName));
     }
 
     /// <summary>

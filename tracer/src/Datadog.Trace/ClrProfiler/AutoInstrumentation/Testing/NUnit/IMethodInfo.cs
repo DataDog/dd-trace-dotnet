@@ -16,5 +16,5 @@ internal interface IMethodInfo
     /// <summary>
     /// Gets the MethodInfo for this method.
     /// </summary>
-    MethodInfo MethodInfo { get; }
+    MethodInfo? MethodInfo { get; }
 }

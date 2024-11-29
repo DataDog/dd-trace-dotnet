@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
@@ -61,7 +62,7 @@ internal abstract class EventPlatformPayload
         {
             if (_url is null)
             {
-                return EnsureUrl();
+                EnsureUrl();
             }
 
             return _url;
@@ -123,7 +124,8 @@ internal abstract class EventPlatformPayload
     /// </summary>
     public abstract void Reset();
 
-    private Uri EnsureUrl()
+    [MemberNotNull(nameof(_url))]
+    private void EnsureUrl()
     {
         UriBuilder builder;
         if (_settings.Agentless)
@@ -173,6 +175,5 @@ internal abstract class EventPlatformPayload
         }
 
         _url = builder.Uri;
-        return builder.Uri;
     }
 }

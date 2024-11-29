@@ -28,9 +28,9 @@ internal interface IWorkItem : IDuckType
 
 internal interface INUnitTestAssemblyRunner
 {
-    ITest LoadedTest { get; }
+    ITest? LoadedTest { get; }
 
-    IWorkItem TopLevelWorkItem { get; }
+    IWorkItem? TopLevelWorkItem { get; }
 }
 
 internal interface ITypeInfo

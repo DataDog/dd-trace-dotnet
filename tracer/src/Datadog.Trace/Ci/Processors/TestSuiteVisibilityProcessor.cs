@@ -48,7 +48,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
         return spans is null ? new ArraySegment<Span>([]) : new ArraySegment<Span>(spans, 0, spIdx);
     }
 
-    public Span? Process(Span span)
+    public Span? Process(Span? span)
     {
         // If agentless is enabled we don't filter anything.
         if (span is null)

@@ -148,7 +148,7 @@ internal class DatadogExporter : IExporter
 
                             if (benchmarkCase.HasParameters)
                             {
-                                var testParameters = new TestParameters { Arguments = new Dictionary<string, object>(), Metadata = new Dictionary<string, object?>() };
+                                var testParameters = new TestParameters { Arguments = new Dictionary<string, object?>(), Metadata = new Dictionary<string, object?>() };
                                 foreach (var parameter in benchmarkCase.Parameters.Items)
                                 {
                                     var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);

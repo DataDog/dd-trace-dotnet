@@ -16,5 +16,5 @@ internal interface ICompositeWorkItem : IWorkItem
     /// <summary>
     /// Gets the List of Child WorkItems
     /// </summary>
-    IEnumerable Children { get; }
+    IEnumerable? Children { get; }
 }

@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Ci.Coverage.Exceptions;
@@ -19,6 +20,7 @@ internal class PdbNotFoundException : Exception
     /// </summary>
     /// <exception cref="PdbNotFoundException">Throws current exception</exception>
     [MethodImpl(MethodImplOptions.NoInlining)]
+    [DoesNotReturn]
     public static void Throw()
     {
         throw new PdbNotFoundException();

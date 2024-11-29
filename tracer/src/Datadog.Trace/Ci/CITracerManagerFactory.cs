@@ -81,7 +81,7 @@ namespace Datadog.Trace.Ci
 
         protected override bool ShouldEnableRemoteConfiguration(ImmutableTracerSettings settings) => false;
 
-        protected override IAgentWriter? GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Ci
                 }
 
                 Environment.FailFast("An API key is required in Agentless mode.");
-                return null;
+                return null!;
             }
 
             // With agent scenario:

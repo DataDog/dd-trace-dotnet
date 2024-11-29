@@ -24,7 +24,7 @@ namespace Datadog.Trace.Ci
         /// Gets or sets the test arguments
         /// </summary>
         [JsonProperty("arguments")]
-        public Dictionary<string, object>? Arguments { get; set; }
+        public Dictionary<string, object?>? Arguments { get; set; }
 
         internal string ToJSON()
         {

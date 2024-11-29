@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
-#pragma warning disable SA1402
+#pragma warning disable SA1402 // disable check to only have one class per file
 
 using System;
 using Datadog.Trace.Logging;

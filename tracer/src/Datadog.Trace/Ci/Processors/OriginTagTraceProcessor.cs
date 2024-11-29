@@ -85,8 +85,13 @@ namespace Datadog.Trace.Ci.Processors
             return trace;
         }
 
-        public Span Process(Span span)
+        public Span? Process(Span? span)
         {
+            if (span is null)
+            {
+                return span;
+            }
+
             // Sets the origin tag on the TraceContext to ensure the CI track.
             var traceContext = span.Context.TraceContext;
 

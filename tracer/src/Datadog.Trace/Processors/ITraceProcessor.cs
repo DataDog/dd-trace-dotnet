@@ -12,7 +12,7 @@ namespace Datadog.Trace.Processors
     {
         ArraySegment<Span> Process(ArraySegment<Span> trace);
 
-        Span? Process(Span span);
+        Span? Process(Span? span);
 
         ITagProcessor? GetTagProcessor();
     }
