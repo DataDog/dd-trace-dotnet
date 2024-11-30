@@ -21,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcDotNetServerCommon));
 
+        public static bool IsASupportedVersion<TTarget>()
+        {
+            return SupportedVersionByTypeCache<TTarget>.IsSupported;
+        }
+
         public static Scope? CreateServerSpan<T>(Tracer tracer, T instance, HttpRequest requestMessage)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc))
@@ -28,8 +33,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 return null;
             }
 
+            // Check if the current handler has the MethodInvoker property
+            MethodStruct method;
+            if (instance.TryDuckCast<ServerCallHandlerBaseStruct>(out var handlerWithMethodInvoker))
+            {
+                // The current handler has the MethodInvoker property (this is the case for >= 2.27.0 versions)
+                method = handlerWithMethodInvoker.MethodInvoker.Method;
+            }
+            else
+            {
+                return null;
+            }
+
             Scope? scope = null;
-            var method = instance.DuckCast<ServerCallHandlerBaseStruct>().MethodInvoker.Method;
             try
             {
                 var tags = new GrpcServerTags();
@@ -73,6 +89,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
             }
 
             return default;
+        }
+
+        private static class SupportedVersionByTypeCache<TTarget>
+        {
+            static SupportedVersionByTypeCache()
+            {
+                // The assembly version of Grpc.AspNetCore.Server is fixed to 2.0.0, so we need to check the FileVersion
+                // to know if we should instrument this library.
+                if (typeof(TTarget).TryGetAssemblyFileVersionFromType(out var version))
+                {
+                    // Grpc.AspNetCore.Server 2.30.0 is the minimum version supported by this implementation.
+                    IsSupported = version >= new Version(2, 30, 0);
+                }
+                else
+                {
+                    IsSupported = false;
+                }
+            }
+
+            // ReSharper disable once StaticMemberInGenericType
+            public static bool IsSupported { get; }
         }
     }
 }

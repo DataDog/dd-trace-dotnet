@@ -284,7 +284,6 @@ src/Datadog.Trace/Ci/Tags/CommonTags.cs
 src/Datadog.Trace/Ci/Tags/IntelligentTestRunnerTags.cs
 src/Datadog.Trace/Ci/Tags/TestTags.cs
 src/Datadog.Trace/Ci/Telemetry/TelemetryHelper.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AutoInstrumentationExtensions.cs
 src/Datadog.Trace/ClrProfiler/Helpers/HttpBypassHelper.cs
 src/Datadog.Trace/ClrProfiler/Helpers/Interception.cs
 src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/LambdaMetadata.cs
