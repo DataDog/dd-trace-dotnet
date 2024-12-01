@@ -18,7 +18,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
     {
         private const string ScenarioGenerics = "--scenario 9";
         private const string ScenarioMeasureAllocation = "--scenario 16";
-        private const string ScenarioWithoutGC = "--scenario 25 --threads 2 --param 1000";
+        private const string ScenarioWithoutGC = "--scenario 6 --threads 1";
 
         private readonly ITestOutputHelper _output;
 
@@ -130,6 +130,8 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         public void ShouldGetAllocationSamplesViaEtw(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutGC);
+            // allow agent proxy to send the recorded events
+            runner.TestDurationInSeconds = 30;
 
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
