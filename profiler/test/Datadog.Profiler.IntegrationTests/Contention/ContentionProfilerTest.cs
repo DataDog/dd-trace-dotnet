@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
     public class ContentionProfilerTest
     {
         private const string ScenarioContention = "--scenario 10 --threads 20";
-        private const string ScenarioWithoutContention = "--scenario 25 --threads 2 --param 1000";
+        private const string ScenarioWithoutContention = "--scenario 6 --threads 1";
 
         private readonly ITestOutputHelper _output;
 
@@ -90,6 +90,8 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         public void ShouldGetLockContentionSamplesViaEtw(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutContention);
+            // allow agent proxy to send the recorded events
+            runner.TestDurationInSeconds = 30;
 
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
