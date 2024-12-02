@@ -40,7 +40,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Npgsql",
-    TypeName = "Npgsql.NpgsqlCommand",
+    TypeName = "Npgsql.NpgsqlDataReader",
     MinimumVersion = "4.0.0",
     MaximumVersion = "8.*.*",
     IntegrationName = nameof(IntegrationId.Npgsql),
