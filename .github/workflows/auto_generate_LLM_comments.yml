@@ -4,7 +4,7 @@ on:
 - pull_request
 
 jobs:
-  check-snapshots:
+  add-llm-review:
 
     runs-on: ubuntu-latest
     permissions:
@@ -21,10 +21,10 @@ jobs:
         with:
           dotnet-version: '8.0.100'
 
-      - name: "Check Snapshots"
+      - name: "Add LLM review"
         run: ./tracer/build.sh LLMReport
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"
           TargetBranch: "${{ github.base_ref }}"
-          OpenAIKey: "${{ github.OPEN_AI_KEY }}"
+          OpenAIKey: "${{ secrets.OPEN_AI_KEY }}"
