@@ -40,12 +40,7 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
     // we may want to allow checking for process time or if managed thread have been created
     if (_number_of_attempts > 2)
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            Log::Debug("Failed at retrieving GC threads after ", _number_of_attempts, " of attempts");
-        }
+        LogOnce(Debug, "Failed at retrieving GC threads after ", _number_of_attempts, " of attempts");
         return _gcThreads;
     }
 

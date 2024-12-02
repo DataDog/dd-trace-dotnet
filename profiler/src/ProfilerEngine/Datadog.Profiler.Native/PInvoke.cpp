@@ -59,9 +59,8 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
     profiler->TraceContextHasBeenSet();
 
     // Engine is active. Get info for current thread.
-    std::shared_ptr<ManagedThreadInfo> pCurrentThreadInfo;
-    HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(pCurrentThreadInfo);
-    if (FAILED(hr))
+    auto pCurrentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (pCurrentThreadInfo == nullptr)
     {
         // There was an error looking up the current thread info:
         return nullptr;

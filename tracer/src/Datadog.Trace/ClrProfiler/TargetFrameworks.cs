@@ -14,14 +14,7 @@ internal enum TargetFrameworks : uint
     // NOTE : When modifying this file make sure to update the TargetFrameworks enum in the CodeGenerator folder inside the _build project
 
     NET461 = 1,
-    NET462 = 2,
-    NETSTANDARD2_0 = 4,
-    NETCOREAPP2_1 = 8,
-    NETCOREAPP3_0 = 16,
-    NETCOREAPP3_1 = 32,
-    NET5_0 = 64,
-    NET6_0 = 128,
-    NET7_0 = 256,
-    NET8_0 = 512,
-    NET9_0 = 1024,
+    NETSTANDARD2_0 = 2,
+    NETCOREAPP3_1 = 4,
+    NET6_0 = 8,
 }

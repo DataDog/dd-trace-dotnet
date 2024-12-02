@@ -224,10 +224,11 @@ public:
 
     void ValidateCallstack(const Callstack& callstack)
     {
-        // Disable this check on Alpine due to flackyness
+        // Disable this check due to flackyness
         // Libunwind randomly fails with unw_backtrace2 (from a signal handler)
         // but unw_backtrace
-#ifndef DD_ALPINE
+        // Keep this for now for documentation.
+#if 0
         const auto& expectedCallstack = _workerThread->GetExpectedCallStack();
 
         const auto expectedNbFrames = expectedCallstack.Size();

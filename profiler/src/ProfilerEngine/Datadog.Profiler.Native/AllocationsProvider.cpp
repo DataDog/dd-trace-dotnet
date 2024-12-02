@@ -6,13 +6,13 @@
 #include "COMHelpers.h"
 #include "FrameworkThreadInfo.h"
 #include "HResultConverter.h"
-#include "IConfiguration.h"
-#include "IManagedThreadList.h"
-#include "IFrameStore.h"
-#include "IThreadsCpuManager.h"
 #include "IAppDomainStore.h"
+#include "IConfiguration.h"
+#include "IFrameStore.h"
+#include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
 #include "ISampledAllocationsListener.h"
+#include "IThreadsCpuManager.h"
 #include "Log.h"
 #include "MetricsRegistry.h"
 #include "OsSpecificApi.h"
@@ -99,7 +99,6 @@ AllocationsProvider::AllocationsProvider(
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
 }
 
-
 void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        ClassID classId,
                                        const WCHAR* typeName,
@@ -119,8 +118,12 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     // create a sample from the allocation
 
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "AllocationsProvider::OnAllocation: Profiler failed at getting the current managed thread info ");
+        return;
+    }
 
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
         _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
@@ -240,16 +243,16 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
             rawSample.AppDomainId = -1;
         }
     }
-    else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
+    else // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
     {
         rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
 
         // TODO: do we need to set to -1?
-        //rawSample.AppDomainId = -1;
+        // rawSample.AppDomainId = -1;
     }
 
-    //rawSample.AllocationSize = objectSize;
-    //rawSample.Address = address;
+    // rawSample.AllocationSize = objectSize;
+    // rawSample.Address = address;
     rawSample.MethodTable = classId;
 
     // The provided type name contains the metadata-based `xx syntax for generics instead of <>
