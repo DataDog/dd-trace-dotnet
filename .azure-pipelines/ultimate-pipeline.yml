@@ -257,7 +257,7 @@ stages:
 
 - stage: generate_LLM_Report
   dependsOn: [merge_commit_id]
-  condition: and(eq(variables['generateLLMReport'], 'true'))
+  condition: eq(variables['generateLLMReport'], 'true')
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
