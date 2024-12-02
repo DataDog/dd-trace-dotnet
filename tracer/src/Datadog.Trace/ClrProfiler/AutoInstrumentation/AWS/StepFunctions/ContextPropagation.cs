@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 
         private static void Inject<TExecutionRequest>(PropagationContext context, ref string input)
         {
-            var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
+            var sb = Util.StringBuilderCache.Acquire();
             sb.Append(input);
             if (sb[sb.Length - 1] != '}')
             {

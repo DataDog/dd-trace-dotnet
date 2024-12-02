@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
     /// <summary>
     /// StartSyncExecutionRequest interface for ducktyping
     /// </summary>
-    internal interface IStartSyncExecutionRequest : IAmazonStepFunctionsRequestWithStateMachineArn, IContainsInput
+    internal interface IStartSyncExecutionRequest : IAwsStepFunctionsRequestWithStateMachineArn, IContainsInput
     {
     }
 }
