@@ -22,7 +22,7 @@ jobs:
           dotnet-version: '8.0.100'
 
       - name: "Add LLM review"
-        run: ./tracer/build.sh LLMReport
+        run: ./tracer/build.sh SummaryOfSnapshotChanges
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"
