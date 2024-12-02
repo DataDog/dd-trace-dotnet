@@ -103,7 +103,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.ManagedDataAccess",
-    TypeName = "Oracle.ManagedDataAccess.Client.OracleCommand",
+    TypeName = "Oracle.ManagedDataAccess.Client.OracleDataReader",
     // see comment top most attribute on version numbers
     MinimumVersion = "23.0.0",
     MaximumVersion = "23.*.*",
@@ -122,7 +122,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "Oracle.DataAccess",
-    TypeName = "Oracle.DataAccess.Client.OracleCommand",
+    TypeName = "Oracle.DataAccess.Client.OracleDataReader",
     MinimumVersion = "4.122.0",
     MaximumVersion = "4.122.*",
     IntegrationName = nameof(IntegrationId.Oracle),
