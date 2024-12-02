@@ -130,9 +130,12 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
-
         // Add a scrubber to remove the useMicrosoftDataDb value
         settings.AddRegexScrubber((new Regex(@"database=.*"), "database=...,"));
+        // Oracle column names are all upper case
+        settings.AddRegexScrubber((new Regex(@"\""DETAILS\"""), @"""Details"""));
+        // Postgres column names are all lower case
+        settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
 
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
