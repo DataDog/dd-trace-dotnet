@@ -115,6 +115,7 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
+  generateLLMReport: $(generate_llm_report)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
@@ -256,6 +257,7 @@ stages:
 
 - stage: generate_LLM_Report
   dependsOn: [merge_commit_id]
+  condition: and(eq(variables['generateLLMReport'], 'true'))
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -265,7 +267,7 @@ stages:
       jobs: [generate_LLM_job]
 
   - job: generate_LLM_job
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 3 #default value
     dependsOn: []
     pool:
       name: azure-windows-scale-set-3
