@@ -1065,6 +1065,8 @@ namespace Samples.Security.AspNetCore5.Controllers
                     SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
                     SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteScalar(),
                     NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteScalar(),
+                    OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteScalar(),
                     _ => null
                 };
 
