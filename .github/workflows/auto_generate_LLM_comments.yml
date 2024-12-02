@@ -19,10 +19,10 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0.100'
+          dotnet-version: '9.0.100'
 
       - name: "Add LLM review"
-        run: ./tracer/build.sh SummaryOfSnapshotChanges
+        run: ./tracer/build.sh LLMReport
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"
