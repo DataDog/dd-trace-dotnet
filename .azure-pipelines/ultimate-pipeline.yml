@@ -115,7 +115,6 @@ variables:
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
-  generateLLMReport: $(generate_llm_report)
   slackWebhookUrl: $(SLACK_WEBHOOK_URL)
   isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-dotnet')]
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
