@@ -142,7 +142,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySql.Data",
-    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
+    TypeName = "MySql.Data.MySqlClient.MySqlDataReader",
     MinimumVersion = "8.0.0",
     MaximumVersion = "9.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
@@ -160,7 +160,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySqlConnector",
-    TypeName = "MySqlConnector.MySqlCommand",
+    TypeName = "MySqlConnector.MySqlDataReader",
     MinimumVersion = "1.0.0",
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.MySql),

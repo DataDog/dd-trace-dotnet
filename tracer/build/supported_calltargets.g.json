@@ -9085,28 +9085,6 @@
     "IntegrationName": "MySql",
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 8,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 9,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySql.Data",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "ExecuteDbDataReader",
     "TargetReturnType": "System.Data.Common.DbDataReader",
     "TargetParameterTypes": [
@@ -9481,30 +9459,6 @@
     "IntegrationName": "MySql",
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 8,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 9,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySql.Data",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -9529,30 +9483,6 @@
     "IntegrationName": "MySql",
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 8,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 9,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySql.Data",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -9563,28 +9493,6 @@
     },
     "MaximumVersion": {
       "Item1": 6,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySql.Data",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 8,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 9,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9620,7 +9528,99 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySql.Data",
-    "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",
+    "TargetTypeName": "MySql.Data.MySqlClient.MySqlDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 8,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 9,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MySql",
+    "AssemblyName": "MySql.Data",
+    "TargetTypeName": "MySql.Data.MySqlClient.MySqlDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 8,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 9,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MySql",
+    "AssemblyName": "MySql.Data",
+    "TargetTypeName": "MySql.Data.MySqlClient.MySqlDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 8,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 9,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MySql",
+    "AssemblyName": "MySql.Data",
+    "TargetTypeName": "MySql.Data.MySqlClient.MySqlDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 8,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 9,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MySql",
+    "AssemblyName": "MySql.Data",
+    "TargetTypeName": "MySql.Data.MySqlClient.MySqlDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
@@ -9824,28 +9824,6 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "MySql",
-    "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySqlConnector.MySqlCommand",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 2,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
@@ -10089,7 +10067,29 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySqlConnector.MySqlCommand",
+    "TargetTypeName": "MySqlConnector.MySqlDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MySql",
+    "AssemblyName": "MySqlConnector",
+    "TargetTypeName": "MySqlConnector.MySqlDataReader",
     "TargetMethodName": "GetString",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
@@ -10113,7 +10113,7 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySqlConnector.MySqlCommand",
+    "TargetTypeName": "MySqlConnector.MySqlDataReader",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -10137,7 +10137,7 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySqlConnector.MySqlCommand",
+    "TargetTypeName": "MySqlConnector.MySqlDataReader",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -10159,7 +10159,7 @@
   {
     "IntegrationName": "MySql",
     "AssemblyName": "MySqlConnector",
-    "TargetTypeName": "MySqlConnector.MySqlCommand",
+    "TargetTypeName": "MySqlConnector.MySqlDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
@@ -10307,28 +10307,6 @@
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV5",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Npgsql",
-    "AssemblyName": "Npgsql",
-    "TargetTypeName": "Npgsql.NpgsqlCommand",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 4,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 8,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
     "InstrumentationCategory": 1
   },
   {
@@ -10546,7 +10524,29 @@
   {
     "IntegrationName": "Npgsql",
     "AssemblyName": "Npgsql",
-    "TargetTypeName": "Npgsql.NpgsqlCommand",
+    "TargetTypeName": "Npgsql.NpgsqlDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Npgsql",
+    "AssemblyName": "Npgsql",
+    "TargetTypeName": "Npgsql.NpgsqlDataReader",
     "TargetMethodName": "GetString",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
@@ -10570,7 +10570,7 @@
   {
     "IntegrationName": "Npgsql",
     "AssemblyName": "Npgsql",
-    "TargetTypeName": "Npgsql.NpgsqlCommand",
+    "TargetTypeName": "Npgsql.NpgsqlDataReader",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -10594,7 +10594,7 @@
   {
     "IntegrationName": "Npgsql",
     "AssemblyName": "Npgsql",
-    "TargetTypeName": "Npgsql.NpgsqlCommand",
+    "TargetTypeName": "Npgsql.NpgsqlDataReader",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -10616,7 +10616,7 @@
   {
     "IntegrationName": "Npgsql",
     "AssemblyName": "Npgsql",
-    "TargetTypeName": "Npgsql.NpgsqlCommand",
+    "TargetTypeName": "Npgsql.NpgsqlDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
@@ -10887,28 +10887,6 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
     "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 4,
-      "Item2": 122,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 4,
-      "Item2": 122,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Oracle",
-    "AssemblyName": "Oracle.DataAccess",
-    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
     "TargetMethodName": "ExecuteDbDataReader",
     "TargetReturnType": "System.Data.Common.DbDataReader",
     "TargetParameterTypes": [
@@ -11022,7 +11000,29 @@
   {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
-    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 122,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.DataAccess",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleDataReader",
     "TargetMethodName": "GetString",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [
@@ -11046,7 +11046,7 @@
   {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
-    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleDataReader",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -11070,7 +11070,7 @@
   {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
-    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleDataReader",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -11092,7 +11092,7 @@
   {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.DataAccess",
-    "TargetTypeName": "Oracle.DataAccess.Client.OracleCommand",
+    "TargetTypeName": "Oracle.DataAccess.Client.OracleDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [
@@ -11128,28 +11128,6 @@
     "MaximumVersion": {
       "Item1": 4,
       "Item2": 122,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Oracle",
-    "AssemblyName": "Oracle.ManagedDataAccess",
-    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
-    "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 23,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 23,
-      "Item2": 65535,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
@@ -11413,30 +11391,6 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.ManagedDataAccess",
     "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
-    "TargetMethodName": "GetString",
-    "TargetReturnType": "System.String",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 23,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 23,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Oracle",
-    "AssemblyName": "Oracle.ManagedDataAccess",
-    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
     "TargetMethodName": "GetValue",
     "TargetReturnType": "System.Object",
     "TargetParameterTypes": [
@@ -11461,30 +11415,6 @@
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.ManagedDataAccess",
     "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
-    "TargetMethodName": "GetValue",
-    "TargetReturnType": "System.Object",
-    "TargetParameterTypes": [
-      "System.Int32"
-    ],
-    "MinimumVersion": {
-      "Item1": 23,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 23,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Oracle",
-    "AssemblyName": "Oracle.ManagedDataAccess",
-    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
     "TargetMethodName": "Read",
     "TargetReturnType": "System.Boolean",
     "TargetParameterTypes": [],
@@ -11496,28 +11426,6 @@
     "MaximumVersion": {
       "Item1": 4,
       "Item2": 122,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "Oracle",
-    "AssemblyName": "Oracle.ManagedDataAccess",
-    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
-    "TargetMethodName": "Read",
-    "TargetReturnType": "System.Boolean",
-    "TargetParameterTypes": [],
-    "MinimumVersion": {
-      "Item1": 23,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 23,
-      "Item2": 65535,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
@@ -11552,7 +11460,99 @@
   {
     "IntegrationName": "Oracle",
     "AssemblyName": "Oracle.ManagedDataAccess",
-    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleCommand",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    "TargetMethodName": "Close",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    "TargetMethodName": "GetString",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    "TargetMethodName": "GetValue",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleDataReader",
+    "TargetMethodName": "Read",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 23,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 23,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": true,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Oracle",
+    "AssemblyName": "Oracle.ManagedDataAccess",
+    "TargetTypeName": "Oracle.ManagedDataAccess.Client.OracleDataReader",
     "TargetMethodName": "ReadAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
     "TargetParameterTypes": [

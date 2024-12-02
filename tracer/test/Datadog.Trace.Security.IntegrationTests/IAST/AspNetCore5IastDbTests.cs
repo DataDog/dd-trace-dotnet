@@ -19,6 +19,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false)
     {
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
     [SkippableTheory]
@@ -52,6 +53,10 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
         settings.AddRegexScrubber((new Regex(@"&database=.*"), "&database=...,"));
+        // Oracle column names are all upper case
+        settings.AddRegexScrubber((new Regex(@"\""DETAILS\"""), @"""Details"""));
+        // Postgres column names are all lower case
+        settings.AddRegexScrubber((new Regex(@"\""details\"""), @"""Details"""));
 
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
