@@ -214,6 +214,11 @@ namespace Datadog.Trace.AppSec
 
         private static IReadOnlyDictionary<string, object?> ExtractDictionary(object value, Type dictType, int depth, HashSet<object> visited)
         {
+            if (!visited.Add(value))
+            {
+                return EmptyDictionary;
+            }
+
             var gtkvp = typeof(KeyValuePair<,>);
             var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
             var keyProp = tkvp.GetProperty("Key");
@@ -265,6 +270,11 @@ namespace Datadog.Trace.AppSec
 
         private static List<object?> ExtractListOrArray(object value, int depth, HashSet<object> visited)
         {
+            if (visited.Contains(value))
+            {
+                return [];
+            }
+
             var sourceList = (ICollection)value;
             var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
             var items = new List<object?>(listSize);
