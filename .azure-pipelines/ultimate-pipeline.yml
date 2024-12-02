@@ -254,6 +254,40 @@ stages:
       displayName: Generate Matrices
       name: generate_variables_step
 
+- stage: generate_LLM_Report
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [generate_variables_job]
+
+  - job: generate_LLM_job
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - powershell: |
+        tracer/build.ps1 LLMReport
+      displayName: Generate LLM report
+      name: generate_variables_step
+      env:
+        PullRequestNumber: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        OpenAIKey: $(OPEN_AI_KEY)
+        TargetBranch: $(targetBranch)
+
 - stage: build_windows_tracer
   dependsOn: [merge_commit_id]
   variables:
