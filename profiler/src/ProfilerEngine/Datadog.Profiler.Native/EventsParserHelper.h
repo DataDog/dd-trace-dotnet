@@ -16,9 +16,9 @@ class EventsParserHelper
 public:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
-    static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
+    static WCHAR* ReadWideString(LPCBYTE pEventData, ULONG cbEventData, ULONG* offset)
     {
-        WCHAR* start = (WCHAR*)(eventData + *offset);
+        WCHAR* start = (WCHAR*)(pEventData + *offset);
         size_t length = WStrLen(start);
 
         // Account for the null character
@@ -29,14 +29,14 @@ public:
     }
 
     template <typename T>
-    static bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
+    static bool Read(T& value, LPCBYTE pEventData, ULONG cbEventData, ULONG& offset)
     {
         if ((offset + sizeof(T)) > cbEventData)
         {
             return false;
         }
 
-        memcpy(&value, (T*)(eventData + offset), sizeof(T));
+        memcpy(&value, (T*)(pEventData + offset), sizeof(T));
         offset += sizeof(T);
         return true;
     }

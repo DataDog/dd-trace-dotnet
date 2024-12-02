@@ -60,14 +60,16 @@ public:
     void OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string targetHost) override;
     void OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
-
     void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
 
 private:
-    bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
+    bool MonitorRequest(NetworkRequestInfo*& info, LPCGUID pActivityId, bool isRoot = true);
     bool CaptureThreadInfo(NetworkRequestInfo& info);
     void FillRawSample(RawNetworkSample& sample, NetworkRequestInfo& info, std::chrono::nanoseconds timestamp);
+    void UpdateHandshakeDuration(NetworkRequestInfo* pInfo, std::chrono::nanoseconds timestamp);
+    void UpdateHandshakeWait(NetworkRequestInfo* pInfo);
+    bool TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot = true);
 
 private:
     static std::vector<SampleValueType> SampleTypeDefinitions;

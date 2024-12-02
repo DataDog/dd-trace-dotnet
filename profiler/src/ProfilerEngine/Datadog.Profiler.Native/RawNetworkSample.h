@@ -22,9 +22,10 @@ public:
         Error(std::move(other.Error)),
         EndThreadId(std::move(other.EndThreadId)),
         RedirectUrl(std::move(other.RedirectUrl)),
-        DnsStartTimestamp(other.DnsStartTimestamp),
+        DnsWait(other.DnsWait),
         DnsDuration(other.DnsDuration),
         DnsSuccess(other.DnsSuccess),
+        HandshakeWait(other.HandshakeWait),
         HandshakeDuration(other.HandshakeDuration),
         HandshakeError(std::move(other.HandshakeError)),
         SocketConnectDuration(other.SocketConnectDuration),
@@ -44,9 +45,10 @@ public:
             Error = std::move(other.Error);
             EndThreadId = std::move(other.EndThreadId);
             RedirectUrl = std::move(other.RedirectUrl);
-            DnsStartTimestamp = other.DnsStartTimestamp;
+            DnsWait = other.DnsWait;
             DnsDuration = other.DnsDuration;
             DnsSuccess = other.DnsSuccess;
+            HandshakeWait = other.HandshakeWait;
             HandshakeDuration = other.HandshakeDuration;
             HandshakeError = std::move(other.HandshakeError);
             SocketConnectDuration = other.SocketConnectDuration;
@@ -74,11 +76,13 @@ public:
         }
         if (DnsDuration != std::chrono::nanoseconds::zero())
         {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestDnsWaitLabel, DnsWait.count()));
             sample->AddNumericLabel(NumericLabel(Sample::RequestDnsDurationLabel, DnsDuration.count()));
             sample->AddLabel(Label(Sample::RequestDnsSuccessLabel, DnsSuccess ? "true" : "false"));
         }
         if (HandshakeDuration != std::chrono::nanoseconds::zero())
         {
+            sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeWaitLabel, HandshakeWait.count()));
             sample->AddNumericLabel(NumericLabel(Sample::RequestHandshakeDurationLabel, HandshakeDuration.count()));
         }
         if (!HandshakeError.empty())
@@ -103,10 +107,11 @@ public:
     std::string EndThreadId;
     std::string RedirectUrl;
 
-    std::chrono::nanoseconds DnsStartTimestamp;
+    std::chrono::nanoseconds DnsWait;
     std::chrono::nanoseconds DnsDuration;
     bool DnsSuccess;
 
+    std::chrono::nanoseconds HandshakeWait;
     std::chrono::nanoseconds HandshakeDuration;
     std::string HandshakeError;
 

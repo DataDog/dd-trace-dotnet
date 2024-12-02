@@ -98,7 +98,8 @@ void NetworkProvider::OnRequestStart(std::chrono::nanoseconds timestamp, LPCGUID
     {
         // TODO: this should never happen; i.e. a request with the same activity is already in progress
         _requests.erase(activity);
-        return;
+
+        // we start a new request with the same activity to avoid losing both the previous and the current one
     }
 
     auto slot = _requests.insert_or_assign(activity, NetworkRequestInfo{ url, timestamp });
@@ -119,7 +120,7 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
     auto requestInfo = _requests.find(activity);
     if (requestInfo == _requests.end())
     {
-        // TODO: this should never happen; i.e. a request with the same activity is not in progress
+        // skipped request
         return;
     }
 
@@ -146,14 +147,14 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
         rawSample.Error = std::move(requestInfo->second.Error);
     }
 
-    if (!requestInfo->second.RedirectUrl.empty())
-    {
-        rawSample.RedirectUrl = std::move(requestInfo->second.RedirectUrl);
-    }
-
     if (!requestInfo->second.HandshakeError.empty())
     {
         rawSample.HandshakeError = std::move(requestInfo->second.HandshakeError);
+    }
+
+    if (requestInfo->second.Redirect != nullptr)
+    {
+        rawSample.RedirectUrl = std::move(requestInfo->second.Redirect->Url);
     }
 
     Add(std::move(rawSample));
@@ -161,196 +162,258 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
     _requests.erase(activity);
 }
 
+// OnRequestStop will be called AFTER this one so the sample is created in one place
 void NetworkProvider::OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity))
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId))
     {
         return;
     }
 
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
-    {
-        // TODO: this should never happen; i.e. a request with the same activity is not in progress
-        return;
-    }
-
-    requestInfo->second.Error = std::move(message);
+    pInfo->Error = std::move(message);
 }
 
 void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string redirectUrl)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId))
     {
         return;
     }
 
-    requestInfo->second.RedirectUrl = std::move(redirectUrl);
+    // we need to keep track of the duration of the initial processing that ends up to a redirect
+    // and count it as part of the request/response phase
+    pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
+    pInfo->Redirect = std::make_unique<NetworkRequestInfo>(redirectUrl, timestamp);
 }
 
 void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId))
     {
         return;
     }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
-    {
-        return;
-    }
-    requestInfo->second.DnsStartTime = timestamp;
+
+    pInfo->DnsStartTime = timestamp;
 }
 void NetworkProvider::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, bool success)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId))
     {
         return;
     }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+
+    // DNS is the first phase...
+    if (pInfo->Redirect == nullptr)
     {
-        return;
+        // ... of the first part of the request
+        pInfo->DnsDuration = timestamp - pInfo->DnsStartTime;
+        pInfo->DnsWait = pInfo->DnsStartTime - pInfo->StartTimestamp;
     }
-    requestInfo->second.DnsDuration = timestamp - requestInfo->second.DnsStartTime;
-    requestInfo->second.DnsResolutionSuccess = success;
+    else
+    {
+        // ... of the redirected part of the request
+        pInfo->Redirect->DnsDuration = timestamp - pInfo->Redirect->DnsStartTime;
+        pInfo->Redirect->DnsWait = pInfo->Redirect->DnsStartTime - pInfo->Redirect->StartTimestamp;
+    }
+
+    // even if the first request succeeds, the redirected one might fail
+    pInfo->DnsResolutionSuccess = success;
 }
 
 void NetworkProvider::OnConnectStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.SocketConnectStartTime = timestamp;
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->SocketConnectStartTime = timestamp;
+    }
+    else
+    {
+        pInfo->Redirect->SocketConnectStartTime = timestamp;
+    }
 }
 
 void NetworkProvider::OnConnectStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+
+    if (pInfo->Redirect == nullptr)
     {
-        return;
+        pInfo->SocketDuration = timestamp - pInfo->SocketConnectStartTime;
     }
-    requestInfo->second.SocketDuration = timestamp - requestInfo->second.SocketConnectStartTime;
+    else
+    {
+        pInfo->Redirect->SocketDuration = timestamp - pInfo->Redirect->SocketConnectStartTime;
+    }
 }
 
 void NetworkProvider::OnConnectFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+
+    if (pInfo->Redirect == nullptr)
     {
-        return;
+        pInfo->SocketDuration = timestamp - pInfo->SocketConnectStartTime;
     }
-    requestInfo->second.SocketDuration = timestamp - requestInfo->second.SocketConnectStartTime;
-    requestInfo->second.Error = std::move(message);
+    else
+    {
+        pInfo->Redirect->SocketDuration = timestamp - pInfo->Redirect->SocketConnectStartTime;
+    }
+
+    // TODO: check if we should rely on the RequestFailed event to set the error message
+    pInfo->Error = std::move(message);
 }
 
 void NetworkProvider::OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.ReqRespStartTime = timestamp;
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->ReqRespStartTime = timestamp;
+    }
+    else
+    {
+        pInfo->Redirect->ReqRespStartTime = timestamp;
+    }
 }
 
 void NetworkProvider::OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.ReqRespDuration = timestamp - requestInfo->second.ReqRespStartTime;
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
+    }
+    else
+    {
+        pInfo->Redirect->ReqRespDuration = timestamp - pInfo->Redirect->ReqRespStartTime;
+    }
 }
 
 void NetworkProvider::OnHandshakeStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string targetHost)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.HandshakeStartTime = timestamp;
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->HandshakeStartTime = timestamp;
+    }
+    else
+    {
+        pInfo->Redirect->HandshakeStartTime = timestamp;
+    }
 }
 
 void NetworkProvider::OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.HandshakeDuration = timestamp - requestInfo->second.HandshakeStartTime;
+    UpdateHandshakeDuration(pInfo, timestamp);
+    UpdateHandshakeWait(pInfo);
 }
 
 void NetworkProvider::OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message)
 {
-    NetworkActivity activity;
-    if (!TryGetActivity(pActivityId, activity, false))
-    {
-        return;
-    }
-    auto requestInfo = _requests.find(activity);
-    if (requestInfo == _requests.end())
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
     {
         return;
     }
 
-    requestInfo->second.HandshakeDuration = timestamp - requestInfo->second.HandshakeStartTime;
-    requestInfo->second.HandshakeError = std::move(message);
+    UpdateHandshakeDuration(pInfo, timestamp);
+    UpdateHandshakeWait(pInfo);
+
+    pInfo->HandshakeError = std::move(message);
+}
+
+void NetworkProvider::UpdateHandshakeDuration(NetworkRequestInfo* pInfo, std::chrono::nanoseconds timestamp)
+{
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->HandshakeDuration = timestamp - pInfo->HandshakeStartTime;
+    }
+    else
+    {
+        pInfo->HandshakeDuration = timestamp - pInfo->Redirect->HandshakeStartTime;
+    }
+}
+
+
+void NetworkProvider::UpdateHandshakeWait(NetworkRequestInfo* pInfo)
+{
+    // phases order: Start --> DNS --> socket --> handshake
+    // we need to take into account situations where DNS/socket phases might be missing
+    if (pInfo->Redirect == nullptr)
+    {
+        if (pInfo->SocketConnectStartTime != std::chrono::nanoseconds::zero())
+        {
+            pInfo->HandshakeWait =        // = socket end time
+                pInfo->HandshakeStartTime - (pInfo->SocketConnectStartTime + pInfo->SocketDuration);
+        }
+        else
+        if (pInfo->DnsStartTime != std::chrono::nanoseconds::zero())
+        {
+            pInfo->HandshakeWait =        // = DNS end time
+                pInfo->HandshakeStartTime - (pInfo->DnsStartTime + pInfo->DnsDuration);
+        }
+        else
+        {
+            pInfo->HandshakeWait = pInfo->HandshakeStartTime - pInfo->StartTimestamp;
+        }
+    }
+    else
+    {
+        if (pInfo->Redirect->SocketConnectStartTime != std::chrono::nanoseconds::zero())
+        {
+            pInfo->Redirect->HandshakeWait =        // = socket end time
+                pInfo->Redirect->HandshakeStartTime - (pInfo->Redirect->SocketConnectStartTime + pInfo->Redirect->SocketDuration);
+        }
+        else
+        if (pInfo->Redirect->DnsStartTime != std::chrono::nanoseconds::zero())
+        {
+            pInfo->Redirect->HandshakeWait =        // = DNS end time
+                pInfo->Redirect->HandshakeStartTime - (pInfo->Redirect->DnsStartTime + pInfo->Redirect->DnsDuration);
+        }
+        else
+        {
+            pInfo->Redirect->HandshakeWait = pInfo->Redirect->HandshakeStartTime - pInfo->Redirect->StartTimestamp;
+        }
+    }
 }
 
 
@@ -366,16 +429,56 @@ void NetworkProvider::FillRawSample(RawNetworkSample& sample, NetworkRequestInfo
     sample.ThreadInfo = std::move(info.StartThreadInfo);
     auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
     sample.EndThreadId = currentThreadInfo->GetProfileThreadId();
-    sample.DnsStartTimestamp = info.DnsStartTime;
-    sample.DnsDuration = info.DnsDuration;
     sample.DnsSuccess = info.DnsResolutionSuccess;
+
+    // count the durations for the initial request...
+    sample.DnsDuration = info.DnsDuration;
+    sample.DnsWait = info.DnsWait;
     sample.HandshakeDuration = info.HandshakeDuration;
+    sample.HandshakeWait = info.HandshakeWait;
     sample.SocketConnectDuration = info.SocketDuration;
     sample.ReqRespDuration = info.ReqRespDuration;
+
+    // ... plus for the redirected request if any
+    if (info.Redirect != nullptr)
+    {
+        sample.DnsDuration += info.Redirect->DnsDuration;
+        sample.DnsWait += info.Redirect->DnsWait;
+        sample.HandshakeDuration += info.Redirect->HandshakeDuration;
+        sample.HandshakeWait += info.Redirect->HandshakeWait;
+        sample.SocketConnectDuration += info.Redirect->SocketDuration;
+        sample.ReqRespDuration += info.Redirect->ReqRespDuration;
+
+        // The computation of the wait/queueing time is based on the time difference
+        // between end of a phase and the start of the next one
+        // --> high values usually reflect the lack of ThreadPool threads availability
+        // During the tests, the wait time before the socket connection is very short so no need to provide it
+    }
 }
 
 
+// This helper function is called with isRoot = true for Start/Stop events handlers and false otherwise
 bool NetworkProvider::TryGetActivity(LPCGUID pActivityId, NetworkActivity& activity, bool isRoot)
 {
     return NetworkActivity::GetRootActivity(pActivityId, activity, isRoot);
 }
+
+bool NetworkProvider::MonitorRequest(NetworkRequestInfo*& pInfo, LPCGUID pActivityId, bool isRoot)
+{
+    NetworkActivity activity;
+    if (!TryGetActivity(pActivityId, activity, isRoot))
+    {
+        return false;
+    }
+
+    auto existingInfo = _requests.find(activity);
+    if (existingInfo == _requests.end())
+    {
+        return false;
+    }
+
+    pInfo = &(existingInfo->second);
+
+    return true;
+}
+
