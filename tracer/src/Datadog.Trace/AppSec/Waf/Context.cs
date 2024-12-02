@@ -66,12 +66,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
         {
-            if (_disposed)
-            {
-                Log.Information("Can't run WAF when context is disposed");
-                return null;
-            }
-
             DdwafResultStruct retNative = default;
 
             if (_waf.Disposed)
@@ -95,6 +89,12 @@ namespace Datadog.Trace.AppSec.Waf
             WafReturnCode code;
             lock (_stopwatch)
             {
+                if (_disposed)
+                {
+                    Log.Information("Can't run WAF when context is disposed");
+                    return null;
+                }
+
                 // NOTE: the WAF must be called with either pwPersistentArgs or pwEphemeralArgs (or both) pointing to
                 // a valid structure. Failure to do so, results in a WAF error. It doesn't makes sense to propagate this
                 // error.
@@ -151,21 +151,21 @@ namespace Datadog.Trace.AppSec.Waf
 
         public void Dispose(bool disposing)
         {
-            if (_disposed)
-            {
-                return;
-            }
-
-            _disposed = true;
-
-            // WARNING do not move this above, this should only be disposed in the end of the context's life
-            foreach (var encodeResult in _encodeResults)
-            {
-                encodeResult.Dispose();
-            }
-
             lock (_stopwatch)
             {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+
+                // WARNING do not move this above, this should only be disposed in the end of the context's life
+                foreach (var encodeResult in _encodeResults)
+                {
+                    encodeResult.Dispose();
+                }
+
                 _wafLibraryInvoker.ContextDestroy(_contextHandle);
             }
         }
