@@ -138,8 +138,12 @@ void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp,
     static uint64_t failureCount = 0;
     if ((timestamp == 0ns) && (threadId == -1) && stack.empty())
     {
-        std::shared_ptr<ManagedThreadInfo> threadInfo;
-        CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+        auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+        if (threadInfo == nullptr)
+        {
+            LogOnce(Warn, "ContentionProvider::AddContentionSample: Profiler failed at getting the current managed thread info ");
+            return;
+        }
 
         const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
             _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);

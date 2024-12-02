@@ -139,9 +139,12 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         }
     }
 
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-
-    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "ExceptionsProvider::OnExceptionThrown: Profiler failed at getting the current managed thread info ");
+        return false;
+    }
 
     uint32_t hrCollectStack = E_FAIL;
     const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
