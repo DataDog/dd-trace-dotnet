@@ -262,7 +262,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [generate_variables_job]
+      jobs: [generate_LLM_job]
 
   - job: generate_LLM_job
     timeoutInMinutes: 60 #default value
@@ -280,10 +280,9 @@ stages:
     - powershell: |
         tracer/build.ps1 LLMReport
       displayName: Generate LLM report
-      name: generate_variables_step
+      name: generate_llm_step
       env:
         PullRequestNumber: $(System.PullRequest.PullRequestNumber)
-        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
         OpenAIKey: $(OPEN_AI_KEY)
         TargetBranch: $(targetBranch)
