@@ -220,14 +220,24 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredXssRequest(string database)
     {
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
         var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = "/Iast/StoredXss?param=<b>RawValue</b>";
+        var url = $"/Iast/StoredXss?param=<b>RawValue</b>&useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -238,18 +248,30 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
+        settings.AddRegexScrubber((new Regex(@"&useMicrosoftDataDb=(True|False)"), "&useMicrosoftDataDb=..."));
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredXssEscapedRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredXssEscapedRequest(string database)
     {
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
         var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/StoredXssEscaped";
+        var url = $"/Iast/StoredXssEscaped?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -259,22 +281,31 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
 
-        // Add a scrubber to remove the "?param=<value>" from the a single line
-        (Regex RegexPattern, string Replacement) scrubber = (new Regex(@"\?param=[^ ]+"), "?param=...,\n");
-        settings.AddRegexScrubber(scrubber);
+        // Add a scrubber to remove the useMicrosoftDataDb value
+        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
 
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
     }
 
-    [SkippableFact]
+    [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    public async Task TestIastStoredSqliRequest()
+    [InlineData("System.Data.SQLite")]
+    [InlineData("Microsoft.Data.Sqlite")]
+    public async Task TestIastStoredSqliRequest(string database)
     {
+        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
         var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = "/Iast/StoredSqli";
+        var url = $"/Iast/StoredSqli?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
@@ -285,6 +316,10 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         settings.AddIastScrubbing();
         settings.AddRegexScrubber(aspNetCorePathScrubber);
         settings.AddRegexScrubber(hashScrubber);
+
+        // Add a scrubber to remove the useMicrosoftDataDb value
+        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
+
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
@@ -348,6 +383,49 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         newFixture.Dispose();
         newFixture.SetOutput(null);
     }
+
+    [Fact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestQueryParameterNameVulnerability()
+    {
+        var filename = "Iast.QueryParameterName.AspNetCore5";
+        var url = "/Iast/Print?Encrypt=True&ClientDatabase=774E4D65564946426A53694E48756B592B444A6C43673D3D&p=413&ID=2376&EntityType=114&Print=True&OutputType=WORDOPENXML&SSRSReportID=1";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    #if NET6_0_OR_GREATER
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastSqliInterpolatedString()
+    {
+        var filename = "Iast.SqliInterpolatedString.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = $"/Iast/InterpolatedSqlString?name=John";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+    #endif
 }
 
 // Classes to test particular features

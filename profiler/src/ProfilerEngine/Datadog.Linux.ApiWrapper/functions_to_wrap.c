@@ -541,6 +541,24 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
 #ifdef DD_ALPINE
 
+struct pthread_wrapped_arg
+{
+    void* (*func)(void*);
+    void* orig_arg;
+};
+
+// This symbol must be public for crashtracking filtering mechanism
+void* dd_pthread_entry(void* arg)
+{
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)arg;
+    void* result = new_arg->func(new_arg->orig_arg);
+    free(new_arg);
+    // Call into the profiler to do extra cleanup.
+    // This is *useful* at shutdown time to avoid crashing.
+    __dd_on_thread_routine_finished();
+    return result;
+}
+
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
@@ -551,7 +569,11 @@ int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
 
     // call the real pthread_create (libc/musl-libc)
-    int result = __real_pthread_create(res, attrp, entry, arg);
+    struct pthread_wrapped_arg* new_arg = (struct pthread_wrapped_arg*)malloc(sizeof(struct pthread_wrapped_arg));
+    new_arg->func = entry;
+    new_arg->orig_arg = arg;
+
+    int result = __real_pthread_create(res, attrp, dd_pthread_entry, new_arg);
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 

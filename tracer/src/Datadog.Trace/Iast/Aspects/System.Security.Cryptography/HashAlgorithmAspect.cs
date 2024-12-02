@@ -22,8 +22,6 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HashAlgorithmAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmAspect));
-
     /// <summary>
     /// ComputeHash not static
     /// </summary>

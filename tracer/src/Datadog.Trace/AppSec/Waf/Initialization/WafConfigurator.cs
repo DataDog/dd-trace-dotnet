@@ -134,7 +134,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker, encoder);
             if (initResult.HasErrors)
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 foreach (var item in initResult.Errors)
                 {
                     sb.Append($"{item.Key}: [{string.Join(", ", item.Value)}] ");

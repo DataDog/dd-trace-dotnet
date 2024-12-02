@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
         private static bool? _isDataCollectorDomainCache;
+        private static bool? _isMsBuildTaskCache;
 
         internal static bool DotnetTestIntegrationEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(DotnetTestIntegrationId);
 
@@ -40,7 +42,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     return value;
                 }
 
+                // If the AppDomainName contains "DataCollector" we are in the data collector domain
                 return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+            }
+        }
+
+        internal static bool IsMsBuildTask
+        {
+            get
+            {
+                if (_isMsBuildTaskCache is { } value)
+                {
+                    return value;
+                }
+
+                // Let's try to detect if we are in the MSBuild task scenario
+                // the process name is not guaranteed so we need to check the stack trace
+                // to see if we are getting called from the Coverlet.MSbuild.Tasks namespace
+                // because we don't need any symbols this should be fast enough.
+                if (new StackTrace(3, false).GetFrames() is { } frames)
+                {
+                    foreach (var stackFrame in frames)
+                    {
+                        if (stackFrame is null)
+                        {
+                            continue;
+                        }
+
+                        if (stackFrame.GetMethod()?.DeclaringType?.FullName?.StartsWith("Coverlet.MSbuild.Tasks") == true)
+                        {
+                            _isMsBuildTaskCache = true;
+                            return true;
+                        }
+                    }
+
+                    _isMsBuildTaskCache = false;
+                }
+
+                return _isMsBuildTaskCache ?? false;
             }
         }
 
@@ -381,7 +420,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.DotnetTest: Microsoft.DotNet.Tools.Test.TestCommand..ctor arguments:");
 
                 if (msbuildArgs is not null)
@@ -521,7 +560,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                var sb = StringBuilderCache.Acquire();
                 sb.AppendLine("InjectCodeCoverageCollector.VsConsoleTest: arguments:");
 
                 if (args != null)

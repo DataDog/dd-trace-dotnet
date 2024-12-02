@@ -25,6 +25,9 @@ namespace Datadog.Trace.Activity.Handlers
             "Npgsql",
             "System.Net.Http.Desktop",
             "SqlClientDiagnosticListener",
+            "Experimental.System.Net.NameResolution",
+            "Experimental.System.Net.Http.Connections",
+            "Experimental.System.Net.Sockets",
         };
 
         private static readonly string[] IgnoreOperationNamesStartingWith =

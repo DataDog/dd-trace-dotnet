@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Util;
 
 #nullable enable
 
@@ -15,13 +17,13 @@ namespace Datadog.Trace;
 /// <summary>
 /// Baggage is a collection of name-value pairs that are propagated to downstream services.
 /// </summary>
-internal sealed class Baggage : IDictionary<string, string>
+internal sealed class Baggage : IDictionary<string, string?>
 {
     private static readonly AsyncLocal<Baggage> AsyncStorage = new();
 
-    private static readonly List<KeyValuePair<string, string>> EmptyList = [];
+    private static readonly List<KeyValuePair<string, string?>> EmptyList = [];
 
-    private List<KeyValuePair<string, string>>? _items;
+    private List<KeyValuePair<string, string?>>? _items;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Baggage"/> class.
@@ -34,7 +36,7 @@ internal sealed class Baggage : IDictionary<string, string>
     /// Initializes a new instance of the <see cref="Baggage"/> class using the specified items.
     /// </summary>
     /// <param name="items">The baggage items.</param>
-    public Baggage(IEnumerable<KeyValuePair<string, string>>? items)
+    public Baggage(IEnumerable<KeyValuePair<string, string?>>? items)
     {
         if (items != null!)
         {
@@ -56,9 +58,9 @@ internal sealed class Baggage : IDictionary<string, string>
     /// </summary>
     public int Count => _items?.Count ?? 0;
 
-    bool ICollection<KeyValuePair<string, string>>.IsReadOnly => false;
+    bool ICollection<KeyValuePair<string, string?>>.IsReadOnly => false;
 
-    ICollection<string> IDictionary<string, string>.Keys
+    ICollection<string> IDictionary<string, string?>.Keys
     {
         get
         {
@@ -84,7 +86,7 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    ICollection<string> IDictionary<string, string>.Values
+    ICollection<string?> IDictionary<string, string?>.Values
     {
         get
         {
@@ -94,7 +96,7 @@ internal sealed class Baggage : IDictionary<string, string>
                 {
                     if (items.Count > 0)
                     {
-                        var values = new string[items.Count];
+                        var values = new string?[items.Count];
 
                         for (int i = 0; i < items.Count; i++)
                         {
@@ -110,7 +112,7 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    public string this[string key]
+    public string? this[string key]
     {
         get
         {
@@ -129,7 +131,7 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    private List<KeyValuePair<string, string>> EnsureListInitialized()
+    private List<KeyValuePair<string, string?>> EnsureListInitialized()
     {
         if (_items == null)
         {
@@ -144,7 +146,7 @@ internal sealed class Baggage : IDictionary<string, string>
     /// </summary>
     /// <param name="key">The baggage item name.</param>
     /// <param name="value">The baggage item value.</param>
-    public void AddOrReplace(string key, string value)
+    public void AddOrReplace(string key, string? value)
     {
         var items = EnsureListInitialized();
 
@@ -154,20 +156,20 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    private static void AddOrReplaceInternal(List<KeyValuePair<string, string>> items, string key, string value)
+    private static void AddOrReplaceInternal(List<KeyValuePair<string, string?>> items, string key, string? value)
     {
         for (int i = 0; i < items.Count; i++)
         {
             if (items[i].Key == key)
             {
                 // key found, replace with new value
-                items[i] = new KeyValuePair<string, string>(key, value);
+                items[i] = new KeyValuePair<string, string?>(key, value);
                 return;
             }
         }
 
         // key not found, add new entry
-        items.Add(new KeyValuePair<string, string>(key, value));
+        items.Add(new KeyValuePair<string, string?>(key, value));
     }
 
     public bool TryGetValue(string key, out string value)
@@ -191,7 +193,7 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    bool IDictionary<string, string>.ContainsKey(string key)
+    bool IDictionary<string, string?>.ContainsKey(string key)
     {
         if (_items is { } items)
         {
@@ -210,7 +212,7 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    bool ICollection<KeyValuePair<string, string>>.Contains(KeyValuePair<string, string> item)
+    bool ICollection<KeyValuePair<string, string?>>.Contains(KeyValuePair<string, string?> item)
     {
         if (_items is { } items)
         {
@@ -229,7 +231,7 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    public void Add(string key, string value)
+    public void Add(string key, string? value)
     {
         var items = EnsureListInitialized();
 
@@ -243,11 +245,11 @@ internal sealed class Baggage : IDictionary<string, string>
                 }
             }
 
-            items.Add(new KeyValuePair<string, string>(key, value));
+            items.Add(new KeyValuePair<string, string?>(key, value));
         }
     }
 
-    void ICollection<KeyValuePair<string, string>>.Add(KeyValuePair<string, string> item)
+    void ICollection<KeyValuePair<string, string?>>.Add(KeyValuePair<string, string?> item)
     {
         Add(item.Key, item.Value);
     }
@@ -282,7 +284,7 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    bool ICollection<KeyValuePair<string, string>>.Remove(KeyValuePair<string, string> item)
+    bool ICollection<KeyValuePair<string, string?>>.Remove(KeyValuePair<string, string?> item)
     {
         if (_items is { } items)
         {
@@ -302,7 +304,7 @@ internal sealed class Baggage : IDictionary<string, string>
         return false;
     }
 
-    void ICollection<KeyValuePair<string, string>>.CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
+    void ICollection<KeyValuePair<string, string?>>.CopyTo(KeyValuePair<string, string?>[] array, int arrayIndex)
     {
         if (array == null!)
         {
@@ -416,9 +418,31 @@ internal sealed class Baggage : IDictionary<string, string>
         }
     }
 
-    private List<KeyValuePair<string, string>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
+    public void Enumerate<T>(T processor)
+        where T : struct, ICancellableObserver<KeyValuePair<string, string?>>
+    {
+        if (_items is { } list)
+        {
+            lock (list)
+            {
+                foreach (var item in list)
+                {
+                    if (processor.CancellationRequested)
+                    {
+                        break;
+                    }
 
-    IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator() => GetEnumerator();
+                    processor.OnNext(item);
+                }
+
+                processor.OnCompleted();
+            }
+        }
+    }
+
+    private List<KeyValuePair<string, string?>>.Enumerator GetEnumerator() => _items?.GetEnumerator() ?? EmptyList.GetEnumerator();
+
+    IEnumerator<KeyValuePair<string, string?>> IEnumerable<KeyValuePair<string, string?>>.GetEnumerator() => GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

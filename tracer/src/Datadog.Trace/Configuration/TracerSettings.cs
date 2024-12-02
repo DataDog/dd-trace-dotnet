@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -15,7 +14,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Propagators;
@@ -391,8 +389,8 @@ namespace Datadog.Trace.Configuration
                         .ToArray();
 
             var getDefaultPropagationHeaders = () => new DefaultResult<string[]>(
-                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext],
-                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext}");
+                [ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.W3CBaggage],
+                $"{ContextPropagationHeaderStyle.Datadog},{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.W3CBaggage}");
 
             // Same otel config is used for both injection and extraction
             var otelPropagation = config
@@ -418,6 +416,14 @@ namespace Datadog.Trace.Configuration
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
                                          .AsBool(false);
+
+            BaggageMaximumItems = config
+                                 .WithKeys(ConfigurationKeys.BaggageMaximumItems)
+                                 .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageItems);
+
+            BaggageMaximumBytes = config
+                                 .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
+                                 .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
 
             // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
             if (!IsActivityListenerEnabled)
@@ -898,6 +904,22 @@ namespace Datadog.Trace.Configuration
         internal bool PropagationExtractFirstOnly { get; }
 
         /// <summary>
+        /// Gets the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumItems"/>
+        internal int BaggageMaximumItems { get; }
+
+        /// <summary>
+        /// Gets the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumBytes"/>
+        internal int BaggageMaximumBytes { get; }
+
+        /// <summary>
         /// Gets a value indicating whether runtime metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
@@ -1281,6 +1303,7 @@ namespace Datadog.Trace.Configuration
 
         internal static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
+            inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
                 return DbmPropagationLevel.Disabled;

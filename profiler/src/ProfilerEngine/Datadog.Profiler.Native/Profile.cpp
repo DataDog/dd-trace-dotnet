@@ -9,7 +9,11 @@
 #include "ProfileImpl.hpp"
 #include "Sample.h"
 
+#include <chrono>
+
 namespace libdatadog {
+
+using namespace std::chrono_literals;
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
@@ -77,7 +81,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     ffiSample.values = {values.data(), values.size()};
 
     // add timestamp
-    std::int64_t timestamp = 0;
+    auto timestamp = 0ns;
     if (_addTimestampOnSample)
     {
         // All timestamps give the time when "something" ends and the associated duration
@@ -85,7 +89,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp);
+    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp.count());
     if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
         return make_error(add_res.err);

@@ -196,18 +196,7 @@ concept IsWstring = same_as<T, ::shared::WSTRING> ||
 template <IsWstring T>
 void WriteToStream(std::ostringstream& oss, T const& x)
 {
-    if constexpr (std::is_same_v<T, ::shared::WSTRING>)
-    {
-        oss << ::shared::ToString(x);
-    }
-    else if constexpr (std::is_array_v<T>)
-    {
-        oss << ::shared::ToString(x, std::extent_v<T>);
-    }
-    else
-    {
-        oss << ::shared::ToString(x);
-    }
+    oss << ::shared::ToString(x);
 }
 
 template <class Period>

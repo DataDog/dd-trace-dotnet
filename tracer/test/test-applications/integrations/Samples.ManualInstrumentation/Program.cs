@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
@@ -38,6 +39,8 @@ internal class Program
 
         async Task OtherStuff()
         {
+            var mutex = new ManualResetEventSlim();
+
             var shouldBeAttached = Environment.GetEnvironmentVariable("AUTO_INSTRUMENT_ENABLED") == "1";
             var runInstrumentationChecks = shouldBeAttached;
 
@@ -65,10 +68,15 @@ internal class Program
 
             // Manually enable debug logs
             GlobalSettings.SetDebugEnabled(true);
-            LogCurrentSettings(_initialTracer, "Initial");
+            LogAndAssertCurrentSettings(_initialTracer, "Initial");
 
             // verify instrumentation
             ThrowIf(string.IsNullOrEmpty(_initialTracer.DefaultServiceName));
+
+            // baggage works even without an active span
+            var baggage = Baggage.Current;
+            baggage["key1"] = "value1";
+            Expect(baggage.TryGetValue("key1", out var baggageValue1) && baggageValue1 == "value1");
 
             // Manual + automatic before reconfiguration
             var firstOperationName = $"Manual-{++count}.Initial";
@@ -83,7 +91,17 @@ internal class Program
                 Expect(scope.Span.GetTag("Temp") == "TempTest");
                 scope.Span.SetTag("Temp", null);
 
-                await SendHttpRequest("Initial");
+                // baggage keeps working with an active span
+                baggage["key2"] = "value2";
+                Expect(baggage.TryGetValue("key2", out var baggageValue2) && baggageValue2 == "value2");
+
+                var responseMessage = await SendHttpRequest("Initial");
+                var requestMessage = responseMessage.RequestMessage!;
+
+                // verify baggage in the request headers
+                Expect(
+                    requestMessage.Headers.TryGetValues("baggage", out var baggageValues) &&
+                    baggageValues.FirstOrDefault() == "key1=value1,key2=value2");
             }
 
             await _initialTracer.ForceFlushAsync();
@@ -94,7 +112,7 @@ internal class Program
             settings.Environment = "updated-env";
             settings.GlobalTags = new Dictionary<string, string> { { "Updated-key", "Updated Value" } };
             Tracer.Configure(settings);
-            LogCurrentSettings(Tracer.Instance, "Reconfigured");
+            LogAndAssertCurrentSettings(Tracer.Instance, "Reconfigured", settings);
 
             // Manual + automatic
             using (Tracer.Instance.StartActive($"Manual-{++count}.Reconfigured"))
@@ -117,7 +135,7 @@ internal class Program
             httpIntegration.AnalyticsEnabled = false; // just setting them because why not
             httpIntegration.AnalyticsSampleRate = 1.0;
             Tracer.Configure(settings);
-            LogCurrentSettings(Tracer.Instance, "HttpDisabled");
+            LogAndAssertCurrentSettings(Tracer.Instance, "HttpDisabled", settings);
 
             // send a trace with it disabled
             using (Tracer.Instance.StartActive($"Manual-{++count}.HttpDisabled"))
@@ -128,8 +146,9 @@ internal class Program
             await Tracer.Instance.ForceFlushAsync();
 
             // go back to the defaults
-            Tracer.Configure(TracerSettings.FromDefaultSources());
-            LogCurrentSettings(Tracer.Instance, "DefaultsReinstated");
+            settings = TracerSettings.FromDefaultSources();
+            Tracer.Configure(settings);
+            LogAndAssertCurrentSettings(Tracer.Instance, "DefaultsReinstated", settings);
             using (Tracer.Instance.StartActive($"Manual-{++count}.DefaultsReinstated"))
             {
                 await SendHttpRequest("DefaultsReinstated");
@@ -207,12 +226,21 @@ internal class Program
             Environment.Exit(0);
             return;
 
-            async Task SendHttpRequest(string name)
+            async Task<HttpResponseMessage> SendHttpRequest(string name)
             {
+                mutex.Reset();
                 var q = $"{count}.{name}";
                 using var scope = Tracer.Instance.StartActive($"Manual-{q}.HttpClient");
-                await client.GetAsync(url + $"?q={q}");
+                var responseMessage = await client.GetAsync(url + $"?q={q}");
+
                 Console.WriteLine("Received response for client.GetAsync(String)");
+
+                if (!mutex.Wait(30_000))
+                {
+                    throw new Exception($"Timed out waiting for response to request: Manual-{q}.HttpClient");
+                }
+
+                return responseMessage;
             }
 
             void HandleHttpRequests(HttpListenerContext context)
@@ -220,34 +248,39 @@ internal class Program
                 try
                 {
                     var query = context.Request.QueryString["q"];
-                    using var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener");
-                    Console.WriteLine("[HttpListener] received request");
-
-                    // read request content and headers
-                    using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                    using (var scope = Tracer.Instance.StartActive($"Manual-{query}.HttpListener"))
                     {
-                        string requestContent = reader.ReadToEnd();
-                        Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                        Console.WriteLine("[HttpListener] received request");
+
+                        // read request content and headers
+                        using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
+                        {
+                            string requestContent = reader.ReadToEnd();
+                            Console.WriteLine($"[HttpListener] request content: {requestContent}");
+                        }
+
+                        // write response content
+                        scope.Span.SetTag("content", "PONG");
+                        var responseBytes = Encoding.UTF8.GetBytes("PONG");
+                        context.Response.ContentEncoding = Encoding.UTF8;
+                        context.Response.ContentLength64 = responseBytes.Length;
+                        context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+                        // we must close the response
+                        context.Response.Close();
                     }
 
-                    // write response content
-                    scope.Span.SetTag("content", "PONG");
-                    var responseBytes = Encoding.UTF8.GetBytes("PONG");
-                    context.Response.ContentEncoding = Encoding.UTF8;
-                    context.Response.ContentLength64 = responseBytes.Length;
-                    context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-                    // we must close the response
-                    context.Response.Close();
+                    mutex.Set();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                     context.Response.Close();
+                    mutex.Set();
                     throw;
                 }
             }
 
-            static void LogCurrentSettings(Tracer tracer, string step)
+            void LogAndAssertCurrentSettings(Tracer tracer, string step, TracerSettings expected = null)
             {
                 var settings = tracer.Settings;
                 Console.WriteLine($"Current tracer settings for {step}: ");
@@ -257,6 +290,14 @@ internal class Program
                 WriteLog(settings.ServiceVersion);
                 var globalTags = string.Join(". ", settings.GlobalTags.Select(x => $"{x.Key}:{x.Value}"));
                 WriteLog(globalTags);
+
+                if (expected is not null)
+                {
+                    Expect(settings.Environment == expected.Environment);
+                    Expect(settings.ServiceName == expected.ServiceName);
+                    Expect(settings.ServiceVersion == expected.ServiceVersion);
+                    Expect(settings.GlobalTags.Count == expected.GlobalTags.Count);
+                }
 
                 static void WriteLog(object argument, [CallerArgumentExpression(nameof(argument))] string paramName = null)
                 {

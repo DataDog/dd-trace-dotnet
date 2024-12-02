@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Iast.Dataflow;
 
 #nullable enable
@@ -12,7 +13,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> HttpWebRequest class aspects </summary>
-[AspectClass("System.Net.Requests,System,netstandard", AspectType.RaspIastSink, VulnerabilityType.Ssrf)]
+[AspectClass("System.Net.Requests,System,netstandard", InstrumentationCategory.IastRasp, AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class WebRequestAspect

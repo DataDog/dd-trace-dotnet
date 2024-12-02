@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -26,6 +28,7 @@ public class ManualInstrumentationTests : TestHelper
     public ManualInstrumentationTests(ITestOutputHelper output)
         : base("ManualInstrumentation", output)
     {
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
     }
 
     [SkippableFact]
@@ -54,6 +57,20 @@ public class ManualInstrumentationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task ReadyToRunManualAndAutomatic()
     {
+#if NET9_0_OR_GREATER
+        // OK, I know, this is weird, but AFAICT they changed the host FX lookup logic in .NET 9,
+        // and for some reason it doesn't seem to work properly in this _one_specific case...
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+         && Environment.GetEnvironmentVariable("DOTNET_EXE_32") is { } dotnet32BitExe)
+        {
+            var root = Path.GetDirectoryName(dotnet32BitExe);
+            SetEnvironmentVariable("DOTNET_ROOT(x86)", root);
+        }
+#endif
+#if !NET6_0_OR_GREATER
+        // osx-arm64 doesn't work with Ready2Run
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
+#endif
         SetEnvironmentVariable("READY2RUN_ENABLED", "1");
         await RunTest(usePublishWithRID: true);
     }

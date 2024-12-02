@@ -33,7 +33,7 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
 {
 }
 
-void StopTheWorldGCProvider::OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration)
+void StopTheWorldGCProvider::OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration)
 {
     RawStopTheWorldSample rawSample;
     rawSample.Timestamp = timestamp;

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
@@ -23,6 +25,7 @@ using System.Xml.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
@@ -68,24 +71,23 @@ namespace Samples.Security.AspNetCore5.Controllers
     [ApiController]
     public class IastController : Controller
     {
-        static SQLiteConnection dbConnection = null;
-        static IMongoDatabase mongoDb = null;
+        private static SQLiteConnection _dbConnectionSystemData = null;
+        private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
+        private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
         {
             return Content("Ok\n");
         }
 
-        private SQLiteConnection DbConnection
+        private static SQLiteConnection DbConnectionSystemData
         {
-            get
-            {
-                if (dbConnection is null)
-                {
-                    dbConnection = IastControllerHelper.CreateDatabase();
-                }
-                return dbConnection;
-            }
+            get { return _dbConnectionSystemData ??= IastControllerHelper.CreateSystemDataDatabase(); }
+        }
+        
+        private static SqliteConnection DbConnectionSystemDataMicrosoftData
+        {
+            get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
         }
 
         [HttpGet("HardcodedSecrets")]
@@ -123,7 +125,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                dbConnection ??= IastControllerHelper.CreateDatabase();
+                _dbConnectionSystemData ??= IastControllerHelper.CreateSystemDataDatabase();
                 return Content("OK");
             }
             catch (SQLiteException ex)
@@ -141,13 +143,13 @@ namespace Samples.Security.AspNetCore5.Controllers
                 if (!string.IsNullOrEmpty(username))
                 {
                     var taintedQuery = "SELECT Surname from Persons where name = '" + username + "'";
-                    var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(taintedQuery, DbConnectionSystemData).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
 
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnectionSystemData).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -165,16 +167,16 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                if (mongoDb is null)
+                if (_mongoDb is null)
                 {
-                    mongoDb = MongoDbHelper.CreateMongoDb();
+                    _mongoDb = MongoDbHelper.CreateMongoDb();
                 }
 
                 if (!string.IsNullOrEmpty(price))
                 {
                     var taintedQuery = "{ \"Price\" :\"" + price + "\"}";
                     var document = BsonDocument.Parse(taintedQuery);
-                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var collection = _mongoDb.GetCollection<BsonDocument>("Books");
                     var find = collection.Find(document).ToList();
                     return Content($"Found {find.Count} books with price {price}");
                 }
@@ -182,7 +184,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 if (!string.IsNullOrEmpty(query))
                 {
                     var document = BsonDocument.Parse(query);
-                    var collection = mongoDb.GetCollection<BsonDocument>("Books");
+                    var collection = _mongoDb.GetCollection<BsonDocument>("Books");
                     var find = collection.Find(document).ToList();
                     return Content($"Found {find.Count} books with query {query}");
                 }
@@ -290,7 +292,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     {
                         result = Process.Start(file, argumentLine);
                     }
-                    
+
                     return Content($"Process launched: " + result.ProcessName);
                 }
                 else
@@ -382,7 +384,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (!string.IsNullOrEmpty(query))
                 {
-                    var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
+                    var rname = new SQLiteCommand(query, DbConnectionSystemData).ExecuteScalar();
                     return Content($"Result: " + rname);
                 }
             }
@@ -631,7 +633,7 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         private ActionResult ExecuteQuery(string query)
         {
-            var rname = new SQLiteCommand(query, DbConnection).ExecuteScalar();
+            var rname = new SQLiteCommand(query, DbConnectionSystemData).ExecuteScalar();
             return Content($"Result: " + rname);
         }
 
@@ -1002,18 +1004,20 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StoredXss")]
         [Route("StoredXss")]
-        public IActionResult StoredXss()
+        public IActionResult StoredXss(bool useMicrosoftDataDb = false)
         {
-            var param = GetDbValue();
+            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+            var param = GetDbValue(db);
             ViewData["XSS"] = param + "<b>More Text</b>";
             return View("Xss");
         }
 
         [HttpGet("StoredXssEscaped")]
         [Route("StoredXssEscaped")]
-        public IActionResult StoredXssEscaped()
+        public IActionResult StoredXssEscaped(bool useMicrosoftDataDb = false)
         {
-            var param = GetDbValue();
+            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+            var param = GetDbValue(db);
             var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
                             + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
             ViewData["XSS"] = escapedText;
@@ -1023,14 +1027,22 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("StoredSqli")]
         [Route("StoredSqli")]
-        public IActionResult StoredSqli()
+        public IActionResult StoredSqli(bool useMicrosoftDataDb = false)
         {
             try
             {
-                var details = GetDbValue("Michael");
+                IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
+                var details = GetDbValue(db, "Michael");
                 var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
-                var rname = new SQLiteCommand(taintedQuery, DbConnection).ExecuteScalar();
-                return Content($"Result: " + rname);
+
+                var name = db switch
+                {
+                    SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
+                    SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
+                    _ => null
+                };
+
+                return Content($"Result: " + name);
             }
             catch (Exception)
             {
@@ -1038,14 +1050,63 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
-        private string GetDbValue(string name = "Name1")
+        private static string GetDbValue(IDbConnection db, string name = "Name1")
         {
             var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
-            var reader = new SQLiteCommand(taintedQuery, DbConnection).ExecuteReader();
+
+            IDataReader reader = db switch
+            {
+                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
+                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
+                _ => throw new ArgumentException("Invalid db connection")
+            };
+
             reader.Read();
             var res = reader.GetString(0);
             return res;
         }
+        
+        #if NET6_0_OR_GREATER
+        [HttpGet("InterpolatedSqlString")]
+        [Route("InterpolatedSqlString")]
+        public IActionResult InterpolatedSqlString(string name)
+        {
+            var order = new
+            {
+                CustomerId = "VINET",
+                EmployeeId = 5,
+                OrderDate = new DateTime(2021, 1, 1),
+                RequiredDate = new DateTime(2021, 1, 1),
+                ShipVia = 3,
+                Freight = 32.38M,
+                ShipName = "Vins et alcools Chevalier",
+                ShipAddress = name,
+                ShipCity = "Reims",
+                ShipPostalCode = "51100",
+                ShipCountry = "France"
+            };
+        
+            var sql = "INSERT INTO Orders (" +
+                      "CustomerId, EmployeeId, OrderDate, RequiredDate, ShipVia, Freight, ShipName, ShipAddress, " +
+                      "ShipCity, ShipPostalCode, ShipCountry" +
+                      ") VALUES (" +
+                      $"'{order.CustomerId}','{order.EmployeeId}','{order.OrderDate:yyyy-MM-dd}','{order.RequiredDate:yyyy-MM-dd}'," +
+                      $"'{order.ShipVia}','{order.Freight}','{order.ShipName}','{order.ShipAddress}'," +
+                      $"'{order.ShipCity}','{order.ShipPostalCode}','{order.ShipCountry}')";
+            sql += ";\nSELECT OrderID FROM Orders ORDER BY OrderID DESC LIMIT 1;";
+
+            try
+            {
+                new SqliteCommand(sql, DbConnectionSystemDataMicrosoftData).ExecuteScalar();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            return Content("Yey");
+        }
+        #endif
 
         [HttpGet("TestJsonTagSizeExceeded")]
         [Route("TestJsonTagSizeExceeded")]
@@ -1056,7 +1117,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 ExecuteCommandInternal(i.ToString() + "-" + tainted, i.ToString() + "-" + tainted);
             }
-            
+
             return Content("TestJsonTagSizeExceeded");
         }
 
@@ -1141,8 +1202,8 @@ namespace Samples.Security.AspNetCore5.Controllers
             string result = string.Empty;
             try
             {
-                if (injectOnlyDatabase) { host = GetDbValue(); }
-                else { host += GetDbValue(); }
+                if (injectOnlyDatabase) { host = GetDbValue(DbConnectionSystemData); }
+                else { host += GetDbValue(DbConnectionSystemData); }
                 result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
             }
             catch
@@ -1151,6 +1212,33 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content(result, "text/html");
+        }
+
+        [HttpGet("Print")]
+        public ActionResult PrintReport(
+        [FromQuery] bool Encrypt,
+        [FromQuery] string ClientDatabase,
+        [FromQuery] int p,
+        [FromQuery] int ID,
+        [FromQuery] int EntityType,
+        [FromQuery] bool Print,
+        [FromQuery] string OutputType,
+        [FromQuery] int SSRSReportID)
+        {
+            var key = Request.Query.ElementAt(1).Key;
+            var query1 = string.Format("\r\nDECLARE @{0}ID INT = (SELECT {0}ID FROM[Get{0}]('", key);
+            var query2 = string.Format("'))\r\n\r\nSELECT SSRSReports FROM [ClientCentral].[dbo].[ClientDatabases] WHERE {0}ID = @{0}ID)", key);
+            var query = (query1 + query2);
+
+            try
+            { 
+                var rname = ExecuteQuery(query);
+                return Content($"Result: " + rname);
+            }
+            catch
+            {
+                return Content("Nothing to display.");
+            }
         }
     }
 }

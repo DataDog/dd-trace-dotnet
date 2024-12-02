@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -134,6 +135,11 @@ namespace Datadog.Trace.Ci
             {
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "false";
+            }
+            else
+            {
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "true";
             }
 
             // Normalize the service name
@@ -203,6 +209,11 @@ namespace Datadog.Trace.Ci
             {
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "false";
+            }
+            else
+            {
+                tracerSettings.GlobalTagsInternal[CommonTags.UserProvidedTestServiceTag] = "true";
             }
 
             // Normalize the service name
@@ -708,11 +719,23 @@ namespace Datadog.Trace.Ci
                 var settings = Settings;
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
-                Task<long>? uploadRepositoryChangesTask = null;
+                Task? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
-                    uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
+                    async Task UploadRepositoryChangesAsync()
+                    {
+                        try
+                        {
+                            await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "CIVisibility: Error uploading repository git metadata.");
+                        }
+                    }
+
+                    uploadRepositoryChangesTask = Task.Run(UploadRepositoryChangesAsync);
                 }
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set

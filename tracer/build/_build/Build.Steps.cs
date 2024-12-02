@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using CodeGenerators;
 using Mono.Cecil;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -62,7 +63,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.20.1";
+    const string LibDdwafVersion = "1.21.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -180,11 +181,11 @@ partial class Build
 
     TargetFramework[] GetTestingFrameworks(bool isArm64) => (isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
-        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
-        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, },
+        (false, true) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (false, false) => new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, TargetFramework.NET9_0, },
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, },
-        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, },
+        (true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
+        (true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET8_0, TargetFramework.NET9_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -369,7 +370,8 @@ partial class Build
         .Description("Compiles the native tracer assets")
         .DependsOn(CompileTracerNativeSrcWindows)
         .DependsOn(CompileNativeSrcMacOs)
-        .DependsOn(CompileTracerNativeSrcLinux);
+        .DependsOn(CompileTracerNativeSrcLinux)
+        .After(CompileManagedSrc);
 
     Target CompileTracerNativeTests => _ => _
         .Unlisted()
@@ -432,8 +434,11 @@ partial class Build
             var toBuild = include.Except(exclude);
 
             DotnetBuild(toBuild, noDependencies: false);
-        });
 
+            var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+            CallSitesGenerator.GenerateCallSites(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath);
+            CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version, BuildDirectory);
+        });
 
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
@@ -2429,7 +2434,7 @@ partial class Build
 
             var csvFilePath = TracerDirectory / "missing-nullability-files.csv";
             File.WriteAllText(csvFilePath, sb.ToString());
-            Serilog.Log.Information("File ordered and saved: {File}", csvFilePath);
+            Logger.Information("File ordered and saved: {File}", csvFilePath);
         });
 
     Target CreateRootDescriptorsFile => _ => _
@@ -2481,7 +2486,7 @@ partial class Build
             var projectFolder = Solution.GetProject(Projects.DatadogTraceTrimming).Directory;
             var descriptorFilePath = projectFolder / "build" / $"{Projects.DatadogTraceTrimming}.xml";
             File.WriteAllText(descriptorFilePath, sb.ToString());
-            Serilog.Log.Information("File saved: {File}", descriptorFilePath);
+            Logger.Information("File saved: {File}", descriptorFilePath);
 
             static List<(string Assembly, string Type)> GetTypeReferences(string dllPath)
             {

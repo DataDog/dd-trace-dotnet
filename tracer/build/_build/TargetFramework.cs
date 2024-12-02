@@ -20,6 +20,7 @@ public class TargetFramework : Enumeration
     public static TargetFramework NET6_0 = new TargetFramework { Value = "net6.0" };
     public static TargetFramework NET7_0 = new TargetFramework { Value = "net7.0" };
     public static TargetFramework NET8_0 = new TargetFramework { Value = "net8.0" };
+    public static TargetFramework NET9_0 = new TargetFramework { Value = "net9.0" };
 
     public static implicit operator string(TargetFramework framework)
     {

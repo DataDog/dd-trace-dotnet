@@ -35,12 +35,16 @@ namespace Samples.Console_
                     progress.Report(exception);
                 }
 
-                if (args[0] == "crash-thread")
+                if (args[0].StartsWith("crash-thread"))
                 {
                     var thread = new Thread(
                         () =>
                         {
-                            SetCurrentThreadName("DD_thread");
+                            if (args[0] == "crash-thread-datadog")
+                            {
+                                SetCurrentThreadName("DD_thread");
+                            }
+
                             DoCrash();
                         });
 
@@ -198,7 +202,7 @@ namespace Samples.Console_
 
             var folder = Path.GetDirectoryName(Environment.GetEnvironmentVariable(profilerPathEnvironmentVariable));
             var profilerPath = Path.Combine(folder, "Datadog.Profiler.Native" + (Environment.OSVersion.Platform == PlatformID.Win32NT ? ".dll" : ".so"));
-            
+
             var arguments = new object[] { profilerPath, null };
             tryLoad.Invoke(null, arguments);
 

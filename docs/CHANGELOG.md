@@ -7,6 +7,157 @@
 
 
 
+
+
+## [Release 3.6.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.6.0)
+
+## Summary
+
+* Adds support for .NET 9
+* Adds DSM support for AWS SNS
+* Add support for baggage propagation
+*  [CI Visibility] Add support for coverlet.msbuild coverage reporting
+* [Dynamic Instrumentation] Collect code origin for exit spans
+* [ASM] Fix shutdown bug
+* [Continuous Profiler] Fix crash at shutdown
+
+## Changes
+
+### Tracer
+* Baggage part 3/3: add public api to `Datadog.Trace.Manual` (#6190)
+* Baggage part 2/3: propagation (#6158)
+* Remove dependency on System.IO.Compression for .NET Framework build (#6192)
+* Add default value to StringBuilderCache, and use in more places (#6232)
+* Enable baggage propagator by default (#6258)
+* Add support for `AllowWriteStreamBuffering=false` in `WebRequest` for .NET 9 (#6271)
+* Add initial support for .NET 9 (#6265)
+* Ensure that we never run any call target instrumentations in partial trust (#6290)
+
+### CI Visibility
+* [CI Visibility] Add more checks for the object pack files (#6256)
+* [CI Visibility] GitInfoProvider refactor (#6259)
+* [CI Visibility] Add support for coverlet.msbuild coverage reporting (#6284)
+* [CI Visibility] Fix GitCommandParser test (#6289)
+* [CI Visibility] Catch some gitinfo exceptions. (#6297)
+
+### ASM
+* [ASM] Avoid HttpRequestValidationException when reading body or namevalueCollection values (#6185)
+* [ASM] Fix issue with waf disposing while it might concurrently be updating  (#6250)
+* [ASM] Serialize ASM tags and metrics (#6272)
+* [ASM] Fix benchmarks AppSecBodyBenchmarks: have a trace context to avoid null reference exceptions (#6274)
+* [ASM] IAST: Add web form tests (#6276)
+* [ASM] iast: Fix `Microsoft.Data.Sqlite` database tainting (#6295)
+* [IAST] Minor cleanup in IAST aspects (#6293)
+* [IAST] Updated CallSite IL Dump (#6240)
+
+### Continuous Profiler
+* [Profiler] CPU profiler: Check if the stackwalk lock was not already taken (#6198)
+* [Profiler] Prevent `StackSamplerLoop` from crashing at shutdown (#6238)
+* [Profiler] Add metrics for cpu and walltime profilers (#6267)
+* [Profiler] Fix crash at shutdown with the `timer_create`-based CPU profiler (#6268)
+
+### Debugger
+* [Dynamic Instrumentation] DEBUG-2916 Stabilize the probe processor (#6077)
+* [Dynamic Instrumentation] DEBUG-3088 Add object pool (#6105)
+* [Dynamic Instrumentation] DEBUG-2913 Fix runtime reflection exceptions when getting field value (#6078)
+* [Dynamic Instrumentation] DEBUG-2602 Collection expressions fixes (#6087)
+* [Dynamic Instrumentation] DEBUG-3076 Code origin for exit spans (#6216)
+* [Dynamic Instrumentation] DEBUG-3110 Fix how we access span in probe processor (#6242)
+
+### Miscellaneous
+* Add DSM support for AWS SNS (#6253)
+* Downgrade error to warning (#6263)
+* Improve docs for building on mac (APMSP-1425) (#6254)
+* baggage propagator clean up (#6266)
+* Add additional exclusions for dependency collection (#6282)
+
+### Build / Test
+* [IAST] Macos compilation warning fix (#6255)
+* [refacto] Unify SNS and SQS instrumentation code (#6199)
+* Add additional exclusions to for obsolete libraries (#6231)
+* Fix typo in create_draft_release.yml (#6246)
+* [Test Package Versions Bump] Updating package versions (#6249)
+* Make snapshot tests compatible with running on Docker v2 (#6260)
+* Fix R2R build for OSX-ARM64 (#6264)
+* Small fixes for .NET 9 (#6277)
+* Exclude Paket from exploration tests for now (#6283)
+* Fix r2r manual instrumentation issue in .NET 9 x86 (#6286)
+* Add more smoke testing for .NET 9 (#6296)
+
+[Changes since 3.5.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.5.0...v3.6.0)
+
+## [Release 3.5.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.5.0)
+
+## Summary
+
+- Add support for Ready2Run and NGen behaviour with manual instrumentation
+- Fix for IIS apps using `CustomConfigurationBuilder` with multiple apps in a pool
+- [DBM] Fix DBM bugs (pgssql query plan hints ignored, `DbDataSource` issues, missing `Transaction` scope)
+- [ASM] Only run RASP file operations on read operations
+- Fix Remote Configuration values should be 64-bit not 32-bit
+
+## Changes
+
+### Tracer
+* Make DD_TRACE_<INTEGRATION>_ENABLED Case Insensitive  (#6175)
+* Baggage part 1/3: change propagator signatures (#6157)
+
+### CI Visibility
+* [CI Visibility] Fix errors detected from error tracking. (#6222)
+
+### ASM
+* [ASM] remote configuration refactoring and simplifying updates (#6179)
+* [ASM] Add rules version to all spans when ASM enabled (#6188)
+* [ASM] Fix possible null reference exception in extracting headers (#6211)
+* [ASM] Update ruleset to version 1.13.2 (#6218)
+* [ASM] Restrict RASP Lfi operations to read operation only (#6221)
+
+### Continuous Profiler
+* [Profiler] Make LibrariesInfoCache standalone (#6019)
+* [Profiler] Make sure we log only once for DebugInfoStore errors (#6187)
+* [Profiler] Improve EtwEventsManager cleanup (#6189)
+* [Profiler] Fix bugs in the `timer_create`-based CPU profiler (#6229)
+
+### Fixes
+* Add workaround for ASP.NET ConfigBuilder issue (#6147)
+* Reject method NGEN image if there's a rejit request for that method. (#6184)
+* Revert "Load the tracer/profiler after guardrails checks" (#6200)
+* [DBM][fix] Do not prepend DBM injected comment when a pg plan hint is present (#6204)
+* move all RC int values to long, to mirror RC backend (#6219)
+* Fix `InvalidOperationException` in DBM propagation (#6233)
+
+### Build / Test
+* [ASM] Fix TestExternalWafHeaders snapshot netcore 2.1 (#6202)
+* [Test Package Versions Bump] Updating package versions (#6150)
+* Inject startup hook preferentially into static constructor when available (#6154)
+* add new integrations system tests scenario (#6177)
+* Fix typo in create_draft_release.yml (#6194)
+* Fix using the wrong pool for smoke tests (#6196)
+* Pin Azure Functions version used in CI to get the integration tests running (#6203)
+* [Test Package Versions Bump] Updating package versions (#6206)
+* Fix some build warnings in sample apps (#6207)
+* Fix IIS LoaderOptimisation tests not testing anything (#6209)
+* Update CosmosDb snapshots (#6213)
+* Fix flake in Ngen `ManualInstrumentationTests` (#6214)
+* Fixes Clion build on OSX (#6215)
+* Run aspnetcore tests in other TFMs (#6217)
+* Convert WebRequestTests to snapshot tests (#6223)
+* Add smoke test for config builder instrumentation issue (#6224)
+* Update version conflict test (#6226)
+* [Test Package Versions Bump] Updating package versions (#6230)
+* Add more info when GenerateDumpIfDbgRequested fails (take 2) (#6197)
+* Add profiling scenario to onboarding tests (#6201)
+* [Profiler] Remove non open source third party reference (#6163)
+* [Dynamic Instrumentation] Fix line exploration tests (#6089)
+
+### Miscellaneous
+* [Crashtracking] Collect PDB info (#6176)
+* Revert "[Crashtracking] Disable crashtracking on Windows by default" (#6220)
+* [ASM] Add event rules version in telemetry (#6208)
+
+
+[Changes since 3.4.1](https://github.com/DataDog/dd-trace-dotnet/compare/v3.4.1...v3.5.0)
+
 ## [Release 3.4.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.4.0)
 
 ## Summary

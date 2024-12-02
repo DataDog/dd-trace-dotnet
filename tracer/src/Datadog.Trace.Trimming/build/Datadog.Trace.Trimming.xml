@@ -109,6 +109,7 @@
    <assembly fullname="Microsoft.Win32.Primitives">
       <type fullname="System.ComponentModel.Win32Exception" />
    </assembly>
+   <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -204,6 +205,7 @@
       <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
+      <type fullname="System.Data.ConnectionState" />
       <type fullname="System.Data.DbType" />
       <type fullname="System.Data.IDataParameter" />
       <type fullname="System.Data.IDataParameterCollection" />
@@ -211,6 +213,7 @@
       <type fullname="System.Data.IDbCommand" />
       <type fullname="System.Data.IDbConnection" />
       <type fullname="System.Data.IDbDataParameter" />
+      <type fullname="System.Data.IDbTransaction" />
    </assembly>
    <assembly fullname="System.Data.SqlClient" />
    <assembly fullname="System.Data.SQLite" />

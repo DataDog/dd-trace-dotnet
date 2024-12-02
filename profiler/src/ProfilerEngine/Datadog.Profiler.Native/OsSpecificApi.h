@@ -5,7 +5,11 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "MetricsRegistry.h"
 #include "StackFramesCollectorBase.h"
+
+#include <chrono>
+#include <tuple>
 
 // forward declarations
 namespace shared {
@@ -26,18 +30,28 @@ namespace OsSpecificApi
     std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
         IConfiguration const* pConfiguration,
-        CallstackProvider* callstackProvider);
-    uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
-    bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
+        CallstackProvider* callstackProvider,
+        MetricsRegistry& metricsRegistry);
+
+    std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo);
+
+    //    isRunning,        cpu time          , failed 
+    std::tuple<bool, std::chrono::milliseconds, bool> IsRunning(IThreadInfo* pThreadInfo);
+
     int32_t GetProcessorCount();
+
     std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
+
     std::pair<DWORD, std::string> GetLastErrorMessage();
+
     std::string GetProcessStartTime();
+
     std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
         IGCSuspensionsListener* pGCSuspensionsListener,
         IConfiguration* pConfiguration
         );
+
     double GetProcessLifetime();
  } // namespace OsSpecificApi

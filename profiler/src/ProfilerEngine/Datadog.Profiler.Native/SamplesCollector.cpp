@@ -7,6 +7,10 @@
 #include "OpSysTools.h"
 #include "SamplesEnumerator.h"
 
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
     IThreadsCpuManager* pThreadsCpuManager,
@@ -16,7 +20,7 @@ SamplesCollector::SamplesCollector(
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
     _exporter{exporter},
-    _cachedSample{std::make_shared<Sample>(0, std::string_view{}, 2048)}
+    _cachedSample{std::make_shared<Sample>(0ns, std::string_view{}, 2048)}
 {
 }
 

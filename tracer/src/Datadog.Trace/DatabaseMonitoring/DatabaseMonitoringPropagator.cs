@@ -44,7 +44,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 return false;
             }
 
-            var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var propagatorStringBuilder = StringBuilderCache.Acquire();
             var dddbs = span.Context.ServiceNameInternal;
             propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
 
@@ -142,10 +142,24 @@ namespace Datadog.Trace.DatabaseMonitoring
         /// Currently only working for MSSQL (uses an instruction that is specific to it)
         /// </summary>
         /// <returns>True if the traceparent information was set</returns>
-        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbConnection? connection, Span span)
+        internal static bool PropagateDataViaContext(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, Span span)
         {
-            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient || connection == null)
+            if (propagationLevel != DbmPropagationLevel.Full || integrationId != IntegrationId.SqlClient)
             {
+                return false;
+            }
+
+            // NOTE: For Npgsql command.Connection throws NotSupportedException for NpgsqlDataSourceCommand (v7.0+)
+            //       Since the feature isn't available for Npgsql we avoid this due to the integrationId check above
+            if (command.Connection == null)
+            {
+                return false;
+            }
+
+            if (command.Connection.State != ConnectionState.Open)
+            {
+                Log.Debug("PropagateDataViaContext did not have an Open connection, so it could not propagate Span data for DBM. Connection state was {ConnectionState}", command.Connection.State);
+
                 return false;
             }
 
@@ -155,8 +169,10 @@ namespace Datadog.Trace.DatabaseMonitoring
             var sampled = SamplingPriorityValues.IsKeep(span.Context.TraceContext.GetOrMakeSamplingDecision());
             var contextValue = BuildContextValue(version, sampled, span.SpanId, span.TraceId128);
 
-            using (var injectionCommand = connection.CreateCommand())
+            using (var injectionCommand = command.Connection.CreateCommand())
             {
+                // if there is a Transaction we need to copy it or our ExecuteNonQuery will throw
+                injectionCommand.Transaction = command.Transaction;
                 injectionCommand.CommandText = SetContextCommand;
 
                 var parameter = injectionCommand.CreateParameter();

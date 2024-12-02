@@ -139,7 +139,19 @@ internal static class CiUtils
             if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
             {
                 // If we are in git upload only then we can defer the await until the child command exits.
-                uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
+                async Task UploadRepositoryChangesAsync()
+                {
+                    try
+                    {
+                        await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "RunCiCommand: Error uploading repository git metadata.");
+                    }
+                }
+
+                uploadRepositoryChangesTask = Task.Run(UploadRepositoryChangesAsync);
 
                 // Once the repository has been uploaded we switch off the git upload in children processes
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.GitUploadEnabled] = "0";

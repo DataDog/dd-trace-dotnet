@@ -25,7 +25,7 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </summary>
         internal static string? GetFullyQualifiedName(this MethodBase mb)
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
 
             try
             {

@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=all");
@@ -228,6 +228,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove EFD tags
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
+                            // Remove user provided service tag
+                            targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
 
                             // check the name
                             Assert.Equal("nunit.test", targetTest.Name);
@@ -497,7 +500,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     }
                 };
 
-                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
 
                 var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                 settings.UseTextForParameters(friendlyName);

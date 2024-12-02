@@ -36,5 +36,6 @@ extern int (*volatile dd_set_shared_memory)(volatile int*);
 int is_interrupted_by_profiler(int rc, int error_code, int interrupted_by_profiler);
 int __dd_set_shared_memory(volatile int* mem);
 void __dd_notify_libraries_cache_update();
+void __dd_on_thread_routine_finished();
 
 void *__dd_dlsym(void *handle, const char *symbol);

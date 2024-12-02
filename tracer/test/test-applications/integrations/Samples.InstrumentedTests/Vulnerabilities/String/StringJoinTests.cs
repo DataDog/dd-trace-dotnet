@@ -37,7 +37,7 @@ public class StringJoinTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingJoinWithObjectArray_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:,:+-TAINTED2-+:", String.Join(",", taintedValue, taintedValue2), () => String.Join(",", taintedValue, taintedValue2));
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:,:+-TAINTED2-+:", String.Join(",", taintedValue, taintedValue2), () => String.Join(",", taintedValue , taintedValue2));
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class StringJoinTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedStringInStruct_WhenCallingJoin_ResultIsTainted4()
     {
-        AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue)), () => String.Join(",", new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue)));
+        AssertTaintedFormatWithOriginalCallCheck("UntaintedString,:+-tainted-+:", String.Join(",", new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue)), () => String.Join(",", new object[] { new StructForStringTest("UntaintedString"), new StructForStringTest(taintedValue) }));
     }
 
     [Fact]
@@ -371,7 +371,7 @@ public class StringJoinTests : InstrumentationTestsBase
         string testString1 = (string) AddTainted("01");
         string testString2 = (string) AddTainted("abc");
 
-        AssertTaintedFormatWithOriginalCallCheck(":+-01-+:", String.Join("-", testString1), () => String.Join("-", testString1));
+        AssertTaintedFormatWithOriginalCallCheck(":+-01-+:", String.Join("-", testString1), () => String.Join("-",testString1));
         AssertTaintedFormatWithOriginalCallCheck(":+-01-+:", String.Join(separator, testString1), () => String.Join(separator, testString1));
         AssertTaintedFormatWithOriginalCallCheck(":+-01-+:-:+-abc-+:", String.Join("-", testString1, testString2), () => String.Join("-", testString1, testString2));
     }

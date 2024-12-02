@@ -1,0 +1,21 @@
+{
+  "dsl": "any(ref CustomArrayLocal, { @it.NestedString == 'hello' })",
+  "any": [
+    {
+      "ref": "CustomArrayLocal"
+    },
+    {
+      "eq": [
+        {
+          "getmember":[
+            {
+              "ref": "@it"
+            },
+            "NestedString"
+          ] 
+        },
+        "hello"
+      ]
+    }
+  ]
+}

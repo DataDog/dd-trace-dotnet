@@ -141,5 +141,61 @@ namespace Datadog.Trace.Tests.Debugger
 
             settings.UploadFlushIntervalMilliseconds.Should().Be(0);
         }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("False")]
+        [InlineData("false")]
+        [InlineData("0")]
+        [InlineData("2")]
+        [InlineData(null)]
+        public void CodeOriginEnabled_False(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.CodeOriginForSpansEnabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData("True")]
+        [InlineData("true")]
+        [InlineData("1")]
+        public void CodeOriginEnabled_True(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.CodeOriginForSpansEnabled.Should().BeTrue();
+        }
+
+        [Theory]
+        [InlineData("8")]
+        [InlineData("1")]
+        [InlineData("1000")]
+        public void CodeOriginMaxUserFrames(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.CodeOriginMaxUserFrames.Should().Be(int.Parse(value));
+        }
+
+        [Theory]
+        [InlineData("-1")]
+        [InlineData("0")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void InvalidCodeOriginMaxUserFrames_DefaultUsed(string value)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.CodeOriginMaxUserFrames, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.CodeOriginMaxUserFrames.Should().Be(8);
+        }
     }
 }

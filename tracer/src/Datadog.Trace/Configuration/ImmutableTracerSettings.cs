@@ -8,14 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -134,6 +132,8 @@ namespace Datadog.Trace.Configuration
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
+            BaggageMaximumItems = settings.BaggageMaximumItems;
+            BaggageMaximumBytes = settings.BaggageMaximumBytes;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (setting.EnabledInternal == false)
                 {
-                    sb ??= StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb ??= StringBuilderCache.Acquire();
                     sb.Append(setting.IntegrationNameInternal);
                     sb.Append(';');
                 }
@@ -513,6 +513,22 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumItems"/>
+        internal int BaggageMaximumItems { get; }
+
+        /// <summary>
+        /// Gets the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.BaggageMaximumBytes"/>
+        internal int BaggageMaximumBytes { get; }
 
         /// <summary>
         /// Gets a value indicating the trace methods configuration.

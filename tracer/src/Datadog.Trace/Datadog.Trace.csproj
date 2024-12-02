@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>3.5.0</Version>
+    <Version>3.7.0</Version>
     <Title>Datadog APM</Title>
     <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -38,7 +38,6 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
-    <Reference Include="System.IO.Compression" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">

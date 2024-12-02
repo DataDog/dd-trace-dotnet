@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,6 +15,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
@@ -266,15 +268,30 @@ internal static class MsTestIntegration
             objTestAssemblyInfo,
             key =>
             {
+                // assemblyName??? MsTest lies about this, if we check the usage it always use the Assembly.Location or similar...
+                // eg:
+                // https://github.com/microsoft/testfx/blob/5c829c1633fdca211c4a96a52a200f61ec85bd5c/src/Adapter/MSTest.TestAdapter/Discovery/AssemblyEnumerator.cs#L379
+                // https://github.com/microsoft/testfx/blob/5c829c1633fdca211c4a96a52a200f61ec85bd5c/src/Adapter/MSTest.TestAdapter/Discovery/TypeEnumerator.cs#L145
                 if (assemblyName is not null)
                 {
-                    assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name ?? string.Empty;
-                }
-                else
-                {
-                    assemblyName = string.Empty;
+                    try
+                    {
+                        if (File.Exists(assemblyName))
+                        {
+                            assemblyName = AssemblyName.GetAssemblyName(assemblyName).Name;
+                        }
+                        else
+                        {
+                            assemblyName = new AssemblyName(assemblyName).Name;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Common.Log.Warning(ex, "Error getting assembly name from {AssemblyName}", assemblyName);
+                    }
                 }
 
+                assemblyName ??= string.Empty;
                 var testAssembly = testAssemblyInfo.Type.Assembly;
                 var frameworkVersion = testAssembly.GetName().Version?.ToString() ?? string.Empty;
                 foreach (var module in testAssembly.Modules)

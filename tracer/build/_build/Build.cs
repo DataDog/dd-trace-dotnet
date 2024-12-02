@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using CodeGenerators;
 using Colorful;
 using Nuke.Common;
 using Nuke.Common.CI;
@@ -62,7 +63,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.5.0";
+    readonly string Version = "3.7.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -593,4 +594,19 @@ partial class Build : NukeBuild
     /// Run the default build
     /// </summary>
     public static int Main() => Execute<Build>(x => x.BuildTracerHome);
+
+    // For nuke step debugging, comment previous line and uncomment the following lines
+    /*
+        public static int Main() => Execute<Build>(x => x.Debug);
+
+        Target Debug => _ => _
+            .Unlisted()
+            .Executes(() =>
+            {
+                Logger.Information("Debugging...");
+                // Execute whatever you want to debug here
+                var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+            });
+    //*/
 }

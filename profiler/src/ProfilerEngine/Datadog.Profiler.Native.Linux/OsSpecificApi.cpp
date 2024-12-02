@@ -60,9 +60,11 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration const* const pConfiguration,
-    CallstackProvider* callstackProvider)
+    CallstackProvider* callstackProvider,
+    MetricsRegistry& metricsRegistry)
 {
-    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider);
+    return std::make_unique<LinuxStackFramesCollector>(
+        ProfilerSignalManager::Get(SIGUSR1), pConfiguration, callstackProvider, metricsRegistry);
 }
 
 // https://linux.die.net/man/5/proc
@@ -172,30 +174,29 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     return true;
 }
 
-uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
+std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
     uint64_t cpuTime = 0;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
-        return 0;
+        return 0ms;
     }
 
-    return cpuTime;
+    return std::chrono::milliseconds(cpuTime);
 }
 
-bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
+//    isRunning,        cpu time          , failed 
+std::tuple<bool, std::chrono::milliseconds, bool> IsRunning(IThreadInfo* pThreadInfo)
 {
     bool isRunning = false;
+    uint64_t cpuTime = 0;
     if (!GetCpuInfo(pThreadInfo->GetOsThreadId(), isRunning, cpuTime))
     {
-        cpuTime = 0;
-        failed = true;
-        return false;
+        return {false, 0ms, true};
     }
 
-    failed = false;
-    return isRunning;
+    return {isRunning, std::chrono::milliseconds(cpuTime), false};
 }
 
 // from https://linux.die.net/man/3/get_nprocs

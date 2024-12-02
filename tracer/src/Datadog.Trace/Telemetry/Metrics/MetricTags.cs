@@ -155,6 +155,13 @@ internal static class MetricTags
         [Description("header_style:datadog")] Datadog,
         [Description("header_style:b3multi")] B3Multi,
         [Description("header_style:b3single")] B3SingleHeader,
+        [Description("header_style:baggage")] Baggage,
+    }
+
+    public enum ContextHeaderTruncationReason
+    {
+        [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
+        [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
     }
 
     internal enum TelemetryEndpoint
