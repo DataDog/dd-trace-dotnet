@@ -9,7 +9,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
-internal readonly record struct ConfigurationResult<T>
+/// <summary>
+/// Represents the result of a call to <see cref="IConfigurationSource"/>
+/// </summary>
+/// <typeparam name="T">The type of the returned value</typeparam>
+public readonly record struct ConfigurationResult<T>
 {
     private ConfigurationResult(T? result, ConfigurationLoadResult loadResult)
     {
@@ -46,11 +50,29 @@ internal readonly record struct ConfigurationResult<T>
     /// </summary>
     public ConfigurationLoadResult LoadResult { get; }
 
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.Valid"/> value
+    /// </summary>
+    /// <param name="result">The value to use</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
     public static ConfigurationResult<T> Valid(T result) => new(result, ConfigurationLoadResult.Valid);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ValidationFailure"/> value
+    /// </summary>
+    /// <param name="result">The value that failed validation</param>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
     public static ConfigurationResult<T> Invalid(T result) => new(result, ConfigurationLoadResult.ValidationFailure);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.NotFound"/> value
+    /// </summary>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
     public static ConfigurationResult<T> NotFound() => new(default, ConfigurationLoadResult.NotFound);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ConfigurationResult{T}" /> with a <see cref="ConfigurationLoadResult.ParsingError"/> value
+    /// </summary>
+    /// <returns>The <see cref="ConfigurationResult{T}"/></returns>
     public static ConfigurationResult<T> ParseFailure() => new(default, ConfigurationLoadResult.ParsingError);
 }
