@@ -14,13 +14,12 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.IAST;
 
+[Trait("RequiresDockerDependency", "true")]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false)
-    {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-    }
+    {}
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
@@ -140,6 +139,12 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                              .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    public async Task TestIastStoredSqli_Npgsql()
+    {
+        await TestIastStoredSqliRequest("Npgsql");
     }
 }
 
