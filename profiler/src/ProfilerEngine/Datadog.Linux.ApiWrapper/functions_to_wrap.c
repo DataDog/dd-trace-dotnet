@@ -428,9 +428,9 @@ int dladdr(const void* addr_arg, Dl_info* info)
 static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
 
 __attribute__((visibility("hidden")))
-int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
+int IsCallingCreateDump(const char* pathname)
 {
-    if (crashHandler == NULL || pathname == NULL)
+    if (pathname == NULL)
     {
         return 0;
     }
@@ -438,6 +438,17 @@ int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
     size_t length = strlen(pathname);
 
     if (length < 11 || strcmp(pathname + length - 11, "/createdump") != 0)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+__attribute__((visibility("hidden")))
+int ShouldCallCustomCreateDump(char* const argv[])
+{
+    if (crashHandler == NULL)
     {
         return 0;
     }
@@ -460,14 +471,19 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     check_init();
 
-    int callCustomCreatedump = ShouldCallCustomCreatedump(pathname, argv);
+    int callingCreateDump = is_app_crashing = IsCallingCreateDump(pathname);
 
-    if (callCustomCreatedump == 0)
+    if (callingCreateDump == 0)
     {
         return __real_execve(pathname, argv, envp);
     }
 
-    is_app_crashing = 1;
+    int shouldCallCustomCreateDump = ShouldCallCustomCreateDump(argv);
+    if (shouldCallCustomCreateDump == 0)
+    {
+        return __real_execve(pathname, argv, envp);
+    }
+
     // Execute the alternative crash handler, and prepend "createdump" to the arguments
 
     // Count the number of arguments (the list ends with a null pointer)
