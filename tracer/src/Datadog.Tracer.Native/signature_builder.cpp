@@ -3,6 +3,7 @@
 SignatureBuilder::SignatureBuilder()
 {
     _buffer = _stackSignatureBuffer;
+    _offset = 0;
     _length = STACK_BUFFER_SIZE;
 }
 
@@ -23,8 +24,9 @@ void SignatureBuilder::EnsureBufferSpace(int size)
 {
     if (_offset + size >= _length)
     {
-        _heapSignatureBuffer = std::make_unique<COR_SIGNATURE[]>(_length * 2);
-        memcpy(_heapSignatureBuffer.get(), _buffer, _length);
+        auto newSignatureBuffer = std::make_unique<COR_SIGNATURE[]>(_length * 2);
+        memcpy(newSignatureBuffer.get(), _buffer, _length);
+        _heapSignatureBuffer = std::move(newSignatureBuffer);
         _buffer = _heapSignatureBuffer.get();
         _length *= 2;
     }
