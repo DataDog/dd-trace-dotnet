@@ -55,7 +55,7 @@ public:
     // By default, use the Duration field
     virtual int64_t GetValue() const
     {
-        return Duration;
+        return Duration.count();
     }
 
     // Derived classes are expected to set the event type + any additional field as label
@@ -64,7 +64,7 @@ public:
 public:
     int32_t Number;
     uint32_t Generation;
-    int64_t Duration;
+    std::chrono::nanoseconds Duration;
 
 private:
     inline static void AddGenerationLabel(std::shared_ptr<Sample>& sample, uint32_t generation)

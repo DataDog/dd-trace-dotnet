@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Headers;
 
@@ -15,11 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 /// </summary>
 internal readonly struct IbmMqHeadersAdapterNoop : IHeadersCollection
 {
-    private static readonly string[] EmptyValue = [];
-
     public IEnumerable<string> GetValues(string name)
     {
-        return EmptyValue;
+        return [];
     }
 
     public void Set(string name, string value)

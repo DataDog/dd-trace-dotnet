@@ -26,6 +26,9 @@ namespace Samples.AWS.SimpleNotificationService
                 PublishMessage(snsClient, topicArn);
 #if AWS_SNS_3_7_3
                 PublishBatch(snsClient, topicArn);
+#else
+                // do a second publish if batch is not available to keep a constant number of spans and make assertions simpler
+                PublishMessage(snsClient, topicArn);
 #endif
                 DeleteTopic(snsClient, topicArn);
 

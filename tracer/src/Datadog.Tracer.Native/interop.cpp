@@ -9,6 +9,7 @@
 #include "cor_profiler.h"
 #include "logger.h"
 #include "iast/hardcoded_secrets_method_analyzer.h"
+#include "Generated/generated_definitions.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -177,9 +178,8 @@ EXTERN_C int STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLeng
     return trace::profiler->RegisterIastAspects(aspects, aspectsLength);
 }
 
-
-EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size,
-                                                          UINT32 enabledCategories)
+EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions3(WCHAR* id, CallTargetDefinition3* items, int size,
+                                                           UINT32 enabledCategories)
 {
     if (trace::profiler == nullptr)
     {
@@ -187,7 +187,7 @@ EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions(WCHAR* id, CallTarget
         return 0;
     }
 
-    return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories);
+    return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories, 0xFFFFFFFF);
 }
 
 EXTERN_C long STDAPICALLTYPE EnableCallTargetDefinitions(UINT32 enabledCategories)
@@ -212,6 +212,38 @@ EXTERN_C long STDAPICALLTYPE DisableCallTargetDefinitions(UINT32 disabledCategor
     return trace::profiler->DisableCallTargetDefinitions(disabledCategories);
 }
 
+EXTERN_C int STDAPICALLTYPE InitEmbeddedCallSiteDefinitions(UINT32 enabledCategories, UINT32 platform)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallSiteDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    auto targets = trace::GeneratedDefinitions::GetCallSites();
+    if (targets)
+    {
+        return trace::profiler->RegisterIastAspects((WCHAR**) targets->data(), targets->size(), enabledCategories, platform);
+    }
+    return 0;
+}
+
+EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCategories, UINT32 platform)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in InitEmbeddedCallTargetDefinitions call. Tracer CLR Profiler was not initialized.");
+        return 0;
+    }
+
+    auto targets = trace::GeneratedDefinitions::GetCallTargets();
+    if (targets)
+    {
+        return trace::profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), targets->data(), targets->size(), enabledCategories, platform);
+    }
+
+    return 0;
+}
 
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {

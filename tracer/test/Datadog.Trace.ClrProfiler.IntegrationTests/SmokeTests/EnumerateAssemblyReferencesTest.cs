@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         public EnumerateAssemblyReferencesTest(ITestOutputHelper output)
             : base(output, "EnumerateAssemblyReferences")
         {
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         [SkippableFact]

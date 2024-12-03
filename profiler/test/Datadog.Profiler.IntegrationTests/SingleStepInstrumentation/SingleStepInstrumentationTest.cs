@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             List<Serie> series = [];
             agent.TelemetryMetricsRequestReceived += (_, ctx) =>
@@ -53,7 +53,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             List<Serie> series = [];
             agent.TelemetryMetricsRequestReceived += (_, ctx) =>
@@ -75,7 +75,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: false);
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             List<Serie> series = [];
             agent.TelemetryMetricsRequestReceived += (_, ctx) =>
@@ -101,7 +101,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
@@ -129,7 +129,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiTelemetryEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.TelemetryToDiskEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
 
@@ -146,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
             runner.Environment.SetVariable(EnvironmentVariables.ProfilerEnabled, "false");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             List<Serie> series = [];
             agent.TelemetryMetricsRequestReceived += (_, ctx) =>

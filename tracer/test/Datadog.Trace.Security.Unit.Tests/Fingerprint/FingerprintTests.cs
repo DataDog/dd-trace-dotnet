@@ -40,7 +40,6 @@ public class FingerprintTests : WafLibraryRequiredTest
                     { "server.response.status", "200" },
                     { "server.request.uri.raw", "/Iast/GetFileContent?file=/nonexisting.txt" },
                     { "http.client_ip", "::1" },
-                    { "server.request.body", new Dictionary<string, string>() },
                     { "server.request.query", new Dictionary<string, string[]> { { "file", new[] { "/nonexisting.txt" } } } },
                     {
                         "server.request.headers.no_cookies", new Dictionary<string, string[]>
@@ -114,8 +113,8 @@ public class FingerprintTests : WafLibraryRequiredTest
 
     [Theory]
     [InlineData(0, 4)]
-    [InlineData(1, 3)]
-    [InlineData(2, 3)]
+    [InlineData(1, 4)]
+    [InlineData(2, 4)]
     public void GivenAFingerprintRequest_WhenRunWAF_FingerprintIsGenerated(int testIndex, int resultingHeaders)
     {
         var ruleFile = "rasp-rule-set.json";
@@ -135,14 +134,8 @@ public class FingerprintTests : WafLibraryRequiredTest
 
     private IContext InitWaf(bool newEncoder, string ruleFile, Dictionary<string, object> args, out Waf waf)
     {
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: newEncoder,
-            embeddedRulesetPath: ruleFile);
+        var initResult = CreateWaf(newEncoder);
         waf = initResult.Waf;
-        waf.Should().NotBeNull();
         var context = waf.CreateContext();
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");

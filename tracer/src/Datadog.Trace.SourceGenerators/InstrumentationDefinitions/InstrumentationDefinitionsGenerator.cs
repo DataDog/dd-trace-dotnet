@@ -193,7 +193,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
                             integrationKind = namedArgument.Value.Value as int?;
                             break;
                         case nameof(Constants.InstrumentAttributeProperties.InstrumentationCategory):
-                            instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as int?).GetValueOrDefault();
+                            instrumentationCategory = (InstrumentationCategory)(namedArgument.Value.Value as uint?).GetValueOrDefault();
                             break;
                         default:
                             hasMisconfiguredInput = true;

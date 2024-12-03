@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -128,7 +126,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             settings.AddRegexScrubber(AppSecFingerPrintNetwork, "_dd.appsec.fp.http.network: <NetworkPrint>");
         }
 
-        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null)
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null, bool forceMetaStruct = false, string fileNameOverride = null, bool showRulesVersion = false)
         {
             settings.ModifySerialization(
                 serializationSettings =>
@@ -166,23 +164,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                             if (target.MetaStruct != null)
                             {
-                                // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
-                                // But that's hard to debug if we only see the binary data
-                                // So move the meta struct appsec data to a fake tag to validate it in snapshots
-                                if (target.MetaStruct.TryGetValue("appsec", out var appsec))
-                                {
-                                    var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
-                                    var json = JsonConvert.SerializeObject(appSecMetaStruct);
-                                    var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
-                                    var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
-                                    target.Tags[Tags.AppSecJson] = orderedJson;
-
-                                    // Let the snapshot know that the data comes from the meta struct
-                                    if (forceMetaStruct)
-                                    {
-                                        target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true";
-                                    }
-                                }
+                                AppsecMetaStructScrubbing(target, forceMetaStruct);
+                                IastVerifyScrubberExtensions.IastMetaStructScrubbing(target, forceMetaStruct);
 
                                 if (_clearMetaStruct)
                                 {
@@ -209,9 +192,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
                 settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
                 settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
+
+            if (!showRulesVersion && !testInit)
+            {
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
             }
 
             var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json") || (s.MetaStruct != null && s.MetaStruct.ContainsKey("appsec")));
@@ -237,14 +224,21 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        public void StacksMetaStructScrubbing(MockSpan target)
+        protected void AppsecMetaStructScrubbing(MockSpan target, bool forceMetaStruct = false)
         {
-            var key = "_dd.stack";
-            if (target.MetaStruct is not null && target.MetaStruct.TryGetValue(key, out var appsec))
+            // We want to retrieve the appsec event data from the meta struct to validate it in snapshots
+            // But that's hard to debug if we only see the binary data
+            // So copy the meta struct appsec data to a fake tag to validate it in snapshots
+            if (target.MetaStruct.TryGetValue("appsec", out var appsec))
             {
-                var metaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
-                var json = JsonConvert.SerializeObject(metaStruct, Formatting.Indented);
-                target.Tags[key] = json;
+                var appSecMetaStruct = MetaStructByteArrayToObject.Invoke(null, [appsec]);
+                var json = JsonConvert.SerializeObject(appSecMetaStruct);
+                var obj = JsonConvert.DeserializeObject<AppSecJson>(json);
+                var orderedJson = JsonConvert.SerializeObject(obj, _jsonSerializerSettingsOrderProperty);
+                target.Tags[Tags.AppSecJson] = orderedJson;
+
+                // Let the snapshot know that the data comes from the meta struct
+                if (forceMetaStruct) { target.Tags[Tags.AppSecJson + ".metastruct.test"] = "true"; }
             }
         }
 

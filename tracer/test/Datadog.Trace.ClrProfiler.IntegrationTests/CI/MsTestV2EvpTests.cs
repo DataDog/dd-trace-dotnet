@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
                     };
 
-                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
+                    using (ProcessResult processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1))
                     {
                         var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();
                         settings.UseTextForParameters("packageVersion=" + (expectedTestCount == 20 ? "pre_2_2_4" : "post_2_2_4"));
@@ -197,6 +197,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove EFD tags
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                             targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
+                            // Remove user provided service tag
+                            targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
 
                             // check the name
                             Assert.Equal("mstestv2.test", targetTest.Name);
@@ -437,7 +440,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     }
                 };
 
-                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
 
                 var packageVersionDescription = expectedTestCount == expectedSpansForPre224 ? "pre_2_2_4" : "post_2_2_4";
                 var settings = VerifyHelper.GetCIVisibilitySpanVerifierSettings();

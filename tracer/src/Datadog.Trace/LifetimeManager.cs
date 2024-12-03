@@ -105,42 +105,49 @@ namespace Datadog.Trace
 
         public void RunShutdownTasks(Exception? exception = null)
         {
-            var current = SynchronizationContext.Current;
             try
             {
-                if (current is not null)
+                var current = SynchronizationContext.Current;
+                try
                 {
-                    SetSynchronizationContext(null);
-                }
+                    if (current is not null)
+                    {
+                        SetSynchronizationContext(null);
+                    }
 
-                while (_shutdownHooks.TryDequeue(out var actionOrFunc))
+                    while (_shutdownHooks.TryDequeue(out var actionOrFunc))
+                    {
+                        if (actionOrFunc is Action<Exception?> action)
+                        {
+                            action(exception);
+                        }
+                        else if (actionOrFunc is Func<Exception?, Task> func)
+                        {
+                            AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
+                        }
+                        else
+                        {
+                            Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
+                        }
+                    }
+                }
+                catch (Exception ex)
                 {
-                    if (actionOrFunc is Action<Exception?> action)
+                    Log.Error(ex, "Error running shutdown hooks");
+                }
+                finally
+                {
+                    if (current is not null)
                     {
-                        action(exception);
+                        SetSynchronizationContext(current);
                     }
-                    else if (actionOrFunc is Func<Exception?, Task> func)
-                    {
-                        AsyncUtil.RunSync(func, exception, (int)TaskTimeout.TotalMilliseconds);
-                    }
-                    else
-                    {
-                        Log.Error("Hooks must be of Action<Exception> or Func<Task> types.");
-                    }
+
+                    DatadogLogging.CloseAndFlush();
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Error(ex, "Error running shutdown hooks");
-            }
-            finally
-            {
-                if (current is not null)
-                {
-                    SetSynchronizationContext(current);
-                }
-
-                DatadogLogging.CloseAndFlush();
+                // Swallow as there's nothing we can with it anyway
             }
 
             static void SetSynchronizationContext(SynchronizationContext? context)

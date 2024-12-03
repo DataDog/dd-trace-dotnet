@@ -60,18 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 // When version 2.1 of the tracer ships, we can go back to the test and add a case using nuget 2.0,
                 // which will actually test the version conflict behavior.
 
-#if NETCOREAPP
-                httpSpans.Should()
-                    .HaveCount(2)
-                    .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
-                    .And.OnlyContain(s => !s.Metrics.ContainsKey(Metrics.SamplingPriority));
-#else
                 httpSpans.Should()
                     .HaveCount(2)
                     .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
                     .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserKeep)
                     .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == SamplingPriorityValues.UserReject);
-#endif
 
                 // Check the headers of the outbound http requests
                 var outputLines = processResult.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);

@@ -102,13 +102,11 @@ private:
     void WalltimeProfilingIteration();
     void CodeHotspotIteration();
     void CollectOneThreadStackSample(std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
-                                     int64_t thisSampleTimestampNanosecs,
-                                     int64_t duration,
+                                     std::chrono::nanoseconds thisSampleTimestampNanosecs,
+                                     std::chrono::nanoseconds duration,
                                      PROFILING_TYPE profilingType);
-    int64_t ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs);
-    static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);
-    void UpdateStatistics(HRESULT hrCollectStack, std::size_t countCollectedStackFrames);
-    static time_t GetCurrentTimestamp();
+    std::chrono::nanoseconds ComputeWallTime(std::chrono::nanoseconds currentTimestampNs, std::chrono::nanoseconds prevTimestampNs);
+    static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, std::chrono::nanoseconds representedDuration, std::chrono::nanoseconds currentUnixTimestamp);
     void PersistStackSnapshotResults(StackSnapshotResultBuffer* pSnapshotResult,
                                      std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      PROFILING_TYPE profilingType);

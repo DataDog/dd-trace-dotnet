@@ -271,11 +271,11 @@ bool Dataflow::IsInitialized()
     return _initialized;
 }
 
-void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
+void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     // Init aspects
     auto aspectsName = Constants::AspectsAssemblyName;
-    trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects...");
+    trace::Logger::Debug("Dataflow::LoadAspects -> Processing aspects... ", aspectsLength, " ", enabledCategories, " ", platform);
 
     DataflowAspectClass* aspectClass = nullptr;
     for (int x = 0; x < aspectsLength; x++)
@@ -283,7 +283,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
         WSTRING line = aspects[x];
         if (BeginsWith(line, WStr("[AspectClass(")))
         {
-            aspectClass = new DataflowAspectClass(this, aspectsName, line);
+            aspectClass = new DataflowAspectClass(this, aspectsName, line, enabledCategories);
             if (!aspectClass->IsValid())
             {
                 trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect class ", aspectClass->ToString());
@@ -297,7 +297,7 @@ void Dataflow::LoadAspects(WCHAR** aspects, int aspectsLength)
         }
         if (BeginsWith(line, WStr("  [Aspect")) && aspectClass != nullptr)
         {
-            auto aspect = new DataflowAspect(aspectClass, line);
+            auto aspect = new DataflowAspect(aspectClass, line, platform);
             if (!aspect->IsValid())
             {
                 trace::Logger::Info("Dataflow::LoadAspects -> Detected invalid aspect ", aspect->ToString());

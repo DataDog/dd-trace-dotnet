@@ -21,8 +21,6 @@ namespace Datadog.Trace.Iast.Aspects.System.Web.Extensions;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JavaScriptSerializerAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JavaScriptSerializerAspects>();
-
     /// <summary>
     /// DeserializeObject aspect
     /// </summary>
@@ -40,7 +38,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error while casting JavaScriptSerializer");
+            IastModule.Log.Error(ex, "Error while casting JavaScriptSerializer");
             return null;
         }
 
@@ -59,7 +57,7 @@ public class JavaScriptSerializerAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error while tainting json in DeserializeObject");
+            IastModule.Log.Warning(ex, "Error while tainting json in DeserializeObject");
         }
 
         return result;

@@ -14,7 +14,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
         public Dictionary<string, Target> Targets { get; set; } = new();
 
         [JsonProperty("version")]
-        public int Version { get; set; }
+        public long Version { get; set; }
 
         [JsonProperty("custom")]
         public TargetsCustom Custom { get; set; }

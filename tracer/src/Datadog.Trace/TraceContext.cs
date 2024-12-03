@@ -116,6 +116,8 @@ namespace Datadog.Trace
             }
         }
 
+        internal bool WafExecuted { get; set; }
+
         internal static TraceContext? GetTraceContext(in ArraySegment<Span> spans) =>
             spans.Count > 0 ?
                 spans.Array![spans.Offset].Context.TraceContext :

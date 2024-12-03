@@ -6,17 +6,19 @@
 #include "COMHelpers.h"
 #include "FrameworkThreadInfo.h"
 #include "HResultConverter.h"
-#include "IConfiguration.h"
-#include "IManagedThreadList.h"
-#include "IFrameStore.h"
-#include "IThreadsCpuManager.h"
 #include "IAppDomainStore.h"
+#include "IConfiguration.h"
+#include "IFrameStore.h"
+#include "IManagedThreadList.h"
 #include "IRuntimeIdStore.h"
 #include "ISampledAllocationsListener.h"
+#include "IThreadsCpuManager.h"
 #include "Log.h"
 #include "MetricsRegistry.h"
 #include "OsSpecificApi.h"
 #include "SampleValueTypeProvider.h"
+
+#include <chrono>
 
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
@@ -84,7 +86,8 @@ AllocationsProvider::AllocationsProvider(
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _pConfiguration(pConfiguration),
-    _callstackProvider{std::move(pool)}
+    _callstackProvider{std::move(pool)},
+    _metricsRegistry{metricsRegistry}
 {
     _allocationsCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_allocations");
     _allocationsSizeMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_allocations_size");
@@ -95,7 +98,6 @@ AllocationsProvider::AllocationsProvider(
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
 }
-
 
 void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        ClassID classId,
@@ -116,10 +118,15 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     // create a sample from the allocation
 
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-    CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "AllocationsProvider::OnAllocation: Profiler failed at getting the current managed thread info ");
+        return;
+    }
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _pConfiguration, &_callstackProvider);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;
@@ -146,10 +153,11 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     rawSample.Address = address;
     rawSample.MethodTable = classId;
 
-    // The provided type name contains the metadata-based `xx syntax for generics instead of <>
-    // So rely on the frame store to get a C#-like representation like what is done for frames
-    if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
+    // the classID can be null when events are replayed in integration tests
+    if ((classId == 0) || !_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
+        // The provided type name contains the metadata-based `xx syntax for generics instead of <>
+        // So rely on the frame store to get a C#-like representation like what is done for frames
         rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
     }
 
@@ -164,7 +172,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
 
-void AllocationsProvider::OnAllocation(uint64_t timestamp,
+void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
                                        uint32_t threadId,
                                        uint32_t allocationKind,
                                        ClassID classId,
@@ -235,16 +243,16 @@ void AllocationsProvider::OnAllocation(uint64_t timestamp,
             rawSample.AppDomainId = -1;
         }
     }
-    else  // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
+    else // create a fake IThreadInfo that wraps the OS thread id (no name, no profiler thread id)
     {
         rawSample.ThreadInfo = std::make_shared<FrameworkThreadInfo>(threadId);
 
         // TODO: do we need to set to -1?
-        //rawSample.AppDomainId = -1;
+        // rawSample.AppDomainId = -1;
     }
 
-    //rawSample.AllocationSize = objectSize;
-    //rawSample.Address = address;
+    // rawSample.AllocationSize = objectSize;
+    // rawSample.Address = address;
     rawSample.MethodTable = classId;
 
     // The provided type name contains the metadata-based `xx syntax for generics instead of <>

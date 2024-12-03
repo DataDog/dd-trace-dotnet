@@ -116,6 +116,27 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsSnsRequestV0(),
             };
 
+        public static Result IsAwsEventBridgeInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsEventBridgeInboundV1(),
+                _ => span.IsAwsEventBridgeRequestV0(),
+            };
+
+        public static Result IsAwsEventBridgeOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsEventBridgeOutboundV1(),
+                _ => span.IsAwsEventBridgeRequestV0(),
+            };
+
+        public static Result IsAwsEventBridgeRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsEventBridgeRequestV1(),
+                _ => span.IsAwsEventBridgeRequestV0(),
+            };
+
         public static Result IsAzureServiceBusInbound(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {

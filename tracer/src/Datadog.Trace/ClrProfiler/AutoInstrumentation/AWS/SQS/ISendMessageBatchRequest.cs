@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
@@ -15,6 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         /// <summary>
         /// Gets the message entries
         /// </summary>
-        IList Entries { get; }
+        IList? Entries { get; }
     }
 }

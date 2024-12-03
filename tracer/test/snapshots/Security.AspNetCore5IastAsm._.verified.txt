@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -61,6 +61,7 @@
       _sampling_priority_v1: 2.0
     },
     MetaStruct: {
+      iast: ,
       _dd.stack: 
     }
   }

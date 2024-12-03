@@ -11,17 +11,14 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Xml.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.StatsdClient.Utils;
 
 namespace Datadog.Trace.AppSec.WafEncoding
 {
@@ -60,8 +57,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
         public static string FormatArgs(object o)
         {
-            // zero capacity because we don't know the size in advance
-            var sb = StringBuilderCache.Acquire(0);
+            var sb = StringBuilderCache.Acquire();
             FormatArgsInternal(o, sb);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
@@ -350,7 +346,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 {
                     string GetItemsAsString()
                     {
-                        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                        var sb = StringBuilderCache.Acquire();
                         foreach (var x in enumerableDic)
                         {
                             sb.Append($"{getKey(x)}, {getValue(x)}, ");

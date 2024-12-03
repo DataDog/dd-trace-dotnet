@@ -9,6 +9,10 @@
 #include <shared/src/native-src/util.h>
 #include <thread>
 
+#ifdef _WIN32
+#include "Windows.h"
+#endif
+
 extern "C"
 {
 #include "datadog/common.h"
@@ -24,7 +28,11 @@ extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 }
 
 CrashReporting::CrashReporting(int32_t pid)
-    : _pid(pid)
+    : _pid(pid),
+    _signal(0),
+    _error{ std::nullopt },
+    _crashInfo{ nullptr },
+    _refCount(0)
 {
 }
 
@@ -34,8 +42,11 @@ CrashReporting::~CrashReporting()
     {
         ddog_Error_drop(&_error.value());
     }
-
-    ddog_crasht_CrashInfo_drop(&_crashInfo);
+    
+    if (_crashInfo.inner != NULL)
+    {
+        ddog_crasht_CrashInfo_drop(&_crashInfo);
+    }
 }
 
 int32_t CrashReporting::Initialize()
@@ -57,6 +68,17 @@ int32_t CrashReporting::Initialize()
         SetLastError(result.err);
         return 1;
     }
+
+#ifdef LINUX
+    // temporary: will remove it when windows will target libdatadog >= 14.3.0
+    auto otherResult = ddog_crasht_CrashInfo_set_procinfo(&_crashInfo, { _pid });
+
+    if (otherResult.tag == DDOG_CRASHT_RESULT_ERR)
+    {
+        SetLastError(otherResult.err);
+        return 1;
+    }
+#endif
 
     return AddTag("severity", "crash");
 }
@@ -186,7 +208,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
 
             strings[i] = frame.method;
 
-            stackFrameNames[i] = ddog_crasht_StackFrameNames{
+            stackFrameNames[i] = ddog_crasht_StackFrameNames
+            {
                 .colno = { DDOG_OPTION_U32_NONE_U32, 0},
                 .filename = {nullptr, 0},
                 .lineno = { DDOG_OPTION_U32_NONE_U32, 0},
@@ -198,7 +221,8 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             auto moduleAddress = static_cast<uintptr_t>(frame.moduleAddress);
             auto symbolAddress = static_cast<uintptr_t>(frame.symbolAddress);
 
-            stackFrames[i] = ddog_crasht_StackFrame{
+            stackFrames[i] = ddog_crasht_StackFrame
+            {
                 .ip = ip,
                 .module_base_address = moduleAddress,
                 .names{
@@ -208,6 +232,23 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 .sp = sp,
                 .symbol_address = symbolAddress,
             };
+
+#ifdef _WINDOWS
+            if (frame.hasPdbInfo)
+            {
+                stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_PDB;
+                stackFrames[i].normalized_ip.age = frame.pdbAge;
+                stackFrames[i].normalized_ip.build_id = { (uint8_t*)&frame.pdbSig, 16 };
+            }
+#else
+            const auto buildId = frame.buildId.AsSpan();
+            if (buildId.size() != 0)
+            {
+                stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_ELF;
+                stackFrames[i].normalized_ip.build_id = {buildId.data(), buildId.size()};
+                stackFrames[i].normalized_ip.file_offset = ip - moduleAddress;
+            }
+#endif
         }
 
         auto threadIdStr = std::to_string(threadId);

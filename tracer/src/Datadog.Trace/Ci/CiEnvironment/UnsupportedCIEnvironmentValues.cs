@@ -13,7 +13,7 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 internal sealed class UnsupportedCIEnvironmentValues<TValueProvider>(TValueProvider valueProvider) : CIEnvironmentValues<TValueProvider>(valueProvider)
     where TValueProvider : struct, IValueProvider
 {
-    protected override void OnInitialize(GitInfo gitInfo)
+    protected override void OnInitialize(IGitInfo gitInfo)
     {
         Log.Information("CIEnvironmentValues: CI could not be detected, using the git folder: {GitFolder}", gitInfo.SourceRoot);
         Branch = gitInfo.Branch;

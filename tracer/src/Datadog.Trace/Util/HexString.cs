@@ -8,7 +8,7 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 #if NETCOREAPP
 using BitConverter = System.BitConverter;
 using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
@@ -28,7 +28,7 @@ internal static class HexString
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ulong ReverseIfLittleEndian(ulong value)
     {
-        return BitConverter.IsLittleEndian ? BinaryPrimitivesHelper.ReverseEndianness(value) : value;
+        return BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
     }
 
     [Pure]
@@ -37,8 +37,8 @@ internal static class HexString
     {
         if (BitConverter.IsLittleEndian)
         {
-            var upper = BinaryPrimitivesHelper.ReverseEndianness(value.Upper);
-            var lower = BinaryPrimitivesHelper.ReverseEndianness(value.Lower);
+            var upper = BinaryPrimitives.ReverseEndianness(value.Upper);
+            var lower = BinaryPrimitives.ReverseEndianness(value.Lower);
 
             // We're intentionally not flipping upper/lower around. This struct doesn't act like a UInt128,
             // where the order of the field needs to be reversed. Instead, Upper is always Upper

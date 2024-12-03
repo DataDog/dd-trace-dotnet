@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
@@ -20,6 +22,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         [Duck(Name = "Type")]
         public OperationTypeProxy OperationType;
 
-        public string Name;
+        public string? Name;
     }
 }

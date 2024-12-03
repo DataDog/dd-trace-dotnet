@@ -10,7 +10,6 @@ using System;
 using System.Text.Json;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 
@@ -20,8 +19,6 @@ namespace Datadog.Trace.Iast.Aspects.System.Text.Json;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class JsonDocumentAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonDocumentAspects>();
-
     /// <summary>
     /// Parse method aspect
     /// Taint all Parent from JsonElement that are string
@@ -40,7 +37,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error tainting JsonDocument.Parse result");
+            IastModule.Log.Warning(ex, "Error tainting JsonDocument.Parse result");
         }
 
         return doc;
@@ -63,7 +60,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error casting to IJsonElement");
+            IastModule.Log.Warning(ex, "Error casting to IJsonElement");
             return null;
         }
 
@@ -80,7 +77,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error tainting JsonElement.GetString result");
+            IastModule.Log.Warning(ex, "Error tainting JsonElement.GetString result");
         }
 
         return str;
@@ -104,7 +101,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error casting to IJsonElement");
+            IastModule.Log.Warning(ex, "Error casting to IJsonElement");
             return null;
         }
 
@@ -121,7 +118,7 @@ public class JsonDocumentAspects
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Error tainting JsonElement.GetRawText result");
+            IastModule.Log.Warning(ex, "Error tainting JsonElement.GetRawText result");
         }
 
         return str;

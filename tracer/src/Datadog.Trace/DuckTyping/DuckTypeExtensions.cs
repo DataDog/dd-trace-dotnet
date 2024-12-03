@@ -48,6 +48,12 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast<T>(this object? instance, [NotNullWhen(true)] out T? value)
         {
+            if (instance is T tInst)
+            {
+                value = tInst;
+                return true;
+            }
+
             if (instance is not null &&
                 DuckType.CreateCache<T>.GetProxy(instance.GetType()) is { Success: true } proxyResult)
             {
@@ -71,11 +77,20 @@ namespace Datadog.Trace.DuckTyping
         {
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
 
-            if (instance is not null &&
-                DuckType.GetOrCreateProxyType(targetType, instance.GetType()) is { Success: true } proxyResult)
+            if (instance is not null)
             {
-                value = proxyResult.CreateInstance(instance);
-                return true;
+                var instanceType = instance.GetType();
+                if (instanceType == targetType)
+                {
+                    value = instance;
+                    return true;
+                }
+
+                if (DuckType.GetOrCreateProxyType(targetType, instanceType) is { Success: true } proxyResult)
+                {
+                    value = proxyResult.CreateInstance(instance);
+                    return true;
+                }
             }
 
             value = default;
@@ -92,6 +107,11 @@ namespace Datadog.Trace.DuckTyping
         public static T? DuckAs<T>(this object? instance)
             where T : class
         {
+            if (instance is T tInst)
+            {
+                return tInst;
+            }
+
             if (instance is not null &&
                 DuckType.CreateCache<T>.GetProxy(instance.GetType()) is { Success: true } proxyResult)
             {
@@ -112,10 +132,18 @@ namespace Datadog.Trace.DuckTyping
         {
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
 
-            if (instance is not null &&
-                DuckType.GetOrCreateProxyType(targetType, instance.GetType()) is { Success: true } proxyResult)
+            if (instance is not null)
             {
-                return proxyResult.CreateInstance(instance);
+                var instanceType = instance.GetType();
+                if (instanceType == targetType)
+                {
+                    return instance;
+                }
+
+                if (DuckType.GetOrCreateProxyType(targetType, instanceType) is { Success: true } proxyResult)
+                {
+                    return proxyResult.CreateInstance(instance);
+                }
             }
 
             return null;

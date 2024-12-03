@@ -383,6 +383,7 @@ namespace Datadog.Trace.Configuration
         /// If <see cref="PropagationStyleInject"/> or <see cref="PropagationStyleExtract"/> are also defined,
         /// they will override any header injections or extraction styled defined here, respectively.
         /// </summary>
+        /// <seealso cref="Datadog.Trace.Propagators.ContextPropagationHeaderStyle"/>
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
@@ -391,6 +392,22 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.PropagationExtractFirstOnly"/>
         public const string PropagationExtractFirstOnly = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
+
+        /// <summary>
+        /// Configuration key to set the maximum number of items that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 64 items.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumItems"/>
+        public const string BaggageMaximumItems = "DD_TRACE_BAGGAGE_MAX_ITEMS";
+
+        /// <summary>
+        /// Configuration key to set the maximum number of bytes that can be
+        /// injected into the baggage header when propagating to a downstream service.
+        /// Default value is 8192 bytes.
+        /// </summary>
+        /// <seealso cref="TracerSettings.BaggageMaximumBytes"/>
+        public const string BaggageMaximumBytes = "DD_TRACE_BAGGAGE_MAX_BYTES";
 
         /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
@@ -462,6 +479,14 @@ namespace Datadog.Trace.Configuration
         /// Default value is false
         /// </summary>
         public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
+
+        /// <summary>
+        /// Configuration key for the comma-separated list of user disabled
+        /// ADO.NET CommandType names that should not have Span created for them.
+        /// <para>"InterceptableDbCommand" and "ProfiledDbCommand" are always disabled by default.</para>
+        /// </summary>
+        /// <seealso cref="TracerSettings.DisabledAdoNetCommandTypes"/>
+        public const string DisabledAdoNetCommandTypes = "DD_TRACE_DISABLED_ADONET_COMMAND_TYPES";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

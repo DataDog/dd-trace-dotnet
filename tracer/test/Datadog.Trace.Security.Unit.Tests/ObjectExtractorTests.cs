@@ -6,6 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NETFRAMEWORK
+using System.Web.Routing;
+using Datadog.Trace.Telemetry.Metrics;
+#endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using FluentAssertions;
@@ -145,6 +149,23 @@ namespace Datadog.Trace.Security.Unit.Tests
             Assert.NotNull(result);
             Assert.Empty(result);
         }
+
+#if NETFRAMEWORK
+        [Fact]
+        public void TestRecursiveRouteData()
+        {
+            var routeData = new RouteValueDictionary { { "controller", "test" } };
+            routeData.Add(
+                "action",
+                routeData);
+            var result = ObjectExtractor.Extract(routeData) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result!.Count.Should().Be(2);
+            result["controller"].Should().Be("test");
+            result["action"].Should().BeAssignableTo<IReadOnlyDictionary<string, object>>();
+            ((IReadOnlyDictionary<string, object>)result["action"]).Count.Should().Be(0);
+        }
+#endif
 
         [Fact]
         public void TestAnonymousTypeNested()

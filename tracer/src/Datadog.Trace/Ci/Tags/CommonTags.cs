@@ -204,4 +204,9 @@ internal static class CommonTags
     /// GIT PR Base branch name
     /// </summary>
     public const string GitPrBaseBranch = "git.pull_request.base_branch";
+
+    /// <summary>
+    /// Defines if the service is a user provided test service
+    /// </summary>
+    public const string UserProvidedTestServiceTag = "_dd.test.is_user_provided_service";
 }

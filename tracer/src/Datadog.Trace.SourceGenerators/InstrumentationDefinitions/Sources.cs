@@ -17,24 +17,6 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 
         public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
-            static void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
-            {
-                string? integrationName = null;
-
-                sb.Append($@"
-            // CallTarget types
-            {instrumentationsCollectionName} = new NativeCallTargetDefinition2[]
-            {{
-");
-                foreach (var definition in orderedDefinitions)
-                {
-                    integrationName = WriteDefinition(definition, integrationName, sb);
-                }
-
-                sb.Append($@"
-            }};");
-            }
-
             static void BuildInstrumentedAssemblies(StringBuilder sb, IReadOnlyCollection<CallTargetDefinitionSource> orderedDefinitions)
             {
                 var hashSet = new HashSet<string>();
@@ -98,8 +80,6 @@ namespace Datadog.Trace.ClrProfiler
 {{
     internal static partial class InstrumentationDefinitions
     {{
-        internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName};
-
         static InstrumentationDefinitions()
         {{");
             var orderedDefinitions = definitions
@@ -108,8 +88,6 @@ namespace Datadog.Trace.ClrProfiler
                                     .ThenBy(static x => x.TargetTypeName)
                                     .ThenBy(static x => x.TargetMethodName)
                                     .ToList();
-
-            BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
             sb.Append(@$"
         }}
 
@@ -278,92 +256,6 @@ namespace Datadog.Trace.ClrProfiler
 ");
 
             return sb.ToString();
-        }
-
-        private static string WriteDefinition(CallTargetDefinitionSource definition, string? integrationName, StringBuilder sb)
-        {
-            if (definition.IntegrationName != integrationName)
-            {
-                if (integrationName is not null)
-                {
-                    sb.AppendLine();
-                }
-
-                integrationName = definition.IntegrationName;
-                sb.Append(
-                $@"
-                // {integrationName}");
-            }
-
-            sb.Append(
-               @"
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
-              .Append(definition.AssemblyName)
-              .Append(@"""), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
-              .Append(definition.TargetTypeName)
-              .Append(@"""), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
-              .Append(definition.TargetMethodName)
-              .Append(@"""), ");
-
-            var paramLengths = (definition.TargetParameterTypes.Count) + 1;
-            if (paramLengths > 9)
-            {
-                sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(new[] { """)
-                  .Append(definition.TargetReturnType)
-                  .Append(@"""");
-
-                foreach (var parameterType in definition.TargetParameterTypes!)
-                {
-                    sb.Append(@", """)
-                      .Append(parameterType)
-                      .Append('"');
-                }
-
-                sb.Append(" }), ")
-                  .Append(paramLengths)
-                  .Append(", ");
-            }
-            else
-            {
-                sb.Append(@"NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray(""")
-                  .Append(definition.TargetReturnType)
-                  .Append(@"""");
-
-                if (definition.TargetParameterTypes is { Count: > 0 } types)
-                {
-                    foreach (var parameterType in types)
-                    {
-                        sb.Append(@", """)
-                          .Append(parameterType)
-                          .Append('"');
-                    }
-                }
-
-                sb.Append("), ")
-                  .Append(paramLengths)
-                  .Append(", ");
-            }
-
-            var min = definition.MinimumVersion;
-            var max = definition.MaximumVersion;
-            sb.Append(min.Major)
-              .Append(", ")
-              .Append(min.Minor)
-              .Append(", ")
-              .Append(min.Patch)
-              .Append(", ")
-              .Append(max.Major)
-              .Append(", ")
-              .Append(max.Minor)
-              .Append(", ")
-              .Append(max.Patch);
-
-            sb.Append(@", NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(""")
-              .Append(definition.InstrumentationTypeName)
-              .Append(@"""), ")
-              .Append($"{definition.IntegrationKind}, ")
-              .Append($"{(int)definition.InstrumentationCategory}),");
-            return integrationName;
         }
     }
 }

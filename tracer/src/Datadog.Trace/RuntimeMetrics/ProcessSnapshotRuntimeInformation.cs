@@ -39,6 +39,15 @@ internal class ProcessSnapshotRuntimeInformation
         PSS_QUERY_PERFORMANCE_COUNTERS = 7
     }
 
+    private enum PSS_WALK_INFORMATION_CLASS
+    {
+        PSS_WALK_AUXILIARY_PAGES = 0,
+        PSS_WALK_VA_SPACE = 1,
+        PSS_WALK_HANDLES = 2,
+        PSS_WALK_THREADS = 3,
+        PSS_WALK_THREAD_NAME = 4
+    }
+
     [Flags]
     private enum PSS_CAPTURE_FLAGS : uint
     {
@@ -64,6 +73,12 @@ internal class ProcessSnapshotRuntimeInformation
         PSS_CREATE_RELEASE_SECTION = 0x80000000
     }
 
+    private enum PSS_THREAD_FLAGS : int
+    {
+        PSS_THREAD_FLAGS_NONE = 0,
+        PSS_THREAD_FLAGS_TERMINATED = 1
+    }
+
     // The value of the current process handle on Windows is hardcoded to -1
     // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentprocess#remarks
     private static IntPtr CurrentProcessHandle => new(-1);
@@ -81,16 +96,7 @@ internal class ProcessSnapshotRuntimeInformation
                 throw new Win32Exception(result, $"PssCaptureSnapshot failed with code {result}");
             }
 
-            PSS_THREAD_INFORMATION threadInformation = default;
-
-            result = PssQuerySnapshot(snapshotHandle, PSS_QUERY_INFORMATION_CLASS.PSS_QUERY_THREAD_INFORMATION, &threadInformation, Marshal.SizeOf<PSS_THREAD_INFORMATION>());
-
-            if (result != 0)
-            {
-                throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result}");
-            }
-
-            threadCount = threadInformation.ThreadsCaptured;
+            threadCount = GetThreadCount(snapshotHandle);
 
             long userTime;
             long kernelTime;
@@ -146,6 +152,58 @@ internal class ProcessSnapshotRuntimeInformation
         }
     }
 
+    private static unsafe int GetThreadCount(IntPtr snapshotHandle)
+    {
+        PSS_THREAD_INFORMATION threadInformation = default;
+
+        var result = PssQuerySnapshot(snapshotHandle, PSS_QUERY_INFORMATION_CLASS.PSS_QUERY_THREAD_INFORMATION, &threadInformation, Marshal.SizeOf<PSS_THREAD_INFORMATION>());
+
+        if (result != 0)
+        {
+            throw new Win32Exception(result, $"PssQuerySnapshot with PSS_QUERY_THREAD_INFORMATION failed with code {result}");
+        }
+
+        result = PssWalkMarkerCreate(IntPtr.Zero, out var walkMarkerHandle);
+
+        if (result != 0)
+        {
+            throw new Win32Exception(result, $"PssWalkMarkerCreate failed with code {result}");
+        }
+
+        try
+        {
+            PSS_THREAD_ENTRY entry = default;
+
+            int deadThreads = 0;
+
+            for (int count = 0; count < threadInformation.ThreadsCaptured; count++)
+            {
+                result = PssWalkSnapshot(snapshotHandle, PSS_WALK_INFORMATION_CLASS.PSS_WALK_THREADS, walkMarkerHandle, &entry, Marshal.SizeOf<PSS_THREAD_ENTRY>());
+
+                if (result != 0)
+                {
+                    throw new Win32Exception(result, $"PssWalkSnapshot failed with code {result}");
+                }
+
+                if (entry.Flags == PSS_THREAD_FLAGS.PSS_THREAD_FLAGS_TERMINATED)
+                {
+                    deadThreads++;
+                }
+            }
+
+            return threadInformation.ThreadsCaptured - deadThreads;
+        }
+        finally
+        {
+            result = PssWalkMarkerFree(walkMarkerHandle);
+
+            if (result != 0)
+            {
+                Log.Error<IntPtr, int>("PssWalkMarkerFree returned an error, the tracer might be leaking memory. Handle: {Handle}. Error code: {Result}.", walkMarkerHandle, result);
+            }
+        }
+    }
+
     [DllImport("kernel32.dll")]
     private static extern int PssCaptureSnapshot(IntPtr processHandle, PSS_CAPTURE_FLAGS captureFlags, int threadContextFlags, out IntPtr snapshotHandle);
 
@@ -154,6 +212,15 @@ internal class ProcessSnapshotRuntimeInformation
 
     [DllImport("kernel32.dll")]
     private static extern unsafe int PssQuerySnapshot(IntPtr snapshotHandle, PSS_QUERY_INFORMATION_CLASS informationClass, void* buffer, int bufferLength);
+
+    [DllImport("kernel32.dll")]
+    private static extern unsafe int PssWalkSnapshot(IntPtr snapshotHandle, PSS_WALK_INFORMATION_CLASS informationClass, IntPtr walkMarkerHandle, void* buffer, int bufferLength);
+
+    [DllImport("kernel32.dll")]
+    private static extern unsafe int PssWalkMarkerCreate(IntPtr allocator, out IntPtr walkMarkerHandle);
+
+    [DllImport("kernel32.dll")]
+    private static extern unsafe int PssWalkMarkerFree(IntPtr walkMarkerHandle);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct PSS_THREAD_INFORMATION
@@ -222,5 +289,37 @@ internal class ProcessSnapshotRuntimeInformation
         public nuint PrivateUsage;
         public uint ExecuteFlags;
         public fixed char ImageFileName[260];
+    }
+
+    // The native FILETIME is normally aligned on 4 bytes, but ulong is aligned on 8 bytes (in 64 bits)
+    // So we wrap the ulong in a custom struct to individually change its alignment (using pack)
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 8)]
+    private unsafe struct FILETIME
+    {
+        public ulong Data;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct PSS_THREAD_ENTRY
+    {
+        public uint ExitStatus;
+        public IntPtr TebBaseAddress;
+        public uint ProcessId;
+        public uint ThreadId;
+        public nint AffinityMask;
+        public int Priority;
+        public int BasePriority;
+        public IntPtr LastSyscallFirstArgument;
+        public ushort LastSyscallNumber;
+        public FILETIME CreateTime;
+        public FILETIME ExitTime;
+        public FILETIME KernelTime;
+        public FILETIME UserTime;
+        public IntPtr Win32StartAddress;
+        public FILETIME CaptureTime;
+        public PSS_THREAD_FLAGS Flags;
+        public ushort SuspendCount;
+        public ushort SizeOfContextRecord;
+        public IntPtr ContextRecord;
     }
 }

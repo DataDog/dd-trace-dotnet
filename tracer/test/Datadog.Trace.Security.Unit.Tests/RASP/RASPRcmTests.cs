@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -28,7 +29,9 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var remoteConfigValues = CreateRemoteConfigValues(rules);
         var security = CreateSecurity();
-        var result = security.UpdateFromRcmForTest(remoteConfigValues);
+        var securitytype = typeof(AppSec.Security);
+        var method = securitytype.GetMethod("UpdateFromRcm", BindingFlags.NonPublic | BindingFlags.Instance);
+        var result = (ApplyDetails[])method.Invoke(security, [remoteConfigValues, null]);
         result.Length.Should().Be(1);
 
         if (errorExpected)
@@ -51,11 +54,10 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var source = CreateConfigurationSource([(ConfigurationKeys.AppSec.Enabled, "true")]);
         var settings = new SecuritySettings(source, NullConfigurationTelemetry.Instance);
-        var security = new AppSec.Security(settings);
-        // Set it to true with reflection to avoid all the initialization
-        PropertyInfo propInfo = typeof(AppSec.Security).GetProperty("Enabled", BindingFlags.NonPublic | BindingFlags.Instance);
-        propInfo.SetValue(security, true);
-        security.Enabled.Should().BeTrue();
+        var confState = new ConfigurationState(settings, true);
+        //// Set it to false to avoid all the initialization
+        var security = new AppSec.Security(settings, configurationState: confState);
+        confState.AppsecEnabled = true;
         return security;
     }
 
@@ -63,8 +65,10 @@ public class RaspRcmTests : SettingsTestsBase
     {
         var content = Encoding.UTF8.GetBytes(rules);
         RemoteConfiguration config = new RemoteConfiguration(RemoteConfigurationPath.FromPath("employee/john/doe/smith"), content, content.Length, new Dictionary<string, string>(), 33);
-        var dic = new Dictionary<string, List<RemoteConfiguration>>();
-        dic["ASM_DD"] = (new List<RemoteConfiguration> { config });
+        var dic = new Dictionary<string, List<RemoteConfiguration>>
+        {
+            ["ASM_DD"] = [config]
+        };
         return dic;
     }
 

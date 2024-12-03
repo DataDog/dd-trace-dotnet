@@ -10,9 +10,9 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
-ENV VSBUILDTOOLS_VERSION="17.7.34221.43" \
-    VSBUILDTOOLS_SHA256="59B6DA403AFE6892D4531ADB5C58DC52BFF5DB1E2173477AD7F9CF4B2C490277" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ebbb3a8f-0b8f-4c9d-ac08-5e244e84b4fe/59b6da403afe6892d4531adb5c58dc52bff5db1e2173477ad7f9cf4b2c490277/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="17.11.35327.3" \
+    VSBUILDTOOLS_SHA256="471C9A89FA8BA27D356748AE0CF25EB1F362184992DC0BB6E9CCF10178C43C27" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/69e24482-3b48-44d3-af65-51f866a08313/471c9a89fa8ba27d356748ae0cf25eb1f362184992dc0bb6e9ccf10178c43c27/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
@@ -28,11 +28,11 @@ RUN Powershell -Command .\install_net35.ps1
 COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
-# Install .NET 8
+# Install .NET 9
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="8.0.100" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/93961dfb-d1e0-49c8-9230-abcba1ebab5a/811ed1eb63d7652325727720edda26a8/dotnet-sdk-8.0.100-win-x64.exe" \
-    DOTNET_SHA512="248acec95b381e5302255310fb9396267fd74a4a2dc2c3a5989031969cb31f8270cbd14bda1bc0352ac90f8138bddad1a58e4af1e56cc4a1613b1cf2854b518e"
+ENV DOTNET_VERSION="9.0.100" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/10bb041d-e705-473e-9654-27c0e038f5bd/447c0c10654c2949872fa6154b8c27b5/dotnet-sdk-9.0.100-win-x64.exe" \
+    DOTNET_SHA512="a12ee028f7dff8f330dbe1914534d237eb6e19cc105139ce5de69df1b4b07ee3c1a3e396574ca776a452e805052e799df14a348ace50191af514c9dc4705ecf0"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL

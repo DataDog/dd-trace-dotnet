@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.StackTraceLeak;
     MethodName = "DisplayException",
     ReturnTypeName = ClrNames.Task,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.StackTraceLeak),
     InstrumentationCategory = InstrumentationCategory.Iast)]
 

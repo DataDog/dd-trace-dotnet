@@ -89,5 +89,45 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckAppDomainForNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckGenericsForNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckPiForNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.RunAndCheck();
+        }
+
+        [Trait("Category", "LinuxOnly")]
+        [TestAppFact("Samples.Computer01")]
+        public void CheckFibonacciForNewCpuProfiler(string appName, string framework, string appAssembly)
+        {
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.RunAndCheck();
+        }
     }
 }

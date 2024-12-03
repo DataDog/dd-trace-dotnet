@@ -36,7 +36,7 @@ namespace iast
     class DataflowAspectClass
     {
     public:
-        DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line);
+        DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line, const UINT32 enabledCategories);
 
     protected:
         WSTRING _line = EmptyWStr;
@@ -72,7 +72,7 @@ namespace iast
     class DataflowAspect
     {
     public:
-        DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line);
+        DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line, const UINT32 enabledCategories);
 
     protected:
         WSTRING _line = EmptyWStr;

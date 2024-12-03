@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests.LiveObjects
             runner.Environment.SetVariable(EnvironmentVariables.LiveHeapProfilerEnabled, "1");
 
             // only garbage collection profiler enabled so should only see the 1 related value per sample + Generation label
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             Assert.True(CheckSamplesAreLiveObjects(runner.Environment.PprofDir));

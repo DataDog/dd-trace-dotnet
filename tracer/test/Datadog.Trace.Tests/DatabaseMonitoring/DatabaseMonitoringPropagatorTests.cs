@@ -5,10 +5,8 @@
 
 using System;
 using System.Data;
-using System.Numerics;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
@@ -59,10 +57,14 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var span = _v0Tracer.StartSpan(operationName: "db.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
+            var initialCommandText = "select * from table";
+            var command = CreateCommand(initialCommandText);
+
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
-            returnedComment.Should().Be(expectedComment);
+            command.CommandText.Should().StartWith(expectedComment);
+            command.CommandText.Should().EndWith(initialCommandText);
         }
 
         [Theory]
@@ -77,11 +79,15 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.MySql, out var traceParentInjected);
+            var initialCommandText = "select * from table";
+            var command = CreateCommand(initialCommandText);
+
+            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, "Test.Service", "MyDatabase", "MyHost", span);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
-            returnedComment.Should().Be(expectedComment);
+            command.CommandText.Should().StartWith(expectedComment);
+            command.CommandText.Should().EndWith(initialCommandText);
         }
 
         [Theory]
@@ -96,11 +102,15 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, service, dbName, host, span, IntegrationId.MySql, out var traceParentInjected);
+            var initialCommandText = "select * from table";
+            var command = CreateCommand(initialCommandText);
+
+            var traceParentInjected = DatabaseMonitoringPropagator.PropagateDataViaComment(DbmPropagationLevel.Service, IntegrationId.MySql, command, service, dbName, host, span);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
-            returnedComment.Should().Be(expectedComment);
+            command.CommandText.Should().StartWith(expectedComment);
+            command.CommandText.Should().EndWith(initialCommandText);
         }
 
         [Fact]
@@ -113,14 +123,65 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var expectedComment = $"/*dddbs='{dbServiceName}',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
             var traceParentInjected = false;
             var dbName = "dbname";
+            var initialCommandText = "select * from table";
+            var command = CreateCommand(initialCommandText);
 
             var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "db.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.SetTraceSamplingPriority(samplingPriority);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, integrationId, out var traceParentInjectedValue);
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
-            returnedComment.Should().Be(expectedComment);
+            command.CommandText.Should().StartWith(expectedComment);
+            command.CommandText.Should().EndWith(initialCommandText);
+        }
+
+        [Fact]
+        public void ExpectedCommentAppendedV1()
+        {
+            var dbmPropagationLevel = DbmPropagationLevel.Service;
+            var integrationId = IntegrationId.Npgsql;
+            var samplingPriority = SamplingPriority.AutoReject;
+            var dbServiceName = "Test.Service-postgres";
+            var expectedComment = $"/*dddbs='{dbServiceName}',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/";
+            var traceParentInjected = false;
+            var dbName = "dbname";
+            var initialCommandText = "/*+ this is a hint */ select * from table";
+            var command = CreateCommand(initialCommandText);
+
+            var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "db.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            span.SetTraceSamplingPriority(samplingPriority);
+
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, integrationId, command, "Test.Service", "MyDatabase", "MyHost", span);
+
+            traceParentInjectedValue.Should().Be(traceParentInjected);
+            command.CommandText.Should().EndWith(expectedComment);
+            command.CommandText.Should().StartWith(initialCommandText);
+        }
+
+        [Theory]
+        [InlineData(SchemaVersion.V0)]
+        [InlineData(SchemaVersion.V1)]
+        internal void PeerServiceInjected(SchemaVersion version)
+        {
+            var dbmPropagationLevel = DbmPropagationLevel.Service;
+            var traceParentInjected = false;
+            var peerService = "myPeerService";
+            var initialCommandText = "select * from table";
+            var command = CreateCommand(initialCommandText);
+
+            var sqlTags = version == SchemaVersion.V1 ? new SqlV1Tags() : new SqlTags();
+            sqlTags.SetTag(Tags.PeerServiceRemappedFrom, "old_value");
+            sqlTags.SetTag(Tags.PeerService, peerService);
+
+            var tracer = version == SchemaVersion.V1 ? _v1Tracer : _v0Tracer;
+            var span = tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
+
+            var traceParentInjectedValue = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, IntegrationId.Npgsql, command, "Test.Service", "MyDatabase", "MyHost", span);
+
+            traceParentInjectedValue.Should().Be(traceParentInjected);
+            command.CommandText.Should().StartWith("/*dddbs='myServiceName',ddprs='myPeerService',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");
+            command.CommandText.Should().EndWith(initialCommandText);
         }
 
         [Theory]
@@ -132,7 +193,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("full", "sqlite", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "oracle", SamplingPriorityValues.UserKeep, false, null)]
         [InlineData("full", "mysql", SamplingPriorityValues.UserKeep, false, null)]
-        public void ExpectedContextSet(string propagationMode, string integration, int samplingPriority, bool shouldInject, string expectedContext)
+        internal void ExpectedContextSet(string propagationMode, string integration, int samplingPriority, bool shouldInject, string expectedContext)
         {
             Enum.TryParse(propagationMode, ignoreCase: true, out DbmPropagationLevel dbmPropagationLevel);
             Enum.TryParse(integration, ignoreCase: true, out IntegrationId integrationId);
@@ -144,10 +205,12 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             var commandMock = new Mock<IDbCommand>();
             var parameterMock = new Mock<IDbDataParameter>();
             connectionMock.Setup(c => c.CreateCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c.State).Returns(ConnectionState.Open);
             commandMock.SetupSet(c => c.CommandText = It.IsAny<string>())
                        .Callback<string>(value => sql = value);
             commandMock.Setup(c => c.CreateParameter()).Returns(parameterMock.Object);
             commandMock.SetupGet(c => c.Parameters).Returns(Mock.Of<IDataParameterCollection>());
+            commandMock.SetupGet(c => c.Connection).Returns(connectionMock.Object);
             parameterMock.SetupSet(p => p.Value = It.IsAny<byte[]>())
                          .Callback<object>(value => context = (byte[])value);
 
@@ -156,7 +219,7 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
                 var span = tracer.StartSpan("db.query", parent: SpanContext.None, serviceName: "pouet", traceId: new TraceId(Upper: 0xBABEBABEBABEBABE, Lower: 0xCAFECAFECAFECAFE), spanId: 0xBEEFBEEFBEEFBEEF);
                 span.Context.TraceContext.SetSamplingPriority(samplingPriority);
 
-                DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, connectionMock.Object, span);
+                DatabaseMonitoringPropagator.PropagateDataViaContext(dbmPropagationLevel, integrationId, commandMock.Object, span);
 
                 if (shouldInject)
                 {
@@ -172,25 +235,29 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData(SchemaVersion.V0)]
-        [InlineData(SchemaVersion.V1)]
-        internal void PeerServiceInjected(SchemaVersion version)
+        [InlineData(true, IntegrationId.Npgsql, "/*+ HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        // only for PG, not the others
+        [InlineData(false, IntegrationId.MySql, "/*+ HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        [InlineData(false, IntegrationId.Oracle, "/*+ HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        [InlineData(false, IntegrationId.SqlClient, "/*+ HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        // leading whitespace is ignored
+        [InlineData(true, IntegrationId.Npgsql, " \n\t \u00A0\r /*+ HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        // some other cases
+        [InlineData(false, IntegrationId.Npgsql, "/* HashJoin(t1 t1) */ EXPLAIN SELECT * FROM s1.t1 JOIN public.t1 ON (s1.t1.id=public.t1.id);")]
+        [InlineData(false, IntegrationId.Npgsql, "/*")]
+        [InlineData(false, IntegrationId.Npgsql, "")]
+        internal void ShouldAppendComment(bool expected, IntegrationId integrationId, string commandText)
         {
-            var dbmPropagationLevel = DbmPropagationLevel.Service;
-            var traceParentInjected = false;
-            var peerService = "myPeerService";
+            DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText).Should().Be(expected);
+        }
 
-            var sqlTags = version == SchemaVersion.V1 ? new SqlV1Tags() : new SqlTags();
-            sqlTags.SetTag(Tags.PeerServiceRemappedFrom, "old_value");
-            sqlTags.SetTag(Tags.PeerService, peerService);
-
-            var tracer = version == SchemaVersion.V1 ? _v1Tracer : _v0Tracer;
-            var span = tracer.StartSpan("db.query", sqlTags, serviceName: "myServiceName");
-
-            var returnedComment = DatabaseMonitoringPropagator.PropagateDataViaComment(dbmPropagationLevel, "Test.Service", "MyDatabase", "MyHost", span, IntegrationId.Npgsql, out var traceParentInjectedValue);
-
-            traceParentInjectedValue.Should().Be(traceParentInjected);
-            returnedComment.Should().Be("/*dddbs='myServiceName',ddprs='myPeerService',ddps='Test.Service',dddb='MyDatabase',ddh='MyHost'*/");
+        private IDbCommand CreateCommand(string commandText)
+        {
+            var commandMock = new Mock<IDbCommand>();
+            // allow properties to be used "normally" (value set is returned on get)
+            commandMock.SetupAllProperties();
+            commandMock.Object.CommandText = commandText;
+            return commandMock.Object;
         }
     }
 }

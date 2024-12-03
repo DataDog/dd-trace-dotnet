@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Analyzers;
 using Datadog.Trace.Iast.Settings;
@@ -24,6 +25,8 @@ internal class Iast
     private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
     private readonly OverheadController _overheadController;
+    private IDiscoveryService _discoveryService;
+    private bool _spanMetaStructs;
 
     static Iast()
     {
@@ -70,5 +73,16 @@ internal class Iast
         {
             HardcodedSecretsAnalyzer.Initialize(TimeSpan.FromMilliseconds(_settings.RegexTimeout));
         }
+    }
+
+    internal bool IsMetaStructSupported()
+    {
+        if (_discoveryService is null)
+        {
+            _discoveryService = Tracer.Instance.TracerManager.DiscoveryService;
+            _discoveryService?.SubscribeToChanges(config => _spanMetaStructs = config.SpanMetaStructs);
+        }
+
+        return _spanMetaStructs;
     }
 }

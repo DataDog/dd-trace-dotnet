@@ -40,6 +40,7 @@
   <ItemGroup Label="Required files from the project(s) being tested">
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\CrashReportingWindows.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
@@ -56,11 +57,14 @@
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
+    <ClCompile Include="ClrEventsParserTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
+    <ClCompile Include="CrashReportingTest.cpp" />
     <ClCompile Include="EnabledProfilersTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
     <ClCompile Include="ErrorCodeTest.cpp" />
+    <ClCompile Include="EtwEventsManagerTest.cpp" />
     <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FakeSamples.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
@@ -88,6 +92,7 @@
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
+    <ClCompile Include="ChronoHelperTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
@@ -97,9 +102,9 @@
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
     <ClInclude Include="RuntimeInfoHelper.h" />
-    <ClInclude Include="ThreadsCpuManagerHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HResultConverterTest.cpp" />
@@ -111,6 +116,9 @@
     <ProjectReference Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\Datadog.Profiler.Native.vcxproj">
       <Project>{0831386b-1a96-443f-b02b-c1d2b65fd845}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

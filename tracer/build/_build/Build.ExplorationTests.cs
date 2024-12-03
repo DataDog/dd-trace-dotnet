@@ -266,22 +266,24 @@ partial class Build
 
     private void CreateLineProbesIfNeeded()
     {
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
-
-        if (!testDescription.LineProbesEnabled)
-        {
-            Logger.Information($"Skip line probes creation. The test case '{ExplorationTestName.Value}' does not support line scenario at the moment");
-            return;
-        }
-
+        ExplorationTestDescription testDescription = null;
         if (ExplorationTestName.HasValue)
         {
-            Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            if (!testDescription.LineProbesEnabled)
+            {
+                Logger.Information($"Provided exploration test name is {ExplorationTestName}.");
+                return;
+            }
         }
         else
         {
-            Logger.Information("Exploration test name is not provided. Running protobuf test case");
+            testDescription = ExplorationTestDescription.GetExplorationTestDescription(global::ExplorationTestName.protobuf);
         }
+
+        Logger.Information($"Provided exploration test name is {testDescription.Name}.");
+
+        ExplorationTestDescription.GetAllExplorationTestDescriptions();
 
         var sw = new Stopwatch();
         sw.Start();
@@ -470,8 +472,7 @@ partial class Build
             throw new Exception("Can't determined the correct tracer framework version");
         }
 
-        var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
-        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace." + extension;
+        return MonitoringHomeDirectory / tracerFramework / "Datadog.Trace.dll";
     }
 
     static string[] GetAllTestAssemblies(string rootPath)
@@ -536,7 +537,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper
+    eShopOnWeb, protobuf, cake, swashbuckle, RestSharp, serilog, polly, automapper, // paket, FIXME: .NET 9 - Paket doesn't support .NET 9 yet
 }
 
 class ExplorationTestDescription
@@ -642,17 +643,18 @@ class ExplorationTestDescription
                 // Workaround for https://github.com/dotnet/runtime/issues/95653
                 EnvironmentVariables = new[] { ("DD_CLR_ENABLE_INLINING", "0") },
             },
-            ExplorationTestName.paket => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.paket,
-                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
-                GitRepositoryTag = "6.2.1",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */, "should normalize home path", "should parse config with home path in cache" },
-                SupportedFrameworks = new[] { TargetFramework.NET461 },
-                ShouldRun = false // Dictates that this exploration test should not take part in the CI
-            },
+            // FIXME: .NET 9 - Paket doesn't support .NET 9 yet
+            // ExplorationTestName.paket => new ExplorationTestDescription()
+            // {
+            //     Name = ExplorationTestName.paket,
+            //     GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
+            //     GitRepositoryTag = "6.2.1",
+            //     IsGitShallowCloneSupported = true,
+            //     PathToUnitTestProject = "tests/Paket.Tests",
+            //     TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */, "should normalize home path", "should parse config with home path in cache" },
+            //     SupportedFrameworks = new[] { TargetFramework.NET461 },
+            //     ShouldRun = false // Dictates that this exploration test should not take part in the CI
+            // },
             ExplorationTestName.RestSharp => new ExplorationTestDescription()
             {
                 Name = ExplorationTestName.RestSharp,

@@ -5,6 +5,7 @@
 
 #include "shared/src/native-src/string.h"
 
+#include <chrono>
 #include <string>
 #include <thread>
 
@@ -109,18 +110,18 @@ public:
     ///
     /// This function get the current timestamp in a signal-safe manner
     ///
-    static inline std::uint64_t GetTimestampSafe()
+    static inline std::chrono::nanoseconds GetTimestampSafe()
     {
         struct timespec ts;
         // TODO error handling ?
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        return (std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
+        return std::chrono::nanoseconds((std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec);
     }
 
 #endif
 
     static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);
-    static std::int64_t GetHighPrecisionTimestamp();
+    static std::chrono::nanoseconds GetHighPrecisionTimestamp();
     static std::int64_t ConvertTicks(uint64_t ticks);
 
     static void Sleep(std::chrono::nanoseconds duration);
@@ -148,12 +149,11 @@ private:
 #endif
 };
 
-inline std::int64_t OpSysTools::GetHighPrecisionTimestamp()
+inline std::chrono::nanoseconds OpSysTools::GetHighPrecisionTimestamp()
 {
     auto now = std::chrono::system_clock::now();
 
-    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
-    return static_cast<std::int64_t>(totalNanosecs);
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch());
 }
 
 inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds()

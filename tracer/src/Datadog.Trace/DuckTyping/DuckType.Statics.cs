@@ -185,6 +185,64 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        private static Type? GetTypeFromPartialName(string partialName, bool throwOnError = false)
+        {
+            // We configure it to throw in case throwOnError is true and the partial name contains a version (is not partial).
+            return Type.GetType(partialName, throwOnError: throwOnError && partialName.Contains("Version=")) ??
+                   GetTypeFromPartialNameSlow(partialName, throwOnError);
+
+            static Type? GetTypeFromPartialNameSlow(string partialName, bool throwOnError = false)
+            {
+                // If the type cannot be found, and the name doesn't contain a version,
+                // we try to find the type in the current domain/alc using any assembly that has the same name.
+                var typePair = partialName.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (typePair.Length != 2)
+                {
+                    if (throwOnError)
+                    {
+                        DuckTypeException.Throw($"Invalid type name: {partialName}");
+                    }
+
+                    return null;
+                }
+
+                var typeValue = typePair[0].Trim();
+                var assemblyValue = typePair[1].Trim();
+
+                try
+                {
+                    foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                    {
+                        if (assembly.GetName().Name != assemblyValue)
+                        {
+                            continue;
+                        }
+
+                        var type = assembly.GetType(typeValue, throwOnError: false);
+                        if (type is not null)
+                        {
+                            return type;
+                        }
+                    }
+                }
+                catch
+                {
+                    if (throwOnError)
+                    {
+                        throw;
+                    }
+                }
+
+                // If we were unable to load the type, and we have to throw an error, we do it now.
+                if (throwOnError)
+                {
+                    DuckTypeException.Throw($"Type not found: {partialName}");
+                }
+
+                return null;
+            }
+        }
+
         /// <summary>
         /// DynamicMethods delegates cache
         /// </summary>

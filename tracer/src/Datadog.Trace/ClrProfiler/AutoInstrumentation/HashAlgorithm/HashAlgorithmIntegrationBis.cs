@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     MethodName = "ComputeHash",
     ReturnTypeName = ClrNames.ByteArray,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [InstrumentMethod(
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     MethodName = "ComputeHash",
     ReturnTypeName = ClrNames.ByteArray,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "8.*.*",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 [Browsable(false)]

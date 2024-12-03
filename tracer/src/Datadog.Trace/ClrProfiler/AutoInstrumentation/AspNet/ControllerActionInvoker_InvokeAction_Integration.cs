@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal static CallTargetReturn<TResult?> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult? returnValue, Exception? exception, in CallTargetState state)
         {
             var security = Security.Instance;
-            if (security.Enabled && returnValue is not null)
+            if (security.AppsecEnabled && returnValue is not null)
             {
                 if (returnValue.TryDuckCast<IJsonResultMvc>(out var actionResult))
                 {

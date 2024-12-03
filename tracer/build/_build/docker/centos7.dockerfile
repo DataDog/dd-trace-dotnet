@@ -86,31 +86,3 @@ RUN dotnet restore /build
 COPY . /build
 RUN dotnet build /build --no-restore
 WORKDIR /project
-
-FROM base as tester
-
-# Install ASP.NET Core runtimes using install script
-# There is no arm64 runtime available for .NET Core 2.1, so just install the .NET Core runtime in that case
-
-COPY ./bootstrap/dotnet-install.sh .
-RUN if [ "$(uname -m)" = "x86_64" ]; \
-    then export NETCORERUNTIME2_1=aspnetcore; \
-    else export NETCORERUNTIME2_1=dotnet; \
-    fi \
-    && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
-    && rm dotnet-install.sh
-
-
-ENV USE_NATIVE_SDK_VERSION=true
-
-# Copy the build project in and build it
-COPY *.csproj *.props *.targets /build/
-RUN dotnet restore /build
-COPY . /build
-RUN dotnet build /build --no-restore
-WORKDIR /project

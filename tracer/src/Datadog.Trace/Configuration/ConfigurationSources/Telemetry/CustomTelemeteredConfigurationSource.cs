@@ -153,7 +153,7 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
         string stringifiedDictionary;
         if (result.Count > 0)
         {
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire();
             foreach (var kvp in result)
             {
                 sb.Append(kvp.Key).Append(':').Append(kvp.Value).Append(',');

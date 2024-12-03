@@ -21,8 +21,6 @@ namespace Datadog.Trace.Iast.Aspects.System.Text;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StringBuilderAspects
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StringBuilderAspects));
-
     /// <summary> StringBuildr ctor aspect </summary>
     /// <param name="value"> Init string </param>
     /// <returns> New StringBuilder </returns>

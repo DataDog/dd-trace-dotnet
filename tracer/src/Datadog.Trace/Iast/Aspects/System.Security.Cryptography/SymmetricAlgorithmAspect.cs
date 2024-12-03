@@ -21,8 +21,6 @@ namespace Datadog.Trace.Iast.Aspects;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class SymmetricAlgorithmAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmAspect));
-
     private static void ProcessCipherClassCreation(SymmetricAlgorithm target)
     {
         try
@@ -32,7 +30,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error in SymmetricAlgorithmAspect.");
+            IastModule.Log.Error(ex, "Error in SymmetricAlgorithmAspect.");
         }
     }
 

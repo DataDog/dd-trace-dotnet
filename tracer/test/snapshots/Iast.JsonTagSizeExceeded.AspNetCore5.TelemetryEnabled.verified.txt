@@ -383,6 +383,66 @@
         "path": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       }
+    },
+    {
+      "type": "COMMAND_INJECTION",
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
+      },
+      "hash": -430498668,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteCommandInternal"
+      }
+    },
+    {
+      "type": "COMMAND_INJECTION",
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
+      },
+      "hash": -430498668,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteCommandInternal"
+      }
+    },
+    {
+      "type": "COMMAND_INJECTION",
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
+      },
+      "hash": -430498668,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteCommandInternal"
+      }
+    },
+    {
+      "type": "COMMAND_INJECTION",
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
+      },
+      "hash": -430498668,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteCommandInternal"
+      }
+    },
+    {
+      "type": "COMMAND_INJECTION",
+      "evidence": {
+        "value": "MAX SIZE EXCEEDED"
+      },
+      "hash": -430498668,
+      "location": {
+        "spanId": XXX,
+        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "method": "ExecuteCommandInternal"
+      }
     }
   ]
 },
@@ -390,8 +450,8 @@
     },
     Metrics: {
       process_id: 0,
-      _dd.iast.telemetry.executed.propagation: 360.0,
-      _dd.iast.telemetry.executed.sink.command_injection: 30.0,
+      _dd.iast.telemetry.executed.propagation: 420.0,
+      _dd.iast.telemetry.executed.sink.command_injection: 35.0,
       _dd.iast.telemetry.executed.sink.header_injection: 1.0,
       _dd.iast.telemetry.executed.sink.hsts_header_missing: 1.0,
       _dd.iast.telemetry.executed.sink.unvalidated_redirect: 1.0,

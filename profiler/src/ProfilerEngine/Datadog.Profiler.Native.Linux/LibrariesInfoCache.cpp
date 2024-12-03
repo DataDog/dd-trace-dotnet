@@ -4,87 +4,130 @@
 #include "LibrariesInfoCache.h"
 
 #include "Log.h"
+#include "OpSysTools.h"
 
-#include <string.h>
+#include <unistd.h>
+
+using namespace std::chrono_literals;
 
 LibrariesInfoCache* LibrariesInfoCache::s_instance = nullptr;
 
-// This function is exposed by the ld_preload wrapper library.
-// This allows us to know if we have to reload the cache or not
-extern "C" unsigned long long dd_nb_calls_to_dlopen_dlclose() __attribute__((weak));
+extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
-LibrariesInfoCache::LibrariesInfoCache()
+LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
+    _stopRequested{false},
+    _event(true), // set the event to force updating the cache the first time Wait is called
+    _wrappersAllocator{resource}
 {
-    LibrariesInfo.reserve(100);
-    NbCallsToDlopenDlclose = 0;
+}
+
+LibrariesInfoCache::~LibrariesInfoCache() = default;
+
+const char* LibrariesInfoCache::GetName()
+{
+    return "Libraries Info Cache";
+}
+
+bool LibrariesInfoCache::StartImpl()
+{
+    _librariesInfo.reserve(100);
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
+    _worker = std::thread(&LibrariesInfoCache::Work, this);
+    return true;
 }
 
-LibrariesInfoCache* LibrariesInfoCache::Get()
-{
-    static LibrariesInfoCache Instance;
-    return s_instance;
-}
-
-LibrariesInfoCache::~LibrariesInfoCache()
+bool LibrariesInfoCache::StopImpl()
 {
     unw_set_iterate_phdr_function(unw_local_addr_space, dl_iterate_phdr);
     s_instance = nullptr;
+
+    _stopRequested = true;
+    NotifyCacheUpdateImpl();
+    Log::Debug("Notification to stop the worker has been sent.");
+    _worker.join();
+    _librariesInfo.clear();
+
+    return true;
 }
 
-struct IterationData
+void LibrariesInfoCache::Work()
 {
-public:
-    std::size_t Index;
-    LibrariesInfoCache* Cache;
-};
+    OpSysTools::SetNativeThreadName(WStr("DD_LibsCache"));
+
+    auto timeout = InfiniteTimeout;
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = LibrariesInfoCache::NotifyCacheUpdate;
+    }
+    else
+    {
+        // if this function is missing we still want the cache to update on a regular basis
+        constexpr auto defaultTimeout = 1s;
+        Log::Info("Wrapper library is missing. The cache will reload itself every ", defaultTimeout);
+        timeout = defaultTimeout;
+    }
+
+    while (!_stopRequested)
+    {
+        // in the default case, notification mechanism in place, we will block until notification
+        // Otherwise, we reload the cache no matter on a regular basis (defaultTimeout)
+        _event.Wait(timeout);
+
+        if (_stopRequested)
+        {
+            break;
+        }
+
+        UpdateCache();
+    }
+
+    Log::Debug("Stopping worker: stop request received.");
+
+    if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
+    {
+        dd_notify_libraries_cache_update = nullptr;
+    }
+}
 
 void LibrariesInfoCache::UpdateCache()
 {
-    std::unique_lock l(_cacheLock);
+    // We *MUST* not allocate while holding the _cacheLock
+    // We may end up in a deadlock situation
+    // Example:
+    // T1 tries to allocate and is interrupted by the sampler
+    // Cache Thread, updates the cache and allocates while holding the cache lock.
+    // But the Cache Thread is blocked (T1 owns the malloc lock)
+    // T1 is blocked when libwunding calls DlIteratePhdr.
 
-    auto shouldReload = true;
-    if (dd_nb_calls_to_dlopen_dlclose != nullptr) [[likely]]
+    // OPTIM: make it static to reuse buffer overtime
+    // Safe to make it static to the function, this variable is accessed only by one thread.
+    static std::vector<DlPhdrInfoWrapper> newCache;
+    newCache.reserve(_librariesInfo.capacity());
+
+    struct Data
     {
-        auto previous = NbCallsToDlopenDlclose;
-        NbCallsToDlopenDlclose = dd_nb_calls_to_dlopen_dlclose();
-        shouldReload = previous != NbCallsToDlopenDlclose;
-    }
+    public:
+        std::vector<DlPhdrInfoWrapper>* Cache;
+        shared::pmr::memory_resource* Allocator;
+    };
 
-    if (!shouldReload)
-    {
-        return;
-    }
+    auto data = Data{.Cache = &newCache, .Allocator = _wrappersAllocator};
 
-    IterationData data = {.Index = 0, .Cache = this};
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* iterationData = static_cast<IterationData*>(data);
-            auto* cache = iterationData->Cache;
-
-            if (cache->LibrariesInfo.size() <= iterationData->Index)
-            {
-                cache->LibrariesInfo.push_back(DlPhdrInfoWrapper(info, size));
-                iterationData->Index++;
-                return 0;
-            }
-
-            auto& current = cache->LibrariesInfo[iterationData->Index];
-            if (current.IsSame(info))
-            {
-                iterationData->Index++;
-                return 0;
-            }
-
-            DlPhdrInfoWrapper wrappedInfo(info, size);
-            cache->LibrariesInfo[iterationData->Index] = std::move(wrappedInfo);
-            iterationData->Index++;
+            auto* impl = static_cast<Data*>(data);
+            impl->Cache->emplace_back(info, size, impl->Allocator);
             return 0;
         },
         &data);
 
-    LibrariesInfo.erase(LibrariesInfo.begin() + data.Index, LibrariesInfo.end());
+    {
+        std::unique_lock l{_cacheLock};
+        _librariesInfo.swap(newCache);
+    }
+
+    newCache.clear();
 }
 
 int LibrariesInfoCache::DlIteratePhdr(unw_iterate_phdr_callback_t callback, void* data)
@@ -104,7 +147,7 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
     std::shared_lock l(_cacheLock);
 
     int rc = 0;
-    for (auto& wrappedInfo : LibrariesInfo)
+    for (auto& wrappedInfo : _librariesInfo)
     {
         auto [info, size] = wrappedInfo.Get();
         rc = callback(info, size, data);
@@ -114,4 +157,19 @@ int LibrariesInfoCache::DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, 
         }
     }
     return rc;
+}
+
+void LibrariesInfoCache::NotifyCacheUpdate()
+{
+    auto* instance = s_instance;
+    if (instance == nullptr)
+    {
+        return;
+    }
+    instance->NotifyCacheUpdateImpl();
+}
+
+void LibrariesInfoCache::NotifyCacheUpdateImpl()
+{
+    _event.Set();
 }

@@ -49,14 +49,14 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     GCReason reason,
     GCType type,
     bool isCompacting,
-    uint64_t pauseDuration,
-    uint64_t totalDuration, // from start to end (includes pauses)
-    uint64_t endTimestamp,  // end of GC
+    std::chrono::nanoseconds pauseDuration,
+    std::chrono::nanoseconds totalDuration, // from start to end (includes pauses)
+    std::chrono::nanoseconds endTimestamp,  // end of GC
     uint64_t gen2Size,
     uint64_t lohSize,
     uint64_t pohSize)
 {
-    _suspensionDurationMetric->Add((double_t)pauseDuration);
+    _suspensionDurationMetric->Add((double_t)pauseDuration.count());
     if (generation == 0)
     {
         _gen0CountMetric->Incr();
@@ -100,7 +100,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     _pohSize = pohSize;
 
     RawGarbageCollectionSample rawSample;
-    rawSample.Timestamp = endTimestamp;
+    rawSample.Timestamp = std::chrono::nanoseconds(endTimestamp);
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
@@ -118,7 +118,7 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
 }
 
 void GarbageCollectionProvider::OnGarbageCollectionStart(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     int32_t number,
     uint32_t generation,
     GCReason reason,

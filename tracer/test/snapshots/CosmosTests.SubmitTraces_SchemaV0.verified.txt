@@ -11,9 +11,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -34,9 +36,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -57,9 +61,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -80,9 +86,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -104,9 +112,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -128,9 +138,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -152,9 +164,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -176,9 +190,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -198,9 +214,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -220,9 +238,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -242,9 +262,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -264,9 +286,11 @@
       component: CosmosDb,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -287,9 +311,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,
@@ -310,9 +336,11 @@
       db.name: db,
       db.type: cosmosdb,
       env: integration_tests,
+      language: dotnet,
       out.host: https://localhost:00000/,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.base_service: Samples.CosmosDb
     },
     Metrics: {
       process_id: 0,

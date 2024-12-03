@@ -39,12 +39,14 @@ namespace Datadog.Profiler.SmokeTests
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
         {
-            _output = output;
             _transportType = transportType;
             _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
+            _output = _testApplicationRunner.XUnitLogger;
         }
 
         public int MinimumExpectedNbPprofFiles { get; set; } = 2;
+
+        public ITestOutputHelper XUnitLogger => _output;
 
         internal EnvironmentHelper EnvironmentHelper
         {

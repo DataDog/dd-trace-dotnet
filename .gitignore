@@ -363,6 +363,7 @@ profiler/_build/
 obj/*
 obj_arm64/*
 obj_x86_64/*
+obj_arm64_x86_64/*
 
 # cmake build files
 .ionide/

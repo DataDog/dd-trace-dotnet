@@ -79,7 +79,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
-                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix);
+                    var alreadyInjected = commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) ||
+                                          // if we appended the comment, we need to look for a potential DBM comment in the whole string.
+                                          (DatabaseMonitoringPropagator.ShouldAppend(integrationId, commandText) && commandText.Contains(DatabaseMonitoringPropagator.DbmPrefix));
                     if (alreadyInjected)
                     {
                         // The command text is already injected, so they're probably caching the SqlCommand
@@ -100,15 +102,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command.Connection, scope.Span);
-                        var propagatedCommand = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span, integrationId, out var traceParentInjectedInComment);
-                        if (!string.IsNullOrEmpty(propagatedCommand))
+                        var traceParentInjectedInComment = DatabaseMonitoringPropagator.PropagateDataViaComment(tracer.Settings.DbmPropagationMode, integrationId, command, tracer.DefaultServiceName, tagsFromConnectionString.DbName, tagsFromConnectionString.OutHost, scope.Span);
+
+                        // try context injection only after comment injection, so that if it fails, we still have service level propagation
+                        var traceParentInjectedInContext = DatabaseMonitoringPropagator.PropagateDataViaContext(tracer.Settings.DbmPropagationMode, integrationId, command, scope.Span);
+                        if (traceParentInjectedInComment || traceParentInjectedInContext)
                         {
-                            command.CommandText = $"{propagatedCommand} {commandText}";
-                            if (traceParentInjectedInComment || traceParentInjectedInContext)
-                            {
-                                tags.DbmTraceInjected = "true";
-                            }
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }
@@ -170,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return true;
                 default:
                     string commandTypeName = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".", StringComparison.Ordinal) + 1);
-                    if (commandTypeName == "InterceptableDbCommand" || commandTypeName == "ProfiledDbCommand")
+                    if (IsDisabledCommandType(commandTypeName))
                     {
                         integrationId = null;
                         dbType = null;
@@ -196,6 +196,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     };
                     return true;
             }
+        }
+
+        internal static bool IsDisabledCommandType(string commandTypeName)
+        {
+            if (string.IsNullOrEmpty(commandTypeName))
+            {
+                return false;
+            }
+
+            var disabledTypes = Tracer.Instance.Settings.DisabledAdoNetCommandTypes;
+
+            if (disabledTypes is null || disabledTypes.Count == 0)
+            {
+                return false;
+            }
+
+            foreach (var disabledType in disabledTypes)
+            {
+                if (string.Equals(disabledType, commandTypeName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static class Cache<TCommand>

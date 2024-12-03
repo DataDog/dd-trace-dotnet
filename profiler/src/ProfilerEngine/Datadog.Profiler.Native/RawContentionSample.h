@@ -50,8 +50,8 @@ public:
         sample->AddLabel(Label{BucketLabelName, std::move(Bucket)});
         sample->AddValue(1, contentionCountIndex);
         sample->AddNumericLabel(NumericLabel{RawCountLabelName, 1});
-        sample->AddNumericLabel(NumericLabel{RawDurationLabelName, static_cast<uint64_t>(ContentionDuration)});
-        sample->AddValue(static_cast<std::int64_t>(ContentionDuration), contentionDurationIndex);
+        sample->AddNumericLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});
+        sample->AddValue(ContentionDuration.count(), contentionDurationIndex);
         if (BlockingThreadId != 0)
         {
             sample->AddNumericLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
@@ -59,7 +59,7 @@ public:
         }
     }
 
-    double ContentionDuration;
+    std::chrono::nanoseconds ContentionDuration;
     std::string Bucket;
     uint64_t BlockingThreadId;
     shared::WSTRING BlockingThreadName;

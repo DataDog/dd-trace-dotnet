@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 
@@ -27,17 +28,10 @@ public class ActionChangeTests : WafLibraryRequiredTest
     [InlineData("dummy_rule", "test-dummy-rule", "block", BlockingAction.RedirectRequestType, 303)]
     public void GivenADummyRule_WhenActionReturnCodeIsChanged_ThenChangesAreApplied(string paramValue, string rule, string action, string actionType, int newStatus)
     {
-        var args = CreateArgs(paramValue);
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: true,
-            embeddedRulesetPath: "rasp-rule-set.json");
-
+        var initResult = CreateWaf(true, "rasp-rule-set.json");
         var waf = initResult.Waf;
-        waf.Should().NotBeNull();
         using var context = waf.CreateContext();
+        var args = CreateArgs(paramValue);
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
         result.BlockInfo["status_code"].Should().Be("403");
@@ -52,11 +46,13 @@ public class ActionChangeTests : WafLibraryRequiredTest
         result.Timeout.Should().BeFalse("Timeout should be false");
         if (actionType == BlockingAction.BlockRequestType)
         {
+            result.BlockInfo.Should().NotBeNull();
             result.BlockInfo["status_code"].Should().Be(newStatus.ToString());
         }
 
         if (actionType == BlockingAction.RedirectRequestType)
         {
+            result.RedirectInfo.Should().NotBeNull();
             result.RedirectInfo["status_code"].Should().Be(newStatus.ToString());
         }
     }
@@ -64,16 +60,9 @@ public class ActionChangeTests : WafLibraryRequiredTest
     [Fact]
     public void GivenADummyRule_WhenActionReturnCodeIsChangedAfterInit_ThenChangesAreApplied()
     {
-        var args = CreateArgs("dummyrule2");
-        var initResult = Waf.Create(
-            WafLibraryInvoker,
-            string.Empty,
-            string.Empty,
-            useUnsafeEncoder: true,
-            embeddedRulesetPath: "rasp-rule-set.json");
-
+        var initResult = CreateWaf(true, "rasp-rule-set.json");
         var waf = initResult.Waf;
-        waf.Should().NotBeNull();
+        var args = CreateArgs("dummyrule2");
 
         UpdateWafWithActions([CreateNewStatusAction("customblock", BlockingAction.BlockRequestType, 500)], waf);
 
@@ -87,9 +76,9 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
     private void UpdateWafWithActions(Action[] actions, Waf waf)
     {
-        ConfigurationStatus configurationStatus = new(string.Empty) { ActionsByFile = { ["file"] = actions } };
-        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafActionsKey);
-        var res = waf.UpdateWafFromConfigurationStatus(configurationStatus);
+        var configurationStatus = UpdateConfigurationState(actions: new() { ["file"] = actions });
+        configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationState.WafActionsKey);
+        var res = waf.Update(configurationStatus);
         res.Success.Should().BeTrue();
     }
 

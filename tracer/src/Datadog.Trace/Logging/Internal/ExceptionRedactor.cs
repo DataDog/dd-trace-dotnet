@@ -33,7 +33,7 @@ internal static class ExceptionRedactor
     /// <returns>The redacted stack trace</returns>
     public static string Redact(Exception exception)
     {
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
 
         // Using recursion to handle inner exceptions so that
         // it matches the behaviour of Exception.ToString():

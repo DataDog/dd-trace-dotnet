@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 {
                     var maxCommandLineLength = MaxCommandLineLength - filename.Length;
 
-                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    var sb = StringBuilderCache.Acquire();
                     sb.Append(filename);
                     foreach (var arg in argumentList)
                     {
@@ -215,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         internal static Collection<string> SplitStringIntoArguments(string input, int maxLength, out bool truncated)
         {
             var result = new Collection<string>();
-            var currentArgument = StringBuilderCache.Acquire(0);
+            var currentArgument = StringBuilderCache.Acquire();
             var inSingleQuotes = false;
             var inDoubleQuotes = false;
             var escapeNextCharacter = false;

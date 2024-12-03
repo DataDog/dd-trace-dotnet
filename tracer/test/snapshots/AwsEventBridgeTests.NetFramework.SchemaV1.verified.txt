@@ -1,0 +1,174 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: async-methods,
+    Resource: async-methods,
+    Service: Samples.AWS.EventBridge,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: http.client.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_eventbridge,
+      peer.service: aws_eventbridge,
+      span.kind: client,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: aws.eventbridge.send,
+    Resource: EventBridge.PutEvents,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutEvents,
+      aws.requestId: Guid_2,
+      aws.service: EventBridge,
+      aws_service: EventBridge,
+      component: aws-sdk,
+      env: integration_tests,
+      eventbusname: MyEventBus,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      peer.service: MyEventBus,
+      span.kind: producer,
+      _dd.peer.service.source: eventbusname
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: http.client.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_eventbridge,
+      peer.service: aws_eventbridge,
+      span.kind: client,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_7,
+    Name: sync-methods,
+    Resource: sync-methods,
+    Service: Samples.AWS.EventBridge,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_8,
+    Name: http.client.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_eventbridge,
+      peer.service: aws_eventbridge,
+      span.kind: client,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_9,
+    Name: aws.eventbridge.send,
+    Resource: EventBridge.PutEvents,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutEvents,
+      aws.requestId: Guid_3,
+      aws.service: EventBridge,
+      aws_service: EventBridge,
+      component: aws-sdk,
+      env: integration_tests,
+      eventbusname: MyEventBus,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      peer.service: MyEventBus,
+      span.kind: producer,
+      _dd.peer.service.source: eventbusname
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_10,
+    Name: http.client.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.EventBridge,
+    Type: http,
+    ParentId: Id_7,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      language: dotnet,
+      out.host: aws_eventbridge,
+      peer.service: aws_eventbridge,
+      span.kind: client,
+      _dd.peer.service.source: out.host
+    }
+  }
+]

@@ -431,6 +431,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The rule name associated with the AWS EventBridge span.
+        /// </summary>
+        internal const string RuleName = "rulename";
+
+        /// <summary>
         /// The stream name associated with the AWS SDK Kinesis span.
         /// </summary>
         internal const string StreamName = "streamname";
@@ -635,6 +640,11 @@ namespace Datadog.Trace
         /// Indicates if the vulnerability json has been truncated because it exceeds the maximum tag size
         /// </summary>
         internal const string IastJsonTagSizeExceeded = "_dd.iast.json.tag.size.exceeded";
+
+        /// <summary>
+        /// Indicates if the vulnerability meta struct has been truncated because it exceeds the maximum tag size
+        /// </summary>
+        internal const string IastMetaStructTagSizeExceeded = "_dd.iast.metastruct.tag.size.exceeded";
 
         /// <summary>
         /// Indicates at the end of a request if IAST analisys has been performned

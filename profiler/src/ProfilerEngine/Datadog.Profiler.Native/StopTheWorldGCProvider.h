@@ -33,5 +33,5 @@ public:
         shared::pmr::memory_resource* memoryResource);
 
     // Inherited via IGCSuspensionsListener
-    void OnSuspension(uint64_t timestamp, int32_t number, uint32_t generation, uint64_t pauseDuration) override;
+    void OnSuspension(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, std::chrono::nanoseconds pauseDuration) override;
 };

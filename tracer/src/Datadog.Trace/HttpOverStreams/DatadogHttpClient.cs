@@ -82,9 +82,6 @@ namespace Datadog.Trace.HttpOverStreams
             const int startOfReasonPhrase = 13;
             const int bufferSize = 10;
 
-            // TODO: Get this from StringBuilderCache after we determine safe maximum capacity
-            var stringBuilder = new StringBuilder();
-
             var chArray = new byte[bufferSize];
 
             async Task GoNextChar()
@@ -171,6 +168,8 @@ namespace Datadog.Trace.HttpOverStreams
             // Skip to status code
             await SkipUntil(statusCodeStart).ConfigureAwait(false);
 
+            var stringBuilder = StringBuilderCache.Acquire();
+
             // Read status code
             while (streamPosition < statusCodeEnd)
             {
@@ -226,6 +225,8 @@ namespace Datadog.Trace.HttpOverStreams
                 headers.Add(name, value);
             }
             while (true);
+
+            StringBuilderCache.Release(stringBuilder);
 
             var isChunked = false;
             foreach (var encoding in headers.GetValues(TransferEncodingHeaderKey))

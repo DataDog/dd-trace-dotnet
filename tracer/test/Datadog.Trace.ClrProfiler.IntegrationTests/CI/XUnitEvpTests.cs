@@ -158,7 +158,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       arguments: "--collect:\"XPlat Code Coverage\"",
-                                      packageVersion: packageVersion);
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 1);
 
         // Check the tests, suites and modules count
         Assert.Equal(ExpectedTestCount, tests.Count);
@@ -202,6 +203,9 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 // Remove EFD tags
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsNew);
                 targetTest.Meta.Remove(EarlyFlakeDetectionTags.TestIsRetry);
+
+                // Remove user provided service tag
+                targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
 
                 // check the name
                 Assert.Equal("xunit.test", targetTest.Name);
@@ -452,7 +456,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
 
             // Check the tests, suites and modules count
             Assert.Equal(expectedSpans, tests.Count);

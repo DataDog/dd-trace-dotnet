@@ -15,6 +15,7 @@
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
+#include <chrono>
 #include <memory>
 
 class IConfiguration;
@@ -69,7 +70,7 @@ public:
                       uint64_t objectSize,
                       uint64_t allocationAmount) override;
 
-    void OnAllocation(uint64_t timestamp,
+    void OnAllocation(std::chrono::nanoseconds timestamp,
                       uint32_t threadId,
                       uint32_t allocationKind,
                       ClassID classId,
@@ -95,4 +96,5 @@ private:
     std::shared_ptr<MeanMaxMetric> _sampledAllocationsSizeMetric;
     std::shared_ptr<SumMetric> _totalAllocationsSizeMetric;
     CallstackProvider _callstackProvider;
+    MetricsRegistry& _metricsRegistry;
 };

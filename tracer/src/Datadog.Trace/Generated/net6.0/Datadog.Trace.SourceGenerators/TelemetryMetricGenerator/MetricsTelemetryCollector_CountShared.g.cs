@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountSharedLength = 228;
+    private const int CountSharedLength = 231;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -122,6 +122,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awssns", "error_type:duck_typing" }),
             new(new[] { "integration_name:awssns", "error_type:invoker" }),
             new(new[] { "integration_name:awssns", "error_type:execution" }),
+            new(new[] { "integration_name:awseventbridge", "error_type:duck_typing" }),
+            new(new[] { "integration_name:awseventbridge", "error_type:invoker" }),
+            new(new[] { "integration_name:awseventbridge", "error_type:execution" }),
             new(new[] { "integration_name:ilogger", "error_type:duck_typing" }),
             new(new[] { "integration_name:ilogger", "error_type:invoker" }),
             new(new[] { "integration_name:ilogger", "error_type:execution" }),
@@ -256,7 +259,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 228, };
+        = new int[]{ 231, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

@@ -13,6 +13,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string Object = "System.Object";
         public const string Bool = "System.Boolean";
         public const string String = "System.String";
+        public const string Guid = "System.Guid";
 
         public const string SByte = "System.SByte";
         public const string Byte = "System.Byte";

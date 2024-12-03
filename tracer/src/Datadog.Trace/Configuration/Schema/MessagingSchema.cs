@@ -90,6 +90,12 @@ namespace Datadog.Trace.Configuration.Schema
             _ => new AwsSnsV1Tags(spanKind),
         };
 
+        public AwsEventBridgeTags CreateAwsEventBridgeTags(string spanKind) => _version switch
+        {
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsEventBridgeTags(),
+            _ => new AwsEventBridgeV1Tags(spanKind),
+        };
+
         public AwsKinesisTags CreateAwsKinesisTags(string spanKind) => _version switch
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),

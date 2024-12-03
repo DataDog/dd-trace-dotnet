@@ -25,9 +25,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED", "false");
-            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
+            var telemetryUrl = $"http://127.0.0.1:{telemetry.Port}";
+            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", telemetryUrl);
             // removed, but necessary for some version conflict tests (e.g. TraceAnnotationsVersionMismatchNewerNuGetTests)
-            helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
+            helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", telemetryUrl);
             // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
             // For legacy versions that don't use V2 by default
@@ -47,11 +48,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
+
+        public static void AssertIntegrationDisabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
+            => mockAgent.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
+
+        public static void AssertIntegration(this MockTracerAgent mockAgent, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            AssertIntegration(allData, integrationId, true, true);
+            AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
         public static void AssertIntegration(this MockTelemetryAgent telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)

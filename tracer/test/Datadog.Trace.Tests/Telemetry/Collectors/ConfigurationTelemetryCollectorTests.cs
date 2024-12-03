@@ -205,14 +205,14 @@ public class ConfigurationTelemetryCollectorTests
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract),
             (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
-            (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext"),
+            (null, null) => (ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,baggage"),
         };
 
         var (injectKey, injectValue) = (propagationStyleInject, propagationStyle) switch
         {
             (not null, _) => (ConfigurationKeys.PropagationStyleInject, propagationStyleInject),
             (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
-            (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext"),
+            (null, null) => (ConfigurationKeys.PropagationStyleInject, "Datadog,tracecontext,baggage"),
         };
 
         GetLatestValueFromConfig(data, extractKey).Should().Be(extractValue);

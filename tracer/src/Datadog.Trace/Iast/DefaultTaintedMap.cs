@@ -62,12 +62,23 @@ internal class DefaultTaintedMap : ITaintedMap
         }
 
         _map.TryGetValue(IndexObject(objectToFind), out var entry);
+        bool isString = objectToFind is string;
 
         while (entry != null)
         {
-            if (objectToFind == entry.Value)
+            if (isString)
             {
-                return entry;
+                if (objectToFind == entry.Value)
+                {
+                    return entry;
+                }
+            }
+            else
+            {
+                if (objectToFind.Equals(entry.Value))
+                {
+                    return entry;
+                }
             }
 
             entry = entry.Next;

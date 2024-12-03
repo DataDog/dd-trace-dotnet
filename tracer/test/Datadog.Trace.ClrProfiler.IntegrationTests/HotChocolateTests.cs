@@ -97,7 +97,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var versionSuffix = usingWebsockets ? string.Empty : GetSuffix(packageVersion);
+            var versionSuffix = GetSuffix(packageVersion);
+
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{_testName}{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
@@ -134,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
 
                 // FAILURE: query fails 'execute' step
-                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+                SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"": ""query ErrorQuery{throwException}""}");
             }
 
             async Task SubmitWebsocketRequests()
@@ -146,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""mutation m{addBook(book:{title:\""New Book\""}){book{title}}}"",""variables"": {}}}");
 
                 // FAILURE: query fails 'execute' step using Websocket
-                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""subscription NotImplementedSub{throwNotImplementedException{name}}"",""variables"": {}}}");
+                await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""query ErrorQuery{throwException}"",""variables"": {}}}");
 
                 // FAILURE: query fails 'validate' step using Websocket
                 await SubmitGraphqlWebsocketRequest(url: "/graphql", httpMethod: null, graphQlRequestBody: @"{""type"": ""start"",""id"": ""1"",""payload"": {""query"": ""{boook{title author{name}}}"",""variables"": {}}}");
@@ -184,11 +185,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         private string GetSuffix(string packageVersion)
-            => packageVersion switch
+        {
+            // An empty package version means we're in the sample,
+            // which targets the latest version of the package.
+            if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("13.1.0"))
             {
-                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
-                _ => ".Pre_13_1_0",
-            };
+                return string.Empty;
+            }
+
+            return ".Pre_13_1_0";
+        }
     }
 }
 

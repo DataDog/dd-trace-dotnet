@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ReaderGetStringIntegration
     {
-        private static bool errorLogged = false;
+        private static bool _errorLogged;
 
         /// <summary>
         /// OnMethodBegin callback
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
                     else
                     {
-                        column = state.State?.ToString() ?? string.Empty;
+                        column = string.Empty;
                     }
 
                     IastModule.AddDbValue(instance!, column, value);
@@ -67,10 +67,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
             catch (Exception e)
             {
-                if (!errorLogged)
+                if (!_errorLogged)
                 {
                     Log.Error(e, "Error adding db value to IAST module");
-                    errorLogged = true;
+                    _errorLogged = true;
                 }
             }
 

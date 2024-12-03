@@ -7,12 +7,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using ELFSharp.ELF;
+using ELFSharp.ELF.Sections;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Newtonsoft.Json.Linq;
@@ -35,11 +39,6 @@ public class CreatedumpTests : ConsoleTestHelper
         SetEnvironmentVariable("COMPlus_DbgMiniDumpType", string.Empty);
         SetEnvironmentVariable("COMPlus_DbgEnableMiniDump", string.Empty);
         SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", string.Empty);
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            SetEnvironmentVariable("DD_CRASHTRACKING_ENABLED", "1");
-        }
     }
 
     private static (string Key, string Value) LdPreloadConfig
@@ -383,7 +382,7 @@ public class CreatedumpTests : ConsoleTestHelper
         using var reportFile = new TemporaryFile();
 
         using var helper = await StartConsoleWithArgs(
-                               "crash-thread",
+                               "crash-thread-datadog",
                                enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
@@ -449,16 +448,20 @@ public class CreatedumpTests : ConsoleTestHelper
         agent.WaitForLatestTelemetry(IsCrashReport).Should().NotBeNull();
     }
 
-    [SkippableFact]
-    public async Task IgnoreNonDatadogCrashes()
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task IgnoreNonDatadogCrashes(bool mainThread)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 
+        var arg = mainThread ? "crash" : "crash-thread";
+
         using var helper = await StartConsoleWithArgs(
-                               "crash",
+                               arg,
                                enableProfiler: true,
                                [LdPreloadConfig, CrashReportConfig(reportFile)]);
 
@@ -547,6 +550,71 @@ public class CreatedumpTests : ConsoleTestHelper
                 var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["names"][0]["name"].Value<string>()));
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
+            }
+
+            var validatedModules = new HashSet<string>();
+
+            foreach (var frame in frames)
+            {
+                var moduleName = frame["names"][0]["name"].Value<string>().Split('!').First();
+
+                if (moduleName.Length > 0 && !moduleName.StartsWith("<") && Path.IsPathRooted(moduleName))
+                {
+                    if (!validatedModules.Add(moduleName))
+                    {
+                        continue;
+                    }
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        // Validate PDBs
+                        var pdbNode = frame["normalized_ip"]["meta"]["Pdb"];
+                        var hash = ((JArray)pdbNode["guid"]).Select(g => g.Value<byte>()).ToArray();
+                        var age = pdbNode["age"].Value<uint>();
+
+                        // Open the PE file
+                        using var file = File.OpenRead(moduleName);
+                        using var peReader = new PEReader(file);
+
+                        var debugDirectoryEntries = peReader.ReadDebugDirectory();
+                        var codeViewEntry = debugDirectoryEntries.Single(e => e.Type == DebugDirectoryEntryType.CodeView);
+                        var pdbInfo = peReader.ReadCodeViewDebugDirectoryData(codeViewEntry);
+
+                        age.Should().Be(unchecked((uint)pdbInfo.Age));
+                        hash.Should().Equal(pdbInfo.Guid.ToByteArray());
+                    }
+                    else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        // Validate sofile
+                        if (frame["normalized_ip"] == null)
+                        {
+                            // On linux we can face cases where the build_id is not available:
+                            // - specifically on alpine, /lib/ld-musl-XX do not have a build_id.
+                            // - We are looking at a frame for which the library was unloaded /memfd:doublemapper (deleted)
+                            continue;
+                        }
+
+                        var elfNode = frame["normalized_ip"]["meta"]["Elf"];
+                        var buildId = ((JArray)elfNode["build_id"]).Select(g => g.Value<byte>()).ToArray();
+
+                        using var elf = ELFReader.Load(moduleName);
+                        var buildIdNote = elf.GetSection(".note.gnu.build-id") as INoteSection;
+                        buildId.Should().Equal(buildIdNote.Description);
+                    }
+                }
+            }
+
+            validatedModules.Should().NotBeEmpty();
+
+#if NETFRAMEWORK
+            var clrModuleName = "clr.dll";
+#else
+            var clrModuleName = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "libcoreclr.so" : "coreclr.dll";
+#endif
+
+            if (!Utils.IsAlpine())
+            {
+                validatedModules.Should().ContainMatch($@"*{Path.DirectorySeparatorChar}{clrModuleName}");
             }
         }
     }

@@ -32,9 +32,12 @@ public class GetActiveScopeIntegration
         where TTarget : ITracerProxy
     {
         // TODO: Add telemetry for public API?
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
-        var scope = tracer.ActiveScope;
+        if (instance.AutomaticTracer is Datadog.Trace.Tracer tracer)
+        {
+            var scope = tracer.ActiveScope;
+            return new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>());
+        }
 
-        return new CallTargetReturn<TReturn>(scope.DuckCast<TReturn>());
+        return new CallTargetReturn<TReturn>(returnValue);
     }
 }

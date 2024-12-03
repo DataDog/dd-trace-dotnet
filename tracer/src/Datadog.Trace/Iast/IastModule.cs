@@ -33,6 +33,7 @@ namespace Datadog.Trace.Iast;
 
 internal static partial class IastModule
 {
+    public const string IastMetaStructKey = "iast";
     public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameStackTraceLeak = "stacktrace_leak";
     private const string OperationNameWeakHash = "weak_hashing";
@@ -711,18 +712,33 @@ internal static partial class IastModule
 
     private static IastModuleResponse AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
-        // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
+        // we either are not in a request or the distributed tracer returned a scope that cannot be cast to Scope, and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
         batch.Add(vulnerability);
 
-        var tags = new IastTags()
-        {
-            IastJson = batch.ToJson(),
-            IastEnabled = "1"
-        };
-
+        var tags = new IastTags { IastEnabled = "1" };
         var scope = tracer.StartActiveInternal(operationName, tags: tags);
         var span = scope.Span;
+
+        if (Iast.Instance.IsMetaStructSupported())
+        {
+            var iastEventMetaStruct = batch.ToMessagePack();
+            if (batch.IsTruncated())
+            {
+                span.SetTag(Tags.IastMetaStructTagSizeExceeded, "1");
+            }
+
+            span.SetMetaStruct(IastMetaStructKey, iastEventMetaStruct);
+        }
+        else
+        {
+            tags.IastJson = batch.ToJson();
+            if (batch.IsTruncated())
+            {
+                span.SetTag(Tags.IastJsonTagSizeExceeded, "1");
+            }
+        }
+
         var traceContext = span.Context.TraceContext;
         span.Type = SpanTypes.IastVulnerability;
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);

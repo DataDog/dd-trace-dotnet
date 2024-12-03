@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.Session;
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.TimeSpan],
     MinimumVersion = "2",
-    MaximumVersion = "8",
+    MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.Iast)]
 [Browsable(false)]

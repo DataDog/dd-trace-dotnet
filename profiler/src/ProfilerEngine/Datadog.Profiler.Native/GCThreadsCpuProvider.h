@@ -19,7 +19,7 @@ public:
     const char* GetName() override;
 
 protected:
-    void OnCpuDuration(std::uint64_t cpuTime) override;
+    void OnCpuDuration(std::chrono::milliseconds cpuTime) override;
 
 private:
     bool IsGcThread(std::shared_ptr<IThreadInfo> const& thread);

@@ -4,7 +4,9 @@
 #pragma once
 
 #include "CallstackProvider.h"
+#include "CounterMetric.h"
 #include "ManagedThreadInfo.h"
+#include "MetricsRegistry.h"
 #include "ServiceBase.h"
 
 #include <signal.h>
@@ -15,6 +17,7 @@
 #include <shared_mutex>
 #include <unordered_set>
 
+class DiscardMetrics;
 class IConfiguration;
 class IThreadInfo;
 class IManagedThreadList;
@@ -30,7 +33,8 @@ public:
         ProfilerSignalManager* pSignalManager,
         IManagedThreadList* pManagedThreadsList,
         CpuTimeProvider* pProvider,
-        CallstackProvider calstackProvider) noexcept;
+        CallstackProvider calstackProvider,
+        MetricsRegistry& metricsRegistry) noexcept;
 
     ~TimerCreateCpuProfiler();
 
@@ -43,8 +47,10 @@ private:
     static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
     static TimerCreateCpuProfiler* Instance;
 
+    bool CanCollect(void* context);
     bool Collect(void* ucontext);
     void RegisterThreadImpl(ManagedThreadInfo* thread);
+    void UnregisterThreadImpl(ManagedThreadInfo* threadInfo);
 
     bool StartImpl() override;
     bool StopImpl() override;
@@ -55,4 +61,6 @@ private:
     CallstackProvider _callstackProvider;
     std::chrono::milliseconds _samplingInterval;
     std::shared_mutex _registerLock;
+    std::shared_ptr<CounterMetric> _totalSampling;
+    std::shared_ptr<DiscardMetrics> _discardMetrics;
 };

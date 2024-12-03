@@ -59,7 +59,7 @@ const char* LiveObjectsProvider::GetName()
 }
 
 void LiveObjectsProvider::OnGarbageCollectionStart(
-    uint64_t timestamp,
+    std::chrono::nanoseconds timestamp,
     int32_t number,
     uint32_t generation,
     GCReason reason,
@@ -78,9 +78,9 @@ void LiveObjectsProvider::OnGarbageCollectionEnd(
     GCReason reason,
     GCType type,
     bool isCompacting,
-    uint64_t pauseDuration,
-    uint64_t totalDuration,
-    uint64_t endTimestamp,
+    std::chrono::nanoseconds pauseDuration,
+    std::chrono::nanoseconds totalDuration,
+    std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
     uint64_t pohSize)
@@ -139,7 +139,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
 {
     std::lock_guard<std::mutex> lock(_liveObjectsLock);
 
-    int64_t currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
+    auto currentTimestamp = OpSysTools::GetHighPrecisionTimestamp();
     std::size_t nbSamples = 0;
 
     // OPTIM maybe use an allocator
@@ -152,7 +152,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string(sample->GetTimeStamp() - currentTimestamp)});
+        sample->ReplaceLabel(Label{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
         sample->ReplaceLabel(Label{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);

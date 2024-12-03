@@ -30,7 +30,7 @@ namespace Datadog.Profiler.IntegrationTests.Logger
             var deprecatedLogPath = Path.Combine(Path.GetTempPath(), "deprecated", System.Environment.ProcessId.ToString());
             runner.Environment.SetVariable("DD_PROFILING_LOG_DIR", deprecatedLogPath);
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

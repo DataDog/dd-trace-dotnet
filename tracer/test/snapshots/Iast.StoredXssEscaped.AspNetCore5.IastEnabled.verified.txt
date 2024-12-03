@@ -15,7 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.route: iast/storedxssescaped,
       http.status_code: 200,
-      http.url: http://localhost:00000/Iast/StoredXssEscaped,
+      http.url: http://localhost:00000/Iast/StoredXssEscaped?useMicrosoftDataDb=...,
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,

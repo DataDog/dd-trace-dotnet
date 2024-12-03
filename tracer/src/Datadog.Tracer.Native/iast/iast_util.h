@@ -152,11 +152,18 @@ namespace iast
     std::string TrimEnd(const std::string& str, const std::string& c = " \t\r\n");
     std::string TrimStart(const std::string& str, const std::string& c = " \t\r\n");
 
-    int ConvertToInt(const WSTRING& str);
+    int ConvertToInt(const WSTRING& str, int defaultValue = 0);
+    UINT32 ConvertToUint(const WSTRING& str, UINT32 defaultValue = 0);
     bool ConvertToBool(const WSTRING& str);
-    bool TryParseInt(const std::string& str, int* pValue);
-    int ConvertToInt(const std::string& str);
+    bool TryParseInt(const WSTRING& str, int* pValue);
+    bool TryParseUint(const WSTRING& str, UINT32* pValue);
+
+
+    int ConvertToInt(const std::string& str, int defaultValue = 0);
+    UINT32 ConvertToUint(const std::string& str, UINT32 defaultValue = 0);
     bool ConvertToBool(const std::string& str);
+    bool TryParseInt(const std::string& str, int* pValue);
+    bool TryParseUint(const std::string& str, UINT32* pValue);
 
     std::vector<int> ConvertToIntVector(const WSTRING& str);
     std::vector<bool> ConvertToBoolVector(const WSTRING& str);

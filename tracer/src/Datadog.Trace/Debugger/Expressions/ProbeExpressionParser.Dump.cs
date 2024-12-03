@@ -13,7 +13,6 @@ using System.Text;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
-using Enumerable = System.Linq.Enumerable;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
@@ -228,7 +227,7 @@ internal partial class ProbeExpressionParser<T>
 
     private string DumpCollection(object value, Type assignableFrom)
     {
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        var sb = StringBuilderCache.Acquire();
         try
         {
             if (value == null)

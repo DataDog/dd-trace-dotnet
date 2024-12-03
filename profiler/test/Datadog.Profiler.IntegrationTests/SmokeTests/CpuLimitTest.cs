@@ -33,12 +33,12 @@ namespace Datadog.Profiler.IntegrationTests.SmokeTests
 
             if (double.TryParse(rawCpuLimit, out var cpuLimit) && cpuLimit < 1)
             {
-                _output.WriteLine("CPU limit set to <1 CPU, expecting profiler to be disabled");
+                runner.XUnitLogger.WriteLine("CPU limit set to <1 CPU, expecting profiler to be disabled");
                 agent.NbCallsOnProfilingEndpoint.Should().Be(0);
             }
             else
             {
-                _output.WriteLine("CPU limit set to >=1 CPU or not set, expecting profiler to be enabled");
+                runner.XUnitLogger.WriteLine("CPU limit set to >=1 CPU or not set, expecting profiler to be enabled");
                 agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
             }
         }

@@ -6,6 +6,8 @@
 #include "RawSample.h"
 #include "Sample.h"
 
+#include <chrono>
+
 class RawCpuSample : public RawSample
 {
 public:
@@ -31,8 +33,8 @@ public:
     inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         assert(valueOffsets.size() == 1);
-        sample->AddValue(Duration * 1000000, valueOffsets[0]);
+        sample->AddValue(Duration.count(), valueOffsets[0]);
     }
 
-    std::uint64_t Duration; // in milliseconds
+    std::chrono::nanoseconds Duration;
 };

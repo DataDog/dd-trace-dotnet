@@ -21,31 +21,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         TypeName = "System.Web.Compilation.BuildManager",
         MethodName = "InvokePreStartInitMethodsCore",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new[] { "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]" },
+        ParameterTypeNames = ["System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]"],
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = nameof(IntegrationId.AspNet))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HttpModule_Integration
     {
-        private const string IntegrationName = nameof(IntegrationId.AspNet);
+        // WARNING: Do not add a static reference to `IDatadogLogger` or reference
+        // anything related to Tracer.Instance etc. This method is called at application
+        // start _before_ the Tracer is initialized; adding additional references could
+        // cause recursion issues and deadlocks in some scenarios, e.g. where there are
+        // multiple apps per app pool.
 
         /// <summary>
         /// Indicates whether we're initializing the HttpModule for the first time
         /// </summary>
         private static int _firstInitialization = 1;
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TCollection">Type of the collection</typeparam>
-        /// <typeparam name="TFunc">Type of the </typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method. This method is static so this parameter will always be null</param>
-        /// <param name="methods">The methods to be invoked</param>
-        /// <param name="setHostingEnvironmentCultures">The function to set the environment culture</param>
-        /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TCollection, TFunc>(TTarget instance, TCollection methods, TFunc setHostingEnvironmentCultures)
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
@@ -61,7 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             catch
             {
                 // Unable to dynamically register module
-                // Not sure if we can technically log yet or not, so do nothing
+                // We can't log here as it could cause recursion issues and deadlocks in some scenarios
+                // where there are multiple apps per app pool
             }
 
             return CallTargetState.GetDefault();

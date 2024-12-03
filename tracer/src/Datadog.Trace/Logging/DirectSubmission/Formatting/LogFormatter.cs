@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
@@ -69,7 +70,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 return string.Empty;
             }
 
-            var sb = new StringBuilder();
+            var sb = StringBuilderCache.Acquire();
             foreach (var tagPair in globalTags)
             {
                 sb.Append(tagPair.Key)
@@ -79,7 +80,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             }
 
             // remove final joiner
-            return sb.ToString(startIndex: 0, length: sb.Length - 1);
+            sb.Remove(sb.Length - 1, length: 1);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private string? EnrichTagsWithAasMetadata(string globalTags, ImmutableAzureAppServiceSettings? aasSettings)

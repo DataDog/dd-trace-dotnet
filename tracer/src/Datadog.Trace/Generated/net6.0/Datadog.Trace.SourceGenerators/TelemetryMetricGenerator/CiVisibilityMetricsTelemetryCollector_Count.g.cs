@@ -76,6 +76,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountContextHeaderTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderTruncationReason tag, int increment = 1)
+    {
+    }
+
     public void RecordCountStatsApiRequests(int increment = 1)
     {
     }

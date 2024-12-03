@@ -879,6 +879,24 @@ TEST_F(ConfigurationTest, CheckEtwIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsEtwEnabled(), expectedValue);
 }
 
+TEST_F(ConfigurationTest, CheckEtwReplayEndpointIsEmptyIfEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    std::string expectedValue = "";
+    ASSERT_THAT(configuration.GetEtwReplayEndpoint(), expectedValue);
+}
+
+// Windows named pipe paths are not supported on Linux
+#ifndef LINUX
+TEST_F(ConfigurationTest, CheckEtwReplayEndpointIfEnvVarIsSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EtwReplayEndpoint, WStr("\\\\.\\pipe\\DD_ETW_FOR_TEST"));
+    auto configuration = Configuration{};
+    std::string expectedValue = "\\\\.\\pipe\\DD_ETW_FOR_TEST";
+    ASSERT_THAT(configuration.GetEtwReplayEndpoint(), expectedValue);
+}
+#endif
+
 TEST_F(ConfigurationTest, CheckSsiNotDeployedByDefault)
 {
     auto configuration = Configuration{};

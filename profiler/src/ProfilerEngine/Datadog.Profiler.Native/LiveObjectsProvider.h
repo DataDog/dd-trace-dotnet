@@ -54,20 +54,21 @@ public:
 
     // Inherited via IGarbageCollectionsListener
     void OnGarbageCollectionStart(
-        uint64_t timestamp,
+        std::chrono::nanoseconds timestamp,
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type) override;
+
     void OnGarbageCollectionEnd(
         int32_t number,
         uint32_t generation,
         GCReason reason,
         GCType type,
         bool isCompacting,
-        uint64_t pauseDuration,
-        uint64_t totalDuration,
-        uint64_t endTimestamp,
+        std::chrono::nanoseconds pauseDuration,
+        std::chrono::nanoseconds totalDuration,
+        std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
         uint64_t pohSize) override;

@@ -9,6 +9,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 
@@ -28,15 +29,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class StartSpanIntegration
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StartSpanIntegration>();
+
     internal static CallTargetState OnMethodBegin<TTarget, TSpanContext>(TTarget instance, string operationName, TSpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         where TTarget : ITracerProxy
     {
         // This is only used by the OpenTracing public API
+        if (instance.AutomaticTracer is not Datadog.Trace.Tracer tracer)
+        {
+            Log.Error(
+                "Error: instance.AutomaticTracer is not a Datadog.Trace.Tracer: {TracerType}. This should never happen, and indicates a problem with automatic instrumentation.",
+                instance.AutomaticTracer?.GetType());
+            return CallTargetState.GetDefault();
+        }
 
         // parent should _normally_ be a manual span, unless they've created a "custom" ISpanContext
         var parentContext = SpanContextHelper.GetContext(parent);
 
-        var tracer = (Datadog.Trace.Tracer)instance.AutomaticTracer;
         var span = ((IDatadogOpenTracingTracer)tracer).StartSpan(operationName, parentContext, serviceName, startTime, ignoreActiveScope);
         tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(ManualInstrumentationConstants.Id);
 
@@ -45,7 +54,10 @@ public class StartSpanIntegration
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        // Duck cast Span as an ISpan (DataDog.Trace.Manual) and return it
-        return new CallTargetReturn<TReturn>(state.State.DuckCast<TReturn>());
+        // Duck cast Scope as an ISpan (DataDog.Trace.Manual) and return it
+        var duck = state.State is { } span
+                            ? span.DuckCast<TReturn>()
+                            : returnValue;
+        return new CallTargetReturn<TReturn>(duck);
     }
 }

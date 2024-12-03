@@ -18,8 +18,6 @@ namespace Datadog.Trace.Iast.Aspects.MongoDB;
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class MongoDatabaseAspect
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDatabaseAspect));
-
     /// <summary>
     ///     MongoDB Driver aspect
     /// </summary>

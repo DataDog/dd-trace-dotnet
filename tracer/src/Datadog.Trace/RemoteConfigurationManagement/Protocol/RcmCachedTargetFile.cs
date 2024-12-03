@@ -10,7 +10,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmCachedTargetFile
     {
-        public RcmCachedTargetFile(string path, int length, List<RcmCachedTargetFileHash> hashes)
+        public RcmCachedTargetFile(string path, long length, List<RcmCachedTargetFileHash> hashes)
         {
             Path = path;
             Length = length;
@@ -21,7 +21,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
         public string Path { get; }
 
         [JsonProperty("length")]
-        public int Length { get; }
+        public long Length { get; }
 
         [JsonProperty("hashes")]
         public List<RcmCachedTargetFileHash> Hashes { get; }

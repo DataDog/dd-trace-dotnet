@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 // Try to work out which trigger type it is
                 var triggerType = "Unknown";
-                SpanContext? spanContext = null;
+                PropagationContext extractedContext = default;
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in context.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
@@ -231,7 +231,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // e.g. Cosmos + ServiceBus, so we should handle those too
                     if (triggerType == "Http")
                     {
-                        spanContext = ExtractPropagatedContextFromHttp(context, entry.Key as string);
+                        extractedContext = ExtractPropagatedContextFromHttp(context, entry.Key as string).MergeBaggageInto(Baggage.Current);
                     }
 
                     break;
@@ -250,7 +250,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: spanContext);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
                 }
                 else
                 {
@@ -295,11 +295,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // in the GRPC http request representation, which is what we're doing here by overwriting all
                 // the existing datadog headers
                 var useNullableHeaders = !string.IsNullOrEmpty(useNullableHeadersCapability);
-                SpanContextPropagator.Instance.Inject(span.Context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
+                var context = new PropagationContext(span.Context, Baggage.Current);
+                SpanContextPropagator.Instance.Inject(context, new RpcHttpHeadersCollection<TTarget>(typedData.Http, useNullableHeaders));
             }
         }
 
-        private static SpanContext? ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -309,7 +310,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // the suggested approach in the docs.
             if (context.Features is null || string.IsNullOrEmpty(bindingName))
             {
-                return null;
+                return default;
             }
 
             try
@@ -326,19 +327,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
                 {
-                    return null;
+                    return default;
                 }
 
                 if (bindingFeature.InputData is null
                  || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
-                    return null;
+                    return default;
                 }
 
                 if (!requestDataObject.TryDuckCast<HttpRequestDataStruct>(out var httpRequest))
                 {
-                    return null;
+                    return default;
                 }
 
                 return SpanContextPropagator.Instance.Extract(new HttpHeadersCollection(httpRequest.Headers));
@@ -346,7 +347,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated HTTP context from Http binding");
-                return null;
+                return default;
             }
         }
     }

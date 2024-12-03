@@ -21,7 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
+        [TestAppFact("Samples.Computer01", new [] { "net462", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateSignatures(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -39,6 +39,10 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
         private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
         {
+            // .NET 9 has different stack trace for 64-bit
+            // e.g. first frame is:
+            // |lm:System.Private.CoreLib |ns:System.Runtime |ct:EH |cg: |fn:DispatchEx |fg: |sg:(System.Runtime.StackFrameIterator& frameIter, ExInfo& exInfo)
+
             var os = Environment.OSVersion.Platform;
             StackTrace stack;
             if (os == PlatformID.Unix && framework != "net8.0")

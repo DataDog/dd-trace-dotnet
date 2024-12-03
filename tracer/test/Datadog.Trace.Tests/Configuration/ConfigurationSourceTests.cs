@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.Exporter.AgentUri, new Uri("http://127.0.0.1:8126/"));
             yield return (s => s.Environment, null);
             yield return (s => s.ServiceName, null);
-            yield return (s => s.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by defa)t
+            yield return (s => s.DisabledIntegrationNames.Count, 1); // The OpenTelemetry integration is disabled by default
             yield return (s => s.LogsInjectionEnabled, false);
             yield return (s => s.GlobalTags.Count, 0);
 #pragma warning disable 618 // App analytics is deprecated but supported
@@ -81,8 +81,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.MaxTracesSubmittedPerSecond, 100);
             yield return (s => s.TracerMetricsEnabled, false);
             yield return (s => s.Exporter.DogStatsdPort, 8125);
-            yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext" });
-            yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext" });
+            yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext", "baggage" });
+            yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext", "baggage" });
             yield return (s => s.ServiceNameMappings, null);
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);

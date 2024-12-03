@@ -113,7 +113,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             spans.AddRange(spans1);
             spans.AddRange(spans2);
 
-            await VerifySpans(spans.ToImmutableList(), settings, testName: nameof(TestGlobalRulesToggling));
+            await VerifySpans(spans.ToImmutableList(), settings, testName: Prefix + nameof(TestGlobalRulesToggling));
         }
 
         protected override string GetTestName() => Prefix + nameof(AspNetCore5AsmRulesToggle);

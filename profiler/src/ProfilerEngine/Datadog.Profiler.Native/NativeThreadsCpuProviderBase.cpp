@@ -3,11 +3,15 @@
 
 #include "NativeThreadsCpuProviderBase.h"
 
+#include <chrono>
+
 #include "CpuTimeProvider.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
 #include "SamplesEnumerator.h"
+
+using namespace std::chrono_literals;
 
 NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider) :
     _cpuTimeProvider{cpuTimeProvider},
@@ -55,7 +59,7 @@ public:
 
 std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
 {
-    std::uint64_t cpuTime = 0;
+    auto cpuTime = 0ms;
     for (auto const& thread : GetThreads())
     {
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
@@ -64,14 +68,14 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
     auto currentTotalCpuTime = cpuTime;
     // There is a case where it's possible to have currentTotalCpuTime < _previousTotalCpuTime: native threads died in the meantime
     // To avoid sending negative values, just check and returns 0 instead.
-    cpuTime = currentTotalCpuTime >= _previousTotalCpuTime ? currentTotalCpuTime - _previousTotalCpuTime : 0;
+    cpuTime = currentTotalCpuTime >= _previousTotalCpuTime ? currentTotalCpuTime - _previousTotalCpuTime : 0ms;
     OnCpuDuration(cpuTime);
 
     // For native threads, we need to keep the last cpu time
     _previousTotalCpuTime = currentTotalCpuTime;
 
     auto enumerator = std::make_unique<CpuSampleEnumerator>();
-    if (cpuTime == 0)
+    if (cpuTime == 0ms)
     {
         Log::Debug(GetName(), " CPU time sums up to 0. No sample will be created.");
         return enumerator;
@@ -97,6 +101,6 @@ std::unique_ptr<SamplesEnumerator> NativeThreadsCpuProviderBase::GetSamples()
     return enumerator;
 }
 
-void NativeThreadsCpuProviderBase::OnCpuDuration(std::uint64_t cpuTime)
+void NativeThreadsCpuProviderBase::OnCpuDuration(std::chrono::milliseconds cpuTime)
 {
 }

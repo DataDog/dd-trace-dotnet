@@ -50,7 +50,7 @@ namespace iast
     //------------------------------------
     VersionInfo currentVersion = GetVersionInfo(GetDatadogVersion());
 
-    DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line)
+    DataflowAspectClass::DataflowAspectClass(Dataflow* dataflow, const WSTRING& aspectsAssembly, const WSTRING& line, const UINT32 enabledCategories)
     {
         this->_dataflow = dataflow;
         this->_aspectsAssembly = aspectsAssembly;
@@ -94,7 +94,23 @@ namespace iast
         {
             _vulnerabilityTypes = ParseVulnerabilityTypes(shared::ToString(parts[part]));
         }
-        _aspectTypeName = Trim(line.substr(offset));
+
+        //Trailing parts
+        parts = Split(Trim(line.substr(offset)));
+        part = -1;
+        if ((int) parts.size() > ++part) // APWXR RTPW Nmw
+        {
+            _aspectTypeName = Trim(parts[part]);
+        }
+        if ((int)parts.size() > ++part) // Category
+        {
+            UINT32 category = ConvertToUint(Trim(parts[part]), 0xFFFFFFFF);
+            if ((category & enabledCategories) == 0)
+            {
+                return; // Current category is not enabled
+            }
+        }
+
         _isValid = true;
     }
 
@@ -115,7 +131,7 @@ namespace iast
 
     //------------------------------------
 
-    DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line)
+    DataflowAspect::DataflowAspect(DataflowAspectClass* aspectClass, const WSTRING& line, const UINT32 enabledCategories)
     {
         this->_aspectClass = aspectClass;
         this->_line = line;
@@ -192,10 +208,24 @@ namespace iast
             _vulnerabilityTypes = ParseVulnerabilityTypes(shared::ToString(parts[part]));
         }
 
-        auto aspectMethod = Trim(line.substr(offset));
-        pos0 = IndexOf(aspectMethod, WStr("("));
-        _aspectMethodName = aspectMethod.substr(0, pos0);
-        _aspectMethodParams = aspectMethod.substr(pos0);
+        // Trailing parts
+        parts = Split(Trim(line.substr(offset)));
+        part = -1;
+        if ((int) parts.size() > ++part) // APWXR RTPW Nmw
+        {
+            auto aspectMethod = Trim(parts[part]);
+            pos0 = IndexOf(aspectMethod, WStr("("));
+            _aspectMethodName = aspectMethod.substr(0, pos0);
+            _aspectMethodParams = aspectMethod.substr(pos0);
+        }
+        if ((int) parts.size() > ++part) // Category
+        {
+            UINT32 category = ConvertToUint(Trim(parts[part]), 0xFFFFFFFF);
+            if ((category & enabledCategories) == 0)
+            {
+                return; // Current category is not enabled
+            }
+        }
 
         _isVirtual = _targetType.length() > 0 && _targetMethodType != _targetType;
         _isGeneric = Contains(_aspectMethodParams, WStr("!!"));

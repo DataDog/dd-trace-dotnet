@@ -51,9 +51,11 @@ public class ManagedVanguardStopIntegration
                     DotnetCommon.Log.Information("MicrosoftCodeCoverage.Percentage: {Value}", percentage);
 
                     // Extract session variables (from out of process sessions)
-                    if (SpanContextPropagator.Instance.Extract(
-                            EnvironmentHelpers.GetEnvironmentVariables(),
-                            new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor)) is { } sessionContext)
+                    var context = SpanContextPropagator.Instance.Extract(
+                        EnvironmentHelpers.GetEnvironmentVariables(),
+                        new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+                    if (context.SpanContext is { } sessionContext)
                     {
                         try
                         {

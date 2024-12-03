@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using nietras.SeparatedValues;
 using Nuke.Common.IO;
+using Logger = Serilog.Log;
 
 #nullable enable
 
@@ -54,7 +55,7 @@ public static class CriticalPathAnalyzer
                                        {mermaidDiagram}
                                        ```
                                        """);
-        Serilog.Log.Information("Created mermaid diagram at {OutputPath}", outputPath);
+        Logger.Information("Created mermaid diagram at {OutputPath}", outputPath);
         return Task.CompletedTask;
     }
 

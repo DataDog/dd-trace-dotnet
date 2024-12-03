@@ -63,7 +63,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _callstackProvider{std::move(callstackProvider)}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration, &_callstackProvider);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, pConfiguration, &_callstackProvider, _metricsRegistry);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();

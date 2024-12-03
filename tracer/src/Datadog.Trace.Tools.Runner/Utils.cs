@@ -840,7 +840,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             const char Quote = '\"';
             const char Backslash = '\\';
-            var stringBuilder = StringBuilderCache.Acquire(100);
+            var stringBuilder = StringBuilderCache.Acquire();
 
             foreach (var argument in args)
             {

@@ -19,7 +19,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '8.0.100'
+          dotnet-version: '9.0.100'
 
       - name: "Removing existing missing-nullability-files.csv"
         run: Get-ChildItem –Path ".\tracer\missing-nullability-files.csv" | Remove-Item

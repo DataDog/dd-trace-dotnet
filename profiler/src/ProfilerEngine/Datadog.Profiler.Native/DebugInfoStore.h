@@ -31,9 +31,11 @@ private:
     struct ModuleDebugInfo
     {
     public:
+        std::string ModulePath;
         std::vector<std::string> Files;
         std::vector<SymbolDebugInfo> SymbolsDebugInfo;
         bool IsValid = false;
+        bool ErrorLogged = false;
     };
 
     void ParseModuleDebugInfo(ModuleID moduleID);
@@ -42,10 +44,23 @@ private:
     template <typename TInfo>
     SymbolDebugInfo Get(TInfo& info, ModuleID moduleId, RID rid)
     {
-        if (!info.IsValid || rid >= info.SymbolsDebugInfo.size())
+        auto invalidInfo = !info.IsValid || rid >= info.SymbolsDebugInfo.size();
+
+        if (invalidInfo)
         {
-            Log::Info("The debug info for the module `", moduleId, "` seems to be invalid (is valid? '", info.IsValid, "') or the RID is out of the symbols array bounds (RID: ",
-                      rid, "). Number of debug info: ", info.SymbolsDebugInfo.size());
+            auto alreadyLogged = std::exchange(info.ErrorLogged, true);
+            if (!alreadyLogged)
+            {
+                if (!info.IsValid)
+                {
+                    Log::Info("The debug info for the module `", info.ModulePath, "` seems to be invalid");
+                }
+                if (rid >= info.SymbolsDebugInfo.size())
+                {
+                    Log::Info("The RID is out of the symbols array bounds (RID: ", rid, "). Number of debug info: ", info.SymbolsDebugInfo.size(),
+                              ", module path: ", info.ModulePath);
+                }
+            }
             return SymbolDebugInfo{NoFileFound, NoStartLine};
         }
         return info.SymbolsDebugInfo[rid];

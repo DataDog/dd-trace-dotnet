@@ -112,13 +112,8 @@ bool ProfilerSignalManager::CheckSignalHandler()
 {
     if (!_canReplaceSignalHandler)
     {
-        static bool alreadyLogged = false;
-        if (alreadyLogged)
-            return false;
-
-        alreadyLogged = true;
         _isHandlerInPlace = false;
-        Log::Warn("Profiler signal handler was replaced again. As of now, it will not be restored: the profiler is disabled.");
+        LogOnce(Warn, "Profiler signal handler was replaced again. As of now, it will not be restored: the profiler is disabled.");
         return false;
     }
 

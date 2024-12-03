@@ -9,6 +9,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
@@ -45,38 +46,38 @@ internal readonly partial struct SecurityCoordinator
 
     internal static SecurityCoordinator Get(Security security, Span span, HttpTransport transport) => new(security, span, transport);
 
-    public static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers)
-    {
-        var headersDic = new Dictionary<string, object>(headers.Keys.Count);
-        foreach (var k in headers.Keys)
-        {
-            var currentKey = k ?? string.Empty;
-            if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
-            {
-                currentKey = currentKey.ToLowerInvariant();
-                var value = GetHeaderValueForWaf(headers[currentKey]);
-#if NETCOREAPP
-                if (!headersDic.TryAdd(currentKey, value))
-                {
-#else
-                if (!headersDic.ContainsKey(currentKey))
-                {
-                    headersDic.Add(currentKey, value);
-                }
-                else
-                {
-#endif
-                    Log.Warning("Header {Key} couldn't be added as argument to the waf", currentKey);
-                }
-            }
-        }
+    internal static Dictionary<string, object> ExtractHeadersFromRequest(IHeaderDictionary headers) => ExtractHeaders(headers.Keys, key => GetHeaderValueForWaf(headers, key));
 
-        return headersDic;
+    private static object GetHeaderAsArray(StringValues value) => value.Count == 1 ? value[0] : value;
+
+    private static object GetHeaderValueForWaf(IHeaderDictionary headers, string currentKey) => GetHeaderAsArray(headers[currentKey]);
+
+    private static void GetCookieKeyValueFromIndex(IRequestCookieCollection cookies, int i, out string key, out string value)
+    {
+        var cookie = cookies.ElementAt(i);
+        key = cookie.Key;
+        value = cookie.Value;
     }
 
-    private static object GetHeaderValueForWaf(StringValues value)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void CollectHeaders(Span internalSpan)
     {
-        return (value.Count == 1 ? value[0] : value);
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+        {
+            CollectHeadersImpl(internalSpan);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void CollectHeadersImpl(Span internalSpan)
+        {
+            var context = CoreHttpContextStore.Instance.Get();
+            internalSpan = TryGetRoot(internalSpan);
+            if (context is not null)
+            {
+                var headers = new HeadersCollectionAdapter(context.Request.Headers);
+                AddRequestHeaders(internalSpan, headers);
+            }
+        }
     }
 
     internal void BlockAndReport(IResult? result)
@@ -109,23 +110,7 @@ internal readonly partial struct SecurityCoordinator
     {
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
-
-        var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
-        for (var i = 0; i < request.Cookies.Count; i++)
-        {
-            var cookie = request.Cookies.ElementAt(i);
-            var currentKey = cookie.Key ?? string.Empty;
-            var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
-            if (!keyExists)
-            {
-                cookiesDic.Add(currentKey, [cookie.Value ?? string.Empty]);
-            }
-            else
-            {
-                value?.Add(cookie.Value);
-            }
-        }
-
+        var cookiesDic = ExtractCookiesFromRequest(request);
         var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
         // a query string like ?test&[$slice} only fills the key part in dotnetcore and in IIS it only fills the value part, it's been decided to make it a key always
         foreach (var kvp in request.Query)
@@ -153,7 +138,11 @@ internal readonly partial struct SecurityCoordinator
 
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
-        AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+
+        if (cookiesDic is not null)
+        {
+            AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
+        }
 
         return addressesDictionary;
 
@@ -166,11 +155,9 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal class HttpTransport : HttpTransportBase
+    internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
-        public HttpTransport(HttpContext context) => Context = context;
-
-        public override HttpContext Context { get; }
+        public override HttpContext Context { get; } = context;
 
         internal override bool IsBlocked
         {

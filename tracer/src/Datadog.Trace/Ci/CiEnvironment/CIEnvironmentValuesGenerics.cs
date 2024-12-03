@@ -100,7 +100,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return new UnsupportedCIEnvironmentValues<TValueProvider>(valueProvider);
     }
 
-    protected override void Setup(GitInfo gitInfo)
+    protected override void Setup(IGitInfo gitInfo)
     {
         OnInitialize(gitInfo);
 
@@ -146,7 +146,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
                 // If we have the original commit message we use that.
                 if (string.IsNullOrWhiteSpace(Message) ||
                     (Message!.StartsWith("Merge", StringComparison.Ordinal) &&
-                     !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
+                     !gitInfo.Message!.StartsWith("Merge", StringComparison.Ordinal)))
                 {
                     Message = gitInfo.Message;
                 }
@@ -258,6 +258,8 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         CommitterName = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterName, CommitterName);
         CommitterEmail = GetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterEmail, CommitterEmail);
         CommitterDate = GetDateTimeOffsetVariableIfIsNotEmpty(Constants.DDGitCommitCommiterDate, CommitterDate);
+
+        Message = Message?.Trim();
     }
 
     protected string? GetVariableIfIsNotEmpty(string key, string? defaultValue, Func<string?, string?, bool>? validator = null)
@@ -342,7 +344,7 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
         return path;
     }
 
-    protected abstract void OnInitialize(GitInfo gitInfo);
+    protected abstract void OnInitialize(IGitInfo gitInfo);
 }
 
 #pragma warning restore SA1649

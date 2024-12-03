@@ -6,7 +6,7 @@
 std::atomic<uint64_t> LiveObjectInfo::s_nextObjectId = 1;
 
 
-LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, int64_t timestamp)
+LiveObjectInfo::LiveObjectInfo(std::shared_ptr<Sample> sample, uintptr_t address, std::chrono::nanoseconds timestamp)
     :
     _address(address),
     _weakHandle(nullptr),

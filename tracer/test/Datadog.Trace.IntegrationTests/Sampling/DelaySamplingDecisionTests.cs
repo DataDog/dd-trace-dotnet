@@ -77,7 +77,9 @@ public class DelaySamplingDecisionTests
             traceContext.SamplingPriority.Should().BeNull();
 
             var headers = new NameValueCollection();
-            SpanContextPropagator.Instance.Inject(scope1.Span.Context, headers.Wrap());
+            SpanContextPropagator.Instance.Inject(
+                new PropagationContext(scope1.Span.Context, baggage: null),
+                headers.Wrap());
 
             // sampling decision IS taken before propagating
             sampler.Verify(s => s.MakeSamplingDecision(It.IsAny<Span>()), Times.Once);

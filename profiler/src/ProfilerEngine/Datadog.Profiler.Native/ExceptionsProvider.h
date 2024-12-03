@@ -79,4 +79,5 @@ private:
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;
     std::shared_ptr<CounterMetric> _sampledExceptionsCountMetric;
     CallstackProvider _callstackProvider;
+    MetricsRegistry& _metricsRegistry;
 };
