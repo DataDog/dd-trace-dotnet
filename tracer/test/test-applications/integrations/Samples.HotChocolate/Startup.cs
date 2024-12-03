@@ -17,8 +17,9 @@ namespace Samples.HotChocolate
             services.AddLogging(builder => builder.AddConsole());
 
             services.AddRouting();
-            services.AddGraphQLServer().AddQueryType<Query>();
-            services.AddGraphQLServer().AddMutationType<Mutation>();
+            services.AddGraphQLServer()
+                .AddQueryType<Query>()
+                .AddMutationType<Mutation>();
         }
 
         public void Configure(IApplicationBuilder app,
