@@ -625,16 +625,16 @@
     "integrationName": "HotChocolate",
     "assemblyName": "HotChocolate.Execution",
     "minAssemblyVersionInclusive": "11.0.0",
-    "maxAssemblyVersionInclusive": "13.65535.65535",
+    "maxAssemblyVersionInclusive": "14.65535.65535",
     "packages": [
       {
         "name": "HotChocolate.AspNetCore",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "11.0.0",
         "minVersionTestedInclusive": "11.3.8",
-        "maxVersionSupportedInclusive": "13.9.14",
+        "maxVersionSupportedInclusive": "14.1.0",
         "maxVersionAvailableInclusive": "14.1.0",
-        "maxVersionTestedInclusive": "13.9.14"
+        "maxVersionTestedInclusive": "14.1.0"
       }
     ]
   },
