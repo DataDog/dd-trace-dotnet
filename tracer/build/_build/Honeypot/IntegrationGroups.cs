@@ -43,6 +43,7 @@ namespace Honeypot
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("AWSSDK.EventBridge", new [] { "AWSSDK.EventBridge" });
+            NugetPackages.Add("AWSSDK.StepFunctions", new [] { "AWSSDK.StepFunctions" });
             NugetPackages.Add("Microsoft.Azure.Cosmos.Client", new [] { "Microsoft.Azure.Cosmos" });
             NugetPackages.Add("Elasticsearch.Net", new [] { "Elasticsearch.Net" });
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
