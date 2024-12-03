@@ -402,9 +402,9 @@ namespace Datadog.Trace.Tools.Runner
                 env[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
-            var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
+            var configurationSource = new CompositeConfigurationSource();
+            configurationSource.Add(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.Add(GlobalConfigurationSource.Instance);
 
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);

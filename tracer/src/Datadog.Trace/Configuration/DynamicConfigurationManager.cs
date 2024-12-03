@@ -138,11 +138,11 @@ namespace Datadog.Trace.Configuration
                 }
                 else
                 {
-                    var compositeConfigurationSource = new CompositeConfigurationSourceInternal();
+                    var compositeConfigurationSource = new CompositeConfigurationSource();
 
                     foreach (var item in apmLibrary)
                     {
-                        compositeConfigurationSource.AddInternal(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
+                        compositeConfigurationSource.Add(new DynamicConfigConfigurationSource(Encoding.UTF8.GetString(item.Contents), ConfigurationOrigins.RemoteConfig));
                     }
 
                     configurationSource = compositeConfigurationSource;
