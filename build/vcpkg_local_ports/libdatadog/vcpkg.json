@@ -1,0 +1,11 @@
+{
+    "name": "libdatadog",
+    "version-string": "1.0.0",
+    "description": "A sample library that provides prebuilt binaries.",
+    "dependencies": [
+  {
+    "name": "vcpkg-cmake-config",
+    "host": true
+  }
+]
+}
