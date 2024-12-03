@@ -11,11 +11,36 @@ namespace OpenAI;
 public class OpenAiApiCall
 {
     private static readonly HttpClient httpClient = new HttpClient();
+    //That is the current maximum number of tokens that can be requested in a single call.
+    private static readonly int maxTokens = 16383;
 
-    public static async Task<string> GetResponseAsync(string prompt, string key)
+    private static int GetApproxTokenCount(string prompt)
+    {
+        // This is a rough estimate of the number of tokens in the prompt.
+        // More info in https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
+        return prompt.Length / 4;
+    }
+
+    // We try the full promt first, if it fails we try a smaller prompt
+    public static string TryGetReponse(ref string prompt, string key)
+    {
+        var result = GetResponse(prompt, key);
+
+        // We probably are facing a situation where we have too many tokens in the prompt
+        // In that case, we just truncate the request instead of doing multiple queries (which would increase the cost)
+        if (string.IsNullOrEmpty(result) && GetApproxTokenCount(prompt) > maxTokens)
+        {
+            Console.WriteLine("Warning: Prompt too long, trying a smaller prompt");
+            prompt = prompt.Substring(0, (int)(maxTokens * 0.95));
+            result = GetResponse(prompt, key);
+        }
+
+        return result;
+    }
+
+    public static string GetResponse(string prompt, string key)
     {
         var url = "https://api.openai.com/v1/chat/completions";
-        int maxTokensForResponse = 10000;
 
         var requestContent = new
         {
@@ -25,7 +50,7 @@ public class OpenAiApiCall
                 new { role = "system", content = "You are a helpful assistant." },
                 new { role = "user", content = prompt }
             },
-            max_tokens = maxTokensForResponse
+            max_tokens = maxTokens
         };
 
         var jsonContent = JsonSerializer.Serialize(requestContent);
@@ -38,11 +63,9 @@ public class OpenAiApiCall
 
             try
             {
-                var response = await httpClient.SendAsync(request);
+                var response = httpClient.Send(request);
                 response.EnsureSuccessStatusCode();
-
-                var responseString = await response.Content.ReadAsStringAsync();
-                return ParseResponseText(responseString);
+                return ParseResponseText(response.Content.ReadAsStringAsync().Result);
             }
             catch (HttpRequestException e)
             {

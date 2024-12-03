@@ -146,9 +146,7 @@ partial class Build
                 continue;
             }
 
-            changesText += ($"Filename: {file.FileName}" + Environment.NewLine);
-            changesText += ($"Changes:\n{file.Patch}");
-            changesText += (new string('-', 40)) + Environment.NewLine + Environment.NewLine;
+            changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
         }
 
         if (string.IsNullOrEmpty(changesText))
@@ -163,12 +161,12 @@ partial class Build
         {
             var fullPrompt = prompt + descriptionPrompt + changesText;
 
+            result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
+
             if (executeLocal)
             {
                 File.WriteAllText("changes.txt", fullPrompt);
             }
-
-            result = await OpenAiApiCall.GetResponseAsync(fullPrompt, OpenAIKey);
         }
 
         Console.WriteLine(result);
