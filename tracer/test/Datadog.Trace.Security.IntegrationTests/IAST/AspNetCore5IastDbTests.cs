@@ -19,7 +19,8 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
     public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false)
-    {}
+    {
+    }
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
