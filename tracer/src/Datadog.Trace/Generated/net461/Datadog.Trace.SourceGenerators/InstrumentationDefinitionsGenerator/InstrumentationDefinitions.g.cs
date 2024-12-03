@@ -406,6 +406,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV4"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV5"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseNpgsqlIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.Npgsql,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.SimpleWorkItemctor2Integration"
@@ -618,7 +620,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderGetStringIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderReadIntegration"
@@ -819,7 +820,6 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlCommand" }
-                    or { Key: "Npgsql", Value: "Npgsql.NpgsqlDataReader" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlDataReader" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlDataReader" }
                     or { Key: "Npgsql", Value: "Npgsql.NpgsqlDataReader" }

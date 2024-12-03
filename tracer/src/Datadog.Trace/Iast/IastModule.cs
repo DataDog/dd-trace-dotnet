@@ -928,8 +928,14 @@ internal static partial class IastModule
             var scope = tracer.ActiveScope as Scope;
             var currentSpan = scope?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;
-            traceContext?.IastRequestContext?.AddDbValue(column, value);
-            return true;
+            var context = traceContext?.IastRequestContext;
+            if (context is not null)
+            {
+                context.AddDbValue(column, value);
+                return false;
+            }
+
+            return false;
         }
 
         private class DbRecordData
