@@ -24,21 +24,22 @@ public class OpenAiApiCall
     // We try the full promt first, if it fails we try a smaller prompt
     public static string TryGetReponse(ref string prompt, string key)
     {
-        var result = GetResponse(prompt, key);
+        // We can do a first request without counting tokens
+        var result = GetResponse(prompt, key).Result;
 
-        // We probably are facing a situation where we have too many tokens in the prompt
+        // If result is null, we probably are facing a situation where we have too many tokens in the prompt
         // In that case, we just truncate the request instead of doing multiple queries (which would increase the cost)
         if (string.IsNullOrEmpty(result) && GetApproxTokenCount(prompt) > maxTokens)
         {
             Console.WriteLine("Warning: Prompt too long, trying a smaller prompt");
             prompt = prompt.Substring(0, (int)(maxTokens * 0.95));
-            result = GetResponse(prompt, key);
+            result = GetResponse(prompt, key).Result;
         }
 
         return result;
     }
 
-    public static string GetResponse(string prompt, string key)
+    public static async Task<string> GetResponse(string prompt, string key)
     {
         var url = "https://api.openai.com/v1/chat/completions";
 
@@ -63,9 +64,9 @@ public class OpenAiApiCall
 
             try
             {
-                var response = httpClient.Send(request);
+                var response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
-                return ParseResponseText(response.Content.ReadAsStringAsync().Result);
+                return ParseResponseText(await response.Content.ReadAsStringAsync());
             }
             catch (HttpRequestException e)
             {

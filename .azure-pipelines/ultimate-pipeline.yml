@@ -286,7 +286,6 @@ stages:
         PullRequestNumber: $(System.PullRequest.PullRequestNumber)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
         OpenAIKey: $(OPEN_AI_KEY)
-        TargetBranch: $(targetBranch)
 
 - stage: build_windows_tracer
   dependsOn: [merge_commit_id]

@@ -105,7 +105,6 @@ partial class Build
            .Requires(() => GitHubToken)
            .Requires(() => OpenAIKey)
            .Requires(() => PullRequestNumber)
-           .Requires(() => TargetBranch)
            .Executes(async () =>
            {
                await GenerateLLMReport(false);
@@ -117,7 +116,6 @@ partial class Build
        .Requires(() => GitHubToken)
        .Requires(() => OpenAIKey)
        .Requires(() => PullRequestNumber)
-       .Requires(() => TargetBranch)
        .Executes(async () =>
        {
            await GenerateLLMReport(true);
@@ -126,9 +124,7 @@ partial class Build
     private async Task GenerateLLMReport(bool executeLocal = true)
     {
         var extensions = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp" };
-        var prompt = "Review this pull request with a focus on improving performance. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
-        // This assumes that we're running in a pull request, so we compare against the target branch
-        var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
+        var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
 
         string result = string.Empty;
         var client = GetGitHubClient();
