@@ -10575,8 +10575,12 @@
     "AssemblyName": "Npgsql",
     "TargetTypeName": "Npgsql.NpgsqlDataReader",
     "TargetMethodName": "Close",
-    "TargetReturnType": "System.Void",
-    "TargetParameterTypes": [],
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
+      "System.Boolean",
+      "System.Boolean",
+      "System.Boolean"
+    ],
     "MinimumVersion": {
       "Item1": 4,
       "Item2": 0,
@@ -10587,9 +10591,9 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseNpgsqlIntegration",
     "IntegrationKind": 0,
-    "IsAdoNetIntegration": true,
+    "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
   {

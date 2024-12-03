@@ -51,7 +51,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // string System.Data.Common.DbDataReader.GetString()
         typeof(ReaderReadAttribute),
         typeof(ReaderReadAsyncAttribute),
-        typeof(ReaderCloseAttribute),
+        // no Close, we need to implement Close(bool, bool, bool) instead
         typeof(ReaderGetStringAttribute),
         typeof(ReaderGetValueAttribute),
     })]
