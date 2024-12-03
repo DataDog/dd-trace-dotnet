@@ -11,8 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -22,7 +20,7 @@ namespace Datadog.Trace.Configuration
     /// A base <see cref="IConfigurationSource"/> implementation
     /// for string-only configuration sources.
     /// </summary>
-    public abstract class StringConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
+    internal abstract class StringConfigurationSource : IConfigurationSource
     {
         private static readonly char[] DictionarySeparatorChars = { ',' };
 
@@ -34,11 +32,10 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
-        [PublicApi]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues);
-            return ParseCustomKeyValuesInternal(data, allowOptionalMappings: false);
+            return ParseCustomKeyValues(data, allowOptionalMappings: false);
         }
 
         /// <summary>
@@ -48,20 +45,12 @@ namespace Datadog.Trace.Configuration
         /// <param name="data">A string containing key-value pairs which are comma-separated, and for which the key and value are colon-separated.</param>
         /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
         /// <returns><see cref="IDictionary{TKey, TValue}"/> of key value pairs.</returns>
-        [PublicApi]
         [return: NotNullIfNotNull(nameof(data))]
         public static IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.StringConfigurationSource_ParseCustomKeyValues_AllowOptionalMappings);
-            return ParseCustomKeyValuesInternal(data, allowOptionalMappings);
-        }
+            => ParseCustomKeyValues(data, allowOptionalMappings, ':');
 
         [return: NotNullIfNotNull(nameof(data))]
-        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
-            => ParseCustomKeyValuesInternal(data, allowOptionalMappings, ':');
-
-        [return: NotNullIfNotNull(nameof(data))]
-        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings, char separator)
+        public static IDictionary<string, string>? ParseCustomKeyValues(string? data, bool allowOptionalMappings, char separator)
         {
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
@@ -123,65 +112,10 @@ namespace Datadog.Trace.Configuration
             return dictionary;
         }
 
-        /// <inheritdoc />
-        public abstract string? GetString(string key);
+        protected abstract string? GetString(string key);
 
         /// <inheritdoc />
-        [PublicApi]
-        public virtual int? GetInt32(string key)
-        {
-            var value = GetString(key);
-
-            return value is not null
-                && int.TryParse(value, out var result)
-                       ? result
-                       : null;
-        }
-
-        /// <inheritdoc />
-        [PublicApi]
-        public double? GetDouble(string key)
-        {
-            var value = GetString(key);
-
-            return value is not null && double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result)
-                       ? result
-                       : null;
-        }
-
-        /// <inheritdoc />
-        [PublicApi]
-        public virtual bool? GetBool(string key)
-        {
-            var value = GetString(key);
-            return value?.ToBoolean();
-        }
-
-        /// <summary>
-        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> from parsing
-        /// </summary>
-        /// <param name="key">The key</param>
-        /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key)
-        {
-            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings: false);
-        }
-
-        /// <summary>
-        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> from parsing
-        /// </summary>
-        /// <param name="key">The key</param>
-        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
-        /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        [PublicApi]
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
-        {
-            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings);
-        }
-
-        /// <inheritdoc />
-        bool ITelemeteredConfigurationSource.IsPresent(string key)
+        public bool IsPresent(string key)
         {
             var value = GetString(key);
 
@@ -189,7 +123,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<string> ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
@@ -209,7 +143,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<int> ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
             var value = GetString(key);
 
@@ -235,7 +169,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<double> ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
             var value = GetString(key);
 
@@ -261,7 +195,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<bool> ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
             var value = GetString(key);
 
@@ -288,7 +222,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             var value = GetString(key);
 
@@ -315,14 +249,11 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
-
-        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var value = GetString(key);
 
@@ -334,7 +265,7 @@ namespace Datadog.Trace.Configuration
             // We record the original dictionary value here instead of serializing the _parsed_ value
             // Currently we have no validation of the dictionary values during parsing, so there's no way to get
             // a validation error that needs recording at this stage
-            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings, separator);
+            var result = ParseCustomKeyValues(value, allowOptionalMappings, separator);
 
             if (validator is null || validator(result))
             {
