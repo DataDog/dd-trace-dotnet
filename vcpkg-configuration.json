@@ -1,0 +1,13 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
+    
+    "binary-caching": {
+        "default": {
+            "kind": "files",
+            "path": "vcpkg_packages"
+        }
+    },
+    "overlay-ports": [
+        "./build/vcpkg_local_ports"
+    ]
+}
