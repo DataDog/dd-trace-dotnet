@@ -8,7 +8,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Vendors.Serilog;
 
