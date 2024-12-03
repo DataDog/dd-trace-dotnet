@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
 using FluentAssertions;
 using Xunit;
 using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
@@ -134,11 +135,16 @@ public class SettingsInstrumentationTests
         var settings = manual.ToDictionary();
 
         var keys = GetManualTracerSettingKeys();
-        settings.Should().ContainKeys(keys).And.HaveSameCount(keys);
+        settings.Should().ContainKeys(keys);
+
+        // we have additional keys for each of the customized settings
+        settings.Keys.Except(keys).Should().ContainSingle("DD_TRACE_COUCHBASE_ANALYTICS_SAMPLE_RATE");
     }
 
-    [Fact]
-    public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly(bool useLegacySettings)
     {
         Dictionary<string, object> initialValues = new();
         PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
@@ -180,8 +186,10 @@ public class SettingsInstrumentationTests
 
         var changedValues = manual.ToDictionary();
 
-        var automatic = new TracerSettings();
-        ConfigureIntegration.UpdateSettings(changedValues, automatic);
+        IConfigurationSource configSource = useLegacySettings
+                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues)
+                               : new ManualInstrumentationConfigurationSource(changedValues);
+        var automatic = new TracerSettings(configSource);
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
