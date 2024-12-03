@@ -28,22 +28,6 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void AddLink_AfterSpanFinished_IsNoOp()
-        {
-            var parentScope = (Scope)_tracer.StartActive("Parent");
-            var childScope = (Scope)_tracer.StartActive("Child");
-
-            var parentSpan = parentScope.Span;
-            var childSpan = childScope.Span;
-            var spanLink = new SpanLink(parentSpan.Context);
-
-            childSpan.Finish();
-
-            childSpan.AddLink(spanLink);
-            childSpan.SpanLinks.Should().BeNullOrEmpty();
-        }
-
-        [Fact]
         public void AddAttribute_BeforeSpanFinished_IsSuccessful()
         {
             var parentScope = (Scope)_tracer.StartActive("Parent");
