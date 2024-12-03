@@ -932,7 +932,7 @@ internal static partial class IastModule
             if (context is not null)
             {
                 context.AddDbValue(column, value);
-                return false;
+                return true;
             }
 
             return false;
