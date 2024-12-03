@@ -50,12 +50,10 @@ namespace Datadog.Trace.Tests.Configuration
         [Theory]
         [InlineData("DD_TRACE_FOO_ANALYTICS_ENABLED", "true", true)]
         [InlineData("DD_TRACE_FOO_ANALYTICS_ENABLED", "false", false)]
-        [InlineData("DD_FOO_ANALYTICS_ENABLED", "true", true)]
-        [InlineData("DD_FOO_ANALYTICS_ENABLED", "false", false)]
-        [InlineData("DD_TRACE_Foo_ANALYTICS_ENABLED", "true", true)]
-        [InlineData("DD_TRACE_Foo_ANALYTICS_ENABLED", "false", false)]
         [InlineData("DD_Foo_ANALYTICS_ENABLED", "true", true)]
         [InlineData("DD_Foo_ANALYTICS_ENABLED", "false", false)]
+        [InlineData("DD_TRACE_Foo_ANALYTICS_ENABLED", "true", true)]
+        [InlineData("DD_TRACE_Foo_ANALYTICS_ENABLED", "false", false)]
         public void IntegrationAnalyticsEnabled(string settingName, string settingValue, bool expected)
         {
             var dict = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -64,15 +62,14 @@ namespace Datadog.Trace.Tests.Configuration
             };
             var source = new DictionaryConfigurationSource(dict);
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new IntegrationSettings("Foo", source);
             Assert.Equal(expected, settings.AnalyticsEnabled);
         }
 
         [Theory]
         [InlineData("DD_TRACE_FOO_ANALYTICS_SAMPLE_RATE", "0.2", 0.2)]
-        [InlineData("DD_FOO_ANALYTICS_SAMPLE_RATE", "0.6", 0.6)]
-        [InlineData("DD_TRACE_Foo_ANALYTICS_SAMPLE_RATE", "0.2", 0.2)]
         [InlineData("DD_Foo_ANALYTICS_SAMPLE_RATE", "0.6", 0.6)]
+        [InlineData("DD_TRACE_Foo_ANALYTICS_SAMPLE_RATE", "0.2", 0.2)]
         public void IntegrationAnalyticsSampleRate(string settingName, string settingValue, double expected)
         {
             var dict = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -81,7 +78,7 @@ namespace Datadog.Trace.Tests.Configuration
             };
             var source = new DictionaryConfigurationSource(dict);
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new IntegrationSettings("Foo", source);
             Assert.Equal(expected, settings.AnalyticsSampleRate);
         }
     }
