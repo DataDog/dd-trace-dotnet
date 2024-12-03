@@ -32,11 +32,6 @@ internal class SpanLink
         Attributes = attributes;
     }
 
-    public SpanLink(Span spanToLink, List<KeyValuePair<string, string>>? attributes = null)
-        : this(spanToLink.Context, attributes)
-    {
-    }
-
     public List<KeyValuePair<string, string>>? Attributes { get; private set; }
 
     public SpanContext Context { get;  }
