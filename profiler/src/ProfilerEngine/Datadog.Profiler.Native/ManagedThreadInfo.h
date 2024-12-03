@@ -44,7 +44,7 @@ private:
 
 public:
     explicit ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pCorProfilerInfo);
-    ~ManagedThreadInfo() = default;
+    ~ManagedThreadInfo() override = default;
 
     // This field is set in the CorProfilerCallback. It's based on the assumption that the thread's calling ThreadAssignedToOSThread
     // is the same native thread assigned to the managed thread.

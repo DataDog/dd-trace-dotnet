@@ -21,7 +21,7 @@ inline bool convert_to(shared::WSTRING const& s, CpuProfilerType& profilerType)
         return true;
     }
 #ifdef LINUX
-    else if (shared::string_iequal(s, WStr("TimerCreate")))
+    if (shared::string_iequal(s, WStr("TimerCreate")))
     {
         profilerType = CpuProfilerType::TimerCreate;
         return true;

@@ -112,7 +112,7 @@ public:
     ///
     static inline std::chrono::nanoseconds GetTimestampSafe()
     {
-        struct timespec ts;
+        struct timespec ts{};
         // TODO error handling ?
         clock_gettime(CLOCK_MONOTONIC, &ts);
         return std::chrono::nanoseconds((std::uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec);

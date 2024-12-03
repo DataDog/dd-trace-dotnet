@@ -36,8 +36,11 @@ public:
         MetricsRegistry& metricsRegistry);
     ~LinuxStackFramesCollector() override;
 
-    LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
+    LinuxStackFramesCollector(LinuxStackFramesCollector const &) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
+
+    LinuxStackFramesCollector(LinuxStackFramesCollector &&) = delete;
+    LinuxStackFramesCollector& operator=(LinuxStackFramesCollector &&) = delete;
 
 protected:
     // Linux collector is different from Windows:
@@ -62,7 +65,6 @@ private:
         std::unordered_map<std::int32_t, std::int32_t> _stats;
     };
 
-private:
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
     void UpdateErrorStats(std::int32_t errorCode);
     static bool ShouldLogStats();

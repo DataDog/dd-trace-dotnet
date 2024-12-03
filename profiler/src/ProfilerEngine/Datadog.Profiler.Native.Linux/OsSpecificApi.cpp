@@ -40,14 +40,15 @@ class CallstackProvider;
 namespace OsSpecificApi {
 
 using namespace std::chrono_literals;
+using namespace std::string_view_literals;
 
 // it's safe to cache it. According to the man sysconf, this value does
 // not change during the lifetime of the process.
-static auto ticks_per_second = sysconf(_SC_CLK_TCK);
+static const auto ticks_per_second = sysconf(_SC_CLK_TCK);
 
 std::pair<DWORD, std::string> GetLastErrorMessage()
 {
-    DWORD errorCode = errno;
+    auto errorCode = errno;
     std::stringstream builder;
     builder << "(error code = 0x" << std::dec << errorCode << ")";
     builder << ": " << strerror(errorCode);
@@ -208,7 +209,7 @@ int32_t GetProcessorCount()
 
 std::vector<int32_t> GetProcessThreads(int32_t pid)
 {
-    DIR* proc_dir;
+    DIR* proc_dir = nullptr;
     char dirname[100];
     std::string pidPath = (pid == -1) ? "self" : std::to_string(pid);
 
@@ -224,7 +225,7 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
         threads.reserve(512);
 
         /* /proc available, iterate through tasks... */
-        struct dirent* entry;
+        struct dirent* entry = nullptr;
         while ((entry = readdir(proc_dir)) != nullptr)
         {
             if (entry->d_name[0] == '.')
@@ -236,6 +237,7 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
     else
     {
         auto errorNumber = errno;
+        //NOLINTNEXTLINE
         LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
@@ -244,9 +246,9 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
 
 std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 {
-    DIR* proc_dir;
-    char dirname[100] = "/proc/self/task";
-    proc_dir = opendir(dirname);
+    DIR* proc_dir = nullptr;
+    auto dirname = "/proc/self/task"sv;
+    proc_dir = opendir(dirname.data());
 
     std::vector<std::shared_ptr<IThreadInfo>> threads;
 
@@ -256,7 +258,7 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
         threads.reserve(512);
 
         /* /proc available, iterate through tasks... */
-        struct dirent* entry;
+        struct dirent* entry = nullptr;
         while ((entry = readdir(proc_dir)) != nullptr)
         {
             if (entry->d_name[0] == '.')
@@ -268,6 +270,7 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     else
     {
         auto errorNumber = errno;
+        //NOLINTNEXTLINE
         LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
@@ -276,9 +279,9 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 
 std::chrono::seconds GetMachineBootTime()
 {
-    char statPath[] = "/proc/stat";
+    auto statPath = "/proc/stat"sv;
 
-    auto fd = open(statPath, O_RDONLY);
+    auto fd = open(statPath.data(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -295,7 +298,7 @@ std::chrono::seconds GetMachineBootTime()
     while ((length = read(fd, line, sizeof(line) - 1)) != 0)
     {
         auto sv = std::string_view(line, length);
-        auto pos = sv.find("btime");
+        auto* pos = sv.find("btime");
         if (std::string_view::npos != pos)
         {
             auto pos2 = strchr(sv.data() + pos, ' ') + 1;
@@ -314,9 +317,9 @@ std::chrono::seconds GetMachineBootTime()
 
 std::chrono::seconds GetProcessStartTimeSinceBoot()
 {
-    char statPath[] = "/proc/self/stat";
+    auto statPath = "/proc/self/stat"sv;
 
-    auto fd = open(statPath, O_RDONLY);
+    auto fd = open(statPath.data(), O_RDONLY);
 
     if (fd == -1)
     {
@@ -410,9 +413,9 @@ double GetProcessLifetime()
         return 0;
     }
 
-    std::chrono::seconds now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
-    auto startTimeIsSeconds = now.count() - (machineBootTime.count() + processStartTimeSinceBoot.count());
-    return startTimeIsSeconds;
+    auto now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch());
+    auto startTimeIsSeconds = now - (machineBootTime + processStartTimeSinceBoot);
+    return startTimeIsSeconds.count();
 }
 
 } // namespace OsSpecificApi

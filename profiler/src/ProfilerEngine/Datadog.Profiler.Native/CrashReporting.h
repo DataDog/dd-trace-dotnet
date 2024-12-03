@@ -54,7 +54,7 @@ private:
             if (ptr != nullptr && _size != 0)
             {
                 _size = 0;
-                ::free(ptr);
+                ::free(ptr); // NOLINT
             }
         }
 
@@ -114,10 +114,11 @@ const IID IID_ICrashReporting = {0x3b3ba8a9, 0xf807, 0x43bf, { 0xa3, 0xa9, 0x55,
 MIDL_INTERFACE("3B3BA8A9-F807-43BF-A3A9-55E369C0C532")
 ICrashReporting : public IUnknown
 {
-public:    
-    virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) = 0;
-    virtual ULONG STDMETHODCALLTYPE AddRef() = 0;
-    virtual ULONG STDMETHODCALLTYPE Release() = 0;
+public:
+    virtual ~ICrashReporting() = default;
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override = 0;
+    ULONG STDMETHODCALLTYPE AddRef() override = 0;
+    ULONG STDMETHODCALLTYPE Release() override = 0;
     virtual int32_t STDMETHODCALLTYPE Initialize() = 0;
     virtual int32_t STDMETHODCALLTYPE GetLastError(const char** message, int32_t* length) = 0;
     virtual int32_t STDMETHODCALLTYPE AddTag(const char* key, const char* value) = 0;

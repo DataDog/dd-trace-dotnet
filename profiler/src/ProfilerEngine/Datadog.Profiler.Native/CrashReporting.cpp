@@ -22,7 +22,7 @@ extern "C"
 
 extern "C" IUnknown * STDMETHODCALLTYPE CreateCrashReport(int32_t pid)
 {
-    auto instance = CrashReporting::Create(pid);
+    auto* instance = CrashReporting::Create(pid);
     instance->AddRef();
     return (IUnknown*)instance;
 }
@@ -162,7 +162,12 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, const char* description)
         signalInfo = std::string(description);
     }
 
-    ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+    auto r = ddog_crasht_CrashInfo_set_siginfo(&_crashInfo, { (uint64_t)signal, libdatadog::to_char_slice(signalInfo) });
+    if (r.tag == DDOG_CRASHT_RESULT_ERR)
+    {
+        // should we set it as last error ?
+        ddog_Error_drop(&r.err);
+    }
 
     return 0;
 }
@@ -242,7 +247,7 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             }
 #else
             const auto buildId = frame.buildId.AsSpan();
-            if (buildId.size() != 0)
+            if (!buildId.empty())
             {
                 stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_ELF;
                 stackFrames[i].normalized_ip.build_id = {buildId.data(), buildId.size()};
@@ -298,7 +303,12 @@ int32_t CrashReporting::SetMetadata(const char* libraryName, const char* library
     for (int32_t i = 0; i < tagCount; i++)
     {
         auto tag = tags[i];
-        ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value));
+        auto r = ddog_Vec_Tag_push(&vecTags, libdatadog::to_char_slice(tag.key), libdatadog::to_char_slice(tag.value));
+        if (r.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
+        {
+            // should we set it as last error ?
+            ddog_Error_drop(&r.err);
+        }
     }
 
     auto result = ddog_crasht_CrashInfo_set_metadata(&_crashInfo, metadata);
@@ -321,7 +331,7 @@ int32_t CrashReporting::Send()
 
 int32_t CrashReporting::WriteToFile(const char* url)
 {
-    auto endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
+    auto* endpoint = ddog_endpoint_from_url(libdatadog::to_char_slice(url));
     return ExportImpl(endpoint);
 }
 
@@ -387,7 +397,7 @@ int32_t CrashReporting::CrashProcess()
 {
     std::thread crashThread([]()
     {
-        throw 42;
+        throw 42; // NOLINT
     });
 
     crashThread.join();
