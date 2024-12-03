@@ -241,10 +241,10 @@
         "name": "AWSSDK.DynamoDBv2",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.403.7",
-        "maxVersionAvailableInclusive": "3.7.403.7",
-        "maxVersionTestedInclusive": "3.7.403.7"
+        "minVersionTestedInclusive": "3.3.106.47",
+        "maxVersionSupportedInclusive": "3.7.403.9",
+        "maxVersionAvailableInclusive": "3.7.403.9",
+        "maxVersionTestedInclusive": "3.7.403.9"
       }
     ]
   },
@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "3.7.401.55",
-        "maxVersionAvailableInclusive": "3.7.401.55",
-        "maxVersionTestedInclusive": "3.7.401.55"
+        "maxVersionSupportedInclusive": "3.7.402.1",
+        "maxVersionAvailableInclusive": "3.7.402.1",
+        "maxVersionTestedInclusive": "3.7.402.1"
       }
     ]
   },
@@ -275,10 +275,10 @@
         "name": "AWSSDK.Kinesis",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.402.34",
-        "maxVersionAvailableInclusive": "3.7.402.34",
-        "maxVersionTestedInclusive": "3.7.402.34"
+        "minVersionTestedInclusive": "3.3.101.1",
+        "maxVersionSupportedInclusive": "3.7.402.36",
+        "maxVersionAvailableInclusive": "3.7.402.36",
+        "maxVersionTestedInclusive": "3.7.402.36"
       }
     ]
   },
@@ -292,10 +292,10 @@
         "name": "Amazon.Lambda.RuntimeSupport",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.4.0",
-        "minVersionTestedInclusive": "1.12.0",
-        "maxVersionSupportedInclusive": "1.12.0",
-        "maxVersionAvailableInclusive": "1.12.0",
-        "maxVersionTestedInclusive": "1.12.0"
+        "minVersionTestedInclusive": "1.12.1",
+        "maxVersionSupportedInclusive": "1.12.1",
+        "maxVersionAvailableInclusive": "1.12.1",
+        "maxVersionTestedInclusive": "1.12.1"
       }
     ]
   },
@@ -310,8 +310,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
+        "maxVersionSupportedInclusive": "3.7.400.59",
+        "maxVersionAvailableInclusive": "3.7.400.59",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -326,10 +326,10 @@
         "name": "AWSSDK.SimpleNotificationService",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
-        "maxVersionTestedInclusive": "3.7.400.57"
+        "minVersionTestedInclusive": "3.3.102.17",
+        "maxVersionSupportedInclusive": "3.7.400.59",
+        "maxVersionAvailableInclusive": "3.7.400.59",
+        "maxVersionTestedInclusive": "3.7.400.59"
       }
     ]
   },
@@ -343,17 +343,17 @@
         "name": "AWSSDK.SQS",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
-        "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
-        "maxVersionTestedInclusive": "3.7.400.57"
+        "minVersionTestedInclusive": "3.3.103.26",
+        "maxVersionSupportedInclusive": "3.7.400.59",
+        "maxVersionAvailableInclusive": "3.7.400.59",
+        "maxVersionTestedInclusive": "3.7.400.59"
       }
     ]
   },
   {
     "integrationName": "AwsStepFunctions",
     "assemblyName": "AWSSDK.StepFunctions",
-    "minAssemblyVersionInclusive": "3.0.0",
+    "minAssemblyVersionInclusive": "3.3.0",
     "maxAssemblyVersionInclusive": "3.65535.65535",
     "packages": [
       {
@@ -361,9 +361,9 @@
         "minVersionAvailableInclusive": "3.3.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.104.87",
-        "maxVersionSupportedInclusive": "3.7.403",
-        "maxVersionAvailableInclusive": "3.7.403",
-        "maxVersionTestedInclusive": "3.7.403"
+        "maxVersionSupportedInclusive": "3.7.403.2",
+        "maxVersionAvailableInclusive": "3.7.403.2",
+        "maxVersionTestedInclusive": "3.7.403.2"
       }
     ]
   },
@@ -567,8 +567,8 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.28.3",
-        "maxVersionAvailableInclusive": "3.28.3",
+        "maxVersionSupportedInclusive": "3.29.0",
+        "maxVersionAvailableInclusive": "3.29.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -650,7 +650,7 @@
         "minVersionSupportedInclusive": "11.0.0",
         "minVersionTestedInclusive": "11.3.8",
         "maxVersionSupportedInclusive": "13.9.14",
-        "maxVersionAvailableInclusive": "14.1.0",
+        "maxVersionAvailableInclusive": "14.2.0",
         "maxVersionTestedInclusive": "13.9.14"
       }
     ]
@@ -801,7 +801,7 @@
         "name": "log4net",
         "minVersionAvailableInclusive": "1.2.10",
         "minVersionSupportedInclusive": "1.2.10",
-        "minVersionTestedInclusive": "1.2.11",
+        "minVersionTestedInclusive": "2.0.17",
         "maxVersionSupportedInclusive": "3.0.3",
         "maxVersionAvailableInclusive": "3.0.3",
         "maxVersionTestedInclusive": "3.0.3"
@@ -818,7 +818,7 @@
         "name": "MongoDB.Driver",
         "minVersionAvailableInclusive": "1.0.3744.30075",
         "minVersionSupportedInclusive": "2.1.0",
-        "minVersionTestedInclusive": "2.0.2",
+        "minVersionTestedInclusive": "2.5.1",
         "maxVersionSupportedInclusive": "2.30.0",
         "maxVersionAvailableInclusive": "3.0.0",
         "maxVersionTestedInclusive": "2.30.0"
@@ -852,8 +852,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.6.3",
-        "maxVersionAvailableInclusive": "3.6.3",
+        "maxVersionSupportedInclusive": "3.6.4",
+        "maxVersionAvailableInclusive": "3.6.4",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -919,7 +919,7 @@
         "name": "NLog",
         "minVersionAvailableInclusive": "1.0.0.505",
         "minVersionSupportedInclusive": "1.0.0.505",
-        "minVersionTestedInclusive": "1.0.0.505",
+        "minVersionTestedInclusive": "4.7.15",
         "maxVersionSupportedInclusive": "5.3.4",
         "maxVersionAvailableInclusive": "5.3.4",
         "maxVersionTestedInclusive": "5.3.4"
@@ -1067,9 +1067,9 @@
         "minVersionAvailableInclusive": "2.2.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "4.0.1",
-        "maxVersionSupportedInclusive": "4.26.1",
-        "maxVersionAvailableInclusive": "4.26.1",
-        "maxVersionTestedInclusive": "4.26.1"
+        "maxVersionSupportedInclusive": "4.27.0",
+        "maxVersionAvailableInclusive": "4.27.0",
+        "maxVersionTestedInclusive": "4.27.0"
       }
     ]
   },
@@ -1083,7 +1083,7 @@
         "name": "Serilog",
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
-        "minVersionTestedInclusive": "1.4.214",
+        "minVersionTestedInclusive": "2.12.0",
         "maxVersionSupportedInclusive": "4.1.0",
         "maxVersionAvailableInclusive": "4.1.0",
         "maxVersionTestedInclusive": "4.1.0"
@@ -1100,10 +1100,10 @@
         "name": "ServiceStack.Redis",
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
-        "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "8.4.0",
-        "maxVersionAvailableInclusive": "8.4.0",
-        "maxVersionTestedInclusive": "8.4.0"
+        "minVersionTestedInclusive": "5.14.0",
+        "maxVersionSupportedInclusive": "8.5.2",
+        "maxVersionAvailableInclusive": "8.5.2",
+        "maxVersionTestedInclusive": "8.5.2"
       }
     ]
   },
@@ -1192,10 +1192,10 @@
         "name": "StackExchange.Redis",
         "minVersionAvailableInclusive": "1.0.187",
         "minVersionSupportedInclusive": "1.0.187",
-        "minVersionTestedInclusive": "1.0.488",
-        "maxVersionSupportedInclusive": "2.8.16",
-        "maxVersionAvailableInclusive": "2.8.16",
-        "maxVersionTestedInclusive": "2.8.16"
+        "minVersionTestedInclusive": "1.2.6",
+        "maxVersionSupportedInclusive": "2.8.22",
+        "maxVersionAvailableInclusive": "2.8.22",
+        "maxVersionTestedInclusive": "2.8.22"
       }
     ]
   },
