@@ -115,4 +115,10 @@ public enum TelemetryErrorCode
     /// </summary>
     [Description("Attempting to use UDS on unsupported runtime")]
     UdsOnUnsupportedPlatform = 16,
+
+    /// <summary>
+    /// Unexpected type in configuration source
+    /// </summary>
+    [Description("Unexpected type in configuration source")]
+    UnexpectedTypeInConfigurationSource = 17,
 }
