@@ -315,7 +315,14 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: |
+        git clone https://github.com/microsoft/vcpkg.git ..\v
+        ..\v\bootstrap-vcpkg.bat
+        ..\v\vcpkg.exe integrate install
+      displayName: Install and setup VCPKG
 
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
