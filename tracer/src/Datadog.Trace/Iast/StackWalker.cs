@@ -58,17 +58,17 @@ internal static class StackWalker
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
-            var declaringType = frame?.GetMethod()?.DeclaringType;
+            var declaringTpe = frame?.GetMethod()?.DeclaringType;
 
             foreach (var excludeType in ExcludeSpanGenerationTypes)
             {
-                if (excludeType == declaringType?.FullName)
+                if (excludeType == declaringTpe?.FullName)
                 {
                     return false;
                 }
             }
 
-            var assembly = declaringType?.Assembly.GetName().Name;
+            var assembly = declaringTpe?.Assembly.GetName().Name;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
                 targetFrame = frame;
@@ -95,6 +95,8 @@ internal static class StackWalker
         // if in the future we need a more sophisticated wildcard support
         static bool IsExcluded(string assembly)
         {
+            var result = false;
+
             foreach (var assemblyToSkip in AssemblyNamesToSkip)
             {
 #if NETCOREAPP3_1_OR_GREATER
@@ -105,19 +107,19 @@ internal static class StackWalker
                 {
                     if (assembly.StartsWith(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
                     {
-                        return true;
+                        result = true;
                     }
                 }
                 else
                 {
                     if (assembly.Equals(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
                     {
-                        return true;
+                        result = true;
                     }
                 }
             }
 
-            return false;
+            return result;
         }
     }
 }

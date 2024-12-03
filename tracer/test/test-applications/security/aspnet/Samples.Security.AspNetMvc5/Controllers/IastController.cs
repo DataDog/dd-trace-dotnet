@@ -224,7 +224,8 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             if (!string.IsNullOrEmpty(query?.UserName))
             {
-                return ExecuteQuery("SELECT Surname from Persons where name = '" + query?.UserName + "'");
+                return ExecuteQuery("SELECT Surname from Persons where name = '" + query?.UserName + "' or name ='" + 
+                    query?.UserName + "'");
             }
 
             if (query?.Arguments != null)
