@@ -23,7 +23,6 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
@@ -64,7 +63,6 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
@@ -101,7 +99,6 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
     [InlineData("System.Data.SQLite")]
     [InlineData("Microsoft.Data.Sqlite")]
     [InlineData("System.Data.SqlClient")]
