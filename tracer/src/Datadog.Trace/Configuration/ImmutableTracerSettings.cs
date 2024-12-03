@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -132,6 +133,7 @@ namespace Datadog.Trace.Configuration
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             PropagationExtractFirstOnly = settings.PropagationExtractFirstOnly;
+            PropagationBehaviorExtract = settings.PropagationBehaviorExtract;
             BaggageMaximumItems = settings.BaggageMaximumItems;
             BaggageMaximumBytes = settings.BaggageMaximumBytes;
             TraceMethods = settings.TraceMethods;
@@ -513,6 +515,11 @@ namespace Datadog.Trace.Configuration
         /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirstOnly { get; }
+
+        /// <summary>
+        /// Gets a value indicating the behavior when extracting propagation headers.
+        /// </summary>
+        internal ExtractBehavior PropagationBehaviorExtract { get; }
 
         /// <summary>
         /// Gets the maximum number of items that can be
