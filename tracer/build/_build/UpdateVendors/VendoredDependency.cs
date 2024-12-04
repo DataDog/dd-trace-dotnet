@@ -90,7 +90,8 @@ namespace UpdateVendors
                 transform: filePath =>
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
-                });
+                },
+                relativePathsToExclude: ["Buffers/ArrayPoolEventSource.cs"]);
 
             Add(
                 libraryName: "System.Private.CoreLib",
