@@ -65,6 +65,13 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
+        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
+        /// </summary>
+        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
+        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
+        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
         {
             var commaSeparator = new[] { ',' };
@@ -1178,7 +1185,7 @@ namespace Datadog.Trace.Configuration
             return httpErrorCodesArray;
         }
 
-        internal static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
+        private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
             inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))

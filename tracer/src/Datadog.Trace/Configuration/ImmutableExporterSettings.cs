@@ -47,7 +47,7 @@ namespace Datadog.Trace.Configuration
         internal ImmutableExporterSettings(ExporterSettings settings, bool unused)
         {
             // unused parameter is purely so we can avoid calling public APIs
-            AgentUri = settings.AgentUriInternal;
+            AgentUri = settings.AgentUri;
 
             TracesTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Configuration
             MetricsUnixDomainSocketPath = settings.MetricsUnixDomainSocketPath;
 
             PartialFlushEnabled = settings.PartialFlushEnabled;
-            PartialFlushMinSpans = settings.PartialFlushMinSpansInternal;
+            PartialFlushMinSpans = settings.PartialFlushMinSpans;
             ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 
