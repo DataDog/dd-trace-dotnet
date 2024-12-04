@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include <chrono>
 #include <map>
 #include <math.h>
 #include <shared_mutex>
@@ -215,8 +216,8 @@ struct GCDetails
     GCReason Reason;
     GCType Type;
     bool IsCompacting;
-    uint64_t PauseDuration;
-    uint64_t StartTimestamp;
+    std::chrono::nanoseconds PauseDuration;
+    std::chrono::nanoseconds StartTimestamp;
 
     uint64_t gen2Size;
     uint64_t lohSize;
@@ -250,7 +251,7 @@ public:
     // Lock contention and AllocationTick are synchronous only here.
     //
     void ParseEvent(
-        uint64_t timestamp,
+        std::chrono::nanoseconds timestamp,
         DWORD version,
         INT64 keywords,
         DWORD id,
@@ -261,19 +262,19 @@ public:
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
-    void ParseGcEvent(uint64_t timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
+    void ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
     // garbage collection events processing
     void OnGCTriggered();
-    void OnGCStart(uint64_t timestamp, GCStartPayload& payload);
+    void OnGCStart(std::chrono::nanoseconds timestamp, GCStartPayload& payload);
     void OnGCEnd(GCEndPayload& payload);
-    void OnGCSuspendEEBegin(uint64_t timestamp);
-    void OnGCRestartEEEnd(uint64_t timestamp);
-    void OnGCHeapStats(uint64_t timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize);
-    void OnGCGlobalHeapHistory(uint64_t timestamp, GCGlobalHeapPayload& payload);
-    void NotifySuspension(uint64_t timestamp, uint32_t number, uint32_t generation, uint64_t duration);
-    void NotifyGarbageCollectionStarted(uint64_t timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
+    void OnGCSuspendEEBegin(std::chrono::nanoseconds timestamp);
+    void OnGCRestartEEEnd(std::chrono::nanoseconds timestamp);
+    void OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t gen2Size, uint64_t lohSize, uint64_t pohSize);
+    void OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, GCGlobalHeapPayload& payload);
+    void NotifySuspension(std::chrono::nanoseconds timestamp, uint32_t number, uint32_t generation, std::chrono::nanoseconds duration);
+    void NotifyGarbageCollectionStarted(std::chrono::nanoseconds timestamp, int32_t number, uint32_t generation, GCReason reason, GCType type);
 
     void NotifyGarbageCollectionEnd(
         int32_t number,
@@ -281,18 +282,16 @@ private:
         GCReason reason,
         GCType type,
         bool isCompacting,
-        uint64_t pauseDuration,
-        uint64_t totalDuration,
-        uint64_t endTimestamp,
+        std::chrono::nanoseconds pauseDuration,
+        std::chrono::nanoseconds totalDuration,
+        std::chrono::nanoseconds endTimestamp,
         uint64_t gen2Size,
         uint64_t lohSize,
         uint64_t pohSize
         );
     GCDetails& GetCurrentGC();
-    void InitializeGC(uint64_t timestamp, GCDetails& gc, GCStartPayload& payload);
+    void InitializeGC(std::chrono::nanoseconds timestamp, GCDetails& gc, GCStartPayload& payload);
     static void ResetGC(GCDetails& gc);
-    static uint64_t GetCurrentTimestamp();
-
 
 public:
     // Points to the UTF16, null terminated string from the given event data buffer
@@ -328,10 +327,12 @@ private:
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
 
+    template <typename... Args>
+    void LogGcEvent(Args const&... args);
  // state for garbage collection details including Stop The World duration
 private:
     // set when GCSuspendEEBegin is received (usually no GC is known at that time)
-    uint64_t _suspensionStart;
+    std::chrono::nanoseconds _suspensionStart;
 
     // for concurrent mode, a background GC could be started
     GCDetails _currentBGC;

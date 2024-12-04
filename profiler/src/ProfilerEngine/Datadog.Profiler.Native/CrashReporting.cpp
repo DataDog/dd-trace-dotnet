@@ -69,6 +69,17 @@ int32_t CrashReporting::Initialize()
         return 1;
     }
 
+#ifdef LINUX
+    // temporary: will remove it when windows will target libdatadog >= 14.3.0
+    auto otherResult = ddog_crasht_CrashInfo_set_procinfo(&_crashInfo, { _pid });
+
+    if (otherResult.tag == DDOG_CRASHT_RESULT_ERR)
+    {
+        SetLastError(otherResult.err);
+        return 1;
+    }
+#endif
+
     return AddTag("severity", "crash");
 }
 
@@ -222,12 +233,22 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
                 .symbol_address = symbolAddress,
             };
 
+#ifdef _WINDOWS
             if (frame.hasPdbInfo)
             {
                 stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_PDB;
                 stackFrames[i].normalized_ip.age = frame.pdbAge;
                 stackFrames[i].normalized_ip.build_id = { (uint8_t*)&frame.pdbSig, 16 };
             }
+#else
+            const auto buildId = frame.buildId.AsSpan();
+            if (buildId.size() != 0)
+            {
+                stackFrames[i].normalized_ip.typ = DDOG_CRASHT_NORMALIZED_ADDRESS_TYPES_ELF;
+                stackFrames[i].normalized_ip.build_id = {buildId.data(), buildId.size()};
+                stackFrames[i].normalized_ip.file_offset = ip - moduleAddress;
+            }
+#endif
         }
 
         auto threadIdStr = std::to_string(threadId);

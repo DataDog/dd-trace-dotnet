@@ -9,6 +9,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
@@ -56,6 +57,27 @@ internal readonly partial struct SecurityCoordinator
         var cookie = cookies.ElementAt(i);
         key = cookie.Key;
         value = cookie.Value;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void CollectHeaders(Span internalSpan)
+    {
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+        {
+            CollectHeadersImpl(internalSpan);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static void CollectHeadersImpl(Span internalSpan)
+        {
+            var context = CoreHttpContextStore.Instance.Get();
+            internalSpan = TryGetRoot(internalSpan);
+            if (context is not null)
+            {
+                var headers = new HeadersCollectionAdapter(context.Request.Headers);
+                AddRequestHeaders(internalSpan, headers);
+            }
+        }
     }
 
     internal void BlockAndReport(IResult? result)
@@ -133,11 +155,9 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal class HttpTransport : HttpTransportBase
+    internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
-        public HttpTransport(HttpContext context) => Context = context;
-
-        public override HttpContext Context { get; }
+        public override HttpContext Context { get; } = context;
 
         internal override bool IsBlocked
         {

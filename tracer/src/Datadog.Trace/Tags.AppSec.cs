@@ -18,6 +18,8 @@ public static partial class Tags
 
         internal static class EventsUsers
         {
+            internal const string True = "true";
+            internal const string False = "false";
             internal const string EventsUsersRoot = Events + "users";
 
             internal static class LoginEvent

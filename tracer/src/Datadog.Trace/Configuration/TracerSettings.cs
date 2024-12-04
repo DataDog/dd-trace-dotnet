@@ -1303,6 +1303,7 @@ namespace Datadog.Trace.Configuration
 
         internal static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
         {
+            inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
                 return DbmPropagationLevel.Disabled;

@@ -284,6 +284,7 @@
     <ClInclude Include="fault_tolerant_tracker.h" />
     <ClInclude Include="function_control_wrapper.h" />
     <ClInclude Include="Generated\generated_callsites.g.h" />
+    <ClInclude Include="Generated\generated_calltargets.g.h" />
     <ClInclude Include="Generated\generated_definitions.h" />
     <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="iast\app_domain_info.h" />
@@ -335,6 +336,7 @@
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
+    <ClInclude Include="signature_builder.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="threadUtils.h" />
@@ -393,6 +395,7 @@
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="signature_builder.cpp" />
     <ClCompile Include="threadUtils.cpp" />
     <ClCompile Include="tracer_handler_module_method.cpp" />
     <ClCompile Include="tracer_integration_definition.cpp" />

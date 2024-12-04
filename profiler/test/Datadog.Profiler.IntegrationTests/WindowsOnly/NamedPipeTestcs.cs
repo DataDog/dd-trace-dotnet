@@ -44,7 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable(EnvironmentVariables.NamedPipeName, "ForSureThisPipeDoesNotExist__I_Hope");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

@@ -22,9 +22,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal const string IntegrationName = nameof(Configuration.IntegrationId.MongoDb);
 
         internal const string Major2 = "2";
+        internal const string Major3 = "3";
         internal const string Major2Minor1 = "2.1";
         internal const string Major2Minor2 = "2.2"; // Synchronous methods added in 2.2
-        internal const string MongoDbClientAssembly = "MongoDB.Driver.Core";
+        internal const string MongoDbClientV2Assembly = "MongoDB.Driver.Core";
+        internal const string MongoDbClientV3Assembly = "MongoDB.Driver";
 
         private const string DatabaseType = "mongodb";
 

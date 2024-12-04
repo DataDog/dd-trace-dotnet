@@ -8,6 +8,9 @@
 #include "MetricsRegistry.h"
 #include "StackFramesCollectorBase.h"
 
+#include <chrono>
+#include <tuple>
+
 // forward declarations
 namespace shared {
 struct LoaderResourceMonikerIDs;
@@ -30,9 +33,10 @@ namespace OsSpecificApi
         CallstackProvider* callstackProvider,
         MetricsRegistry& metricsRegistry);
 
-    uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
+    std::chrono::milliseconds GetThreadCpuTime(IThreadInfo* pThreadInfo);
 
-    bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
+    //    isRunning,        cpu time          , failed 
+    std::tuple<bool, std::chrono::milliseconds, bool> IsRunning(IThreadInfo* pThreadInfo);
 
     int32_t GetProcessorCount();
 

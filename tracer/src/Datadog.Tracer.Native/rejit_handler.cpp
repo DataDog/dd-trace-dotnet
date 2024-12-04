@@ -62,10 +62,10 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     {
         // Now we enumerate all methods that inline the current methodDef
         BOOL incompleteData = false;
-        ICorProfilerMethodEnum* methodEnum;
+        ComPtr<ICorProfilerMethodEnum> methodEnum;
 
         HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, &methodEnum);
+                                                                    &incompleteData, methodEnum.GetAddressOf());
         std::ostringstream hexValue;
         hexValue << std::hex << hr;
         if (SUCCEEDED(hr))
@@ -82,8 +82,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
                 methods.push_back(method.methodId);
                 total++;
             }
-            methodEnum->Release();
-            methodEnum = nullptr;
+
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);

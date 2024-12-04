@@ -5,7 +5,9 @@
 
 #include "gtest/gtest.h"
 
-constexpr std::chrono::seconds WindowDuration = std::chrono::seconds(1);
+using namespace std::chrono_literals;
+
+constexpr std::chrono::seconds WindowDuration = 1s;
 
 TEST(AdaptiveSamplerTest, TestKeep)
 {
@@ -37,7 +39,7 @@ TEST(AdaptiveSamplerTest, TestDrop)
 
 TEST(AdaptiveSamplerTest, TestRollWindow)
 {
-    AdaptiveSampler sampler(std::chrono::milliseconds::zero(), 2, 1, 1, nullptr);
+    AdaptiveSampler sampler(0ms, 2, 1, 1, nullptr);
 
     auto state = sampler.GetInternalState();
 
@@ -107,7 +109,7 @@ TEST(AdaptiveSamplerTest, TestRollWindow)
 TEST(AdaptiveSamplerTest, TestStop)
 {
     bool callbackCalled = false;
-    AdaptiveSampler sampler(std::chrono::milliseconds::zero(), 2, 1, 1, [&callbackCalled]() { callbackCalled = true; });
+    AdaptiveSampler sampler(0ms, 2, 1, 1, [&callbackCalled]() { callbackCalled = true; });
 
     sampler.RollWindow();
 

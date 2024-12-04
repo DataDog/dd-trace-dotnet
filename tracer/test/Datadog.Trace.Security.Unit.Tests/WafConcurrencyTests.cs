@@ -104,32 +104,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
             var thread = new Thread(
                 () =>
                 {
-                    var args = new Dictionary<string, object>
-                    {
-                        { AddressesConstants.WafContextProcessor, new Dictionary<string, bool> { { "extract-schema", false } } },
-                        { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
-                        { AddressesConstants.ResponseStatus, "200" },
-                        { AddressesConstants.RequestQuery, new Dictionary<string, List<string>> { { "arg", new List<string> { "arg", "slice" } } } },
-                        { AddressesConstants.RequestMethod, "GET" },
-                        {
-                            AddressesConstants.RequestHeaderNoCookies, new Dictionary<string, string[]>
-                            {
-                                { "accept-language", new[] { "en-US,en;q=0.9,es;q=0.8" } },
-                                { "accept-encoding", new[] { "gzip, deflate, br" } },
-                                { "sec-ch-ua", new[] { "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"" } },
-                                { "sec-fetch-site", new[] { "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"" } },
-                                { "sec-ch-ua-platform", new[] { "Windows" } },
-                                { "sec-fetch-mode", new[] { "navigate" } },
-                                { "sec-fetch-mode2", new[] { "navigate" } },
-                                { "sec-fetch-dest", new[] { "document" } },
-                                { "upgrade-insecure-requests", new[] { "1" } },
-                                { "user-agent", new[] { "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" } },
-                                { "connection", new[] { "keep-alive" } },
-                                { "host", new[] { "localhost:5458" } }
-                            }
-                        },
-                        { Tags.HttpClientIp, "127.0.0.1" },
-                    };
+                    var args = CreateWafArgs();
                     var r = new Random();
                     for (var i = 0; i < 1000; i++)
                     {
@@ -211,5 +186,93 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
         {
             thread.Join();
         }
+    }
+
+    [Fact]
+    public void SimulateCrossThreadContextUse()
+    {
+        // context is shared between threads - and it's implementation should be thread safe
+        // this tests attempts to ensure it is
+
+        var initResult = CreateWaf();
+
+        using var waf = initResult.Waf;
+        var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
+        result.Should().NotBeNull();
+        var ruleSet = RuleSet.From(result!);
+        ruleSet.Should().NotBeNull();
+
+        var threads = new Thread[20];
+
+        var context = waf.CreateContext();
+
+        for (var t = 0; t < threads.Length; t++)
+        {
+            var thread = new Thread(
+                () =>
+                {
+                    var args = CreateWafArgs();
+                    try
+                    {
+                        for (var i = 0; i < 10; i++)
+                        {
+                            var result = context.Run(args, WafRunTimeoutMicroSeconds);
+                            // we may not get a results if another thread has disposed the context
+                            // this should be fine ...
+
+                            // yield to try and maximize concurrent access during the test
+                            Thread.Sleep(1);
+                        }
+                    }
+                    finally
+                    {
+                        // it's import each thread attempt to dispose the context after use
+                        // as this may happen during real usage
+                        context.Dispose();
+                    }
+                });
+            threads[t] = thread;
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Start();
+        }
+
+        foreach (var thread in threads)
+        {
+            thread.Join();
+        }
+    }
+
+    private static Dictionary<string, object> CreateWafArgs()
+    {
+        var args = new Dictionary<string, object>
+        {
+            { AddressesConstants.WafContextProcessor, new Dictionary<string, bool> { { "extract-schema", false } } },
+            { AddressesConstants.RequestUriRaw, "http://localhost:54587/" },
+            { AddressesConstants.ResponseStatus, "200" },
+            { AddressesConstants.RequestQuery, new Dictionary<string, List<string>> { { "arg", new List<string> { "arg", "slice" } } } },
+            { AddressesConstants.RequestMethod, "GET" },
+            {
+                AddressesConstants.RequestHeaderNoCookies, new Dictionary<string, string[]>
+                {
+                    { "accept-language", new[] { "en-US,en;q=0.9,es;q=0.8" } },
+                    { "accept-encoding", new[] { "gzip, deflate, br" } },
+                    { "sec-ch-ua", new[] { "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"" } },
+                    { "sec-fetch-site", new[] { "\"Google Chrome\";v=\"119\", \"Chromium\";v=\"119\", \"Not?A_Brand\";v=\"24\"" } },
+                    { "sec-ch-ua-platform", new[] { "Windows" } },
+                    { "sec-fetch-mode", new[] { "navigate" } },
+                    { "sec-fetch-mode2", new[] { "navigate" } },
+                    { "sec-fetch-dest", new[] { "document" } },
+                    { "upgrade-insecure-requests", new[] { "1" } },
+                    { "user-agent", new[] { "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" } },
+                    { "connection", new[] { "keep-alive" } },
+                    { "host", new[] { "localhost:5458" } }
+                }
+            },
+            { Tags.HttpClientIp, "127.0.0.1" },
+        };
+        return args;
     }
 }

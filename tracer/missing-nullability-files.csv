@@ -28,7 +28,6 @@ src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
 src/Datadog.Trace/SpanKinds.cs
 src/Datadog.Trace/SpanTypes.cs
-src/Datadog.Trace/TaggingUtils.cs
 src/Datadog.Trace/Tags.AppSec.cs
 src/Datadog.Trace/Tags.cs
 src/Datadog.Trace/TimeConstants.cs
@@ -83,8 +82,6 @@ src/Datadog.Trace/ClrProfiler/InstrumentationDefinitions.cs
 src/Datadog.Trace/ClrProfiler/InstrumentMethodAttribute.cs
 src/Datadog.Trace/ClrProfiler/IntegrationVersionRange.cs
 src/Datadog.Trace/ClrProfiler/ManualTracer.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition.cs
-src/Datadog.Trace/ClrProfiler/NativeCallTargetDefinition2.cs
 src/Datadog.Trace/ClrProfiler/NativeCallTargetUnmanagedMemoryHelper.cs
 src/Datadog.Trace/ClrProfiler/NativeMethods.cs
 src/Datadog.Trace/ClrProfiler/ScopeFactory.cs
@@ -646,8 +643,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V6/RequestPipeli
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Elasticsearch/V7/ElasticsearchV7Constants.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegrationExtra.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegrationExtraV13.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/ExecuteAsyncIntegrationV13.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/HotChocolateCommon.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IError.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IExecutionResult.cs
@@ -656,7 +651,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IOperatio
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryRequest.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryResult.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/NameStringProxy.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/OperationStructV13.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/OperationTypeProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/PreparedOperationStruct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/DocumentV5Struct.cs

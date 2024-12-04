@@ -68,6 +68,9 @@
     <ClInclude Include="CrashReportingWindows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="chrono_helper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">

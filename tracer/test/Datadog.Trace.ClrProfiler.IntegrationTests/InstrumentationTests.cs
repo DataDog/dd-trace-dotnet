@@ -318,6 +318,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
+        // The dynamic context switch/bail out is only available in .NET 8+
+#if NET8_0_OR_GREATER
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenDynamicCodeIsEnabled_InstrumentsApp()
+        {
+            var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(true);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", dotnetRuntimeArgs: dotnetRuntimeArgs);
+            agent.Spans.Should().NotBeEmpty();
+            agent.Telemetry.Should().NotBeEmpty();
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WhenDynamicCodeIsDisabled_DoesNotInstrument()
+        {
+            var dotnetRuntimeArgs = CreateRuntimeConfigWithDynamicCodeEnabled(false);
+
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: "traces 1", dotnetRuntimeArgs: dotnetRuntimeArgs);
+            agent.Spans.Should().BeEmpty();
+            agent.Telemetry.Should().BeEmpty();
+        }
+
+        private string CreateRuntimeConfigWithDynamicCodeEnabled(bool enabled)
+        {
+            // Set to false when PublishAot is set _even if the app is not published with AOT_
+            var name = "System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported";
+            var value = enabled ? "true" : "false";
+
+            // copy the app runtime config to a separate folder before modifying it
+            var fileName = "Samples.Console.runtimeconfig.json";
+            var sourceFile = Path.Combine(Path.GetDirectoryName(EnvironmentHelper.GetSampleApplicationPath())!, fileName);
+            var destDir = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetRandomFileName()));
+            var destFile = Path.Combine(destDir, fileName);
+            Directory.CreateDirectory(destDir);
+
+            Output.WriteLine("Reading contents of " + sourceFile);
+            var contents = File.ReadAllText(sourceFile);
+
+            // hacky replacement to add an extra property, but meh, we can expand/fix it later if
+            // we need to support more values or support the value already existing
+            var replacement = $$"""
+                                    "configProperties": {
+                                      "{{name}}": {{value}},
+                                """;
+            var fixedContents = contents.Replace("""    "configProperties": {""", replacement);
+
+            Output.WriteLine("Writing new contents to" + destFile);
+            File.WriteAllText(destFile, fixedContents);
+
+            // return the path to the variable in the format needed to be passed to the dotnet exe
+            // when running the program. Don't ask me why you need to use dotnet exec...
+            // it's weird, but here we are
+            var dotnetRuntimeArgs = $"exec --runtimeconfig \"{destFile}\"";
+            return dotnetRuntimeArgs;
+        }
+#endif
+
         /// <summary>
         /// Should only be called _directly_ by running test, so that the testName is populated correctly
         /// </summary>
