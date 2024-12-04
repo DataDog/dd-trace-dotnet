@@ -44,7 +44,10 @@ namespace Samples.ParallelCountSites
 
             if ((scenario & Scenario.Blog) == Scenario.Blog)
             {
-                _urlList.Add("https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler-part-4/");
+                // might not trigger DNS resolution within Datadog
+                // _urlList.Add("https://www.datadoghq.com/blog/engineering/dotnet-continuous-profiler-part-4/");
+                // so use an external site instead
+                _urlList.Add("https://github.com/Maoni0");
             }
         }
 
