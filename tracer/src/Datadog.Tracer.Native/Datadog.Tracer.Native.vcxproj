@@ -336,6 +336,7 @@
     <ClInclude Include="rejit_handler.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="rejit_work_offloader.h" />
+    <ClInclude Include="signature_builder.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="threadUtils.h" />
@@ -394,6 +395,7 @@
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="signature_builder.cpp" />
     <ClCompile Include="threadUtils.cpp" />
     <ClCompile Include="tracer_handler_module_method.cpp" />
     <ClCompile Include="tracer_integration_definition.cpp" />
