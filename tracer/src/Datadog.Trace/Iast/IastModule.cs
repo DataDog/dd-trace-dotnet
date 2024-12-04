@@ -929,13 +929,9 @@ internal static partial class IastModule
             var currentSpan = scope?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;
             var context = traceContext?.IastRequestContext;
-            if (context is not null)
-            {
-                context.AddDbValue(column, value);
-                return true;
-            }
+            context?.AddDbValue(column, value);
 
-            return false;
+            return true;
         }
 
         private class DbRecordData
