@@ -79,7 +79,7 @@ public class ConfigurationTests
         var allPotentialConfigKeys = assemblyStrings
                                     .Where(x => (x.StartsWith("DD_") || x.StartsWith("_DD") || x.StartsWith("DATADOG_") || x.StartsWith("OTEL_")) && !x.Contains(" "))
                                     .Concat(configKeyStrings)
-                                    .Where(x => !x.Contains("{0}")) // exclude the format string ones
+                                    .Where(x => !x.Contains("{0}") && x != "DD_") // exclude the format string ones + the interpolated string ones
                                     .Distinct()
                                     .Where(x => !ExcludedKeys.Contains(x))
                                     .ToList();
