@@ -10,12 +10,15 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
@@ -87,6 +90,11 @@ namespace Datadog.Trace.Configuration
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
+            // We don't want/need to record this value, so explicitly use null telemetry
+            var isRunningInCiVisibility = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance)
+                                         .WithKeys(ConfigurationKeys.CIVisibility.IsRunningInCiVisMode)
+                                         .AsBool(false);
+
             LambdaMetadata = LambdaMetadata.Create();
 
             IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
@@ -124,10 +132,33 @@ namespace Datadog.Trace.Configuration
                          .AsString();
 
             var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
-            ServiceName = config
+            var serviceName = config
                                  .WithKeys(ConfigurationKeys.ServiceName, "DD_SERVICE_NAME")
                                  .AsStringResult()
                                  .OverrideWith(in otelServiceName, ErrorLog);
+
+            var isUserProvidedTestServiceTag = true;
+            if (isRunningInCiVisibility)
+            {
+                // Set the service name if not set
+                var ciVisServiceName = serviceName;
+                if (string.IsNullOrEmpty(serviceName))
+                {
+                    // Extract repository name from the git url and use it as a default service name.
+                    ciVisServiceName = CIVisibility.GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+                    isUserProvidedTestServiceTag = false;
+                }
+
+                // Normalize the service name
+                ciVisServiceName = NormalizerTraceProcessor.NormalizeService(ciVisServiceName);
+                if (ciVisServiceName != serviceName)
+                {
+                    serviceName = ciVisServiceName;
+                    telemetry.Record(ConfigurationKeys.ServiceName, serviceName, recordValue: true, ConfigurationOrigins.Calculated);
+                }
+            }
+
+            ServiceName = serviceName;
 
             ServiceVersion = config
                             .WithKeys(ConfigurationKeys.ServiceVersion)
@@ -203,6 +234,11 @@ namespace Datadog.Trace.Configuration
                                  // Filter out tags with empty keys or empty values, and trim whitespace
                                 .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
                                 .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+
+            if (isRunningInCiVisibility)
+            {
+                GlobalTags[Ci.Tags.CommonTags.UserProvidedTestServiceTag] = isUserProvidedTestServiceTag ? "true" : "false";
+            }
 
             var headerTagsNormalizationFixEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
@@ -477,9 +513,19 @@ namespace Datadog.Trace.Configuration
                                         IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
                                         LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
 
+            if (isRunningInCiVisibility)
+            {
+                // always add the additional exclude in ci vis
+                const string fakeSessionEndpoint = "/session/FakeSessionIdForPollingPurposes";
+                urlSubstringSkips = string.IsNullOrEmpty(urlSubstringSkips)
+                                        ? fakeSessionEndpoint
+                                        : $"{urlSubstringSkips},{fakeSessionEndpoint}";
+                telemetry.Record(ConfigurationKeys.HttpClientExcludedUrlSubstrings, urlSubstringSkips, recordValue: true, ConfigurationOrigins.Calculated);
+            }
+
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
-                                                  : Array.Empty<string>();
+                                                  : [];
 
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
