@@ -35,8 +35,6 @@ namespace Datadog.Trace.Tests.Configuration
             instance1.IntegrationName.Should().Be(integrationName);
             instance1.Enabled.Should().BeNull();
 
-            instance1.Enabled = true;
-
             var instance2 = settings[integrationName];
             instance2.Should().NotBe(instance1);
             instance2.IntegrationName.Should().Be(integrationName);
