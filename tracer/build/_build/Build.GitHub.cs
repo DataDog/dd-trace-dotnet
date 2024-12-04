@@ -124,8 +124,8 @@ partial class Build
     private async Task GenerateLLMReport(bool executeLocal = true)
     {
         bool includeDescription = false;
-
-        var extensions = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp" };
+        var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
+        var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
         var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
 
         string result = string.Empty;
@@ -139,7 +139,7 @@ partial class Build
         string changesText = string.Empty;
         foreach (var file in pullRequestFiles)
         {
-            if (!extensions.Any(ext => file.FileName.EndsWith(ext)))
+            if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }

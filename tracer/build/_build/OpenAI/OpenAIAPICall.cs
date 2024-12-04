@@ -10,7 +10,7 @@ namespace OpenAI;
 
 public class OpenAiApiCall
 {
-    private static readonly HttpClient httpClient = new HttpClient();
+    private static readonly HttpClient httpClient = new HttpClient() { Timeout = TimeSpan.FromSeconds(30) };
     //That is the current maximum number of tokens that can be requested in a single call.
     private static readonly int maxTokens = 16383;
 
