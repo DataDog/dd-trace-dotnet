@@ -22,6 +22,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "[Repo Items]", "[Repo Items
 	ProjectSection(SolutionItems) = preProject
 		profiler\CMakeLists.txt = profiler\CMakeLists.txt
 		profiler\Directory.Build.props = profiler\Directory.Build.props
+		profiler\Directory.Build.targets = profiler\Directory.Build.targets
 		LICENSE = LICENSE
 		profiler\README.md = profiler\README.md
 	EndProjectSection

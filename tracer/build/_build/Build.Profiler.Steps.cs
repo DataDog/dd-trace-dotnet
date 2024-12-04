@@ -38,9 +38,18 @@ partial class Build
         .DependsOn(CompileProfilerNativeTestsWindows)
         .DependsOn(CompileProfilerNativeTestsLinux);
 
+    Target SetupVcpkg => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            Vcpkg.Value("integrate install");
+        });
+
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
@@ -446,6 +455,7 @@ partial class Build
     Target RunClangTidyProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
+        .DependsOn(SetupVcpkg)
         .Executes(() =>
         {
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
@@ -475,6 +485,7 @@ partial class Build
     Target RunCppCheckProfiler => _ => _
         .Unlisted()
         .Description("Runs CppCheck on native profiler")
+        .DependsOn(SetupVcpkg)
         .DependsOn(RunCppCheckProfilerWindows)
         .DependsOn(RunCppCheckProfilerLinux);
 
