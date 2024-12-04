@@ -299,6 +299,8 @@ private:
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
 
+    template <typename... Args>
+    void LogGcEvent(Args const&... args);
  // state for garbage collection details including Stop The World duration
 private:
     // set when GCSuspendEEBegin is received (usually no GC is known at that time)

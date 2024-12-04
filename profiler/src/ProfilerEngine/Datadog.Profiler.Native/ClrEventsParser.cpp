@@ -18,21 +18,25 @@
 using namespace std::chrono_literals;
 
 // set to true for debugging purpose
-const bool LogGcEvents = false;
+constexpr bool LogGcEvents = false;
 
-#define LOG_GC_EVENT(x)                         \
-{                                               \
-    if (LogGcEvents)                            \
-    {                                           \
-        std::stringstream builder;              \
-        builder << OpSysTools::GetThreadId()    \
-        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : ""))   \
-        << GetCurrentGC().Number                \
-        << " | " << x << std::endl;             \
-        std::cout << builder.str();             \
-    }                                           \
-}                                               \
+template <typename... Args>
+void ClrEventsParser::LogGcEvent(
+    Args const&... args)
+{
+    if constexpr (!LogGcEvents)
+    {
+        return;
+    }
 
+    std::cout
+        << OpSysTools::GetThreadId()
+        << " " << ((_gcInProgress.Number != -1) ? "F" : ((_currentBGC.Number != -1) ? "B" : ""))
+        << GetCurrentGC().Number
+        << " | ";
+    (std::cout << ... << args);
+    std::cout << std::endl;
+}
 
 ClrEventsParser::ClrEventsParser(
     IAllocationsListener* pAllocationListener,
@@ -57,15 +61,13 @@ void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsL
     _pGarbageCollectionsListeners.push_back(pGarbageCollectionsListener);
 }
 
-
 void ClrEventsParser::ParseEvent(
     std::chrono::nanoseconds timestamp,
     DWORD version,
     INT64 keywords,
     DWORD id,
     ULONG cbEventData,
-    LPCBYTE eventData
-    )
+    LPCBYTE eventData)
 {
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
@@ -104,17 +106,17 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        //template tid = "GCAllocationTick_V4" >
-        //    <data name = "AllocationAmount" inType = "win:UInt32" />
-        //    <data name = "AllocationKind" inType = "win:UInt32" />
-        //    <data name = "ClrInstanceID" inType = "win:UInt16" />
-        //    <data name = "AllocationAmount64" inType = "win:UInt64"/>
-        //    <data name = "TypeID" inType = "win:Pointer" />
-        //    <data name = "TypeName" inType = "win:UnicodeString" />
-        //    <data name = "HeapIndex" inType = "win:UInt32" />
-        //    <data name = "Address" inType = "win:Pointer" />
-        //    <data name = "ObjectSize" inType = "win:UInt64" />
-        //DumpBuffer(pEventData, cbEventData);
+        // template tid = "GCAllocationTick_V4" >
+        //     <data name = "AllocationAmount" inType = "win:UInt32" />
+        //     <data name = "AllocationKind" inType = "win:UInt32" />
+        //     <data name = "ClrInstanceID" inType = "win:UInt16" />
+        //     <data name = "AllocationAmount64" inType = "win:UInt64"/>
+        //     <data name = "TypeID" inType = "win:Pointer" />
+        //     <data name = "TypeName" inType = "win:UnicodeString" />
+        //     <data name = "HeapIndex" inType = "win:UInt32" />
+        //     <data name = "Address" inType = "win:Pointer" />
+        //     <data name = "ObjectSize" inType = "win:UInt64" />
+        // DumpBuffer(pEventData, cbEventData);
 
         AllocationTickV4Payload payload{0};
         ULONG offset = 0;
@@ -172,7 +174,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     //
     if (id == EVENT_GC_TRIGGERED)
     {
-        LOG_GC_EVENT("OnGCTriggered");
+        LogGcEvent("OnGCTriggered");
         OnGCTriggered();
     }
     else if (id == EVENT_GC_START)
@@ -184,9 +186,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        std::stringstream buffer;
-        buffer << "OnGCStart: " << payload.Count << " " << payload.Depth << " " << payload.Reason << " " << payload.Type;
-        LOG_GC_EVENT(buffer.str());
+        LogGcEvent("OnGCStart: ", payload.Count, " ", payload.Depth, " ", payload.Reason, " ", payload.Type);
         OnGCStart(timestamp, payload);
     }
     else if (id == EVENT_GC_END)
@@ -198,19 +198,18 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        std::stringstream buffer;
-        buffer << "OnGCEnd: " << payload.Count << " " << payload.Depth;
-        LOG_GC_EVENT(buffer.str());
+        LogGcEvent("OnGCEnd: ", payload.Count, " ", payload.Depth);
+
         OnGCEnd(payload);
     }
     else if (id == EVENT_GC_SUSPEND_EE_BEGIN)
     {
-        LOG_GC_EVENT("OnGCSuspendEEBegin");
+        LogGcEvent("OnGCSuspendEEBegin");
         OnGCSuspendEEBegin(timestamp);
     }
     else if (id == EVENT_GC_RESTART_EE_END)
     {
-        LOG_GC_EVENT("OnGCRestartEEEnd");
+        LogGcEvent("OnGCRestartEEEnd");
         OnGCRestartEEEnd(timestamp);
     }
     else if (id == EVENT_GC_HEAP_STAT)
@@ -249,7 +248,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             pohSize = payload.GenerationSize4;
         }
 
-        LOG_GC_EVENT("OnGCHeapStats");
+        LogGcEvent("OnGCHeapStats");
         OnGCHeapStats(timestamp, gen2Size, lohSize, pohSize);
     }
     else if (id == EVENT_GC_GLOBAL_HEAP_HISTORY)
@@ -261,7 +260,7 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
             return;
         }
 
-        LOG_GC_EVENT("OnGCGlobalHeapHistory");
+        LogGcEvent("OnGCGlobalHeapHistory");
         OnGCGlobalHeapHistory(timestamp, payload);
     }
 }
@@ -280,7 +279,7 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         //    <data name="ContentionFlags" inType="win:UInt8" />
         //    <data name="ClrInstanceID" inType="win:UInt16" />
         //    <data name="DurationNs" inType="win:Double" />
-        //DumpBuffer(pEventData, cbEventData);
+        // DumpBuffer(pEventData, cbEventData);
 
         ContentionStopV1Payload payload{0};
         ULONG offset = 0;
@@ -317,9 +316,7 @@ void ClrEventsParser::NotifyGarbageCollectionStarted(std::chrono::nanoseconds ti
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        std::stringstream buffer;
-        buffer << "OnGarbageCollectionStart: " << number << " " << generation << " " << reason << " " << type;
-        LOG_GC_EVENT(buffer.str());
+        LogGcEvent("OnGarbageCollectionStart: ", number, " ", generation, " ", reason, " ", type);
 
         pGarbageCollectionsListener->OnGarbageCollectionStart(timestamp, number, generation, reason, type);
     }
@@ -336,14 +333,11 @@ void ClrEventsParser::NotifyGarbageCollectionEnd(
     std::chrono::nanoseconds endTimestamp,
     uint64_t gen2Size,
     uint64_t lohSize,
-    uint64_t pohSize
-    )
+    uint64_t pohSize)
 {
     for (auto& pGarbageCollectionsListener : _pGarbageCollectionsListeners)
     {
-        std::stringstream buffer;
-        buffer << "OnGarbageCollectionEnd: " << number << " " << generation << " " << reason << " " << type;
-        LOG_GC_EVENT(buffer.str());
+        LogGcEvent("OnGarbageCollectionEnd: ", number, " ", generation, " ", reason, " ", type);
 
         pGarbageCollectionsListener->OnGarbageCollectionEnd(
             number,
@@ -414,7 +408,7 @@ void ClrEventsParser::OnGCStart(std::chrono::nanoseconds timestamp, GCStartPaylo
         payload.Depth,
         static_cast<GCReason>(payload.Reason),
         static_cast<GCType>(payload.Type)
-        );
+    );
 
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
     {
@@ -461,17 +455,15 @@ void ClrEventsParser::OnGCRestartEEEnd(std::chrono::nanoseconds timestamp)
     else
     {
         // bad luck: a xxxBegin event has been missed
-        LOG_GC_EVENT("### missing Begin event");
+        LogGcEvent("### missing Begin event");
     }
     gc.PauseDuration += suspensionDuration;
 
     // could be the end of a gen0/gen1 or of a non concurrent gen2 GC
     if ((gc.Generation < 2) || (gc.Type == GCType::NonConcurrentGC))
     {
-        std::stringstream buffer;
-        buffer << "   end of GC #" << gc.Number << " - "
-               << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count() << "ms";
-        LOG_GC_EVENT(buffer.str());
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
         NotifyGarbageCollectionEnd(
             gc.Number,
@@ -505,25 +497,22 @@ void ClrEventsParser::OnGCHeapStats(std::chrono::nanoseconds timestamp, uint64_t
 
     if (gc.HasGlobalHeapHistoryBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-            std::stringstream buffer;
-            buffer << "   end of GC #" << gc.Number << " - "
-                   << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count() << "ms";
-            LOG_GC_EVENT(buffer.str());
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
-            NotifyGarbageCollectionEnd(
-                gc.Number,
-                gc.Generation,
-                gc.Reason,
-                gc.Type,
-                gc.IsCompacting,
-                gc.PauseDuration,
-                timestamp - gc.StartTimestamp,
-                timestamp,
-                gc.gen2Size,
-                gc.lohSize,
-                gc.pohSize
-                );
-            ResetGC(gc);
+        NotifyGarbageCollectionEnd(
+            gc.Number,
+            gc.Generation,
+            gc.Reason,
+            gc.Type,
+            gc.IsCompacting,
+            gc.PauseDuration,
+            timestamp - gc.StartTimestamp,
+            timestamp,
+            gc.gen2Size,
+            gc.lohSize,
+            gc.pohSize);
+        ResetGC(gc);
     }
 }
 
@@ -544,10 +533,8 @@ void ClrEventsParser::OnGCGlobalHeapHistory(std::chrono::nanoseconds timestamp, 
 
     if (gc.HasHeapStatsBeenReceived && (gc.Generation == 2) && (gc.Type == GCType::BackgroundGC))
     {
-        std::stringstream buffer;
-        buffer << "   end of GC #" << gc.Number << " - "
-               << std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count() << "ms";
-        LOG_GC_EVENT(buffer.str());
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timestamp - gc.StartTimestamp).count();
+        LogGcEvent("   end of GC #", gc.Number, "-", duration, "ms");
 
         NotifyGarbageCollectionEnd(
             gc.Number,

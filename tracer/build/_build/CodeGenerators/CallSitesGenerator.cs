@@ -251,6 +251,7 @@ namespace CodeGenerators
         internal static void GenerateFile(Dictionary<string, AspectClass> aspectClasses, AbsolutePath outputPath)
         {
             var sb = new StringBuilder();
+            bool inWin32Section = false;
             sb.AppendLine("""
                 // <copyright company="Datadog">
                 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
@@ -273,7 +274,25 @@ namespace CodeGenerators
 
                 foreach (var method in aspectClass.Value.Aspects.OrderBy(static k => k.Key.ToString(), StringComparer.OrdinalIgnoreCase))
                 {
-                    sb.AppendLine(Format("  " + method.Key + method.Value.Subfix()));
+                    bool win32Only = method.Value.Tfms.IsNetFxOnly();
+                    if (win32Only && !inWin32Section)
+                    {
+                        inWin32Section = true;
+                        sb.AppendLine("#if _WIN32");
+                    }
+                    else if (!win32Only && inWin32Section)
+                    {
+                        inWin32Section = false;
+                        sb.AppendLine("#endif");
+                    }
+
+                    sb.AppendLine(Format("  " + method.Key + method.Value.Suffix()));
+                }
+
+                if (inWin32Section)
+                {
+                    inWin32Section = false;
+                    sb.AppendLine("#endif");
                 }
             }
 
@@ -319,7 +338,7 @@ namespace CodeGenerators
 
             public TargetFrameworks Tfms = TargetFrameworks.None;
 
-            public string Subfix()
+            public string Suffix()
             {
                 return $" {((long)Tfms).ToString()}";
             }
