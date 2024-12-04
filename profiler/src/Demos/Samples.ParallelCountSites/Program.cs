@@ -28,6 +28,8 @@ namespace Samples.ParallelCountSites
             await Console.Out.WriteLineAsync($"pid = {Process.GetCurrentProcess().Id}");
             await Console.Out.WriteLineAsync();
 
+            // await Console.In.ReadLineAsync();
+
             var downloader = new Downloader(scenario);
             await downloader.SumPagesSize(iterations);
         }
