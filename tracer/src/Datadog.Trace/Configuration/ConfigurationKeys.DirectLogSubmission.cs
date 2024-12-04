@@ -17,21 +17,21 @@ namespace Datadog.Trace.Configuration
             /// Default is empty (direct log submission disabled).
             /// Supports multiple values separated with semi-colons.
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionEnabledIntegrations"/>
+            /// <seealso cref="DirectLogSubmissionSettings.EnabledIntegrationNames"/>
             public const string EnabledIntegrations = "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS";
 
             /// <summary>
             /// Set the name of the originating host for direct logs submission.
             /// Required for direct logs submission (default is machine name).
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionHost"/>
+            /// <seealso cref="DirectLogSubmissionSettings.Host"/>
             public const string Host = "DD_LOGS_DIRECT_SUBMISSION_HOST";
 
             /// <summary>
             /// Set the originating source for direct logs submission.
             /// Default is 'csharp'
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionSource"/>
+            /// <seealso cref="DirectLogSubmissionSettings.Source"/>
             public const string Source = "DD_LOGS_DIRECT_SUBMISSION_SOURCE";
 
             /// <summary>
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Configuration
             /// value are colon-separated. For example Key1:Value1, Key2:Value2. If not provided,
             /// <see cref="ConfigurationKeys.GlobalTags"/> are used instead
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionGlobalTags"/>
+            /// <seealso cref="DirectLogSubmissionSettings.GlobalTags"/>
             public const string GlobalTags = "DD_LOGS_DIRECT_SUBMISSION_TAGS";
 
             /// <summary>
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Configuration
             /// Default value uses the domain set in <see cref="ConfigurationKeys.Site"/>, so defaults to
             /// <c>https://http-intake.logs.datadoghq.com:443</c>.
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionUrl"/>
+            /// <seealso cref="DirectLogSubmissionSettings.IntakeUrl"/>
             public const string Url = "DD_LOGS_DIRECT_SUBMISSION_URL";
 
             /// <summary>
@@ -56,28 +56,28 @@ namespace Datadog.Trace.Configuration
             /// Default value is <c>Information</c>.
             /// Should be one of <c>Verbose</c>,<c>Debug</c>,<c>Information</c>,<c>Warning</c>,<c>Error</c>,<c>Fatal</c>
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionMinimumLevel"/>
+            /// <seealso cref="DirectLogSubmissionSettings.MinimumLevel"/>
             public const string MinimumLevel = "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL";
 
             /// <summary>
             /// Configuration key for the maximum number of logs to send at one time
             /// Default value is <c>1,000</c>, the maximum accepted by the Datadog log API
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionBatchSizeLimit"/>
+            /// <seealso cref="DirectLogSubmissionSettings.BatchSizeLimit"/>
             public const string BatchSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE";
 
             /// <summary>
             /// Configuration key for the maximum number of logs to hold in internal queue at any one time
             /// Default value is <c>100,000</c>.
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionQueueSizeLimit"/>
+            /// <seealso cref="DirectLogSubmissionSettings.QueueSizeLimit"/>
             public const string QueueSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE";
 
             /// <summary>
             /// Configuration key for the time to wait between checking for batches
             /// Default value is <c>2</c>s.
             /// </summary>
-            /// <seealso cref="DirectLogSubmissionSettings.DirectLogSubmissionBatchPeriod"/>
+            /// <seealso cref="DirectLogSubmissionSettings.BatchPeriod"/>
             public const string BatchPeriodSeconds = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
         }
     }
