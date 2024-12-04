@@ -52,12 +52,12 @@ namespace Datadog.Trace.Tests
             const string version = "1.0.0";
             const string env = "staging";
 
-            var settings = new TracerSettings()
+            var settings = TracerSettings.Create(new()
             {
-                ServiceName = service,
-                ServiceVersion = version,
-                Environment = env
-            };
+                { ConfigurationKeys.ServiceName, service },
+                { ConfigurationKeys.ServiceVersion, version },
+                { ConfigurationKeys.Environment, env },
+            });
             var tracer = TracerHelper.CreateWithFakeAgent(settings);
             Tracer.UnsafeSetTracerInstance(tracer);
 

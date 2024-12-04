@@ -31,11 +31,11 @@ namespace Benchmarks.Trace
 
         static SpanBenchmark()
         {
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                TraceEnabled = false,
-                StartupDiagnosticLogEnabled = false
-            };
+                { ConfigurationKeys.TraceEnabled, false },
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+            });
 
             Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
 

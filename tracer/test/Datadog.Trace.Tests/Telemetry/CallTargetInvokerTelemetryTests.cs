@@ -22,6 +22,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using ConfigurationKeys = Datadog.Trace.Configuration.ConfigurationKeys;
 
 namespace Datadog.Trace.Tests.Telemetry
 {
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void RecordsRelevantTelemetry()
         {
-            var settings = new TracerSettings() { ServiceName = "DefaultService" };
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "DefaultService" } });
             var telemetry = new TestTelemetryController();
             var tracer = new Tracer(
                 settings,

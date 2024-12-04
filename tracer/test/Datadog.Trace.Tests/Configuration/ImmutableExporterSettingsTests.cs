@@ -95,16 +95,16 @@ namespace Datadog.Trace.Tests.Configuration
             // Ensure that all properties are represented
             Assert.Equal(mutableProperties.Count(), equalityCheckers.Count);
 
-            var exporterSettings = new ExporterSettings();
-
-            exporterSettings.AgentUri = new Uri("http://127.0.0.1:8282");
-            exporterSettings.MetricsUnixDomainSocketPath = "metricsuds";
-            exporterSettings.TracesUnixDomainSocketPath = "tracesuds";
-            exporterSettings.MetricsPipeName = "metricspipe";
-            exporterSettings.TracesPipeName = "tracespipe";
-            exporterSettings.DogStatsdPort = 1234;
-            exporterSettings.TracesPipeTimeoutMs = 5556;
-
+            var exporterSettings = ExporterSettings.Create(new()
+            {
+                { ConfigurationKeys.AgentUri, "http://127.0.0.1:8282" },
+                { ConfigurationKeys.MetricsUnixDomainSocketPath, "metricsuds" },
+                { ConfigurationKeys.TracesUnixDomainSocketPath, "tracesuds" },
+                { ConfigurationKeys.MetricsPipeName, "metricspipe" },
+                { ConfigurationKeys.TracesPipeName, "tracespipe" },
+                { ConfigurationKeys.DogStatsdPort, 1234 },
+                { ConfigurationKeys.TracesPipeTimeoutMs, 5556 },
+            });
             var immutableSettings = new ImmutableExporterSettings(exporterSettings);
 
             foreach (var equalityCheck in equalityCheckers)

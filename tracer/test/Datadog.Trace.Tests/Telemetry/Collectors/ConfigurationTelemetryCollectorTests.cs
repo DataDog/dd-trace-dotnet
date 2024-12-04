@@ -267,15 +267,14 @@ public class ConfigurationTelemetryCollectorTests
             const string env = "serializer-tests";
             const string serviceName = "my-tests";
             const string serviceVersion = "1.2.3";
-            var collector = new ConfigurationTelemetry();
-            var s = new TracerSettings(NullConfigurationSource.Instance, collector, new OverrideErrorLog())
+            var s = TracerSettings.Create(new()
             {
-                ServiceName = serviceName,
-                Environment = env,
-                ServiceVersion = serviceVersion
-            };
+                { ConfigurationKeys.ServiceName, serviceName },
+                { ConfigurationKeys.Environment, env },
+                { ConfigurationKeys.ServiceVersion, serviceVersion },
+            });
 
-            return GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.FullTrustAppDomain);
+            return GetLatestValueFromConfig(s.Telemetry.GetData(), ConfigTelemetryData.FullTrustAppDomain);
         }
     }
 #endif

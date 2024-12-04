@@ -22,10 +22,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
-        {
-            StartupDiagnosticLogEnabled = false
-        };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -47,10 +44,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
-        {
-            StartupDiagnosticLogEnabled = false
-        };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -84,10 +78,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
-        {
-            StartupDiagnosticLogEnabled = false
-        };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -110,10 +101,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
-        {
-            StartupDiagnosticLogEnabled = false
-        };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -147,10 +135,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings
-        {
-            StartupDiagnosticLogEnabled = false
-        };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -171,7 +156,7 @@ public class EventTrackingSdkTests
     {
         var scopeManager = new AsyncLocalScopeManager();
 
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false };
+        var settings = CreateTracerSettings();
         var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -193,4 +178,7 @@ public class EventTrackingSdkTests
             Assert.Equal(kvp.Value, traceContext.Tags.GetTag($"{Tags.AppSec.Events}{eventName}.{kvp.Key}"));
         }
     }
+
+    private static TracerSettings CreateTracerSettings()
+        => TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
 }
