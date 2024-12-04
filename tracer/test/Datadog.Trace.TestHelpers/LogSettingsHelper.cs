@@ -22,7 +22,7 @@ namespace Datadog.Trace.TestHelpers
             version: "1.0.0",
             gitMetadataTagsProvider: new NullGitMetadataProvider());
 
-        public static ImmutableDirectLogSubmissionSettings GetValidSettings()
+        public static DirectLogSubmissionSettings GetValidSettings()
         {
             var tracerSettings = TracerSettings.Create(new()
             {
@@ -31,13 +31,13 @@ namespace Datadog.Trace.TestHelpers
                 { ConfigurationKeys.DirectLogSubmission.Source, "csharp" },
                 { ConfigurationKeys.DirectLogSubmission.Url, "https://localhost:1234" },
                 { ConfigurationKeys.DirectLogSubmission.MinimumLevel, "debug" },
-                { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", ImmutableDirectLogSubmissionSettings.SupportedIntegrations) },
+                { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", DirectLogSubmissionSettings.SupportedIntegrations) },
                 { ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, "1000" },
                 { ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, "2" },
                 { ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, "100000" }
             });
 
-            return ImmutableDirectLogSubmissionSettings.Create(tracerSettings);
+            return tracerSettings.LogSubmissionSettings;
         }
     }
 }
