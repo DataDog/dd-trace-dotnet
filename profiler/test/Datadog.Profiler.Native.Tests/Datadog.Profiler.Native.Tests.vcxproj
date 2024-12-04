@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -27,6 +26,9 @@
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <ProjectName>Datadog.Profiler.Native.Tests</ProjectName>
+  </PropertyGroup>
+  <PropertyGroup>
+    <LibDatadogDependencies>PowrProf.lib;NtDll.lib;UserEnv.lib;Bcrypt.lib;crypt32.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;Secur32.lib;Ncrypt.lib</LibDatadogDependencies>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -138,7 +140,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(LibDatadogDependencies);$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-i386.lib /wholearchive:clang_rt.asan_cxx_dbg-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers />
@@ -161,7 +163,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(LibDatadogDependencies);$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-x86_64.lib /wholearchive:clang_rt.asan_cxx_dbg-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -184,7 +186,7 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(LibDatadogDependencies);$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-i386.lib /wholearchive:clang_rt.asan_cxx-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -207,7 +209,7 @@
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(LibDatadogDependencies);$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan-x86_64.lib /wholearchive:clang_rt.asan_cxx-x86_64.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -218,6 +220,5 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.7\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.13.1.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

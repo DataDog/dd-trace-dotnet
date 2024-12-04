@@ -189,13 +189,16 @@
       <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\native-lib\</SHARED-LIB-PATH>
       <CORECLR-PATH>$(SHARED-LIB-PATH)coreclr\src</CORECLR-PATH>
       <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
+      <!-- VCPKG setup -->
+      <VcpkgEnableManifest>true</VcpkgEnableManifest>
+      <VcpkgUseStatic>true</VcpkgUseStatic>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
       <ClCompile>
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1</PreprocessorDefinitions>
-	<BuildStlModules>false</BuildStlModules>
-	<EnableModules>false</EnableModules>
+	      <BuildStlModules>false</BuildStlModules>
+	      <EnableModules>false</EnableModules>
       </ClCompile>
     </ItemDefinitionGroup>
 

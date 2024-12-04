@@ -25,12 +25,5 @@
 
         <!-- Target base name to use for artifact produced by C++ project -->
         <ProfilerEngineNativeTarget>Datadog.Profiler.Native</ProfilerEngineNativeTarget>
-        <!-- VCPKG setup -->
-        <VcpkgInstalledDir>$(MSBuildThisFileDirectory)..\..\..\vcpkg_packages</VcpkgInstalledDir>
-        <VcpkgEnableManifest>true</VcpkgEnableManifest>
-        <VcpkgUseStatic>true</VcpkgUseStatic>
     </PropertyGroup>
-    <Import Project="$(MSBuildThisFileDirectory)..\..\..\vcpkg_packages\x64-windows-static\share\libdatadog\libdatadog.props"
-            Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\vcpkg_packages\x64-windows-static\share\libdatadog\libdatadog.props')" />
-
 </Project>
