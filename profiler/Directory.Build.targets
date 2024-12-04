@@ -1,0 +1,10 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LibDatadogDependencies>PowrProf.lib;NtDll.lib;UserEnv.lib;Bcrypt.lib;crypt32.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;Secur32.lib;Ncrypt.lib</LibDatadogDependencies>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(VcpkgUseStatic)' == 'true' and '$(VcpkgEnabled)' == 'true' and '$(MSBuildProjectExtension)' == '.vcxproj'">
+    <Link>
+      <AdditionalDependencies>$(LibDatadogDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

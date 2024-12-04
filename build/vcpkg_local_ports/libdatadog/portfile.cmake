@@ -17,7 +17,6 @@ set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
 set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
 set(LIBDATADOG_URL "https://github.com/gleocadie/libdatadog/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
-message(STATUS "Download ${LIBDATADOG_URL}")
 # Download and extract the prebuilt binaries
 vcpkg_download_distfile(ARCHIVE
     URLS ${LIBDATADOG_URL}
@@ -44,16 +43,6 @@ else()
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/libdatadog.props" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
-endif()
-
-
-if ("${VCPKG_LIBRARY_LINKAGE}" STREQUAL "static")
-    file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage"
-	"\n************************************** SETUP\n"
-	"\nFor your project to link correctly, you will need to add:\n"
-	"<Import Project=\"vpkd_installed\\${TARGET_TRIPLET}\\${TARGET_TRIPLET}\\share\\libdatadog\\libdatadog.props\"/>\n"
-    "\n"
-	"into your vcxproj or your Directory.Build.props file\n")
 endif()
 
 vcpkg_install_copyright(FILE_LIST "${source_path}/${LIBDATADOG_FILENAME}/LICENSE")
