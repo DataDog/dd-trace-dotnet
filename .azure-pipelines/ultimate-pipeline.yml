@@ -319,12 +319,14 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
 
     - script: |
-        git clone https://github.com/microsoft/vcpkg.git ..\v
-        ..\v\bootstrap-vcpkg.bat
-        ..\v\vcpkg.exe integrate install
+        rm -r -f vcpkg
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
       displayName: Install and setup VCPKG
 
-    - script: tracer\build.cmd BuildProfilerHome
+    - script: |
+        .\vcpkg\vcpkg.exe integrate install
+        tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
       retryCountOnTaskFailure: 1
 

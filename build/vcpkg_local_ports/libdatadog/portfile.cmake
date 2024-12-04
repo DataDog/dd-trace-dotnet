@@ -1,58 +1,59 @@
-# portfile.cmake
+set(LIBDATADOG_VERSION ${VERSION})
 
-include(vcpkg_common_functions)
+if(#TARGET_TRIPLET STREQUAL "x64-windows" OR
+   TARGET_TRIPLET STREQUAL "x64-windows-static")
+    set(PLATFORM "x64")
+    set(LIBDATADOG_HASH "bd3061cf7811a3a10601c5f5e4be871c9b806a8afac9343802b47878e997a2596426f030b903dfb6aa6ae0961d41c0ad844295d2eb728ee3552db3cfc924a305")
+elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
+       TARGET_TRIPLET STREQUAL "x86-windows-static")
+    set(PLATFORM "x86")
+    set(LIBDATADOG_HASH "e81eb5881a06186111e03d012b10236a32e7a2d1c2d2c0e4a7a19646e280923d6b0a4b2e6ebb588fa358e3304edf5c8fb0ff37383361f577fbfd9ad75dc27aab")
+else()
+    message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
+endif()
 
 # Define the version and download URL for the prebuilt binaries
-set(MYLIB_VERSION ${VERSION})
-set(MYLIB_URL "C:\\Users\\gregory.leocadie\\repos\\libdatadog\\myoutaput\\libdatadog-x64-windows.zip")
-set(MYLIB_HASH "0")  # Replace with actual SHA512 hash
+set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
+set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
+set(LIBDATADOG_URL "https://github.com/gleocadie/libdatadog/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
+message(STATUS "Download ${LIBDATADOG_URL}")
 # Download and extract the prebuilt binaries
-#vcpkg_download_distfile(ARCHIVE
-#    URLS ${MYLIB_URL}
-#    FILENAME "mylib-${MYLIB_VERSION}.zip"
-#    SHA512 ${MYLIB_HASH}
-#)
+vcpkg_download_distfile(ARCHIVE
+    URLS ${LIBDATADOG_URL}
+    FILENAME "${LIBDATADOG_ARTIFACT}"
+    SHA512 ${LIBDATADOG_HASH}
+)
+
 # Extract the downloaded archive using vcpkg_extract_source_archive_ex
 vcpkg_extract_source_archive_ex(
     OUT_SOURCE_PATH source_path
-    ARCHIVE "${MYLIB_URL}"
+    ARCHIVE "${ARCHIVE}"
     NO_REMOVE_ONE_LEVEL
 )
 
-message(STATUS "CURRENT_PACKAGES_DIR ${CURRENT_PACKAGES_DIR}")
-message(STATUS "CMAKE_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_DIR}")
-
 # Move extracted files to appropriate directories
-file(COPY "${source_path}/libdatadog-x64-windows/include/" DESTINATION "${CURRENT_PACKAGES_DIR}/include")
+file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/include/" DESTINATION "${CURRENT_PACKAGES_DIR}/include")
+
 if ("${VCPKG_LIBRARY_LINKAGE}" STREQUAL "dynamic")
-file(COPY "${source_path}/libdatadog-x64-windows/release/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/bin/")
-file(COPY "${source_path}/libdatadog-x64-windows/release/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
-file(COPY "${source_path}/libdatadog-x64-windows/debug/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin/")
-file(COPY "${source_path}/libdatadog-x64-windows/debug/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib/")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/bin/")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
 else()
-file(COPY "${source_path}/libdatadog-x64-windows/release/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
-file(COPY "${source_path}/libdatadog-x64-windows/debug/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib/")
-file(INSTALL "${source_path}/libdatadog-x64-windows/libdatadog.props" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/")
-file(INSTALL "${source_path}/libdatadog-x64-windows/usage" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/libdatadog.props" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
 endif()
 
-# TODO
-# generate usage based on the dynamic/static
 
 if ("${VCPKG_LIBRARY_LINKAGE}" STREQUAL "static")
-    file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage" 
+    file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage"
+	"\n************************************** SETUP\n"
 	"\nFor your project to link correctly, you will need to add:\n"
-	"<Import Project=\"${VCPKG_INSTALLED_DIR}\\${VCPKG_TARGET_TRIPLET}\\share\\libdatadog\\libdatadog.props\"/>\n"
+	"<Import Project=\"vpkd_installed\\${TARGET_TRIPLET}\\${TARGET_TRIPLET}\\share\\libdatadog\\libdatadog.props\"/>\n"
+    "\n"
 	"into your vcxproj or your Directory.Build.props file\n")
 endif()
-# example <Import Project="<manifest install dir>\<triplet>\share\libdatadog\libdatadog.props"/>
 
-# Install CMake configuration files
-#file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/mylibConfig.cmake" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/share/mylib")
-#file(INSTALL "${SOURCE_PATH}/mylibTargets.cmake" DESTINATION "${CURRENT_PACKAGES_DIR}/share/mylib")
-
-# Call vcpkg_cmake_config_fixup to ensure paths are correct in config files
-#vcpkg_cmake_config_fixup(PACKAGE_NAME "mylib")
-
-# Optionally, clean up temporary files or directories if needed
+vcpkg_install_copyright(FILE_LIST "${source_path}/${LIBDATADOG_FILENAME}/LICENSE")
