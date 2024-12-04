@@ -91,7 +91,7 @@ namespace UpdateVendors
                 {
                     RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma);
                 },
-                relativePathsToExclude: ["Buffers/ArrayPoolEventSource.cs"]);
+                relativePathsToExclude: new[] { "Buffers/ArrayPoolEventSource.cs" });
 
             Add(
                 libraryName: "System.Private.CoreLib",
