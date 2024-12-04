@@ -125,6 +125,7 @@
 class NetworkRequestCommon
 {
 public:
+    NetworkRequestCommon();
     NetworkRequestCommon(std::string url, std::chrono::nanoseconds timestamp);
     ~NetworkRequestCommon() = default;
 

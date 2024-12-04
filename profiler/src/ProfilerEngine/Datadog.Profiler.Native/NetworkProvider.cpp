@@ -47,8 +47,12 @@ NetworkProvider::NetworkProvider(
 
 bool NetworkProvider::CaptureThreadInfo(NetworkRequestInfo& info)
 {
-    std::shared_ptr<ManagedThreadInfo> threadInfo;
-    INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+    auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (threadInfo == nullptr)
+    {
+        LogOnce(Warn, "NetworkProvider::CaptureThreadInfo: Profiler failed at getting the current managed thread info ");
+        return false;
+    }
 
     // sampling can be forced for tests
     if (!_pConfiguration->ForceHttpSampling())
@@ -154,7 +158,9 @@ void NetworkProvider::OnRequestStop(std::chrono::nanoseconds timestamp, LPCGUID 
 
     if (requestInfo->second.Redirect != nullptr)
     {
+        // will be an empty string for .NET 7
         rawSample.RedirectUrl = std::move(requestInfo->second.Redirect->Url);
+        rawSample.HasBeenRedirected = true;
     }
 
     Add(std::move(rawSample));
@@ -174,6 +180,7 @@ void NetworkProvider::OnRequestFailed(std::chrono::nanoseconds timestamp, LPCGUI
     pInfo->Error = std::move(message);
 }
 
+// received in .NET 8+
 void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string redirectUrl)
 {
     NetworkRequestInfo* pInfo = nullptr;
@@ -182,10 +189,13 @@ void NetworkProvider::OnRedirect(std::chrono::nanoseconds timestamp, LPCGUID pAc
         return;
     }
 
-    // we need to keep track of the duration of the initial processing that ends up to a redirect
-    // and count it as part of the request/response phase
-    pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
-    pInfo->Redirect = std::make_unique<NetworkRequestInfo>(redirectUrl, timestamp);
+    if (pInfo->Redirect == nullptr)
+    {
+        // this should never happen because Redirect is created in OnRequestHeaderStop
+        return;
+    }
+
+    pInfo->Redirect->Url = redirectUrl;
 }
 
 void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId)
@@ -296,6 +306,26 @@ void NetworkProvider::OnRequestHeaderStart(std::chrono::nanoseconds timestamp, L
     else
     {
         pInfo->Redirect->ReqRespStartTime = timestamp;
+    }
+}
+
+// received in .NET 7+
+void NetworkProvider::OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode)
+{
+    NetworkRequestInfo* pInfo = nullptr;
+    if (!MonitorRequest(pInfo, pActivityId, false))
+    {
+        return;
+    }
+
+    if (statusCode == 301)
+    {
+        // we need to keep track of the duration of the initial processing that ends up to a redirect
+        // and count it as part of the request/response phase
+        pInfo->ReqRespDuration = timestamp - pInfo->ReqRespStartTime;
+
+        // the redirect url will be "" for .NET 7 because the Redirect event is not emitted
+        pInfo->Redirect = std::make_unique<NetworkRequestInfo>("", timestamp);
     }
 }
 

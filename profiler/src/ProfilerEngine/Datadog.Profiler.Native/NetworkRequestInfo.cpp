@@ -15,8 +15,6 @@ NetworkRequestInfo::NetworkRequestInfo(std::string url, std::chrono::nanoseconds
 }
 
 NetworkRequestInfo::NetworkRequestInfo(NetworkRequestInfo&& other) noexcept
-    :
-    NetworkRequestCommon(std::move(other))
 {
     *this = std::move(other);
 }
@@ -40,6 +38,10 @@ NetworkRequestInfo& NetworkRequestInfo::operator=(NetworkRequestInfo&& other) no
 
 // --------------------------------------------------------------------------------
 
+NetworkRequestCommon::NetworkRequestCommon()
+{
+
+}
 
 NetworkRequestCommon::NetworkRequestCommon(std::string url, std::chrono::nanoseconds timestamp)
     :

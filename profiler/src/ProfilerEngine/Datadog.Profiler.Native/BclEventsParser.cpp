@@ -97,7 +97,7 @@ void BclEventsParser::ParseHttpEvent(
             // OnResponseHeadersStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
             break;
         case 12: // ResponseHeadersStop
-            // OnResponseHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
+             OnResponseHeadersStop(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
             break;
         case 13: // ResponseContentStart
             // OnResponseContentStart(timestamp, pActivityId, pRelatedActivityId, pEventData, cbEventData);
@@ -197,6 +197,19 @@ void BclEventsParser::OnRequestFailedDetailed(std::chrono::nanoseconds timestamp
 
 void BclEventsParser::OnConnectionEstablished(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // WARNING: the payload is different in .NET 7 and .NET 8+
+    // .NET 7:
+    //  ------
+    //  byte versionMajor
+    //  byte versionMinor
+    //
+    // .NET 8+
+    //  ------
+    //  long connectionId
+    //  string scheme
+    //  string host
+    //  int port
+    //  string remoteAddress
 }
 
 void BclEventsParser::OnConnectionClosed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
@@ -209,6 +222,12 @@ void BclEventsParser::OnRequestLeftQueue(std::chrono::nanoseconds timestamp, LPC
 
 void BclEventsParser::OnRequestHeadersStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // WARNING: no payload in .NET 7
+    //
+    // .NET 8+
+    //  ------
+    // Int64 connectionId = 0;
+
     _pNetworkListener->OnRequestHeaderStart(timestamp, pActivityId);
 }
 
@@ -230,6 +249,16 @@ void BclEventsParser::OnResponseHeadersStart(std::chrono::nanoseconds timestamp,
 
 void BclEventsParser::OnResponseHeadersStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)
 {
+    // int statusCode
+
+    ULONG offset = 0;
+    uint32_t statusCode = 0;
+    if (!EventsParserHelper::Read(statusCode, pEventData, cbEventData, offset))
+    {
+        return;
+    }
+
+    _pNetworkListener->OnRequestHeaderStop(timestamp, pActivityId, statusCode);
 }
 
 void BclEventsParser::OnResponseContentStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, LPCGUID pRelatedActivityId, LPCBYTE pEventData, ULONG cbEventData)

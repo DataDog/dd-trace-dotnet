@@ -22,6 +22,7 @@ public:
         Error(std::move(other.Error)),
         EndThreadId(std::move(other.EndThreadId)),
         RedirectUrl(std::move(other.RedirectUrl)),
+        HasBeenRedirected(other.HasBeenRedirected),
         DnsWait(other.DnsWait),
         DnsDuration(other.DnsDuration),
         DnsSuccess(other.DnsSuccess),
@@ -45,6 +46,7 @@ public:
             Error = std::move(other.Error);
             EndThreadId = std::move(other.EndThreadId);
             RedirectUrl = std::move(other.RedirectUrl);
+            HasBeenRedirected = other.HasBeenRedirected;
             DnsWait = other.DnsWait;
             DnsDuration = other.DnsDuration;
             DnsSuccess = other.DnsSuccess;
@@ -70,7 +72,7 @@ public:
         {
             sample->AddLabel(Label(Sample::RequestErrorLabel, Error));
         }
-        if (!RedirectUrl.empty())
+        if (HasBeenRedirected)
         {
             sample->AddLabel(Label(Sample::RequestRedirectUrlLabel, RedirectUrl));
         }
@@ -106,6 +108,7 @@ public:
     std::string Error;
     std::string EndThreadId;
     std::string RedirectUrl;
+    bool HasBeenRedirected;
 
     std::chrono::nanoseconds DnsWait;
     std::chrono::nanoseconds DnsDuration;

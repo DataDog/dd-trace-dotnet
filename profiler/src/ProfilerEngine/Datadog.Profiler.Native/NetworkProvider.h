@@ -61,6 +61,7 @@ public:
     void OnHandshakeStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
     void OnHandshakeFailed(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, std::string message) override;
     void OnRequestHeaderStart(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
+    void OnRequestHeaderStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, uint32_t statusCode) override;
     void OnResponseContentStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId) override;
 
 private:

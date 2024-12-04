@@ -107,11 +107,12 @@ namespace Datadog.Profiler.IntegrationTests.Network
                     continue;
                 }
 
-                // in .NET 6 and 7, the redirect is not handled and no error occurs
+                var redirectLabel = labels.FirstOrDefault(l => l.Name == "redirect url");
+                redirectLabel.Name.Should().NotBeNullOrWhiteSpace();
+
+                // in .NET 7, the redirect is detected but no redirected url is available
                 if (framework != "net7.0")
                 {
-                    var redirectLabel = labels.FirstOrDefault(l => l.Name == "redirect url");
-                    redirectLabel.Name.Should().NotBeNullOrWhiteSpace();
                     redirectLabel.Value.Should().NotBeNullOrWhiteSpace();
                 }
 
@@ -212,9 +213,9 @@ namespace Datadog.Profiler.IntegrationTests.Network
                 socketDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
                 socketDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
-                var SecurityDurationLabel = labels.FirstOrDefault(l => l.Name == "sec.duration");
-                SecurityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
-                SecurityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
+                var securityDurationLabel = labels.FirstOrDefault(l => l.Name == "sec.duration");
+                securityDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
+                securityDurationLabel.Value.Should().NotBeNullOrWhiteSpace();
 
                 var requestResponseDurationLabel = labels.FirstOrDefault(l => l.Name == "response.duration");
                 requestResponseDurationLabel.Name.Should().NotBeNullOrWhiteSpace();
