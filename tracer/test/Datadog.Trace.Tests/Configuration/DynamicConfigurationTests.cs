@@ -75,10 +75,12 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void DoesNotOverrideDirectLogsTags()
         {
-            var tracerSettings = new TracerSettings();
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags.Add("key1", "value1");
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("test");
-            tracerSettings.GlobalTags.Add("key2", "value2");
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.DirectLogSubmission.GlobalTags, "key1:value1" },
+                { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, "xunit" },
+                { ConfigurationKeys.GlobalTags, "key2:value2" },
+            });
             TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings), TracerManagerFactory.Instance);
 
             TracerManager.Instance.DirectLogSubmission.Formatter.Tags.Should().Be("key1:value1");
