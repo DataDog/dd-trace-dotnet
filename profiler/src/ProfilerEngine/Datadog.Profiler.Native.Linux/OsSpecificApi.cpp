@@ -235,13 +235,8 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
     }
     else
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            auto errorNumber = errno;
-            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
-        }
+        auto errorNumber = errno;
+        LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
     return threads;
@@ -272,13 +267,8 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     }
     else
     {
-        static bool alreadyLogged = false;
-        if (!alreadyLogged)
-        {
-            alreadyLogged = true;
-            auto errorNumber = errno;
-            Log::Error("Failed at opendir ", dirname, " error: ", strerror(errorNumber));
-        }
+        auto errorNumber = errno;
+        LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
     return threads;

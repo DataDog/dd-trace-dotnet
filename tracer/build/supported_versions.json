@@ -242,9 +242,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.403.7",
-        "maxVersionAvailableInclusive": "3.7.403.7",
-        "maxVersionTestedInclusive": "3.7.403.7"
+        "maxVersionSupportedInclusive": "3.7.403.8",
+        "maxVersionAvailableInclusive": "3.7.403.8",
+        "maxVersionTestedInclusive": "3.7.403.8"
       }
     ]
   },
@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "3.7.401.55",
-        "maxVersionAvailableInclusive": "3.7.401.55",
-        "maxVersionTestedInclusive": "3.7.401.55"
+        "maxVersionSupportedInclusive": "3.7.401.56",
+        "maxVersionAvailableInclusive": "3.7.401.56",
+        "maxVersionTestedInclusive": "3.7.401.56"
       }
     ]
   },
@@ -276,9 +276,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.402.34",
-        "maxVersionAvailableInclusive": "3.7.402.34",
-        "maxVersionTestedInclusive": "3.7.402.34"
+        "maxVersionSupportedInclusive": "3.7.402.35",
+        "maxVersionAvailableInclusive": "3.7.402.35",
+        "maxVersionTestedInclusive": "3.7.402.35"
       }
     ]
   },
@@ -310,8 +310,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
+        "maxVersionSupportedInclusive": "3.7.400.58",
+        "maxVersionAvailableInclusive": "3.7.400.58",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
-        "maxVersionTestedInclusive": "3.7.400.57"
+        "maxVersionSupportedInclusive": "3.7.400.58",
+        "maxVersionAvailableInclusive": "3.7.400.58",
+        "maxVersionTestedInclusive": "3.7.400.58"
       }
     ]
   },
@@ -344,9 +344,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.400.57",
-        "maxVersionAvailableInclusive": "3.7.400.57",
-        "maxVersionTestedInclusive": "3.7.400.57"
+        "maxVersionSupportedInclusive": "3.7.400.58",
+        "maxVersionAvailableInclusive": "3.7.400.58",
+        "maxVersionTestedInclusive": "3.7.400.58"
       }
     ]
   },
@@ -550,8 +550,8 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.28.3",
-        "maxVersionAvailableInclusive": "3.28.3",
+        "maxVersionSupportedInclusive": "3.29.0",
+        "maxVersionAvailableInclusive": "3.29.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -625,16 +625,16 @@
     "integrationName": "HotChocolate",
     "assemblyName": "HotChocolate.Execution",
     "minAssemblyVersionInclusive": "11.0.0",
-    "maxAssemblyVersionInclusive": "13.65535.65535",
+    "maxAssemblyVersionInclusive": "14.65535.65535",
     "packages": [
       {
         "name": "HotChocolate.AspNetCore",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "11.0.0",
         "minVersionTestedInclusive": "11.3.8",
-        "maxVersionSupportedInclusive": "13.9.14",
+        "maxVersionSupportedInclusive": "14.1.0",
         "maxVersionAvailableInclusive": "14.1.0",
-        "maxVersionTestedInclusive": "13.9.14"
+        "maxVersionTestedInclusive": "14.1.0"
       }
     ]
   },
@@ -1101,9 +1101,9 @@
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
         "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "8.5.0",
-        "maxVersionAvailableInclusive": "8.5.0",
-        "maxVersionTestedInclusive": "8.5.0"
+        "maxVersionSupportedInclusive": "8.5.2",
+        "maxVersionAvailableInclusive": "8.5.2",
+        "maxVersionTestedInclusive": "8.5.2"
       }
     ]
   },

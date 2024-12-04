@@ -107,8 +107,14 @@ TEST(ClrEventsParserTest, ContentionStartV2)
     parser.ParseEvent(1234ns, 2, KEYWORD_CONTENTION, EVENT_CONTENTION_START, sizeof(ContentionStartV2Payload), reinterpret_cast<LPCBYTE>(&payload));
 }
 
+// The CLR sends events with misalign field.
+// In this case, since we create an event, it's ok to disregard the misalign issue
+// reported by UBSAN
 template <typename T>
 uint64_t Write(std::uint8_t* buffer, std::uint64_t offset, T const& value)
+#ifdef LINUX
+__attribute__((no_sanitize("alignment")))
+#endif
 {
     *reinterpret_cast<T*>(buffer + offset) = value;
     return offset + sizeof(T);

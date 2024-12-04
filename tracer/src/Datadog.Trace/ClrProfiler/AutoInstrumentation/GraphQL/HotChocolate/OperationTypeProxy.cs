@@ -13,19 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal enum OperationTypeProxy
     {
-        /// <summary>
-        /// A query operation.
-        /// </summary>
         Query,
-
-        /// <summary>
-        /// A mutation operation.
-        /// </summary>
         Mutation,
-
-        /// <summary>
-        /// A subscription operation.
-        /// </summary>
         Subscription
     }
 }
