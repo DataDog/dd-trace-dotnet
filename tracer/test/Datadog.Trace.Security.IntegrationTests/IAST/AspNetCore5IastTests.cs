@@ -742,7 +742,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.SetOutput(Output);
 
         var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
-        await TryStartApp(newFixture);
+        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
 
         var agent = newFixture.Agent;
         var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
