@@ -2,9 +2,11 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 
@@ -27,7 +29,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
             return trace;
         }
 
-        Span[] spans = null;
+        Span[]? spans = null;
         var spIdx = 0;
         for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
         {
@@ -43,10 +45,10 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
             }
         }
 
-        return spans is null ? new ArraySegment<Span>(Array.Empty<Span>()) : new ArraySegment<Span>(spans, 0, spIdx);
+        return spans is null ? new ArraySegment<Span>([]) : new ArraySegment<Span>(spans, 0, spIdx);
     }
 
-    public Span Process(Span span)
+    public Span? Process(Span? span)
     {
         // If agentless is enabled we don't filter anything.
         if (span is null)
@@ -59,7 +61,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
         return span.Type is SpanTypes.TestSuite or SpanTypes.TestModule or SpanTypes.TestSession ? null : span;
     }
 
-    public ITagProcessor GetTagProcessor()
+    public ITagProcessor? GetTagProcessor()
     {
         return null;
     }

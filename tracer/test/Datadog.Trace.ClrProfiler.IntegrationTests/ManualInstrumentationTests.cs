@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -109,5 +110,20 @@ public class ManualInstrumentationTests : TestHelper
         settings.DisableRequireUniquePrefix();
 
         await VerifyHelper.VerifySpans(spans, settings);
+
+        // telemetry should contain "code" config when it's set manually in code
+        // this just verifies we have values for all the settings we call,
+        // without being too rigid about the exact values to avoid fragility
+        var allConfig = TelemetryHelper.GetAllConfigurationPayloads(telemetry.Telemetry)
+                                       .SelectMany(x => x)
+                                       .Where(x => x.Origin == "code")
+                                       .Select(x => x.Name);
+
+        allConfig.Should().Contain([
+            ConfigurationKeys.DebugEnabled,
+            ConfigurationKeys.ServiceName,
+            ConfigurationKeys.Environment,
+            ConfigurationKeys.GlobalTags,
+        ]);
     }
 }

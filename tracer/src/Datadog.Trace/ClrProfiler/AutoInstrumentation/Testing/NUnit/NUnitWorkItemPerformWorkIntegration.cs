@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -62,8 +63,8 @@ public static class NUnitWorkItemPerformWorkIntegration
             case "TestMethod":
                 if (NUnitIntegration.ShouldSkip(item, out _, out _))
                 {
-                    var testMethod = item.Method.MethodInfo;
-                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                    var testMethod = item.Method?.MethodInfo;
+                    Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
                     item.RunState = RunState.Ignored;
                     item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
                 }
