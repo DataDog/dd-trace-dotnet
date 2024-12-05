@@ -203,7 +203,7 @@ namespace Datadog.Trace.Configuration
 
             DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
 
-            Integrations = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
+            Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
 
             Exporter = new ExporterSettings(source, _telemetry);
 

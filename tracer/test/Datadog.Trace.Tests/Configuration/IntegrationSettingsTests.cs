@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests.Configuration
                                                               { settingName, settingValue }
                                                           });
 
-            var settings = new IntegrationSettings("FOO", source);
+            var settings = new IntegrationSettings("FOO", source, false);
             Assert.Equal(expected, settings.Enabled);
         }
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests.Configuration
                 { settingName, settingValue },
             };
             var src = new DictionaryConfigurationSource(dict);
-            var settings = new IntegrationSettings(nameof(IntegrationId.MySql), src);
+            var settings = new IntegrationSettings(nameof(IntegrationId.MySql), src, false);
 
             settings.Enabled.Should().Be(expected);
         }
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests.Configuration
             };
             var source = new DictionaryConfigurationSource(dict);
 
-            var settings = new IntegrationSettings("Foo", source);
+            var settings = new IntegrationSettings("Foo", source, false);
             Assert.Equal(expected, settings.AnalyticsEnabled);
         }
 
@@ -78,8 +78,38 @@ namespace Datadog.Trace.Tests.Configuration
             };
             var source = new DictionaryConfigurationSource(dict);
 
-            var settings = new IntegrationSettings("Foo", source);
+            var settings = new IntegrationSettings("Foo", source, false);
             Assert.Equal(expected, settings.AnalyticsSampleRate);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SettingsRespectsOverride(bool initiallyEnabled)
+        {
+            var name = nameof(IntegrationId.Kafka);
+            var source = new NameValueConfigurationSource(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, name), initiallyEnabled.ToString() },
+            });
+
+            var settings = new IntegrationSettings(name, source: source, isExplicitlyDisabled: true);
+            settings.Enabled.Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SettingsRespectsOriginalIfNotOverridden(bool initiallyEnabled)
+        {
+            var name = nameof(IntegrationId.Kafka);
+            var source = new NameValueConfigurationSource(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, name), initiallyEnabled.ToString() },
+            });
+
+            var settings = new IntegrationSettings(name, source: source, isExplicitlyDisabled: false);
+            settings.Enabled.Should().Be(initiallyEnabled);
         }
     }
 }
