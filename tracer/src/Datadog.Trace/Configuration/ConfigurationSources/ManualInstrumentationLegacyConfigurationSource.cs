@@ -108,7 +108,9 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         return false;
     }
 
-    private static IntegrationId? GetIntegrationEnabled(string key) => key switch
+    // This list is fixed in time and doesn't need to be updated
+    // Internal for testing
+    internal static IntegrationId? GetIntegrationEnabled(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ENABLED" => IntegrationId.HttpMessageHandler,
         "DD_TRACE_HTTPSOCKETSHANDLER_ENABLED" => IntegrationId.HttpSocketsHandler,
@@ -185,7 +187,9 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         _ => null,
     };
 
-    private static IntegrationId? GetIntegrationAnalyticsEnabled(string key) => key switch
+    // This list is fixed in time and doesn't need to be updated
+    // Internal for testing
+    internal static IntegrationId? GetIntegrationAnalyticsEnabled(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_ENABLED" => IntegrationId.HttpMessageHandler,
         "DD_TRACE_HTTPSOCKETSHANDLER_ANALYTICS_ENABLED" => IntegrationId.HttpSocketsHandler,
@@ -262,7 +266,9 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         _ => null,
     };
 
-    private static IntegrationId? GetIntegrationAnalyticsSampleRate(string key) => key switch
+    // This list is fixed in time and doesn't need to be updated
+    // Internal for testing
+    internal static IntegrationId? GetIntegrationAnalyticsSampleRate(string key) => key switch
     {
         "DD_TRACE_HTTPMESSAGEHANDLER_ANALYTICS_SAMPLE_RATE" => IntegrationId.HttpMessageHandler,
         "DD_TRACE_HTTPSOCKETSHANDLER_ANALYTICS_SAMPLE_RATE" => IntegrationId.HttpSocketsHandler,
@@ -339,7 +345,9 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         _ => null,
     };
 
-    private static PublicApiUsage? GetTelemetryKey(string key) => key switch
+    // This list is fixed in time and doesn't need to be updated
+    // Internal for testing
+    internal static PublicApiUsage? GetTelemetryKey(string key) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => PublicApiUsage.ExporterSettings_AgentUri_Set,
         TracerSettingKeyConstants.AnalyticsEnabledKey => PublicApiUsage.TracerSettings_AnalyticsEnabled_Set,
@@ -363,7 +371,6 @@ internal class ManualInstrumentationLegacyConfigurationSource : DictionaryObject
         TracerSettingKeyConstants.StatsComputationEnabledKey => PublicApiUsage.TracerSettings_StatsComputationEnabled_Set,
         TracerSettingKeyConstants.TraceEnabledKey => PublicApiUsage.TracerSettings_TraceEnabled_Set,
         TracerSettingKeyConstants.TracerMetricsEnabledKey => PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set,
-        TracerSettingKeyConstants.IntegrationSettingsKey => PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set,
         _ => null,
     };
 
