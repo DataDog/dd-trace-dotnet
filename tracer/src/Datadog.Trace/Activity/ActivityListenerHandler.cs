@@ -48,16 +48,34 @@ namespace Datadog.Trace.Activity
             {
                 if (source is IActivitySource activitySource)
                 {
-                    if (handler.ShouldListenTo(sName, activitySource.Version) && HandlerBySource.TryAdd(sName, handler))
+                    if (handler.ShouldListenTo(sName, activitySource.Version))
+                    {
+                        if (handler is DisableActivityHandler)
+                        {
+                            Log.Information("ActivityListenerHandler: The .NET Tracer will not listen to {SourceName}.", sName);
+                            return false;
+                        }
+
+                        if (HandlerBySource.TryAdd(sName, handler))
+                        {
+                            Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
+                            return true;
+                        }
+                    }
+                }
+                else if (handler.ShouldListenTo(sName, null))
+                {
+                    if (handler is DisableActivityHandler)
+                    {
+                        Log.Information("ActivityListenerHandler: The .NET Tracer will not listen to {SourceName}.", sName);
+                        return false;
+                    }
+
+                    if (HandlerBySource.TryAdd(sName, handler))
                     {
                         Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
                         return true;
                     }
-                }
-                else if (handler.ShouldListenTo(sName, null) && HandlerBySource.TryAdd(sName, handler))
-                {
-                    Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                    return true;
                 }
             }
 

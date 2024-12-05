@@ -8,6 +8,9 @@ namespace NetActivitySdk;
 public static class Program
 {
     private static ActivitySource _source;
+    private static ActivitySource _ignored;
+    private static ActivitySource _disabledGlob;
+    private static ActivitySource _disabledExact;
 
     private static string SpanLinkTraceId1;
     private static string SpanLinkTraceId2;
@@ -19,12 +22,15 @@ public static class Program
     {
         Console.WriteLine($"SpanId 1: {SpanLinkSpanId1} SpanId 2: {SpanLinkSpanId2}");
         _source = new ActivitySource("Samples.NetActivitySdk");
+        _ignored = new ActivitySource("Microsoft.AspNetCore"); // this is an ignored source
+        _disabledGlob = new ActivitySource("Disabled.By.GlobPattern");
+        _disabledExact = new ActivitySource("Disabled.By.ExactMatch");
 
         var activityListener = new ActivityListener
         {
             //ActivityStarted = activity => Console.WriteLine($"{activity.DisplayName} - Started"),
             ActivityStopped = activity => PrintSpanStoppedInformation(activity),
-            ShouldListenTo = _ => true,
+            ShouldListenTo = source => { return !source.Name.Contains("Disabled"); }, // return true for all except Disabled ones
             Sample = (ref ActivityCreationOptions<ActivityContext> options) => ActivitySamplingResult.AllData
         };
 
@@ -50,6 +56,8 @@ public static class Program
         RunActivityReservedAttributes(); // 1 span (47 total)
 
         RunManuallyUpdatedStartTime(); // 3 spans (50 total)
+
+        RunIgnoredAndDisabledSources(); // 0 spans (50 total)
 
         await Task.Delay(1000);
     }
@@ -205,6 +213,22 @@ public static class Program
                     Console.WriteLine(child.Id.Substring(1));
                 }
             }
+        }
+    }
+
+    private static void RunIgnoredAndDisabledSources()
+    {
+        using var ignoredSpan = _ignored.StartActivity("Ignored - SHOULD NOT BE IN SNAPSHOT") ?? throw new InvalidOperationException("Ignored Activity was null - was it disabled?");
+        using var disabledSpanGlob = _disabledGlob.StartActivity("DisabledGlob - SHOULD BE NULL AND NOT IN SNAPSHOT");
+        if (disabledSpanGlob is not null)
+        {
+            throw new InvalidOperationException("DisabledGlob Activity wasn't null");
+        }
+
+        using var disabledSpanExact = _disabledExact.StartActivity("DisabledExact - SHOULD BE NULL AND NOT IN SNAPSHOT");
+        if (disabledSpanExact is not null)
+        {
+            throw new InvalidOperationException("DisabledExact Activity wasn't null");
         }
     }
 
