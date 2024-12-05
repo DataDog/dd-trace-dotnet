@@ -33,8 +33,12 @@ bool LibrariesInfoCache::StartImpl()
     _librariesInfo.reserve(100);
     s_instance = this;
     unw_set_iterate_phdr_function(unw_local_addr_space, LibrariesInfoCache::DlIteratePhdr);
-    _worker = std::thread(&LibrariesInfoCache::Work, this);
-    return true;
+    auto startEvent = std::make_shared<AutoResetEvent>(false);
+    _worker = std::thread(&LibrariesInfoCache::Work, this, startEvent);
+    // We must wait for the thread to be fully started and the cache populated
+    // before reporting the service start status.
+    // 2s for CI
+    return startEvent->Wait(2s);
 }
 
 bool LibrariesInfoCache::StopImpl()
@@ -51,7 +55,7 @@ bool LibrariesInfoCache::StopImpl()
     return true;
 }
 
-void LibrariesInfoCache::Work()
+void LibrariesInfoCache::Work(std::shared_ptr<AutoResetEvent> startEvent)
 {
     OpSysTools::SetNativeThreadName(WStr("DD_LibsCache"));
 
@@ -80,6 +84,12 @@ void LibrariesInfoCache::Work()
         }
 
         UpdateCache();
+
+        if (startEvent != nullptr)
+        {
+            startEvent->Set();
+            startEvent.reset();
+        }
     }
 
     Log::Debug("Stopping worker: stop request received.");

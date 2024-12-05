@@ -39,11 +39,11 @@ public static class UnitTestRunnerRunSingleTestIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         if (instance is null || !MsTestIntegration.IsEnabled)
         {
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<TReturn?>(returnValue);
         }
 
         var methodInfoCacheItem = MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
@@ -73,7 +73,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                         if (methodInfoCacheItem.TestMethodInfo.TryDuckCast<ITestMethodInfo>(out var testMethodInfo))
                         {
                             // We need to check if the test is failing because a Class initialization error
-                            if (testMethodInfo.Parent.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct))
+                            if (testMethodInfo.Parent?.Instance.TryDuckCast<ClassInfoInitializationExceptionStruct>(out var classInfoInitializationExceptionStruct) == true)
                             {
                                 if (classInfoInitializationExceptionStruct.ClassInitializationException is { } classInitializationException &&
                                     MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false) is { } test)
@@ -88,7 +88,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                             }
 
                             // We need to check if the test is failing because a Class cleanup error
-                            if (testMethodInfo.Parent.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct))
+                            if (testMethodInfo.Parent?.Instance.TryDuckCast<ClassInfoCleanupExceptionsStruct>(out var classInfoCleanupExceptionsStruct) == true)
                             {
                                 if (classInfoCleanupExceptionsStruct.ClassCleanupException is { } classCleanupException &&
                                     MsTestIntegration.GetOrCreateTestSuiteFromTestClassInfo(testMethodInfo.Parent) is { } suite)
@@ -102,7 +102,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                             }
 
                             // We need to check if the test is failing because a Assembly initialization error
-                            if (testMethodInfo.Parent.Parent.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct))
+                            if (testMethodInfo.Parent?.Parent?.Instance.TryDuckCast<AssemblyInfoExceptionsStruct>(out var assemblyInfoExceptionsStruct) == true)
                             {
                                 if (assemblyInfoExceptionsStruct.AssemblyInitializationException is { } assemblyInitializationException &&
                                     MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType(), isRetry: false) is { } test)
@@ -121,7 +121,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
             }
         }
 
-        return new CallTargetReturn<TReturn>(returnValue);
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 
     [DuckCopy]

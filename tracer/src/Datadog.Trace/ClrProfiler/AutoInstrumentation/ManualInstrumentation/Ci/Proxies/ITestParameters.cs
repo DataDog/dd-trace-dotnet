@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Ci
 [DuckType("Datadog.Trace.Ci.TestParameters", "Datadog.Trace.Manual")]
 internal interface ITestParameters : IDuckType
 {
-    public Dictionary<string, object>? Metadata { get; }
+    public Dictionary<string, object?>? Metadata { get; }
 
-    public Dictionary<string, object>? Arguments { get; }
+    public Dictionary<string, object?>? Arguments { get; }
 }

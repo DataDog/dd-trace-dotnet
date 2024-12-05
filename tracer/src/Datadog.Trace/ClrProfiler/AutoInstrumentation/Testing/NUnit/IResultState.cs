@@ -2,24 +2,24 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+
+/// <summary>
+/// DuckTyping interface for NUnit.Framework.Interfaces.ResultState
+/// </summary>
+internal interface IResultState
 {
     /// <summary>
-    /// DuckTyping interface for NUnit.Framework.Interfaces.ResultState
+    /// Gets the TestStatus for the test.
     /// </summary>
-    internal interface IResultState
-    {
-        /// <summary>
-        /// Gets the TestStatus for the test.
-        /// </summary>
-        /// <value>The status.</value>
-        TestStatus Status { get; }
+    /// <value>The status.</value>
+    TestStatus Status { get; }
 
-        /// <summary>
-        /// Gets the stage of test execution in which
-        /// the failure or other result took place.
-        /// </summary>
-        FailureSite Site { get; }
-    }
+    /// <summary>
+    /// Gets the stage of test execution in which
+    /// the failure or other result took place.
+    /// </summary>
+    FailureSite Site { get; }
 }

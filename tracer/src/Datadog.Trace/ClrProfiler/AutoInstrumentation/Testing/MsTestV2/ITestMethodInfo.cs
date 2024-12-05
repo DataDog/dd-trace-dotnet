@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
@@ -13,10 +14,10 @@ internal interface ITestMethodInfo : ITestMethod
     /// <summary>
     /// Gets the test method options
     /// </summary>
-    ITestMethodOptions TestMethodOptions { get; }
+    ITestMethodOptions? TestMethodOptions { get; }
 
     /// <summary>
     /// Gets the parent class Info object.
     /// </summary>
-    ITestClassInfo Parent { get; }
+    ITestClassInfo? Parent { get; }
 }
