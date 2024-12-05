@@ -2,6 +2,7 @@ using System;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
+using System.Net.Http;
 using System.Linq;
 using System.IO;
 using Nuke.Common.Tooling;
@@ -19,6 +20,8 @@ using System.Collections;
 using System.Threading.Tasks;
 using DiffMatchPatch;
 using Logger = Serilog.Log;
+using Nuke.Common.Tools.Git;
+using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 partial class Build
 {
@@ -41,9 +44,79 @@ partial class Build
     Target SetupVcpkg => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            Vcpkg.Value("integrate install");
+            var vcpkg = await GetVcpkg();
+
+            var vcpkgObjFolder = NativeBuildDirectory / "vcpkg";
+            var buildtreesRoot = vcpkgObjFolder / "buildtrees";
+            var packagesRoot = vcpkgObjFolder / "packages";
+            var downloadRoot = vcpkgObjFolder / "download";
+            vcpkg($"integrate install --x-buildtrees-root={buildtreesRoot} --x-packages-root={packagesRoot} --downloads-root={downloadRoot}");
+
+            async Task<Tool> GetVcpkg()
+            {
+                var vcpkgFilePath = string.Empty;
+
+                try
+                {
+                    vcpkgFilePath = ToolPathResolver.GetPathExecutable("vcpkg.exe");
+                }
+                catch (ArgumentException)
+                { }
+
+                if (File.Exists(vcpkgFilePath))
+                {
+                    return ToolResolver.GetLocalTool(vcpkgFilePath);
+                }
+
+                // Check if already downloaded
+                var vcpkgRoot = RootDirectory / "vcpkg";
+                var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
+
+                if (File.Exists(vcpkgExecPath))
+                {
+                    return ToolResolver.GetLocalTool($"{vcpkgExecPath}");
+                }
+
+                await DownloadAndExtractVcpkg(vcpkgRoot);
+                Cmd.Value(arguments: $"cmd /c {vcpkgRoot / "bootstrap-vcpkg.bat"}");
+                return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
+            }
+
+            async Task DownloadAndExtractVcpkg(string destinationFolder)
+            {
+                var nbTries = 0;
+                var keepTrying = true;
+                var vcpkgZip = TempDirectory / "vcpkg.zip";
+                using var client = new HttpClient();
+                const string vcpkgVersion = "2024.11.16";
+                while (keepTrying)
+                {
+                    nbTries++;
+                    try
+                    {
+                        var response = await client.GetAsync($"https://github.com/microsoft/vcpkg/archive/refs/tags/{vcpkgVersion}.zip");
+                        response.EnsureSuccessStatusCode();
+                        await using var stream = await response.Content.ReadAsStreamAsync();
+                        await using var file = File.Create(vcpkgZip);
+                        await stream.CopyToAsync(file);
+                        keepTrying = false;
+                    }
+                    catch (HttpRequestException)
+                    {
+                        if (nbTries > 3)
+                        {
+                            throw;
+                        }
+                    }
+                }
+
+                var tempFolder = TempDirectory / "vcpkg_temp";
+                CompressionTasks.UncompressZip(vcpkgZip, tempFolder);
+
+                CopyDirectoryRecursively(tempFolder / $"vcpkg-{vcpkgVersion}", destinationFolder);
+            }
         });
 
     Target CompileProfilerNativeSrcWindows => _ => _
@@ -264,6 +337,7 @@ partial class Build
 
     Target CompileProfilerNativeTestsWindows => _ => _
         .Unlisted()
+        .DependsOn(SetupVcpkg)
         .After(CompileProfilerNativeSrcWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
