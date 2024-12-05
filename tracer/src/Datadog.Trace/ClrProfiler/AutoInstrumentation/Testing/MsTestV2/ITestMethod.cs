@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Reflection;
@@ -17,29 +18,29 @@ internal interface ITestMethod : IDuckType
     /// <summary>
     /// Gets the test method name
     /// </summary>
-    string TestMethodName { get; }
+    string? TestMethodName { get; }
 
     /// <summary>
     /// Gets the test class name
     /// </summary>
-    string TestClassName { get; }
+    string? TestClassName { get; }
 
     /// <summary>
     /// Gets the MethodInfo
     /// </summary>
-    MethodInfo MethodInfo { get; }
+    MethodInfo? MethodInfo { get; }
 
     /// <summary>
     /// Gets the test arguments
     /// </summary>
-    object[] Arguments { get; }
+    object[]? Arguments { get; }
 
     /// <summary>
     /// Gets all attributes
     /// </summary>
     /// <param name="inherit">Injerits all the attributes from base classes</param>
     /// <returns>Attribute array</returns>
-    Attribute[] GetAllAttributes(bool inherit);
+    Attribute[]? GetAllAttributes(bool inherit);
 
     /// <summary>
     /// Invokes the test method.
@@ -53,5 +54,5 @@ internal interface ITestMethod : IDuckType
     /// <remarks>
     /// This call handles asynchronous test methods as well.
     /// </remarks>
-    object Invoke(object[] arguments);
+    object? Invoke(object[]? arguments);
 }
