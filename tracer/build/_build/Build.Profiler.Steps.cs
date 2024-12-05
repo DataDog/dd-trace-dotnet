@@ -20,8 +20,6 @@ using System.Collections;
 using System.Threading.Tasks;
 using DiffMatchPatch;
 using Logger = Serilog.Log;
-using Nuke.Common.Tools.Git;
-using Microsoft.TeamFoundation.TestManagement.WebApi;
 
 partial class Build
 {

@@ -101,7 +101,6 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
-    [LazyPathExecutable(name: "vcpkg")] readonly Lazy<Tool> Vcpkg;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
