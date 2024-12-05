@@ -37,9 +37,10 @@ public partial class ProcessHelper
                     continue; // Skip processes that can't be accessed
                 }
 
-                if (ppid == parentId)
+                var id = process.Id;
+                if (ppid == parentId && id != parentId)
                 {
-                    childPids.Add(process.Id);
+                    childPids.Add(id);
                 }
             }
         }
