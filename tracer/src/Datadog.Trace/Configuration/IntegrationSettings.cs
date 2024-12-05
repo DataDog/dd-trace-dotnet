@@ -47,24 +47,27 @@ namespace Datadog.Trace.Configuration
 
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
+            var upperName = integrationName.ToUpperInvariant();
             EnabledInternal = config
                      .WithKeys(
-                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName.ToUpperInvariant()),
+                          string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
                           string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                          string.Format("DD_{0}_ENABLED", integrationName))
+                          $"DD_{integrationName}_ENABLED")
                      .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = config
                               .WithKeys(
+                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, upperName),
                                    string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
-                                   string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
+                                   $"DD_{integrationName}_ANALYTICS_ENABLED")
                               .AsBool();
 
             AnalyticsSampleRateInternal = config
                                  .WithKeys(
+                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, upperName),
                                       string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
-                                      string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
+                                      $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
                                  .AsDouble(1.0);
 #pragma warning restore 618
         }
