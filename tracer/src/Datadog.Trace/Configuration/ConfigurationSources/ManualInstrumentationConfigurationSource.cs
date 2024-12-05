@@ -50,7 +50,7 @@ internal class ManualInstrumentationConfigurationSource : DictionaryObjectConfig
         return result;
     }
 
-    private static PublicApiUsage? GetTelemetryKey(string key) => key switch
+    internal static PublicApiUsage? GetTelemetryKey(string key) => key switch
     {
         TracerSettingKeyConstants.AgentUriKey => PublicApiUsage.ExporterSettings_AgentUri_Set,
         TracerSettingKeyConstants.AnalyticsEnabledKey => PublicApiUsage.TracerSettings_AnalyticsEnabled_Set,

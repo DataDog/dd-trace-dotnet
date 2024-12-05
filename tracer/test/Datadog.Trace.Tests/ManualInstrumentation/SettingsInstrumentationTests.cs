@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Config
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
 using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
@@ -139,6 +140,45 @@ public class SettingsInstrumentationTests
 
         // we have additional keys for each of the customized settings
         settings.Keys.Except(keys).Should().ContainSingle("DD_TRACE_COUCHBASE_ANALYTICS_SAMPLE_RATE");
+    }
+
+    [Fact]
+    public void ManualInstrumentationLegacyConfigurationSource_ProducesPublicApiForEveryExpectedValue()
+    {
+        // If we add more public API properties, we need to exclude them here, as we do _not_ expect the legacy provider to support them.
+        string[] excluded = [TracerSettingKeyConstants.IntegrationSettingsKey, TracerSettingKeyConstants.IsFromDefaultSourcesKey];
+        var keys = GetManualTracerSettingKeys().Where(x => !excluded.Contains(x));
+        Dictionary<string, PublicApiUsage> results = new();
+        foreach (var key in keys)
+        {
+            var result = ManualInstrumentationLegacyConfigurationSource.GetTelemetryKey(key);
+            result.Should().NotBeNull($"the TracerSettingKeyConstants key '{key}' should correspond to a public API property. " +
+                                      "Note that if you have added a _new_ TracerSettingKeyConstants value, this failure is expected - " +
+                                      "you should not update your implementation, instead you should add to the 'exlude' list in this test");
+            results.Add(key, result!.Value);
+        }
+
+        results.Should().OnlyHaveUniqueItems(x => x.Value);
+    }
+
+    [Fact]
+    public void ManualInstrumentationConfigurationSource_ProducesPublicApiForEveryExpectedValue()
+    {
+        // Do not add more values here, unless they represent "meta" properties like "IsFromDefaultSources" etc
+        string[] excluded = [TracerSettingKeyConstants.IntegrationSettingsKey, TracerSettingKeyConstants.IsFromDefaultSourcesKey];
+        var keys = GetManualTracerSettingKeys().Where(x => !excluded.Contains(x));
+        Dictionary<string, PublicApiUsage> results = new();
+        foreach (var key in keys)
+        {
+            var result = ManualInstrumentationConfigurationSource.GetTelemetryKey(key);
+            result.Should()
+                  .NotBeNull(
+                       $"the TracerSettingKeyConstants key '{key}' should correspond to a public API property. " +
+                       "Update ManualInstrumentationConfigurationSource.GetTelemetryKey() to include a mapping for the key.");
+            results.Add(key, result!.Value);
+        }
+
+        results.Should().OnlyHaveUniqueItems(x => x.Value);
     }
 
     [Theory]
