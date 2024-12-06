@@ -21,6 +21,14 @@ public:
     ~AutoResetEvent();
 
     void Set();
+
+    // Wait will block the execution of the thread until a call to Set is made
+    // or until it times out.
+    // [parameter] timeout : time to wait before returning.
+    //   if timeout == InfiniteTimeout, it will wait until Set is called.
+    //   if timeout != InfiniteTimeout, it will wait either for a call to Set either for the timeout.
+    // [Return]
+    //   true if Set was called, false is the call timed out.
     bool Wait(std::chrono::milliseconds timeout = InfiniteTimeout);
 
 private:

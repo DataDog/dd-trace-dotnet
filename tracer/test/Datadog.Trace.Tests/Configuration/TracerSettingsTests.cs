@@ -1096,54 +1096,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void RecordsTelemetryAboutChangesMadeInCode_PublicProperties()
-        {
-            const string serviceName = "someOtherName";
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-
-            tracerSettings.ServiceName = serviceName;
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData(); // defaults
-
-            var configKeyValue = data
-                                .GroupBy(x => x.Name)
-                                .Should()
-                                .ContainSingle(x => x.Key == ConfigurationKeys.ServiceName)
-                                .Which
-                                .OrderByDescending(x => x.SeqId)
-                                .First();
-
-            configKeyValue.Name.Should().Be(ConfigurationKeys.ServiceName);
-            configKeyValue.Value.Should().Be(serviceName);
-            configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
-        }
-
-        [Fact]
-        public void RecordsTelemetryAboutChangesMadeInCode_InternalProperties()
-        {
-            const string serviceName = "someOtherName";
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-
-            tracerSettings.ServiceNameInternal = serviceName;
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData(); // defaults
-
-            var configKeyValue = data
-                                .GroupBy(x => x.Name)
-                                .Should()
-                                .ContainSingle(x => x.Key == ConfigurationKeys.ServiceName)
-                                .Which
-                                .OrderByDescending(x => x.SeqId)
-                                .First();
-
-            configKeyValue.Name.Should().Be(ConfigurationKeys.ServiceName);
-            configKeyValue.Value.Should().Be(serviceName);
-            configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
-        }
-
-        [Fact]
         public void RecordsTelemetryAboutTfm()
         {
             var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);

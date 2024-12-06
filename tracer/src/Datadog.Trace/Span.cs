@@ -76,10 +76,10 @@ namespace Datadog.Trace
         /// </summary>
         internal string ServiceName
         {
-            get => Context.ServiceNameInternal;
+            get => Context.ServiceName;
             set
             {
-                Context.ServiceNameInternal = value;
+                Context.ServiceName = value;
             }
         }
 
@@ -127,11 +127,11 @@ namespace Datadog.Trace
 
         internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.ParentInternal == null
-                                 || Context.ParentInternal.SpanId == 0
-                                 || Context.ParentInternal switch
+        internal bool IsTopLevel => Context.Parent == null
+                                 || Context.Parent.SpanId == 0
+                                 || Context.Parent switch
                                  {
-                                     SpanContext s => s.ServiceNameInternal != ServiceName,
+                                     SpanContext s => s.ServiceName != ServiceName,
                                      { } s => s.ServiceName != ServiceName,
                                  };
 
@@ -156,7 +156,7 @@ namespace Datadog.Trace
             sb.AppendLine($"TraceId64: {Context.TraceId128.Lower}");
             sb.AppendLine($"TraceId128: {Context.TraceId128}");
             sb.AppendLine($"RawTraceId: {Context.RawTraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentIdInternal}");
+            sb.AppendLine($"ParentId: {Context.ParentId}");
             sb.AppendLine($"SpanId: {Context.SpanId}");
             sb.AppendLine($"RawSpanId: {Context.RawSpanId}");
             sb.AppendLine($"Origin: {Context.Origin}");
@@ -524,7 +524,7 @@ namespace Datadog.Trace
 
             Log.Debug(
                 "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{TagsType}])",
-                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, Tags, tagsType });
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, Tags, tagsType });
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -532,7 +532,7 @@ namespace Datadog.Trace
         {
             Log.Debug(
                 "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])\nDetails:{ToString}",
-                new object[] { Context.RawSpanId, Context.ParentIdInternal, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
+                new object[] { Context.RawSpanId, Context.ParentId, Context.RawTraceId, ServiceName, ResourceName, OperationName, Tags, ToString() });
         }
 
         /// <summary>

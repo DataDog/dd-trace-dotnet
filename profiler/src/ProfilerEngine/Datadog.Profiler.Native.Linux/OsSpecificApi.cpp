@@ -236,6 +236,7 @@ std::vector<int32_t> GetProcessThreads(int32_t pid)
     else
     {
         auto errorNumber = errno;
+        //NOLINTNEXTLINE
         LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 
@@ -268,6 +269,7 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     else
     {
         auto errorNumber = errno;
+        //NOLINTNEXTLINE
         LogOnce(Error, "Failed at opendir ", dirname, " error: ", strerror(errorNumber));
     }
 

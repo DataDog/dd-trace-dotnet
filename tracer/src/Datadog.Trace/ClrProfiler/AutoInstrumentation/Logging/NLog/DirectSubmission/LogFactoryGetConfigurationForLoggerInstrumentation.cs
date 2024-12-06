@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         {
             var tracerManager = TracerManager.Instance;
 
-            if (!tracerManager.Settings.LogsInjectionEnabledInternal &&
+            if (!tracerManager.Settings.LogsInjectionEnabled &&
                 !tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog))
             {
                 return CallTargetState.GetDefault();
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
 
             // we don't want to do logs injection with our custom configuration that we create as there won't be any targets
-            if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
+            if (tracerManager.Settings.LogsInjectionEnabled && configuration is not null)
             {
                 LogsInjectionHelper<TTarget>.ConfigureLogsInjectionForLoggerConfiguration(configuration);
             }

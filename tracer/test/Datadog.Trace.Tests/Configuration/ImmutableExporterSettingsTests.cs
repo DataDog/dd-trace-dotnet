@@ -52,10 +52,9 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var mutableProperties = typeof(ExporterSettings)
                                    .GetProperties(Flags)
-                                   .Where(// Exclude "internal" properties
-                                        x => !(x.HasAttribute<GeneratePublicApiAttribute>()
-                                            || x.Name == "AgentUriInternal"
-                                            || x.Name == "PartialFlushMinSpansInternal"))
+                                   .Where(x =>
+                                              x.Name != "AgentUriInternal"
+                                           && x.Name != "PartialFlushMinSpansInternal")
                                    .Select(x => x.Name)
                                    .Where(x => !ExcludedProperties.Contains(x));
 
@@ -88,11 +87,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             var mutableProperties = typeof(ExporterSettings)
                                    .GetProperties(Flags)
-                                   .Where(// Exclude "internal" properties
-                                        x => !(x.HasAttribute<GeneratePublicApiAttribute>()
-                                            || x.Name == "AgentUriInternal"
-                                            || x.Name == "Telemetry"
-                                            || x.Name == "PartialFlushMinSpansInternal"));
+                                   .Where(
+                                        x => x.Name != "AgentUriInternal"
+                                          && x.Name != "Telemetry"
+                                          && x.Name != "PartialFlushMinSpansInternal");
 
             // Ensure that all properties are represented
             Assert.Equal(mutableProperties.Count(), equalityCheckers.Count);

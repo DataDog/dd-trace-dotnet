@@ -177,6 +177,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         environment_variables_util.cpp
         method_rewriter.cpp
         tracer_tokens.cpp
+        signature_builder.cpp
         debugger_environment_variables_util.cpp
         debugger_probes_tracker.cpp
         iast/aspect.cpp

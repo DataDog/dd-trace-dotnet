@@ -10,14 +10,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IQueryRequest
     {
-        /// <summary>
-        /// Gets the query
-        /// </summary>
         object Query { get; }
 
-        /// <summary>
-        /// Gets the operation name
-        /// </summary>
         public string OperationName { get; }
     }
 }

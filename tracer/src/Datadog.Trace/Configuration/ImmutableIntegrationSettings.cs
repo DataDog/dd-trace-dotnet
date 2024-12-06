@@ -20,45 +20,41 @@ namespace Datadog.Trace.Configuration
         /// <see cref="IntegrationSettings"/>.
         /// </summary>
         /// <param name="settings">The values to use.</param>
-        /// <param name="isExplicitlyDisabled">If true forces the setting Enabled = false. Otherwise, uses <see cref="IntegrationSettings.EnabledInternal"/></param>
+        /// <param name="isExplicitlyDisabled">If true forces the setting Enabled = false. Otherwise, uses <see cref="IntegrationSettings.Enabled"/></param>
         internal ImmutableIntegrationSettings(IntegrationSettings settings, bool isExplicitlyDisabled)
         {
-            IntegrationNameInternal = settings.IntegrationNameInternal;
-            EnabledInternal = isExplicitlyDisabled ? false : settings.EnabledInternal;
-            AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
-            AnalyticsSampleRateInternal = settings.AnalyticsSampleRateInternal;
+            IntegrationName = settings.IntegrationName;
+            Enabled = isExplicitlyDisabled ? false : settings.Enabled;
+            AnalyticsEnabled = settings.AnalyticsEnabled;
+            AnalyticsSampleRate = settings.AnalyticsSampleRate;
         }
 
         internal ImmutableIntegrationSettings(string name)
         {
-            IntegrationNameInternal = name;
+            IntegrationName = name;
         }
 
         /// <summary>
         /// Gets the name of the integration. Used to retrieve integration-specific settings.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableIntegrationSettings_IntegrationName_Get)]
-        internal string IntegrationNameInternal { get; }
+        public string IntegrationName { get; }
 
         /// <summary>
         /// Gets a value indicating whether
         /// this integration is enabled.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableIntegrationSettings_Enabled_Get)]
-        internal bool? EnabledInternal { get; }
+        public bool? Enabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether
         /// Analytics are enabled for this integration.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableIntegrationSettings_AnalyticsEnabled_Get)]
-        internal bool? AnalyticsEnabledInternal { get; }
+        public bool? AnalyticsEnabled { get; }
 
         /// <summary>
         /// Gets a value between 0 and 1 (inclusive)
         /// that determines the sampling rate for this integration.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableIntegrationSettings_AnalyticsSampleRate_Get)]
-        internal double AnalyticsSampleRateInternal { get; }
+        public double AnalyticsSampleRate { get; }
     }
 }

@@ -79,9 +79,9 @@ public static class TestMethodAttributeExecuteIntegration
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        if (state.State is TestRunnerState testMethodState)
+        if (state.State is TestRunnerState { Test: not null } testMethodState)
         {
             var duration = testMethodState.Elapsed;
             var testMethod = testMethodState.TestMethod;
@@ -94,24 +94,27 @@ public static class TestMethodAttributeExecuteIntegration
                 for (var i = 0; i < returnValueList.Count; i++)
                 {
                     var test = i == 0 ? testMethodState.Test : MsTestIntegration.OnMethodBegin(testMethodState.TestMethod, testMethodState.TestMethod.Type, isRetry: false, testMethodState.Test.StartTime);
-                    if (test.GetTags() is { } testTags)
+                    if (test is not null)
                     {
-                        isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
-                        if (isTestNew && duration.TotalMinutes >= 5)
+                        if (test.GetTags() is { } testTags)
                         {
-                            testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                            isTestNew = isTestNew || testTags.EarlyFlakeDetectionTestIsNew == "true";
+                            if (isTestNew && duration.TotalMinutes >= 5)
+                            {
+                                testTags.EarlyFlakeDetectionTestAbortReason = "slow";
+                            }
                         }
-                    }
 
-                    resultStatus = HandleTestResult(test, testMethod, returnValueList[i], exception);
-                    allowRetries = allowRetries || resultStatus != TestStatus.Skip;
+                        resultStatus = HandleTestResult(test, testMethod, returnValueList[i], exception);
+                        allowRetries = allowRetries || resultStatus != TestStatus.Skip;
+                    }
                 }
             }
             else
             {
                 Common.Log.Warning("Failed to extract TestResult from return value");
                 testMethodState.Test.Close(TestStatus.Fail);
-                return new CallTargetReturn<TReturn>(returnValue);
+                return new CallTargetReturn<TReturn?>(returnValue);
             }
 
             if (isTestNew && allowRetries)
@@ -131,7 +134,7 @@ public static class TestMethodAttributeExecuteIntegration
                     }
 
                     // Calculate final results
-                    returnValue = (TReturn)GetFinalResults(results);
+                    returnValue = (TReturn?)GetFinalResults(results);
                 }
             }
             else if (CIVisibility.Settings.FlakyRetryEnabled == true && resultStatus == TestStatus.Fail)
@@ -169,7 +172,7 @@ public static class TestMethodAttributeExecuteIntegration
             }
         }
 
-        return new CallTargetReturn<TReturn>(returnValue);
+        return new CallTargetReturn<TReturn?>(returnValue);
 
         static void RunRetry(ITestMethod testMethod, TestRunnerState testMethodState, List<IList> resultsCollection, out bool hasFailed)
         {
@@ -191,7 +194,12 @@ public static class TestMethodAttributeExecuteIntegration
                 {
                     for (var j = 0; j < retryTestResultList.Count; j++)
                     {
-                        var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest.StartTime);
+                        var ciRetryTest = j == 0 ? retryTest : MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true, retryTest?.StartTime);
+                        if (ciRetryTest is null)
+                        {
+                            continue;
+                        }
+
                         if (HandleTestResult(ciRetryTest, testMethod, retryTestResultList[j], retryException) == TestStatus.Fail)
                         {
                             hasFailed = true;
@@ -202,7 +210,7 @@ public static class TestMethodAttributeExecuteIntegration
                 }
                 else
                 {
-                    if (HandleTestResult(retryTest, testMethod, retryTestResult, retryException) == TestStatus.Fail)
+                    if (retryTest is not null && HandleTestResult(retryTest, testMethod, retryTestResult, retryException) == TestStatus.Fail)
                     {
                         hasFailed = true;
                     }
@@ -339,10 +347,10 @@ public static class TestMethodAttributeExecuteIntegration
     {
         private readonly TraceClock _clock;
         public readonly ITestMethod TestMethod;
-        public readonly Test Test;
+        public readonly Test? Test;
         public readonly DateTimeOffset StartTime;
 
-        public TestRunnerState(ITestMethod testMethod, Test test)
+        public TestRunnerState(ITestMethod testMethod, Test? test)
         {
             TestMethod = testMethod;
             Test = test;

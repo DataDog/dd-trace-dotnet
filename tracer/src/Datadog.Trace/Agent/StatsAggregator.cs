@@ -65,8 +65,8 @@ namespace Datadog.Trace.Agent
 
             var header = new ClientStatsPayload
             {
-                Environment = settings.EnvironmentInternal,
-                Version = settings.ServiceVersionInternal,
+                Environment = settings.Environment,
+                Version = settings.ServiceVersion,
                 HostName = HostMetadata.Instance.Hostname
             };
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            return settings.StatsComputationEnabledInternal ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()

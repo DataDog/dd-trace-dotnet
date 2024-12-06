@@ -2,43 +2,43 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+
+/// <summary>
+/// DuckTyping interface for NUnit.Framework.Interfaces.IPropertyBag
+/// </summary>
+internal interface IPropertyBag
 {
     /// <summary>
-    /// DuckTyping interface for NUnit.Framework.Interfaces.IPropertyBag
+    /// Gets a collection containing all the keys in the property set
     /// </summary>
-    internal interface IPropertyBag
-    {
-        /// <summary>
-        /// Gets a collection containing all the keys in the property set
-        /// </summary>
-        ICollection<string> Keys { get; }
+    ICollection<string>? Keys { get; }
 
-        /// <summary>
-        /// Gets or sets the list of values for a particular key
-        /// </summary>
-        /// <param name="key">The key for which the values are to be retrieved</param>
-        IList this[string key] { get; }
+    /// <summary>
+    /// Gets or sets the list of values for a particular key
+    /// </summary>
+    /// <param name="key">The key for which the values are to be retrieved</param>
+    IList? this[string key] { get; }
 
-        /// <summary>
-        /// Gets a single value for a key, using the first
-        /// one if multiple values are present and returning
-        /// null if the value is not found.
-        /// </summary>
-        /// <param name="key">the key for which the values are to be retrieved</param>
-        /// <returns>First value of the list for the key; otherwise null.</returns>
-        object Get(string key);
+    /// <summary>
+    /// Gets a single value for a key, using the first
+    /// one if multiple values are present and returning
+    /// null if the value is not found.
+    /// </summary>
+    /// <param name="key">the key for which the values are to be retrieved</param>
+    /// <returns>First value of the list for the key; otherwise null.</returns>
+    object? Get(string key);
 
-        /// <summary>
-        /// Sets the value for a key, removing any other
-        /// values that are already in the property set.
-        /// </summary>
-        /// <param name="key">the key for which the values are to be retrieved</param>
-        /// <param name="value">value for the key</param>
-        void Set(string key, object value);
-    }
+    /// <summary>
+    /// Sets the value for a key, removing any other
+    /// values that are already in the property set.
+    /// </summary>
+    /// <param name="key">the key for which the values are to be retrieved</param>
+    /// <param name="value">value for the key</param>
+    void Set(string key, object? value);
 }

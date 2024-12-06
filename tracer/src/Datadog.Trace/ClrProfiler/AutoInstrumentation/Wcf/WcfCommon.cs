@@ -173,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 if (headers is not null)
                 {
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
-                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTagsInternal!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    SpanContextPropagator.Instance.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

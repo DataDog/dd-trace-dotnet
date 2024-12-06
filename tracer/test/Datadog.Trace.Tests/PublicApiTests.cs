@@ -16,12 +16,19 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.PublicApiTests
 {
-    public class DatadogTraceTests : PublicApiTestsBase
+    public class DatadogTraceTests
     {
+        private readonly PublicApiTestsBase _base;
+
         public DatadogTraceTests(ITestOutputHelper output)
-            : base(typeof(Tracer).Assembly, output)
         {
+            // We don't care about _all_ the public API tests (because this isn't _really_ public)
+            // so working around it like this
+            _base = new InternalBase(output);
         }
+
+        [Fact]
+        public void AssemblyReferencesHaveNotChanged() => _base.AssemblyReferencesHaveNotChanged();
 
 #if NETFRAMEWORK
         [Fact]
@@ -31,6 +38,8 @@ namespace Datadog.Trace.Tests.PublicApiTests
             Assert.NotNull(httpModuleType);
         }
 #endif
+
+        private class InternalBase(ITestOutputHelper output) : PublicApiTestsBase(typeof(Tracer).Assembly, output);
     }
 
     public class DatadogTraceAnnotationsTests : PublicApiTestsBase

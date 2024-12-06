@@ -126,20 +126,20 @@ internal class CIVisibilityTestCommand
         }
 
         result.SetResult(
-            result.ResultState.Status != TestStatus.Passed ? retryResult.ResultState : result.ResultState,
+            result.ResultState?.Status != TestStatus.Passed ? retryResult.ResultState : result.ResultState,
             message,
             stackTrace);
 
         if (retryResult.Output is { } testResultOutput && testResultOutput != "\r\n" && testResultOutput != "\n")
         {
-            result.OutWriter.WriteLine(testResultOutput);
+            result.OutWriter?.WriteLine(testResultOutput);
         }
 
-        if (retryResult.AssertionResults.Count > 0)
+        if (retryResult.AssertionResults?.Count > 0 && result.AssertionResults is { } assertionResults)
         {
             foreach (var assertionResult in retryResult.AssertionResults)
             {
-                result.AssertionResults.Add(assertionResult);
+                assertionResults.Add(assertionResult);
             }
         }
     }

@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
         public static void AddScope<TAction, TState>(Tracer tracer, TAction callback, TState state)
         {
-            if (tracer.Settings.LogsInjectionEnabledInternal
+            if (tracer.Settings.LogsInjectionEnabled
              && tracer.Settings.IsIntegrationEnabled(IntegrationId)
              && callback is Action<object, TState> foreachCallback)
             {

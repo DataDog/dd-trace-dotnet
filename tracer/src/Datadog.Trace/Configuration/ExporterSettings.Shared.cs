@@ -58,7 +58,7 @@ namespace Datadog.Trace.Configuration
             if (!string.IsNullOrWhiteSpace(tracesPipeName))
             {
                 TracesTransport = TracesTransportType.WindowsNamedPipe;
-                TracesPipeNameInternal = tracesPipeName;
+                TracesPipeName = tracesPipeName;
                 RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Configuration
             {
 #if NETCOREAPP3_1_OR_GREATER
                 TracesTransport = TracesTransportType.UnixDomainSocket;
-                TracesUnixDomainSocketPathInternal = uri.PathAndQuery;
+                TracesUnixDomainSocketPath = uri.PathAndQuery;
 
                 var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
                 bool potentiallyInvalid = false;
@@ -170,7 +170,7 @@ namespace Datadog.Trace.Configuration
                 RecordTraceTransport(nameof(TracesTransportType.UnixDomainSocket), origin);
                 _telemetry.Record(
                     ConfigurationKeys.TracesUnixDomainSocketPath,
-                    TracesUnixDomainSocketPathInternal,
+                    TracesUnixDomainSocketPath,
                     recordValue: true,
                     origin,
                     potentiallyInvalid ? TelemetryErrorCode.PotentiallyInvalidUdsPath : null);

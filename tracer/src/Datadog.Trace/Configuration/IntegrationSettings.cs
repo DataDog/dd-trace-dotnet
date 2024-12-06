@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
                 ThrowHelper.ThrowArgumentNullException(nameof(integrationName));
             }
 
-            IntegrationNameInternal = integrationName;
+            IntegrationName = integrationName;
 
             if (source == null)
             {
@@ -47,24 +47,27 @@ namespace Datadog.Trace.Configuration
 
             // We don't record these in telemetry, because they're blocked anyway
             var config = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
-            EnabledInternal = config
+            var upperName = integrationName.ToUpperInvariant();
+            Enabled = config
                      .WithKeys(
-                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName.ToUpperInvariant()),
+                          string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
                           string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                          string.Format("DD_{0}_ENABLED", integrationName))
+                          $"DD_{integrationName}_ENABLED")
                      .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabledInternal = config
+            AnalyticsEnabled = config
                               .WithKeys(
+                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, upperName),
                                    string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
-                                   string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
+                                   $"DD_{integrationName}_ANALYTICS_ENABLED")
                               .AsBool();
 
-            AnalyticsSampleRateInternal = config
+            AnalyticsSampleRate = config
                                  .WithKeys(
+                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, upperName),
                                       string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
-                                      string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
+                                      $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE")
                                  .AsDouble(1.0);
 #pragma warning restore 618
         }
@@ -72,36 +75,24 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the name of the integration. Used to retrieve integration-specific settings.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.IntegrationSettings_IntegrationName_Get)]
-        internal string IntegrationNameInternal { get; }
+        public string IntegrationName { get; }
 
-#pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
         /// Gets or sets a value indicating whether
         /// this integration is enabled.
         /// </summary>
-        [GeneratePublicApi(
-            PublicApiUsage.IntegrationSettings_Enabled_Get,
-            PublicApiUsage.IntegrationSettings_Enabled_Set)]
-        internal bool? EnabledInternal { get; set; }
+        public bool? Enabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether
         /// Analytics are enabled for this integration.
         /// </summary>
-        [GeneratePublicApi(
-            PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Get,
-            PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set)]
-        internal bool? AnalyticsEnabledInternal { get; set; }
+        public bool? AnalyticsEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value between 0 and 1 (inclusive)
         /// that determines the sampling rate for this integration.
         /// </summary>
-        [GeneratePublicApi(
-            PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Get,
-            PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set)]
-        internal double AnalyticsSampleRateInternal { get; set; }
-#pragma warning restore SA1624
+        public double AnalyticsSampleRate { get; set; }
     }
 }

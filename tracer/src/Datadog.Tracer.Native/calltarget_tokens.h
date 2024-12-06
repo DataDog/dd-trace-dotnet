@@ -12,6 +12,7 @@
 #include "clr_helpers.h"
 #include "il_rewriter.h"
 #include "integration.h"
+#include "signature_builder.h"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/com_ptr.h"
 
@@ -77,8 +78,7 @@ protected:
     virtual const shared::WSTRING& GetCallTargetRefStructType() = 0;
 
     virtual void AddAdditionalLocals(TypeSignature* methodReturnValue, std::vector<TypeSignature>* methodTypeArguments,
-                                     COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
-                                     ULONG& signatureSize, bool isAsyncMethod);
+        SignatureBuilder& signatureBuffer, bool isAsyncMethod);
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
                      bool enableCallTargetStateByRef);

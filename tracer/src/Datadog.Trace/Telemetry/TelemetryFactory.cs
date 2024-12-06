@@ -80,7 +80,7 @@ namespace Datadog.Trace.Telemetry
 
             try
             {
-                var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.ExporterInternal);
+                var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
 
                 if (!telemetryTransports.HasTransports)
                 {

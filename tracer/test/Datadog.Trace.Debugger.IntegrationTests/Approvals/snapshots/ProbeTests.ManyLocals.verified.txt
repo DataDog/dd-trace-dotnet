@@ -1,0 +1,4053 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "this": {
+                "type": "ManyLocals",
+                "value": "ManyLocals"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "this": {
+                "type": "ManyLocals",
+                "value": "ManyLocals"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int64",
+                "value": "500500"
+              },
+              "var10": {
+                "type": "Int32",
+                "value": "10"
+              },
+              "var100": {
+                "type": "Int32",
+                "value": "100"
+              },
+              "var1000": {
+                "type": "Int32",
+                "value": "1000"
+              },
+              "var101": {
+                "type": "Int32",
+                "value": "101"
+              },
+              "var102": {
+                "type": "Int32",
+                "value": "102"
+              },
+              "var103": {
+                "type": "Int32",
+                "value": "103"
+              },
+              "var104": {
+                "type": "Int32",
+                "value": "104"
+              },
+              "var105": {
+                "type": "Int32",
+                "value": "105"
+              },
+              "var106": {
+                "type": "Int32",
+                "value": "106"
+              },
+              "var107": {
+                "type": "Int32",
+                "value": "107"
+              },
+              "var108": {
+                "type": "Int32",
+                "value": "108"
+              },
+              "var109": {
+                "type": "Int32",
+                "value": "109"
+              },
+              "var11": {
+                "type": "Int32",
+                "value": "11"
+              },
+              "var110": {
+                "type": "Int32",
+                "value": "110"
+              },
+              "var111": {
+                "type": "Int32",
+                "value": "111"
+              },
+              "var112": {
+                "type": "Int32",
+                "value": "112"
+              },
+              "var113": {
+                "type": "Int32",
+                "value": "113"
+              },
+              "var114": {
+                "type": "Int32",
+                "value": "114"
+              },
+              "var115": {
+                "type": "Int32",
+                "value": "115"
+              },
+              "var116": {
+                "type": "Int32",
+                "value": "116"
+              },
+              "var117": {
+                "type": "Int32",
+                "value": "117"
+              },
+              "var118": {
+                "type": "Int32",
+                "value": "118"
+              },
+              "var119": {
+                "type": "Int32",
+                "value": "119"
+              },
+              "var12": {
+                "type": "Int32",
+                "value": "12"
+              },
+              "var120": {
+                "type": "Int32",
+                "value": "120"
+              },
+              "var121": {
+                "type": "Int32",
+                "value": "121"
+              },
+              "var122": {
+                "type": "Int32",
+                "value": "122"
+              },
+              "var123": {
+                "type": "Int32",
+                "value": "123"
+              },
+              "var124": {
+                "type": "Int32",
+                "value": "124"
+              },
+              "var125": {
+                "type": "Int32",
+                "value": "125"
+              },
+              "var126": {
+                "type": "Int32",
+                "value": "126"
+              },
+              "var127": {
+                "type": "Int32",
+                "value": "127"
+              },
+              "var128": {
+                "type": "Int32",
+                "value": "128"
+              },
+              "var129": {
+                "type": "Int32",
+                "value": "129"
+              },
+              "var13": {
+                "type": "Int32",
+                "value": "13"
+              },
+              "var130": {
+                "type": "Int32",
+                "value": "130"
+              },
+              "var131": {
+                "type": "Int32",
+                "value": "131"
+              },
+              "var132": {
+                "type": "Int32",
+                "value": "132"
+              },
+              "var133": {
+                "type": "Int32",
+                "value": "133"
+              },
+              "var134": {
+                "type": "Int32",
+                "value": "134"
+              },
+              "var135": {
+                "type": "Int32",
+                "value": "135"
+              },
+              "var136": {
+                "type": "Int32",
+                "value": "136"
+              },
+              "var137": {
+                "type": "Int32",
+                "value": "137"
+              },
+              "var138": {
+                "type": "Int32",
+                "value": "138"
+              },
+              "var139": {
+                "type": "Int32",
+                "value": "139"
+              },
+              "var14": {
+                "type": "Int32",
+                "value": "14"
+              },
+              "var140": {
+                "type": "Int32",
+                "value": "140"
+              },
+              "var141": {
+                "type": "Int32",
+                "value": "141"
+              },
+              "var142": {
+                "type": "Int32",
+                "value": "142"
+              },
+              "var143": {
+                "type": "Int32",
+                "value": "143"
+              },
+              "var144": {
+                "type": "Int32",
+                "value": "144"
+              },
+              "var145": {
+                "type": "Int32",
+                "value": "145"
+              },
+              "var146": {
+                "type": "Int32",
+                "value": "146"
+              },
+              "var147": {
+                "type": "Int32",
+                "value": "147"
+              },
+              "var148": {
+                "type": "Int32",
+                "value": "148"
+              },
+              "var149": {
+                "type": "Int32",
+                "value": "149"
+              },
+              "var15": {
+                "type": "Int32",
+                "value": "15"
+              },
+              "var150": {
+                "type": "Int32",
+                "value": "150"
+              },
+              "var151": {
+                "type": "Int32",
+                "value": "151"
+              },
+              "var152": {
+                "type": "Int32",
+                "value": "152"
+              },
+              "var153": {
+                "type": "Int32",
+                "value": "153"
+              },
+              "var154": {
+                "type": "Int32",
+                "value": "154"
+              },
+              "var155": {
+                "type": "Int32",
+                "value": "155"
+              },
+              "var156": {
+                "type": "Int32",
+                "value": "156"
+              },
+              "var157": {
+                "type": "Int32",
+                "value": "157"
+              },
+              "var158": {
+                "type": "Int32",
+                "value": "158"
+              },
+              "var159": {
+                "type": "Int32",
+                "value": "159"
+              },
+              "var16": {
+                "type": "Int32",
+                "value": "16"
+              },
+              "var160": {
+                "type": "Int32",
+                "value": "160"
+              },
+              "var161": {
+                "type": "Int32",
+                "value": "161"
+              },
+              "var162": {
+                "type": "Int32",
+                "value": "162"
+              },
+              "var163": {
+                "type": "Int32",
+                "value": "163"
+              },
+              "var164": {
+                "type": "Int32",
+                "value": "164"
+              },
+              "var165": {
+                "type": "Int32",
+                "value": "165"
+              },
+              "var166": {
+                "type": "Int32",
+                "value": "166"
+              },
+              "var167": {
+                "type": "Int32",
+                "value": "167"
+              },
+              "var168": {
+                "type": "Int32",
+                "value": "168"
+              },
+              "var169": {
+                "type": "Int32",
+                "value": "169"
+              },
+              "var17": {
+                "type": "Int32",
+                "value": "17"
+              },
+              "var170": {
+                "type": "Int32",
+                "value": "170"
+              },
+              "var171": {
+                "type": "Int32",
+                "value": "171"
+              },
+              "var172": {
+                "type": "Int32",
+                "value": "172"
+              },
+              "var173": {
+                "type": "Int32",
+                "value": "173"
+              },
+              "var174": {
+                "type": "Int32",
+                "value": "174"
+              },
+              "var175": {
+                "type": "Int32",
+                "value": "175"
+              },
+              "var176": {
+                "type": "Int32",
+                "value": "176"
+              },
+              "var177": {
+                "type": "Int32",
+                "value": "177"
+              },
+              "var178": {
+                "type": "Int32",
+                "value": "178"
+              },
+              "var179": {
+                "type": "Int32",
+                "value": "179"
+              },
+              "var18": {
+                "type": "Int32",
+                "value": "18"
+              },
+              "var180": {
+                "type": "Int32",
+                "value": "180"
+              },
+              "var181": {
+                "type": "Int32",
+                "value": "181"
+              },
+              "var182": {
+                "type": "Int32",
+                "value": "182"
+              },
+              "var183": {
+                "type": "Int32",
+                "value": "183"
+              },
+              "var184": {
+                "type": "Int32",
+                "value": "184"
+              },
+              "var185": {
+                "type": "Int32",
+                "value": "185"
+              },
+              "var186": {
+                "type": "Int32",
+                "value": "186"
+              },
+              "var187": {
+                "type": "Int32",
+                "value": "187"
+              },
+              "var188": {
+                "type": "Int32",
+                "value": "188"
+              },
+              "var189": {
+                "type": "Int32",
+                "value": "189"
+              },
+              "var19": {
+                "type": "Int32",
+                "value": "19"
+              },
+              "var190": {
+                "type": "Int32",
+                "value": "190"
+              },
+              "var191": {
+                "type": "Int32",
+                "value": "191"
+              },
+              "var192": {
+                "type": "Int32",
+                "value": "192"
+              },
+              "var193": {
+                "type": "Int32",
+                "value": "193"
+              },
+              "var194": {
+                "type": "Int32",
+                "value": "194"
+              },
+              "var195": {
+                "type": "Int32",
+                "value": "195"
+              },
+              "var196": {
+                "type": "Int32",
+                "value": "196"
+              },
+              "var197": {
+                "type": "Int32",
+                "value": "197"
+              },
+              "var198": {
+                "type": "Int32",
+                "value": "198"
+              },
+              "var199": {
+                "type": "Int32",
+                "value": "199"
+              },
+              "var2": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "var20": {
+                "type": "Int32",
+                "value": "20"
+              },
+              "var200": {
+                "type": "Int32",
+                "value": "200"
+              },
+              "var201": {
+                "type": "Int32",
+                "value": "201"
+              },
+              "var202": {
+                "type": "Int32",
+                "value": "202"
+              },
+              "var203": {
+                "type": "Int32",
+                "value": "203"
+              },
+              "var204": {
+                "type": "Int32",
+                "value": "204"
+              },
+              "var205": {
+                "type": "Int32",
+                "value": "205"
+              },
+              "var206": {
+                "type": "Int32",
+                "value": "206"
+              },
+              "var207": {
+                "type": "Int32",
+                "value": "207"
+              },
+              "var208": {
+                "type": "Int32",
+                "value": "208"
+              },
+              "var209": {
+                "type": "Int32",
+                "value": "209"
+              },
+              "var21": {
+                "type": "Int32",
+                "value": "21"
+              },
+              "var210": {
+                "type": "Int32",
+                "value": "210"
+              },
+              "var211": {
+                "type": "Int32",
+                "value": "211"
+              },
+              "var212": {
+                "type": "Int32",
+                "value": "212"
+              },
+              "var213": {
+                "type": "Int32",
+                "value": "213"
+              },
+              "var214": {
+                "type": "Int32",
+                "value": "214"
+              },
+              "var215": {
+                "type": "Int32",
+                "value": "215"
+              },
+              "var216": {
+                "type": "Int32",
+                "value": "216"
+              },
+              "var217": {
+                "type": "Int32",
+                "value": "217"
+              },
+              "var218": {
+                "type": "Int32",
+                "value": "218"
+              },
+              "var219": {
+                "type": "Int32",
+                "value": "219"
+              },
+              "var22": {
+                "type": "Int32",
+                "value": "22"
+              },
+              "var220": {
+                "type": "Int32",
+                "value": "220"
+              },
+              "var221": {
+                "type": "Int32",
+                "value": "221"
+              },
+              "var222": {
+                "type": "Int32",
+                "value": "222"
+              },
+              "var223": {
+                "type": "Int32",
+                "value": "223"
+              },
+              "var224": {
+                "type": "Int32",
+                "value": "224"
+              },
+              "var225": {
+                "type": "Int32",
+                "value": "225"
+              },
+              "var226": {
+                "type": "Int32",
+                "value": "226"
+              },
+              "var227": {
+                "type": "Int32",
+                "value": "227"
+              },
+              "var228": {
+                "type": "Int32",
+                "value": "228"
+              },
+              "var229": {
+                "type": "Int32",
+                "value": "229"
+              },
+              "var23": {
+                "type": "Int32",
+                "value": "23"
+              },
+              "var230": {
+                "type": "Int32",
+                "value": "230"
+              },
+              "var231": {
+                "type": "Int32",
+                "value": "231"
+              },
+              "var232": {
+                "type": "Int32",
+                "value": "232"
+              },
+              "var233": {
+                "type": "Int32",
+                "value": "233"
+              },
+              "var234": {
+                "type": "Int32",
+                "value": "234"
+              },
+              "var235": {
+                "type": "Int32",
+                "value": "235"
+              },
+              "var236": {
+                "type": "Int32",
+                "value": "236"
+              },
+              "var237": {
+                "type": "Int32",
+                "value": "237"
+              },
+              "var238": {
+                "type": "Int32",
+                "value": "238"
+              },
+              "var239": {
+                "type": "Int32",
+                "value": "239"
+              },
+              "var24": {
+                "type": "Int32",
+                "value": "24"
+              },
+              "var240": {
+                "type": "Int32",
+                "value": "240"
+              },
+              "var241": {
+                "type": "Int32",
+                "value": "241"
+              },
+              "var242": {
+                "type": "Int32",
+                "value": "242"
+              },
+              "var243": {
+                "type": "Int32",
+                "value": "243"
+              },
+              "var244": {
+                "type": "Int32",
+                "value": "244"
+              },
+              "var245": {
+                "type": "Int32",
+                "value": "245"
+              },
+              "var246": {
+                "type": "Int32",
+                "value": "246"
+              },
+              "var247": {
+                "type": "Int32",
+                "value": "247"
+              },
+              "var248": {
+                "type": "Int32",
+                "value": "248"
+              },
+              "var249": {
+                "type": "Int32",
+                "value": "249"
+              },
+              "var25": {
+                "type": "Int32",
+                "value": "25"
+              },
+              "var250": {
+                "type": "Int32",
+                "value": "250"
+              },
+              "var251": {
+                "type": "Int32",
+                "value": "251"
+              },
+              "var252": {
+                "type": "Int32",
+                "value": "252"
+              },
+              "var253": {
+                "type": "Int32",
+                "value": "253"
+              },
+              "var254": {
+                "type": "Int32",
+                "value": "254"
+              },
+              "var255": {
+                "type": "Int32",
+                "value": "255"
+              },
+              "var256": {
+                "type": "Int32",
+                "value": "256"
+              },
+              "var257": {
+                "type": "Int32",
+                "value": "257"
+              },
+              "var258": {
+                "type": "Int32",
+                "value": "258"
+              },
+              "var259": {
+                "type": "Int32",
+                "value": "259"
+              },
+              "var26": {
+                "type": "Int32",
+                "value": "26"
+              },
+              "var260": {
+                "type": "Int32",
+                "value": "260"
+              },
+              "var261": {
+                "type": "Int32",
+                "value": "261"
+              },
+              "var262": {
+                "type": "Int32",
+                "value": "262"
+              },
+              "var263": {
+                "type": "Int32",
+                "value": "263"
+              },
+              "var264": {
+                "type": "Int32",
+                "value": "264"
+              },
+              "var265": {
+                "type": "Int32",
+                "value": "265"
+              },
+              "var266": {
+                "type": "Int32",
+                "value": "266"
+              },
+              "var267": {
+                "type": "Int32",
+                "value": "267"
+              },
+              "var268": {
+                "type": "Int32",
+                "value": "268"
+              },
+              "var269": {
+                "type": "Int32",
+                "value": "269"
+              },
+              "var27": {
+                "type": "Int32",
+                "value": "27"
+              },
+              "var270": {
+                "type": "Int32",
+                "value": "270"
+              },
+              "var271": {
+                "type": "Int32",
+                "value": "271"
+              },
+              "var272": {
+                "type": "Int32",
+                "value": "272"
+              },
+              "var273": {
+                "type": "Int32",
+                "value": "273"
+              },
+              "var274": {
+                "type": "Int32",
+                "value": "274"
+              },
+              "var275": {
+                "type": "Int32",
+                "value": "275"
+              },
+              "var276": {
+                "type": "Int32",
+                "value": "276"
+              },
+              "var277": {
+                "type": "Int32",
+                "value": "277"
+              },
+              "var278": {
+                "type": "Int32",
+                "value": "278"
+              },
+              "var279": {
+                "type": "Int32",
+                "value": "279"
+              },
+              "var28": {
+                "type": "Int32",
+                "value": "28"
+              },
+              "var280": {
+                "type": "Int32",
+                "value": "280"
+              },
+              "var281": {
+                "type": "Int32",
+                "value": "281"
+              },
+              "var282": {
+                "type": "Int32",
+                "value": "282"
+              },
+              "var283": {
+                "type": "Int32",
+                "value": "283"
+              },
+              "var284": {
+                "type": "Int32",
+                "value": "284"
+              },
+              "var285": {
+                "type": "Int32",
+                "value": "285"
+              },
+              "var286": {
+                "type": "Int32",
+                "value": "286"
+              },
+              "var287": {
+                "type": "Int32",
+                "value": "287"
+              },
+              "var288": {
+                "type": "Int32",
+                "value": "288"
+              },
+              "var289": {
+                "type": "Int32",
+                "value": "289"
+              },
+              "var29": {
+                "type": "Int32",
+                "value": "29"
+              },
+              "var290": {
+                "type": "Int32",
+                "value": "290"
+              },
+              "var291": {
+                "type": "Int32",
+                "value": "291"
+              },
+              "var292": {
+                "type": "Int32",
+                "value": "292"
+              },
+              "var293": {
+                "type": "Int32",
+                "value": "293"
+              },
+              "var294": {
+                "type": "Int32",
+                "value": "294"
+              },
+              "var295": {
+                "type": "Int32",
+                "value": "295"
+              },
+              "var296": {
+                "type": "Int32",
+                "value": "296"
+              },
+              "var297": {
+                "type": "Int32",
+                "value": "297"
+              },
+              "var298": {
+                "type": "Int32",
+                "value": "298"
+              },
+              "var299": {
+                "type": "Int32",
+                "value": "299"
+              },
+              "var3": {
+                "type": "Int32",
+                "value": "3"
+              },
+              "var30": {
+                "type": "Int32",
+                "value": "30"
+              },
+              "var300": {
+                "type": "Int32",
+                "value": "300"
+              },
+              "var301": {
+                "type": "Int32",
+                "value": "301"
+              },
+              "var302": {
+                "type": "Int32",
+                "value": "302"
+              },
+              "var303": {
+                "type": "Int32",
+                "value": "303"
+              },
+              "var304": {
+                "type": "Int32",
+                "value": "304"
+              },
+              "var305": {
+                "type": "Int32",
+                "value": "305"
+              },
+              "var306": {
+                "type": "Int32",
+                "value": "306"
+              },
+              "var307": {
+                "type": "Int32",
+                "value": "307"
+              },
+              "var308": {
+                "type": "Int32",
+                "value": "308"
+              },
+              "var309": {
+                "type": "Int32",
+                "value": "309"
+              },
+              "var31": {
+                "type": "Int32",
+                "value": "31"
+              },
+              "var310": {
+                "type": "Int32",
+                "value": "310"
+              },
+              "var311": {
+                "type": "Int32",
+                "value": "311"
+              },
+              "var312": {
+                "type": "Int32",
+                "value": "312"
+              },
+              "var313": {
+                "type": "Int32",
+                "value": "313"
+              },
+              "var314": {
+                "type": "Int32",
+                "value": "314"
+              },
+              "var315": {
+                "type": "Int32",
+                "value": "315"
+              },
+              "var316": {
+                "type": "Int32",
+                "value": "316"
+              },
+              "var317": {
+                "type": "Int32",
+                "value": "317"
+              },
+              "var318": {
+                "type": "Int32",
+                "value": "318"
+              },
+              "var319": {
+                "type": "Int32",
+                "value": "319"
+              },
+              "var32": {
+                "type": "Int32",
+                "value": "32"
+              },
+              "var320": {
+                "type": "Int32",
+                "value": "320"
+              },
+              "var321": {
+                "type": "Int32",
+                "value": "321"
+              },
+              "var322": {
+                "type": "Int32",
+                "value": "322"
+              },
+              "var323": {
+                "type": "Int32",
+                "value": "323"
+              },
+              "var324": {
+                "type": "Int32",
+                "value": "324"
+              },
+              "var325": {
+                "type": "Int32",
+                "value": "325"
+              },
+              "var326": {
+                "type": "Int32",
+                "value": "326"
+              },
+              "var327": {
+                "type": "Int32",
+                "value": "327"
+              },
+              "var328": {
+                "type": "Int32",
+                "value": "328"
+              },
+              "var329": {
+                "type": "Int32",
+                "value": "329"
+              },
+              "var33": {
+                "type": "Int32",
+                "value": "33"
+              },
+              "var330": {
+                "type": "Int32",
+                "value": "330"
+              },
+              "var331": {
+                "type": "Int32",
+                "value": "331"
+              },
+              "var332": {
+                "type": "Int32",
+                "value": "332"
+              },
+              "var333": {
+                "type": "Int32",
+                "value": "333"
+              },
+              "var334": {
+                "type": "Int32",
+                "value": "334"
+              },
+              "var335": {
+                "type": "Int32",
+                "value": "335"
+              },
+              "var336": {
+                "type": "Int32",
+                "value": "336"
+              },
+              "var337": {
+                "type": "Int32",
+                "value": "337"
+              },
+              "var338": {
+                "type": "Int32",
+                "value": "338"
+              },
+              "var339": {
+                "type": "Int32",
+                "value": "339"
+              },
+              "var34": {
+                "type": "Int32",
+                "value": "34"
+              },
+              "var340": {
+                "type": "Int32",
+                "value": "340"
+              },
+              "var341": {
+                "type": "Int32",
+                "value": "341"
+              },
+              "var342": {
+                "type": "Int32",
+                "value": "342"
+              },
+              "var343": {
+                "type": "Int32",
+                "value": "343"
+              },
+              "var344": {
+                "type": "Int32",
+                "value": "344"
+              },
+              "var345": {
+                "type": "Int32",
+                "value": "345"
+              },
+              "var346": {
+                "type": "Int32",
+                "value": "346"
+              },
+              "var347": {
+                "type": "Int32",
+                "value": "347"
+              },
+              "var348": {
+                "type": "Int32",
+                "value": "348"
+              },
+              "var349": {
+                "type": "Int32",
+                "value": "349"
+              },
+              "var35": {
+                "type": "Int32",
+                "value": "35"
+              },
+              "var350": {
+                "type": "Int32",
+                "value": "350"
+              },
+              "var351": {
+                "type": "Int32",
+                "value": "351"
+              },
+              "var352": {
+                "type": "Int32",
+                "value": "352"
+              },
+              "var353": {
+                "type": "Int32",
+                "value": "353"
+              },
+              "var354": {
+                "type": "Int32",
+                "value": "354"
+              },
+              "var355": {
+                "type": "Int32",
+                "value": "355"
+              },
+              "var356": {
+                "type": "Int32",
+                "value": "356"
+              },
+              "var357": {
+                "type": "Int32",
+                "value": "357"
+              },
+              "var358": {
+                "type": "Int32",
+                "value": "358"
+              },
+              "var359": {
+                "type": "Int32",
+                "value": "359"
+              },
+              "var36": {
+                "type": "Int32",
+                "value": "36"
+              },
+              "var360": {
+                "type": "Int32",
+                "value": "360"
+              },
+              "var361": {
+                "type": "Int32",
+                "value": "361"
+              },
+              "var362": {
+                "type": "Int32",
+                "value": "362"
+              },
+              "var363": {
+                "type": "Int32",
+                "value": "363"
+              },
+              "var364": {
+                "type": "Int32",
+                "value": "364"
+              },
+              "var365": {
+                "type": "Int32",
+                "value": "365"
+              },
+              "var366": {
+                "type": "Int32",
+                "value": "366"
+              },
+              "var367": {
+                "type": "Int32",
+                "value": "367"
+              },
+              "var368": {
+                "type": "Int32",
+                "value": "368"
+              },
+              "var369": {
+                "type": "Int32",
+                "value": "369"
+              },
+              "var37": {
+                "type": "Int32",
+                "value": "37"
+              },
+              "var370": {
+                "type": "Int32",
+                "value": "370"
+              },
+              "var371": {
+                "type": "Int32",
+                "value": "371"
+              },
+              "var372": {
+                "type": "Int32",
+                "value": "372"
+              },
+              "var373": {
+                "type": "Int32",
+                "value": "373"
+              },
+              "var374": {
+                "type": "Int32",
+                "value": "374"
+              },
+              "var375": {
+                "type": "Int32",
+                "value": "375"
+              },
+              "var376": {
+                "type": "Int32",
+                "value": "376"
+              },
+              "var377": {
+                "type": "Int32",
+                "value": "377"
+              },
+              "var378": {
+                "type": "Int32",
+                "value": "378"
+              },
+              "var379": {
+                "type": "Int32",
+                "value": "379"
+              },
+              "var38": {
+                "type": "Int32",
+                "value": "38"
+              },
+              "var380": {
+                "type": "Int32",
+                "value": "380"
+              },
+              "var381": {
+                "type": "Int32",
+                "value": "381"
+              },
+              "var382": {
+                "type": "Int32",
+                "value": "382"
+              },
+              "var383": {
+                "type": "Int32",
+                "value": "383"
+              },
+              "var384": {
+                "type": "Int32",
+                "value": "384"
+              },
+              "var385": {
+                "type": "Int32",
+                "value": "385"
+              },
+              "var386": {
+                "type": "Int32",
+                "value": "386"
+              },
+              "var387": {
+                "type": "Int32",
+                "value": "387"
+              },
+              "var388": {
+                "type": "Int32",
+                "value": "388"
+              },
+              "var389": {
+                "type": "Int32",
+                "value": "389"
+              },
+              "var39": {
+                "type": "Int32",
+                "value": "39"
+              },
+              "var390": {
+                "type": "Int32",
+                "value": "390"
+              },
+              "var391": {
+                "type": "Int32",
+                "value": "391"
+              },
+              "var392": {
+                "type": "Int32",
+                "value": "392"
+              },
+              "var393": {
+                "type": "Int32",
+                "value": "393"
+              },
+              "var394": {
+                "type": "Int32",
+                "value": "394"
+              },
+              "var395": {
+                "type": "Int32",
+                "value": "395"
+              },
+              "var396": {
+                "type": "Int32",
+                "value": "396"
+              },
+              "var397": {
+                "type": "Int32",
+                "value": "397"
+              },
+              "var398": {
+                "type": "Int32",
+                "value": "398"
+              },
+              "var399": {
+                "type": "Int32",
+                "value": "399"
+              },
+              "var4": {
+                "type": "Int32",
+                "value": "4"
+              },
+              "var40": {
+                "type": "Int32",
+                "value": "40"
+              },
+              "var400": {
+                "type": "Int32",
+                "value": "400"
+              },
+              "var401": {
+                "type": "Int32",
+                "value": "401"
+              },
+              "var402": {
+                "type": "Int32",
+                "value": "402"
+              },
+              "var403": {
+                "type": "Int32",
+                "value": "403"
+              },
+              "var404": {
+                "type": "Int32",
+                "value": "404"
+              },
+              "var405": {
+                "type": "Int32",
+                "value": "405"
+              },
+              "var406": {
+                "type": "Int32",
+                "value": "406"
+              },
+              "var407": {
+                "type": "Int32",
+                "value": "407"
+              },
+              "var408": {
+                "type": "Int32",
+                "value": "408"
+              },
+              "var409": {
+                "type": "Int32",
+                "value": "409"
+              },
+              "var41": {
+                "type": "Int32",
+                "value": "41"
+              },
+              "var410": {
+                "type": "Int32",
+                "value": "410"
+              },
+              "var411": {
+                "type": "Int32",
+                "value": "411"
+              },
+              "var412": {
+                "type": "Int32",
+                "value": "412"
+              },
+              "var413": {
+                "type": "Int32",
+                "value": "413"
+              },
+              "var414": {
+                "type": "Int32",
+                "value": "414"
+              },
+              "var415": {
+                "type": "Int32",
+                "value": "415"
+              },
+              "var416": {
+                "type": "Int32",
+                "value": "416"
+              },
+              "var417": {
+                "type": "Int32",
+                "value": "417"
+              },
+              "var418": {
+                "type": "Int32",
+                "value": "418"
+              },
+              "var419": {
+                "type": "Int32",
+                "value": "419"
+              },
+              "var42": {
+                "type": "Int32",
+                "value": "42"
+              },
+              "var420": {
+                "type": "Int32",
+                "value": "420"
+              },
+              "var421": {
+                "type": "Int32",
+                "value": "421"
+              },
+              "var422": {
+                "type": "Int32",
+                "value": "422"
+              },
+              "var423": {
+                "type": "Int32",
+                "value": "423"
+              },
+              "var424": {
+                "type": "Int32",
+                "value": "424"
+              },
+              "var425": {
+                "type": "Int32",
+                "value": "425"
+              },
+              "var426": {
+                "type": "Int32",
+                "value": "426"
+              },
+              "var427": {
+                "type": "Int32",
+                "value": "427"
+              },
+              "var428": {
+                "type": "Int32",
+                "value": "428"
+              },
+              "var429": {
+                "type": "Int32",
+                "value": "429"
+              },
+              "var43": {
+                "type": "Int32",
+                "value": "43"
+              },
+              "var430": {
+                "type": "Int32",
+                "value": "430"
+              },
+              "var431": {
+                "type": "Int32",
+                "value": "431"
+              },
+              "var432": {
+                "type": "Int32",
+                "value": "432"
+              },
+              "var433": {
+                "type": "Int32",
+                "value": "433"
+              },
+              "var434": {
+                "type": "Int32",
+                "value": "434"
+              },
+              "var435": {
+                "type": "Int32",
+                "value": "435"
+              },
+              "var436": {
+                "type": "Int32",
+                "value": "436"
+              },
+              "var437": {
+                "type": "Int32",
+                "value": "437"
+              },
+              "var438": {
+                "type": "Int32",
+                "value": "438"
+              },
+              "var439": {
+                "type": "Int32",
+                "value": "439"
+              },
+              "var44": {
+                "type": "Int32",
+                "value": "44"
+              },
+              "var440": {
+                "type": "Int32",
+                "value": "440"
+              },
+              "var441": {
+                "type": "Int32",
+                "value": "441"
+              },
+              "var442": {
+                "type": "Int32",
+                "value": "442"
+              },
+              "var443": {
+                "type": "Int32",
+                "value": "443"
+              },
+              "var444": {
+                "type": "Int32",
+                "value": "444"
+              },
+              "var445": {
+                "type": "Int32",
+                "value": "445"
+              },
+              "var446": {
+                "type": "Int32",
+                "value": "446"
+              },
+              "var447": {
+                "type": "Int32",
+                "value": "447"
+              },
+              "var448": {
+                "type": "Int32",
+                "value": "448"
+              },
+              "var449": {
+                "type": "Int32",
+                "value": "449"
+              },
+              "var45": {
+                "type": "Int32",
+                "value": "45"
+              },
+              "var450": {
+                "type": "Int32",
+                "value": "450"
+              },
+              "var451": {
+                "type": "Int32",
+                "value": "451"
+              },
+              "var452": {
+                "type": "Int32",
+                "value": "452"
+              },
+              "var453": {
+                "type": "Int32",
+                "value": "453"
+              },
+              "var454": {
+                "type": "Int32",
+                "value": "454"
+              },
+              "var455": {
+                "type": "Int32",
+                "value": "455"
+              },
+              "var456": {
+                "type": "Int32",
+                "value": "456"
+              },
+              "var457": {
+                "type": "Int32",
+                "value": "457"
+              },
+              "var458": {
+                "type": "Int32",
+                "value": "458"
+              },
+              "var459": {
+                "type": "Int32",
+                "value": "459"
+              },
+              "var46": {
+                "type": "Int32",
+                "value": "46"
+              },
+              "var460": {
+                "type": "Int32",
+                "value": "460"
+              },
+              "var461": {
+                "type": "Int32",
+                "value": "461"
+              },
+              "var462": {
+                "type": "Int32",
+                "value": "462"
+              },
+              "var463": {
+                "type": "Int32",
+                "value": "463"
+              },
+              "var464": {
+                "type": "Int32",
+                "value": "464"
+              },
+              "var465": {
+                "type": "Int32",
+                "value": "465"
+              },
+              "var466": {
+                "type": "Int32",
+                "value": "466"
+              },
+              "var467": {
+                "type": "Int32",
+                "value": "467"
+              },
+              "var468": {
+                "type": "Int32",
+                "value": "468"
+              },
+              "var469": {
+                "type": "Int32",
+                "value": "469"
+              },
+              "var47": {
+                "type": "Int32",
+                "value": "47"
+              },
+              "var470": {
+                "type": "Int32",
+                "value": "470"
+              },
+              "var471": {
+                "type": "Int32",
+                "value": "471"
+              },
+              "var472": {
+                "type": "Int32",
+                "value": "472"
+              },
+              "var473": {
+                "type": "Int32",
+                "value": "473"
+              },
+              "var474": {
+                "type": "Int32",
+                "value": "474"
+              },
+              "var475": {
+                "type": "Int32",
+                "value": "475"
+              },
+              "var476": {
+                "type": "Int32",
+                "value": "476"
+              },
+              "var477": {
+                "type": "Int32",
+                "value": "477"
+              },
+              "var478": {
+                "type": "Int32",
+                "value": "478"
+              },
+              "var479": {
+                "type": "Int32",
+                "value": "479"
+              },
+              "var48": {
+                "type": "Int32",
+                "value": "48"
+              },
+              "var480": {
+                "type": "Int32",
+                "value": "480"
+              },
+              "var481": {
+                "type": "Int32",
+                "value": "481"
+              },
+              "var482": {
+                "type": "Int32",
+                "value": "482"
+              },
+              "var483": {
+                "type": "Int32",
+                "value": "483"
+              },
+              "var484": {
+                "type": "Int32",
+                "value": "484"
+              },
+              "var485": {
+                "type": "Int32",
+                "value": "485"
+              },
+              "var486": {
+                "type": "Int32",
+                "value": "486"
+              },
+              "var487": {
+                "type": "Int32",
+                "value": "487"
+              },
+              "var488": {
+                "type": "Int32",
+                "value": "488"
+              },
+              "var489": {
+                "type": "Int32",
+                "value": "489"
+              },
+              "var49": {
+                "type": "Int32",
+                "value": "49"
+              },
+              "var490": {
+                "type": "Int32",
+                "value": "490"
+              },
+              "var491": {
+                "type": "Int32",
+                "value": "491"
+              },
+              "var492": {
+                "type": "Int32",
+                "value": "492"
+              },
+              "var493": {
+                "type": "Int32",
+                "value": "493"
+              },
+              "var494": {
+                "type": "Int32",
+                "value": "494"
+              },
+              "var495": {
+                "type": "Int32",
+                "value": "495"
+              },
+              "var496": {
+                "type": "Int32",
+                "value": "496"
+              },
+              "var497": {
+                "type": "Int32",
+                "value": "497"
+              },
+              "var498": {
+                "type": "Int32",
+                "value": "498"
+              },
+              "var499": {
+                "type": "Int32",
+                "value": "499"
+              },
+              "var5": {
+                "type": "Int32",
+                "value": "5"
+              },
+              "var50": {
+                "type": "Int32",
+                "value": "50"
+              },
+              "var500": {
+                "type": "Int32",
+                "value": "500"
+              },
+              "var501": {
+                "type": "Int32",
+                "value": "501"
+              },
+              "var502": {
+                "type": "Int32",
+                "value": "502"
+              },
+              "var503": {
+                "type": "Int32",
+                "value": "503"
+              },
+              "var504": {
+                "type": "Int32",
+                "value": "504"
+              },
+              "var505": {
+                "type": "Int32",
+                "value": "505"
+              },
+              "var506": {
+                "type": "Int32",
+                "value": "506"
+              },
+              "var507": {
+                "type": "Int32",
+                "value": "507"
+              },
+              "var508": {
+                "type": "Int32",
+                "value": "508"
+              },
+              "var509": {
+                "type": "Int32",
+                "value": "509"
+              },
+              "var51": {
+                "type": "Int32",
+                "value": "51"
+              },
+              "var510": {
+                "type": "Int32",
+                "value": "510"
+              },
+              "var511": {
+                "type": "Int32",
+                "value": "511"
+              },
+              "var512": {
+                "type": "Int32",
+                "value": "512"
+              },
+              "var513": {
+                "type": "Int32",
+                "value": "513"
+              },
+              "var514": {
+                "type": "Int32",
+                "value": "514"
+              },
+              "var515": {
+                "type": "Int32",
+                "value": "515"
+              },
+              "var516": {
+                "type": "Int32",
+                "value": "516"
+              },
+              "var517": {
+                "type": "Int32",
+                "value": "517"
+              },
+              "var518": {
+                "type": "Int32",
+                "value": "518"
+              },
+              "var519": {
+                "type": "Int32",
+                "value": "519"
+              },
+              "var52": {
+                "type": "Int32",
+                "value": "52"
+              },
+              "var520": {
+                "type": "Int32",
+                "value": "520"
+              },
+              "var521": {
+                "type": "Int32",
+                "value": "521"
+              },
+              "var522": {
+                "type": "Int32",
+                "value": "522"
+              },
+              "var523": {
+                "type": "Int32",
+                "value": "523"
+              },
+              "var524": {
+                "type": "Int32",
+                "value": "524"
+              },
+              "var525": {
+                "type": "Int32",
+                "value": "525"
+              },
+              "var526": {
+                "type": "Int32",
+                "value": "526"
+              },
+              "var527": {
+                "type": "Int32",
+                "value": "527"
+              },
+              "var528": {
+                "type": "Int32",
+                "value": "528"
+              },
+              "var529": {
+                "type": "Int32",
+                "value": "529"
+              },
+              "var53": {
+                "type": "Int32",
+                "value": "53"
+              },
+              "var530": {
+                "type": "Int32",
+                "value": "530"
+              },
+              "var531": {
+                "type": "Int32",
+                "value": "531"
+              },
+              "var532": {
+                "type": "Int32",
+                "value": "532"
+              },
+              "var533": {
+                "type": "Int32",
+                "value": "533"
+              },
+              "var534": {
+                "type": "Int32",
+                "value": "534"
+              },
+              "var535": {
+                "type": "Int32",
+                "value": "535"
+              },
+              "var536": {
+                "type": "Int32",
+                "value": "536"
+              },
+              "var537": {
+                "type": "Int32",
+                "value": "537"
+              },
+              "var538": {
+                "type": "Int32",
+                "value": "538"
+              },
+              "var539": {
+                "type": "Int32",
+                "value": "539"
+              },
+              "var54": {
+                "type": "Int32",
+                "value": "54"
+              },
+              "var540": {
+                "type": "Int32",
+                "value": "540"
+              },
+              "var541": {
+                "type": "Int32",
+                "value": "541"
+              },
+              "var542": {
+                "type": "Int32",
+                "value": "542"
+              },
+              "var543": {
+                "type": "Int32",
+                "value": "543"
+              },
+              "var544": {
+                "type": "Int32",
+                "value": "544"
+              },
+              "var545": {
+                "type": "Int32",
+                "value": "545"
+              },
+              "var546": {
+                "type": "Int32",
+                "value": "546"
+              },
+              "var547": {
+                "type": "Int32",
+                "value": "547"
+              },
+              "var548": {
+                "type": "Int32",
+                "value": "548"
+              },
+              "var549": {
+                "type": "Int32",
+                "value": "549"
+              },
+              "var55": {
+                "type": "Int32",
+                "value": "55"
+              },
+              "var550": {
+                "type": "Int32",
+                "value": "550"
+              },
+              "var551": {
+                "type": "Int32",
+                "value": "551"
+              },
+              "var552": {
+                "type": "Int32",
+                "value": "552"
+              },
+              "var553": {
+                "type": "Int32",
+                "value": "553"
+              },
+              "var554": {
+                "type": "Int32",
+                "value": "554"
+              },
+              "var555": {
+                "type": "Int32",
+                "value": "555"
+              },
+              "var556": {
+                "type": "Int32",
+                "value": "556"
+              },
+              "var557": {
+                "type": "Int32",
+                "value": "557"
+              },
+              "var558": {
+                "type": "Int32",
+                "value": "558"
+              },
+              "var559": {
+                "type": "Int32",
+                "value": "559"
+              },
+              "var56": {
+                "type": "Int32",
+                "value": "56"
+              },
+              "var560": {
+                "type": "Int32",
+                "value": "560"
+              },
+              "var561": {
+                "type": "Int32",
+                "value": "561"
+              },
+              "var562": {
+                "type": "Int32",
+                "value": "562"
+              },
+              "var563": {
+                "type": "Int32",
+                "value": "563"
+              },
+              "var564": {
+                "type": "Int32",
+                "value": "564"
+              },
+              "var565": {
+                "type": "Int32",
+                "value": "565"
+              },
+              "var566": {
+                "type": "Int32",
+                "value": "566"
+              },
+              "var567": {
+                "type": "Int32",
+                "value": "567"
+              },
+              "var568": {
+                "type": "Int32",
+                "value": "568"
+              },
+              "var569": {
+                "type": "Int32",
+                "value": "569"
+              },
+              "var57": {
+                "type": "Int32",
+                "value": "57"
+              },
+              "var570": {
+                "type": "Int32",
+                "value": "570"
+              },
+              "var571": {
+                "type": "Int32",
+                "value": "571"
+              },
+              "var572": {
+                "type": "Int32",
+                "value": "572"
+              },
+              "var573": {
+                "type": "Int32",
+                "value": "573"
+              },
+              "var574": {
+                "type": "Int32",
+                "value": "574"
+              },
+              "var575": {
+                "type": "Int32",
+                "value": "575"
+              },
+              "var576": {
+                "type": "Int32",
+                "value": "576"
+              },
+              "var577": {
+                "type": "Int32",
+                "value": "577"
+              },
+              "var578": {
+                "type": "Int32",
+                "value": "578"
+              },
+              "var579": {
+                "type": "Int32",
+                "value": "579"
+              },
+              "var58": {
+                "type": "Int32",
+                "value": "58"
+              },
+              "var580": {
+                "type": "Int32",
+                "value": "580"
+              },
+              "var581": {
+                "type": "Int32",
+                "value": "581"
+              },
+              "var582": {
+                "type": "Int32",
+                "value": "582"
+              },
+              "var583": {
+                "type": "Int32",
+                "value": "583"
+              },
+              "var584": {
+                "type": "Int32",
+                "value": "584"
+              },
+              "var585": {
+                "type": "Int32",
+                "value": "585"
+              },
+              "var586": {
+                "type": "Int32",
+                "value": "586"
+              },
+              "var587": {
+                "type": "Int32",
+                "value": "587"
+              },
+              "var588": {
+                "type": "Int32",
+                "value": "588"
+              },
+              "var589": {
+                "type": "Int32",
+                "value": "589"
+              },
+              "var59": {
+                "type": "Int32",
+                "value": "59"
+              },
+              "var590": {
+                "type": "Int32",
+                "value": "590"
+              },
+              "var591": {
+                "type": "Int32",
+                "value": "591"
+              },
+              "var592": {
+                "type": "Int32",
+                "value": "592"
+              },
+              "var593": {
+                "type": "Int32",
+                "value": "593"
+              },
+              "var594": {
+                "type": "Int32",
+                "value": "594"
+              },
+              "var595": {
+                "type": "Int32",
+                "value": "595"
+              },
+              "var596": {
+                "type": "Int32",
+                "value": "596"
+              },
+              "var597": {
+                "type": "Int32",
+                "value": "597"
+              },
+              "var598": {
+                "type": "Int32",
+                "value": "598"
+              },
+              "var599": {
+                "type": "Int32",
+                "value": "599"
+              },
+              "var6": {
+                "type": "Int32",
+                "value": "6"
+              },
+              "var60": {
+                "type": "Int32",
+                "value": "60"
+              },
+              "var600": {
+                "type": "Int32",
+                "value": "600"
+              },
+              "var601": {
+                "type": "Int32",
+                "value": "601"
+              },
+              "var602": {
+                "type": "Int32",
+                "value": "602"
+              },
+              "var603": {
+                "type": "Int32",
+                "value": "603"
+              },
+              "var604": {
+                "type": "Int32",
+                "value": "604"
+              },
+              "var605": {
+                "type": "Int32",
+                "value": "605"
+              },
+              "var606": {
+                "type": "Int32",
+                "value": "606"
+              },
+              "var607": {
+                "type": "Int32",
+                "value": "607"
+              },
+              "var608": {
+                "type": "Int32",
+                "value": "608"
+              },
+              "var609": {
+                "type": "Int32",
+                "value": "609"
+              },
+              "var61": {
+                "type": "Int32",
+                "value": "61"
+              },
+              "var610": {
+                "type": "Int32",
+                "value": "610"
+              },
+              "var611": {
+                "type": "Int32",
+                "value": "611"
+              },
+              "var612": {
+                "type": "Int32",
+                "value": "612"
+              },
+              "var613": {
+                "type": "Int32",
+                "value": "613"
+              },
+              "var614": {
+                "type": "Int32",
+                "value": "614"
+              },
+              "var615": {
+                "type": "Int32",
+                "value": "615"
+              },
+              "var616": {
+                "type": "Int32",
+                "value": "616"
+              },
+              "var617": {
+                "type": "Int32",
+                "value": "617"
+              },
+              "var618": {
+                "type": "Int32",
+                "value": "618"
+              },
+              "var619": {
+                "type": "Int32",
+                "value": "619"
+              },
+              "var62": {
+                "type": "Int32",
+                "value": "62"
+              },
+              "var620": {
+                "type": "Int32",
+                "value": "620"
+              },
+              "var621": {
+                "type": "Int32",
+                "value": "621"
+              },
+              "var622": {
+                "type": "Int32",
+                "value": "622"
+              },
+              "var623": {
+                "type": "Int32",
+                "value": "623"
+              },
+              "var624": {
+                "type": "Int32",
+                "value": "624"
+              },
+              "var625": {
+                "type": "Int32",
+                "value": "625"
+              },
+              "var626": {
+                "type": "Int32",
+                "value": "626"
+              },
+              "var627": {
+                "type": "Int32",
+                "value": "627"
+              },
+              "var628": {
+                "type": "Int32",
+                "value": "628"
+              },
+              "var629": {
+                "type": "Int32",
+                "value": "629"
+              },
+              "var63": {
+                "type": "Int32",
+                "value": "63"
+              },
+              "var630": {
+                "type": "Int32",
+                "value": "630"
+              },
+              "var631": {
+                "type": "Int32",
+                "value": "631"
+              },
+              "var632": {
+                "type": "Int32",
+                "value": "632"
+              },
+              "var633": {
+                "type": "Int32",
+                "value": "633"
+              },
+              "var634": {
+                "type": "Int32",
+                "value": "634"
+              },
+              "var635": {
+                "type": "Int32",
+                "value": "635"
+              },
+              "var636": {
+                "type": "Int32",
+                "value": "636"
+              },
+              "var637": {
+                "type": "Int32",
+                "value": "637"
+              },
+              "var638": {
+                "type": "Int32",
+                "value": "638"
+              },
+              "var639": {
+                "type": "Int32",
+                "value": "639"
+              },
+              "var64": {
+                "type": "Int32",
+                "value": "64"
+              },
+              "var640": {
+                "type": "Int32",
+                "value": "640"
+              },
+              "var641": {
+                "type": "Int32",
+                "value": "641"
+              },
+              "var642": {
+                "type": "Int32",
+                "value": "642"
+              },
+              "var643": {
+                "type": "Int32",
+                "value": "643"
+              },
+              "var644": {
+                "type": "Int32",
+                "value": "644"
+              },
+              "var645": {
+                "type": "Int32",
+                "value": "645"
+              },
+              "var646": {
+                "type": "Int32",
+                "value": "646"
+              },
+              "var647": {
+                "type": "Int32",
+                "value": "647"
+              },
+              "var648": {
+                "type": "Int32",
+                "value": "648"
+              },
+              "var649": {
+                "type": "Int32",
+                "value": "649"
+              },
+              "var65": {
+                "type": "Int32",
+                "value": "65"
+              },
+              "var650": {
+                "type": "Int32",
+                "value": "650"
+              },
+              "var651": {
+                "type": "Int32",
+                "value": "651"
+              },
+              "var652": {
+                "type": "Int32",
+                "value": "652"
+              },
+              "var653": {
+                "type": "Int32",
+                "value": "653"
+              },
+              "var654": {
+                "type": "Int32",
+                "value": "654"
+              },
+              "var655": {
+                "type": "Int32",
+                "value": "655"
+              },
+              "var656": {
+                "type": "Int32",
+                "value": "656"
+              },
+              "var657": {
+                "type": "Int32",
+                "value": "657"
+              },
+              "var658": {
+                "type": "Int32",
+                "value": "658"
+              },
+              "var659": {
+                "type": "Int32",
+                "value": "659"
+              },
+              "var66": {
+                "type": "Int32",
+                "value": "66"
+              },
+              "var660": {
+                "type": "Int32",
+                "value": "660"
+              },
+              "var661": {
+                "type": "Int32",
+                "value": "661"
+              },
+              "var662": {
+                "type": "Int32",
+                "value": "662"
+              },
+              "var663": {
+                "type": "Int32",
+                "value": "663"
+              },
+              "var664": {
+                "type": "Int32",
+                "value": "664"
+              },
+              "var665": {
+                "type": "Int32",
+                "value": "665"
+              },
+              "var666": {
+                "type": "Int32",
+                "value": "666"
+              },
+              "var667": {
+                "type": "Int32",
+                "value": "667"
+              },
+              "var668": {
+                "type": "Int32",
+                "value": "668"
+              },
+              "var669": {
+                "type": "Int32",
+                "value": "669"
+              },
+              "var67": {
+                "type": "Int32",
+                "value": "67"
+              },
+              "var670": {
+                "type": "Int32",
+                "value": "670"
+              },
+              "var671": {
+                "type": "Int32",
+                "value": "671"
+              },
+              "var672": {
+                "type": "Int32",
+                "value": "672"
+              },
+              "var673": {
+                "type": "Int32",
+                "value": "673"
+              },
+              "var674": {
+                "type": "Int32",
+                "value": "674"
+              },
+              "var675": {
+                "type": "Int32",
+                "value": "675"
+              },
+              "var676": {
+                "type": "Int32",
+                "value": "676"
+              },
+              "var677": {
+                "type": "Int32",
+                "value": "677"
+              },
+              "var678": {
+                "type": "Int32",
+                "value": "678"
+              },
+              "var679": {
+                "type": "Int32",
+                "value": "679"
+              },
+              "var68": {
+                "type": "Int32",
+                "value": "68"
+              },
+              "var680": {
+                "type": "Int32",
+                "value": "680"
+              },
+              "var681": {
+                "type": "Int32",
+                "value": "681"
+              },
+              "var682": {
+                "type": "Int32",
+                "value": "682"
+              },
+              "var683": {
+                "type": "Int32",
+                "value": "683"
+              },
+              "var684": {
+                "type": "Int32",
+                "value": "684"
+              },
+              "var685": {
+                "type": "Int32",
+                "value": "685"
+              },
+              "var686": {
+                "type": "Int32",
+                "value": "686"
+              },
+              "var687": {
+                "type": "Int32",
+                "value": "687"
+              },
+              "var688": {
+                "type": "Int32",
+                "value": "688"
+              },
+              "var689": {
+                "type": "Int32",
+                "value": "689"
+              },
+              "var69": {
+                "type": "Int32",
+                "value": "69"
+              },
+              "var690": {
+                "type": "Int32",
+                "value": "690"
+              },
+              "var691": {
+                "type": "Int32",
+                "value": "691"
+              },
+              "var692": {
+                "type": "Int32",
+                "value": "692"
+              },
+              "var693": {
+                "type": "Int32",
+                "value": "693"
+              },
+              "var694": {
+                "type": "Int32",
+                "value": "694"
+              },
+              "var695": {
+                "type": "Int32",
+                "value": "695"
+              },
+              "var696": {
+                "type": "Int32",
+                "value": "696"
+              },
+              "var697": {
+                "type": "Int32",
+                "value": "697"
+              },
+              "var698": {
+                "type": "Int32",
+                "value": "698"
+              },
+              "var699": {
+                "type": "Int32",
+                "value": "699"
+              },
+              "var7": {
+                "type": "Int32",
+                "value": "7"
+              },
+              "var70": {
+                "type": "Int32",
+                "value": "70"
+              },
+              "var700": {
+                "type": "Int32",
+                "value": "700"
+              },
+              "var701": {
+                "type": "Int32",
+                "value": "701"
+              },
+              "var702": {
+                "type": "Int32",
+                "value": "702"
+              },
+              "var703": {
+                "type": "Int32",
+                "value": "703"
+              },
+              "var704": {
+                "type": "Int32",
+                "value": "704"
+              },
+              "var705": {
+                "type": "Int32",
+                "value": "705"
+              },
+              "var706": {
+                "type": "Int32",
+                "value": "706"
+              },
+              "var707": {
+                "type": "Int32",
+                "value": "707"
+              },
+              "var708": {
+                "type": "Int32",
+                "value": "708"
+              },
+              "var709": {
+                "type": "Int32",
+                "value": "709"
+              },
+              "var71": {
+                "type": "Int32",
+                "value": "71"
+              },
+              "var710": {
+                "type": "Int32",
+                "value": "710"
+              },
+              "var711": {
+                "type": "Int32",
+                "value": "711"
+              },
+              "var712": {
+                "type": "Int32",
+                "value": "712"
+              },
+              "var713": {
+                "type": "Int32",
+                "value": "713"
+              },
+              "var714": {
+                "type": "Int32",
+                "value": "714"
+              },
+              "var715": {
+                "type": "Int32",
+                "value": "715"
+              },
+              "var716": {
+                "type": "Int32",
+                "value": "716"
+              },
+              "var717": {
+                "type": "Int32",
+                "value": "717"
+              },
+              "var718": {
+                "type": "Int32",
+                "value": "718"
+              },
+              "var719": {
+                "type": "Int32",
+                "value": "719"
+              },
+              "var72": {
+                "type": "Int32",
+                "value": "72"
+              },
+              "var720": {
+                "type": "Int32",
+                "value": "720"
+              },
+              "var721": {
+                "type": "Int32",
+                "value": "721"
+              },
+              "var722": {
+                "type": "Int32",
+                "value": "722"
+              },
+              "var723": {
+                "type": "Int32",
+                "value": "723"
+              },
+              "var724": {
+                "type": "Int32",
+                "value": "724"
+              },
+              "var725": {
+                "type": "Int32",
+                "value": "725"
+              },
+              "var726": {
+                "type": "Int32",
+                "value": "726"
+              },
+              "var727": {
+                "type": "Int32",
+                "value": "727"
+              },
+              "var728": {
+                "type": "Int32",
+                "value": "728"
+              },
+              "var729": {
+                "type": "Int32",
+                "value": "729"
+              },
+              "var73": {
+                "type": "Int32",
+                "value": "73"
+              },
+              "var730": {
+                "type": "Int32",
+                "value": "730"
+              },
+              "var731": {
+                "type": "Int32",
+                "value": "731"
+              },
+              "var732": {
+                "type": "Int32",
+                "value": "732"
+              },
+              "var733": {
+                "type": "Int32",
+                "value": "733"
+              },
+              "var734": {
+                "type": "Int32",
+                "value": "734"
+              },
+              "var735": {
+                "type": "Int32",
+                "value": "735"
+              },
+              "var736": {
+                "type": "Int32",
+                "value": "736"
+              },
+              "var737": {
+                "type": "Int32",
+                "value": "737"
+              },
+              "var738": {
+                "type": "Int32",
+                "value": "738"
+              },
+              "var739": {
+                "type": "Int32",
+                "value": "739"
+              },
+              "var74": {
+                "type": "Int32",
+                "value": "74"
+              },
+              "var740": {
+                "type": "Int32",
+                "value": "740"
+              },
+              "var741": {
+                "type": "Int32",
+                "value": "741"
+              },
+              "var742": {
+                "type": "Int32",
+                "value": "742"
+              },
+              "var743": {
+                "type": "Int32",
+                "value": "743"
+              },
+              "var744": {
+                "type": "Int32",
+                "value": "744"
+              },
+              "var745": {
+                "type": "Int32",
+                "value": "745"
+              },
+              "var746": {
+                "type": "Int32",
+                "value": "746"
+              },
+              "var747": {
+                "type": "Int32",
+                "value": "747"
+              },
+              "var748": {
+                "type": "Int32",
+                "value": "748"
+              },
+              "var749": {
+                "type": "Int32",
+                "value": "749"
+              },
+              "var75": {
+                "type": "Int32",
+                "value": "75"
+              },
+              "var750": {
+                "type": "Int32",
+                "value": "750"
+              },
+              "var751": {
+                "type": "Int32",
+                "value": "751"
+              },
+              "var752": {
+                "type": "Int32",
+                "value": "752"
+              },
+              "var753": {
+                "type": "Int32",
+                "value": "753"
+              },
+              "var754": {
+                "type": "Int32",
+                "value": "754"
+              },
+              "var755": {
+                "type": "Int32",
+                "value": "755"
+              },
+              "var756": {
+                "type": "Int32",
+                "value": "756"
+              },
+              "var757": {
+                "type": "Int32",
+                "value": "757"
+              },
+              "var758": {
+                "type": "Int32",
+                "value": "758"
+              },
+              "var759": {
+                "type": "Int32",
+                "value": "759"
+              },
+              "var76": {
+                "type": "Int32",
+                "value": "76"
+              },
+              "var760": {
+                "type": "Int32",
+                "value": "760"
+              },
+              "var761": {
+                "type": "Int32",
+                "value": "761"
+              },
+              "var762": {
+                "type": "Int32",
+                "value": "762"
+              },
+              "var763": {
+                "type": "Int32",
+                "value": "763"
+              },
+              "var764": {
+                "type": "Int32",
+                "value": "764"
+              },
+              "var765": {
+                "type": "Int32",
+                "value": "765"
+              },
+              "var766": {
+                "type": "Int32",
+                "value": "766"
+              },
+              "var767": {
+                "type": "Int32",
+                "value": "767"
+              },
+              "var768": {
+                "type": "Int32",
+                "value": "768"
+              },
+              "var769": {
+                "type": "Int32",
+                "value": "769"
+              },
+              "var77": {
+                "type": "Int32",
+                "value": "77"
+              },
+              "var770": {
+                "type": "Int32",
+                "value": "770"
+              },
+              "var771": {
+                "type": "Int32",
+                "value": "771"
+              },
+              "var772": {
+                "type": "Int32",
+                "value": "772"
+              },
+              "var773": {
+                "type": "Int32",
+                "value": "773"
+              },
+              "var774": {
+                "type": "Int32",
+                "value": "774"
+              },
+              "var775": {
+                "type": "Int32",
+                "value": "775"
+              },
+              "var776": {
+                "type": "Int32",
+                "value": "776"
+              },
+              "var777": {
+                "type": "Int32",
+                "value": "777"
+              },
+              "var778": {
+                "type": "Int32",
+                "value": "778"
+              },
+              "var779": {
+                "type": "Int32",
+                "value": "779"
+              },
+              "var78": {
+                "type": "Int32",
+                "value": "78"
+              },
+              "var780": {
+                "type": "Int32",
+                "value": "780"
+              },
+              "var781": {
+                "type": "Int32",
+                "value": "781"
+              },
+              "var782": {
+                "type": "Int32",
+                "value": "782"
+              },
+              "var783": {
+                "type": "Int32",
+                "value": "783"
+              },
+              "var784": {
+                "type": "Int32",
+                "value": "784"
+              },
+              "var785": {
+                "type": "Int32",
+                "value": "785"
+              },
+              "var786": {
+                "type": "Int32",
+                "value": "786"
+              },
+              "var787": {
+                "type": "Int32",
+                "value": "787"
+              },
+              "var788": {
+                "type": "Int32",
+                "value": "788"
+              },
+              "var789": {
+                "type": "Int32",
+                "value": "789"
+              },
+              "var79": {
+                "type": "Int32",
+                "value": "79"
+              },
+              "var790": {
+                "type": "Int32",
+                "value": "790"
+              },
+              "var791": {
+                "type": "Int32",
+                "value": "791"
+              },
+              "var792": {
+                "type": "Int32",
+                "value": "792"
+              },
+              "var793": {
+                "type": "Int32",
+                "value": "793"
+              },
+              "var794": {
+                "type": "Int32",
+                "value": "794"
+              },
+              "var795": {
+                "type": "Int32",
+                "value": "795"
+              },
+              "var796": {
+                "type": "Int32",
+                "value": "796"
+              },
+              "var797": {
+                "type": "Int32",
+                "value": "797"
+              },
+              "var798": {
+                "type": "Int32",
+                "value": "798"
+              },
+              "var799": {
+                "type": "Int32",
+                "value": "799"
+              },
+              "var8": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "var80": {
+                "type": "Int32",
+                "value": "80"
+              },
+              "var800": {
+                "type": "Int32",
+                "value": "800"
+              },
+              "var801": {
+                "type": "Int32",
+                "value": "801"
+              },
+              "var802": {
+                "type": "Int32",
+                "value": "802"
+              },
+              "var803": {
+                "type": "Int32",
+                "value": "803"
+              },
+              "var804": {
+                "type": "Int32",
+                "value": "804"
+              },
+              "var805": {
+                "type": "Int32",
+                "value": "805"
+              },
+              "var806": {
+                "type": "Int32",
+                "value": "806"
+              },
+              "var807": {
+                "type": "Int32",
+                "value": "807"
+              },
+              "var808": {
+                "type": "Int32",
+                "value": "808"
+              },
+              "var809": {
+                "type": "Int32",
+                "value": "809"
+              },
+              "var81": {
+                "type": "Int32",
+                "value": "81"
+              },
+              "var810": {
+                "type": "Int32",
+                "value": "810"
+              },
+              "var811": {
+                "type": "Int32",
+                "value": "811"
+              },
+              "var812": {
+                "type": "Int32",
+                "value": "812"
+              },
+              "var813": {
+                "type": "Int32",
+                "value": "813"
+              },
+              "var814": {
+                "type": "Int32",
+                "value": "814"
+              },
+              "var815": {
+                "type": "Int32",
+                "value": "815"
+              },
+              "var816": {
+                "type": "Int32",
+                "value": "816"
+              },
+              "var817": {
+                "type": "Int32",
+                "value": "817"
+              },
+              "var818": {
+                "type": "Int32",
+                "value": "818"
+              },
+              "var819": {
+                "type": "Int32",
+                "value": "819"
+              },
+              "var82": {
+                "type": "Int32",
+                "value": "82"
+              },
+              "var820": {
+                "type": "Int32",
+                "value": "820"
+              },
+              "var821": {
+                "type": "Int32",
+                "value": "821"
+              },
+              "var822": {
+                "type": "Int32",
+                "value": "822"
+              },
+              "var823": {
+                "type": "Int32",
+                "value": "823"
+              },
+              "var824": {
+                "type": "Int32",
+                "value": "824"
+              },
+              "var825": {
+                "type": "Int32",
+                "value": "825"
+              },
+              "var826": {
+                "type": "Int32",
+                "value": "826"
+              },
+              "var827": {
+                "type": "Int32",
+                "value": "827"
+              },
+              "var828": {
+                "type": "Int32",
+                "value": "828"
+              },
+              "var829": {
+                "type": "Int32",
+                "value": "829"
+              },
+              "var83": {
+                "type": "Int32",
+                "value": "83"
+              },
+              "var830": {
+                "type": "Int32",
+                "value": "830"
+              },
+              "var831": {
+                "type": "Int32",
+                "value": "831"
+              },
+              "var832": {
+                "type": "Int32",
+                "value": "832"
+              },
+              "var833": {
+                "type": "Int32",
+                "value": "833"
+              },
+              "var834": {
+                "type": "Int32",
+                "value": "834"
+              },
+              "var835": {
+                "type": "Int32",
+                "value": "835"
+              },
+              "var836": {
+                "type": "Int32",
+                "value": "836"
+              },
+              "var837": {
+                "type": "Int32",
+                "value": "837"
+              },
+              "var838": {
+                "type": "Int32",
+                "value": "838"
+              },
+              "var839": {
+                "type": "Int32",
+                "value": "839"
+              },
+              "var84": {
+                "type": "Int32",
+                "value": "84"
+              },
+              "var840": {
+                "type": "Int32",
+                "value": "840"
+              },
+              "var841": {
+                "type": "Int32",
+                "value": "841"
+              },
+              "var842": {
+                "type": "Int32",
+                "value": "842"
+              },
+              "var843": {
+                "type": "Int32",
+                "value": "843"
+              },
+              "var844": {
+                "type": "Int32",
+                "value": "844"
+              },
+              "var845": {
+                "type": "Int32",
+                "value": "845"
+              },
+              "var846": {
+                "type": "Int32",
+                "value": "846"
+              },
+              "var847": {
+                "type": "Int32",
+                "value": "847"
+              },
+              "var848": {
+                "type": "Int32",
+                "value": "848"
+              },
+              "var849": {
+                "type": "Int32",
+                "value": "849"
+              },
+              "var85": {
+                "type": "Int32",
+                "value": "85"
+              },
+              "var850": {
+                "type": "Int32",
+                "value": "850"
+              },
+              "var851": {
+                "type": "Int32",
+                "value": "851"
+              },
+              "var852": {
+                "type": "Int32",
+                "value": "852"
+              },
+              "var853": {
+                "type": "Int32",
+                "value": "853"
+              },
+              "var854": {
+                "type": "Int32",
+                "value": "854"
+              },
+              "var855": {
+                "type": "Int32",
+                "value": "855"
+              },
+              "var856": {
+                "type": "Int32",
+                "value": "856"
+              },
+              "var857": {
+                "type": "Int32",
+                "value": "857"
+              },
+              "var858": {
+                "type": "Int32",
+                "value": "858"
+              },
+              "var859": {
+                "type": "Int32",
+                "value": "859"
+              },
+              "var86": {
+                "type": "Int32",
+                "value": "86"
+              },
+              "var860": {
+                "type": "Int32",
+                "value": "860"
+              },
+              "var861": {
+                "type": "Int32",
+                "value": "861"
+              },
+              "var862": {
+                "type": "Int32",
+                "value": "862"
+              },
+              "var863": {
+                "type": "Int32",
+                "value": "863"
+              },
+              "var864": {
+                "type": "Int32",
+                "value": "864"
+              },
+              "var865": {
+                "type": "Int32",
+                "value": "865"
+              },
+              "var866": {
+                "type": "Int32",
+                "value": "866"
+              },
+              "var867": {
+                "type": "Int32",
+                "value": "867"
+              },
+              "var868": {
+                "type": "Int32",
+                "value": "868"
+              },
+              "var869": {
+                "type": "Int32",
+                "value": "869"
+              },
+              "var87": {
+                "type": "Int32",
+                "value": "87"
+              },
+              "var870": {
+                "type": "Int32",
+                "value": "870"
+              },
+              "var871": {
+                "type": "Int32",
+                "value": "871"
+              },
+              "var872": {
+                "type": "Int32",
+                "value": "872"
+              },
+              "var873": {
+                "type": "Int32",
+                "value": "873"
+              },
+              "var874": {
+                "type": "Int32",
+                "value": "874"
+              },
+              "var875": {
+                "type": "Int32",
+                "value": "875"
+              },
+              "var876": {
+                "type": "Int32",
+                "value": "876"
+              },
+              "var877": {
+                "type": "Int32",
+                "value": "877"
+              },
+              "var878": {
+                "type": "Int32",
+                "value": "878"
+              },
+              "var879": {
+                "type": "Int32",
+                "value": "879"
+              },
+              "var88": {
+                "type": "Int32",
+                "value": "88"
+              },
+              "var880": {
+                "type": "Int32",
+                "value": "880"
+              },
+              "var881": {
+                "type": "Int32",
+                "value": "881"
+              },
+              "var882": {
+                "type": "Int32",
+                "value": "882"
+              },
+              "var883": {
+                "type": "Int32",
+                "value": "883"
+              },
+              "var884": {
+                "type": "Int32",
+                "value": "884"
+              },
+              "var885": {
+                "type": "Int32",
+                "value": "885"
+              },
+              "var886": {
+                "type": "Int32",
+                "value": "886"
+              },
+              "var887": {
+                "type": "Int32",
+                "value": "887"
+              },
+              "var888": {
+                "type": "Int32",
+                "value": "888"
+              },
+              "var889": {
+                "type": "Int32",
+                "value": "889"
+              },
+              "var89": {
+                "type": "Int32",
+                "value": "89"
+              },
+              "var890": {
+                "type": "Int32",
+                "value": "890"
+              },
+              "var891": {
+                "type": "Int32",
+                "value": "891"
+              },
+              "var892": {
+                "type": "Int32",
+                "value": "892"
+              },
+              "var893": {
+                "type": "Int32",
+                "value": "893"
+              },
+              "var894": {
+                "type": "Int32",
+                "value": "894"
+              },
+              "var895": {
+                "type": "Int32",
+                "value": "895"
+              },
+              "var896": {
+                "type": "Int32",
+                "value": "896"
+              },
+              "var897": {
+                "type": "Int32",
+                "value": "897"
+              },
+              "var898": {
+                "type": "Int32",
+                "value": "898"
+              },
+              "var899": {
+                "type": "Int32",
+                "value": "899"
+              },
+              "var9": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "var90": {
+                "type": "Int32",
+                "value": "90"
+              },
+              "var900": {
+                "type": "Int32",
+                "value": "900"
+              },
+              "var901": {
+                "type": "Int32",
+                "value": "901"
+              },
+              "var902": {
+                "type": "Int32",
+                "value": "902"
+              },
+              "var903": {
+                "type": "Int32",
+                "value": "903"
+              },
+              "var904": {
+                "type": "Int32",
+                "value": "904"
+              },
+              "var905": {
+                "type": "Int32",
+                "value": "905"
+              },
+              "var906": {
+                "type": "Int32",
+                "value": "906"
+              },
+              "var907": {
+                "type": "Int32",
+                "value": "907"
+              },
+              "var908": {
+                "type": "Int32",
+                "value": "908"
+              },
+              "var909": {
+                "type": "Int32",
+                "value": "909"
+              },
+              "var91": {
+                "type": "Int32",
+                "value": "91"
+              },
+              "var910": {
+                "type": "Int32",
+                "value": "910"
+              },
+              "var911": {
+                "type": "Int32",
+                "value": "911"
+              },
+              "var912": {
+                "type": "Int32",
+                "value": "912"
+              },
+              "var913": {
+                "type": "Int32",
+                "value": "913"
+              },
+              "var914": {
+                "type": "Int32",
+                "value": "914"
+              },
+              "var915": {
+                "type": "Int32",
+                "value": "915"
+              },
+              "var916": {
+                "type": "Int32",
+                "value": "916"
+              },
+              "var917": {
+                "type": "Int32",
+                "value": "917"
+              },
+              "var918": {
+                "type": "Int32",
+                "value": "918"
+              },
+              "var919": {
+                "type": "Int32",
+                "value": "919"
+              },
+              "var92": {
+                "type": "Int32",
+                "value": "92"
+              },
+              "var920": {
+                "type": "Int32",
+                "value": "920"
+              },
+              "var921": {
+                "type": "Int32",
+                "value": "921"
+              },
+              "var922": {
+                "type": "Int32",
+                "value": "922"
+              },
+              "var923": {
+                "type": "Int32",
+                "value": "923"
+              },
+              "var924": {
+                "type": "Int32",
+                "value": "924"
+              },
+              "var925": {
+                "type": "Int32",
+                "value": "925"
+              },
+              "var926": {
+                "type": "Int32",
+                "value": "926"
+              },
+              "var927": {
+                "type": "Int32",
+                "value": "927"
+              },
+              "var928": {
+                "type": "Int32",
+                "value": "928"
+              },
+              "var929": {
+                "type": "Int32",
+                "value": "929"
+              },
+              "var93": {
+                "type": "Int32",
+                "value": "93"
+              },
+              "var930": {
+                "type": "Int32",
+                "value": "930"
+              },
+              "var931": {
+                "type": "Int32",
+                "value": "931"
+              },
+              "var932": {
+                "type": "Int32",
+                "value": "932"
+              },
+              "var933": {
+                "type": "Int32",
+                "value": "933"
+              },
+              "var934": {
+                "type": "Int32",
+                "value": "934"
+              },
+              "var935": {
+                "type": "Int32",
+                "value": "935"
+              },
+              "var936": {
+                "type": "Int32",
+                "value": "936"
+              },
+              "var937": {
+                "type": "Int32",
+                "value": "937"
+              },
+              "var938": {
+                "type": "Int32",
+                "value": "938"
+              },
+              "var939": {
+                "type": "Int32",
+                "value": "939"
+              },
+              "var94": {
+                "type": "Int32",
+                "value": "94"
+              },
+              "var940": {
+                "type": "Int32",
+                "value": "940"
+              },
+              "var941": {
+                "type": "Int32",
+                "value": "941"
+              },
+              "var942": {
+                "type": "Int32",
+                "value": "942"
+              },
+              "var943": {
+                "type": "Int32",
+                "value": "943"
+              },
+              "var944": {
+                "type": "Int32",
+                "value": "944"
+              },
+              "var945": {
+                "type": "Int32",
+                "value": "945"
+              },
+              "var946": {
+                "type": "Int32",
+                "value": "946"
+              },
+              "var947": {
+                "type": "Int32",
+                "value": "947"
+              },
+              "var948": {
+                "type": "Int32",
+                "value": "948"
+              },
+              "var949": {
+                "type": "Int32",
+                "value": "949"
+              },
+              "var95": {
+                "type": "Int32",
+                "value": "95"
+              },
+              "var950": {
+                "type": "Int32",
+                "value": "950"
+              },
+              "var951": {
+                "type": "Int32",
+                "value": "951"
+              },
+              "var952": {
+                "type": "Int32",
+                "value": "952"
+              },
+              "var953": {
+                "type": "Int32",
+                "value": "953"
+              },
+              "var954": {
+                "type": "Int32",
+                "value": "954"
+              },
+              "var955": {
+                "type": "Int32",
+                "value": "955"
+              },
+              "var956": {
+                "type": "Int32",
+                "value": "956"
+              },
+              "var957": {
+                "type": "Int32",
+                "value": "957"
+              },
+              "var958": {
+                "type": "Int32",
+                "value": "958"
+              },
+              "var959": {
+                "type": "Int32",
+                "value": "959"
+              },
+              "var96": {
+                "type": "Int32",
+                "value": "96"
+              },
+              "var960": {
+                "type": "Int32",
+                "value": "960"
+              },
+              "var961": {
+                "type": "Int32",
+                "value": "961"
+              },
+              "var962": {
+                "type": "Int32",
+                "value": "962"
+              },
+              "var963": {
+                "type": "Int32",
+                "value": "963"
+              },
+              "var964": {
+                "type": "Int32",
+                "value": "964"
+              },
+              "var965": {
+                "type": "Int32",
+                "value": "965"
+              },
+              "var966": {
+                "type": "Int32",
+                "value": "966"
+              },
+              "var967": {
+                "type": "Int32",
+                "value": "967"
+              },
+              "var968": {
+                "type": "Int32",
+                "value": "968"
+              },
+              "var969": {
+                "type": "Int32",
+                "value": "969"
+              },
+              "var97": {
+                "type": "Int32",
+                "value": "97"
+              },
+              "var970": {
+                "type": "Int32",
+                "value": "970"
+              },
+              "var971": {
+                "type": "Int32",
+                "value": "971"
+              },
+              "var972": {
+                "type": "Int32",
+                "value": "972"
+              },
+              "var973": {
+                "type": "Int32",
+                "value": "973"
+              },
+              "var974": {
+                "type": "Int32",
+                "value": "974"
+              },
+              "var975": {
+                "type": "Int32",
+                "value": "975"
+              },
+              "var976": {
+                "type": "Int32",
+                "value": "976"
+              },
+              "var977": {
+                "type": "Int32",
+                "value": "977"
+              },
+              "var978": {
+                "type": "Int32",
+                "value": "978"
+              },
+              "var979": {
+                "type": "Int32",
+                "value": "979"
+              },
+              "var98": {
+                "type": "Int32",
+                "value": "98"
+              },
+              "var980": {
+                "type": "Int32",
+                "value": "980"
+              },
+              "var981": {
+                "type": "Int32",
+                "value": "981"
+              },
+              "var982": {
+                "type": "Int32",
+                "value": "982"
+              },
+              "var983": {
+                "type": "Int32",
+                "value": "983"
+              },
+              "var984": {
+                "type": "Int32",
+                "value": "984"
+              },
+              "var985": {
+                "type": "Int32",
+                "value": "985"
+              },
+              "var986": {
+                "type": "Int32",
+                "value": "986"
+              },
+              "var987": {
+                "type": "Int32",
+                "value": "987"
+              },
+              "var988": {
+                "type": "Int32",
+                "value": "988"
+              },
+              "var989": {
+                "type": "Int32",
+                "value": "989"
+              },
+              "var99": {
+                "type": "Int32",
+                "value": "99"
+              },
+              "var990": {
+                "type": "Int32",
+                "value": "990"
+              },
+              "var991": {
+                "type": "Int32",
+                "value": "991"
+              },
+              "var992": {
+                "type": "Int32",
+                "value": "992"
+              },
+              "var993": {
+                "type": "Int32",
+                "value": "993"
+              },
+              "var994": {
+                "type": "Int32",
+                "value": "994"
+              },
+              "var995": {
+                "type": "Int32",
+                "value": "995"
+              },
+              "var996": {
+                "type": "Int32",
+                "value": "996"
+              },
+              "var997": {
+                "type": "Int32",
+                "value": "997"
+              },
+              "var998": {
+                "type": "Int32",
+                "value": "998"
+              },
+              "var999": {
+                "type": "Int32",
+                "value": "999"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodWith1000Variables",
+            "type": "Samples.Probes.TestRuns.SmokeTests.ManyLocals"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodWith1000Variables",
+      "name": "Samples.Probes.TestRuns.SmokeTests.ManyLocals",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
