@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     ParameterTypeNames = ["Google.Protobuf.CodedOutputStream"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "Protobuf")]
+    IntegrationName = "Protobuf",
+    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageWriteToIntegration

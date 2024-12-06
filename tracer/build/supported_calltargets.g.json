@@ -10825,7 +10825,7 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalMergeFromIntegration",
-    "IntegrationKind": 0,
+    "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
@@ -10849,7 +10849,7 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.BufferMessageInternalWriteToIntegration",
-    "IntegrationKind": 0,
+    "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
@@ -10873,7 +10873,7 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageMergeFromIntegration",
-    "IntegrationKind": 0,
+    "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },
@@ -10897,7 +10897,7 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf.MessageWriteToIntegration",
-    "IntegrationKind": 0,
+    "IntegrationKind": 2,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
   },

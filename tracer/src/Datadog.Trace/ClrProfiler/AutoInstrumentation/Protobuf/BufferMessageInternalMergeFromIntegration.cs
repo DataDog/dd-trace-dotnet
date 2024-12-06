@@ -22,7 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "Protobuf")]
+    IntegrationName = "Protobuf",
+    CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class BufferMessageInternalMergeFromIntegration

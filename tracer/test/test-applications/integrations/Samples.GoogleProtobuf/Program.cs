@@ -8,7 +8,7 @@ namespace Samples.GoogleProtobuf;
 
 internal class Program
 {
-    private static void Main(string[] args)
+    private static void Main()
     {
         // sample data
         var john = new Person { Id = 1234, Name = "John Doe", Email = "john@doe.com", Phones = { new PhoneNumber { Number = "12345", Type = PhoneType.Home } } };
