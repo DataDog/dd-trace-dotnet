@@ -32,7 +32,7 @@ internal class TracerFlareApi
         _endpoint = _requestFactory.GetEndpoint(TracerFlareEndpoint);
     }
 
-    public static TracerFlareApi Create(ImmutableExporterSettings exporterSettings)
+    public static TracerFlareApi Create(ExporterSettings exporterSettings)
     {
         var requestFactory = AgentTransportStrategy.Get(
             exporterSettings,

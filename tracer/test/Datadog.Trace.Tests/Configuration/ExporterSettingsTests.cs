@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 using MetricsTransportType = Datadog.Trace.Vendors.StatsdClient.Transport.TransportType;
 
@@ -531,6 +533,28 @@ namespace Datadog.Trace.Tests.Configuration
         {
             var settingsFromSource = Setup(DefaultSocketFilesExist(), "DD_TRACE_AGENT_URL:unix:///var/datadog/myscocket.soc", "DD_AGENT_HOST:someotherhost");
             AssertMetricsUdpIsConfigured(settingsFromSource, hostname: "someotherhost");
+        }
+
+        [Fact]
+        public void OnlyHasReadOnlyProperties()
+        {
+            var flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
+
+            var type = typeof(ExporterSettings);
+
+            using var scope = new AssertionScope();
+
+            var properties = type.GetProperties(flags);
+            foreach (var propertyInfo in properties)
+            {
+                propertyInfo.CanWrite.Should().BeFalse($"{propertyInfo.Name} should be read only");
+            }
+
+            var fields = type.GetFields(flags);
+            foreach (var field in fields)
+            {
+                field.IsInitOnly.Should().BeTrue($"{field.Name} should be read only");
+            }
         }
 
         private ExporterSettings Setup(string key, string value)
