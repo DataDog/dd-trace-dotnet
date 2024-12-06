@@ -30,9 +30,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void GetOperationNameIsCorrect(object schemaVersionObject, string spanKind)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject;
-            var configSourceMock = new Mock<IConfigurationSource>();
-            configSourceMock.Setup(c => c.GetString(It.Is<string>(s => s.Equals(ConfigurationKeys.MetadataSchemaVersion)))).Returns(schemaVersion.ToString());
-            var settings = new TracerSettings(configSourceMock.Object, new ConfigurationTelemetry(), new OverrideErrorLog());
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion.ToString() } });
             var writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
             var tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
