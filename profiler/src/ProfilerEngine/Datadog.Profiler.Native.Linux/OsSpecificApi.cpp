@@ -298,7 +298,7 @@ std::chrono::seconds GetMachineBootTime()
     while ((length = read(fd, line, sizeof(line) - 1)) != 0)
     {
         auto sv = std::string_view(line, length);
-        auto* pos = sv.find("btime");
+        auto pos = sv.find("btime");
         if (std::string_view::npos != pos)
         {
             auto pos2 = strchr(sv.data() + pos, ' ') + 1;
