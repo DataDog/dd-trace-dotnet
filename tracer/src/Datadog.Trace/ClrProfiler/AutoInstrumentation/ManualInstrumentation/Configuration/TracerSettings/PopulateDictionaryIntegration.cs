@@ -45,7 +45,7 @@ public class PopulateDictionaryIntegration
     internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Configuration.TracerSettings settings)
     {
         // record all the settings in the dictionary
-        values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUriInternal;
+        values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUri;
 #pragma warning disable CS0618 // Type or member is obsolete
         values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabled;
 #pragma warning restore CS0618 // Type or member is obsolete
