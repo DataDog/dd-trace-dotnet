@@ -1,13 +1,13 @@
 set(LIBDATADOG_VERSION ${VERSION})
 
-if(#TARGET_TRIPLET STREQUAL "x64-windows" OR
+if(TARGET_TRIPLET STREQUAL "x64-windows" OR
    TARGET_TRIPLET STREQUAL "x64-windows-static")
     set(PLATFORM "x64")
-    set(LIBDATADOG_HASH "bd3061cf7811a3a10601c5f5e4be871c9b806a8afac9343802b47878e997a2596426f030b903dfb6aa6ae0961d41c0ad844295d2eb728ee3552db3cfc924a305")
+    set(LIBDATADOG_HASH "9b0d511b7d8f302704cf3108d3cc4b5d2a66a646808814bc5ddfa95f45a20c8a952d942f0c33dab8ca7d3eb77fad5bc5a43020b7afc2248a1d44873b69a65743")
 elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
        TARGET_TRIPLET STREQUAL "x86-windows-static")
     set(PLATFORM "x86")
-    set(LIBDATADOG_HASH "e81eb5881a06186111e03d012b10236a32e7a2d1c2d2c0e4a7a19646e280923d6b0a4b2e6ebb588fa358e3304edf5c8fb0ff37383361f577fbfd9ad75dc27aab")
+    set(LIBDATADOG_HASH "653826d9852450fcebad49d7f132747326cfaeffefcadab92cbd23783fb33ff7ea81b412704c40e2800f36d5906297249f49e04b798c5c454abd69165204e6ad")
 else()
     message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
 endif()
@@ -36,13 +36,14 @@ file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/include/" DESTINATION "${CUR
 
 if ("${VCPKG_LIBRARY_LINKAGE}" STREQUAL "dynamic")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/bin/")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/dynamic/datadog_profiling_ffi.pdb" DESTINATION "${CURRENT_PACKAGES_DIR}/bin/")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/dynamic/datadog_profiling_ffi.dll" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin")
+    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/dynamic/datadog_profiling_ffi.pdb" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/dynamic/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
 else()
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/release/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
     file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/debug/static/datadog_profiling_ffi.lib" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
-    file(INSTALL "${source_path}/${LIBDATADOG_FILENAME}/libdatadog.props" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
 endif()
 
 vcpkg_install_copyright(FILE_LIST "${source_path}/${LIBDATADOG_FILENAME}/LICENSE")
