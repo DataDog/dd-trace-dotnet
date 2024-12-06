@@ -166,35 +166,32 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     unsigned exTypeRefBuffer;
     auto exTypeRefSize = CorSigCompressToken(faultTolerantTokens->GetExceptionTypeRef(), &exTypeRefBuffer);
 
-    ULONG newSignatureOffset = 0;
-    COR_SIGNATURE newSignatureBuffer[BUFFER_SIZE];
-    newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
-    newSignatureBuffer[newSignatureOffset++] = isVoid ? 2 : 3;
+    SignatureBuilder newSignature;
+    newSignature.Append(IMAGE_CEE_CS_CALLCONV_LOCAL_SIG);
+    newSignature.Append(isVoid ? 2 : 3);
 
     // shouldSelfHeal, index = 0
-    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_BOOLEAN;
+    newSignature.Append(ELEMENT_TYPE_BOOLEAN);
 
     auto shouldSelfHealLocalIndex = 0;
 
     // Exception value, index = 1
-    newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
-    newSignatureOffset += exTypeRefSize;
+    newSignature.Append(ELEMENT_TYPE_CLASS);
+    newSignature.Append(&exTypeRefBuffer, exTypeRefSize);
 
     auto exceptionLocalIndex = 1;
 
     if (!isVoid)
     {
         // return value, index = 2
-        memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType, returnSignatureTypeSize);
-        newSignatureOffset += returnSignatureTypeSize;
+        newSignature.Append(returnSignatureType, returnSignatureTypeSize);
     }
 
     auto returnValueLocalIndex = 2;
 
     // Get new locals token
     mdToken newLocalVarSig;
-    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignatureBuffer, newSignatureOffset,
+    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignature.GetSignature(), newSignature.Size(),
                                                                             &newLocalVarSig);
     if (FAILED(hr))
     {

@@ -153,8 +153,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             {
                 Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
             }
-
-            await Task.Delay(5000);
         }
     }
 }
