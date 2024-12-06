@@ -77,7 +77,7 @@ partial class Build
                 return ToolResolver.GetLocalTool($"{vcpkgRoot / "vcpkg.exe"}");
             }
 
-            async Task DownloadAndExtractVcpkg(string destinationFolder)
+            async Task DownloadAndExtractVcpkg(AbsolutePath destinationFolder)
             {
                 var nbTries = 0;
                 var keepTrying = true;
@@ -105,10 +105,12 @@ partial class Build
                     }
                 }
 
-                var tempFolder = TempDirectory / "vcpkg_temp";
-                CompressionTasks.UncompressZip(vcpkgZip, tempFolder);
+                EnsureExistingParentDirectory(destinationFolder);
+                var parentFolder = destinationFolder.Parent;
 
-                CopyDirectoryRecursively(tempFolder / $"vcpkg-{vcpkgVersion}", destinationFolder);
+                CompressionTasks.UncompressZip(vcpkgZip, parentFolder);
+
+                RenameDirectory(parentFolder / $"vcpkg-{vcpkgVersion}", destinationFolder.Name);
             }
         });
 
