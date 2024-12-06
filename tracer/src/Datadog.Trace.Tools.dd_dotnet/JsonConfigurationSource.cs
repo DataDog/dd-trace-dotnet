@@ -19,10 +19,10 @@ internal class JsonConfigurationSource : IConfigurationSource
         _document = JsonDocument.Parse(json, new JsonDocumentOptions { AllowTrailingCommas = true });
     }
 
-    internal static JsonConfigurationSource? TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory)
+    internal static JsonConfigurationSource? TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory, out string configurationFileName)
     {
         // if environment variable is not set, look for default file name in the current directory
-        var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName)
+        configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName)
                                  ?? configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE")
                                  ?? Path.Combine(baseDirectory ?? AppDomain.CurrentDomain.BaseDirectory, "datadog.json");
 
