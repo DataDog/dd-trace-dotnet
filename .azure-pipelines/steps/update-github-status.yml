@@ -15,9 +15,9 @@ steps:
     allChecks="${{ parameters.checkName }}"
     for stageToSkip in $allChecks; do
       TARGET_URL="https://dev.azure.com/datadoghq/$(AZURE_PROJECT_NAME)/_build/results?buildId=$(Build.BuildId)"
-      curl -X POST --fail-with-body --silent --show-error \
+      curl -X POST --fail --silent --show-error \
       -H "Accept: application/vnd.github.v3+json" \
-      -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+      -H "Authorization: Bearer $(GITHUB_TOKEN)X" \
       https://api.github.com/repos/DataDog/$(GITHUB_REPOSITORY_NAME)/statuses/$(OriginalCommitId) \
       -d '{"state":"${{ parameters.status }}","context":"'"$stageToSkip"'","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'    
     done
