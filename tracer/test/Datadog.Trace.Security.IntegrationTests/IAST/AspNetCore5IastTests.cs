@@ -1273,8 +1273,8 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 
-    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
-        : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off, string sampleName = "AspNetCore5")
+        : base(sampleName, outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
         fixture.SetOutput(outputHelper);
