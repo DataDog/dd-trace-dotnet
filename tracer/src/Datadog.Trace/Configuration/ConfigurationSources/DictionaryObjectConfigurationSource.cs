@@ -15,7 +15,6 @@ namespace Datadog.Trace.Configuration;
 
 internal class DictionaryObjectConfigurationSource : IConfigurationSource
 {
-    private readonly IReadOnlyDictionary<string, object?> _dictionary;
     private readonly ConfigurationOrigins _origin;
 
     public DictionaryObjectConfigurationSource(IReadOnlyDictionary<string, object?> dictionary)
@@ -25,15 +24,20 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public DictionaryObjectConfigurationSource(IReadOnlyDictionary<string, object?> dictionary, ConfigurationOrigins origin)
     {
-        _dictionary = dictionary;
+        Dictionary = dictionary;
         _origin = origin;
     }
 
-    public bool IsPresent(string key) => _dictionary.ContainsKey(key);
+    protected IReadOnlyDictionary<string, object?> Dictionary { get; }
+
+    protected virtual bool TryGetValue(string key, out object? value)
+        => Dictionary.TryGetValue(key, out value);
+
+    public bool IsPresent(string key) => Dictionary.ContainsKey(key);
 
     public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not string value)
             {
@@ -56,7 +60,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not int value)
             {
@@ -79,7 +83,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not double value)
             {
@@ -102,7 +106,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not bool value)
             {
@@ -128,7 +132,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not IDictionary<string, string> value)
             {
@@ -152,7 +156,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
     public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
     {
-        if (_dictionary.TryGetValue(key, out var objValue) && objValue is not null)
+        if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             // Handle conversion
             var valueAsString = objValue.ToString()!;

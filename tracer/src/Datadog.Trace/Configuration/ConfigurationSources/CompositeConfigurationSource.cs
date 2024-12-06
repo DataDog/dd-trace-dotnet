@@ -23,7 +23,17 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     internal class CompositeConfigurationSource : IConfigurationSource, IEnumerable<IConfigurationSource>
     {
-        private readonly List<IConfigurationSource> _sources = new();
+        private readonly List<IConfigurationSource> _sources;
+
+        public CompositeConfigurationSource()
+        {
+            _sources = new();
+        }
+
+        public CompositeConfigurationSource(IEnumerable<IConfigurationSource> sources)
+        {
+            _sources = [..sources];
+        }
 
         /// <summary>
         /// Adds a new configuration source to this instance.

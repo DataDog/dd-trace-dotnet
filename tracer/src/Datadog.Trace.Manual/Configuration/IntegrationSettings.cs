@@ -75,4 +75,22 @@ public sealed class IntegrationSettings
             _analyticsEnabled.IsOverridden ? _analyticsEnabled.Value : null,
             _analyticsSampleRate.IsOverridden,
             _analyticsSampleRate.IsOverridden ? _analyticsSampleRate.Value : null);
+
+    internal void RecordChangedKeys(Dictionary<string, object?> results)
+    {
+        if (_enabled.IsOverridden)
+        {
+            results[$"DD_TRACE_{IntegrationName.ToUpperInvariant()}_ENABLED"] = _enabled.Value;
+        }
+
+        if (_analyticsEnabled.IsOverridden)
+        {
+            results[$"DD_TRACE_{IntegrationName.ToUpperInvariant()}_ANALYTICS_ENABLED"] = _analyticsEnabled.Value;
+        }
+
+        if (_analyticsSampleRate.IsOverridden)
+        {
+            results[$"DD_TRACE_{IntegrationName.ToUpperInvariant()}_ANALYTICS_SAMPLE_RATE"] = _analyticsSampleRate.Value;
+        }
+    }
 }
