@@ -232,15 +232,12 @@ namespace Datadog.Trace.Tests
 
             using (var agent = MockTracerAgent.Create(null, agentPort))
             {
-                var settings = new TracerSettings
+                var settings = TracerSettings.Create(new()
                 {
-                    Exporter = new ExporterSettings()
-                    {
-                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
-                    },
-                    TracerMetricsEnabled = tracerMetricsEnabled,
-                    StartupDiagnosticLogEnabled = false,
-                };
+                    { ConfigurationKeys.AgentUri, $"http://127.0.0.1:{agent.Port}" },
+                    { ConfigurationKeys.TracerMetricsEnabled, tracerMetricsEnabled },
+                    { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                });
 
                 await using var tracer = TracerHelper.Create(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
 
