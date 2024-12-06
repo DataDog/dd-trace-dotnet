@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedTracerFlareEndpoint,
             };
 
-        public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
+        public static DiscoveryService Create(ExporterSettings exporterSettings)
             => Create(
                 exporterSettings,
                 tcpTimeout: TimeSpan.FromSeconds(15),
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 recheckIntervalMs: 30_000);
 
         public static DiscoveryService Create(
-            ImmutableExporterSettings exporterSettings,
+            ExporterSettings exporterSettings,
             TimeSpan tcpTimeout,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
