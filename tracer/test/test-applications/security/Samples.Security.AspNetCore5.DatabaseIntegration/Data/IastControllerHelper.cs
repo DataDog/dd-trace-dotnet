@@ -58,7 +58,7 @@ namespace Samples.Security.Data
 
         public static OracleConnection CreateOracleDatabase()
         {
-            var host = "localhost";
+            var host = Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
             var cstringBuilder = new OracleConnectionStringBuilder();
             cstringBuilder.DataSource = $"{host}:1521/FREE";
             cstringBuilder.UserID = "system";
@@ -108,7 +108,14 @@ namespace Samples.Security.Data
         public static NpgsqlConnection CreatePostgresDatabase()
         {
             // assumes the postgres docker image is running...
-            var connection = new NpgsqlConnection("Host=localhost;Username=postgres;Password=postgres;Database=postgres;");
+            var connectionString = Environment.GetEnvironmentVariable("POSTGRES_CONNECTION_STRING");
+
+            if (connectionString == null)
+            {
+                var host = Environment.GetEnvironmentVariable("POSTGRES_HOST") ?? "localhost";
+                connectionString = $"Host={host};Username=postgres;Password=postgres;Database=postgres";
+            }
+            var connection = new NpgsqlConnection(connectionString);
             connection.Open();
 
             foreach (var command in PostgresTables)
@@ -126,14 +133,10 @@ namespace Samples.Security.Data
         public static SqlConnection CreateSqlServerDatabase()
         {
             // assumes the sqlserver docker image is running...
-            using (var masterConnection = new SqlConnection("Server=localhost;Database=master;User Id=sa;Password=Strong!Passw0rd;"))
-            {
-                masterConnection.Open();
-                new SqlCommand("IF DB_ID (N'books') IS NOT NULL\nDROP DATABASE books;", masterConnection).ExecuteNonQuery();
-                new SqlCommand("CREATE DATABASE books;", masterConnection).ExecuteNonQuery();
-            }
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+                                   @"Server=localhost;User Id=sa;Password=Strong!Passw0rd;";
 
-            var connection = new SqlConnection("Server=localhost;Database=books;User Id=sa;Password=Strong!Passw0rd;");
+            var connection = new SqlConnection("Server=localhost;User Id=sa;Password=Strong!Passw0rd;");
             connection.Open();
 
             foreach (var command in SqlServerTables)
