@@ -206,8 +206,16 @@ void NetworkProvider::OnDnsResolutionStart(std::chrono::nanoseconds timestamp, L
         return;
     }
 
-    pInfo->DnsStartTime = timestamp;
+    if (pInfo->Redirect == nullptr)
+    {
+        pInfo->DnsStartTime = timestamp;
+    }
+    else
+    {
+        pInfo->Redirect->DnsStartTime = timestamp;
+    }
 }
+
 void NetworkProvider::OnDnsResolutionStop(std::chrono::nanoseconds timestamp, LPCGUID pActivityId, bool success)
 {
     NetworkRequestInfo* pInfo = nullptr;
