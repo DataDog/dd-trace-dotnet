@@ -426,7 +426,17 @@ internal class CreatedumpCommand : Command
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
 
-        var lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
+        IntPtr lib;
+
+        try
+        {
+            lib = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, profilerLibrary));
+        }
+        catch (DllNotFoundException ex) when (ex.Message.Contains("GLIBC"))
+        {
+            Errors.Add($"The GLIBC version is too old");
+            return;
+        }
 
         var export = NativeLibrary.GetExport(lib, "CreateCrashReport");
 

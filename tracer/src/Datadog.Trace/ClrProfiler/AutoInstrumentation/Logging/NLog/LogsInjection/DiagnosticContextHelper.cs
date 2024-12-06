@@ -133,8 +133,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     return new[]
                     {
                         new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                        new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty),
+                        new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty),
+                        new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty),
                         new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId),
                         new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId)
                     };
@@ -144,8 +144,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return new[]
             {
                 new KeyValuePair<string, object>(CorrelationIdentifier.ServiceKey, tracer.DefaultServiceName ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersionInternal ?? string.Empty),
-                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.EnvironmentInternal ?? string.Empty)
+                new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty),
+                new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty)
             };
         }
 

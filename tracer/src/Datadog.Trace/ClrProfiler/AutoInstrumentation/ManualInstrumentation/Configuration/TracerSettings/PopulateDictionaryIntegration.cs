@@ -45,31 +45,31 @@ public class PopulateDictionaryIntegration
     internal static void PopulateSettings(Dictionary<string, object?> values, Trace.Configuration.TracerSettings settings)
     {
         // record all the settings in the dictionary
-        values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;
+        values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUriInternal;
 #pragma warning disable CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabledInternal;
+        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabled;
 #pragma warning restore CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRulesInternal;
+        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRules;
         values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
-        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.DisabledIntegrationNamesInternal;
-        values[TracerSettingKeyConstants.EnvironmentKey] = settings.EnvironmentInternal;
-        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRateInternal;
-        values[TracerSettingKeyConstants.GrpcTags] = settings.GrpcTagsInternal;
-        values[TracerSettingKeyConstants.HeaderTags] = settings.HeaderTagsInternal;
-        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabledInternal;
+        values[TracerSettingKeyConstants.DisabledIntegrationNamesKey] = settings.DisabledIntegrationNames;
+        values[TracerSettingKeyConstants.EnvironmentKey] = settings.Environment;
+        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRate;
+        values[TracerSettingKeyConstants.GrpcTags] = settings.GrpcTags;
+        values[TracerSettingKeyConstants.HeaderTags] = settings.HeaderTags;
+        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabled;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
         values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogSubmissionSettings.LogsInjectionEnabled;
 #pragma warning restore DD0002
-        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecondInternal;
-        values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceNameInternal;
-        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.ServiceVersionInternal;
-        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.StartupDiagnosticLogEnabledInternal;
-        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabledInternal;
-        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabledInternal;
-        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabledInternal;
+        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecond;
+        values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceName;
+        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.ServiceVersion;
+        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.StartupDiagnosticLogEnabled;
+        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabled;
+        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabled;
+        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabled;
 
-        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.GlobalTagsInternal;
-        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = settings.GlobalTags;
+        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.Integrations);
     }
 
     private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
@@ -82,7 +82,7 @@ public class PopulateDictionaryIntegration
         var results = new Dictionary<string, object?[]>(settings.Settings.Length, StringComparer.OrdinalIgnoreCase);
         foreach (var setting in settings.Settings)
         {
-            results[setting.IntegrationNameInternal] = IntegrationSettingsSerializationHelper.SerializeFromAutomatic(setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal);
+            results[setting.IntegrationName] = IntegrationSettingsSerializationHelper.SerializeFromAutomatic(setting.Enabled, setting.AnalyticsEnabled, setting.AnalyticsSampleRate);
         }
 
         return results;

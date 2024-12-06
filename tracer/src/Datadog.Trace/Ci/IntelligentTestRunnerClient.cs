@@ -77,12 +77,12 @@ internal class IntelligentTestRunnerClient
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
-        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.EnvironmentInternal ?? "none") ?? "none";
-        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceNameInternal) ?? string.Empty;
+        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? "none") ?? "none";
+        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
         _customConfigurations = null;
 
         // Extract custom tests configurations from DD_TAGS
-        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTagsInternal);
+        _customConfigurations = GetCustomTestsConfigurations(_settings.TracerSettings.GlobalTags);
 
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _getBranchNameTask = GetBranchNameAsync();

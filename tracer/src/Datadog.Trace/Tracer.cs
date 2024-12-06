@@ -393,7 +393,7 @@ namespace Datadog.Trace
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
         void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
-            if (Settings.TraceEnabledInternal || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
+            if (Settings.TraceEnabled || Settings.AzureAppServiceMetadata?.CustomTracingEnabled is true)
             {
                 TracerManager.WriteTrace(trace);
             }
@@ -533,12 +533,12 @@ namespace Datadog.Trace
             };
 
             // Apply any global tags
-            if (Settings.GlobalTagsInternal.Count > 0)
+            if (Settings.GlobalTags.Count > 0)
             {
                 // if DD_TAGS contained "env", "version", "git.commit.sha", or "git.repository.url",  they were used to set
                 // ImmutableTracerSettings.Environment, ImmutableTracerSettings.ServiceVersion, ImmutableTracerSettings.GitCommitSha, and ImmutableTracerSettings.GitRepositoryUrl
                 // and removed from Settings.GlobalTags
-                foreach (var entry in Settings.GlobalTagsInternal)
+                foreach (var entry in Settings.GlobalTags)
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
