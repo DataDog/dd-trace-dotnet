@@ -69,6 +69,11 @@ public:
     inline static const shared::WSTRING SsiLongLivedThreshold       = WStr("DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD");
     inline static const shared::WSTRING TelemetryToDiskEnabled      = WStr("DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED");
     inline static const shared::WSTRING SsiTelemetryEnabled         = WStr("DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED");
+    inline static const shared::WSTRING HttpProfilingEnabled        = WStr("DD_INTERNAL_PROFILING_HTTP_ENABLED");
+    inline static const shared::WSTRING HttpRequestDurationThreshold = WStr("DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD");
+
+    // used for tests only
+    inline static const shared::WSTRING ForceHttpSampling           = WStr("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
