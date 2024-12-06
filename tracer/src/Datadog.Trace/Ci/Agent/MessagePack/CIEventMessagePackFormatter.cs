@@ -39,9 +39,9 @@ internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibil
 
     public CIEventMessagePackFormatter(TracerSettings tracerSettings)
     {
-        if (!string.IsNullOrEmpty(tracerSettings.EnvironmentInternal))
+        if (!string.IsNullOrEmpty(tracerSettings.Environment))
         {
-            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.EnvironmentInternal);
+            _environmentValueBytes = StringEncoding.UTF8.GetBytes(tracerSettings.Environment);
         }
 
         if (!string.IsNullOrWhiteSpace(Ci.CIVisibility.Settings.TestSessionName))

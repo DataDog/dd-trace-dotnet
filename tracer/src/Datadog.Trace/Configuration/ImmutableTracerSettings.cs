@@ -69,52 +69,52 @@ namespace Datadog.Trace.Configuration
             // unused parameter is purely so we can avoid calling public APIs
 
             // DD_SERVICE has precedence over DD_TAGS
-            ServiceNameInternal = GetExplicitSettingOrTag(settings.ServiceNameInternal, settings.GlobalTagsInternal, Tags.Service);
+            ServiceName = GetExplicitSettingOrTag(settings.ServiceName, settings.GlobalTags, Tags.Service);
 
             // DD_ENV has precedence over DD_TAGS
-            EnvironmentInternal = GetExplicitSettingOrTag(settings.EnvironmentInternal, settings.GlobalTagsInternal, Tags.Env);
+            Environment = GetExplicitSettingOrTag(settings.Environment, settings.GlobalTags, Tags.Env);
 
             // DD_VERSION has precedence over DD_TAGS
-            ServiceVersionInternal = GetExplicitSettingOrTag(settings.ServiceVersionInternal, settings.GlobalTagsInternal, Tags.Version);
+            ServiceVersion = GetExplicitSettingOrTag(settings.ServiceVersion, settings.GlobalTags, Tags.Version);
 
             // DD_GIT_COMMIT_SHA has precedence over DD_TAGS
-            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTagsInternal, CommonTags.GitCommit);
+            GitCommitSha = GetExplicitSettingOrTag(settings.GitCommitSha, settings.GlobalTags, CommonTags.GitCommit);
 
             // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTagsInternal, CommonTags.GitRepository);
+            GitRepositoryUrl = GetExplicitSettingOrTag(settings.GitRepositoryUrl, settings.GlobalTags, CommonTags.GitRepository);
 
             // create dictionary copy without "env", "version", "git.commit.sha" or "git.repository.url" tags
             // these value are used for "Environment" and "ServiceVersion", "GitCommitSha" and "GitRepositoryUrl" properties
             // or overriden with DD_ENV, DD_VERSION, DD_GIT_COMMIT_SHA and DD_GIT_REPOSITORY_URL respectively
-            var globalTags = settings.GlobalTagsInternal
+            var globalTags = settings.GlobalTags
                                      .Where(kvp => kvp.Key is not (Tags.Service or Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                                      .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
             _globalTags = new ReadOnlyDictionary<string, string>(globalTags);
 
             GitMetadataEnabled = settings.GitMetadataEnabled;
-            _traceEnabled = settings.TraceEnabledInternal;
+            _traceEnabled = settings.TraceEnabled;
             _appsecStandaloneEnabled = settings.AppsecStandaloneEnabledInternal;
-            ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
+            Exporter = new ImmutableExporterSettings(settings.Exporter, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
+            AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
-            MaxTracesSubmittedPerSecondInternal = settings.MaxTracesSubmittedPerSecondInternal;
-            _customSamplingRules = settings.CustomSamplingRulesInternal;
+            MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
+            _customSamplingRules = settings.CustomSamplingRules;
             CustomSamplingRulesFormat = settings.CustomSamplingRulesFormat;
             SpanSamplingRules = settings.SpanSamplingRules;
-            _globalSamplingRate = settings.GlobalSamplingRateInternal;
-            IntegrationsInternal = new ImmutableIntegrationSettingsCollection(settings.IntegrationsInternal, settings.DisabledIntegrationNamesInternal);
-            _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTagsInternal);
-            GrpcTagsInternal = new ReadOnlyDictionary<string, string>(settings.GrpcTagsInternal);
+            _globalSamplingRate = settings.GlobalSamplingRate;
+            Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
+            _headerTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
+            GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             IpHeader = settings.IpHeader;
             IpHeaderEnabled = settings.IpHeaderEnabled;
-            TracerMetricsEnabledInternal = settings.TracerMetricsEnabledInternal;
-            StatsComputationEnabledInternal = settings.StatsComputationEnabledInternal;
+            TracerMetricsEnabled = settings.TracerMetricsEnabled;
+            StatsComputationEnabled = settings.StatsComputationEnabled;
             StatsComputationInterval = settings.StatsComputationInterval;
             _runtimeMetricsEnabled = settings.RuntimeMetricsEnabled;
-            KafkaCreateConsumerScopeEnabledInternal = settings.KafkaCreateConsumerScopeEnabledInternal;
-            StartupDiagnosticLogEnabledInternal = settings.StartupDiagnosticLogEnabledInternal;
+            KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
+            StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
             HttpServerErrorStatusCodes = settings.HttpServerErrorStatusCodes;
             HttpClientErrorStatusCodes = settings.HttpClientErrorStatusCodes;
@@ -199,12 +199,12 @@ namespace Datadog.Trace.Configuration
             // through the IntegrationTelemetryCollector currently so record it here instead
             StringBuilder? sb = null;
 
-            foreach (var setting in IntegrationsInternal.Settings)
+            foreach (var setting in Integrations.Settings)
             {
-                if (setting.EnabledInternal == false)
+                if (setting.Enabled == false)
                 {
                     sb ??= StringBuilderCache.Acquire();
-                    sb.Append(setting.IntegrationNameInternal);
+                    sb.Append(setting.IntegrationName);
                     sb.Append(';');
                 }
             }
@@ -217,22 +217,19 @@ namespace Datadog.Trace.Configuration
         /// Gets the default environment name applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Environment"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Environment_Get)]
-        internal string? EnvironmentInternal { get; }
+        public string? Environment { get; }
 
         /// <summary>
         /// Gets the service name applied to top-level spans and used to build derived service names.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceName"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ServiceName_Get)]
-        internal string? ServiceNameInternal { get; }
+        public string? ServiceName { get; }
 
         /// <summary>
         /// Gets the version tag applied to all spans.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ServiceVersion"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ServiceVersion_Get)]
-        internal string? ServiceVersionInternal { get; }
+        public string? ServiceVersion { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 
@@ -260,8 +257,7 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>true</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get)]
-        internal bool TraceEnabledInternal => DynamicSettings.TraceEnabled ?? _traceEnabled;
+        public bool TraceEnabled => DynamicSettings.TraceEnabled ?? _traceEnabled;
 
         /// <summary>
         /// Gets a value indicating whether Appsec standalone billing is enabled.
@@ -273,8 +269,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Exporter_Get)]
-        internal ImmutableExporterSettings ExporterInternal { get; }
+        public ImmutableExporterSettings Exporter { get; }
 
 #pragma warning disable CS1574 // AnalyticsEnabled is obsolete
         /// <summary>
@@ -286,8 +281,7 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
 #pragma warning restore CS1574
         [Obsolete(DeprecationMessages.AppAnalytics)]
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_AnalyticsEnabled_Get)]
-        internal bool AnalyticsEnabledInternal { get; }
+        public bool AnalyticsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether correlation identifiers are
@@ -295,23 +289,20 @@ namespace Datadog.Trace.Configuration
         /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.LogsInjectionEnabled"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_LogsInjectionEnabled_Get)]
-        internal bool LogsInjectionEnabledInternal => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
+        public bool LogsInjectionEnabled => DynamicSettings.LogsInjectionEnabled ?? _logsInjectionEnabled;
 
         /// <summary>
         /// Gets a value indicating the maximum number of traces set to AutoKeep (p1) per second.
         /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceRateLimit"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_MaxTracesSubmittedPerSecond_Get)]
-        internal int MaxTracesSubmittedPerSecondInternal { get; }
+        public int MaxTracesSubmittedPerSecond { get; }
 
         /// <summary>
         /// Gets a value indicating custom sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_CustomSamplingRules_Get)]
-        internal string? CustomSamplingRulesInternal => DynamicSettings.SamplingRules ?? _customSamplingRules;
+        public string? CustomSamplingRules => DynamicSettings.SamplingRules ?? _customSamplingRules;
 
         internal bool CustomSamplingRulesIsRemote => DynamicSettings.SamplingRules != null;
 
@@ -331,34 +322,29 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating a global rate for sampling.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalSamplingRate"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalSamplingRate_Get)]
-        internal double? GlobalSamplingRateInternal => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
+        public double? GlobalSamplingRate => DynamicSettings.GlobalSamplingRate ?? _globalSamplingRate;
 
         /// <summary>
-        /// Gets a collection of <see cref="IntegrationsInternal"/> keyed by integration name.
+        /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_Integrations_Get)]
-        internal ImmutableIntegrationSettingsCollection IntegrationsInternal { get; }
+        public ImmutableIntegrationSettingsCollection Integrations { get; }
 
         /// <summary>
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GlobalTags_Get)]
-        internal IReadOnlyDictionary<string, string> GlobalTagsInternal => DynamicSettings.GlobalTags ?? _globalTags;
+        public IReadOnlyDictionary<string, string> GlobalTags => DynamicSettings.GlobalTags ?? _globalTags;
 
         /// <summary>
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing requests.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_HeaderTags_Get)]
-        internal IReadOnlyDictionary<string, string> HeaderTagsInternal => DynamicSettings.HeaderTags ?? _headerTags;
+        public IReadOnlyDictionary<string, string> HeaderTags => DynamicSettings.HeaderTags ?? _headerTags;
 
         /// <summary>
         /// Gets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>
         /// of incoming and outgoing GRPC requests.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_GrpcTags_Get)]
-        internal IReadOnlyDictionary<string, string> GrpcTagsInternal { get; }
+        public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -374,28 +360,24 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get)]
-        internal bool TracerMetricsEnabledInternal { get; }
+        public bool TracerMetricsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_StatsComputationEnabled_Get)]
-        internal bool StatsComputationEnabledInternal { get; }
+        public bool StatsComputationEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
         /// Consumer.Consume() call, and closed on entering Consumer.Consume().
         /// </summary>
         /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_KafkaCreateConsumerScopeEnabled_Get)]
-        internal bool KafkaCreateConsumerScopeEnabledInternal { get; }
+        public bool KafkaCreateConsumerScopeEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_StartupDiagnosticLogEnabled_Get)]
-        internal bool StartupDiagnosticLogEnabledInternal { get; }
+        public bool StartupDiagnosticLogEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics
@@ -717,9 +699,9 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
         {
-            if (TraceEnabledInternal && !_domainMetadata.ShouldAvoidAppDomain())
+            if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
-                return IntegrationsInternal[integration].EnabledInternal ?? defaultValue;
+                return Integrations[integration].Enabled ?? defaultValue;
             }
 
             return false;
@@ -728,9 +710,9 @@ namespace Datadog.Trace.Configuration
         [Obsolete(DeprecationMessages.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
-            var integrationSettings = IntegrationsInternal[integration];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabledInternal ?? (enabledWithGlobalSetting && AnalyticsEnabledInternal);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRateInternal : (double?)null;
+            var integrationSettings = Integrations[integration];
+            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
+            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
     }
 }

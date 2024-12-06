@@ -80,7 +80,7 @@ public class SpanMessagePackFormatterTests
             actual.Duration.Should().Be(expected.Duration.ToNanoseconds());
             actual.ParentId.Should().Be(expected.Context.ParentId);
             actual.Error.Should().Be(expected.Error ? (byte)0x1 : (byte)0x0);
-            actual.ParentId.Should().Be(expected.Context.ParentIdInternal);
+            actual.ParentId.Should().Be(expected.Context.ParentId);
 
             var tagsProcessor = new TagsProcessor<string>(actual.Tags);
             expected.Tags.EnumerateTags(ref tagsProcessor);

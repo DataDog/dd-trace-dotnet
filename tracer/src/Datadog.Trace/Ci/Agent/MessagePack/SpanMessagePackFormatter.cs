@@ -87,7 +87,7 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         // It should be the number of members of the object to be serialized.
         var len = 9;
 
-        if (context.ParentIdInternal is not null)
+        if (context.ParentId is not null)
         {
             len++;
         }
@@ -157,10 +157,10 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
         offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
 
-        if (context.ParentIdInternal is not null)
+        if (context.ParentId is not null)
         {
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentIdInternal.Value);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
         }
 
         if (testSuiteTags is not null)
@@ -271,7 +271,7 @@ internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         }
 
         // add "version" tags to all spans whose service name is the default service name
-        if (string.Equals(span.Context.ServiceNameInternal, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(span.Context.ServiceName, traceContext?.Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
         {
             var version = traceContext?.ServiceVersion;
 

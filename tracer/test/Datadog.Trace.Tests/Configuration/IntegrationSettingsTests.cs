@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Configuration
             var src = new DictionaryConfigurationSource(dict);
             var settings = new IntegrationSettings(nameof(IntegrationId.MySql), src);
 
-            settings.EnabledInternal.Should().Be(expected);
+            settings.Enabled.Should().Be(expected);
         }
 
         [Theory]
