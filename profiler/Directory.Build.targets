@@ -1,6 +1,11 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <LibDatadogDependencies>PowrProf.lib;NtDll.lib;UserEnv.lib;Bcrypt.lib;crypt32.lib;wsock32.lib;ws2_32.lib;shlwapi.lib;Secur32.lib;Ncrypt.lib</LibDatadogDependencies>
+    <VcpkgIntermediateFolder>$(VcpkgManifestRoot)\artifacts\obj\vcpkg</VcpkgIntermediateFolder>
+    <VcpkgDepsDir>$(VcpkgManifestRoot)\artifacts\deps\vcpkg\</VcpkgDepsDir>
+    <!-- trying mimicking what's vcpkg does by default but redirecting where we want the final files -->
+    <VcpkgInstalledDir>$(VcpkgDepsDir)$(VcpkgTriplet)</VcpkgInstalledDir>
+    <VcpkgAdditionalInstallOptions>--downloads-root $(VcpkgIntermediateFolder)/downloads --x-packages-root $(VcpkgIntermediateFolder)/packages --x-buildtrees-root $(VcpkgIntermediateFolder)/buildtrees  --clean-after-build</VcpkgAdditionalInstallOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(VcpkgUseStatic)' == 'true' and '$(VcpkgEnabled)' == 'true' and '$(MSBuildProjectExtension)' == '.vcxproj'">
     <Link>
