@@ -192,8 +192,7 @@
       <!-- VCPKG setup -->
       <VcpkgEnableManifest>true</VcpkgEnableManifest>
       <VcpkgUseStatic>true</VcpkgUseStatic>
-      <VcpkgIntermediateFolder>$(DOTNET-TRACER-REPO-ROOT-PATH)obj\vcpkg</VcpkgIntermediateFolder>
-      <VcpkgAdditionalInstallOptions>--downloads-root $(VcpkgIntermediateFolder)/downloads --x-packages-root $(VcpkgIntermediateFolder)/packages --x-buildtrees-root $(VcpkgIntermediateFolder)/buildtrees  --clean-after-build</VcpkgAdditionalInstallOptions>
+      <VcpkgTriplet>$(Platform)-windows</VcpkgTriplet>
     </PropertyGroup>
 
     <ItemDefinitionGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
