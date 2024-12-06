@@ -95,9 +95,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
 
-            var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = true;
-            tracerSettings.Integrations[nameof(IntegrationId.AdoNet)].Enabled = false;
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), "true" },
+                { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.AdoNet)), "false" },
+            });
             await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
 
             // Create scope
@@ -344,8 +346,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         private static TracerHelper.ScopedTracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
         {
             // Set up tracer
-            var tracerSettings = new TracerSettings();
-            tracerSettings.Integrations[integrationName].Enabled = enabled;
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), enabled },
+            });
             return TracerHelper.Create(tracerSettings);
         }
 

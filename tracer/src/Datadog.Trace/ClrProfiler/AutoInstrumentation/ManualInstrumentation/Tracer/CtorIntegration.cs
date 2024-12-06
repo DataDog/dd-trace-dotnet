@@ -74,7 +74,7 @@ public class CtorIntegration
         values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.Integrations);
     }
 
-    private static Dictionary<string, object?[]>? BuildIntegrationSettings(ImmutableIntegrationSettingsCollection settings)
+    private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
     {
         if (settings.Settings.Length == 0)
         {
