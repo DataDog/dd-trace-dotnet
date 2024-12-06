@@ -158,7 +158,7 @@ internal abstract class EventPlatformPayload
                     break;
                 case TracesTransportType.Default:
                 default:
-                    builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUriInternal);
+                    builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUri);
                     break;
             }
 
