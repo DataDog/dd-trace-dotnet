@@ -494,6 +494,11 @@ namespace Datadog.Trace.Configuration
         public static class CIVisibility
         {
             /// <summary>
+            /// An internal key used to "tell" tracer settings that we're running in CI Visibility mode
+            /// </summary>
+            public const string IsRunningInCiVisMode = "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY";
+
+            /// <summary>
             /// Configuration key for enabling or disabling CI Visibility.
             /// Default value is false (disabled).
             /// </summary>
