@@ -45,12 +45,7 @@ partial class Build
         .Executes(async () =>
         {
             var vcpkg = await GetVcpkg();
-
-            var vcpkgObjFolder = NativeBuildDirectory / "vcpkg";
-            var buildtreesRoot = vcpkgObjFolder / "buildtrees";
-            var packagesRoot = vcpkgObjFolder / "packages";
-            var downloadRoot = vcpkgObjFolder / "download";
-            vcpkg($"integrate install --x-buildtrees-root={buildtreesRoot} --x-packages-root={packagesRoot} --downloads-root={downloadRoot}");
+            vcpkg("integrate install");
 
             async Task<Tool> GetVcpkg()
             {
@@ -69,7 +64,7 @@ partial class Build
                 }
 
                 // Check if already downloaded
-                var vcpkgRoot = RootDirectory / "vcpkg";
+                var vcpkgRoot = RootDirectory / "artifacts" / "bin" / "vcpkg";
                 var vcpkgExecPath = vcpkgRoot / "vcpkg.exe";
 
                 if (File.Exists(vcpkgExecPath))

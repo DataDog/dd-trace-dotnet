@@ -214,12 +214,6 @@ PublishScripts/
 *.nuget.props
 *.nuget.targets
 
-# Vcpkg Packages
-**/vcpkg_installed/*
-# when building using Nuke and vcpkg is not installed (or in the PATH)
-# the target SetupVcpkg will install it at the root of the repo
-**/vcpkg/*
-
 # Microsoft Azure Build Output
 csx/
 *.build.csdef
