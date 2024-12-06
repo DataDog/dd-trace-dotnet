@@ -13,6 +13,8 @@ internal interface ITaintedMap
 
     public ITaintedObject Get(object obj);
 
+    public ITaintedObject Pop(object obj);
+
     public List<ITaintedObject> GetListValues();
 
     public int GetEstimatedSize();
