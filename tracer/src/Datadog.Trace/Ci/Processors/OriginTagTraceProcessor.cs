@@ -47,7 +47,7 @@ namespace Datadog.Trace.Ci.Processors
                 for (var i = trace.Offset + trace.Count - 1; i >= trace.Offset; i--)
                 {
                     var span = trace.Array![i];
-                    if (span.Context.ParentInternal is null &&
+                    if (span.Context.Parent is null &&
                         span.Type != SpanTypes.Test &&
                         span.Type != SpanTypes.Browser &&
                         span.Type != SpanTypes.TestSuite &&

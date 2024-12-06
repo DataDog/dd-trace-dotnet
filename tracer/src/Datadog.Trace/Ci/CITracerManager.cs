@@ -62,7 +62,7 @@ namespace Datadog.Trace.Ci
                 remoteConfigurationManager,
                 dynamicConfigurationManager,
                 tracerFlareManager,
-                GetProcessors(settings.ExporterInternal.PartialFlushEnabledInternal, agentWriter is CIVisibilityProtocolWriter))
+                GetProcessors(settings.Exporter.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
 

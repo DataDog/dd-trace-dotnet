@@ -150,7 +150,7 @@ internal abstract class EventPlatformPayload
         else
         {
             // Use Agent EVP Proxy
-            switch (_settings.TracerSettings.ExporterInternal.TracesTransport)
+            switch (_settings.TracerSettings.Exporter.TracesTransport)
             {
                 case TracesTransportType.WindowsNamedPipe:
                 case TracesTransportType.UnixDomainSocket:
@@ -158,7 +158,7 @@ internal abstract class EventPlatformPayload
                     break;
                 case TracesTransportType.Default:
                 default:
-                    builder = new UriBuilder(_settings.TracerSettings.ExporterInternal.AgentUriInternal);
+                    builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUriInternal);
                     break;
             }
 

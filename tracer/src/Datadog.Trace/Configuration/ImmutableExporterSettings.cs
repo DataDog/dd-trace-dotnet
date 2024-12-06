@@ -47,22 +47,22 @@ namespace Datadog.Trace.Configuration
         internal ImmutableExporterSettings(ExporterSettings settings, bool unused)
         {
             // unused parameter is purely so we can avoid calling public APIs
-            AgentUriInternal = settings.AgentUriInternal;
+            AgentUri = settings.AgentUriInternal;
 
             TracesTransport = settings.TracesTransport;
-            TracesPipeNameInternal = settings.TracesPipeNameInternal;
-            TracesPipeTimeoutMsInternal = settings.TracesPipeTimeoutMsInternal;
+            TracesPipeName = settings.TracesPipeName;
+            TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
 
             MetricsTransport = settings.MetricsTransport;
             MetricsHostname = settings.MetricsHostname;
-            MetricsPipeNameInternal = settings.MetricsPipeNameInternal;
-            DogStatsdPortInternal = settings.DogStatsdPortInternal;
+            MetricsPipeName = settings.MetricsPipeName;
+            DogStatsdPort = settings.DogStatsdPort;
 
-            TracesUnixDomainSocketPathInternal = settings.TracesUnixDomainSocketPathInternal;
-            MetricsUnixDomainSocketPathInternal = settings.MetricsUnixDomainSocketPathInternal;
+            TracesUnixDomainSocketPath = settings.TracesUnixDomainSocketPath;
+            MetricsUnixDomainSocketPath = settings.MetricsUnixDomainSocketPath;
 
-            PartialFlushEnabledInternal = settings.PartialFlushEnabledInternal;
-            PartialFlushMinSpansInternal = settings.PartialFlushMinSpansInternal;
+            PartialFlushEnabled = settings.PartialFlushEnabled;
+            PartialFlushMinSpans = settings.PartialFlushMinSpansInternal;
             ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 
@@ -73,66 +73,57 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentUri"/>
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_AgentUri_Get)]
-        internal Uri AgentUriInternal { get; }
+        public Uri AgentUri { get; }
 
         /// <summary>
         /// Gets the windows pipe name where the Tracer can connect to the Agent.
         /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_TracesPipeName_Get)]
-        internal string? TracesPipeNameInternal { get; }
+        public string? TracesPipeName { get; }
 
         /// <summary>
         /// Gets the timeout in milliseconds for the windows named pipe requests.
         /// Default is <c>100</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_TracesPipeTimeoutMs_Get)]
-        internal int TracesPipeTimeoutMsInternal { get; }
+        public int TracesPipeTimeoutMs { get; }
 
         /// <summary>
         /// Gets the windows pipe name where the Tracer can send stats.
         /// Default is <c>null</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_MetricsPipeName_Get)]
-        internal string? MetricsPipeNameInternal { get; }
+        public string? MetricsPipeName { get; }
 
         /// <summary>
         /// Gets the port where the DogStatsd server is listening for connections.
         /// Default is <c>8125</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_DogStatsdPort_Get)]
-        internal int DogStatsdPortInternal { get; }
+        public int DogStatsdPort { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_PartialFlushEnabled_Get)]
-        internal bool PartialFlushEnabledInternal { get; }
+        public bool PartialFlushEnabled { get; }
 
         /// <summary>
         /// Gets the minimum number of closed spans in a trace before it's partially flushed
         /// </summary>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_PartialFlushMinSpans_Get)]
-        internal int PartialFlushMinSpansInternal { get; }
+        public int PartialFlushMinSpans { get; }
 
         /// <summary>
         /// Gets the unix domain socket path where the Tracer can connect to the Agent.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_TracesUnixDomainSocketPath_Get)]
-        internal string? TracesUnixDomainSocketPathInternal { get; }
+        public string? TracesUnixDomainSocketPath { get; }
 
         /// <summary>
         /// Gets the unix domain socket path where the Tracer can send stats.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
-        [GeneratePublicApi(PublicApiUsage.ImmutableExporterSettings_MetricsUnixDomainSocketPath_Get)]
-        internal string? MetricsUnixDomainSocketPathInternal { get; }
+        public string? MetricsUnixDomainSocketPath { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.
