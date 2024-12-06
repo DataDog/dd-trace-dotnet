@@ -32,7 +32,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ExporterSettings { AgentUri = agentPath };
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         await RunTest(settings, agent);
     }
@@ -95,7 +95,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ExporterSettings { AgentUri = agentPath };
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var invalidJson = "{meep";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse(invalidJson, 500);
@@ -117,7 +117,7 @@ public class TracerFlareApiTests(ITestOutputHelper output)
     {
         using var agent = MockTracerAgent.Create(output);
         var agentPath = new Uri($"http://localhost:{agent.Port}");
-        var settings = new ExporterSettings { AgentUri = agentPath };
+        var settings = ExporterSettings.Create(new() { { ConfigurationKeys.AgentUri, agentPath } });
 
         var somethingWentWrong = "Something went wrong";
         agent.CustomResponses[MockTracerResponseType.TracerFlare] = new MockTracerResponse($$"""{ "error": "{{somethingWentWrong}}" }""", 500);
