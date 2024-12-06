@@ -1008,18 +1008,6 @@ namespace Datadog.Trace.Configuration
             return FromDefaultSourcesInternal();
         }
 
-        /// <summary>
-        /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
-        /// AppSettings where available, and a local datadog.json file, if present.
-        /// </summary>
-        /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        [PublicApi]
-        public static CompositeConfigurationSource CreateDefaultConfigurationSource()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_CreateDefaultConfigurationSource);
-            return GlobalConfigurationSource.CreateDefaultConfigurationSource();
-        }
-
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 

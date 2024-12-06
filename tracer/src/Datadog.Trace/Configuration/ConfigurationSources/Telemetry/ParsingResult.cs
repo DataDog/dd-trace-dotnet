@@ -9,7 +9,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 
-internal readonly record struct ParsingResult<T>
+/// <summary>
+/// The result of parsing a configuration value
+/// </summary>
+/// <typeparam name="T"></typeparam>
+public readonly record struct ParsingResult<T>
 {
     private ParsingResult(T? result, bool isValid)
     {
@@ -28,9 +32,23 @@ internal readonly record struct ParsingResult<T>
     [MemberNotNullWhen(true, nameof(Result))]
     public bool IsValid { get; }
 
+    /// <summary>
+    /// Implicitly converts a value to a successful <see cref="ParsingResult{T}"/>
+    /// </summary>
+    /// <param name="result">The value to convert</param>
+    /// <returns>The converted value</returns>
     public static implicit operator ParsingResult<T>(T result) => Success(result);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ParsingResult{T}"/> representing a successful parsing operation
+    /// </summary>
+    /// <param name="result">The value to use as the result</param>
+    /// <returns>The result</returns>
     public static ParsingResult<T> Success(T result) => new(result, isValid: true);
 
+    /// <summary>
+    /// Creates an instance of <see cref="ParsingResult{T}"/> representing a failed parsing operation
+    /// </summary>
+    /// <returns>The result</returns>
     public static ParsingResult<T> Failure() => new(default, isValid: false);
 }

@@ -301,13 +301,13 @@ namespace Datadog.Trace.Ci.Configuration
         {
             var source = GlobalConfigurationSource.CreateDefaultConfigurationSource();
             var defaultExcludedUrlSubstrings = string.Empty;
-            var configResult = ((ITelemeteredConfigurationSource)source).GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, validator: null, recordValue: false);
+            var configResult = source.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings, NullConfigurationTelemetry.Instance, validator: null, recordValue: false);
             if (configResult is { IsValid: true, Result: { } substrings } && !string.IsNullOrWhiteSpace(substrings))
             {
                 defaultExcludedUrlSubstrings = substrings + ", ";
             }
 
-            source.InsertInternal(0, new NameValueConfigurationSource(
+            source.Insert(0, new NameValueConfigurationSource(
                                       new NameValueCollection
                                       {
                                           [ConfigurationKeys.HttpClientExcludedUrlSubstrings] = defaultExcludedUrlSubstrings + "/session/FakeSessionIdForPollingPurposes",

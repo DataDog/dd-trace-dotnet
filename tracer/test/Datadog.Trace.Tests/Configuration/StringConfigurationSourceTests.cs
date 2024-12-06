@@ -114,7 +114,7 @@ public class StringConfigurationSourceTests
     [InlineData("  key  :value")] // 2 spaces around key
     public void ParseCustomKeyValues_WhitespaceAroundKey_WithValue(string entry)
     {
-        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry);
+        var dictionary = StringConfigurationSource.ParseCustomKeyValues(entry, allowOptionalMappings: false);
 
         dictionary.Should().HaveCount(1);
         dictionary.Should().Contain(new KeyValuePair<string, string>("key", "value"));

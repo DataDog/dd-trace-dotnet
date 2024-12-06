@@ -17,7 +17,7 @@ internal static partial class TelemetryErrorCodeExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 17;
+    public const int Length = 18;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.TelemetryErrorCode"/> value.
@@ -47,6 +47,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError => "Error configuring Dynamic Instrumentation",
             Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath => "Potentially invalid UDS path",
             Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform => "Attempting to use UDS on unsupported runtime",
+            Datadog.Trace.Telemetry.TelemetryErrorCode.UnexpectedTypeInConfigurationSource => "Unexpected type in configuration source",
             _ => value.ToString(),
         };
 
@@ -77,6 +78,7 @@ internal static partial class TelemetryErrorCodeExtensions
             Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError,
             Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath,
             Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform,
+            Datadog.Trace.Telemetry.TelemetryErrorCode.UnexpectedTypeInConfigurationSource,
         };
 
     /// <summary>
@@ -107,6 +109,7 @@ internal static partial class TelemetryErrorCodeExtensions
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath),
             nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.UdsOnUnsupportedPlatform),
+            nameof(Datadog.Trace.Telemetry.TelemetryErrorCode.UnexpectedTypeInConfigurationSource),
         };
 
     /// <summary>
@@ -137,5 +140,6 @@ internal static partial class TelemetryErrorCodeExtensions
             "Error configuring Dynamic Instrumentation",
             "Potentially invalid UDS path",
             "Attempting to use UDS on unsupported runtime",
+            "Unexpected type in configuration source",
         };
 }
