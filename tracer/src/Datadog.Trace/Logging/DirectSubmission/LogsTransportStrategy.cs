@@ -15,7 +15,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsTransportStrategy));
 
-        public static IApiRequestFactory Get(ImmutableDirectLogSubmissionSettings settings)
+        public static IApiRequestFactory Get(DirectLogSubmissionSettings settings)
         {
             // Still quite a long time, but we could be sending a lot of data
             var timeout = TimeSpan.FromSeconds(15);

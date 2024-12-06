@@ -140,7 +140,7 @@ namespace Datadog.Trace.Configuration
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
-            LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
+            LogSubmissionSettings = settings.LogSubmissionSettings;
             _logsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
@@ -460,7 +460,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal int QueryStringReportingSize { get; }
 
-        internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
+        internal DirectLogSubmissionSettings LogSubmissionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
