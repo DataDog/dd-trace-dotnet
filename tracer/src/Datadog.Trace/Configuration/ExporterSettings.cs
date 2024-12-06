@@ -115,7 +115,7 @@ namespace Datadog.Trace.Configuration
             TracesTransport = traceSettings.Transport;
             TracesPipeName = traceSettings.PipeName;
             TracesUnixDomainSocketPath = traceSettings.UdsPath;
-            AgentUriInternal = traceSettings.AgentUri;
+            AgentUri = traceSettings.AgentUri;
 
             var metricsSettings = ConfigureMetricsTransport(metricsUrl, traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
             MetricsHostname = metricsSettings.Hostname;
@@ -144,16 +144,7 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.AgentUri"/>
         /// <seealso cref="ConfigurationKeys.AgentHost"/>
         /// <seealso cref="ConfigurationKeys.AgentPort"/>
-        [PublicApi]
-        public Uri AgentUri
-        {
-            get
-            {
-                return AgentUriInternal;
-            }
-        }
-
-        internal Uri AgentUriInternal { get; }
+        public Uri AgentUri { get; }
 
 #pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>
