@@ -82,7 +82,21 @@ internal partial class ProbeExpressionParser<T>
         }
         catch (Exception e)
         {
-            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", e.Message);
+            var error = e.Message;
+            if (e is InvalidOperationException)
+            {
+                if ((left?.Type?.IsValueType == true && right?.Type?.IsValueType == false)
+                 || (right?.Type?.IsValueType == true && left?.Type?.IsValueType == false))
+                {
+                    error = "A reference type cannot be compared to a not nullable value type.";
+                    if (right is ConstantExpression { Value: null } || left is ConstantExpression { Value: null })
+                    {
+                        error += " Did you mean to compare do 'default' instead of 'null'?";
+                    }
+                }
+            }
+
+            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", error);
             return ReturnDefaultValueExpression();
         }
     }
