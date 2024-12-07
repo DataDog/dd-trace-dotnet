@@ -114,8 +114,11 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
         [NotNullWhen(true)] out T? value)
         where T : default
     {
+        Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Evaluating OTEL Key: {0}, DD Key: {1}", otelKey, datadogKey);
+        Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: OtelConfigResult.Result={0}, OtelConfigResult.IsValid={1}, OtelConfigResult.ShouldFallBack={2}, OtelConfigResult.IsPresent={3},", otelConfigResult.Result, otelConfigResult.IsValid, otelConfigResult.ShouldFallBack, otelConfigResult.IsPresent);
         if (datadogConfigResult.IsPresent && otelConfigResult.IsPresent)
         {
+            Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Both present");
             LogDuplicateConfiguration(datadogKey, otelKey);
         }
         else if (otelConfigResult is { IsPresent: true } config)
@@ -124,13 +127,16 @@ internal sealed class OverrideErrorLog : IConfigurationOverrideHandler
             {
                 {
                     value = openTelemetryValue;
+                    Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Exiting with valid OTEL Value: {0}", openTelemetryValue);
                     return true;
                 }
             }
 
+            Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Invalid OTEL Value: {0}", otelKey);
             LogInvalidConfiguration(otelKey);
         }
 
+        Console.WriteLine("IConfigurationOverrideHandler.TryHandleOverrides: Exiting");
         value = default;
         return false;
     }

@@ -369,8 +369,8 @@ namespace Datadog.Trace.Configuration
             var otelActivityListenerEnabled = config
                                              .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
                                              .AsBoolResult(
-                                                  value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-                                                               ? ParsingResult<bool>.Success(result: false)
+                                                  value => bool.TryParse(value, out var result)
+                                                               ? ParsingResult<bool>.Success(!result)
                                                                : ParsingResult<bool>.Failure());
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
