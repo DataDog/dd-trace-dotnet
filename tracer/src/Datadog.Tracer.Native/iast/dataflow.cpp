@@ -83,6 +83,7 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("DelegateDecompiler*"),
     WStr("FluentValidation*"),
     WStr("NHibernate*"),
+    WStr("Npgsql*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
