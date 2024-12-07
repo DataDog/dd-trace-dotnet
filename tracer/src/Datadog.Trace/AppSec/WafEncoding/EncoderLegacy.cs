@@ -298,23 +298,16 @@ internal class EncoderLegacy : IEncoder
     private static StringBuilder FormatList<T>(IEnumerable<T> objs, StringBuilder sb)
     {
         sb.Append("[ ");
-        using var enumerator = objs.GetEnumerator();
-        if (!enumerator.MoveNext())
-        {
-            sb.Append(" ]");
-            return sb;
-        }
 
-        if (enumerator.Current != null)
+        using var enumerator = objs.GetEnumerator();
+        var canMoveNext = enumerator.MoveNext();
+        while (canMoveNext && enumerator.Current != null)
         {
             FormatArgsInternal(enumerator.Current, sb);
-        }
-
-        while (enumerator.MoveNext())
-        {
-            if (enumerator.Current != null)
+            canMoveNext = enumerator.MoveNext();
+            if (canMoveNext)
             {
-                FormatArgsInternal(enumerator.Current, sb);
+                sb.Append(", ");
             }
         }
 

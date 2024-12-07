@@ -28,6 +28,7 @@ internal static class RCMCapabilitiesHelper
         { RcmCapabilitiesIndices.AsmRaspSsrf, new Version(1, 17) },
         { RcmCapabilitiesIndices.AsmRaspShi, new Version(1, 19) },
         { RcmCapabilitiesIndices.AsmExclusionData, new Version(1, 19) },
+        { RcmCapabilitiesIndices.AsmRaspCmd, new Version(1, 21) },
     };
 
     internal static bool WafSupportsCapability(BigInteger capability, string? wafVersion)
