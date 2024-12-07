@@ -5,9 +5,11 @@ stages:
   - shared-pipeline
   - publish
   - benchmarks
+  - macrobenchmarks
 
 include:
   - remote: https://gitlab-templates.ddbuild.io/libdatadog/include/one-pipeline.yml
+  - local: .gitlab/macrobenchmarks.yml
 
 variables:
   DOTNET_PACKAGE_VERSION:
