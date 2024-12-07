@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -125,6 +126,10 @@ namespace Datadog.Trace.Tests.Telemetry
             }
 
             public void RecordProfilerSettings(Profiler profiler)
+            {
+            }
+
+            public void RecordCiVisibilitySettings(CIVisibilitySettings settings)
             {
             }
 
