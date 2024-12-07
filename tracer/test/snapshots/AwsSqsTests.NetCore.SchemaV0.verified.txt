@@ -370,8 +370,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.name: MyAsyncSQSQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.queue.name: MyAsyncSQSQueue2,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_9,
       aws.service: SQS,
       aws_service: SQS,
@@ -381,7 +381,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      queuename: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.AWS.SQS
@@ -556,8 +556,8 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
-      aws.queue.name: MyAsyncSQSQueue,
-      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.queue.name: MyAsyncSQSQueue2,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_15,
       aws.service: SQS,
       aws_service: SQS,
@@ -567,7 +567,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/,
       language: dotnet,
-      queuename: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.AWS.SQS
