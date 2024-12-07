@@ -168,6 +168,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFramework tag, int increment = 1)
+    {
+    }
+
     public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
     }

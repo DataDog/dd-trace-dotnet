@@ -764,7 +764,17 @@
       ],
       "metric_type": "count",
       "data_type": "events",
-      "description": "Number of user events skipped due to not having a user id",
+      "description": "The library was unable to obtain a user ID as part of the login success or failure event. This should only be sent if the user login was also unavailable.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "instrum.user_auth.missing_user_login": {
+      "tags": [
+        "framework"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The library was unable to obtain a user login as part of the login success, login failure or signup event.",
       "send_to_user": false,
       "user_tags": []
     }
