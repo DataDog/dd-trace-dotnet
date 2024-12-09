@@ -1,7 +1,5 @@
 using System;
-using System.Data.SqlClient;
 using System.Data.SQLite;
-using System.Linq;
 using System.Text;
 #if NETCOREAPP
 using Npgsql;
