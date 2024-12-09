@@ -28,7 +28,7 @@ public class TelemetryFactoryTests
     public void TelemetryFactory_DisabledIfTelemetryIsDisabled()
     {
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: false, // explicitly disabled
             configurationError: null,
@@ -48,7 +48,7 @@ public class TelemetryFactoryTests
     public void TelemetryFactory_DisabledIfNoTransports()
     {
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
@@ -72,7 +72,7 @@ public class TelemetryFactoryTests
         TelemetryFactory.SetMetricsForTesting(new MetricsTelemetryCollector());
 
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
@@ -97,7 +97,7 @@ public class TelemetryFactoryTests
         TelemetryFactory.SetMetricsForTesting(new MetricsTelemetryCollector());
 
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
@@ -122,7 +122,7 @@ public class TelemetryFactoryTests
         TelemetryFactory.SetMetricsForTesting(metricsTelemetryCollector);
 
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
@@ -147,7 +147,7 @@ public class TelemetryFactoryTests
         TelemetryFactory.SetMetricsForTesting(metricsTelemetryCollector);
 
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
@@ -176,7 +176,7 @@ public class TelemetryFactoryTests
         TelemetryFactory.SetMetricsForTesting(new MetricsTelemetryCollector());
 
         var factory = TelemetryFactory.CreateFactory();
-        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog()));
+        var tracerSettings = new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance, new OverrideErrorLog());
         var settings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,

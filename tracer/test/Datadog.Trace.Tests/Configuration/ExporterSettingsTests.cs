@@ -521,7 +521,8 @@ namespace Datadog.Trace.Tests.Configuration
             var fields = type.GetFields(flags);
             foreach (var field in fields)
             {
-                field.IsInitOnly.Should().BeTrue($"{field.Name} should be read only");
+                var isReadonlyOrConstant = field.IsInitOnly || field.IsLiteral;
+                isReadonlyOrConstant.Should().BeTrue($"{field.Name} should be read only");
             }
         }
 

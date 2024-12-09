@@ -216,31 +216,30 @@ public class SettingsInstrumentationTests
     public void AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
     {
         var automatic = GetAndAssertAutomaticTracerSettings();
-        var immutable = automatic.Build();
 
         Dictionary<string, object> serializedSettings = new();
-        CtorIntegration.PopulateSettings(serializedSettings, immutable);
+        CtorIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ImmutableManualSettings(serializedSettings);
 
-        manual.AgentUri.Should().Be(immutable.Exporter.AgentUri);
-        manual.Exporter.AgentUri.Should().Be(immutable.Exporter.AgentUri);
-        manual.AnalyticsEnabled.Should().Be(immutable.AnalyticsEnabled);
-        manual.CustomSamplingRules.Should().Be(immutable.CustomSamplingRules);
-        manual.Environment.Should().Be(immutable.Environment);
-        manual.GlobalSamplingRate.Should().Be(immutable.GlobalSamplingRate);
-        manual.GlobalTags.Should().BeEquivalentTo(immutable.GlobalTags);
-        manual.HeaderTags.Should().BeEquivalentTo(immutable.HeaderTags);
-        manual.Integrations.Settings.Should().BeEquivalentTo(immutable.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
-        manual.KafkaCreateConsumerScopeEnabled.Should().Be(immutable.KafkaCreateConsumerScopeEnabled);
-        manual.LogsInjectionEnabled.Should().Be(immutable.LogsInjectionEnabled);
-        manual.MaxTracesSubmittedPerSecond.Should().Be(immutable.MaxTracesSubmittedPerSecond);
-        manual.ServiceName.Should().Be(immutable.ServiceName);
-        manual.ServiceVersion.Should().Be(immutable.ServiceVersion);
-        manual.StartupDiagnosticLogEnabled.Should().Be(immutable.StartupDiagnosticLogEnabled);
-        manual.StatsComputationEnabled.Should().Be(immutable.StatsComputationEnabled);
-        manual.TraceEnabled.Should().Be(immutable.TraceEnabled);
-        manual.TracerMetricsEnabled.Should().Be(immutable.TracerMetricsEnabled);
+        manual.AgentUri.Should().Be(automatic.Exporter.AgentUri);
+        manual.Exporter.AgentUri.Should().Be(automatic.Exporter.AgentUri);
+        manual.AnalyticsEnabled.Should().Be(automatic.AnalyticsEnabled);
+        manual.CustomSamplingRules.Should().Be(automatic.CustomSamplingRules);
+        manual.Environment.Should().Be(automatic.Environment);
+        manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
+        manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
+        manual.HeaderTags.Should().BeEquivalentTo(automatic.HeaderTags);
+        manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
+        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.KafkaCreateConsumerScopeEnabled);
+        manual.LogsInjectionEnabled.Should().Be(automatic.LogsInjectionEnabled);
+        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MaxTracesSubmittedPerSecond);
+        manual.ServiceName.Should().Be(automatic.ServiceName);
+        manual.ServiceVersion.Should().Be(automatic.ServiceVersion);
+        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.StartupDiagnosticLogEnabled);
+        manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
+        manual.TraceEnabled.Should().Be(automatic.TraceEnabled);
+        manual.TracerMetricsEnabled.Should().Be(automatic.TracerMetricsEnabled);
     }
 
     private static void AssertEquivalent(ManualSettings manual, TracerSettings automatic)
