@@ -41,6 +41,7 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(
     _useBacktrace2{configuration->UseBacktrace2()},
     _ex{nullptr}
 {
+    // test
     if (_signalManager != nullptr)
     {
         _signalManager->RegisterHandler(LinuxStackFramesCollector::CollectStackSampleSignalHandler);
