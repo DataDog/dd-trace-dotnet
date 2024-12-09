@@ -17,12 +17,12 @@ namespace Datadog.Trace.Iast.Propagation;
 
 internal static class DefaultInterpolatedStringHandlerModuleImpl
 {
-    public static unsafe void Append(IntPtr target, string? value)
+    public static void Append(IntPtr target, string? value)
     {
         FullTaintIfAnyTainted(target, value);
     }
 
-    public static unsafe void FullTaintIfAnyTainted(IntPtr target, string? input)
+    public static void FullTaintIfAnyTainted(IntPtr target, string? input)
     {
         try
         {
@@ -64,7 +64,7 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         }
     }
 
-    public static object? PropagateTaint(object? input, string? result)
+    public static void PropagateTaint(IntPtr? input, string? result)
     {
         try
         {
@@ -72,21 +72,21 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
 
             if (result is null || input is null)
             {
-                return result;
+                return;
             }
 
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
             {
-                return result;
+                return;
             }
 
             var taintedObjects = iastContext.GetTaintedObjects();
-            var taintedSelf = taintedObjects.Get(input);
+            var taintedSelf = taintedObjects.Pop(input);
 
             if (taintedSelf == null)
             {
-                return result;
+                return;
             }
 
             var range = new Range(0, result.Length, taintedSelf.Ranges[0].Source, taintedSelf.Ranges[0].SecureMarks);
@@ -96,8 +96,6 @@ internal static class DefaultInterpolatedStringHandlerModuleImpl
         {
             IastModule.Log.Error(err, $"{nameof(DefaultInterpolatedStringHandlerModuleImpl)}.{nameof(PropagateTaint)} exception");
         }
-
-        return result;
     }
 
     private static TaintedObject? GetTaintedWithRanges(TaintedObjects taintedObjects, object? value)
