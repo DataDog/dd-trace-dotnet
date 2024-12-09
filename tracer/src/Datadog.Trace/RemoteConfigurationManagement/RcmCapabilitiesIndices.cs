@@ -81,6 +81,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static readonly BigInteger AsmHeaderFingerprint = Create(35);
 
+        public static readonly BigInteger AsmTruncationRules = Create(36);
+
+        public static readonly BigInteger AsmRaspCmd = Create(37);
+
         private static BigInteger Create(int index) => new(1UL << index);
     }
 }

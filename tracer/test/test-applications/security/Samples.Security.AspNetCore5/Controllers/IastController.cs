@@ -279,19 +279,11 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 if (!string.IsNullOrEmpty(file))
                 {
-                    Process result;
-                    if (fromShell)
-                    {
-                        ProcessStartInfo startInfo = new ProcessStartInfo();
-                        startInfo.FileName = file;
-                        startInfo.Arguments = argumentLine;
-                        startInfo.UseShellExecute = true;
-                        result = Process.Start(startInfo);
-                    }
-                    else
-                    {
-                        result = Process.Start(file, argumentLine);
-                    }
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.FileName = file;
+                    startInfo.Arguments = argumentLine;
+                    startInfo.UseShellExecute = fromShell;
+                    var result = Process.Start(startInfo);
 
                     return Content($"Process launched: " + result.ProcessName);
                 }

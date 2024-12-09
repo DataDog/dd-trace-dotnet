@@ -17,7 +17,7 @@ internal static partial class RaspRuleTypeExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 4;
+    public const int Length = 5;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType"/> value.
@@ -33,7 +33,8 @@ internal static partial class RaspRuleTypeExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi => "waf_version;rule_type:lfi",
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf => "waf_version;rule_type:ssrf",
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.SQlI => "waf_version;rule_type:sql_injection",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjection => "waf_version;rule_type:command_injection",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionShell => "waf_version;rule_type:command_injection;rule_variant:shell",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionExec => "waf_version;rule_type:command_injection;rule_variant:exec",
             _ => value.ToString(),
         };
 
@@ -50,7 +51,8 @@ internal static partial class RaspRuleTypeExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi,
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf,
             Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.SQlI,
-            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjection,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionShell,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionExec,
         };
 
     /// <summary>
@@ -67,7 +69,8 @@ internal static partial class RaspRuleTypeExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Lfi),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.Ssrf),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.SQlI),
-            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjection),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionShell),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType.CommandInjectionExec),
         };
 
     /// <summary>
@@ -84,6 +87,7 @@ internal static partial class RaspRuleTypeExtensions
             "waf_version;rule_type:lfi",
             "waf_version;rule_type:ssrf",
             "waf_version;rule_type:sql_injection",
-            "waf_version;rule_type:command_injection",
+            "waf_version;rule_type:command_injection;rule_variant:shell",
+            "waf_version;rule_type:command_injection;rule_variant:exec",
         };
 }

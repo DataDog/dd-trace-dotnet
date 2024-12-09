@@ -51,20 +51,21 @@ public class WafLibraryRequiredTest : SettingsTestsBase
         return CreateConfigurationState(creation: false, ruleFile, ruleOverrides, rulesData, ruleSet, actions);
     }
 
-    internal InitResult CreateWaf(bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false)
+    internal InitResult CreateWaf(bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false, bool wafDebugEnabled = false)
     {
         var configurationState = CreateConfigurationState(ruleFile);
-        return CreateWaf(configurationState, useUnsafeEncoder, ruleFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, expectWafNull);
+        return CreateWaf(configurationState, useUnsafeEncoder, ruleFile, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, expectWafNull, wafDebugEnabled);
     }
 
-    internal InitResult CreateWaf(ConfigurationState configurationState, bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false)
+    internal InitResult CreateWaf(ConfigurationState configurationState, bool useUnsafeEncoder = false, string? ruleFile = null, string? obfuscationParameterKeyRegex = null, string? obfuscationParameterValueRegex = null, bool expectWafNull = false, bool wafDebugEnabled = false)
     {
         var initResult = Waf.Create(
             WafLibraryInvoker!,
             obfuscationParameterKeyRegex ?? string.Empty,
             obfuscationParameterValueRegex ?? string.Empty,
             configurationState,
-            useUnsafeEncoder: useUnsafeEncoder);
+            useUnsafeEncoder: useUnsafeEncoder,
+            wafDebugEnabled: wafDebugEnabled);
         initResult.Should().NotBeNull();
         if (expectWafNull)
         {
