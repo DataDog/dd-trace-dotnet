@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
+                HeaderTags = headerTags,
                 // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
                 GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
             };
@@ -99,7 +99,8 @@ namespace Datadog.Trace.Configuration
 
             Log.Information("Applying new dynamic configuration");
 
-            var newSettings = oldSettings with { DynamicSettings = dynamicSettings };
+            // TODO: fix this again to make dynamic settings work
+            var newSettings = oldSettings; // with { DynamicSettings = dynamicSettings };
 
             /*
             if (debugLogsEnabled != null && debugLogsEnabled.Value != GlobalSettings.Instance.DebugEnabled)

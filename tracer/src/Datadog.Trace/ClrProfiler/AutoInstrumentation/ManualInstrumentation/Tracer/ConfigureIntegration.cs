@@ -51,6 +51,6 @@ public class ConfigureIntegration
         var settings = new TracerSettings(source, new ConfigurationTelemetry(), new OverrideErrorLog());
 
         // Update the global instance
-        Trace.Tracer.ConfigureInternal(new ImmutableTracerSettings(settings, true));
+        Trace.Tracer.ConfigureInternal(settings);
     }
 }

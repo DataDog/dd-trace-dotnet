@@ -59,13 +59,13 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public static TelemetryFactory CreateFactory() => new();
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
+        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService)
             => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable: null), discoveryService, useCiVisibilityTelemetry: false);
 
-        public ITelemetryController CreateCiVisibilityTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable)
+        public ITelemetryController CreateCiVisibilityTelemetryController(TracerSettings tracerSettings, IDiscoveryService discoveryService, bool isAgentAvailable)
             => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings, isAgentAvailable), discoveryService, useCiVisibilityTelemetry: true);
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
+        public ITelemetryController CreateTelemetryController(TracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
         {
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();

@@ -1080,17 +1080,6 @@ namespace Datadog.Trace.Configuration
         internal static TracerSettings FromDefaultSourcesInternal()
             => new(GlobalConfigurationSource.Instance, new ConfigurationTelemetry(), new());
 
-        /// <summary>
-        /// Create an instance of <see cref="ImmutableTracerSettings"/> that can be used to build a <see cref="Tracer"/>
-        /// </summary>
-        /// <returns>The <see cref="ImmutableTracerSettings"/> that can be passed to a <see cref="Tracer"/> instance</returns>
-        [PublicApi]
-        public ImmutableTracerSettings Build()
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Build);
-            return new ImmutableTracerSettings(this, true);
-        }
-
         internal static ReadOnlyDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
             var mappings = config
