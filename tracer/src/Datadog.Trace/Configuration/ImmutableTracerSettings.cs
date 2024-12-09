@@ -138,6 +138,7 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
 
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
+            IsDataStreamsLegacyHeadersEnabled = settings.IsDataStreamsLegacyHeadersEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
@@ -526,6 +527,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
+
+        /// <summary>
+        /// Gets a value indicating whether data streams monitoring legacy headers are enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsLegacyHeadersEnabled { get; }
 
         /// <summary>
         /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
