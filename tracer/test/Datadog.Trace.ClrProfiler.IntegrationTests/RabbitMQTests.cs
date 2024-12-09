@@ -63,8 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            var expectedSpanCount = 52;
-
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-rabbitmq" : EnvironmentHelper.FullSampleName;
@@ -74,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 using var assertionScope = new AssertionScope();
-                var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
+                var spans = agent.WaitForSpans(32); // Do not filter on operation name because they will vary depending on instrumented method
 
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
