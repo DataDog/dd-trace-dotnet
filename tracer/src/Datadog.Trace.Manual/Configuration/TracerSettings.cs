@@ -471,7 +471,9 @@ public sealed class TracerSettings
 
         // Always set
         results[TracerSettingKeyConstants.IsFromDefaultSourcesKey] = _isFromDefaultSources;
-        if (BuildIntegrationSettings(Integrations) is { } integrations)
+        // We include both the "legacy" way of specifying the integration changes
+        // as well as the "new" way, so that we are both backward and forward compatible
+        if (BuildIntegrationSettings(Integrations, results) is { } integrations)
         {
             results[TracerSettingKeyConstants.IntegrationSettingsKey] = integrations;
         }
@@ -549,24 +551,26 @@ public sealed class TracerSettings
             }
         }
 
-        static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
+        static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings, Dictionary<string, object?> results)
         {
             if (settings.Settings.Count == 0)
             {
                 return null;
             }
 
-            var results = new Dictionary<string, object?[]>(settings.Settings.Count, StringComparer.OrdinalIgnoreCase);
+            var integrationArrays = new Dictionary<string, object?[]>(settings.Settings.Count, StringComparer.OrdinalIgnoreCase);
             foreach (var pair in settings.Settings)
             {
                 var setting = pair.Value;
                 if (setting.GetChangeDetails() is { } changes)
                 {
-                    results[setting.IntegrationName] = changes;
+                    integrationArrays[setting.IntegrationName] = changes;
+                    // set the values that have changed explicitly using the "new" way
+                    setting.RecordChangedKeys(results);
                 }
             }
 
-            return results;
+            return integrationArrays;
         }
     }
 }
