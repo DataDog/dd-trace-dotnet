@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
 
-        public RareSampler(ImmutableTracerSettings settings)
+        public RareSampler(TracerSettings settings)
         {
             IsEnabled = settings.IsRareSamplerEnabled;
         }
