@@ -25,15 +25,14 @@ namespace Sample {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgxzYW1wbGUucHJvdG8SBnNhbXBsZRofZ29vZ2xlL3Byb3RvYnVmL3RpbWVz",
-            "dGFtcC5wcm90byLAAgoGUGVyc29uEgwKBG5hbWUYASABKAkSCgoCaWQYAiAB",
+            "dGFtcC5wcm90byKUAgoGUGVyc29uEgwKBG5hbWUYASABKAkSCgoCaWQYAiAB",
             "KAUSDQoFZW1haWwYAyABKAkSKgoGcGhvbmVzGAQgAygLMhouc2FtcGxlLlBl",
             "cnNvbi5QaG9uZU51bWJlchIwCgxsYXN0X3VwZGF0ZWQYBSABKAsyGi5nb29n",
             "bGUucHJvdG9idWYuVGltZXN0YW1wGkUKC1Bob25lTnVtYmVyEg4KBm51bWJl",
             "chgBIAEoCRImCgR0eXBlGAIgASgOMhguc2FtcGxlLlBlcnNvbi5QaG9uZVR5",
-            "cGUiaAoJUGhvbmVUeXBlEhoKFlBIT05FX1RZUEVfVU5TUEVDSUZJRUQQABIV",
-            "ChFQSE9ORV9UWVBFX01PQklMRRABEhMKD1BIT05FX1RZUEVfSE9NRRACEhMK",
-            "D1BIT05FX1RZUEVfV09SSxADIi0KC0FkZHJlc3NCb29rEh4KBnBlb3BsZRgB",
-            "IAMoCzIOLnNhbXBsZS5QZXJzb25iBnByb3RvMw=="));
+            "cGUiPAoJUGhvbmVUeXBlEg8KC1VOU1BFQ0lGSUVEEAASCgoGTU9CSUxFEAES",
+            "CAoESE9NRRACEggKBFdPUksQAyItCgtBZGRyZXNzQm9vaxIeCgZwZW9wbGUY",
+            "ASADKAsyDi5zYW1wbGUuUGVyc29uYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
@@ -393,10 +392,10 @@ namespace Sample {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static partial class Types {
       public enum PhoneType {
-        [pbr::OriginalName("PHONE_TYPE_UNSPECIFIED")] Unspecified = 0,
-        [pbr::OriginalName("PHONE_TYPE_MOBILE")] Mobile = 1,
-        [pbr::OriginalName("PHONE_TYPE_HOME")] Home = 2,
-        [pbr::OriginalName("PHONE_TYPE_WORK")] Work = 3,
+        [pbr::OriginalName("UNSPECIFIED")] Unspecified = 0,
+        [pbr::OriginalName("MOBILE")] Mobile = 1,
+        [pbr::OriginalName("HOME")] Home = 2,
+        [pbr::OriginalName("WORK")] Work = 3,
       }
 
       [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]

@@ -22,16 +22,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     ParameterTypeNames = ["Google.Protobuf.CodedInputStream"],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
-    IntegrationName = "Protobuf",
+    IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MessageMergeFromIntegration
 {
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
+    internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
         where TTarget : IMessageProxy
     {
         SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
-        return CallTargetReturn.GetDefault();
+        return CallTargetState.GetDefault();
     }
 }
