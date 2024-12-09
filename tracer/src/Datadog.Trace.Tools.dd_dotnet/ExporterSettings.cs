@@ -21,8 +21,6 @@ public partial class ExporterSettings
     private readonly Func<string, bool> _fileExists = File.Exists;
     private readonly DummyTelemetry _telemetry = new();
 
-    private Uri _agentUri;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ExporterSettings"/> class.
     /// </summary>
@@ -37,7 +35,11 @@ public partial class ExporterSettings
 
         int.TryParse(agentPortStr, out var agentPort);
 
-        ConfigureTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
+        var traceSettings = GetTraceTransport(agentUri, tracePipeName, agentHost, agentPort, unixDomainSocketPath);
+        TracesTransport = traceSettings.Transport;
+        TracesPipeName = traceSettings.PipeName;
+        TracesUnixDomainSocketPath = traceSettings.UdsPath;
+        AgentUri = traceSettings.AgentUri;
     }
 
     /// <summary>
@@ -46,7 +48,11 @@ public partial class ExporterSettings
     /// <param name="agentUri">Agent URI</param>
     public ExporterSettings(string agentUri)
     {
-        ConfigureTraceTransport(agentUri, null, null, null, null);
+        var traceSettings = GetTraceTransport(agentUri, null, null, null, null);
+        TracesTransport = traceSettings.Transport;
+        TracesPipeName = traceSettings.PipeName;
+        TracesUnixDomainSocketPath = traceSettings.UdsPath;
+        AgentUri = traceSettings.AgentUri;
     }
 
     internal enum TelemetryErrorCode
@@ -54,15 +60,15 @@ public partial class ExporterSettings
         PotentiallyInvalidUdsPath
     }
 
-    internal Uri AgentUri => _agentUri;
+    internal Uri AgentUri { get; }
 
-    private List<string> ValidationWarnings { get; set; } = new();
+    private List<string> ValidationWarnings { get; } = new();
 
-    internal TracesTransportType TracesTransport { get; private set; }
+    internal TracesTransportType TracesTransport { get;  }
 
-    internal string? TracesPipeName { get; private set; }
+    internal string? TracesPipeName { get; }
 
-    internal string? TracesUnixDomainSocketPath { get; private set; }
+    internal string? TracesUnixDomainSocketPath { get; }
 
     private static string? GetValue(IConfigurationSource? configuration, params string[] keys)
     {
