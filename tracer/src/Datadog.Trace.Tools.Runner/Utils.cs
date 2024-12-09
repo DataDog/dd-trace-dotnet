@@ -406,8 +406,7 @@ namespace Datadog.Trace.Tools.Runner
             configurationSource.Add(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
             configurationSource.Add(GlobalConfigurationSource.Instance);
 
-            var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
-            var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
+            var settings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
 
             Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Exporter.AgentUri);
             var discoveryService = DiscoveryService.Create(
@@ -425,7 +424,7 @@ namespace Datadog.Trace.Tools.Runner
             using (cts.Token.Register(
                        () =>
                        {
-                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
+                           WriteError($"Error connecting to the Datadog Agent at {settings.Exporter.AgentUri}.");
                            tcs.TrySetResult(null);
                        }))
             {

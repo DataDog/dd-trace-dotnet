@@ -25,7 +25,7 @@ internal class ApmAgentWriter : IEventWriter
     private static Span[]? _spanArray;
     private readonly AgentWriter _agentWriter;
 
-    public ApmAgentWriter(ImmutableTracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
+    public ApmAgentWriter(TracerSettings settings, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
     {
         var partialFlushEnabled = settings.Exporter.PartialFlushEnabled;
         var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
