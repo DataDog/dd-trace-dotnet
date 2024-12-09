@@ -129,21 +129,6 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "false";
-            }
-            else
-            {
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "true";
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
             Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
@@ -203,21 +188,6 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "false";
-            }
-            else
-            {
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "true";
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
             Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
