@@ -29,7 +29,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
     [InlineData("MySql.Data")]
-    [InlineData("Oracle")]
+    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
     public async Task TestIastStoredXssRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -69,7 +69,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
     [InlineData("MySql.Data")]
-    [InlineData("Oracle")]
+    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
 #if NETCOREAPP3_0
@@ -105,7 +105,7 @@ public class AspNetCore5IastDbTests : AspNetCore5IastTests
     [InlineData("System.Data.SqlClient")]
     [InlineData("Npgsql")]
     [InlineData("MySql.Data")]
-    [InlineData("Oracle")]
+    // [InlineData("Oracle")] // This test requires the Oracle DB image, which is huge (8GB unpacked), so we cannot enable it without taking precautionary measures.
     public async Task TestIastStoredSqliRequest(string database)
     {
 #if NETCOREAPP3_0

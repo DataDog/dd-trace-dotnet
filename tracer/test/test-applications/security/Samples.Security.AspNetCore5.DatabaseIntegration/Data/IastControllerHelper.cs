@@ -136,19 +136,34 @@ namespace Samples.Security.Data
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
                                    @"Server=localhost;User Id=sa;Password=Strong!Passw0rd;";
 
-            var connection = new SqlConnection("Server=localhost;User Id=sa;Password=Strong!Passw0rd;");
-            connection.Open();
-
-            foreach (var command in SqlServerTables)
+            int numAttempts = 3;
+            for (int i = 0; i < numAttempts; i++)
             {
-                new SqlCommand(command, connection).ExecuteNonQuery();
-            }
-            foreach (var command in PopulateCommands)
-            {
-                new SqlCommand(command, connection).ExecuteNonQuery();
+                SqlConnection connection = null;
+                try
+                {
+                    connection =new SqlConnection(connectionString);
+                    connection.Open();
+
+                    foreach (var command in SqlServerTables)
+                    {
+                        new SqlCommand(command, connection).ExecuteNonQuery();
+                    }
+                    foreach (var command in PopulateCommands)
+                    {
+                        new SqlCommand(command, connection).ExecuteNonQuery();
+                    }
+                    return connection;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    connection?.Dispose();
+                }
+
             }
 
-            return connection;
+            throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
         }
 
         public static SQLiteConnection CreateSystemDataDatabase()
