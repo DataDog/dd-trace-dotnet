@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.ManualInstrumentation;
 public class DuckTypingTests
 {
     private readonly AsyncLocalScopeManager _scopeManager = new();
-    private readonly TracerSettings _settings = new() { StartupDiagnosticLogEnabled = false };
+    private readonly TracerSettings _settings = TracerSettings.Create(new() { { ConfigurationKeys.StartupDiagnosticLogEnabled, false } });
     private readonly Tracer _tracer;
 
     public DuckTypingTests()
