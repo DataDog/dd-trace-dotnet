@@ -34,6 +34,8 @@ using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
 using Logger = Serilog.Log;
+using Nuke.Common.Utilities;
+using OpenAI;
 
 partial class Build
 {
@@ -42,6 +44,9 @@ partial class Build
 
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
+
+    [Parameter("A OpenAI key", Name = "OPEN_AI_KEY")]
+    readonly string OpenAIKey;
 
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
@@ -93,6 +98,95 @@ partial class Build
 
             Console.WriteLine($"PR assigned");
         });
+
+    Target LLMReport => _ => _
+           .Unlisted()
+           .Requires(() => GitHubRepositoryName)
+           .Requires(() => GitHubToken)
+           .Requires(() => OpenAIKey)
+           .Requires(() => PullRequestNumber)
+           .Executes(async () =>
+           {
+               await GenerateLLMReport(false);
+           });
+
+    Target LLMLocalReport => _ => _
+       .Unlisted()
+       .Requires(() => GitHubRepositoryName)
+       .Requires(() => GitHubToken)
+       .Requires(() => OpenAIKey)
+       .Requires(() => PullRequestNumber)
+       .Executes(async () =>
+       {
+           await GenerateLLMReport(true);
+       });
+
+    private async Task GenerateLLMReport(bool executeLocal = true)
+    {
+        bool includeDescription = false;
+        var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
+        var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
+        var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
+
+        string result = string.Empty;
+        var client = GetGitHubClient();
+
+        var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+        var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
+
+        var descriptionPrompt = includeDescription ? " The body of the PR is: " + pullRequest.Body + Environment.NewLine : string.Empty;
+
+        string changesText = string.Empty;
+        foreach (var file in pullRequestFiles)
+        {
+            if (!extensionsToReview.Any(ext => file.FileName.EndsWith(ext)) || excludePath.Any(x => file.FileName.Contains(x, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            changesText += ($"Filename: {file.FileName}" + Environment.NewLine + ($"{file.Patch}") + Environment.NewLine + Environment.NewLine);
+        }
+
+        if (string.IsNullOrEmpty(changesText))
+        {
+            result = "No changes detected.";
+        }
+        else if (string.IsNullOrEmpty(OpenAIKey))
+        {
+            result = "Null or empty OpenAI key.";
+        }
+        else
+        {
+            var fullPrompt = prompt + descriptionPrompt + changesText;
+
+            result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
+
+            if (executeLocal)
+            {
+                File.WriteAllText("changes.txt", fullPrompt);
+            }
+        }
+
+        Console.WriteLine(result);
+
+        if (string.IsNullOrEmpty(result))
+        {
+            Console.WriteLine("Error in OpenAI's response");
+            result = "Error in OpenAI's response";
+        }
+
+        var llmReport = new StringBuilder();
+        llmReport.AppendLine("## LLM Report").AppendLine(result).AppendLine();
+
+        if (executeLocal)
+        {
+            File.WriteAllText("LLMResult.txt", llmReport.ToString());
+        }
+        else
+        {
+            await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## LLM Report", llmReport.ToString());
+        }
+    }
 
     Target SummaryOfSnapshotChanges => _ => _
            .Unlisted()
