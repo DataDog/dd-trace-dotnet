@@ -362,7 +362,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
                 }
                 catch (Exception e)
                 {

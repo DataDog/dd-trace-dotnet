@@ -402,16 +402,16 @@ namespace Datadog.Trace.Tools.Runner
                 env[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
-            var configurationSource = new CompositeConfigurationSourceInternal();
-            configurationSource.AddInternal(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
-            configurationSource.AddInternal(GlobalConfigurationSource.Instance);
+            var configurationSource = new CompositeConfigurationSource();
+            configurationSource.Add(new NameValueConfigurationSource(env, ConfigurationOrigins.EnvVars));
+            configurationSource.Add(GlobalConfigurationSource.Instance);
 
             var tracerSettings = new TracerSettings(configurationSource, new ConfigurationTelemetry(), new OverrideErrorLog());
             var settings = new ImmutableTracerSettings(tracerSettings, unusedParamNotToUsePublicApi: true);
 
-            Log.Debug("Creating DiscoveryService for: {AgentUriInternal}", settings.ExporterInternal.AgentUriInternal);
+            Log.Debug("Creating DiscoveryService for: {AgentUri}", settings.Exporter.AgentUri);
             var discoveryService = DiscoveryService.Create(
-                settings.ExporterInternal,
+                settings.Exporter,
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,
@@ -425,7 +425,7 @@ namespace Datadog.Trace.Tools.Runner
             using (cts.Token.Register(
                        () =>
                        {
-                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.ExporterInternal.AgentUriInternal}.");
+                           WriteError($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUriInternal}.");
                            tcs.TrySetResult(null);
                        }))
             {
