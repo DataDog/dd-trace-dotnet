@@ -27,6 +27,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("RabbitMQ", output)
         {
             SetServiceVersion("1.0.0");
+            SetSecurity(true);
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+            SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+            SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+            SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
