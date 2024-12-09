@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
@@ -39,6 +40,8 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerManagerFactory>();
 
         public static readonly TracerManagerFactory Instance = new();
+
+        private bool _dataPipelineEnabled = true;
 
         /// <summary>
         /// The primary factory method, called by <see cref="TracerManager"/>,
@@ -342,11 +345,23 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, updateSampleRates, settings.Exporter.PartialFlushEnabled);
+            var api = GetApi(settings, statsd, updateSampleRates, apiRequestFactory, settings.Exporter.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, appsecStandaloneEnabled: settings.AppsecStandaloneEnabledInternal);
+        }
+
+        private IApi GetApi(ImmutableTracerSettings settings, IDogStatsd statsd, Action<Dictionary<string, float>> updateSampleRates, IApiRequestFactory apiRequestFactory, bool partialFlushEnabled)
+        {
+            // TODO: This is a temporary solution to enable the data pipeline for the .NET tracer.
+            // This needs to come from the configuration ideally only on Azure App Service to start with.
+            if (_dataPipelineEnabled)
+            {
+                return new TraceExporter(settings);
+            }
+
+            return new Api(apiRequestFactory, statsd, updateSampleRates, partialFlushEnabled);
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
