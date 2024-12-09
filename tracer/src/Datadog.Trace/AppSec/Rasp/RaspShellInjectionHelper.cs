@@ -43,10 +43,7 @@ internal static class RaspShellInjectionHelper
 
         if (argumentList is { Count: > 0 })
         {
-            var result = new string[argumentList.Count + 1];
-            result[0] = file;
-            argumentList.CopyTo(result, 1);
-            return result;
+            return [file, ..argumentList];
         }
 
         return !string.IsNullOrEmpty(argumentLine) ? [file, argumentLine] : [file];
