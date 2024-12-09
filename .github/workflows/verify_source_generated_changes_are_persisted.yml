@@ -22,7 +22,7 @@ jobs:
           dotnet-version: '9.0.100'
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 BuildManagedTracerHome
+        run: .\tracer\build.ps1 Restore CompileManagedSrc
 
       - name: "Verify no changes in generated files"
         run: |
