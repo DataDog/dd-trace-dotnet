@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (s => s.Exporter.DogStatsdPort, 8125);
             yield return (s => s.PropagationStyleInject, new[] { "Datadog", "tracecontext", "baggage" });
             yield return (s => s.PropagationStyleExtract, new[] { "Datadog", "tracecontext", "baggage" });
-            yield return (s => s.ServiceNameMappings, null);
+            yield return (s => s.ServiceNameMappings, new string[0]);
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, false);

@@ -64,7 +64,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
@@ -83,7 +82,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
@@ -104,7 +102,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
@@ -209,7 +206,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void Environment(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Environment, value));
@@ -224,7 +221,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("test", "error", "ignored_otel", "test")]
         [InlineData(null, "test", null, "test")]
         [InlineData(null, "test", "ignored_otel", "test")]
-        [InlineData("", "test", "ignored_otel", "")]
+        [InlineData("", "test", "ignored_otel", null)]
         [InlineData(null, null, "otel", "otel")]
         [InlineData(null, null, null, null)]
         public void ServiceName(string value, string legacyValue, string otelValue, string expected)
@@ -246,7 +243,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void ServiceVersion(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceVersion, value));
@@ -256,7 +253,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitCommitSha(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
@@ -266,7 +263,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitRepositoryUrl(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
@@ -430,7 +427,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("invalid", new string[0])]
-        [InlineData(null, null)]
+        [InlineData(null, new string[0])]
         [InlineData("", new string[0])]
         public void ServiceNameMappings(string value, string[] expected)
         {
