@@ -1497,6 +1497,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
 
     const auto& module_info = GetModuleInfo(this->info_, module_id);
+    if (!module_info.IsValid())
+    {
+        return S_OK;
+    }
 
     bool has_loader_injected_in_appdomain =
         first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
@@ -4375,6 +4379,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     const auto& module_info = GetModuleInfo(this->info_, module_id);
+    if (!module_info.IsValid())
+    {
+        return S_OK;
+    }
+
     const auto& appDomainId = module_info.assembly.app_domain_id;
 
     const bool has_loader_injected_in_appdomain =
