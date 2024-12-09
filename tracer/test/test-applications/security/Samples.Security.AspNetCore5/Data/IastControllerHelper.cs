@@ -1,12 +1,7 @@
 using System;
-using System.Data.SqlClient;
 using System.Data.SQLite;
-using System.Linq;
 using System.Text;
-using MySql.Data.MySqlClient;
-using Npgsql;
 #if !NETFRAMEWORK
-using Oracle.ManagedDataAccess.Client;
 using Microsoft.Data.Sqlite;
 #endif
 
