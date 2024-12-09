@@ -26,5 +26,4 @@
         <!-- Target base name to use for artifact produced by C++ project -->
         <ProfilerEngineNativeTarget>Datadog.Profiler.Native</ProfilerEngineNativeTarget>
     </PropertyGroup>
-
 </Project>

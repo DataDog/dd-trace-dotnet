@@ -1,0 +1,11 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "shared-dependencies",
+    "version": "1.0.0",
+    "description": "Shared dependencies for multiple projects.",
+    "dependencies": [
+        {
+            "name": "libdatadog"
+        }
+    ]
+}

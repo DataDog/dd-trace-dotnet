@@ -69,8 +69,6 @@ int32_t CrashReporting::Initialize()
         return 1;
     }
 
-#ifdef LINUX
-    // temporary: will remove it when windows will target libdatadog >= 14.3.0
     auto otherResult = ddog_crasht_CrashInfo_set_procinfo(&_crashInfo, { _pid });
 
     if (otherResult.tag == DDOG_CRASHT_RESULT_ERR)
@@ -78,7 +76,6 @@ int32_t CrashReporting::Initialize()
         SetLastError(otherResult.err);
         return 1;
     }
-#endif
 
     return AddTag("severity", "crash");
 }
