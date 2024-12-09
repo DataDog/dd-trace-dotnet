@@ -27,7 +27,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
+    public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
 
@@ -234,16 +234,6 @@ namespace Datadog.Trace
         /// </summary>
         PerTraceSettings IDatadogTracer.PerTraceSettings => TracerManager.PerTraceSettings;
 
-        /// <summary>
-        /// Gets the active scope
-        /// </summary>
-        IScope ITracer.ActiveScope => ActiveScope;
-
-        /// <summary>
-        /// Gets this tracer's settings.
-        /// </summary>
-        ImmutableTracerSettings ITracer.Settings => Settings;
-
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
         internal static int LiveTracerCount => _liveTracerCount;
@@ -296,25 +286,6 @@ namespace Datadog.Trace
             }
 
             instance?.TracerManager.Start();
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            return StartActiveInternal(operationName);
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            var finishOnClose = settings.FinishOnClose ?? true;
-            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 
         /// <summary>
