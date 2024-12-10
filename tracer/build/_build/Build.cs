@@ -205,7 +205,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
@@ -218,7 +218,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
 
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -371,7 +371,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
+        .DependsOn(CreateRequiredDirectories, CreateTrimmingFile)
         .Executes(() =>
         {
             DotNetPack(s => s

@@ -2437,8 +2437,8 @@ partial class Build
             Logger.Information("File ordered and saved: {File}", csvFilePath);
         });
 
-    Target CreateRootDescriptorsFile => _ => _
-       .Description("Create RootDescriptors.xml file")
+    Target CreateTrimmingFile => _ => _
+       .Description("Create Datadog.Trace.Trimming.xml file")
        .DependsOn(CompileManagedSrc)
        .Executes(() =>
         {
