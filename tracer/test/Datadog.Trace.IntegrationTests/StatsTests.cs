@@ -47,18 +47,14 @@ namespace Datadog.Trace.IntegrationTests
             var year2KDateTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
+                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.ServiceName, "default-service" },
+                { ConfigurationKeys.ServiceVersion, "v1" },
+                { ConfigurationKeys.Environment, "test" },
+                { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+            });
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
@@ -195,18 +191,14 @@ namespace Datadog.Trace.IntegrationTests
         public async Task SendsStatsWithProcessing_Obfuscator()
         {
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                StatsComputationEnabled = true,
-                ServiceName = "default-service",
-                ServiceVersion = "v1",
-                Environment = "test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
+                { ConfigurationKeys.StatsComputationEnabled, true },
+                { ConfigurationKeys.ServiceName, "default-service" },
+                { ConfigurationKeys.ServiceVersion, "v1" },
+                { ConfigurationKeys.Environment, "test" },
+                { ConfigurationKeys.AgentUri, $"http://localhost:{agent.Port}" },
+            });
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);

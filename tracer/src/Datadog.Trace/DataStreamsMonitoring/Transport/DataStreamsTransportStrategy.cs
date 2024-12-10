@@ -11,7 +11,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 
 internal static class DataStreamsTransportStrategy
 {
-    public static IApiRequestFactory GetAgentIntakeFactory(ImmutableExporterSettings settings)
+    public static IApiRequestFactory GetAgentIntakeFactory(ExporterSettings settings)
         => AgentTransportStrategy.Get(
             settings,
             productName: "data streams monitoring",
