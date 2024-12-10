@@ -211,13 +211,18 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         ucontext_t* cctx = reinterpret_cast<ucontext_t*>(ctx);
         ucontext_t context;
         // TODO check if callstack reuse is enabled it's enabled
-        auto wasInWrapper = _pCurrentCollectionThreadInfo->IsExecutingWrapper(*cctx);
-        if (GetStackSnapshotResult()->CanReuseCallstack() && cctx != nullptr && wasInWrapper)
+        auto wasInWrapper = false;
+        if (cctx != nullptr && GetStackSnapshotResult()->CanReuseCallstack())
         {
-            context = *reinterpret_cast<ucontext_t*>(cctx);
-            _pCurrentCollectionThreadInfo->RestoreContext(context);
-            cctx = &context;
+            wasInWrapper = _pCurrentCollectionThreadInfo->IsExecutingWrapper(*cctx);
+            if (wasInWrapper)
+            {
+                context = *reinterpret_cast<ucontext_t*>(cctx);
+                _pCurrentCollectionThreadInfo->RestoreContext(context);
+                cctx = &context;
+            }
         }
+
         auto result = _useBacktrace2 ? CollectStackWithBacktrace2(cctx) : CollectStackManually(cctx);
         if (!wasInWrapper && GetStackSnapshotResult()->CanReuseCallstack() && cctx != nullptr && result == S_OK)
         {
