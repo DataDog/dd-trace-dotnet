@@ -76,6 +76,8 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.AuthenticationHttpContextExtensionsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreBlockMiddlewareIntegrationEnd"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.HttpContextSetUser"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.HttpContextSetUser"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.SignInManagerPasswordSignInUserIntegration"
