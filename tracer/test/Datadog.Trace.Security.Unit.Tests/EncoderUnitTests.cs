@@ -181,7 +181,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
     [SkippableTheory]
     [InlineData(new object[] { "a", 3, new object[] { "b", 6 }, 44 }, "[ a, 3, [ b, 6 ], 44 ]")]
-    [InlineData(new object[] { "aba", "3", new object[] { new object[] { "w" }, "e" },  }, "[ aba, 3, [ [ w ], e ] ]")]
+    [InlineData(new object[] { "aba", "3", null, new object[] { new object[] { "w" }, "e" },  }, "[ aba, 3, null, [ [ w ], e ] ]")]
     public void TestFormatArgs(object args, string expectedOutput)
     {
         Encoder.FormatArgs(args).Should().Be(expectedOutput);

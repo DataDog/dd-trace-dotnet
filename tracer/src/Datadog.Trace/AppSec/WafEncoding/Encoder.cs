@@ -638,9 +638,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
 
             using var enumerator = objs.GetEnumerator();
             var canMoveNext = enumerator.MoveNext();
-            while (canMoveNext && enumerator.Current != null)
+            while (canMoveNext)
             {
-                FormatArgsInternal(enumerator.Current, sb);
+                FormatArgsInternal(enumerator.Current as object ?? "null", sb);
                 canMoveNext = enumerator.MoveNext();
                 if (canMoveNext)
                 {
