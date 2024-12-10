@@ -92,7 +92,7 @@ public class TracerManagerFactoryTests : IAsyncLifetime
             => DirectLogSubmissionManager.Create(
                 previous: null,
                 settings: new ImmutableTracerSettings(NullConfigurationSource.Instance),
-                directLogSettings: ImmutableDirectLogSubmissionSettings.Create(new TracerSettings()),
+                directLogSettings: new TracerSettings().LogSubmissionSettings,
                 azureAppServiceSettings: null,
                 serviceName: "test",
                 env: "test",

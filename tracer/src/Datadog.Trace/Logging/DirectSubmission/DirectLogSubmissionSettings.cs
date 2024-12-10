@@ -7,10 +7,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Logging.DirectSubmission
@@ -28,17 +30,25 @@ namespace Datadog.Trace.Logging.DirectSubmission
         private const string IntakePrefix = "https://http-intake.logs.";
         private const string DefaultSite = "datadoghq.com";
         private const string IntakeSuffix = ":443";
+        private readonly bool[]? _enabledIntegrations;
+
+        internal static readonly IntegrationId[] SupportedIntegrations =
+        {
+            IntegrationId.Serilog,
+            IntegrationId.ILogger,
+            IntegrationId.Log4Net,
+            IntegrationId.NLog,
+            IntegrationId.XUnit,
+        };
 
         public DirectLogSubmissionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-            // TODO: Combine DirectLogSubmissionSettings and ImmutableDirectLogSubmissionSettings
             source ??= NullConfigurationSource.Instance;
             var config = new ConfigurationBuilder(source, telemetry);
-
-            DirectLogSubmissionHost = config
+            Host = config
                                      .WithKeys(ConfigurationKeys.DirectLogSubmission.Host)
                                      .AsString(HostMetadata.Instance.Hostname ?? string.Empty);
-            DirectLogSubmissionSource = config
+            Source = config
                                        .WithKeys(ConfigurationKeys.DirectLogSubmission.Source)
                                        .AsString(DefaultSource);
 
@@ -56,7 +66,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                                          },
                                          validator: x => !string.IsNullOrEmpty(x));
 
-            DirectLogSubmissionMinimumLevel = config
+            MinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
                                              .GetAs(
                                                   () => new DefaultResult<DirectSubmissionLogLevel>(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
@@ -65,25 +75,18 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             var globalTags = config
                             .WithKeys(ConfigurationKeys.DirectLogSubmission.GlobalTags)
-                            .AsDictionary();
+                            .AsDictionary()
+                           ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
-            DirectLogSubmissionGlobalTags = globalTags?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                                       .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
-                                         ?? new Dictionary<string, string>();
+            GlobalTags = new ReadOnlyDictionary<string, string>(globalTags ?? []);
 
-            var logSubmissionIntegrations = config
-                                           .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
-                                           .AsString()
-                                          ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                            Enumerable.Empty<string>();
-            DirectLogSubmissionEnabledIntegrations = new HashSet<string>(logSubmissionIntegrations, StringComparer.OrdinalIgnoreCase);
-
-            DirectLogSubmissionBatchSizeLimit = config
+            BatchSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit)
                                                .AsInt32(DefaultBatchSizeLimit, x => x > 0)
                                                .Value;
 
-            DirectLogSubmissionQueueSizeLimit = config
+            QueueSizeLimit = config
                                                .WithKeys(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit)
                                                .AsInt32(DefaultQueueSizeLimit, x => x > 0)
                                                .Value;
@@ -93,20 +96,56 @@ namespace Datadog.Trace.Logging.DirectSubmission
                      .AsInt32(DefaultBatchPeriodSeconds, x => x > 0)
                      .Value;
 
-            DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(seconds);
+            BatchPeriod = TimeSpan.FromSeconds(seconds);
 
-            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString() ?? string.Empty;
+            bool[]? enabledIntegrations = null;
 
-            var isEnabled = DirectLogSubmissionEnabledIntegrations.Count > 0;
-            var validationErrors = new List<string>();
+            List<string> validationErrors = [];
+            var logSubmissionIntegrations = config
+                                           .WithKeys(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
+                                           .AsString()
+                                          ?.Split([';'], StringSplitOptions.RemoveEmptyEntries);
 
-            if (string.IsNullOrWhiteSpace(DirectLogSubmissionHost))
+            if (logSubmissionIntegrations is { Length: > 0 })
+            {
+                foreach (var integrationName in logSubmissionIntegrations)
+                {
+                    if (!IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
+                    {
+                        validationErrors.Add(
+                            "Unknown integration: " + integrationName +
+                            ". Use a valid logs integration name: " +
+                            string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
+                        continue;
+                    }
+
+                    if (!SupportedIntegrations.Contains(integrationId))
+                    {
+                        validationErrors.Add(
+                            "Integration: " + integrationName + " is not a supported direct log submission integration. " +
+                            "Use one of " + string.Join(", ", SupportedIntegrations.Select(x => IntegrationRegistry.GetName(x))));
+                        continue;
+                    }
+
+                    enabledIntegrations ??= new bool[IntegrationRegistry.Ids.Count];
+                    if (!enabledIntegrations[(int)integrationId])
+                    {
+                        enabledIntegrations[(int)integrationId] = true;
+                    }
+                }
+            }
+
+            var isEnabled = enabledIntegrations is not null;
+            _enabledIntegrations = enabledIntegrations;
+
+            if (string.IsNullOrWhiteSpace(Host))
             {
                 isEnabled = false;
                 validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Host}'.");
             }
 
-            if (string.IsNullOrWhiteSpace(DirectLogSubmissionSource))
+            if (string.IsNullOrWhiteSpace(Source))
             {
                 isEnabled = false;
                 validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
@@ -119,7 +158,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             }
             else
             {
-                DirectLogSubmissionUrl = uri;
+                IntakeUrl = uri;
             }
 
             if (string.IsNullOrWhiteSpace(ApiKey))
@@ -146,68 +185,76 @@ namespace Datadog.Trace.Logging.DirectSubmission
         internal IReadOnlyList<string> ValidationErrors { get; }
 
         /// <summary>
-        /// Gets the integrations enabled for direct log submission
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations" />
-        internal HashSet<string> DirectLogSubmissionEnabledIntegrations { get; }
-
-        /// <summary>
         /// Gets the originating host name for direct logs submission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Host" />
-        internal string DirectLogSubmissionHost { get; }
+        internal string Host { get; }
 
         /// <summary>
         /// Gets the originating source for direct logs submission
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Source" />
-        internal string DirectLogSubmissionSource { get; }
+        internal string Source { get; }
 
         /// <summary>
         /// Gets the global tags, which are applied to all directly submitted logs. If not provided,
         /// <see cref="TracerSettings.GlobalTags"/> are used instead
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
-        internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; }
+        internal IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
         /// Gets the url to send logs to
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
-        internal Uri? DirectLogSubmissionUrl { get; }
+        internal Uri? IntakeUrl { get; }
 
         /// <summary>
         /// Gets the minimum level logs should have to be sent to the intake.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
-        internal DirectSubmissionLogLevel DirectLogSubmissionMinimumLevel { get; }
+        internal DirectSubmissionLogLevel MinimumLevel { get; }
 
         /// <summary>
         /// Gets the maximum number of logs to send at one time
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchSizeLimit"/>
-        internal int DirectLogSubmissionBatchSizeLimit { get; }
+        internal int BatchSizeLimit { get; }
 
         /// <summary>
         /// Gets the maximum number of logs to hold in internal queue at any one time
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.QueueSizeLimit"/>
-        internal int DirectLogSubmissionQueueSizeLimit { get; }
+        internal int QueueSizeLimit { get; }
 
         /// <summary>
         /// Gets or sets the time to wait between checking for batches
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
-        internal TimeSpan DirectLogSubmissionBatchPeriod { get; set; }
+        internal TimeSpan BatchPeriod { get; set; }
 
         /// <summary>
         /// Gets the Datadog API key
         /// </summary>
-        internal string? ApiKey { get; }
+        internal string ApiKey { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether logs injection is enabled or disabled
         /// </summary>
         internal bool LogsInjectionEnabled { get; set; }
+
+        public IEnumerable<string> EnabledIntegrationNames
+            => SupportedIntegrations.Where(x => _enabledIntegrations?[(int)x] == true).Select(x => IntegrationRegistry.GetName(x));
+
+        public BatchingSinkOptions CreateBatchingSinkOptions()
+            => new(
+                batchSizeLimit: BatchSizeLimit,
+                queueLimit: QueueSizeLimit,
+                period: BatchPeriod);
+
+        public bool IsIntegrationEnabled(IntegrationId integrationId)
+        {
+            return IsEnabled && _enabledIntegrations is not null && _enabledIntegrations[(int)integrationId];
+        }
     }
 }
