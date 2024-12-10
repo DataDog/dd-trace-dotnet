@@ -124,7 +124,7 @@ namespace Datadog.Trace.Tests
                 { ConfigurationKeys.AgentUri, agentUri },
                 { ConfigurationKeys.AgentHost, agentHost },
                 { ConfigurationKeys.DogStatsdPort, port },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.UDP);
             var expectedPort = settings.Exporter.DogStatsdPort;
@@ -152,7 +152,7 @@ namespace Datadog.Trace.Tests
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.MetricsPipeName, agent.StatsWindowsPipeName },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.NamedPipe);
 
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
                 { ConfigurationKeys.MetricsUnixDomainSocketPath, $"unix://{metricsPath}" },
-            })).Build();
+            }));
 
             settings.Exporter.MetricsTransport.Should().Be(TransportType.UDS);
 
@@ -208,7 +208,7 @@ namespace Datadog.Trace.Tests
             var settings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.AgentUri, $"unix://{tracesPath}" },
-            })).Build();
+            }));
 
             // If we're not using the "default" UDS path, then we fallback to UDP for stats
             // Should fallback to the "default" stats location

@@ -42,7 +42,7 @@ public class CtorIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static void PopulateSettings(Dictionary<string, object?> values, ImmutableTracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, TracerSettings settings)
     {
         // record all the settings in the dictionary
         // This key is used to detect if the settings have been populated _at all_, so should always be sent
