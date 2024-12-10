@@ -129,5 +129,60 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.RunAndCheck();
         }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckAppDomainOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+#if X64
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+            runner.RunAndCheck();
+#else
+#endif
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckGenericsOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+#if X64
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
+            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+            runner.RunAndCheck();
+#else
+#endif
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckPiOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+#if X64
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
+            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+            runner.RunAndCheck();
+#else
+#endif
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckFibonacciOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+#if X64
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
+            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+            runner.RunAndCheck();
+#else
+#endif
+        }
+
+        [TestAppFact("Samples.Computer01")]
+        public void CheckSleepersOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+#if X64
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 6 --threads 200", output: _output);
+            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+            runner.RunAndCheck();
+#else
+#endif
+        }
     }
 }

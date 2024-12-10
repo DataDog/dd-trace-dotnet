@@ -482,55 +482,43 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
     return {localRootSpanId, spanId};
 }
 
+
 #if defined(DD_CALLSTACK_REUSE_ENABLED)
 
 #if defined(_WINDOWS)
-#ifdef BIT64
-#define Ip(ctx) ctx.Rip
-#define FirstParam(ctx) ctx.Rdi
+#define GetIp(ctx) ctx.Rip
+#define GetRdi(ctx) ctx.Rdi
 #else
-#define Ip(ctx) ctx.Eip
-#define FirstParam(ctx) ctx.Edi
+#define GetIp(ctx) ctx.uc_mcontext.gregs[REG_RIP]
+#define GetRdi(ctx) ctx.uc_mcontext.gregs[REG_RDI]
 #endif
-#endif
+
 inline void ManagedThreadInfo::UpdateContext(ThreadContext& context)
 {
-#ifdef _WINDOWS
-    _wrapperContext.RipOrig = Ip(context);
-    _wrapperContext.RdiOrig = FirstParam(context);
+    _wrapperContext.RipOrig = GetIp(context);
+    _wrapperContext.RdiOrig = GetRdi(context);
     _wrapperContext.Flag = 0;
-    FirstParam(context) = reinterpret_cast<decltype(FirstParam(context))>(&_wrapperContext);
-    Ip(context) = reinterpret_cast<decltype(Ip(context))>(&dd_restart_wrapper);
-#else
-    _wrapperContext.RipOrig = context.uc_mcontext.gregs[REG_RIP];
-    _wrapperContext.RipOrig = context.uc_mcontext.gregs[REG_RDI];
-    context.uc_mcontext.gregs[REG_RDI] = reinterpret_cast<greg_t>(&_wrapperContext);
-    context.uc_mcontext.gregs[REG_RIP] = reinterpret_cast<greg_t>(&dd_restart_wrapper);
-#endif
+
+    static_assert(sizeof(std::uintptr_t) == sizeof(decltype(GetIp(context))));
+    static_assert(sizeof(std::uintptr_t) == sizeof(decltype(GetRdi(context))));
+
+    GetRdi(context) = reinterpret_cast<std::uintptr_t>(&_wrapperContext);
+    GetIp(context) = reinterpret_cast<std::uintptr_t>(&dd_restart_wrapper);
 }
 
 inline bool ManagedThreadInfo::CanReuseCallstack() const
-{
+{ 
     return _wrapperContext.Flag == 0;
 }
 
 inline void ManagedThreadInfo::RestoreContext(ThreadContext& ctx) const
 {
-#ifdef _WINDOWS
-    Ip(ctx) = _wrapperContext.RipOrig;
-    FirstParam(ctx) = _wrapperContext.RdiOrig;
-#else
-    ctx.uc_mcontext.gregs[REG_RDI] = _wrapperContext.RdiOrig;
-    ctx.uc_mcontext.gregs[REG_RIP] = _wrapperContext.RipOrig;
-#endif
+    GetIp(ctx) = _wrapperContext.RipOrig;
+    GetRdi(ctx) = _wrapperContext.RdiOrig;
 }
 inline bool ManagedThreadInfo::IsExecutingWrapper(ThreadContext const& ctx) const
 {
-#ifdef _WINDOWS
-    auto ip = Ip(ctx);
-#else
-    std::uintptr_t ip = ctx.uc_mcontext.gregs[REG_RIP];
-#endif
+    auto ip = GetIp(ctx);
     uintptr_t start = reinterpret_cast<uintptr_t>(&dd_restart_wrapper);
     uintptr_t end = start + dd_restart_wrapper_size;
     return (ip >= start && ip < end);

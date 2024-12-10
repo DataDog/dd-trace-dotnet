@@ -427,7 +427,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     }
 
     const auto reuseCallstack =
-#ifdef WIN32
+#ifndef DD_CALLSTACK_REUSE_ENABLED
         false;
 #else
         profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
@@ -520,7 +520,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
-                #ifndef WIN32
+                #ifdef DD_CALLSTACK_REUSE_ENABLED
                 auto callstack = pStackSnapshotResult->GetCallstack();
                 //Log::Info("Reuse callstack: ", std::boolalpha, _canReuseCaLLStack, std::noboolalpha,
                 //          "\nprofilingType: ", PROFILING_TYPE::WallTime,
