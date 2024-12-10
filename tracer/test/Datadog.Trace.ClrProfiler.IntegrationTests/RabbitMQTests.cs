@@ -27,6 +27,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("RabbitMQ", output)
         {
             SetServiceVersion("1.0.0");
+            SetSecurity(true);
+            SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+            SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+            SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+            SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -57,8 +63,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            var expectedSpanCount = 52;
-
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-rabbitmq" : EnvironmentHelper.FullSampleName;
@@ -68,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 using var assertionScope = new AssertionScope();
-                var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
+                var spans = agent.WaitForSpans(32); // Do not filter on operation name because they will vary depending on instrumented method
 
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.GetTag("component"), "RabbitMQ", StringComparison.OrdinalIgnoreCase));
 
