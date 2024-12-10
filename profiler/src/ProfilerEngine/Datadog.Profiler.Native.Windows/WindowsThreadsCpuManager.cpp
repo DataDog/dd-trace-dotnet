@@ -13,6 +13,11 @@
 
 void ThreadsCpuManager::LogCpuTimes()
 {
+    if (!Log::IsDebugEnabled())
+    {
+        return;
+    }
+
     auto currentPID = ::GetCurrentProcessId();
 
     // How to list a process threads:  https://docs.microsoft.com/en-us/windows/win32/toolhelp/traversing-the-thread-list

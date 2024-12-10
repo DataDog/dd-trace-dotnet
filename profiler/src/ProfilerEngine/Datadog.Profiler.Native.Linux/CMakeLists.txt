@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.7.0)
+project("Datadog.Profiler.Native.Linux" LANGUAGES C ASM VERSION 3.7.0 )
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -77,6 +77,11 @@ list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
 # ******************************************************
 # Define static target
 # ******************************************************
+if (ISAMD64)
+    set_property(SOURCE wrapper_callback.s APPEND PROPERTY COMPILE_OPTIONS "-x" "assembler-with-cpp")
+    list(APPEND LINUX_PROFILER_SRC wrapper_callback.s)
+endif()
+
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${LINUX_PROFILER_SRC}
     ${COMMON_PROFILER_SRC}

@@ -207,7 +207,33 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+
+        ucontext_t* cctx = reinterpret_cast<ucontext_t*>(ctx);
+#ifndef ARM64
+        ucontext_t context;
+        // TODO check if callstack reuse is enabled it's enabled
+        auto wasInWrapper = false;
+        if (cctx != nullptr && GetStackSnapshotResult()->CanReuseCallstack())
+        {
+            wasInWrapper = _pCurrentCollectionThreadInfo->IsExecutingWrapper(*cctx);
+            if (wasInWrapper)
+            {
+                context = *reinterpret_cast<ucontext_t*>(cctx);
+                _pCurrentCollectionThreadInfo->RestoreContext(context);
+                cctx = &context;
+            }
+        }
+#endif
+
+        auto result = _useBacktrace2 ? CollectStackWithBacktrace2(cctx) : CollectStackManually(cctx);
+#ifndef ARM64
+        if (!wasInWrapper && GetStackSnapshotResult()->CanReuseCallstack() && cctx != nullptr && result == S_OK)
+        {
+            cctx = reinterpret_cast<ucontext_t*>(ctx);
+            _pCurrentCollectionThreadInfo->UpdateContext(*cctx);
+        }
+#endif
+        return result;
     }
     catch (...)
     {

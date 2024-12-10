@@ -88,6 +88,7 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetSsiLongLivedThreshold, (), (const override));
     MOCK_METHOD(bool, IsTelemetryToDiskEnabled, (), (const override));
     MOCK_METHOD(bool, IsSsiTelemetryEnabled, (), (const override));
+    MOCK_METHOD(bool, CanReuseWalltimeCallstack, (), (const override));
 };
 
 class MockExporter : public IExporter
