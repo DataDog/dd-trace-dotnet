@@ -77,7 +77,7 @@ public static class SignInManagerPasswordSignInUserIntegration
 
             var foundUserId = false;
             var foundLogin = false;
-            Func<string, string?> processPii;
+            Func<string, string?>? processPii = null;
             string autoMode;
             if (security.IsAnonUserTrackingMode)
             {
@@ -86,7 +86,6 @@ public static class SignInManagerPasswordSignInUserIntegration
             }
             else
             {
-                processPii = val => val;
                 autoMode = SecuritySettings.UserTrackingIdentMode;
             }
 
@@ -103,7 +102,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (!string.IsNullOrEmpty(userId))
                 {
                     foundUserId = true;
-                    userId = processPii(userId!);
+                    userId = processPii?.Invoke(userId!) ?? userId;
                     setTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId!);
                 }
@@ -111,7 +110,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (!string.IsNullOrEmpty(userLogin))
                 {
                     foundLogin = true;
-                    var login = processPii(userLogin!);
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin;
                     setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login!);
                 }
@@ -129,9 +128,9 @@ public static class SignInManagerPasswordSignInUserIntegration
 
                 if (!string.IsNullOrEmpty(userLogin))
                 {
-                    var login = processPii(userLogin!);
-                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login!);
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
                 }
             }
 #endif
