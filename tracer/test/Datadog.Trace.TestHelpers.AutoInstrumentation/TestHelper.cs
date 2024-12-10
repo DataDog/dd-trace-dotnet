@@ -115,7 +115,7 @@ namespace Datadog.Trace.TestHelpers
             var process = await StartDotnetTestSample(agent, arguments, packageVersion, aspNetCorePort: 5000, framework: framework, forceVsTestParam: forceVsTestParam);
 
             using var helper = new ProcessHelper(process);
-            return WaitForProcessResult(helper, expectedExitCode);
+            return WaitForProcessResult(helper, expectedExitCode, dumpChildProcesses: true);
         }
 
         public async Task<Process> StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "", bool? enableSecurity = null, string externalRulesFile = null, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
@@ -166,7 +166,7 @@ namespace Datadog.Trace.TestHelpers
             return WaitForProcessResult(helper);
         }
 
-        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0)
+        public ProcessResult WaitForProcessResult(ProcessHelper helper, int expectedExitCode = 0, bool dumpChildProcesses = false)
         {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
