@@ -240,7 +240,7 @@ namespace Datadog.Trace.AppSec
                 catch (Exception e)
                 {
                     rcmUpdateError = e.Message;
-                    Log.Warning(e, "An error happened on the rcm subscription callback in class Security");
+                    Log.Error(e, "An error happened on the rcm subscription callback in class Security");
                 }
 
                 var productsCount = 0;
