@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "Callstack.h"
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "shared/src/native-src/string.h"
@@ -23,6 +24,9 @@
 using dd_mutex_t = SpinningMutex;
 #else
 using dd_mutex_t = std::mutex;
+
+extern "C" void dd_restart_wrapper();
+
 #endif
 
 static constexpr int32_t MinFieldAlignRequirement = 8;
@@ -95,6 +99,9 @@ public:
     inline bool CanBeInterrupted() const;
 #endif
 
+#if defined(_WINDOWS)
+    inline void UpdateContext(CONTEXT& context);
+#endif
     inline AppDomainID GetAppDomainId();
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
@@ -145,6 +152,22 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+
+#if defined(_WINDOWS)
+    struct WrapperThreadContext
+    {
+        std::uintptr_t RipOrig;
+        std::uintptr_t RdiOrig;
+        std::uintptr_t Flag;
+    };
+
+    WrapperThreadContext _wrapperContext = {0, 0, 1};
+
+public:
+    // should be previous snapshot (missing spanid and stuff)
+    Callstack PreviousCallstack;
+    inline bool CanReuseCallstack() const;
+#endif
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -447,3 +470,27 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
 
     return {localRootSpanId, spanId};
 }
+
+#if defined(_WINDOWS)
+
+#ifdef BIT64
+#define Ip(ctx) ctx.Rip
+#define FirstParam(ctx) ctx.Rdi
+#else
+#define Ip(ctx) ctx.Eip
+#define FirstParam(ctx) ctx.Edi
+#endif
+inline void ManagedThreadInfo::UpdateContext(CONTEXT& context)
+{
+    _wrapperContext.RipOrig = Ip(context);
+    _wrapperContext.RdiOrig = FirstParam(context);
+    _wrapperContext.Flag = 0;
+    FirstParam(context) = reinterpret_cast<decltype(FirstParam(context))>(&_wrapperContext);
+    Ip(context) = reinterpret_cast<decltype(Ip(context))>(&dd_restart_wrapper);
+}
+
+inline bool ManagedThreadInfo::CanReuseCallstack() const
+{
+    return _wrapperContext.Flag == 0;
+}
+#endif

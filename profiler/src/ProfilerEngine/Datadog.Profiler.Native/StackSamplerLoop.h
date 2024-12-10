@@ -23,6 +23,7 @@
 #include "RawWallTimeSample.h"
 #include "MetricsRegistry.h"
 #include "MeanMaxMetric.h"
+#include "CounterMetric.h"
 #include "shared/src/native-src/string.h"
 
 // forward declarations
@@ -94,6 +95,8 @@ private:
     bool _areInternalMetricsEnabled;
     std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
+    std::uint64_t _reusedCallstack;
+    bool _canReuseCaLLStack;
 
 private:
     void MainLoop();

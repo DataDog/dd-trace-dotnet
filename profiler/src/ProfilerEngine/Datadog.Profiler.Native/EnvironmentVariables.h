@@ -72,4 +72,5 @@ public:
 
     inline static const shared::WSTRING CIVisibilityEnabled         = WStr("DD_CIVISIBILITY_ENABLED");
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
+    inline static const shared::WSTRING ExperimentalReuseCallstackWalltime  = WStr("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK");
 };

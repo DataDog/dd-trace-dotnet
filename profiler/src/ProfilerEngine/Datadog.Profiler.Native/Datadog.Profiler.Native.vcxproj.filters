@@ -51,6 +51,9 @@
     <Filter Include="libdatadog">
       <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="asm">
+      <UniqueIdentifier>{714e84ee-7e64-4b86-845e-331b032ef895}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -111,9 +114,6 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="ScopeFinalizer.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Semaphore.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="EnvironmentVariables.h">
@@ -716,5 +716,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="wrapper_callback.x64.asm">
+      <Filter>asm</Filter>
+    </MASM>
+    <MASM Include="wrapper_callback.x86.asm">
+      <Filter>asm</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

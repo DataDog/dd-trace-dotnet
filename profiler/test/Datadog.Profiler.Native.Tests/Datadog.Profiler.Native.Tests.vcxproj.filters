@@ -207,9 +207,6 @@
     <ClInclude Include="RuntimeIdStoreHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
-    <ClInclude Include="ThreadsCpuManagerHelper.h">
-      <Filter>Helpers</Filter>
-    </ClInclude>
     <ClInclude Include="RuntimeInfoHelper.h">
       <Filter>Helpers</Filter>
     </ClInclude>

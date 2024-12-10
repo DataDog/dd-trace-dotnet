@@ -202,6 +202,16 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedT
     return result;
 }
 
+void StackFramesCollectorBase::ReuseCallstack(bool reuseCallstack)
+{
+    _pStackSnapshotResult->SetReuseCallstack(reuseCallstack);
+}
+
+Callstack StackFramesCollectorBase::GetCallstack()
+{
+    return _callstackProvider->Get();
+}
+
 void StackFramesCollectorBase::OnDeadlock()
 {
     // In 32bits, we use the method DoStackSnapshot to walk and collect a thread callstack.
