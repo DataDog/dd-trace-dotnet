@@ -18,4 +18,10 @@ std::vector<CallTargetDefinition3>* GeneratedDefinitions::GetCallTargets()
     return &g_callTargets;
 }
 
+void GeneratedDefinitions::Cleanup()
+{
+    g_callSites.clear();
+    g_callTargets.clear();
+}
+
 } // namespace trace
