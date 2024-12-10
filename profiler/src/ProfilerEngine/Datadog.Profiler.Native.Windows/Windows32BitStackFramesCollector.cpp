@@ -60,14 +60,6 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
 
         *pHR = hr;
 
-        if (SUCCEEDED(hr) && GetStackSnapshotResult()->CanReuseCallstack() && GetStackSnapshotResult()->GetFramesCount() > 0)
-        {
-            CONTEXT ctx{};
-            ctx.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
-            ::GetThreadContext(osThreadHandle, &ctx);
-            pThreadInfo->UpdateContext(ctx);
-            ::SetThreadContext(osThreadHandle, &ctx);
-        }
         return GetStackSnapshotResult();
     }
     __except (EXCEPTION_EXECUTE_HANDLER)

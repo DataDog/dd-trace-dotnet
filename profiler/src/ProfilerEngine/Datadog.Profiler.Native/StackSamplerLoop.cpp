@@ -418,7 +418,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     std::chrono::nanoseconds duration,
     PROFILING_TYPE profilingType)
 {
-    const auto reuseCallstack = profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
 
     if (osThreadHandle == static_cast<HANDLE>(0))
@@ -427,6 +426,8 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         return;
     }
 
+    #ifndef WIN32
+    const auto reuseCallstack = profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
     if (reuseCallstack)
     {
         StackSnapshotResultBuffer buffer;
@@ -442,6 +443,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         _reusedCallstack++;
         return;
     }
+#endif
     // NOTE: since the StackSamplerLoop thread is not managed, it is not possible to collect ourself
 
     // In this section we use the uint32_t type where logically the HRESULT type would be used normally.
@@ -502,8 +504,9 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
-
+                #ifndef WIN32
                 _pStackFramesCollector->ReuseCallstack(reuseCallstack);
+                #endif
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
             }
 
@@ -515,7 +518,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
-
+                #ifndef WIN32
                 auto callstack = pStackSnapshotResult->GetCallstack();
                 //Log::Info("Reuse callstack: ", std::boolalpha, _canReuseCaLLStack, std::noboolalpha,
                 //          "\nprofilingType: ", PROFILING_TYPE::WallTime,
@@ -530,6 +533,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                     pThreadInfo->PreviousCallstack.CopyFrom(callstack);
                 }
                 pStackSnapshotResult->SetCallstack(std::move(callstack));
+                #endif
             }
 
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),

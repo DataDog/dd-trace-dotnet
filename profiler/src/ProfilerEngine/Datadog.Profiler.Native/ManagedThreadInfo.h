@@ -20,7 +20,7 @@
 #include <utility>
 
 #undef DD_CALLSTACK_REUSE_ENABLED
-#if (defined(LINUX) && defined(AMD64)) || defined(_WINDOWS)
+#if (defined(LINUX) && defined(AMD64)) || (defined(_WINDOWS) && defined(BIT64))
 #define DD_CALLSTACK_REUSE_ENABLED
 extern "C" void dd_restart_wrapper();
 extern "C" size_t dd_restart_wrapper_size;
@@ -517,6 +517,8 @@ inline bool ManagedThreadInfo::CanReuseCallstack() const
 inline void ManagedThreadInfo::RestoreContext(ThreadContext& ctx) const
 {
 #ifdef _WINDOWS
+    Ip(ctx) = _wrapperContext.RipOrig;
+    FirstParam(ctx) = _wrapperContext.RdiOrig;
 #else
     ctx.uc_mcontext.gregs[REG_RDI] = _wrapperContext.RdiOrig;
     ctx.uc_mcontext.gregs[REG_RIP] = _wrapperContext.RipOrig;
@@ -525,6 +527,7 @@ inline void ManagedThreadInfo::RestoreContext(ThreadContext& ctx) const
 inline bool ManagedThreadInfo::IsExecutingWrapper(ThreadContext const& ctx) const
 {
 #ifdef _WINDOWS
+    auto ip = Ip(ctx);
 #else
     std::uintptr_t ip = ctx.uc_mcontext.gregs[REG_RIP];
 #endif

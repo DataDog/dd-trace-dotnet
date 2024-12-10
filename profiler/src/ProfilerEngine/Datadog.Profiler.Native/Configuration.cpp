@@ -603,7 +603,11 @@ std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
 
 bool Configuration::CanReuseWalltimeCallstack() const
 {
+#ifndef WIN32
     return _reuseCallstackWalltime;
+#else
+    return false;
+#endif
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)
