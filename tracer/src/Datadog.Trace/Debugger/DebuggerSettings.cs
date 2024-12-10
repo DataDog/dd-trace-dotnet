@@ -123,9 +123,11 @@ namespace Datadog.Trace.Debugger
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
-										 
-			IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+
+            IsSnapshotExplorationTestEnabled = config.WithKeys(ConfigurationKeys.Debugger.IsSnapshotExplorationTestEnabled).AsBool(false);
+
             SnapshotExplorationTestProbesPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestProbesPath).AsString(string.Empty);
+
             SnapshotExplorationTestReportPath = config.WithKeys(ConfigurationKeys.Debugger.SnapshotExplorationTestReportPath).AsString(string.Empty);
         }
 
@@ -157,9 +159,15 @@ namespace Datadog.Trace.Debugger
 
         public HashSet<string> RedactedTypes { get; }
 
+        public bool CodeOriginForSpansEnabled { get; }
 
+        public int CodeOriginMaxUserFrames { get; }
 
-        public string SnapshotExplorationTestReportPath { get; set; }
+        public bool IsSnapshotExplorationTestEnabled { get; }
+
+        public string SnapshotExplorationTestProbesPath { get; }
+
+        public string SnapshotExplorationTestReportPath { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
