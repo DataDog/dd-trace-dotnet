@@ -25,9 +25,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "true");
             helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED", "false");
-            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
+            var telemetryUrl = $"http://127.0.0.1:{telemetry.Port}";
+            helper.SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", telemetryUrl);
             // removed, but necessary for some version conflict tests (e.g. TraceAnnotationsVersionMismatchNewerNuGetTests)
-            helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
+            helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", telemetryUrl);
             // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
             // For legacy versions that don't use V2 by default
@@ -104,18 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
-            var payloads =
-                allData
-                   .OrderByDescending(x => x.SeqId)
-                   .Select(
-                        data => data switch
-                        {
-                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
-                            _ => null,
-                        })
-                   .Where(x => x is not null)
-                   .ToList();
+            var payloads = GetAllConfigurationPayloads(allData);
 
             payloads.Should().NotBeEmpty();
             var config = payloads
@@ -130,6 +120,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 config.Value.Should().Be(value);
             }
+        }
+
+        internal static List<ICollection<ConfigurationKeyValue>> GetAllConfigurationPayloads(IEnumerable<TelemetryData> allData)
+        {
+            var payloads =
+                allData
+                   .OrderByDescending(x => x.SeqId)
+                   .Select(
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ => null,
+                        })
+                   .Where(x => x is not null)
+                   .ToList();
+            return payloads;
         }
 
         internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)

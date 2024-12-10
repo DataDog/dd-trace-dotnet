@@ -40,7 +40,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 
         public LogFormatter(
             ImmutableTracerSettings settings,
-            ImmutableDirectLogSubmissionSettings directLogSettings,
+            DirectLogSubmissionSettings directLogSettings,
             ImmutableAzureAppServiceSettings? aasSettings,
             string serviceName,
             string env,
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(directLogSettings.Host) ? null : directLogSettings.Host;
 
-            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTagsInternal;
+            var globalTags = directLogSettings.GlobalTags is { Count: > 0 } ? directLogSettings.GlobalTags : settings.GlobalTags;
 
             Tags = EnrichTagsWithAasMetadata(StringifyGlobalTags(globalTags), aasSettings);
             _env = string.IsNullOrEmpty(env) ? null : env;

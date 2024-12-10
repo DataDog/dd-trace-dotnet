@@ -4,6 +4,8 @@
 #pragma once
 #include "CrashReporting.h"
 
+#include <cstdint>
+#include <memory>
 #include <string>
 
 #include <libunwind.h>
@@ -14,6 +16,8 @@ struct ModuleInfo
     uintptr_t endAddress;
     uintptr_t baseAddress;
     std::string path;
+    // defined in CrashReporting.h
+    ElfBuildId build_id;
 };
 
 class CrashReportingLinux : public CrashReporting
@@ -28,7 +32,7 @@ public:
 private:
     std::vector<std::pair<int32_t, std::string>> GetThreads() override;
     std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) override;
-    std::pair<std::string_view, uintptr_t> FindModule(uintptr_t ip);
+    const ModuleInfo* FindModule(uintptr_t ip);
     std::vector<ModuleInfo> GetModules();
     std::string GetSignalInfo(int32_t signal) override;
     std::string GetThreadName(int32_t tid);

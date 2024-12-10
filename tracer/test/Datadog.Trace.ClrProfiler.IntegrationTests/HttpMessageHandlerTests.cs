@@ -103,7 +103,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var isExternalSpan = metadataSchemaVersion == "v0";
                 var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
-                using (var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true))
+                using var telemetry = this.ConfigureTelemetry();
+                using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
                 {
                     agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
@@ -165,11 +166,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
 
                     using var scope = new AssertionScope();
-                    agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+                    telemetry.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
                     // ignore for now auto enabled for simplicity
-                    agent.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
-                    agent.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
-                    agent.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
                     VerifyInstrumentation(processResult.Process);
                 }
             }
@@ -196,9 +197,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetInstrumentationVerification();
                 ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
+                using var telemetry = this.ConfigureTelemetry();
                 int httpPort = TcpPortProvider.GetOpenPort();
 
-                using (var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true))
+                using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
                 {
                     var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
@@ -214,10 +216,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     using var scope = new AssertionScope();
                     // ignore auto enabled for simplicity
-                    agent.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
-                    agent.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
-                    agent.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
-                    agent.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegrationDisabled(IntegrationId.HttpMessageHandler);
+                    telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
+                    telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
                     VerifyInstrumentation(processResult.Process);
                 }
             }

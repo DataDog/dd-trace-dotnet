@@ -50,6 +50,17 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
+    // Let's validate the vars before calling `EnumNgenModuleMethodsInliningThisMethod`
+    if (currentModuleId == NULL ||
+        moduleId == NULL ||
+        currentMethodDef == NULL ||
+        currentMethodDef == mdMethodDefNil)
+    {
+        // we just return true to avoid the retry by the handler.
+        Logger::Warn("NGEN:: EnumNgenModuleMethodsInliningThisMethod call skipped by invalid data.");
+        return true;
+    }
+
 #if DEBUG
     // We generate this log hundreds of times, and isn't typically useful in escalations
     Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ", "[ModuleInliner=", moduleId,
@@ -62,10 +73,10 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     {
         // Now we enumerate all methods that inline the current methodDef
         BOOL incompleteData = false;
-        ICorProfilerMethodEnum* methodEnum;
+        ComPtr<ICorProfilerMethodEnum> methodEnum;
 
         HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
-                                                                    &incompleteData, &methodEnum);
+                                                                    &incompleteData, methodEnum.GetAddressOf());
         std::ostringstream hexValue;
         hexValue << std::hex << hr;
         if (SUCCEEDED(hr))
@@ -82,8 +93,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
                 methods.push_back(method.methodId);
                 total++;
             }
-            methodEnum->Release();
-            methodEnum = nullptr;
+
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);

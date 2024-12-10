@@ -36,7 +36,7 @@ const std::string Sample::ObjectGenerationLabel = "object generation";
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
 
 
-Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
+Sample::Sample(std::chrono::nanoseconds timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
 {
     _timestamp = timestamp;
@@ -56,7 +56,7 @@ Sample::Sample(std::string_view runtimeId) :
 {
 }
 
-uint64_t Sample::GetTimeStamp() const
+std::chrono::nanoseconds Sample::GetTimeStamp() const
 {
     return _timestamp;
 }

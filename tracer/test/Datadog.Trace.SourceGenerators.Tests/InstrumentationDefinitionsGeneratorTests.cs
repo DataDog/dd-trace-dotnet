@@ -61,17 +61,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -163,18 +154,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -267,18 +248,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -372,18 +343,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 1, 1),
-            };
         }
 
         /// <summary>
@@ -477,18 +438,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 2, 1),
-            };
         }
 
         /// <summary>
@@ -581,20 +532,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // Kafka
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Produce"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration"), 0, 1),
-
-                // MongoDb
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.FakeMongoDbIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -679,18 +618,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // MySql
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data.MySqlClient.MySqlCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteNonQuery"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Int32"), 1, 6, 7, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data.MySqlClient.MySqlCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteReader"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("MySql.Data.MySqlClient.MySqlDataReader"), 1, 6, 7, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -795,21 +724,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // AdoNet
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("System.Data.Common.DbCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteNonQuery"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Int32"), 1, 4, 0, 0, 4, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"), 1, 1),
-
-                // MySql
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data.MySqlClient.MySqlCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteNonQuery"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Int32"), 1, 6, 7, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"), 0, 1),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data.MySqlClient.MySqlCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteReader"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("MySql.Data.MySqlClient.MySqlDataReader"), 1, 6, 7, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"), 0, 1),
-            };
         }
 
         /// <summary>
@@ -915,18 +831,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // AspNetCore
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.Core"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("set_Result"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"), 2, 2, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"), 0, 2),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.Core"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("set_Result"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"), 2, 2, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"), 1, 2),
-            };
         }
 
         /// <summary>
@@ -1023,18 +929,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static partial class InstrumentationDefinitions
     {
-        internal static NativeCallTargetDefinition2[] Instrumentations;
-
         static InstrumentationDefinitions()
         {
-            // CallTarget types
-            Instrumentations = new NativeCallTargetDefinition2[]
-            {
-
-                // AspNetCore
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.Core"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("set_Result"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"), 2, 2, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"), 0, 6),
-                new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.Core"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("set_Result"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"), 2, 2, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"), 1, 3),
-            };
         }
 
         /// <summary>

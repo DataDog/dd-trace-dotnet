@@ -1052,12 +1052,21 @@ namespace Datadog.Trace.Tests.Configuration
         // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
-        [InlineData("", DbmPropagationLevel.Disabled)]
-        [InlineData(null, DbmPropagationLevel.Disabled)]
-        [InlineData("invalid", DbmPropagationLevel.Disabled)]
-        [InlineData("Disabled", DbmPropagationLevel.Disabled)]
-        [InlineData("full", DbmPropagationLevel.Full)]
-        [InlineData("SERVICE", DbmPropagationLevel.Service)]
+        [InlineData("", DbmPropagationLevel.Disabled)]              // empty string defaults to disabled
+        [InlineData(null, DbmPropagationLevel.Disabled)]            // null defaults to disabled
+        [InlineData("      ", DbmPropagationLevel.Disabled)]        // whitespace defaults to disabled
+        [InlineData("invalid", DbmPropagationLevel.Disabled)]       // invalid input
+        [InlineData("full", DbmPropagationLevel.Full)]              // exact match
+        [InlineData("service", DbmPropagationLevel.Service)]        // exact match
+        [InlineData("disabled", DbmPropagationLevel.Disabled)]      // exact match
+        [InlineData("Disabled", DbmPropagationLevel.Disabled)]      // case insenstive
+        [InlineData("SERVICE", DbmPropagationLevel.Service)]        // case insensitive
+        [InlineData("FuLl", DbmPropagationLevel.Full)]              // case insensitive
+        [InlineData(" service", DbmPropagationLevel.Service)]       // trim whitespace
+        [InlineData("service ", DbmPropagationLevel.Service)]       // trim whitespace
+        [InlineData("full   ", DbmPropagationLevel.Full)]           // trim whitespace
+        [InlineData("     disabled", DbmPropagationLevel.Disabled)] // trim whitespace
+        [InlineData("s e r v i c e", DbmPropagationLevel.Disabled)] // invalid input
         public void DbmPropagationMode(string value, object expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DbmPropagationMode, value));
@@ -1084,54 +1093,6 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.TraceId128BitLoggingEnabled.Should().Be(expected);
-        }
-
-        [Fact]
-        public void RecordsTelemetryAboutChangesMadeInCode_PublicProperties()
-        {
-            const string serviceName = "someOtherName";
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-
-            tracerSettings.ServiceName = serviceName;
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData(); // defaults
-
-            var configKeyValue = data
-                                .GroupBy(x => x.Name)
-                                .Should()
-                                .ContainSingle(x => x.Key == ConfigurationKeys.ServiceName)
-                                .Which
-                                .OrderByDescending(x => x.SeqId)
-                                .First();
-
-            configKeyValue.Name.Should().Be(ConfigurationKeys.ServiceName);
-            configKeyValue.Value.Should().Be(serviceName);
-            configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
-        }
-
-        [Fact]
-        public void RecordsTelemetryAboutChangesMadeInCode_InternalProperties()
-        {
-            const string serviceName = "someOtherName";
-            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
-
-            tracerSettings.ServiceNameInternal = serviceName;
-            var collector = new ConfigurationTelemetry();
-            tracerSettings.CollectTelemetry(collector);
-            var data = collector.GetData(); // defaults
-
-            var configKeyValue = data
-                                .GroupBy(x => x.Name)
-                                .Should()
-                                .ContainSingle(x => x.Key == ConfigurationKeys.ServiceName)
-                                .Which
-                                .OrderByDescending(x => x.SeqId)
-                                .First();
-
-            configKeyValue.Name.Should().Be(ConfigurationKeys.ServiceName);
-            configKeyValue.Value.Should().Be(serviceName);
-            configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
         }
 
         [Fact]

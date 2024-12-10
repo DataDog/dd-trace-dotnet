@@ -9,7 +9,7 @@ partial class Program
 {
     static void RegisterCategorizedCallTargets()
     {
-        var categoriesDefs = new NativeCallTargetDefinition2[]
+        var categoriesDefs = new NativeCallTargetDefinition3[]
         {
             new(TargetAssembly, typeof(CategoriesTests).FullName, "Cat1Method", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsIntegration).FullName, (byte)CallTargetKind.Default, 1),
             new(TargetAssembly, typeof(CategoriesTests).FullName, "Cat2Method", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsIntegration).FullName, (byte)CallTargetKind.Default, 2),

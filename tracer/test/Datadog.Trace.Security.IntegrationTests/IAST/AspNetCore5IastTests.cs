@@ -227,8 +227,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredXssRequest(string database)
     {
-        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = $"/Iast/StoredXss?param=<b>RawValue</b>&useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
@@ -255,8 +262,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredXssEscapedRequest(string database)
     {
-        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = $"/Iast/StoredXssEscaped?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
@@ -282,8 +296,15 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("Microsoft.Data.Sqlite")]
     public async Task TestIastStoredSqliRequest(string database)
     {
-        var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
+#if NETCOREAPP3_0
+        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
+        {
+            throw new SkipException();
+        }
+#endif
+
+        var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
         var url = $"/Iast/StoredSqli?useMicrosoftDataDb={useMicrosoftDataDb}";
         IncludeAllHttpSpans = true;
         await TryStartApp();
@@ -382,6 +403,51 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
     }
+
+    #if NET6_0_OR_GREATER
+    [SkippableFact]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastSqliInterpolatedString()
+    {
+        var filename = "Iast.SqliInterpolatedString.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = $"/Iast/InterpolatedSqlString?name=John";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+    #endif
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastEventMetaStructEnabled()
+    {
+        var filename = "Iast.MetaStruct.AspNetCore5.IastEnabled";
+        const string type = "System.String";
+        var url = $"/Iast/TypeReflectionInjection?type={type}";
+        IncludeAllHttpSpans = true;
+
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, [url]);
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing(forceMetaStruct: true);
+
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 // Classes to test particular features
@@ -425,11 +491,6 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
                 {
                     var json = MetaStructToJson(data);
                     span.Tags["_dd.stack"] = json;
-                }
-
-                foreach (var key in span.MetaStruct.Keys.ToArray())
-                {
-                    span.MetaStruct[key] = [];
                 }
             }
         }
@@ -571,13 +632,39 @@ public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
         var filename = "Iast.JsonTagSizeExceeded.AspNetCore5.TelemetryEnabled";
         var url = "/Iast/TestJsonTagSizeExceeded?tainted=taint";
         IncludeAllHttpSpans = true;
+
+        var newFixture = new AspNetCoreTestFixture();
+        newFixture.SetOutput(Output);
+        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
+
+        var agent = newFixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+
+        newFixture.Dispose();
+        newFixture.SetOutput(null);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastMetaStructTagSizeExceeded()
+    {
+        var filename = "Iast.MetaStructTagSizeExceeded.AspNetCore5.TelemetryEnabled";
+        var url = "/Iast/TestJsonTagSizeExceeded?tainted=taint";
+        IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
+        settings.AddIastScrubbing(forceMetaStruct: true);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
@@ -609,6 +696,7 @@ public class AspNetCore5IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetC
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
         var parentSpan = spans.First(x => x.ParentId == null);
+        IastVerifyScrubberExtensions.IastMetaStructScrubbing(parentSpan);
         var childSpan = spans.First(x => x.ParentId == parentSpan.SpanId);
         var vulnerabilityJson = parentSpan.GetTag(Tags.IastJson);
         vulnerabilityJson.Should().Contain("\"spanId\": " + childSpan.SpanId);
@@ -654,7 +742,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.SetOutput(Output);
 
         var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
-        await TryStartApp(newFixture);
+        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
 
         var agent = newFixture.Agent;
         var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
@@ -682,7 +770,7 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         newFixture.SetOutput(Output);
 
         var datetimeOffset = DateTimeOffset.UtcNow; // Catch vulnerability at the startup of the app
-        await TryStartApp(newFixture);
+        await TryStartApp(newFixture, new MockTracerAgent.AgentConfiguration { SpanMetaStructs = false });
 
         var agent = newFixture.Agent;
         var spans = agent.WaitForSpans(1, minDateTime: datetimeOffset);
@@ -1326,12 +1414,12 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         Fixture.SetOutput(null);
     }
 
-    public virtual async Task TryStartApp()
+    public virtual async Task TryStartApp(MockTracerAgent.AgentConfiguration agentConfiguration = null)
     {
-        await TryStartApp(Fixture);
+        await TryStartApp(Fixture, agentConfiguration);
     }
 
-    public virtual async Task TryStartApp(AspNetCoreTestFixture fixture)
+    public virtual async Task TryStartApp(AspNetCoreTestFixture fixture, MockTracerAgent.AgentConfiguration agentConfiguration = null)
     {
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
@@ -1340,7 +1428,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, SamplingRate?.ToString() ?? string.Empty);
-        await fixture.TryStartApp(this, enableSecurity: false);
+        await fixture.TryStartApp(this, enableSecurity: false, agentConfiguration: agentConfiguration);
         SetHttpPort(fixture.HttpPort);
     }
 

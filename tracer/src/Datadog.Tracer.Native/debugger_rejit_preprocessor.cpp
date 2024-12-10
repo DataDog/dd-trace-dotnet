@@ -35,6 +35,11 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     for (const auto& module : modules)
     {
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
+        if (!moduleInfo.IsValid())
+        {
+            continue;
+        }
+
         Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
         ComPtr<IUnknown> metadataInterfaces;

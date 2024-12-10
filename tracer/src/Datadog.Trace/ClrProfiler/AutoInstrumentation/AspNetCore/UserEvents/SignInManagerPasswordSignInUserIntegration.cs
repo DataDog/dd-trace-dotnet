@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -80,19 +81,24 @@ public static class SignInManagerPasswordSignInUserIntegration
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
             if (!returnValue.Succeeded)
             {
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
 
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                    if (!string.IsNullOrEmpty(anonId))
+                    {
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId!);
+                    }
                 }
                 else
                 {
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
                 }
+
+                SecurityCoordinator.CollectHeaders(span);
             }
             else if (userExists)
             {
@@ -101,7 +107,10 @@ public static class SignInManagerPasswordSignInUserIntegration
                 if (security.IsAnonUserTrackingMode)
                 {
                     var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.User.Id, anonId);
+                    if (!string.IsNullOrEmpty(anonId))
+                    {
+                        tryAddTag(Tags.User.Id, anonId!);
+                    }
                 }
                 else
                 {

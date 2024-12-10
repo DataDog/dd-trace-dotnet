@@ -13,8 +13,12 @@
 
 
 #include "Configuration.h"
+#include "chrono_helper.hpp"
+
+#include <chrono>
 #include <memory>
 
+using namespace std::chrono_literals;
 
 enum class EventId : uint32_t
 {
@@ -22,7 +26,6 @@ enum class EventId : uint32_t
     ContentionStart = 1,
     AllocationTick = 2
 };
-
 
 struct ThreadInfo
 {
@@ -34,11 +37,11 @@ struct ThreadInfo
 
     // Lock contentions
     std::vector<uintptr_t> ContentionCallStack;
-    uint64_t ContentionStartTimestamp = 0;
+    etw_timestamp ContentionStartTimestamp = etw_timestamp::zero();
 
     // Allocations
     std::vector<uintptr_t> AllocationCallStack;
-    uint64_t AllocationTickTimestamp = 0;
+    std::chrono::nanoseconds AllocationTickTimestamp = 0ns;
     uint32_t AllocationKind = 0;
     uintptr_t AllocationClassId = 0;
     std::string AllocatedType;
@@ -79,7 +82,7 @@ public:
 
 // Inherited via IEtwEventsReceiver
     void OnEvent(
-        uint64_t systemTimestamp,
+        etw_timestamp systemTimestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,

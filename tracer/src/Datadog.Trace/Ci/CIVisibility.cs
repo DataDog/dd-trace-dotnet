@@ -16,6 +16,7 @@ using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.ExporterInternal, true),
+                        new ImmutableExporterSettings(settings.TracerSettings.Exporter, true),
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -128,17 +129,7 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
-            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -197,17 +188,7 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceNameInternal))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceNameInternal = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceNameInternal = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceNameInternal);
-            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceNameInternal);
+            Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
@@ -429,7 +410,7 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
-            var exporterSettings = tracerSettings.ExporterInternal;
+            var exporterSettings = tracerSettings.Exporter;
             if (exporterSettings.TracesTransport != TracesTransportType.Default)
             {
                 factory = AgentTransportStrategy.Get(
@@ -445,13 +426,13 @@ namespace Datadog.Trace.Ci
 #if NETCOREAPP
                 Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
                 factory = new HttpClientRequestFactory(
-                    exporterSettings.AgentUriInternal,
+                    exporterSettings.AgentUri,
                     AgentHttpHeaderNames.DefaultHeaders,
                     handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
                     timeout: timeout);
 #else
                 Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-                factory = new ApiWebRequestFactory(tracerSettings.ExporterInternal.AgentUriInternal, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+                factory = new ApiWebRequestFactory(tracerSettings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
                 var settings = Settings;
                 if (!string.IsNullOrWhiteSpace(settings.ProxyHttps))
@@ -708,11 +689,23 @@ namespace Datadog.Trace.Ci
                 var settings = Settings;
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, settings));
 
-                Task<long>? uploadRepositoryChangesTask = null;
+                Task? uploadRepositoryChangesTask = null;
                 if (settings.GitUploadEnabled != false)
                 {
                     // Upload the git metadata
-                    uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
+                    async Task UploadRepositoryChangesAsync()
+                    {
+                        try
+                        {
+                            await lazyItrClient.Value.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "CIVisibility: Error uploading repository git metadata.");
+                        }
+                    }
+
+                    uploadRepositoryChangesTask = Task.Run(UploadRepositoryChangesAsync);
                 }
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set

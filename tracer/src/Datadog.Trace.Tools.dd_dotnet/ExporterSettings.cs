@@ -60,9 +60,9 @@ public partial class ExporterSettings
 
     internal TracesTransportType TracesTransport { get; private set; }
 
-    internal string? TracesPipeNameInternal { get; private set; }
+    internal string? TracesPipeName { get; private set; }
 
-    internal string? TracesUnixDomainSocketPathInternal { get; private set; }
+    internal string? TracesUnixDomainSocketPath { get; private set; }
 
     private static string? GetValue(IConfigurationSource? configuration, params string[] keys)
     {

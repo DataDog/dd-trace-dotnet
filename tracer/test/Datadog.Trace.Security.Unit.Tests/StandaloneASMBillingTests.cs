@@ -37,6 +37,6 @@ public class StandaloneASMBillingTests
 
         // Should ignore the configuration set by the customer
         Assert.False(tracerSettings.StatsComputationEnabled);
-        Assert.False(tracerSettings.StatsComputationEnabledInternal);
+        Assert.False(tracerSettings.StatsComputationEnabled);
     }
 }

@@ -82,7 +82,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 return Array.Empty<T>();
             }
 
-            ArrayPoolEventSource log = ArrayPoolEventSource.Log;
             T[]? buffer;
 
             int index = Utilities.SelectBucketIndex(minimumLength);
@@ -98,10 +97,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     buffer = _buckets[i].Rent();
                     if (buffer != null)
                     {
-                        if (log.IsEnabled())
-                        {
-                            log.BufferRented(buffer.GetHashCode(), buffer.Length, Id, _buckets[i].Id);
-                        }
                         return buffer;
                     }
                 }
@@ -116,15 +111,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 // The request was for a size too large for the pool.  Allocate an array of exactly the requested length.
                 // When it's returned to the pool, we'll simply throw it away.
                 buffer = new T[minimumLength];
-            }
-
-            if (log.IsEnabled())
-            {
-                int bufferId = buffer.GetHashCode();
-                log.BufferRented(bufferId, buffer.Length, Id, ArrayPoolEventSource.NoBucketId);
-                log.BufferAllocated(bufferId, buffer.Length, Id, ArrayPoolEventSource.NoBucketId, index >= _buckets.Length ?
-                    ArrayPoolEventSource.BufferAllocatedReason.OverMaximumSize :
-                    ArrayPoolEventSource.BufferAllocatedReason.PoolExhausted);
             }
 
             return buffer;
@@ -162,18 +148,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 // instead of dropping a bucket, in which case we could try to return to a lower-sized bucket,
                 // just as how in Rent we allow renting from a higher-sized bucket.
                 _buckets[bucket].Return(array);
-            }
-
-            // Log that the buffer was returned
-            ArrayPoolEventSource log = ArrayPoolEventSource.Log;
-            if (log.IsEnabled())
-            {
-                int bufferId = array.GetHashCode();
-                log.BufferReturned(bufferId, array.Length, Id);
-                if (!haveBucket)
-                {
-                    log.BufferDropped(bufferId, array.Length, Id, ArrayPoolEventSource.NoBucketId, ArrayPoolEventSource.BufferDroppedReason.Full);
-                }
             }
         }
 
@@ -234,13 +208,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 if (allocateBuffer)
                 {
                     buffer = new T[_bufferLength];
-
-                    ArrayPoolEventSource log = ArrayPoolEventSource.Log;
-                    if (log.IsEnabled())
-                    {
-                        log.BufferAllocated(buffer.GetHashCode(), _bufferLength, _poolId, Id,
-                            ArrayPoolEventSource.BufferAllocatedReason.Pooled);
-                    }
                 }
 
                 return buffer;
@@ -280,15 +247,6 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 finally
                 {
                     if (lockTaken) _lock.Exit(false);
-                }
-
-                if (!returned)
-                {
-                    ArrayPoolEventSource log = ArrayPoolEventSource.Log;
-                    if (log.IsEnabled())
-                    {
-                        log.BufferDropped(array.GetHashCode(), _bufferLength, _poolId, Id, ArrayPoolEventSource.BufferDroppedReason.Full);
-                    }
                 }
             }
         }

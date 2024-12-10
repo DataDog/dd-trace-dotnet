@@ -109,6 +109,7 @@
    <assembly fullname="Microsoft.Win32.Primitives">
       <type fullname="System.ComponentModel.Win32Exception" />
    </assembly>
+   <assembly fullname="MongoDB.Driver" />
    <assembly fullname="MongoDB.Driver.Core" />
    <assembly fullname="MySql.Data" />
    <assembly fullname="MySqlConnector" />
@@ -256,13 +257,10 @@
       <type fullname="System.Diagnostics.TraceListenerCollection" />
    </assembly>
    <assembly fullname="System.Diagnostics.Tracing">
-      <type fullname="System.Diagnostics.Tracing.EventAttribute" />
       <type fullname="System.Diagnostics.Tracing.EventKeywords" />
       <type fullname="System.Diagnostics.Tracing.EventLevel" />
       <type fullname="System.Diagnostics.Tracing.EventListener" />
       <type fullname="System.Diagnostics.Tracing.EventSource" />
-      <type fullname="System.Diagnostics.Tracing.EventSource/EventData" />
-      <type fullname="System.Diagnostics.Tracing.EventSourceAttribute" />
       <type fullname="System.Diagnostics.Tracing.EventSourceCreatedEventArgs" />
       <type fullname="System.Diagnostics.Tracing.EventWrittenEventArgs" />
    </assembly>

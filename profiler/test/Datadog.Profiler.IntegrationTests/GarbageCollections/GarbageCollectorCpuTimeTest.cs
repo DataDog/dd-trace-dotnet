@@ -41,7 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // Enable GC Server
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -64,7 +64,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable("DOTNET_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -83,7 +83,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // disable gc server
             runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -102,7 +102,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // disable gc server
             runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -121,7 +121,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // disable gc server
             runner.Environment.SetVariable("DOTNET_gcServer", "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -140,7 +140,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // enable gc server
             runner.Environment.SetVariable("COMPlus_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
@@ -159,7 +159,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             // enable gc server
             runner.Environment.SetVariable("COMPlus_gcServer", "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
