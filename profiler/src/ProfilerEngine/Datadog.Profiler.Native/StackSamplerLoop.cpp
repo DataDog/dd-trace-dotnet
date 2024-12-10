@@ -426,8 +426,12 @@ void StackSamplerLoop::CollectOneThreadStackSample(
         return;
     }
 
-    #ifndef WIN32
-    const auto reuseCallstack = profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
+    const auto reuseCallstack =
+#ifdef WIN32
+        false;
+#else
+        profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
+
     if (reuseCallstack)
     {
         StackSnapshotResultBuffer buffer;
@@ -504,9 +508,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
-                #ifndef WIN32
                 _pStackFramesCollector->ReuseCallstack(reuseCallstack);
-                #endif
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
             }
 
