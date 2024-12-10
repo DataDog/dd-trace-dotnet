@@ -1,6 +1,8 @@
 PUBLIC dd_restart_wrapper
+PUBLIC dd_restart_wrapper_size
 
 .data
+dd_restart_wrapper_size QWORD 0
 
 .code
 
@@ -42,4 +44,8 @@ dd_restart_wrapper PROC
 
     ret
 dd_restart_wrapper ENDP
+
+dd_restart_wrapper_end:
+mov dd_restart_wrapper_size, OFFSET dd_restart_wrapper_end - OFFSET dd_restart_wrapper  ; Calculate size of the function
+
 END

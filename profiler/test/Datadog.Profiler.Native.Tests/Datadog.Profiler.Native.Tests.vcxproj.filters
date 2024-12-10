@@ -16,6 +16,9 @@
     <Filter Include="External Sources">
       <UniqueIdentifier>{ecc1aba4-974c-43eb-99cb-8a79be4132ea}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Helpers\asm">
+      <UniqueIdentifier>{2283e900-95dd-4dfc-9c94-04e4d43000e6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -218,5 +221,10 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\wrapper_callback.x64.asm">
+      <Filter>Helpers\asm</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

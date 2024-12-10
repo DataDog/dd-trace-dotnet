@@ -214,6 +214,12 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     auto origContext = context;
 
+    auto wasExecutingWrapper = pThreadInfo->IsExecutingWrapper(context);
+    if (wasExecutingWrapper)
+    {
+        pThreadInfo->RestoreContext(context);
+    }
+
     do
     {
         if (!this->AddFrame(context.Rip))
@@ -329,7 +335,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     } while (context.Rip != 0);
 
-    if (GetStackSnapshotResult()->GetFramesCount() > 0 && GetStackSnapshotResult()->CanReuseCallstack())
+    if (!wasExecutingWrapper && GetStackSnapshotResult()->GetFramesCount() > 0 && GetStackSnapshotResult()->CanReuseCallstack())
     {
         pThreadInfo->UpdateContext(origContext);
         SetThreadContext(handle, &origContext);
