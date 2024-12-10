@@ -6264,7 +6264,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 7,
+      "Item1": 8,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -6312,7 +6312,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 7,
+      "Item1": 8,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -6429,6 +6429,31 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV5AndV7",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "GraphQL",
+    "AssemblyName": "GraphQL",
+    "TargetTypeName": "GraphQL.Validation.DocumentValidator",
+    "TargetMethodName": "ValidateAsyncCoreAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[!0]",
+    "TargetParameterTypes": [
+      "GraphQL.Validation.ValidationContext",
+      "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 8,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ValidateAsyncIntegrationV8",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

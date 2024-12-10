@@ -609,7 +609,6 @@ src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/IQueryRes
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/NameStringProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/OperationTypeProxy.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/HotChocolate/PreparedOperationStruct.cs
-src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/DocumentV5Struct.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegration.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/ExecuteAsyncIntegrationV5AndV7.cs
 src/Datadog.Trace/ClrProfiler/AutoInstrumentation/GraphQL/Net/GraphQLCommon.cs
