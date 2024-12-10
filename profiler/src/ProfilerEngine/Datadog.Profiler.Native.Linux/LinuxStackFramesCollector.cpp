@@ -209,6 +209,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 
 
         ucontext_t* cctx = reinterpret_cast<ucontext_t*>(ctx);
+#ifndef ARM64
         ucontext_t context;
         // TODO check if callstack reuse is enabled it's enabled
         auto wasInWrapper = false;
@@ -222,13 +223,16 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
                 cctx = &context;
             }
         }
+#endif
 
         auto result = _useBacktrace2 ? CollectStackWithBacktrace2(cctx) : CollectStackManually(cctx);
+#ifndef ARM64
         if (!wasInWrapper && GetStackSnapshotResult()->CanReuseCallstack() && cctx != nullptr && result == S_OK)
         {
             cctx = reinterpret_cast<ucontext_t*>(ctx);
             _pCurrentCollectionThreadInfo->UpdateContext(*cctx);
         }
+#endif
         return result;
     }
     catch (...)
