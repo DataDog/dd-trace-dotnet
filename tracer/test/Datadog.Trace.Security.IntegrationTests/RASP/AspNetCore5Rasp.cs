@@ -105,6 +105,7 @@ public abstract class AspNetCore5Rasp : AspNetBase, IClassFixture<AspNetCoreTest
     [InlineData("/Iast/GetFileContent?file=filename", "Lfi")]
     [InlineData("/Iast/SsrfAttack?host=127.0.0.1", "SSRF")]
     [InlineData("/Iast/ExecuteCommand?file=ls&argumentLine=;evilCommand&fromShell=true", "CmdI")]
+    [InlineData("/Iast/ExecuteCommand?file=/bin/rebootCommand&argumentLine=-f&fromShell=false", "CmdI")]
     [Trait("RunOnWindows", "True")]
     public async Task TestRaspRequest(string url, string exploit)
     {

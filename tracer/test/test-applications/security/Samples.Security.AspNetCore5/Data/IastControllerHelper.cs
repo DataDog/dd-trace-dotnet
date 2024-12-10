@@ -1,7 +1,7 @@
 using System;
 using System.Data.SQLite;
 using System.Text;
-#if !NETFRAMEWORK
+#if NETCOREAPP
 using Microsoft.Data.Sqlite;
 #endif
 
@@ -40,8 +40,8 @@ namespace Samples.Security.Data
 
             return dbConnectionSystemData;
         }
-        
-        #if !NETFRAMEWORK
+
+#if NETCOREAPP
         public static SqliteConnection CreateMicrosoftDataDatabase()
         {
             var builderMicrosoftData = new SqliteConnectionStringBuilder { DataSource = ":memory:" };
@@ -61,7 +61,7 @@ namespace Samples.Security.Data
             
             return dbConnectionMicrosoftData;
         }
-        #endif
+#endif
 
         public static string ToFormattedString(Exception ex)
         {

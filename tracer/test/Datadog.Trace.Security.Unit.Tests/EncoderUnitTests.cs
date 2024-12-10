@@ -179,6 +179,15 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         Assert.Equal(expectedLength, CountNestedMapDepth(result));
     }
 
+    [SkippableTheory]
+    [InlineData(new object[] { "a", 3, new object[] { "b", 6 }, 44 }, "[ a, 3, [ b, 6 ], 44 ]")]
+    [InlineData(new object[] { "aba", "3", null, new object[] { new object[] { "w" }, "e" },  }, "[ aba, 3, null, [ [ w ], e ] ]")]
+    public void TestFormatArgs(object args, string expectedOutput)
+    {
+        Encoder.FormatArgs(args).Should().Be(expectedOutput);
+        EncoderLegacy.FormatArgs(args).Should().Be(expectedOutput);
+    }
+
     private static List<object> MakeNestedList(int nestingDepth)
     {
         var root = new List<object>();

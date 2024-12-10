@@ -23,6 +23,8 @@ namespace Datadog.Trace.Security.Unit.Tests
                     { "1.0.50", RcmCapabilitiesIndices.AsmRaspSsrf, false },
                     { "1.19", RcmCapabilitiesIndices.AsmRaspShi, true },
                     { "1.18", RcmCapabilitiesIndices.AsmRaspShi, false },
+                    { "1.20", RcmCapabilitiesIndices.AsmRaspCmd, false },
+                    { "1.21", RcmCapabilitiesIndices.AsmRaspCmd, true },
                     { "1.19", RcmCapabilitiesIndices.AsmExclusionData, true },
                     { null, RcmCapabilitiesIndices.AsmExclusionData, false },
                     { "INVALID", RcmCapabilitiesIndices.AsmExclusionData, false },
