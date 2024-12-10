@@ -50,6 +50,8 @@ public:
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
     StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
+    void ReuseCallstack(bool reuseCallstack);
+    Callstack GetCallstack();
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;

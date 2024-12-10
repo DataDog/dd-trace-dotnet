@@ -99,6 +99,7 @@ Configuration::Configuration()
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _reuseCallstackWalltime = GetEnvironmentValue(EnvironmentVariables::ExperimentalReuseCallstackWalltime, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -598,6 +599,11 @@ CpuProfilerType Configuration::GetCpuProfilerType() const
 std::chrono::milliseconds Configuration::GetCpuProfilingInterval() const
 {
     return _cpuProfilingInterval;
+}
+
+bool Configuration::CanReuseWalltimeCallstack() const
+{
+    return _reuseCallstackWalltime;
 }
 
 static bool convert_to(shared::WSTRING const& s, bool& result)

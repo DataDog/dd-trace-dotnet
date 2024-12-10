@@ -54,6 +54,9 @@ public:
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
 
+    inline bool CanReuseCallstack() const;
+    inline void SetReuseCallstack(bool reuseCallstack);
+
 protected:
 
     std::chrono::nanoseconds _unixTimeUtc;
@@ -62,6 +65,7 @@ protected:
 
     std::uint64_t _localRootSpanId;
     std::uint64_t _spanId;
+    bool _reuseCallstack;
 };
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
@@ -149,4 +153,14 @@ inline Callstack StackSnapshotResultBuffer::GetCallstack()
 inline void StackSnapshotResultBuffer::SetCallstack(Callstack callstack)
 {
     _callstack = std::move(callstack);
+}
+
+inline bool StackSnapshotResultBuffer::CanReuseCallstack() const
+{
+    return _reuseCallstack;
+}
+
+inline void StackSnapshotResultBuffer::SetReuseCallstack(bool reuseCallstack)
+{
+    _reuseCallstack = reuseCallstack;
 }
