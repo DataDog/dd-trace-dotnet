@@ -1111,6 +1111,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET5_0
                 new object[] { "7.0.2" },
@@ -1123,6 +1126,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET6_0
                 new object[] { "7.0.2" },
@@ -1135,6 +1141,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET7_0
                 new object[] { "7.0.2" },
@@ -1147,6 +1156,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET8_0
                 new object[] { "7.0.2" },
@@ -1159,6 +1171,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET9_0
                 new object[] { "7.0.2" },
@@ -1171,6 +1186,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.7.2" },
                 new object[] { "7.8.0" },
                 new object[] { "7.9.0" },
+                new object[] { "8.0.2" },
+                new object[] { "8.1.0" },
+                new object[] { "8.2.1" },
 #endif
 #endif
             };
