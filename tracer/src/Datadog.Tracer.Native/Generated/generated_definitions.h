@@ -16,5 +16,6 @@ class GeneratedDefinitions
 public:
     static std::vector<WCHAR*>* GetCallSites();
     static std::vector<CallTargetDefinition3>* GetCallTargets();
+    static void Cleanup();
 };
 } // namespace trace
