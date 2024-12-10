@@ -220,111 +220,6 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
                           .DisableRequireUniquePrefix();
     }
 
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [InlineData("System.Data.SQLite")]
-    [InlineData("Microsoft.Data.Sqlite")]
-    public async Task TestIastStoredXssRequest(string database)
-    {
-        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
-#if NETCOREAPP3_0
-        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
-        {
-            throw new SkipException();
-        }
-#endif
-
-        var filename = "Iast.StoredXss.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
-        var url = $"/Iast/StoredXss?param=<b>RawValue</b>&useMicrosoftDataDb={useMicrosoftDataDb}";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(aspNetCorePathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-        settings.AddRegexScrubber((new Regex(@"&useMicrosoftDataDb=(True|False)"), "&useMicrosoftDataDb=..."));
-
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
-    }
-
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [InlineData("System.Data.SQLite")]
-    [InlineData("Microsoft.Data.Sqlite")]
-    public async Task TestIastStoredXssEscapedRequest(string database)
-    {
-        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
-#if NETCOREAPP3_0
-        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
-        {
-            throw new SkipException();
-        }
-#endif
-
-        var filename = "Iast.StoredXssEscaped.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = $"/Iast/StoredXssEscaped?useMicrosoftDataDb={useMicrosoftDataDb}";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-
-        // Add a scrubber to remove the useMicrosoftDataDb value
-        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
-
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
-    }
-
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [InlineData("System.Data.SQLite")]
-    [InlineData("Microsoft.Data.Sqlite")]
-    public async Task TestIastStoredSqliRequest(string database)
-    {
-        var useMicrosoftDataDb = database == "Microsoft.Data.Sqlite";
-#if NETCOREAPP3_0
-        if (useMicrosoftDataDb && EnvironmentHelper.IsAlpine())
-        {
-            throw new SkipException();
-        }
-#endif
-
-        var filename = "Iast.StoredSqli.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
-        var url = $"/Iast/StoredSqli?useMicrosoftDataDb={useMicrosoftDataDb}";
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, 2, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
-        settings.AddRegexScrubber(aspNetCorePathScrubber);
-        settings.AddRegexScrubber(hashScrubber);
-
-        // Add a scrubber to remove the useMicrosoftDataDb value
-        settings.AddRegexScrubber((new Regex(@"useMicrosoftDataDb=(True|False)"), "useMicrosoftDataDb=..."));
-
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
-    }
-
     [Theory]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "ArmUnsupported")]
@@ -1378,8 +1273,8 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 
-    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
-        : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
+    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off, string sampleName = "AspNetCore5")
+        : base(sampleName, outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
         fixture.SetOutput(outputHelper);
