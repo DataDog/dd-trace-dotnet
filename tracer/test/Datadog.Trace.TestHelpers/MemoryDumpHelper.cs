@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -126,12 +127,12 @@ namespace Datadog.Trace.TestHelpers
             return tcs.Task;
         }
 
-        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null)
+        public static bool CaptureMemoryDump(Process process, IProgress<string> output = null, bool includeChildProcesses = false)
         {
             return CaptureMemoryDump(process.Id, output);
         }
 
-        private static bool CaptureMemoryDump(int pid, IProgress<string> output = null)
+        private static bool CaptureMemoryDump(int pid, IProgress<string> output = null, bool includeChildProcesses = false)
         {
             if (!IsAvailable)
             {
@@ -139,9 +140,10 @@ namespace Datadog.Trace.TestHelpers
                 return false;
             }
 
-            // children firsts and then the parent process last
+            // children first and then the parent process last
+            IEnumerable<int> pids = includeChildProcesses ? [..ProcessHelper.GetChildrenIds(pid), pid] : [pid];
             var atLeastOneDump = false;
-            foreach (var cPid in ProcessHelper.GetChildrenIds(pid).Concat([pid]))
+            foreach (var cPid in pids)
             {
                 try
                 {
