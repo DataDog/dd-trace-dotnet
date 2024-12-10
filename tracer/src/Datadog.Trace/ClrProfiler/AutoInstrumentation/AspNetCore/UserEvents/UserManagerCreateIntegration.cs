@@ -75,7 +75,7 @@ public static class UserManagerCreateIntegration
             UserEventsCommon.RecordMetricsSignupIfNotFound(foundUserId, foundLogin);
             if (returnValue.Succeeded)
             {
-                Func<string, string> processPii;
+                Func<string, string>? processPii = null;
                 string successAutoMode;
                 if (security.IsAnonUserTrackingMode)
                 {
@@ -84,7 +84,6 @@ public static class UserManagerCreateIntegration
                 }
                 else
                 {
-                    processPii = val => val;
                     successAutoMode = SecuritySettings.UserTrackingIdentMode;
                 }
 
@@ -93,19 +92,17 @@ public static class UserManagerCreateIntegration
 
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.Track, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.AutoMode, successAutoMode);
-                tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, userId!);
-                tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
 
                 if (foundUserId)
                 {
-                    var processedUserId = processPii(userId!);
+                    var processedUserId = processPii?.Invoke(userId!) ?? userId!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, processedUserId);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, processedUserId);
                 }
 
                 if (foundLogin)
                 {
-                    var processedUserLogin = processPii(userLogin!);
+                    var processedUserLogin = processPii?.Invoke(userLogin!) ?? userLogin!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.Login, processedUserLogin);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalLogin, processedUserLogin);
                 }

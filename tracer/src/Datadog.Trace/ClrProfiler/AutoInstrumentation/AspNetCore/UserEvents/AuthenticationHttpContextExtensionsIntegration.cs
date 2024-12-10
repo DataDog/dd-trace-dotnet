@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 var span = scope.Span;
                 var foundUserId = false;
                 var foundLogin = false;
-                Func<string, string> processPii;
+                Func<string, string>? processPii = null;
                 string successAutoMode;
                 if (security.IsAnonUserTrackingMode)
                 {
@@ -77,7 +77,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                 }
                 else
                 {
-                    processPii = val => val;
                     successAutoMode = SecuritySettings.UserTrackingIdentMode;
                 }
 
@@ -93,14 +92,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                     if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
                     {
                         foundUserId = true;
-                        var userId = processPii(claim.Value);
+                        var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
                         tryAddTag(Tags.User.Id, userId);
                         setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
                     }
                     else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
                     {
                         foundLogin = true;
-                        var login = processPii(claim.Value);
+                        var login = processPii?.Invoke(claim.Value) ?? claim.Value;
                         setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
                         tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
                     }

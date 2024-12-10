@@ -27,11 +27,15 @@ internal static class UserEventsCommon
     {
         // spec says take first half of the hash
         const int bytesToUse = 16;
-        var encodedBytes = Encoding.UTF8.GetBytes(id);
         #if NET6_0_OR_GREATER
-        var destination = new Span<byte>(new byte[32]);
-        var successfullyHashed = SHA256.TryHashData(new ReadOnlySpan<byte>(encodedBytes), destination, out var bytesWritten);
+        Span<byte> destination = stackalloc byte[32];
+        var destinationBytes = new Span<byte>();
+        var source = new ReadOnlySpan<char>(id.ToCharArray());
+        var utf8 = new UTF8Encoding();
+        utf8.GetBytes(source, destinationBytes);
+        var successfullyHashed = SHA256.TryHashData(destinationBytes, destination, out var bytesWritten);
         #else
+        var encodedBytes = Encoding.UTF8.GetBytes(id);
         using var hash = SHA256.Create();
         var destination = hash.ComputeHash(encodedBytes);
         var bytesWritten = destination.Length;
@@ -59,7 +63,7 @@ internal static class UserEventsCommon
             return new string(stringChars, 0, 37);
         }
 
-        Log.Warning<int>("Couldn't anonymize user information (login or id), byteArray length was {BytesWritten}", bytesWritten);
+        Log.Debug<int>("Couldn't anonymize user information (login or id), byteArray length was {BytesWritten}", bytesWritten);
         return string.Empty;
     }
 
