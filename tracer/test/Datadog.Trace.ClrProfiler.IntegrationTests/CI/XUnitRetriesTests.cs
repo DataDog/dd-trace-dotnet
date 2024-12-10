@@ -4,15 +4,7 @@
 // </copyright>
 #if NETCOREAPP3_1_OR_GREATER
 
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
