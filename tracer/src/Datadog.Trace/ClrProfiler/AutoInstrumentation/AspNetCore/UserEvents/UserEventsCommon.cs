@@ -29,11 +29,9 @@ internal static class UserEventsCommon
         const int bytesToUse = 16;
         #if NET6_0_OR_GREATER
         Span<byte> destination = stackalloc byte[32];
-        var destinationBytes = new Span<byte>();
-        var source = new ReadOnlySpan<char>(id.ToCharArray());
         var utf8 = new UTF8Encoding();
-        utf8.GetBytes(source, destinationBytes);
-        var successfullyHashed = SHA256.TryHashData(destinationBytes, destination, out var bytesWritten);
+        var sourceBytes = utf8.GetBytes(id.ToCharArray());
+        var successfullyHashed = SHA256.TryHashData(sourceBytes, destination, out var bytesWritten);
         #else
         var encodedBytes = Encoding.UTF8.GetBytes(id);
         using var hash = SHA256.Create();
