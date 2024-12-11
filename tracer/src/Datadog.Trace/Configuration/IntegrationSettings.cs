@@ -5,34 +5,24 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
-    public partial class IntegrationSettings
+    public class IntegrationSettings
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettings"/> class.
         /// </summary>
         /// <param name="integrationName">The integration name.</param>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        [PublicApi]
-        public IntegrationSettings(string integrationName, IConfigurationSource? source)
-            : this(integrationName, source, false)
+        /// <param name="isExplicitlyDisabled">Has the integration been explicitly disabled</param>
+        internal IntegrationSettings(string integrationName, IConfigurationSource? source, bool isExplicitlyDisabled)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Ctor);
-        }
-
-        internal IntegrationSettings(string integrationName, IConfigurationSource? source, bool unusedParamNotToUsePublicApi)
-        {
-            // unused parameter is to give us a non-public API we can use
             if (integrationName is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(integrationName));
@@ -40,20 +30,15 @@ namespace Datadog.Trace.Configuration
 
             IntegrationName = integrationName;
 
-            if (source == null)
-            {
-                return;
-            }
-
             // We don't record these in telemetry, because they're blocked anyway
-            var config = new ConfigurationBuilder(source, NullConfigurationTelemetry.Instance);
+            var config = new ConfigurationBuilder(source ?? NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             var upperName = integrationName.ToUpperInvariant();
-            Enabled = config
-                     .WithKeys(
-                          string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
-                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                          $"DD_{integrationName}_ENABLED")
-                     .AsBool();
+            Enabled = isExplicitlyDisabled ? false : config
+                                                  .WithKeys(
+                                                       string.Format(ConfigurationKeys.Integrations.Enabled, upperName),
+                                                       string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
+                                                       $"DD_{integrationName}_ENABLED")
+                                                  .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = config
@@ -78,21 +63,21 @@ namespace Datadog.Trace.Configuration
         public string IntegrationName { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether
+        /// Gets a value indicating whether
         /// this integration is enabled.
         /// </summary>
-        public bool? Enabled { get; set; }
+        public bool? Enabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether
+        /// Gets a value indicating whether
         /// Analytics are enabled for this integration.
         /// </summary>
-        public bool? AnalyticsEnabled { get; set; }
+        public bool? AnalyticsEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value between 0 and 1 (inclusive)
+        /// Gets a value between 0 and 1 (inclusive)
         /// that determines the sampling rate for this integration.
         /// </summary>
-        public double AnalyticsSampleRate { get; set; }
+        public double AnalyticsSampleRate { get; }
     }
 }

@@ -5,11 +5,8 @@
 
 #nullable enable
 
-using System;
+using System.Collections.Generic;
 using Datadog.Trace.Logging;
-using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Configuration
 {
@@ -19,40 +16,31 @@ namespace Datadog.Trace.Configuration
     public class IntegrationSettingsCollection
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
-        private readonly IntegrationSettings[] _settings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettingsCollection"/> class.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        [PublicApi]
-        public IntegrationSettingsCollection(IConfigurationSource source)
-            : this(source, false)
+        /// <param name="disabledIntegrationNames">Integrations already disabled by name</param>
+        internal IntegrationSettingsCollection(IConfigurationSource source, HashSet<string> disabledIntegrationNames)
         {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Ctor_Source);
+            Settings = GetIntegrationSettings(source, disabledIntegrationNames);
         }
 
-        internal IntegrationSettingsCollection(IConfigurationSource source, bool unusedParamNotToUsePublicApi)
-        {
-            _settings = GetIntegrationSettings(source);
-        }
-
-        internal IntegrationSettings[] Settings => _settings;
+        internal IntegrationSettings[] Settings { get; }
 
         /// <summary>
         /// Gets the <see cref="IntegrationSettings"/> for the specified integration.
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
-        [PublicApi]
         public IntegrationSettings this[string integrationName]
         {
             get
             {
-                TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettingsCollection_Indexer_Name);
                 if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
                 {
-                    return _settings[(int)integrationId];
+                    return Settings[(int)integrationId];
                 }
 
                 Log.Warning(
@@ -64,7 +52,10 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source)
+        internal IntegrationSettings this[IntegrationId integration]
+            => Settings[(int)integration];
+
+        private static IntegrationSettings[] GetIntegrationSettings(IConfigurationSource source, HashSet<string> disabledIntegrationNames)
         {
             var integrations = new IntegrationSettings[IntegrationRegistry.Names.Length];
 
@@ -74,7 +65,8 @@ namespace Datadog.Trace.Configuration
 
                 if (name != null)
                 {
-                    integrations[i] = new IntegrationSettings(name, source, false);
+                    var explicitlyDisabled = disabledIntegrationNames.Contains(name);
+                    integrations[i] = new IntegrationSettings(name, source, explicitlyDisabled);
                 }
             }
 
