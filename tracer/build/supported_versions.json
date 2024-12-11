@@ -53,7 +53,7 @@
         "minVersionTestedInclusive": "4.0.3",
         "maxVersionSupportedInclusive": "7.4.0",
         "maxVersionAvailableInclusive": "8.0.0",
-        "maxVersionTestedInclusive": "7.4.0"
+        "maxVersionTestedInclusive": "8.0.0"
       }
     ]
   },
