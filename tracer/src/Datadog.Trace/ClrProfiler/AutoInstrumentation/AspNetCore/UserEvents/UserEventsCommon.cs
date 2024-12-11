@@ -23,7 +23,7 @@ internal static class UserEventsCommon
 
     internal static string? GetLogin(IIdentityUser? user) => user?.UserName ?? user?.Email;
 
-    internal static unsafe string Anonymize(string id)
+    internal static string Anonymize(string id)
     {
         // spec says take first half of the hash
         const int bytesToUse = 16;
@@ -44,7 +44,7 @@ internal static class UserEventsCommon
             // we want to end up with a string of the form anon_0c76692372ebf01a7da6e9570fb7d0a1
             // 37 is 5 prefix character plus 32 hexadecimal digits (presenting 16 bytes)
             // stackalloc to avoid intermediate heap allocation
-            var stringChars = stackalloc char[37];
+            Span<char> stringChars = stackalloc char[37];
             stringChars[0] = 'a';
             stringChars[1] = 'n';
             stringChars[2] = 'o';
@@ -58,7 +58,7 @@ internal static class UserEventsCommon
                 stringChars[iChars + 6] = ByteDigitToChar(b & 0x0F);
             }
 
-            return new string(stringChars, 0, 37);
+            return new string(stringChars.ToArray(), 0, 37);
         }
 
         Log.Debug<int>("Couldn't anonymize user information (login or id), byteArray length was {BytesWritten}", bytesWritten);
