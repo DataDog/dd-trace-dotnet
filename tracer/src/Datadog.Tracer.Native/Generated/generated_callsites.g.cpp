@@ -8,8 +8,9 @@
 
 namespace trace
 {
-
-std::vector<WCHAR*> g_callSites=
+const std::vector<WCHAR*> GeneratedDefinitions::GetCallSites()
+{
+std::vector<WCHAR*> callSites =
 {
 (WCHAR*)WStr("[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect 12"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object) 15"),
@@ -707,4 +708,6 @@ std::vector<WCHAR*> g_callSites=
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 };
+return callSites;
+}
 }

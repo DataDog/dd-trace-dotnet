@@ -220,10 +220,10 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallSiteDefinitions(UINT32 enabledCatego
         return 0;
     }
 
-    auto targets = trace::GeneratedDefinitions::GetCallSites();
-    if (targets)
+    auto sites = trace::GeneratedDefinitions::GetCallSites();
+    if (sites.size() > 0)
     {
-        return trace::profiler->RegisterIastAspects((WCHAR**) targets->data(), targets->size(), enabledCategories, platform);
+        return trace::profiler->RegisterIastAspects((WCHAR**) sites.data(), sites.size(), enabledCategories, platform);
     }
     return 0;
 }
@@ -237,9 +237,9 @@ EXTERN_C int STDAPICALLTYPE InitEmbeddedCallTargetDefinitions(UINT32 enabledCate
     }
 
     auto targets = trace::GeneratedDefinitions::GetCallTargets();
-    if (targets)
+    if (targets.size() > 0)
     {
-        return trace::profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), targets->data(), targets->size(), enabledCategories, platform);
+        return trace::profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), targets.data(), targets.size(), enabledCategories, platform);
     }
 
     return 0;

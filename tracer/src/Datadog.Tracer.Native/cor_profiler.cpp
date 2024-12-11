@@ -1370,8 +1370,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 
     DEL(_dataflow);
 
-    GeneratedDefinitions::Cleanup();
-
     auto definitions = definitions_ids.Get();
 
     Logger::Info("Exiting...");

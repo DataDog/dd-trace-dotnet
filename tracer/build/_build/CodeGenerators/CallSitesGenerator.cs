@@ -263,8 +263,9 @@ namespace CodeGenerators
 
                 namespace trace
                 {
-
-                std::vector<WCHAR*> g_callSites=
+                const std::vector<WCHAR*> GeneratedDefinitions::GetCallSites()
+                {
+                std::vector<WCHAR*> callSites =
                 {
                 """);
 
@@ -298,12 +299,14 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
+                return callSites;
+                }
                 }
                 """);
 
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            var fileName = outputPath / "generated_callsites.g.h";
+            var fileName = outputPath / "generated_callsites.g.cpp";
             File.WriteAllText(fileName, sb.ToString());
 
             Logger.Information("CallSite definitions File saved: {File}", fileName);

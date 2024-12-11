@@ -515,6 +515,8 @@ namespace CodeGenerators
 
                 namespace trace
                 {
+                const std::vector<CallTargetDefinition3> GeneratedDefinitions::GetCallTargets()
+                {
                 """);
 
             var assemblyName = $"Datadog.Trace, Version={version}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
@@ -548,7 +550,7 @@ namespace CodeGenerators
             //Write all CallTargets
             bool inWin32Section = false;
             sb.AppendLine();
-            sb.AppendLine("std::vector<CallTargetDefinition3> g_callTargets=");
+            sb.AppendLine("std::vector<CallTargetDefinition3> callTargets =");
             sb.AppendLine("{");
             int x = 0;
             foreach (var definition in definitions
@@ -580,12 +582,14 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
+                return callTargets;
+                }
                 }
                 """);
 
 
             if (!Directory.Exists(outputPath)) { Directory.CreateDirectory(outputPath); }
-            var fileName = outputPath / "generated_calltargets.g.h";
+            var fileName = outputPath / "generated_calltargets.g.cpp";
             File.WriteAllText(fileName, sb.ToString());
 
             Logger.Information("CallTarget definitions File saved: {File}", fileName);
@@ -603,7 +607,7 @@ namespace CodeGenerators
 
             static string GetSignatureName(int index)
             {
-                return $"g_callTargets_Sig_{index:000}";
+                return $"sig{index:000}";
             }
 
             static string GetSignatureField(string signatureName, string signature)
