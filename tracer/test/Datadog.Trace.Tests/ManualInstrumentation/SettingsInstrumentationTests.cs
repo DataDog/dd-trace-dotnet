@@ -52,32 +52,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_CustomSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
-        {
-            AnalyticsEnabled = true,
-            CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
-            DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = ["something"],
-            Environment = "my-test-env",
-            GlobalSamplingRate = 0.5,
-            GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
-            GrpcTags = new Dictionary<string, string> { { "grpc1", "grpc-value" } },
-            HeaderTags = new Dictionary<string, string> { { "header1", "header-value" } },
-            KafkaCreateConsumerScopeEnabled = false,
-            LogsInjectionEnabled = true,
-            MaxTracesSubmittedPerSecond = 50,
-            ServiceName = "my-test-service",
-            ServiceVersion = "1.2.3",
-            StartupDiagnosticLogEnabled = false,
-            StatsComputationEnabled = true,
-            TraceEnabled = false,
-            TracerMetricsEnabled = true,
-        };
-
-        automatic.Exporter.AgentUri = new Uri("http://localhost:1234");
-        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled = false;
-        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled = true;
-        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
+        var automatic = GetAndAssertAutomaticTracerSettings();
 
         Dictionary<string, object> serializedSettings = new();
         PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
@@ -240,33 +215,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
-        {
-            AnalyticsEnabled = true,
-            CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
-            DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = [nameof(IntegrationId.Kafka)],
-            Environment = "my-test-env",
-            GlobalSamplingRate = 0.5,
-            GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
-            GrpcTags = new Dictionary<string, string> { { "grpc1", "grpc-value" } },
-            HeaderTags = new Dictionary<string, string> { { "header1", "header-value" } },
-            KafkaCreateConsumerScopeEnabled = false,
-            LogsInjectionEnabled = true,
-            MaxTracesSubmittedPerSecond = 50,
-            ServiceName = "my-test-service",
-            ServiceVersion = "1.2.3",
-            StartupDiagnosticLogEnabled = false,
-            StatsComputationEnabled = true,
-            TraceEnabled = false,
-            TracerMetricsEnabled = true,
-        };
-
-        automatic.Exporter.AgentUri = new Uri("http://localhost:1234");
-        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled = false;
-        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled = true;
-        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
-
+        var automatic = GetAndAssertAutomaticTracerSettings();
         var immutable = automatic.Build();
 
         Dictionary<string, object> serializedSettings = new();
@@ -318,11 +267,10 @@ public class SettingsInstrumentationTests
         manual.TracerMetricsEnabled.Should().Be(automatic.TracerMetricsEnabled);
 
         Uri GetTransformedAgentUri(Uri agentUri)
-        {
-            var e = new ExporterSettings();
-            e.AgentUri = agentUri;
-            return e.AgentUri;
-        }
+            => ExporterSettings.Create(new()
+            {
+                { ConfigurationKeys.AgentUri, agentUri }
+            }).AgentUri;
     }
 
     private static string[] GetAllTracerSettingKeys()
@@ -350,4 +298,59 @@ public class SettingsInstrumentationTests
         => GetAllTracerSettingKeys()
           .Where(x => x is not "DD_DIAGNOSTIC_SOURCE_ENABLED")
           .ToArray();
+
+    private static TracerSettings GetAndAssertAutomaticTracerSettings()
+    {
+        var automatic = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.GlobalAnalyticsEnabled, true },
+            { ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""" },
+            { ConfigurationKeys.DiagnosticSourceEnabled, true },
+            { ConfigurationKeys.DisabledIntegrations, "something;OpenTelemetry" },
+            { ConfigurationKeys.Environment, "my-test-env" },
+            { ConfigurationKeys.GlobalSamplingRate, 0.5 },
+            { ConfigurationKeys.GlobalTags, "tag1:value" },
+            { ConfigurationKeys.GrpcTags, "grpc1:grpc-value" },
+            { ConfigurationKeys.HeaderTags, "header1:header-value" },
+            { ConfigurationKeys.KafkaCreateConsumerScopeEnabled, false },
+            { ConfigurationKeys.LogsInjectionEnabled, true },
+            { ConfigurationKeys.MaxTracesSubmittedPerSecond, 50 },
+            { ConfigurationKeys.ServiceName, "my-test-service" },
+            { ConfigurationKeys.ServiceVersion, "1.2.3" },
+            { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+            { ConfigurationKeys.StatsComputationEnabled, true },
+            { ConfigurationKeys.TraceEnabled, false },
+            { ConfigurationKeys.TracerMetricsEnabled, true },
+            { ConfigurationKeys.AgentUri, "http://localhost:1234" },
+            { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.Aerospike)), "false" },
+            { string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, nameof(IntegrationId.Grpc)), "true" },
+            { string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, nameof(IntegrationId.Couchbase)), 0.5 },
+        });
+
+        // verify that all the settings are as expected
+        automatic.AnalyticsEnabled.Should().Be(true);
+        automatic.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
+        automatic.DiagnosticSourceEnabled.Should().Be(true);
+        automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry"]);
+        automatic.Environment.Should().Be("my-test-env");
+        automatic.GlobalSamplingRate.Should().Be(0.5);
+        automatic.GlobalTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "tag1", "value" } });
+        automatic.GrpcTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "grpc1", "grpc-value" } });
+        automatic.HeaderTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "header1", "header-value" } });
+        automatic.KafkaCreateConsumerScopeEnabled.Should().Be(false);
+        automatic.LogsInjectionEnabled.Should().Be(true);
+        automatic.MaxTracesSubmittedPerSecond.Should().Be(50);
+        automatic.ServiceName.Should().Be("my-test-service");
+        automatic.ServiceVersion.Should().Be("1.2.3");
+        automatic.StartupDiagnosticLogEnabled.Should().Be(false);
+        automatic.StatsComputationEnabled.Should().Be(true);
+        automatic.TraceEnabled.Should().Be(false);
+        automatic.TracerMetricsEnabled.Should().Be(true);
+        automatic.Exporter.AgentUri.Should().Be(new Uri("http://127.0.0.1:1234"));
+        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
+        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
+        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
+
+        return automatic;
+    }
 }
