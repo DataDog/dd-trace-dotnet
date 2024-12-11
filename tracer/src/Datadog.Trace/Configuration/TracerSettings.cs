@@ -196,14 +196,27 @@ namespace Datadog.Trace.Configuration
                 TraceEnabled = false;
             }
 
+            var otelActivityListenerEnabled = config
+                                             .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
+                                             .AsBoolResult(
+                                                  value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
+                                                               ? ParsingResult<bool>.Success(result: false)
+                                                               : ParsingResult<bool>.Failure());
+            IsActivityListenerEnabled = config
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
+                                       .AsBoolResult()
+                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
-                                                               .AsString()
-                                                              ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
-                                           Enumerable.Empty<string>();
+                                                 .AsString()
+                                                ?.Split([';'], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
-            DisabledIntegrationNames = new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase);
+            // If Activity support is enabled, we shouldn't enable the OTel listener
+            DisabledIntegrationNames = IsActivityListenerEnabled
+                                           ? new HashSet<string>(disabledIntegrationNames, StringComparer.OrdinalIgnoreCase)
+                                           : new HashSet<string>([..disabledIntegrationNames, nameof(IntegrationId.OpenTelemetry)], StringComparer.OrdinalIgnoreCase);
 
-            Integrations = new IntegrationSettingsCollection(source, unusedParamNotToUsePublicApi: false);
+            Integrations = new IntegrationSettingsCollection(source, DisabledIntegrationNames);
 
             Exporter = new ExporterSettings(source, _telemetry);
 
@@ -402,17 +415,6 @@ namespace Datadog.Trace.Configuration
                                                 .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegexTimeout)
                                                 .AsDouble(200, val1 => val1 is > 0).Value;
 
-            var otelActivityListenerEnabled = config
-                                             .WithKeys(ConfigurationKeys.OpenTelemetry.SdkDisabled)
-                                             .AsBoolResult(
-                                                  value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
-                                                               ? ParsingResult<bool>.Success(result: false)
-                                                               : ParsingResult<bool>.Failure());
-            IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
-                                       .AsBoolResult()
-                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
-
             Func<string[], bool> injectionValidator = styles => styles is { Length: > 0 };
             Func<string, ParsingResult<string[]>> otelConverter =
                 style => TrimSplitString(style, commaSeparator)
@@ -458,12 +460,6 @@ namespace Datadog.Trace.Configuration
             BaggageMaximumBytes = config
                                  .WithKeys(ConfigurationKeys.BaggageMaximumBytes)
                                  .AsInt32(defaultValue: W3CBaggagePropagator.DefaultMaximumBaggageBytes);
-
-            // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
-            if (!IsActivityListenerEnabled)
-            {
-                DisabledIntegrationNames.Add(nameof(IntegrationId.OpenTelemetry));
-            }
 
             LogSubmissionSettings = new DirectLogSubmissionSettings(source, _telemetry);
 

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
@@ -270,6 +271,10 @@ namespace Datadog.Trace.Configuration
         internal List<string> ValidationWarnings { get; }
 
         internal IConfigurationTelemetry Telemetry => _telemetry;
+
+        // internal for testing
+        internal static ExporterSettings Create(Dictionary<string, object?> settings)
+            => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
 
         private static string GetMetricsHostNameFromAgentUri(Uri agentUri)
         {

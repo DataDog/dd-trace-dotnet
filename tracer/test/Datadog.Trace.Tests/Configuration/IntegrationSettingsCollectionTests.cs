@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using FluentAssertions;
 using Xunit;
@@ -15,7 +16,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsIntegrationWhenUsingIncorrectCasing()
         {
-            var settings = new IntegrationSettingsCollection(null);
+            var settings = new IntegrationSettingsCollection(null, new());
 
             var log4NetByName = settings["LOG4NET"];
             var log4NetById = settings[nameof(IntegrationId.Log4Net)];
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void ReturnsDefaultSettingsForUnknownIntegration()
         {
-            var settings = new IntegrationSettingsCollection(null);
+            var settings = new IntegrationSettingsCollection(null, new());
 
             var integrationName = "blobby";
             var instance1 = settings[integrationName];
@@ -34,12 +35,67 @@ namespace Datadog.Trace.Tests.Configuration
             instance1.IntegrationName.Should().Be(integrationName);
             instance1.Enabled.Should().BeNull();
 
-            instance1.Enabled = true;
-
             var instance2 = settings[integrationName];
             instance2.Should().NotBe(instance1);
             instance2.IntegrationName.Should().Be(integrationName);
             instance2.Enabled.Should().BeNull();
+        }
+
+        [Fact]
+        public void PopulatesFromBuilderCorrectly()
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { "DD_TRACE_FOO_ENABLED", "true" },
+                { "DD_TRACE_FOO_ANALYTICS_ENABLED", "true" },
+                { "DD_TRACE_FOO_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_TRACE_BAR_ENABLED", "false" },
+                { "DD_TRACE_BAR_ANALYTICS_ENABLED", "false" },
+                { "DD_BAZ_ENABLED", "false" },
+                { "DD_BAZ_ANALYTICS_ENABLED", "false" },
+                { "DD_BAZ_ANALYTICS_SAMPLE_RATE", "0.6" },
+                { "DD_TRACE_Kafka_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_TRACE_GraphQL_ENABLED", "false" },
+                { "DD_TRACE_GraphQL_ANALYTICS_ENABLED", "false" },
+                { "DD_Wcf_ENABLED", "false" },
+                { "DD_Wcf_ANALYTICS_ENABLED", "false" },
+                { "DD_Wcf_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_Msmq_ENABLED", "true" },
+                { "DD_TRACE_stackexchangeredis_ENABLED", "false" },
+            });
+
+            var disabledIntegrations = new HashSet<string> { "foobar", "MongoDb", "Msmq" };
+
+            var final = new IntegrationSettingsCollection(source, disabledIntegrations);
+
+            var kafka = final[IntegrationId.Kafka];
+            kafka.Enabled.Should().BeTrue();
+            kafka.AnalyticsEnabled.Should().BeTrue();
+            kafka.AnalyticsSampleRate.Should().Be(0.2);
+
+            var graphql = final[IntegrationId.GraphQL];
+            graphql.Enabled.Should().BeFalse();
+            graphql.AnalyticsEnabled.Should().BeFalse();
+            graphql.AnalyticsSampleRate.Should().Be(1.0);
+
+            var wcf = final[IntegrationId.Wcf];
+            wcf.Enabled.Should().BeFalse();
+            wcf.AnalyticsEnabled.Should().BeFalse();
+            wcf.AnalyticsSampleRate.Should().Be(0.2);
+
+            var mongodb = final[IntegrationId.MongoDb];
+            mongodb.Enabled.Should().BeFalse();
+
+            var msmq = final[IntegrationId.Msmq];
+            msmq.Enabled.Should().BeFalse();
+
+            var consmos = final[IntegrationId.CosmosDb];
+            consmos.Enabled.Should().BeNull();
+
+            var redis = final[IntegrationId.StackExchangeRedis];
+            redis.Enabled.Should().BeFalse();
         }
     }
 }
