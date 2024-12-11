@@ -95,7 +95,7 @@ namespace Datadog.Trace.Configuration
             GitMetadataEnabled = settings.GitMetadataEnabled;
             _traceEnabled = settings.TraceEnabled;
             _appsecStandaloneEnabled = settings.AppsecStandaloneEnabledInternal;
-            Exporter = new ImmutableExporterSettings(settings.Exporter, true);
+            Exporter = settings.Exporter;
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
@@ -269,7 +269,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.
         /// </summary>
-        public ImmutableExporterSettings Exporter { get; }
+        public ExporterSettings Exporter { get; }
 
 #pragma warning disable CS1574 // AnalyticsEnabled is obsolete
         /// <summary>
