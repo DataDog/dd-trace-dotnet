@@ -1006,8 +1006,8 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    # The CreateRootDescriptorsFile tasks expects the native loader but we build that in the other stage
-    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateRootDescriptorsFile
+    # The CreateTrimmingFile tasks expects the native loader but we build that in the other stage
+    - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile
       displayName: Build managed tracer + native loader
       retryCountOnTaskFailure: 1
 
