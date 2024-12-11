@@ -328,7 +328,6 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     CallstackProvider p(MemoryResourceManager::GetDefault());
     MetricsRegistry metricsRegistry;
     auto collector = CreateStackFramesCollector(signalManager, configuration.get(), &p, metricsRegistry);
-
     auto threadInfo = ManagedThreadInfo((ThreadID)0, nullptr);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
 
@@ -461,6 +460,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     // Reset to validate that the profiler will not call the test handler
     ResetCallbackState();
     collector.PrepareForNextCollection();
+    collector.ReuseCallstack(true);
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
     EXPECT_EQ(hr, S_OK);
 

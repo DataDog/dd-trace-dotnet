@@ -2,6 +2,7 @@
 .text
 .global dd_restart_wrapper
 .global dd_restart_wrapper_size
+.global dd_restart_wrapper_end
 
 # Function description (comments preserved from the original)
 # When a thread is interrupted, we replace the Rip by the address of this function
@@ -28,9 +29,9 @@ dd_restart_wrapper:
     push [rdi]    # [rdi] points to the next RIP
 
     # Prologue
-    push rbp
-    mov rbp, rsp
-    and rsp, -16  # Make sure the stack is 16-byte aligned
+    # push rbp
+    # mov rbp, rsp
+    # and rsp, -16  # Make sure the stack is 16-byte aligned
 
     # Mark the execution as resumed
     mov qword ptr [rdi + 8], 1
@@ -39,7 +40,7 @@ dd_restart_wrapper:
     mov rdi, qword ptr [rdi + 16]
     
     # Epilogue
-    leave
+    # leave
 
     ret
 

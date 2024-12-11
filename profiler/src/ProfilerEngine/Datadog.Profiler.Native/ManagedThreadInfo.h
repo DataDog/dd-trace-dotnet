@@ -23,6 +23,7 @@
 #if (defined(LINUX) && defined(AMD64)) || (defined(_WINDOWS) && defined(BIT64))
 #define DD_CALLSTACK_REUSE_ENABLED
 extern "C" void dd_restart_wrapper();
+extern "C" void dd_restart_wrapper_end();
 extern "C" size_t dd_restart_wrapper_size;
 #endif
 
@@ -520,7 +521,8 @@ inline bool ManagedThreadInfo::IsExecutingWrapper(ThreadContext const& ctx) cons
 {
     auto ip = GetIp(ctx);
     uintptr_t start = reinterpret_cast<uintptr_t>(&dd_restart_wrapper);
-    uintptr_t end = start + dd_restart_wrapper_size;
+    uintptr_t end = reinterpret_cast<uintptr_t>(&dd_restart_wrapper_end);
+    //uintptr_t end = start + dd_restart_wrapper_size;
     return (ip >= start && ip < end);
 }
 #endif
