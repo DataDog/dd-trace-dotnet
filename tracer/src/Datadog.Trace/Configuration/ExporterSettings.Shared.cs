@@ -20,12 +20,12 @@ namespace Datadog.Trace.Configuration
     public partial class ExporterSettings
     {
         /// <summary>
-        /// The default host value for <see cref="AgentUriInternal"/>.
+        /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
         public const string DefaultAgentHost = "localhost";
 
         /// <summary>
-        /// The default port value for <see cref="AgentUriInternal"/>.
+        /// The default port value for <see cref="AgentUri"/>.
         /// </summary>
         public const int DefaultAgentPort = 8126;
 
@@ -39,8 +39,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
 
-        [MemberNotNull(nameof(_agentUri))]
-        private void ConfigureTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
+        private TraceTransportSettings GetTraceTransport(string? agentUri, string? tracesPipeName, string? agentHost, int? agentPort, string? tracesUnixDomainSocketPath)
         {
             var origin = ConfigurationOrigins.Default; // default because only called from constructor
 
@@ -49,27 +48,27 @@ namespace Datadog.Trace.Configuration
             // For other cases (eg a configured unix domain socket path not found), we don't fallback as the problem could be fixed outside the application.
             if (!string.IsNullOrWhiteSpace(agentUri))
             {
-                if (TrySetAgentUriAndTransport(agentUri!, origin))
+                if (TryGetAgentUriAndTransport(agentUri!, origin, out var settings))
                 {
-                    return;
+                    return settings;
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(tracesPipeName))
             {
-                TracesTransport = TracesTransportType.WindowsNamedPipe;
-                TracesPipeName = tracesPipeName;
                 RecordTraceTransport(nameof(TracesTransportType.WindowsNamedPipe), origin);
 
                 // The Uri isn't needed anymore in that case, just populating it for retro compatibility.
                 if (!Uri.TryCreate($"http://{agentHost ?? DefaultAgentHost}:{agentPort ?? DefaultAgentPort}", UriKind.Absolute, out var uri))
                 {
-                    // fallback so _agentUri is always non-null
+                    // fallback so AgentUri is always non-null
                     uri = CreateDefaultUri();
                 }
 
-                SetAgentUriReplacingLocalhost(uri, origin);
-                return;
+                return new TraceTransportSettings(
+                    TracesTransportType.WindowsNamedPipe,
+                    GetAgentUriReplacingLocalhost(uri, origin),
+                    PipeName: tracesPipeName);
             }
 
             // This property shouldn't have been introduced. We need to remove it as part of 3.0
@@ -77,9 +76,9 @@ namespace Datadog.Trace.Configuration
             if (!string.IsNullOrWhiteSpace(tracesUnixDomainSocketPath))
             {
 #if NETCOREAPP3_1_OR_GREATER
-                if (TrySetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin))
+                if (TryGetAgentUriAndTransport(UnixDomainSocketPrefix + tracesUnixDomainSocketPath, origin, out var settings))
                 {
-                    return;
+                    return settings;
                 }
 #else
                 // .NET Core 2.1 and .NET FX don't support Unix Domain Sockets
@@ -99,9 +98,9 @@ namespace Datadog.Trace.Configuration
                 // The agent will fail to start if it can not bind a port, so we need to override 8126 to prevent port conflict
                 // Port 0 means it will pick some random available port
 
-                if (TrySetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort))
+                if (TryGetAgentUriAndTransport(agentHost ?? DefaultAgentHost, agentPort ?? DefaultAgentPort, out var settings))
                 {
-                    return;
+                    return settings;
                 }
             }
 
@@ -111,45 +110,44 @@ namespace Datadog.Trace.Configuration
             {
                 // setting the urls as well for retro compatibility in the almost impossible case where someone
                 // used this config and accessed the AgentUri property as well (to avoid a potential null ref)
-                // Using Set not TrySet because we know this is a valid Uri and ensures _agentUri is always non-null
-                SetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), origin);
-                return;
+                // Using Get not TryGet because we know this is a valid Uri and ensures _agentUri is always non-null
+                return GetAgentUriAndTransport(new Uri(UnixDomainSocketPrefix + DefaultTracesUnixDomainSocket), origin);
             }
 #endif
 
             ValidationWarnings.Add("No transport configuration found, using default values");
 
             // we know this URL is valid so don't use TrySet, otherwise can't guarantee _agentUri is non null
-            SetAgentUriAndTransport(CreateDefaultUri(), origin);
+            return GetAgentUriAndTransport(CreateDefaultUri(), origin);
         }
 
-        [MemberNotNullWhen(true, nameof(_agentUri))]
-        private bool TrySetAgentUriAndTransport(string host, int port)
+        private bool TryGetAgentUriAndTransport(string host, int port, out TraceTransportSettings settings)
         {
-            return TrySetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default); // default because only called from constructor
+            return TryGetAgentUriAndTransport($"http://{host}:{port}", ConfigurationOrigins.Default, out settings); // default because only called from constructor
         }
 
-        [MemberNotNullWhen(true, nameof(_agentUri))]
-        private bool TrySetAgentUriAndTransport(string url, ConfigurationOrigins origin)
+        private bool TryGetAgentUriAndTransport(string url, ConfigurationOrigins origin, out TraceTransportSettings settings)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
                 ValidationWarnings.Add($"The Uri: '{url}' is not valid. It won't be taken into account to send traces. Note that only absolute urls are accepted.");
+                settings = default;
                 return false;
             }
 
-            SetAgentUriAndTransport(uri, ConfigurationOrigins.Default); // default because only called from constructor
+            settings = GetAgentUriAndTransport(uri, ConfigurationOrigins.Default); // default because only called from constructor
             return true;
         }
 
-        [MemberNotNull(nameof(_agentUri))]
-        private void SetAgentUriAndTransport(Uri uri, ConfigurationOrigins origin)
+        private TraceTransportSettings GetAgentUriAndTransport(Uri uri, ConfigurationOrigins origin)
         {
+            TracesTransportType transport;
+            string? udsPath;
             if (uri.OriginalString.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase))
             {
 #if NETCOREAPP3_1_OR_GREATER
-                TracesTransport = TracesTransportType.UnixDomainSocket;
-                TracesUnixDomainSocketPath = uri.PathAndQuery;
+                transport = TracesTransportType.UnixDomainSocket;
+                udsPath = uri.PathAndQuery;
 
                 var absoluteUri = uri.AbsoluteUri.Replace(UnixDomainSocketPrefix, string.Empty);
                 bool potentiallyInvalid = false;
@@ -184,22 +182,23 @@ namespace Datadog.Trace.Configuration
                     recordValue: true,
                     origin,
                     TelemetryErrorCode.UdsOnUnsupportedPlatform);
-                SetAgentUriAndTransport(CreateDefaultUri(), ConfigurationOrigins.Calculated);
-                return;
+                return GetAgentUriAndTransport(CreateDefaultUri(), ConfigurationOrigins.Calculated);
 #endif
             }
             else
             {
-                TracesTransport = TracesTransportType.Default;
+                transport = TracesTransportType.Default;
+                udsPath = null;
                 RecordTraceTransport(nameof(TracesTransportType.Default), origin);
             }
 
-            SetAgentUriReplacingLocalhost(uri, origin);
+            var agentUri = GetAgentUriReplacingLocalhost(uri, origin);
+            return new(transport, agentUri, UdsPath: udsPath);
         }
 
-        [MemberNotNull(nameof(_agentUri))]
-        private void SetAgentUriReplacingLocalhost(Uri uri, ConfigurationOrigins origin)
+        private Uri GetAgentUriReplacingLocalhost(Uri uri, ConfigurationOrigins origin)
         {
+            Uri agentUri;
             if (string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
                 // Replace localhost with 127.0.0.1 to avoid DNS resolution.
@@ -207,16 +206,19 @@ namespace Datadog.Trace.Configuration
                 // because the trace agent is only bound to ipv4.
                 // This causes delays when sending traces.
                 var builder = new UriBuilder(uri) { Host = "127.0.0.1" };
-                _agentUri = builder.Uri;
+                agentUri = builder.Uri;
             }
             else
             {
-                _agentUri = uri;
+                agentUri = uri;
             }
 
-            _telemetry.Record(ConfigurationKeys.AgentUri, _agentUri.ToString(), recordValue: true, origin);
+            _telemetry.Record(ConfigurationKeys.AgentUri, agentUri.ToString(), recordValue: true, origin);
+            return agentUri;
         }
 
         private Uri CreateDefaultUri() => new Uri($"http://{DefaultAgentHost}:{DefaultAgentPort}");
+
+        private readonly record struct TraceTransportSettings(TracesTransportType Transport, Uri AgentUri, string? UdsPath = null, string? PipeName = null);
     }
 }
