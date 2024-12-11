@@ -1,5 +1,5 @@
 PUBLIC dd_restart_wrapper
-PUBLIC dd_restart_wrapper_size
+PUBLIC dd_restart_wrapper_end
 
 .data
 dd_restart_wrapper_size QWORD 0
