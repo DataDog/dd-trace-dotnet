@@ -55,7 +55,7 @@ public class IastInstrumentationUnitTests : TestHelper
             var tfm = (uint)Telemetry.ConfigTelemetryData.TargetFramework;
             var aspects = new List<string>();
             // Read aspects from the native definitions file
-            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.h");
+            var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.cpp");
             foreach (var line in File.ReadAllLines(path))
             {
                 if (!line.Contains("Aspect")) { continue; }
