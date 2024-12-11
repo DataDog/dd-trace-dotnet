@@ -430,7 +430,8 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 #ifndef DD_CALLSTACK_REUSE_ENABLED
         false;
 #else
-        profilingType == PROFILING_TYPE::WallTime && _canReuseCaLLStack  && pThreadInfo->PreviousCallstack.Size() > 0;
+        profilingType == PROFILING_TYPE::WallTime == profilingType && _canReuseCaLLStack && pThreadInfo->PreviousCallstack.Size() > 0
+                         && pThreadInfo->CanReuseCallstack();
 
     if (reuseCallstack)
     {
@@ -508,7 +509,9 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
-                _pStackFramesCollector->ReuseCallstack(reuseCallstack);
+                auto toto = profilingType == PROFILING_TYPE::WallTime;
+                auto tata = _canReuseCaLLStack;
+                _pStackFramesCollector->ReuseCallstack(toto && tata);
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
             }
 

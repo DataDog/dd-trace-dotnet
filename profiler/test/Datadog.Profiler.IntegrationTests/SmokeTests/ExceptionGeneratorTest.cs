@@ -37,12 +37,12 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.ExceptionGenerator")]
         public void CheckSmokeOptimReuseCallstack(string appName, string framework, string appAssembly)
         {
-#if X64
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
-            runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
-            runner.RunAndCheck();
-#else
-#endif
+            if (EnvironmentHelper.GetPlatform() == "x64")
+            {
+                var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+                runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+                runner.RunAndCheck();
+            }
         }
     }
 }
