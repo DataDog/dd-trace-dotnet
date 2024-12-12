@@ -76,7 +76,12 @@ void ClrEventsParser::ParseEvent(
     {
         ParseContentionEvent(id, version, cbEventData, eventData);
     }
+    else if (KEYWORD_WAITHANDLE == (keywords & KEYWORD_WAITHANDLE))
+    {
+        ParseWaitHandleEvent(timestamp, id, version, cbEventData, eventData);
+    }
 }
+
 
 // TL;DR Deactivate the alignment check in the Undefined Behavior Sanitizers for the ParseGcEvent function
 // because events fields are not aligned in the bitstream sent by the CLR.
@@ -300,6 +305,48 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         }
 
         _pContentionListener->SetBlockingThread(payload.LockOwnerThreadID);
+    }
+}
+
+void ClrEventsParser::ParseWaitHandleEvent(std::chrono::nanoseconds timestamp, DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
+{
+    if (_pContentionListener == nullptr)
+    {
+        return;
+    }
+
+    if (id == EVENT_WAITHANDLE_START)
+    {
+        // <template tid="WaitHandleWaitStart">
+        //     <data name="WaitSource" inType="win:UInt8" map="WaitHandleWaitSourceMap" />
+        //     <data name="AssociatedObjectID" inType="win:Pointer" />
+        //     data name="ClrInstanceID" inType="win:UInt16" />
+        // </template>
+
+        WaitHandleWaitStartPayload payload{0};
+        ULONG offset = 0;
+        if (!Read<WaitHandleWaitStartPayload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        _pContentionListener->OnWaitStart(timestamp, payload.AssociatedObjectID);
+    }
+    else
+    if (id == EVENT_WAITHANDLE_STOP)
+    {
+        // <template tid="WaitHandleWaitStart">
+        //     data name="ClrInstanceID" inType="win:UInt16" />
+        // </template>
+
+        WaitHandleWaitStopPayload payload{0};
+        ULONG offset = 0;
+        if (!Read<WaitHandleWaitStopPayload>(payload, pEventData, cbEventData, offset))
+        {
+            return;
+        }
+
+        _pContentionListener->OnWaitStop(timestamp);
     }
 }
 

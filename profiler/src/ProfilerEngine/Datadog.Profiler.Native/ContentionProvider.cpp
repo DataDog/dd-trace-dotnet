@@ -115,10 +115,63 @@ void ContentionProvider::OnContention(std::chrono::nanoseconds contentionDuratio
     AddContentionSample(0ns, -1, contentionDuration, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
+void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId)
+{
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (currentThreadInfo == nullptr)
+    {
+        return;
+    }
+
+    // TODO: try to get the type of associatedObjectId to make the difference between Monitor/lock, AutoResetEvent, ManualResetEvent, Mutex and Semaphore
+    ClassID classId = 0;
+    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(static_cast<ObjectID>(associatedObjectId), &classId);
+    if (SUCCEEDED(hr))
+    {
+        std::string typeName;
+        if (_pFrameStore->GetTypeName(classId, typeName))
+        {
+            std::cout << "WaitStart: " << typeName << std::endl;
+        }
+    }
+
+    currentThreadInfo->SetWaitStart(timestamp);
+}
+
+void ContentionProvider::OnWaitStop(std::chrono::nanoseconds timestamp)
+{
+    auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
+    if (currentThreadInfo == nullptr)
+    {
+        return;
+    }
+
+    auto waitStartTimestamp = currentThreadInfo->GetWaitStart();
+    if (waitStartTimestamp == 0ns)
+    {
+        return;
+    }
+
+    auto waitDuration = timestamp - waitStartTimestamp;
+    if (waitDuration < 0ns)
+    {
+        return;
+    }
+    currentThreadInfo->SetWaitStart(0ns);
+
+    // We are not interested in waits that are too short
+    if (waitDuration < 1ms)
+    {
+        return;
+    }
+
+    AddContentionSample(0ns, -1, waitDuration, 0, WStr(""), _emptyStack);
+}
+
 void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
-    _lockContentionsDurationMetric->Add(contentionDuration.count());
+    _lockContentionsDurationMetric->Add(static_cast<double>(contentionDuration.count()));
 
     auto bucket = GetBucket(contentionDuration);
 
@@ -233,7 +286,7 @@ void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp,
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
-    _sampledLockContentionsDurationMetric->Add(contentionDuration.count());
+    _sampledLockContentionsDurationMetric->Add(static_cast<double>(contentionDuration.count()));
 }
 
 

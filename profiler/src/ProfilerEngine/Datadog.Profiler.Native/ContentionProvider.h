@@ -56,6 +56,8 @@ public:
         const std::vector<uintptr_t>& stack) override;
 
     void SetBlockingThread(uint64_t osThreadId) override;
+    void OnWaitStart(std::chrono::nanoseconds timestamp, uintptr_t associatedObjectId) override;
+    void OnWaitStop(std::chrono::nanoseconds timestamp) override;
 
     // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;

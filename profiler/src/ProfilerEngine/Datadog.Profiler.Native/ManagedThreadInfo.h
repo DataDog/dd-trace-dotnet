@@ -99,6 +99,11 @@ public:
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
 
+    // TODO: check if we need to create a dedicated dictionary for WaitHandle profiling
+    //       --> this would reduce memory consumption
+    inline void SetWaitStart(std::chrono::nanoseconds timestamp) { _waitStartTimestamp = timestamp; }
+    inline std::chrono::nanoseconds GetWaitStart() { return _waitStartTimestamp; }
+
 private:
     inline std::string BuildProfileThreadId();
     inline std::string BuildProfileThreadName();
@@ -145,6 +150,9 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+
+    // for WaitHandle profiling, keep track of the wait start timestamp
+    std::chrono::nanoseconds _waitStartTimestamp;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()

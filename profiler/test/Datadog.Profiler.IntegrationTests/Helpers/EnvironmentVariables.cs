@@ -34,5 +34,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string TelemetryToDiskEnabled = "DD_INTERNAL_PROFILING_TELEMETRY_TO_DISK_ENABLED";
         public const string EtwReplayEndpoint = "DD_INTERNAL_ETW_REPLAY_ENDPOINT";
         public const string SsiTelemetryEnabled = "DD_INTERNAL_PROFILING_SSI_TELEMETRY_ENABLED";
+        public const string WaitHandleContentionProfilingEnabled = "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED";
     }
 }

@@ -250,8 +250,10 @@ private:
         }
     }
 
-private:
+protected:
     IFrameStore* _pFrameStore = nullptr;
+
+private:
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
