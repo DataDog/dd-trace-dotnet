@@ -84,7 +84,7 @@ internal class TelemetryController : ITelemetryController
         _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in telemetry flush task"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
+    public void RecordTracerSettings(TracerSettings settings, string defaultServiceName)
     {
         // Note that this _doesn't_ clear the configuration held by ImmutableTracerSettings
         // that's necessary because users could reconfigure the tracer to re-use an old

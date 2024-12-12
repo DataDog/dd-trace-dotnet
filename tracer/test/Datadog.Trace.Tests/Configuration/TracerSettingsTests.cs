@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -17,6 +18,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Moq;
 using Xunit;
 
@@ -62,7 +64,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
@@ -81,7 +82,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
@@ -102,7 +102,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
-            Assert.True(settings.GlobalTags.Any());
             settings.GlobalTags.Should().NotContainKey(otelTagKey);
 
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
@@ -193,38 +192,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void SetServiceNameMappings_AddsMappings()
-        {
-            var collection = new NameValueCollection { };
-
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
-            settings.ServiceNameMappings.Should().BeNullOrEmpty();
-
-            var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
-            settings.SetServiceNameMappings(mappings);
-            settings.ServiceNameMappings.Should().BeEquivalentTo(mappings);
-        }
-
-        [Fact]
-        public void SetServiceNameMappings_ReplacesExistingMappings()
-        {
-            var collection = new NameValueCollection { };
-
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
-            settings.ServiceNameMappings.Should().BeNullOrEmpty();
-
-            var mappings = new Dictionary<string, string> { { "elasticsearch", "custom-name" } };
-            settings.SetServiceNameMappings(mappings);
-            settings.ServiceNameMappings.Should().BeEquivalentTo(mappings);
-
-            var newMappings = new Dictionary<string, string> { { "sql-server", "custom-db" } };
-            settings.SetServiceNameMappings(newMappings);
-            settings.ServiceNameMappings.Should().BeEquivalentTo(newMappings);
-        }
-
-        [Fact]
         public void Constructor_HandlesNullSource()
         {
             var tracerSettings = new TracerSettings(null);
@@ -238,20 +205,8 @@ namespace Datadog.Trace.Tests.Configuration
             tracerSettings.Should().NotBeNull();
         }
 
-        [Fact]
-        public void SetClientHttpCodes()
-        {
-            SetAndValidateStatusCodes((s, c) => s.SetHttpClientErrorStatusCodes(c), s => s.HttpClientErrorStatusCodes);
-        }
-
-        [Fact]
-        public void SetServerHttpCodes()
-        {
-            SetAndValidateStatusCodes((s, c) => s.SetHttpServerErrorStatusCodes(c), s => s.HttpServerErrorStatusCodes);
-        }
-
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void Environment(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Environment, value));
@@ -266,7 +221,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("test", "error", "ignored_otel", "test")]
         [InlineData(null, "test", null, "test")]
         [InlineData(null, "test", "ignored_otel", "test")]
-        [InlineData("", "test", "ignored_otel", "")]
+        [InlineData("", "test", "ignored_otel", null)]
         [InlineData(null, null, "otel", "otel")]
         [InlineData(null, null, null, null)]
         public void ServiceName(string value, string legacyValue, string otelValue, string expected)
@@ -288,7 +243,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void ServiceVersion(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ServiceVersion, value));
@@ -298,7 +253,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitCommitSha(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitCommitSha, value));
@@ -308,7 +263,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), null, Strings.DisallowEmpty)]
         public void GitRepositoryUrl(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.GitRepositoryUrl, value));
@@ -472,7 +427,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("invalid", new string[0])]
-        [InlineData(null, null)]
+        [InlineData(null, new string[0])]
         [InlineData("", new string[0])]
         public void ServiceNameMappings(string value, string[] expected)
         {
@@ -1237,26 +1192,132 @@ namespace Datadog.Trace.Tests.Configuration
             ValidateErrorStatusCodes(result, newClientErrorKeyValue, deprecatedClientErrorKeyValue, expectedClientErrorCodes);
         }
 
-        private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
+        [Fact]
+        public void OnlyHasReadOnlyProperties()
         {
-            var settings = new TracerSettings();
-            var statusCodes = new Queue<int>(new[] { 100, 201, 503 });
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
-            setStatusCodes(settings, statusCodes);
+            var type = typeof(TracerSettings);
 
-            var result = getStatusCodes(settings);
+            using var scope = new AssertionScope();
 
-            for (int i = 0; i < 600; i++)
+            var properties = type.GetProperties(flags);
+            foreach (var propertyInfo in properties)
             {
-                if (result[i])
+                if (propertyInfo.CanWrite)
                 {
-                    var code = statusCodes.Dequeue();
-
-                    Assert.Equal(code, i);
+                    propertyInfo.SetMethod!.ReturnParameter!.GetRequiredCustomModifiers()
+                                .Should()
+                                .ContainSingle(m => m.FullName == "System.Runtime.CompilerServices.IsExternalInit", $"{propertyInfo.Name} should be read only or init only");
                 }
             }
 
-            Assert.Empty(statusCodes);
+            var fields = type.GetFields(flags);
+            foreach (var field in fields)
+            {
+                field.IsInitOnly.Should().BeTrue($"{field.Name} should be read only");
+            }
+        }
+
+        [Fact]
+        public void RecordsDisabledSettingsInTelemetry()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "DD_TRACE_FOO_ENABLED", "true" },
+                { "DD_TRACE_FOO_ANALYTICS_ENABLED", "true" },
+                { "DD_TRACE_FOO_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_TRACE_BAR_ENABLED", "false" },
+                { "DD_TRACE_BAR_ANALYTICS_ENABLED", "false" },
+                { "DD_BAZ_ENABLED", "false" },
+                { "DD_BAZ_ANALYTICS_ENABLED", "false" },
+                { "DD_BAZ_ANALYTICS_SAMPLE_RATE", "0.6" },
+                { "DD_TRACE_Kafka_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_ENABLED", "true" },
+                { "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_TRACE_GraphQL_ENABLED", "false" },
+                { "DD_TRACE_GraphQL_ANALYTICS_ENABLED", "false" },
+                { "DD_Wcf_ENABLED", "false" },
+                { "DD_Wcf_ANALYTICS_ENABLED", "false" },
+                { "DD_Wcf_ANALYTICS_SAMPLE_RATE", "0.2" },
+                { "DD_Msmq_ENABLED", "true" },
+                { "DD_TRACE_stackexchangeredis_ENABLED", "false" },
+                { ConfigurationKeys.DisabledIntegrations, "foobar;MongoDb;Msmq" },
+            });
+
+            var expected = new[] { "MongoDb", "Msmq", "GraphQL", "Wcf", "StackExchangeRedis" };
+
+            var telemetry = new ConfigurationTelemetry();
+            var tracerSettings = new TracerSettings(source, telemetry, new());
+
+            var config = tracerSettings
+                        .Telemetry
+                        .Should()
+                        .BeOfType<ConfigurationTelemetry>()
+                        .Subject;
+
+            var entry = config.GetQueueForTesting()
+                              .Where(x => x.Key == ConfigurationKeys.DisabledIntegrations)
+                              .OrderByDescending(x => x.SeqId)
+                              .Should()
+                              .HaveCountGreaterThan(0)
+                              .And.Subject.First();
+
+            entry.Key.Should().Be(ConfigurationKeys.DisabledIntegrations);
+            entry.StringValue.Should().NotBeNullOrEmpty();
+            entry.StringValue!.Split(';')
+                  .Should()
+                  .Contain(expected);
+        }
+
+        [Fact]
+        public void DDTagsSetsServiceInformation()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "DD_TAGS", "env:datadog_env,service:datadog_service,version:datadog_version" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.Environment.Should().Be("datadog_env");
+            tracerSettings.ServiceVersion.Should().Be("datadog_version");
+            tracerSettings.ServiceName.Should().Be("datadog_service");
+        }
+
+        [Fact]
+        public void OTELTagsSetsServiceInformation()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+
+            tracerSettings.Environment.Should().Be("datadog_env");
+            tracerSettings.ServiceVersion.Should().Be("datadog_version");
+            tracerSettings.ServiceName.Should().Be("datadog_service");
+        }
+
+        [Fact]
+        public void DDTagsTakesPrecedenceOverOTELTags()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { "DD_TAGS", "env:datadog_env" },
+                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+            });
+
+            var errorLog = new OverrideErrorLog();
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
+
+            tracerSettings.Environment.Should().Be("datadog_env");
+
+            // Since the DD_TAGS config is set, the OTEL_RESOURCE_ATTRIBUTES config is ignored
+            tracerSettings.ServiceVersion.Should().NotBe("datadog_version");
+            tracerSettings.ServiceName.Should().NotBe("datadog_service");
+            errorLog.ShouldHaveExpectedOtelMetric(Count.OpenTelemetryConfigHiddenByDatadogConfig, "OTEL_RESOURCE_ATTRIBUTES".ToLowerInvariant(), "DD_TAGS".ToLowerInvariant());
         }
 
         private void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)

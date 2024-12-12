@@ -56,7 +56,7 @@ public class DataStreamsMonitoringTransportTests
         var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
         var tracerSettings = GetSettings(agent);
         var api = new DataStreamsApi(
-            DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
+            DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Exporter));
 
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(

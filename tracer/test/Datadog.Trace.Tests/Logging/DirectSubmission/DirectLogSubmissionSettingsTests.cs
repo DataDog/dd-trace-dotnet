@@ -384,10 +384,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             }
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
 
-            immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            immutableSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
         }
 
         [Theory]
@@ -404,10 +403,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             }
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
-            var immutableSettings = new ImmutableTracerSettings(tracerSettings);
 
-            immutableSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
-            immutableSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
         }
     }
 }
