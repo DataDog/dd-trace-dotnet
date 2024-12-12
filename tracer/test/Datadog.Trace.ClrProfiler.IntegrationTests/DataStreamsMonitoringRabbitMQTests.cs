@@ -12,78 +12,89 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using ICSharpCode.Decompiler.Util;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests;
-
-[UsesVerify]
-[Trait("RequiresDockerDependency", "true")]
-public class DataStreamsMonitoringRabbitMQTests : TestHelper
+namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
-        : base("DataStreams.RabbitMQ", output)
+    [UsesVerify]
+    [Trait("RequiresDockerDependency", "true")]
+    public class DataStreamsMonitoringRabbitMQTests : TestHelper
     {
-        SetServiceVersion("1.0.0");
-    }
-
-    [SkippableTheory]
-    [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
-    [Trait("Category", "EndToEnd")]
-    public async Task HandleProduceAndConsume(string packageVersion)
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-
-        using var assertionScope = new AssertionScope();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+        public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
+            : base("DataStreams.RabbitMQ", output)
         {
-            var spans = agent.WaitForSpans(31);
-            spans.Should().HaveCount(31);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.UseParameters(packageVersion);
-            settings.AddDataStreamsScrubber();
-            await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
-                          .DisableRequireUniquePrefix();
+            SetServiceVersion("1.0.0");
         }
-    }
 
-    [SkippableTheory]
-    [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
-    [Trait("Category", "EndToEnd")]
-    public async Task ValidateSpanTags(string packageVersion)
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-
-        using var assertionScope = new AssertionScope();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+        public static IEnumerable<object[]> GetRabbitMQTestData()
         {
-            var spans = agent.WaitForSpans(31);
-            spans.Should().HaveCount(31);
-            var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(13);
-        }
-    }
-
-    private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
-    {
-        var points = new List<MockDataStreamsStatsPoint>();
-        foreach (var payload in payloads)
-        {
-            foreach (var bucket in payload.Stats)
+            foreach (var version in PackageVersions.RabbitMQ)
             {
-                if (bucket.Stats != null)
-                {
-                    points.AddRange(bucket.Stats);
-                }
+                yield return new object[] { version[0], true };
+                yield return new object[] { version[0], false };
             }
         }
 
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
+        [SkippableTheory]
+        [MemberData(nameof(GetRabbitMQTestData))]
+        [Trait("Category", "EndToEnd")]
+        public async Task HandleProduceAndConsume(string packageVersion, bool enableLegacyHeaders)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
+
+            using var assertionScope = new AssertionScope();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            {
+                var spans = agent.WaitForSpans(31);
+                spans.Should().HaveCount(31);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.UseParameters(packageVersion, enableLegacyHeaders);
+                settings.AddDataStreamsScrubber();
+                await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
+                              .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
+                              .DisableRequireUniquePrefix();
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetRabbitMQTestData))]
+        [Trait("Category", "EndToEnd")]
+        public async Task ValidateSpanTags(string packageVersion, bool enableLegacyHeaders)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
+
+            using var assertionScope = new AssertionScope();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            {
+                var spans = agent.WaitForSpans(31);
+                spans.Should().HaveCount(31);
+                var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
+                taggedSpans.Should().HaveCount(13);
+            }
+        }
+
+        private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
+        {
+            var points = new List<MockDataStreamsStatsPoint>();
+            foreach (var payload in payloads)
+            {
+                foreach (var bucket in payload.Stats)
+                {
+                    if (bucket.Stats != null)
+                    {
+                        points.AddRange(bucket.Stats);
+                    }
+                }
+            }
+
+            return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
+        }
     }
 }
