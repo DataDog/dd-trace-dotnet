@@ -34,10 +34,10 @@ dd_restart_wrapper:
     # and rsp, -16  # Make sure the stack is 16-byte aligned
 
     # Mark the execution as resumed
-    mov qword ptr [rdi + 8], 1
+    mov qword ptr [rdi + 16], 1
     
     # Restore rdi
-    mov rdi, qword ptr [rdi + 16]
+    mov rdi, qword ptr [rdi + 8]
     
     # Epilogue
     # leave

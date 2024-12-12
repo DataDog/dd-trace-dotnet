@@ -171,7 +171,7 @@ private:
         std::uintptr_t Flag;
     };
 
-    WrapperThreadContext _wrapperContext = {0, 0, 1};
+    WrapperThreadContext _wrapperContext = {0xdeadbeef, 0xdeadbeef, 1};
 
 public:
     // should be previous snapshot (missing spanid and stuff)
