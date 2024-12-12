@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, PropagationContext context)
+        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, PropagationContext context, Dictionary<string, object> propagatedContext)
             where TRecordsRequest : IPutRecordsRequest
         {
             // request.Records is not null and has at least one element
@@ -32,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             if (request.Records[0].DuckCast<IContainsData>() is { } record)
             {
-                InjectTraceIntoData(record, context);
+                InjectTraceIntoData(record, context, propagatedContext);
             }
         }
 
-        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, PropagationContext context)
+        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, PropagationContext context, Dictionary<string, object> propagatedContext)
             where TRecordRequest : IContainsData
         {
             if (record.Data is null)
@@ -52,7 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                var propagatedContext = new Dictionary<string, object>();
                 SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
                 jsonData[KinesisKey] = propagatedContext;
 
