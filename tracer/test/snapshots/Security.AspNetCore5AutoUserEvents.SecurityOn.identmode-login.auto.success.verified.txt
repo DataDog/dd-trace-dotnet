@@ -30,6 +30,7 @@
       span.kind: server,
       usr.id: Guid_2,
       _dd.appsec.events.users.login.success.auto.mode: identification,
+      _dd.appsec.user.collection_mode: identification,
       _dd.appsec.usr.id: Guid_2,
       _dd.appsec.usr.login: TestUser,
       _dd.runtime_family: dotnet
