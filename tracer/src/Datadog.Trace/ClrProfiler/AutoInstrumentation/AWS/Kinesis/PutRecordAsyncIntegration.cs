@@ -56,23 +56,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
-            /*
-            Dictionary<string, object> dsmHeaders = new Dictionary<string, object>();
-            if (scope?.Span.Context != null && !string.IsNullOrEmpty(request.StreamName))
-            {
-                var dataStreamsManager = Tracer.Instance.TracerManager.DataStreamsManager;
-                if (dataStreamsManager != null && dataStreamsManager.IsEnabled)
-                {
-                    var edgeTags = new[] { "direction:out", $"topic:{request.StreamName}", "type:kinesis" };
-                    scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    var adapter = new KinesisHeadersCollection();
-                    dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
-                    dsmHeaders = adapter.GetDictionary();
-                }
-            }
-
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            */
             ContextPropagation.InjectTraceIntoData(request, scope, request.StreamName);
 
             return new CallTargetState(scope);
