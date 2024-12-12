@@ -65,7 +65,7 @@ namespace Datadog.Trace.Debugger.Upload
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
-            if (symbols.Array == null)
+            if (symbols.Array == null || symbols.Count == 0)
             {
                 return false;
             }
@@ -82,39 +82,26 @@ namespace Datadog.Trace.Debugger.Upload
             var retries = 0;
             var sleepDuration = StartingSleepDuration;
 
-            MultipartFormItem[] items;
+            MultipartFormItem symbolsItem;
 
             if (_enableCompression)
             {
-                using (var memoryStream = new MemoryStream())
-                {
+                using var memoryStream = new MemoryStream();
 #if NETFRAMEWORK
-                    using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
-                    {
-                        gzipStream.Write(symbols.Array, 0, symbols.Array.Length);
-                    }
+                using var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream);
+                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length);
 #else
-                    using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
-                    {
-                        gzipStream.Write(symbols.Array, 0, symbols.Array.Length);
-                    }
+                await using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
+                await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length);
 #endif
-                }
-
-                items =
-                [
-                    new("file", "gzip", "file.gz", symbols),
-                    new("event", MimeTypes.Json, "event.json", _eventMetadata)
-                ];
+                symbolsItem = new MultipartFormItem("file", "gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
             }
             else
             {
-                items =
-                [
-                    new("file", MimeTypes.Json, "file.json", symbols),
-                    new("event", MimeTypes.Json, "event.json", _eventMetadata)
-                ];
+                symbolsItem = new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols);
             }
+
+            var items = new[] { symbolsItem, new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata) };
 
             while (retries < MaxRetries)
             {
