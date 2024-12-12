@@ -266,7 +266,7 @@ stages:
       jobs: [generate_LLM_job]
 
   - job: generate_LLM_job
-    timeoutInMinutes: 3 #default value
+    timeoutInMinutes: 3
     dependsOn: []
     pool:
       name: azure-windows-scale-set-3

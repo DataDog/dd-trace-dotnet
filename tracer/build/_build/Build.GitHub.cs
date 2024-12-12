@@ -123,7 +123,6 @@ partial class Build
 
     private async Task GenerateLLMReport(bool executeLocal = true)
     {
-        bool includeDescription = false;
         var excludePath = new string[] { "Datadog.Trace/Generated", ".g.cs" };
         var extensionsToReview = new[] { ".csproj", ".cs", ".yml", ".h", ".cpp", ".dockerfile" };
         var prompt = "Review this pull request with a focus on improving performance and bug detection. Make a list of the most important areas that need enhancement. For each suggestion, name the involved file and include both the original code and your recommended change, adding the corrected code if applicable. The code to be reviewed is the result of running the \"git --diff\" command. Highlight any performance bottlenecks and opportunities for optimization." + Environment.NewLine;
@@ -133,8 +132,6 @@ partial class Build
 
         var pullRequest = await client.PullRequest.Get(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
         var pullRequestFiles = await client.PullRequest.Files(GitHubRepositoryOwner, GitHubRepositoryName, PullRequestNumber.Value);
-
-        var descriptionPrompt = includeDescription ? " The body of the PR is: " + pullRequest.Body + Environment.NewLine : string.Empty;
 
         string changesText = string.Empty;
         foreach (var file in pullRequestFiles)
@@ -157,7 +154,7 @@ partial class Build
         }
         else
         {
-            var fullPrompt = prompt + descriptionPrompt + changesText;
+            var fullPrompt = prompt + changesText;
 
             result = OpenAiApiCall.TryGetReponse(ref fullPrompt, OpenAIKey);
 
