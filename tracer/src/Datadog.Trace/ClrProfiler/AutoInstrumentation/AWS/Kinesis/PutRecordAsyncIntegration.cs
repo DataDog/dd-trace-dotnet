@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
@@ -57,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
+            /*
             Dictionary<string, object> dsmHeaders = new Dictionary<string, object>();
             if (scope?.Span.Context != null && !string.IsNullOrEmpty(request.StreamName))
             {
@@ -72,7 +72,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            ContextPropagation.InjectTraceIntoData(request, context, dsmHeaders);
+            */
+            ContextPropagation.InjectTraceIntoData(request, scope, request.StreamName);
 
             return new CallTargetState(scope);
         }

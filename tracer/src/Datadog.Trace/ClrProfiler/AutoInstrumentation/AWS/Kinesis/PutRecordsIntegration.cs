@@ -54,8 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 tags.StreamName = request.StreamName;
             }
 
-            var context = new PropagationContext(scope?.Span.Context, Baggage.Current);
-            ContextPropagation.InjectTraceIntoRecords(request, context, new Dictionary<string, object>());
+            ContextPropagation.InjectTraceIntoRecords(request, scope, request.StreamName);
 
             return new CallTargetState(scope);
         }
