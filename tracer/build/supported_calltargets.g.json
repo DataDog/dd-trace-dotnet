@@ -10591,10 +10591,10 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseNpgsqlIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.ReaderCloseNpgsqlIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
+    "InstrumentationCategory": 4
   },
   {
     "IntegrationName": "Npgsql",

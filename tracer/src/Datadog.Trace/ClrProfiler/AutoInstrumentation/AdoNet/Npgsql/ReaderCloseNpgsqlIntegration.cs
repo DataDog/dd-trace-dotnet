@@ -12,7 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Vendors.Serilog;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
 {
     /// <summary>
     /// CallTarget instrumentation for:
@@ -27,24 +27,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         ParameterTypeNames = new[] { ClrNames.Bool, ClrNames.Bool, ClrNames.Bool, },
         MinimumVersion = "4.0.0",
         MaximumVersion = "8.*.*",
-        IntegrationName = nameof(IntegrationId.Npgsql))]
+        IntegrationName = nameof(IntegrationId.Npgsql),
+        InstrumentationCategory = InstrumentationCategory.Iast)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ReaderCloseNpgsqlIntegration
     {
         private static bool errorLogged = false;
 
-        /// <summary>
-        /// OnMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">Instance of the return value</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        // internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             try

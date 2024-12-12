@@ -437,7 +437,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV4"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegrationV5"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.ReaderCloseNpgsqlIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.ReaderCloseNpgsqlIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Npgsql,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCommandBuilderMakeTestCommandIntegration"
