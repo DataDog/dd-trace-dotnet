@@ -80,6 +80,12 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
+    internal void CollectHeaders()
+    {
+        var headers = new HeadersCollectionAdapter(_httpTransport.Context.Request.Headers);
+        AddRequestHeaders(_localRootSpan, headers);
+    }
+
     internal void BlockAndReport(IResult? result)
     {
         if (result is not null)
