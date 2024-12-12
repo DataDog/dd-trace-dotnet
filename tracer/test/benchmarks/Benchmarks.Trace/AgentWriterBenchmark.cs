@@ -24,10 +24,13 @@ namespace Benchmarks.Trace
         private static readonly ArraySegment<Span> EnrichedSpans;
         static AgentWriterBenchmark()
         {
-            var settings = TracerSettings.FromDefaultSources();
-
-            settings.StartupDiagnosticLogEnabled = false;
-            settings.TraceEnabled = false;
+            var overrides = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString() },
+                { ConfigurationKeys.TraceEnabled, false.ToString() },
+            });
+            var sources = new CompositeConfigurationSource(new[] { overrides, GlobalConfigurationSource.Instance });
+            var settings = new TracerSettings(sources);
 
             var api = new Api(new FakeApiRequestFactory(settings.Exporter.AgentUri), statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
