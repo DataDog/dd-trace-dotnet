@@ -419,21 +419,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETCOREAPP3_1
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET5_0
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET6_0
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET7_0
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET8_0
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #if NET9_0
                 new object[] { "7.9.0" },
+                new object[] { "8.2.1" },
 #endif
 #endif
             };

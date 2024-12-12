@@ -518,7 +518,7 @@
         "minVersionTestedInclusive": "4.1.0",
         "maxVersionSupportedInclusive": "7.9.0",
         "maxVersionAvailableInclusive": "8.2.1",
-        "maxVersionTestedInclusive": "7.9.0"
+        "maxVersionTestedInclusive": "8.2.1"
       }
     ]
   },

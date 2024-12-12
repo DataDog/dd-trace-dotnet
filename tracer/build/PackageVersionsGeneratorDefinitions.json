@@ -180,9 +180,10 @@
     "SampleProjectName": "Samples.GraphQL7",
     "NugetPackageSearchName": "GraphQL",
     "MinVersion": "7.0.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
-      "7.*.*"
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "8.0.0",
