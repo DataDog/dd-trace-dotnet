@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return CallTargetState.GetDefault();
             }
 
-            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, null, out var tags);
+            var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Consumer, null, out var tags);
 
             string? streamName = null;
             // clean this up before commit
