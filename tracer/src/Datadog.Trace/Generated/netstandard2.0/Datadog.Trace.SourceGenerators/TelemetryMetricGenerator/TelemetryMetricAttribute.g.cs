@@ -118,7 +118,7 @@ internal class TelemetryMetricAttribute : System.Attribute
 /// which has a single tag
 /// </summary>
 [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
-internal class TelemetryMetricAttribute<TTag> : System.Attribute
+internal class TelemetryMetricAttribute<TTag> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
     where TTag : System.Enum
 {
     /// <summary>
@@ -128,10 +128,8 @@ internal class TelemetryMetricAttribute<TTag> : System.Attribute
     /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
     /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
     public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
     {
-        MetricName = metricName;
-        IsCommon = isCommon;
-        NameSpace = nameSpace;
     }
 
     /// <summary>
@@ -141,34 +139,19 @@ internal class TelemetryMetricAttribute<TTag> : System.Attribute
     /// <param name="metricName">The name of the metric, as reported to Datadog</param>
     /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
     public TelemetryMetricAttribute(string metricName, bool isCommon)
-        : this(metricName, isCommon, null!)
+        : base(metricName, isCommon, null!)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
-    /// Uses the default namespace and sets <see cref="IsCommon"/> to <c>true</c>
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
     /// </summary>
     /// <param name="metricName">The name of the metric, as reported to Datadog</param>
     public TelemetryMetricAttribute(string metricName)
-        : this(metricName, isCommon: true, null!)
+        : base(metricName, isCommon: true, null!)
     {
     }
-
-    /// <summary>
-    /// Gets the name of the metric, as reported to Datadog
-    /// </summary>
-    public string MetricName { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether the metric a "common" metric, shared across languages?
-    /// </summary>
-    public bool IsCommon { get; }
-
-    /// <summary>
-    /// Gets the namespace of the metric, if not the default (Tracer)
-    /// </summary>
-    public string? NameSpace { get; }
 }
 
 /// <summary>
@@ -177,7 +160,7 @@ internal class TelemetryMetricAttribute<TTag> : System.Attribute
 /// which has two tags
 /// </summary>
 [System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
-internal class TelemetryMetricAttribute<TTag1, TTag2> : System.Attribute
+internal class TelemetryMetricAttribute<TTag1, TTag2> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
     where TTag1 : System.Enum
     where TTag2 : System.Enum
 {
@@ -188,10 +171,8 @@ internal class TelemetryMetricAttribute<TTag1, TTag2> : System.Attribute
     /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
     /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
     public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
     {
-        MetricName = metricName;
-        IsCommon = isCommon;
-        NameSpace = nameSpace;
     }
 
     /// <summary>
@@ -201,32 +182,199 @@ internal class TelemetryMetricAttribute<TTag1, TTag2> : System.Attribute
     /// <param name="metricName">The name of the metric, as reported to Datadog</param>
     /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
     public TelemetryMetricAttribute(string metricName, bool isCommon)
-        : this(metricName, isCommon, null!)
+        : base(metricName, isCommon, null!)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
-    /// Uses the default namespace and sets <see cref="IsCommon"/> to <c>true</c>
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
     /// </summary>
     /// <param name="metricName">The name of the metric, as reported to Datadog</param>
     public TelemetryMetricAttribute(string metricName)
-        : this(metricName, isCommon: true, null!)
+        : base(metricName, isCommon: true, null!)
+    {
+    }
+}
+
+/// <summary>
+/// Used to describe a specific metric defined as a field
+/// inside an enum decorated with <see cref="TelemetryMetricTypeAttribute"/>
+/// which has two tags
+/// </summary>
+[System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+internal class TelemetryMetricAttribute<TTag1, TTag2, TTag3> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
+    where TTag1 : System.Enum
+    where TTag2 : System.Enum
+    where TTag3 : System.Enum
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
     {
     }
 
     /// <summary>
-    /// Gets the name of the metric, as reported to Datadog
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace
     /// </summary>
-    public string MetricName { get; }
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon)
+        : base(metricName, isCommon, null!)
+    {
+    }
 
     /// <summary>
-    /// Gets a value indicating whether the metric a "common" metric, shared across languages?
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
     /// </summary>
-    public bool IsCommon { get; }
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    public TelemetryMetricAttribute(string metricName)
+        : base(metricName, isCommon: true, null!)
+    {
+    }
+}
+
+/// <summary>
+/// Used to describe a specific metric defined as a field
+/// inside an enum decorated with <see cref="TelemetryMetricTypeAttribute"/>
+/// which has two tags
+/// </summary>
+[System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+internal class TelemetryMetricAttribute<TTag1, TTag2, TTag3, TTag4> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
+    where TTag1 : System.Enum
+    where TTag2 : System.Enum
+    where TTag3 : System.Enum
+    where TTag4 : System.Enum
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
+    {
+    }
 
     /// <summary>
-    /// Gets the namespace of the metric, if not the default (Tracer)
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace
     /// </summary>
-    public string? NameSpace { get; }
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon)
+        : base(metricName, isCommon, null!)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    public TelemetryMetricAttribute(string metricName)
+        : base(metricName, isCommon: true, null!)
+    {
+    }
+}
+
+/// <summary>
+/// Used to describe a specific metric defined as a field
+/// inside an enum decorated with <see cref="TelemetryMetricTypeAttribute"/>
+/// which has two tags
+/// </summary>
+[System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+internal class TelemetryMetricAttribute<TTag1, TTag2, TTag3, TTag4, TTag5> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
+    where TTag1 : System.Enum
+    where TTag2 : System.Enum
+    where TTag3 : System.Enum
+    where TTag4 : System.Enum
+    where TTag5 : System.Enum
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon)
+        : base(metricName, isCommon, null!)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    public TelemetryMetricAttribute(string metricName)
+        : base(metricName, isCommon: true, null!)
+    {
+    }
+}
+
+/// <summary>
+/// Used to describe a specific metric defined as a field
+/// inside an enum decorated with <see cref="TelemetryMetricTypeAttribute"/>
+/// which has two tags
+/// </summary>
+[System.AttributeUsage(System.AttributeTargets.Field, AllowMultiple = false)]
+internal class TelemetryMetricAttribute<TTag1, TTag2, TTag3, TTag4, TTag5, TTag6> : Datadog.Trace.SourceGenerators.TelemetryMetricAttribute
+    where TTag1 : System.Enum
+    where TTag2 : System.Enum
+    where TTag3 : System.Enum
+    where TTag4 : System.Enum
+    where TTag5 : System.Enum
+    where TTag6 : System.Enum
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    /// <param name="nameSpace">The namespace of the metric, if not the default (Tracer)</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon, string nameSpace)
+        : base(metricName, isCommon, nameSpace)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    /// <param name="isCommon">Is the metric a "common" metric, shared across languages?</param>
+    public TelemetryMetricAttribute(string metricName, bool isCommon)
+        : base(metricName, isCommon, null!)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TelemetryMetricAttribute"/> class.
+    /// Uses the default namespace and sets <see cref="TelemetryMetricAttribute.IsCommon"/> to <c>true</c>
+    /// </summary>
+    /// <param name="metricName">The name of the metric, as reported to Datadog</param>
+    public TelemetryMetricAttribute(string metricName)
+        : base(metricName, isCommon: true, null!)
+    {
+    }
 }
