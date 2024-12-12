@@ -45,7 +45,7 @@ partial class Build
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
 
-    [Parameter("A OpenAI key", Name = "OPEN_AI_KEY")]
+    [Parameter("An OpenAI key", Name = "OPEN_AI_KEY")]
     readonly string OpenAIKey;
 
     [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
