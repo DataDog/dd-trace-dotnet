@@ -84,15 +84,23 @@ namespace Datadog.Trace.Tests
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var headers = new WebHeaderCollection().Wrap();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, headers);
-            scope.Span.SetTag("error.msg", "Exception");
-            scope.Span.SetTag("error.type", "Exception");
-            scope.Span.SetTag("error.stack", "everything is " + System.Environment.NewLine + "fine");
+
+            var errorMsg = "Exception";
+            var errorType = "Exception";
+            var errorStack = "everything is " + System.Environment.NewLine + "fine";
+            scope.Span.SetTag("error.msg", errorMsg);
+            scope.Span.SetTag("error.type", errorType);
+            scope.Span.SetTag("error.stack", errorStack);
+
+            var expectedErrorMsg = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(errorMsg));
+            var expectedErrorType = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(errorType));
+            var expectedErrorStack = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(errorStack));
 
             ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
             var request = requestBuilder.GetEndInvocationRequest(scope, true);
             request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
-            request.Headers.Get("x-datadog-invocation-error-msg").Should().Be("Exception");
-            request.Headers.Get("x-datadog-invocation-error-type").Should().Be("Exception");
+            request.Headers.Get("x-datadog-invocation-error-msg").Should().Be(expectedErrorMsg);
+            request.Headers.Get("x-datadog-invocation-error-type").Should().Be(expectedErrorType);
             request.Headers.Get("x-datadog-invocation-error-stack").Should().NotBeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
