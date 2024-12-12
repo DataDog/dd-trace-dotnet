@@ -9,7 +9,7 @@
     Tags: {
       appsec.events.users.login.failure.track: true,
       appsec.events.users.login.failure.usr.exists: false,
-      appsec.events.users.login.failure.usr.id: anon_c34de12d00b78a9977da847b7e55202e,
+      appsec.events.users.login.failure.usr.login: anon_c34de12d00b78a9977da847b7e55202e,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
@@ -30,6 +30,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.events.users.login.failure.auto.mode: anonymization,
+      _dd.appsec.usr.login: anon_c34de12d00b78a9977da847b7e55202e,
       _dd.runtime_family: dotnet
     },
     Metrics: {
