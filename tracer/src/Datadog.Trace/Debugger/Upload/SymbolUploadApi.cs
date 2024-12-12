@@ -5,6 +5,8 @@
 
 #nullable enable
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -24,17 +26,19 @@ namespace Datadog.Trace.Debugger.Upload
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ArraySegment<byte> _eventMetadata;
+        private readonly bool _enableCompression;
 
         private SymbolUploadApi(
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            ArraySegment<byte> eventMetadata)
+            ArraySegment<byte> eventMetadata,
+            bool enableCompression)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
-
+            _enableCompression = enableCompression;
             discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 
@@ -42,7 +46,8 @@ namespace Datadog.Trace.Debugger.Upload
             IApiRequestFactory apiRequestFactory,
             IDiscoveryService discoveryService,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            string serviceName)
+            string serviceName,
+            bool enableCompression)
         {
             ArraySegment<byte> GetEventMetadataAsArraySegment()
             {
@@ -55,11 +60,16 @@ namespace Datadog.Trace.Debugger.Upload
             }
 
             var eventMetadata = GetEventMetadataAsArraySegment();
-            return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata);
+            return new SymbolUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, eventMetadata, enableCompression);
         }
 
         public override async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
+            if (symbols.Array == null)
+            {
+                return false;
+            }
+
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))
             {
@@ -72,11 +82,39 @@ namespace Datadog.Trace.Debugger.Upload
             var retries = 0;
             var sleepDuration = StartingSleepDuration;
 
-            var items = new MultipartFormItem[]
+            MultipartFormItem[] items;
+
+            if (_enableCompression)
             {
-                new("file", MimeTypes.Json, "file.json", symbols),
-                new("event", MimeTypes.Json, "event.json", _eventMetadata)
-            };
+                using (var memoryStream = new MemoryStream())
+                {
+#if NETFRAMEWORK
+                    using (var gzipStream = new Vendors.ICSharpCode.SharpZipLib.GZip.GZipOutputStream(memoryStream))
+                    {
+                        gzipStream.Write(symbols.Array, 0, symbols.Array.Length);
+                    }
+#else
+                    using (var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                    {
+                        gzipStream.Write(symbols.Array, 0, symbols.Array.Length);
+                    }
+#endif
+                }
+
+                items =
+                [
+                    new("file", "gzip", "file.gz", symbols),
+                    new("event", MimeTypes.Json, "event.json", _eventMetadata)
+                ];
+            }
+            else
+            {
+                items =
+                [
+                    new("file", MimeTypes.Json, "file.json", symbols),
+                    new("event", MimeTypes.Json, "event.json", _eventMetadata)
+                ];
+            }
 
             while (retries < MaxRetries)
             {
