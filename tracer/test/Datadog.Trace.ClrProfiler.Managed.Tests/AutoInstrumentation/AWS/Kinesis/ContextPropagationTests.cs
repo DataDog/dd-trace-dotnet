@@ -75,7 +75,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, new PropagationContext(_spanContext, baggage: null));
+        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecords", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -88,8 +89,8 @@ public class ContextPropagationTests
         // Cast into a Dictionary<string, string> so we can read it properly
         var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
     }
 
     [Fact]
@@ -106,7 +107,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords(proxy, new PropagationContext(_spanContext, baggage: null));
+        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecords", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -125,7 +127,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, new PropagationContext(_spanContext, baggage: null));
+        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecord", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoData(proxy, scope, "streamname");
 
         // Naively deserialize in order to not use tracer extraction logic
         var jsonString = Encoding.UTF8.GetString(proxy.Data.ToArray());
@@ -136,8 +139,8 @@ public class ContextPropagationTests
         // Cast into a Dictionary<string, string> so we can read it properly
         var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(scope.Span.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(scope.Span.TraceId.ToString());
     }
 
     [Fact]
@@ -156,7 +159,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData(proxy, new PropagationContext(_spanContext, baggage: null));
+        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecord", SpanKinds.Producer, null, out var tags);
+        ContextPropagation.InjectTraceIntoData(proxy, scope, "streamname");
 
         var data = proxy.Data;
 
