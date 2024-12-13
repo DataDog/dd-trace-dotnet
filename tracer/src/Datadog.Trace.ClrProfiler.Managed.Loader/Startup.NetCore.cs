@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
             StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
-            var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+            var path = new FileInfo(Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll")).FullName;
             StartupLogger.Debug("Looking for: {0}", path);
 
             if (IsDatadogAssembly(path, out var cachedAssembly))
