@@ -911,6 +911,14 @@ internal static partial class IastModule
             dataBaseRows.Remove(instance);
         }
 
+        /// <summary>
+        /// Add a DB value to be tainted
+        /// </summary>
+        /// <returns>The return value this method indicates if the value could have been tainted
+        /// if a iast context is available. It will return true if iast is enabled and the row
+        /// count conditions are met. The result is used in the unit tests, don't use it
+        /// anywhere else
+        /// </returns>
         public bool AddDbValue(object instance, string? column, string value)
         {
             if (!iastSettings.Enabled || iastSettings.DataBaseRowsToTaint <= 0)
@@ -935,7 +943,9 @@ internal static partial class IastModule
             var scope = tracer.ActiveScope as Scope;
             var currentSpan = scope?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;
-            traceContext?.IastRequestContext?.AddDbValue(column, value);
+            var context = traceContext?.IastRequestContext;
+            context?.AddDbValue(column, value);
+
             return true;
         }
 
