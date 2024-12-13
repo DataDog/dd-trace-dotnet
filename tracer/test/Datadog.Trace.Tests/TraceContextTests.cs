@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -49,14 +50,11 @@ namespace Datadog.Trace.Tests
         {
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
-                {
-                    PartialFlushEnabled = partialFlush,
-                    PartialFlushMinSpans = 5
-                }
-            }.Build());
+                { ConfigurationKeys.PartialFlushEnabled, partialFlush },
+                { ConfigurationKeys.PartialFlushMinSpans, 5 },
+            }));
 
             var traceContext = new TraceContext(tracer.Object);
 
@@ -129,14 +127,11 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
-                {
-                    PartialFlushEnabled = true,
-                    PartialFlushMinSpans = partialFlushThreshold
-                }
-            }.Build());
+                { ConfigurationKeys.PartialFlushEnabled, true },
+                { ConfigurationKeys.PartialFlushMinSpans, partialFlushThreshold },
+            }));
 
             ArraySegment<Span>? spans = null;
 
@@ -181,14 +176,11 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Mock<IDatadogTracer>();
 
-            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            tracer.Setup(t => t.Settings).Returns(TracerSettings.Create(new()
             {
-                Exporter = new Trace.Configuration.ExporterSettings()
-                {
-                    PartialFlushEnabled = true,
-                    PartialFlushMinSpans = partialFlushThreshold
-                },
-            }.Build());
+                { ConfigurationKeys.PartialFlushEnabled, true },
+                { ConfigurationKeys.PartialFlushMinSpans, partialFlushThreshold },
+            }));
 
             ArraySegment<Span>? spans = null;
 

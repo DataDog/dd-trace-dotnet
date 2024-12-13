@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Net.WebSockets;
@@ -21,9 +22,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             try
             {
-                var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
+                var request = (HttpWebRequest)WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
                 request.Method = requestInfo.HttpMethod;
-                ((HttpWebRequest)request).UserAgent = "testhelper";
+                request.UserAgent = "testhelper";
+                // Added to avoid CSRF values (required in graphl.NET v8+
+                request.Headers["GraphQL-Require-Preflight"] = "1";
 
                 if (requestInfo.RequestBody != null)
                 {

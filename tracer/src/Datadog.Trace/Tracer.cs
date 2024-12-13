@@ -27,7 +27,7 @@ namespace Datadog.Trace
     /// <summary>
     /// The tracer is responsible for creating spans and flushing them to the Datadog agent
     /// </summary>
-    public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
+    public class Tracer : IDatadogTracer, IDatadogOpenTracingTracer
     {
         private static readonly object GlobalInstanceLock = new();
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
             // before this new instance of Tracer is assigned to Tracer.Instance
-            TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings is null ? null : settings, TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -91,7 +91,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings is null ? null : new ImmutableTracerSettings(settings, true), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService ?? NullDiscoveryService.Instance, dataStreamsManager: null, remoteConfigurationManager: null, dynamicConfigurationManager: null, tracerFlareManager: null))
         {
         }
 
@@ -227,22 +227,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings => TracerManager.Settings;
+        public TracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
         /// Gets the tracer's settings for the current trace.
         /// </summary>
         PerTraceSettings IDatadogTracer.PerTraceSettings => TracerManager.PerTraceSettings;
-
-        /// <summary>
-        /// Gets the active scope
-        /// </summary>
-        IScope ITracer.ActiveScope => ActiveScope;
-
-        /// <summary>
-        /// Gets this tracer's settings.
-        /// </summary>
-        ImmutableTracerSettings ITracer.Settings => Settings;
 
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
@@ -273,10 +263,10 @@ namespace Datadog.Trace
         public static void Configure(TracerSettings settings)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Configure);
-            ConfigureInternal(settings is null ? null : new ImmutableTracerSettings(settings, true));
+            ConfigureInternal(settings);
         }
 
-        internal static void ConfigureInternal(ImmutableTracerSettings settings)
+        internal static void ConfigureInternal(TracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
             Tracer.Instance.TracerManager.Start();
@@ -296,25 +286,6 @@ namespace Datadog.Trace
             }
 
             instance?.TracerManager.Start();
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            return StartActiveInternal(operationName);
-        }
-
-        /// <inheritdoc cref="ITracer" />
-        [PublicApi]
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
-            var finishOnClose = settings.FinishOnClose ?? true;
-            return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 
         /// <summary>

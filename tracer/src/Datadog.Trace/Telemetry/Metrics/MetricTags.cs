@@ -292,7 +292,8 @@ internal static class MetricTags
         [Description("waf_version;rule_type:lfi")] Lfi = 0,
         [Description("waf_version;rule_type:ssrf")] Ssrf = 1,
         [Description("waf_version;rule_type:sql_injection")] SQlI = 2,
-        [Description("waf_version;rule_type:command_injection")] CommandInjection = 3,
+        [Description("waf_version;rule_type:command_injection;rule_variant:shell")] CommandInjectionShell = 3,
+        [Description("waf_version;rule_type:command_injection;rule_variant:exec")] CommandInjectionExec = 4,
     }
 
     public enum TruncationReason
@@ -353,10 +354,12 @@ internal static class MetricTags
         [Description("vulnerability_type:email_html_injection")] EmailHtmlInjection = 26,
     }
 
-    public enum AuthenticationFramework
+    public enum AuthenticationFrameworkWithEventType
     {
-        [Description("framework:aspnetcore_identity")] AspNetCoreIdentity,
-        [Description("framework:unknown")] Unknown,
+        [Description("framework:aspnetcore_identity;event_type:login_success")] AspNetCoreIdentityLoginSuccess,
+        [Description("framework:aspnetcore_identity;event_type:login_failure")] AspNetCoreIdentityLoginFailure,
+        [Description("framework:aspnetcore_identity;event_type:signup")] AspNetCoreIdentitySignup,
+        [Description("framework:unknown;event_type:signup")] Unknown,
     }
 
     public enum CIVisibilityTestFramework

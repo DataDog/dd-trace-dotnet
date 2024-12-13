@@ -18,7 +18,7 @@ internal class ApplicationTelemetryCollector
     private HostTelemetryData? _hostData = null;
 
     public void RecordTracerSettings(
-        ImmutableTracerSettings tracerSettings,
+        TracerSettings tracerSettings,
         string defaultServiceName)
     {
         // Try to retrieve config based Git Info

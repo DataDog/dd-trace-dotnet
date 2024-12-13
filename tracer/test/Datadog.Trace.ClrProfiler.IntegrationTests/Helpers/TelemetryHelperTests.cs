@@ -60,12 +60,12 @@ public class TelemetryHelperTests
 
         collector.IntegrationRunning(IntegrationId.Kafka);
         collector.IntegrationGeneratedSpan(IntegrationId.Msmq);
-        var tracerSettings = new TracerSettings(null, NullConfigurationTelemetry.Instance, new OverrideErrorLog())
+        var tracerSettings = TracerSettings.Create(new()
         {
-            DisabledIntegrationNames = new HashSet<string> { nameof(IntegrationId.Kafka), nameof(IntegrationId.Msmq) }
-        };
+            { ConfigurationKeys.DisabledIntegrations, $"{nameof(IntegrationId.Kafka)};{nameof(IntegrationId.Msmq)}" }
+        });
 
-        collector.RecordTracerSettings(new(tracerSettings));
+        collector.RecordTracerSettings(tracerSettings);
         telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppClosing: true));
 
         using var s = new AssertionScope();
@@ -129,7 +129,7 @@ public class TelemetryHelperTests
             { ConfigurationKeys.AppSec.ScaEnabled, "1" },
         });
 
-        _ = new ImmutableTracerSettings(new TracerSettings(config, collector, new OverrideErrorLog()));
+        _ = new TracerSettings(config, collector, new OverrideErrorLog());
 
         telemetryData.Add(BuildTelemetryData(null, collector.GetData()));
 
