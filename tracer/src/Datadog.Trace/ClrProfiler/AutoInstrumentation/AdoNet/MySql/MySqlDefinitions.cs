@@ -121,3 +121,57 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
     })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "MySql.Data",
+    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
+    MinimumVersion = "6.7.0",
+    MaximumVersion = "6.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "MySql.Data",
+    TypeName = "MySql.Data.MySqlClient.MySqlDataReader",
+    MinimumVersion = "8.0.0",
+    MaximumVersion = "9.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
+
+[assembly: AdoNetClientInstrumentMethods(
+    AssemblyName = "MySqlConnector",
+    TypeName = "MySqlConnector.MySqlDataReader",
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = nameof(IntegrationId.MySql),
+    DataReaderType = "MySqlConnector.MySqlDataReader",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[MySqlConnector.MySqlDataReader]",
+    TargetMethodAttributes = new[]
+    {
+        // string System.Data.Common.DbDataReader.GetString()
+        typeof(ReaderReadAttribute),
+        typeof(ReaderReadAsyncAttribute),
+        typeof(ReaderCloseAttribute),
+        typeof(ReaderGetStringAttribute),
+        typeof(ReaderGetValueAttribute),
+    })]
