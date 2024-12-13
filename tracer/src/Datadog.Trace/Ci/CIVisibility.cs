@@ -110,7 +110,7 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     discoveryService = DiscoveryService.Create(
-                        new ImmutableExporterSettings(settings.TracerSettings.Exporter, true),
+                        settings.TracerSettings.Exporter,
                         tcpTimeout: TimeSpan.FromSeconds(5),
                         initialRetryDelayMs: 10,
                         maxRetryDelayMs: 1000,
@@ -129,26 +129,11 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "false";
-            }
-            else
-            {
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "true";
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
             Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -203,26 +188,11 @@ namespace Datadog.Trace.Ci
 
             var tracerSettings = settings.TracerSettings;
             Log.Debug("Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
-
-            // Set the service name if empty
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "false";
-            }
-            else
-            {
-                tracerSettings.GlobalTags[CommonTags.UserProvidedTestServiceTag] = "true";
-            }
-
-            // Normalize the service name
-            tracerSettings.ServiceName = NormalizerTraceProcessor.NormalizeService(tracerSettings.ServiceName);
             Log.Debug("Setting up the service name to: {ServiceName}", tracerSettings.ServiceName);
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(new ImmutableTracerSettings(tracerSettings, true), new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
+            TracerManager.ReplaceGlobalManager(tracerSettings, new CITracerManagerFactory(settings, discoveryService, eventPlatformProxyEnabled, UseLockedTracerManager));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -432,12 +402,12 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings settings)
         {
             return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
         }
 
-        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings tracerSettings, TimeSpan timeout)
+        internal static IApiRequestFactory GetRequestFactory(TracerSettings tracerSettings, TimeSpan timeout)
         {
             IApiRequestFactory? factory = null;
             var exporterSettings = tracerSettings.Exporter;

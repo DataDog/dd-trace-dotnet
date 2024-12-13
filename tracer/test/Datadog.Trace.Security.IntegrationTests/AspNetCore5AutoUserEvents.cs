@@ -115,12 +115,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
     }
 
-    public class AspNetCore5AutoUserEventsExtendedModeSecurityDisabled : AspNetCore5AutoUserEvents
+    public class AspNetCore5AutoUserEventsExtendedModeSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AutoUserEvents(fixture, outputHelper, false, "extended")
     {
-        public AspNetCore5AutoUserEventsExtendedModeSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, false, "extended")
-        {
-        }
     }
 }
 #endif

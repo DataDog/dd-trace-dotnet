@@ -61,7 +61,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             IRemoteConfigurationApi remoteConfigurationApi,
             RemoteConfigurationSettings settings,
             string serviceName,
-            ImmutableTracerSettings tracerSettings,
+            TracerSettings tracerSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
@@ -76,7 +76,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     subscriptionManager);
         }
 
-        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, ImmutableTracerSettings tracerSettings)
+        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, TracerSettings tracerSettings)
         {
             var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 

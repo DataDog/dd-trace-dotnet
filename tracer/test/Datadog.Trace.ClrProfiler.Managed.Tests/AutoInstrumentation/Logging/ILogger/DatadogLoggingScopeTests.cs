@@ -18,12 +18,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenNoActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                ServiceName = "TestService",
-                ServiceVersion = "1.2.3",
-                Environment = "test"
-            };
+                { ConfigurationKeys.ServiceName, "TestService" },
+                { ConfigurationKeys.ServiceVersion, "1.2.3" },
+                { ConfigurationKeys.Environment, "test" },
+            });
 
             var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
 
@@ -37,12 +37,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         [Fact]
         public void OutputsJsonFormattedStringWhenActiveTrace()
         {
-            var settings = new TracerSettings
+            var settings = TracerSettings.Create(new()
             {
-                ServiceName = "TestService",
-                ServiceVersion = "1.2.3",
-                Environment = "test"
-            };
+                { ConfigurationKeys.ServiceName, "TestService" },
+                { ConfigurationKeys.ServiceVersion, "1.2.3" },
+                { ConfigurationKeys.Environment, "test" },
+            });
 
             var tracer = new Tracer(settings, new Mock<IAgentWriter>().Object, null, null, new NoOpStatsd());
             using var spanScope = tracer.StartActive("test");

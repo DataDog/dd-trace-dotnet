@@ -11,7 +11,7 @@ namespace Datadog.Trace.Agent
 {
     internal static class TracesTransportStrategy
     {
-        public static IApiRequestFactory Get(ImmutableExporterSettings settings)
+        public static IApiRequestFactory Get(ExporterSettings settings)
             => AgentTransportStrategy.Get(
                 settings,
                 productName: "trace",

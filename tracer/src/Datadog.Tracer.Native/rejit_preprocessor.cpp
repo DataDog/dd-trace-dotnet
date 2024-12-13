@@ -560,6 +560,11 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     {
         auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
+        if (!moduleInfo.IsValid())
+        {
+            continue;
+        }
+
         Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
         ComPtr<IUnknown> metadataInterfaces;
