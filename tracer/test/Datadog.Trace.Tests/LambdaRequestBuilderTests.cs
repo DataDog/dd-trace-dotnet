@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #if NET6_0_OR_GREATER
+using System;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
@@ -101,7 +102,7 @@ namespace Datadog.Trace.Tests
             request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
             request.Headers.Get("x-datadog-invocation-error-msg").Should().Be(expectedErrorMsg);
             request.Headers.Get("x-datadog-invocation-error-type").Should().Be(expectedErrorType);
-            request.Headers.Get("x-datadog-invocation-error-stack").Should().NotBeNull();
+            request.Headers.Get("x-datadog-invocation-error-stack").Should().Be(expectedErrorStack);
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
