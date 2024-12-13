@@ -26,8 +26,7 @@ public class RandomAspect
     {
         try
         {
-            var scope = IastModule.OnWeakRandomness(_evidenceValue);
-            scope.SingleSpan?.Dispose();
+            IastModule.OnWeakRandomness(_evidenceValue);
         }
         catch (global::System.Exception ex)
         {
