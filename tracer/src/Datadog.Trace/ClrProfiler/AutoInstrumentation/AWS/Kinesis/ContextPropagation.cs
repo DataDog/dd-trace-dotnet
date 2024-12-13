@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 {
                     var edgeTags = new[] { "direction:out", $"topic:{streamName}", "type:kinesis" };
                     scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes: 0, timeInQueueMs: 0);
-                    var adapter = new KinesisHeadersCollection();
+                    var adapter = new KinesisContextAdapter();
                     dataStreamsManager.InjectPathwayContext(scope.Span.Context.PathwayContext, adapter);
                     propagatedContext = adapter.GetDictionary();
                 }
