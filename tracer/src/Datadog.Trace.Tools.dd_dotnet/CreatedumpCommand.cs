@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -27,6 +28,8 @@ internal class CreatedumpCommand : Command
 
     private static readonly List<string> Errors = new();
     private static ClrRuntime? _runtime;
+    private static DataTarget? _dataTarget;
+    private static IntPtr _oldUnhandledExceptionFilter;
 
     private readonly Argument<string[]> _allArguments = new("args");
 
@@ -270,6 +273,30 @@ internal class CreatedumpCommand : Command
         }
     }
 
+    [UnmanagedCallersOnly]
+    private static unsafe int UnhandledExceptionFilter(IntPtr exceptionInfo)
+    {
+        // A lot of the logic is implemented on the native side (Datadog.Profiler.Native and libdatadog).
+        // Unfortunately, native exceptions such as access violation can't be caught on the managed side.
+        // It means that if the native side crashes, we don't have a chance to clean the ClrMD context,
+        // which in turn means that the threads of the crashing process will remain suspended, preventing it from exiting.
+        // To prevent that, we bypass .NET exception management and use SetUnhandledExceptionFilter to catch all exceptions.
+
+        // We're running managed code in a completely unsupported state, so keep the amount of work to an absolute minimum.
+        _dataTarget?.Dispose();
+
+        if (_oldUnhandledExceptionFilter != IntPtr.Zero)
+        {
+            var function = (delegate* unmanaged<IntPtr, int>)_oldUnhandledExceptionFilter;
+            return function(exceptionInfo);
+        }
+
+        return 0; // EXCEPTION_CONTINUE_SEARCH
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr SetUnhandledExceptionFilter(IntPtr lpTopLevelExceptionFilter);
+
     private static bool ShouldRedactFrame(string? assemblyName)
     {
         if (assemblyName == null)
@@ -423,6 +450,7 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
+        File.AppendAllText(@"C:\temp\log.txt", $"Started\n");
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
 
@@ -446,7 +474,16 @@ internal class CreatedumpCommand : Command
             return;
         }
 
+        // Do not register the unhandled exception filter if a debugger is attached,
+        // because breakpoints rely on exceptions
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Debugger.IsAttached)
+        {
+            var unhandledExceptionFilter = (delegate* unmanaged<IntPtr, int>)&UnhandledExceptionFilter;
+            _oldUnhandledExceptionFilter = SetUnhandledExceptionFilter((IntPtr)unhandledExceptionFilter);
+        }
+
         using var target = DataTarget.AttachToProcess(pid, suspend: true);
+        _dataTarget = target;
         _runtime = target.ClrVersions[0].CreateRuntime();
 
         var function = (delegate* unmanaged<int, IntPtr>)export;
