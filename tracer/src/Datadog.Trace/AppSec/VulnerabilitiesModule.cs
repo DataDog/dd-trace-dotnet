@@ -42,13 +42,13 @@ internal static class VulnerabilitiesModule
         }
     }
 
-    internal static void OnCommandInjection(ProcessStartInfo startInfo)
+    internal static void OnCommandInjection(ProcessStartInfo startInfo, bool autoCloseScopeWhenSingleSpan = true)
     {
 #if NETCOREAPP3_1_OR_GREATER
-        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, Configuration.IntegrationId.Process);
+        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, Configuration.IntegrationId.Process, autoCloseScopeWhenSingleSpan);
         RaspModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, startInfo.ArgumentList, startInfo.UseShellExecute);
 #else
-        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, Configuration.IntegrationId.Process);
+        IastModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, Configuration.IntegrationId.Process, autoCloseScopeWhenSingleSpan);
         RaspModule.OnCommandInjection(startInfo.FileName, startInfo.Arguments, null, startInfo.UseShellExecute);
 #endif
     }

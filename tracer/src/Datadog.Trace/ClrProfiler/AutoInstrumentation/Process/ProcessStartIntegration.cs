@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (instance is System.Diagnostics.Process { StartInfo: var startInfo }
                 && ProcessHelpers.ShouldTraceProcessStart())
             {
-                VulnerabilitiesModule.OnCommandInjection(startInfo);
+                VulnerabilitiesModule.OnCommandInjection(startInfo, false);
                 return new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
             }
 
