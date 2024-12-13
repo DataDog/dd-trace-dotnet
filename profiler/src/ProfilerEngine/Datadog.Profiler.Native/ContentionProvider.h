@@ -13,6 +13,7 @@
 #include "GroupSampler.h"
 #include "IContentionListener.h"
 #include "IUpscaleProvider.h"
+#include "ManagedThreadInfo.h"
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawContentionSample.h"
@@ -28,6 +29,7 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class SampleValueTypeProvider;
+
 
 class ContentionProvider : public CollectorBase<RawContentionSample>,
                            public IContentionListener,
@@ -62,10 +64,15 @@ public:
     // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;
 
+    void OnModuleLoaded(ModuleID moduleId);
+    void OnClassLoaded(ClassID classId);
+
 private:
     static std::string GetBucket(std::chrono::nanoseconds contentionDuration);
     static std::vector<SampleValueType> SampleTypeDefinitions;
-    void AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack);
+    void AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, WaitType waitType, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack);
+    void SetClassIdIfNeeded(ClassID& field, const char* expectedTypeName, ClassID classId, std::string& typeName);
+    WaitType GetWaitType(ClassID classId);
 
 private:
     static std::vector<uintptr_t> _emptyStack;
@@ -83,4 +90,10 @@ private:
     std::mutex _contentionsLock;
     MetricsRegistry& _metricsRegistry;
     CallstackProvider _callstackProvider;
+
+    ModuleID _mscorlibModuleId;
+    ClassID _mutexClassID;
+    ClassID _semaphoreClassID;
+    ClassID _autoResetEventClassID;
+    ClassID _manualResetEventClassID;
 };

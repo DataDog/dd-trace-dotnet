@@ -1,3 +1,8 @@
+// <copyright file="Program.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+// </copyright>
+
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -23,47 +28,51 @@ namespace Samples.WaitHandles
             Console.WriteLine("Starting threads...");
 
             Stopwatch sw = new Stopwatch();
-            sw.Start();
+            for (int i = 0; i < 5; i++)
+            {
+                sw.Restart();
 
-            // start a thread that will own the mutex and the semaphore
-            var owningThread = new Thread(OwningThread);
-            owningThread.Start();
-            Thread.Sleep(5);
+                // start a thread that will own the mutex and the semaphore
+                var owningThread = new Thread(OwningThread);
+                owningThread.Start();
+                Thread.Sleep(5);
 
-            var autoResetEventThread = new Thread(AutoResetEventThread);
-            autoResetEventThread.Start();
+                var autoResetEventThread = new Thread(AutoResetEventThread);
+                autoResetEventThread.Start();
 
-            var manualResetEventThread = new Thread(ManualResetEventThread);
-            manualResetEventThread.Start();
+                var manualResetEventThread = new Thread(ManualResetEventThread);
+                manualResetEventThread.Start();
 
-            var mutexThread = new Thread(MutexThread);
-            mutexThread.Start();
+                var mutexThread = new Thread(MutexThread);
+                mutexThread.Start();
 
-            var semaphoreThread = new Thread(SemaphoreThread);
-            semaphoreThread.Start();
+                var semaphoreThread = new Thread(SemaphoreThread);
+                semaphoreThread.Start();
 
-            // wait for all threads to finish
-            owningThread.Join();
-            autoResetEventThread.Join();
-            manualResetEventThread.Join();
-            mutexThread.Join();
-            semaphoreThread.Join();
+                // wait for all threads to finish
+                owningThread.Join();
+                autoResetEventThread.Join();
+                manualResetEventThread.Join();
+                mutexThread.Join();
+                semaphoreThread.Join();
 
-            sw.Stop();
-            Console.WriteLine("___________________________________________");
-            Console.WriteLine($"Duration = {sw.ElapsedMilliseconds} ms");
+                sw.Stop();
+                Console.WriteLine("___________________________________________");
+                Console.WriteLine($"Duration = {sw.ElapsedMilliseconds} ms");
 
-            Thread.Sleep(2);
+                Thread.Sleep(2);
+            }
         }
 
-        static void OwningThread()
+        private static void OwningThread()
         {
+            Console.WriteLine();
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] Start to hold resources");
             Console.WriteLine("___________________________________________");
             mutex.WaitOne();
             semaphore.WaitOne();
 
-            Thread.Sleep(6000);
+            Thread.Sleep(3000);
             Console.WriteLine();
             Console.WriteLine("    Release resources");
 
@@ -73,36 +82,38 @@ namespace Samples.WaitHandles
             manualResetEvent.Set();
         }
 
-        static void AutoResetEventThread()
+        private static void AutoResetEventThread()
         {
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for AutoResetEvent...");
             autoResetEvent.WaitOne();
             Console.WriteLine("    <-- AutoResetEvent");
         }
 
-        static void ManualResetEventThread()
+        private static void ManualResetEventThread()
         {
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for ManualResetEvent...");
             manualResetEvent.WaitOne();
+            manualResetEvent.Reset();
             Console.WriteLine("    <-- ManualResetEvent");
         }
 
-        static void MutexThread()
+        private static void MutexThread()
         {
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for Mutex...");
             mutex.WaitOne();
+            mutex.ReleaseMutex();
             Console.WriteLine("    <-- Mutex");
         }
 
-        static void SemaphoreThread()
+        private static void SemaphoreThread()
         {
             Console.WriteLine($"    [{GetCurrentThreadId(),8}] waiting for Semaphore");
             semaphore.WaitOne();
+            semaphore.Release(1);
             Console.WriteLine("    <-- Semaphore");
         }
 
         [DllImport("kernel32.dll")]
         private static extern uint GetCurrentThreadId();
     }
-
 }

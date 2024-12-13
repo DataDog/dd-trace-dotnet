@@ -49,6 +49,7 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, ICorProfilerInfo4* pC
 #endif
     _info{pCorProfilerInfo},
     _blockingThreadId{0},
-    _waitStartTimestamp{0ns}
+    _waitStartTimestamp{0ns},
+    _waitType{WaitType::Unknown}
 {
 }

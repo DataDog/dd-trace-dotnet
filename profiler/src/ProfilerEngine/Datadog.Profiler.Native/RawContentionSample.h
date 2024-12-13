@@ -5,6 +5,7 @@
 
 #include "RawSample.h"
 #include "Sample.h"
+#include "ManagedThreadInfo.h"
 
 class RawContentionSample : public RawSample
 {
@@ -14,6 +15,7 @@ public:
     inline static const std::string RawDurationLabelName = "raw duration";
     inline static const std::string BlockingThreadIdLabelName = "blocking thread id";
     inline static const std::string BlockingThreadNameLabelName = "blocking thread name";
+    inline static const std::string WaitTypeLabelName = "wait type";
 
 public:
     RawContentionSample() = default;
@@ -24,7 +26,8 @@ public:
         ContentionDuration(other.ContentionDuration),
         Bucket(std::move(other.Bucket)),
         BlockingThreadId(other.BlockingThreadId),
-        BlockingThreadName(std::move(other.BlockingThreadName))
+        BlockingThreadName(std::move(other.BlockingThreadName)),
+        WaitType(other.WaitType)
     {
     }
 
@@ -37,6 +40,7 @@ public:
             Bucket = std::move(other.Bucket);
             BlockingThreadId = other.BlockingThreadId;
             BlockingThreadName = std::move(other.BlockingThreadName);
+            WaitType = other.WaitType;
         }
         return *this;
     }
@@ -57,10 +61,24 @@ public:
             sample->AddNumericLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
             sample->AddLabel(Label{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
         }
+        sample->AddLabel(Label{WaitTypeLabelName, WaitTypes[static_cast<int>(WaitType)]});
     }
 
     std::chrono::nanoseconds ContentionDuration;
     std::string Bucket;
     uint64_t BlockingThreadId;
     shared::WSTRING BlockingThreadName;
+    WaitType WaitType;
+
+    static std::string WaitTypes[static_cast<int>(WaitType::LastWait)];
+};
+
+inline std::string RawContentionSample::WaitTypes[static_cast<int>(WaitType::LastWait)] =
+{
+    "Unknown",
+    "Lock",
+    "Mutex",
+    "Semaphore",
+    "AutoResetEvent",
+    "ManualResetEvent"
 };

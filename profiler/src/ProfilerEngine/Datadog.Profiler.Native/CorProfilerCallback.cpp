@@ -1221,6 +1221,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
+    if (_pConfiguration->IsWaitHandleProfilingEnabled())
+    {
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         //              for GC                              for JIT
@@ -1486,6 +1491,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         _pExceptionsProvider->OnModuleLoaded(moduleId);
     }
 
+    if (_pContentionProvider != nullptr)
+    {
+        _pContentionProvider->OnModuleLoaded(moduleId);
+    }
+
     return S_OK;
 }
 
@@ -1511,6 +1521,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadStarted(ClassID classId)
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
 {
+    if (_pContentionProvider != nullptr)
+    {
+        // look for Mutex, Semaphore, AutoResetEvent and ManualResetEvent ClassID
+        _pContentionProvider->OnClassLoaded(classId);
+    }
+
     return S_OK;
 }
 
