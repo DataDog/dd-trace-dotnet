@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
@@ -12,10 +11,10 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Microsoft.Diagnostics.Runtime;
 using Spectre.Console;
@@ -515,6 +514,23 @@ internal class CreatedumpCommand : Command
         {
             Errors.Add($"Failed to initialize crash report: {GetLastError(crashReport, ex)}");
             return;
+        }
+
+        if (Environment.GetEnvironmentVariable("DD_INTERNAL_CRASHTRACKING_CRASH") == "1")
+        {
+            AnsiConsole.WriteLine("DD_INTERNAL_CRASHTRACKING_CRASH is set, crashing on purpose...");
+
+            try
+            {
+                crashReport.AddTag(0x1, 0x1);
+            }
+            catch
+            {
+                // The error isn't supposed to be catchable, it breaks the assumption the test is built on
+                // Sleep forever to timeout so somebody will have a look
+                AnsiConsole.WriteLine("Failed to crash the process, sleeping forever.");
+                Thread.Sleep(Timeout.Infinite);
+            }
         }
 
         if (crashThread == null)
