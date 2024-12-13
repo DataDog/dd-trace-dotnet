@@ -745,10 +745,6 @@ internal static partial class IastModule
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         traceContext?.Tags.SetTag(Tags.Propagated.AppSec, "1");
         vulnerability.Location?.ReportStack(span);
-
-        // We dispose the scope right after creating it
-        scope.Dispose();
-
         return new IastModuleResponse(scope);
     }
 
