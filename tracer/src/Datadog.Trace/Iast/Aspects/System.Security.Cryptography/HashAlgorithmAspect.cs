@@ -36,6 +36,7 @@ public class HashAlgorithmAspect
         try
         {
             var scope = HashAlgorithmIntegrationCommon.CreateScope(target);
+            scope?.Dispose();
             return target;
         }
         catch (global::System.Exception ex)

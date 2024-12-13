@@ -398,7 +398,7 @@ internal static partial class IastModule
         if (Iast.Instance.Settings.Enabled)
         {
             // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability);
+            AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose(); ;
         }
     }
 
@@ -420,7 +420,7 @@ internal static partial class IastModule
             new Evidence($"Directory listing is configured with: {methodName}"),
             IntegrationId.DirectoryListingLeak);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability);
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.DirectoryListingLeak, OperationNameHardcodedSecret, vulnerability).SingleSpan?.Dispose(); ;
     }
 
     public static void OnSessionTimeout(string methodName, TimeSpan value)
@@ -437,7 +437,7 @@ internal static partial class IastModule
             new Evidence($"Session idle timeout is configured with: {methodName}, with a value of {value.TotalMinutes} minutes"),
             IntegrationId.SessionTimeout);
 
-        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability);
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.SessionTimeout, OperationNameSessionTimeout, vulnerability).SingleSpan?.Dispose(); ;
     }
 
     public static IastModuleResponse OnCipherAlgorithm(Type type, IntegrationId integrationId)
