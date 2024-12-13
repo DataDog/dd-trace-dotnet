@@ -61,7 +61,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_3,
     SpanId: Id_4,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/streamingfromclient,
@@ -122,7 +122,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_5,
     SpanId: Id_6,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/streamingfromserver,
@@ -183,7 +183,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_7,
     SpanId: Id_8,
     Name: aspnet_core.request,
     Resource: POST /greet.tester.greeter/unary,
