@@ -450,7 +450,6 @@ internal class CreatedumpCommand : Command
 
     private unsafe void GenerateCrashReport(int pid, int? signal, int? crashThread)
     {
-        File.AppendAllText(@"C:\temp\log.txt", $"Started\n");
         var extension = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dll" : "so";
         var profilerLibrary = $"Datadog.Profiler.Native.{extension}";
 
