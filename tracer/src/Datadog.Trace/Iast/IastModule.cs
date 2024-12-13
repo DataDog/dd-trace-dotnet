@@ -278,7 +278,7 @@ internal static partial class IastModule
         }
     }
 
-    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string>? argumentList, IntegrationId integrationId, bool autoCloseScopeWhenSingleSpan)
+    public static IastModuleResponse OnCommandInjection(string file, string argumentLine, Collection<string>? argumentList, IntegrationId integrationId)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -289,7 +289,7 @@ internal static partial class IastModule
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
-            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, taintValidator: Always, safeSources: _dbSources, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
+            return string.IsNullOrEmpty(evidence) ? IastModuleResponse.Empty : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, taintValidator: Always, safeSources: _dbSources);
         }
         catch (Exception ex)
         {
