@@ -58,7 +58,7 @@ public class IastInstrumentationUnitTests : TestHelper
             var path = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "src", "Datadog.Tracer.Native", "Generated", "generated_callsites.g.cpp");
             foreach (var line in File.ReadAllLines(path))
             {
-                if (!line.Contains("Aspect")) { continue; }
+                if (!line.Contains("[Aspect")) { continue; }
                 var aspect = line.Substring(14, line.Length - 17).Replace("\\\"", "\"");
 
                 // Get TFMs from the aspect
