@@ -215,7 +215,7 @@ void ContentionProvider::OnWaitStart(std::chrono::nanoseconds timestamp, uintptr
     }
 
     // TODO: try to get the type of associatedObjectId to make the difference between Monitor/lock, AutoResetEvent, ManualResetEvent, Mutex and Semaphore
-    // the following code does not work because GetClassFromObject returns CORPROF_E_RUNTIME_UNINITIALIZED here
+    // the following code does not work because GetClassFromObject returns CORPROF_E_UNSUPPORTED_CALL_SEQUENCE here
     //  ClassID classId = 0;
     //  HRESULT hr = _pCorProfilerInfo->GetClassFromObject(static_cast<ObjectID>(associatedObjectId), &classId);
     //  if (SUCCEEDED(hr))
