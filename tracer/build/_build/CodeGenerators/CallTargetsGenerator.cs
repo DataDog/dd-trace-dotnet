@@ -514,6 +514,8 @@ namespace CodeGenerators
 
                 namespace trace
                 {
+                int GeneratedDefinitions::InitCallTargets(UINT32 enabledCategories, UINT32 platform)
+                {
                 """);
 
             var assemblyName = $"Datadog.Trace, Version={version}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
@@ -548,8 +550,6 @@ namespace CodeGenerators
             bool inWin32Section = false;
             sb.AppendLine();
             sb.AppendLine("""
-                const std::vector<CallTargetDefinition3> GeneratedDefinitions::GetCallTargets()
-                {
                 std::vector<CallTargetDefinition3> callTargets =
                 """);
             sb.AppendLine("{");
@@ -583,7 +583,7 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
-                return callTargets;
+                return profiler->RegisterCallTargetDefinitions((WCHAR*) WStr("Tracing"), callTargets.data(), callTargets.size(), enabledCategories, platform);
                 }
                 }
                 """);
@@ -608,7 +608,7 @@ namespace CodeGenerators
 
             static string GetSignatureName(int index)
             {
-                return $"g_sig{index:000}";
+                return $"sig{index:000}";
             }
 
             static string GetSignatureField(string signatureName, string signature)

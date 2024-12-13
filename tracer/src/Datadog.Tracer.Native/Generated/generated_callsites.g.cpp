@@ -7,7 +7,7 @@
 
 namespace trace
 {
-const std::vector<WCHAR*> GeneratedDefinitions::GetCallSites()
+int GeneratedDefinitions::InitCallSites(UINT32 enabledCategories, UINT32 platform)
 {
 std::vector<WCHAR*> callSites =
 {
@@ -707,6 +707,6 @@ std::vector<WCHAR*> callSites =
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String)\",\"\",[0],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 (WCHAR*)WStr("  [AspectMethodInsertBefore(\"System.Xml.XPath.Extensions::XPathSelectElements(System.Xml.Linq.XNode,System.String,System.Xml.IXmlNamespaceResolver)\",\"\",[1],[False],[None],Default,[])] ReviewPath(System.String) 15"),
 };
-return callSites;
+return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), callSites.size(), enabledCategories, platform);
 }
 }

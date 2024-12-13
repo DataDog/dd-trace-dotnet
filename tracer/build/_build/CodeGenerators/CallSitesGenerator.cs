@@ -262,7 +262,7 @@ namespace CodeGenerators
 
                 namespace trace
                 {
-                const std::vector<WCHAR*> GeneratedDefinitions::GetCallSites()
+                int GeneratedDefinitions::InitCallSites(UINT32 enabledCategories, UINT32 platform)
                 {
                 std::vector<WCHAR*> callSites =
                 {
@@ -298,7 +298,7 @@ namespace CodeGenerators
 
             sb.AppendLine("""
                 };
-                return callSites;
+                return trace::profiler->RegisterIastAspects((WCHAR**) callSites.data(), callSites.size(), enabledCategories, platform);
                 }
                 }
                 """);
