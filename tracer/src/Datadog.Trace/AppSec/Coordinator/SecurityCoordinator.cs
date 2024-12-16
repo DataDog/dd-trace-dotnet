@@ -7,6 +7,7 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -110,7 +111,7 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWafForUser(IDictionary<string, string> loginTags, bool force = false)
     {
-        var args = (IDictionary<string, object>)loginTags;
+        var args = loginTags.ToDictionary(a => a.Key, object (a) => a.Value);
         LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try

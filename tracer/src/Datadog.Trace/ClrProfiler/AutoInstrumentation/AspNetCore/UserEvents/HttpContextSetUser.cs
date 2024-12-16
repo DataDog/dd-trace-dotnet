@@ -7,6 +7,7 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
@@ -14,6 +15,7 @@ using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -76,6 +78,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                     var setTag = TaggingUtils.GetSpanSetter(span, out _);
                     var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+                    var addressesForWaf = new Dictionary<string, string>();
+                    var secCoord = SecurityCoordinator.Get(security, scope.Span, httpContext);
+
                     foreach (var claim in claimsPrincipal.Claims)
                     {
                         if (string.IsNullOrEmpty(claim.Value))
@@ -91,12 +96,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                             setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
                             setTag(Tags.AppSec.EventsUsers.CollectionMode, successAutoMode);
 
-                            var secCoord = SecurityCoordinator.Get(security, scope.Span, httpContext);
                             secCoord.CollectHeaders();
                             security.SetTraceSamplingPriority(span);
+                            addressesForWaf.Add(AddressesConstants.UserId, userId);
                             break;
                         }
                     }
+
+                    var sessionId = httpContext.Features.Get<ISessionFeature>()?.Session?.Id;
+                    if (sessionId != null)
+                    {
+                        addressesForWaf.Add(AddressesConstants.UserSessionId, sessionId);
+                    }
+
+                    var result = secCoord.RunWafForUser(addressesForWaf);
+                    secCoord.BlockAndReport(result);
 
                     UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, true);
                 }

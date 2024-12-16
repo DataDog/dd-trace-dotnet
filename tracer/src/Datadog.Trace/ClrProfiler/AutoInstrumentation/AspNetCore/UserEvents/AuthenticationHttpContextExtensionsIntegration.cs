@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 #if !NETFRAMEWORK
@@ -55,81 +56,84 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                return new CallTargetState(scope, claimPrincipal);
+                return new CallTargetState(scope, (claimPrincipal, httpContext));
             }
 
             return CallTargetState.GetDefault();
         }
 
-        internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
+        internal static object OnAsyncMethodEnd<TTarget>(object instance, object returnValue, Exception exception, in CallTargetState state)
         {
-            var claimsPrincipal = state.State as ClaimsPrincipal;
-            if (claimsPrincipal?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
+            if (state.State is Tuple<ClaimsPrincipal, HttpContext> stateTuple)
             {
-                var span = scope.Span;
-                var foundUserId = false;
-                var foundLogin = false;
-                Func<string, string>? processPii = null;
-                string successAutoMode;
-                if (security.IsAnonUserTrackingMode)
-                {
-                    processPii = UserEventsCommon.Anonymize;
-                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
-                }
-                else
-                {
-                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
-                }
 
-                var setTag = TaggingUtils.GetSpanSetter(span, out _);
-                var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                var secCoordinator = SecurityCoordinator.Get(security, span, (instance as HttpContext)!);
-                var loginAddressesForWaf = new Dictionary<string, string>();
-                foreach (var claim in claimsPrincipal.Claims)
+                if (stateTuple.Item1?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
                 {
-                    if (string.IsNullOrEmpty(claim.Value))
+                    var span = scope.Span;
+                    var foundUserId = false;
+                    var foundLogin = false;
+                    Func<string, string>? processPii = null;
+                    string successAutoMode;
+                    if (security.IsAnonUserTrackingMode)
                     {
-                        continue;
+                        processPii = UserEventsCommon.Anonymize;
+                        successAutoMode = SecuritySettings.UserTrackingAnonMode;
+                    }
+                    else
+                    {
+                        successAutoMode = SecuritySettings.UserTrackingIdentMode;
                     }
 
-                    if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
+                    var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                    var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+                    var secCoordinator = SecurityCoordinator.Get(security, span, stateTuple.Item2);
+                    var loginAddressesForWaf = new Dictionary<string, string>();
+                    foreach (var claim in stateTuple.Item1.Claims)
                     {
-                        foundUserId = true;
-                        var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
-                        tryAddTag(Tags.User.Id, userId);
-                        setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
-                        loginAddressesForWaf.Add(AddressesConstants.UserId, userId);
-                    }
-                    else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
-                    {
-                        foundLogin = true;
-                        var login = processPii?.Invoke(claim.Value) ?? claim.Value;
-                        setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
-                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
-                        if (security.AddressEnabled(AddressesConstants.UserLogin))
+                        if (string.IsNullOrEmpty(claim.Value))
                         {
-                            loginAddressesForWaf.Add(AddressesConstants.UserLogin, login);
+                            continue;
+                        }
+
+                        if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
+                        {
+                            foundUserId = true;
+                            var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
+                            tryAddTag(Tags.User.Id, userId);
+                            setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                            loginAddressesForWaf.Add(AddressesConstants.UserId, userId);
+                        }
+                        else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
+                        {
+                            foundLogin = true;
+                            var login = processPii?.Invoke(claim.Value) ?? claim.Value;
+                            setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
+                            if (security.AddressEnabled(AddressesConstants.UserLogin))
+                            {
+                                loginAddressesForWaf.Add(AddressesConstants.UserLogin, login);
+                            }
+                        }
+
+                        if (foundLogin && foundUserId)
+                        {
+                            break;
                         }
                     }
 
-                    if (foundLogin && foundUserId)
+                    if (foundUserId || foundLogin)
                     {
-                        break;
+                        loginAddressesForWaf.Add(AddressesConstants.UserBusinessLoginSuccess, string.Empty);
+                        security.SetTraceSamplingPriority(span);
+                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
                     }
-                }
 
-                if (foundUserId || foundLogin)
-                {
-                    loginAddressesForWaf.Add(AddressesConstants.UserBusinessLoginSuccess, string.Empty);
-                    security.SetTraceSamplingPriority(span);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
+                    UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
+                    secCoordinator.CollectHeaders();
+                    var result = secCoordinator.RunWafForUser(loginAddressesForWaf);
+                    secCoordinator.BlockAndReport(result);
                 }
-
-                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                secCoordinator.CollectHeaders();
-                var result = secCoordinator.RunWafForUser(loginAddressesForWaf);
-                secCoordinator.BlockAndReport(result);
             }
 
             return returnValue;
