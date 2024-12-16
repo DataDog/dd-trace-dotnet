@@ -3,9 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -19,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
+[Collection(nameof(KafkaTests.KafkaTestsCollection))]
 [Trait("RequiresDockerDependency", "true")]
 public class DataStreamsMonitoringKafkaTests : TestHelper
 {
@@ -28,72 +27,40 @@ public class DataStreamsMonitoringKafkaTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-    public static IEnumerable<object[]> GetKafkaTestData()
-    {
-        foreach (var version in PackageVersions.Kafka)
-        {
-            yield return new object[] { version[0], true };
-            yield return new object[] { version[0], false };
-        }
-    }
-
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <summary>
+    /// This sample does a series of produces and consumes to create two pipelines:
+    ///  - service -> topic 1 -> Consumer 1 -> topic 2 -> Consumer 2 -> topic 3 -> consumer 3
+    ///  - service -> topic 2 -> Consumer 2 -> topic 3 -> consumer 3
+    /// Each node (apart from 'service') in the pipelines above have a unique hash
+    /// </summary>
+    /// <param name="enableConsumerScopeCreation">Is the scope created manually or using built-in support</param>
+    /// <param name="enableLegacyHeaders">Should legacy headers be enabled or not</param>
     [SkippableTheory]
-    [MemberData(nameof(GetKafkaTestData))]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
     [Trait("Category", "EndToEnd")]
-    public async Task HandleProduceAndConsume(string packageVersion, bool enableLegacyHeaders)
+    [Trait("Category", "ArmUnsupported")]
+    public async Task SubmitsDataStreams(bool enableConsumerScopeCreation, bool enableLegacyHeaders)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, enableConsumerScopeCreation ? "1" : "0");
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
 
-        using var assertionScope = new AssertionScope();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
-        {
-            var spans = agent.WaitForSpans(31);
-            spans.Should().HaveCount(31);
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.UseParameters(packageVersion, enableLegacyHeaders);
-            settings.AddDataStreamsScrubber();
-            await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(HandleProduceAndConsume)}")
-                          .DisableRequireUniquePrefix();
-        }
-    }
-
-    [SkippableTheory]
-    [MemberData(nameof(GetKafkaTestData))]
-    [Trait("Category", "EndToEnd")]
-    public async Task ValidateSpanTags(string packageVersion, bool enableLegacyHeaders)
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, enableLegacyHeaders ? "1" : "0");
+        using var processResult = await RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using (await RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
-        {
-            var spans = agent.WaitForSpans(31);
-            spans.Should().HaveCount(31);
-            var taggedSpans = spans.Where(s => s.Tags.ContainsKey("pathway.hash"));
-            taggedSpans.Should().HaveCount(13);
-        }
-    }
-
-    private static IList<MockDataStreamsStatsPoint> PayloadsToPoints(IImmutableList<MockDataStreamsPayload> payloads)
-    {
-        var points = new List<MockDataStreamsStatsPoint>();
-        foreach (var payload in payloads)
-        {
-            foreach (var bucket in payload.Stats)
-            {
-                if (bucket.Stats != null)
-                {
-                    points.AddRange(bucket.Stats);
-                }
-            }
-        }
-
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
+        var payload = MockDataStreamsPayload.Normalize(agent.DataStreams);
+        // using span verifier to add all the default scrubbers
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+        settings.AddDataStreamsScrubber();
+        await Verifier.Verify(payload, settings)
+                      .UseFileName($"{nameof(DataStreamsMonitoringKafkaTests)}.{nameof(SubmitsDataStreams)}")
+                      .DisableRequireUniquePrefix();
     }
 }
