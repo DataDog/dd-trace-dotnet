@@ -243,7 +243,7 @@
     <!-- Integration: nunit.framework -->
     <!--    Assembly: nunit.framework -->
     <!-- Latest package https://www.nuget.org/packages/NUnit/4.2.2 -->
-    <PackageReference Include="NUnit" Version="4.2.2" />
+    <PackageReference Include="NUnit" Version="4.3.0" />
 
     <!-- Integration: OpenTelemetry -->
     <!--    Assembly: OpenTelemetry -->
