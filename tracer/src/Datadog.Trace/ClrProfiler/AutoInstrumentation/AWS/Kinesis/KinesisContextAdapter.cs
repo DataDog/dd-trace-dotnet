@@ -52,9 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
             else
             {
-                var newValues = new List<string>();
-                newValues.Add(value);
-                headers.Add(name, newValues);
+                headers[name] = new List<string> { value };
             }
         }
 
