@@ -17,7 +17,7 @@ internal class HashAlgorithmIntegrationCommon
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
 
-    internal static Scope? CreateScope<TTarget>(TTarget instance)
+    internal static Scope? CreateScope<TTarget>(TTarget instance, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
         {
@@ -29,7 +29,7 @@ internal class HashAlgorithmIntegrationCommon
 
             try
             {
-                return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId).SingleSpan;
+                return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, autoCloseScopeWhenSingleSpan).SingleSpan;
             }
             catch (Exception ex)
             {
