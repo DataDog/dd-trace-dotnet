@@ -5,18 +5,32 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission
 {
     public class DirectLogSubmissionSettingsTests : SettingsTestsBase
     {
+        private static readonly List<string> AllIntegrations =
+            DirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList();
+
+        private static readonly NameValueCollection Defaults =  new()
+        {
+            { ConfigurationKeys.LogsInjectionEnabled, "1" },
+            { ConfigurationKeys.ApiKey, "some_key" },
+            { ConfigurationKeys.DirectLogSubmission.Host, "integration_tests" },
+            { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", AllIntegrations) },
+        };
+
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -30,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 { ConfigurationKeys.Site, ddSite },
             }));
 
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
+            tracerSettings.LogSubmissionSettings.IntakeUrl.Should().Be(expected);
         }
 
         [Theory]
@@ -46,7 +60,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 { ConfigurationKeys.Site, domain },
             }));
 
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
+            tracerSettings.LogSubmissionSettings.IntakeUrl.Should().Be(expected);
         }
 
         [Fact]
@@ -55,7 +69,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var expected = "https://http-intake.logs.datadoghq.com:443";
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()));
 
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionUrl.Should().Be(expected);
+            tracerSettings.LogSubmissionSettings.IntakeUrl.Should().Be(expected);
         }
 
         [Fact]
@@ -70,7 +84,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 { "DD_TRACE_GLOBAL_TAGS", "test5:value5, test6:value6" },
             }));
 
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
+            tracerSettings.LogSubmissionSettings.GlobalTags
                           .Should()
                           .BeEquivalentTo(expected);
         }
@@ -85,7 +99,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 { "DD_TRACE_GLOBAL_TAGS", "test5:value5, test6:value6" },
             }));
 
-            tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
+            tracerSettings.LogSubmissionSettings.GlobalTags
                           .Should()
                           .BeEmpty();
         }
@@ -102,7 +116,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Host, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionHost.Should().Be(expected);
+            settings.Host.Should().Be(expected);
         }
 
         [Theory]
@@ -112,7 +126,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.Source, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionSource.Should().Be(expected);
+            settings.Source.Should().Be(expected);
         }
 
         [Theory]
@@ -124,19 +138,20 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.MinimumLevel, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionMinimumLevel.Should().Be((DirectSubmissionLogLevel)expected);
+            settings.MinimumLevel.Should().Be((DirectSubmissionLogLevel)expected);
         }
 
         [Theory]
         [InlineData("", new string[0])]
         [InlineData(null, new string[0])]
-        [InlineData("test1;TEST1;;test2", new[] { "test1", "test2" })]
+        [InlineData("test1;TEST1;;test2", new string[0])]
+        [InlineData("serilog;SERILOG;;NLog", new[] { "Serilog", "NLog" })]
         public void DirectLogSubmissionEnabledIntegrations(string value, string[] expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionEnabledIntegrations.Should().BeEquivalentTo(expected);
+            settings.EnabledIntegrationNames.Should().BeEquivalentTo(expected);
         }
 
         [Theory]
@@ -151,7 +166,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchSizeLimit, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionBatchSizeLimit.Should().Be(expected);
+            settings.BatchSizeLimit.Should().Be(expected);
         }
 
         [Theory]
@@ -166,7 +181,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.QueueSizeLimit, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionQueueSizeLimit.Should().Be(expected);
+            settings.QueueSizeLimit.Should().Be(expected);
         }
 
         [Theory]
@@ -181,11 +196,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var source = CreateConfigurationSource((ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds, value));
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
-            settings.DirectLogSubmissionBatchPeriod.Should().Be(TimeSpan.FromSeconds(expected));
+            settings.BatchPeriod.Should().Be(TimeSpan.FromSeconds(expected));
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
+        [MemberData(nameof(StringTestCases), "", Strings.AllowEmpty)]
         public void ApiKey(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ApiKey, value));
@@ -202,6 +217,195 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.LogsInjectionEnabled.Should().Be(expected);
+        }
+
+        [Fact]
+        public void ValidSettingsAreValid()
+        {
+            var settings = LogSettingsHelper.GetValidSettings();
+            settings.IsEnabled.Should().BeTrue();
+        }
+
+        [Fact]
+        public void ValidDefaultsAreValid()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(Defaults));
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.ValidationErrors.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("  ")]
+        [InlineData(null)]
+        public void InvalidApiKeyIsInvalid(string apiKey)
+        {
+            var nameValueCollection = new NameValueCollection(Defaults);
+            nameValueCollection[ConfigurationKeys.ApiKey] = apiKey;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(nameValueCollection));
+
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeFalse();
+            logSettings.ValidationErrors.Should().NotBeEmpty();
+        }
+
+        [Theory]
+        [InlineData("VeryVerbose", DirectSubmissionLogLevel.Information)]
+        [InlineData("", DirectSubmissionLogLevel.Information)]
+        [InlineData(null, DirectSubmissionLogLevel.Information)]
+        [InlineData("Verbose", DirectSubmissionLogLevel.Verbose)]
+        [InlineData("trace", DirectSubmissionLogLevel.Verbose)]
+        [InlineData("Debug", DirectSubmissionLogLevel.Debug)]
+        [InlineData("Info", DirectSubmissionLogLevel.Information)]
+        [InlineData("Warning", DirectSubmissionLogLevel.Warning)]
+        [InlineData("ERROR", DirectSubmissionLogLevel.Error)]
+        [InlineData("Fatal", DirectSubmissionLogLevel.Fatal)]
+        [InlineData("critical", DirectSubmissionLogLevel.Fatal)]
+        public void ParsesLogLevelsCorrectly(string value, DirectSubmissionLogLevel expected)
+        {
+            var updatedSettings = new NameValueCollection(Defaults);
+            updatedSettings[ConfigurationKeys.DirectLogSubmission.MinimumLevel] = value;
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.ValidationErrors.Should().BeEmpty();
+            logSettings.MinimumLevel.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Host, "")]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Host, "   ")]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Source, "")]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Source, "   ")]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Url, "   ")]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.Url, "localhost")]
+        public void InvalidSettingDisablesDirectLogSubmission(string setting, string value)
+        {
+            var updatedSettings = new NameValueCollection(Defaults);
+            updatedSettings[setting] = value;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeFalse();
+            logSettings.ValidationErrors.Should().NotBeEmpty();
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, "Serilog;Garbage")]
+        public void InvalidSettingWarnsButDoesNotDisableDirectLogSubmission(string setting, string value)
+        {
+            var updatedSettings = new NameValueCollection(Defaults);
+            updatedSettings[setting] = value;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(updatedSettings));
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.ValidationErrors.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public void CanLoadSettingsFromTracerSettings()
+        {
+            var apiKey = "some_key";
+            var hostName = "integration_tests";
+            var intake = "http://localhost:1234";
+            var enabledIntegrations = DirectLogSubmissionSettings.SupportedIntegrations
+                                                                 .Select(x => x.ToString())
+                                                                 .ToList();
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.LogsInjectionEnabled, "1" },
+                { ConfigurationKeys.ApiKey, apiKey },
+                { ConfigurationKeys.DirectLogSubmission.Host, hostName },
+                { ConfigurationKeys.DirectLogSubmission.Url, intake },
+                { ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, string.Join(";", enabledIntegrations) },
+                { ConfigurationKeys.DirectLogSubmission.GlobalTags, "sometag:value, someothertag:someothervalue" },
+            };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source);
+
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            using var scope = new AssertionScope();
+            logSettings.ApiKey.Should().Be(apiKey);
+            logSettings.Host.Should().Be(hostName);
+            logSettings.IntakeUrl?.ToString().Should().Be("http://localhost:1234/");
+            logSettings.GlobalTags.Should().BeEquivalentTo(new KeyValuePair<string, string>[] { new("someothertag", "someothervalue"), new("sometag", "value") });
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.MinimumLevel.Should().Be(DirectSubmissionLogLevel.Information);
+            logSettings.Source.Should().Be("csharp");
+            logSettings.ValidationErrors.Should().BeEmpty();
+            logSettings.EnabledIntegrationNames.Should().Equal(enabledIntegrations);
+        }
+
+        [Theory]
+        [InlineData("nlog")]
+        [InlineData("NLOG")]
+        [InlineData("nLog")]
+        [InlineData("Nlog")]
+        [InlineData("NLog")]
+        [InlineData("nLog;nlog;Nlog")]
+        public void EnabledIntegrationsAreCaseInsensitive(string integration)
+        {
+            var config = new NameValueCollection(Defaults);
+            config[ConfigurationKeys.DirectLogSubmission.EnabledIntegrations] = integration;
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+            var logSettings = tracerSettings.LogSubmissionSettings;
+
+            logSettings.IsEnabled.Should().BeTrue();
+            logSettings.ValidationErrors.Should().BeEmpty();
+            var expected = new List<string> { nameof(IntegrationId.NLog) };
+            logSettings.EnabledIntegrationNames.Should().BeEquivalentTo(expected);
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void WhenLogsInjectionIsExplicitlySetViaEnvironmentThenValueIsUsed(bool logsInjectionEnabled, bool directLogSubmissionEnabled)
+        {
+            var config = new NameValueCollection(Defaults);
+            config[ConfigurationKeys.LogsInjectionEnabled] = logsInjectionEnabled.ToString();
+
+            if (!directLogSubmissionEnabled)
+            {
+                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
+            }
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+
+            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogsInjectionEnabled.Should().Be(logsInjectionEnabled);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void WhenLogsInjectionIsNotSetThenValueIsSameAsLogSubmissionEnabled(bool directLogSubmissionEnabled)
+        {
+            var config = new NameValueCollection(Defaults);
+            config.Remove(ConfigurationKeys.LogsInjectionEnabled);
+
+            if (!directLogSubmissionEnabled)
+            {
+                config.Remove(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations);
+            }
+
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(config));
+
+            tracerSettings.LogSubmissionSettings.IsEnabled.Should().Be(directLogSubmissionEnabled);
+            tracerSettings.LogsInjectionEnabled.Should().Be(directLogSubmissionEnabled);
         }
     }
 }

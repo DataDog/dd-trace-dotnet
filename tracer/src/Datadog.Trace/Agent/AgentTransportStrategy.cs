@@ -31,10 +31,10 @@ internal static class AgentTransportStrategy
     /// <param name="getHttpHeaderHelper">A func that returns an <see cref="HttpHeaderHelperBase"/> for use
     /// with <see cref="DatadogHttpClient"/></param>
     /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to for a given "base" endpoint.
-    /// The base endpoint will be <see cref="ImmutableExporterSettings.AgentUri" /> for TCP requests and
+    /// The base endpoint will be <see cref="ExporterSettings.AgentUri" /> for TCP requests and
     /// http://localhost/ for named pipes/UDS</param>
     public static IApiRequestFactory Get(
-        ImmutableExporterSettings settings,
+        ExporterSettings settings,
         string productName,
         TimeSpan? tcpTimeout,
         KeyValuePair<string, string>[] defaultAgentHeaders,

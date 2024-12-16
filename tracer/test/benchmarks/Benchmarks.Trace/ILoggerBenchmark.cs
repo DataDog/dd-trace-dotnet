@@ -21,13 +21,13 @@ namespace Benchmarks.Trace
 
         static ILoggerBenchmark()
         {
-            var logInjectionSettings = new TracerSettings
+            var logInjectionSettings = TracerSettings.Create(new()
             {
-                StartupDiagnosticLogEnabled = false,
-                LogsInjectionEnabled = true,
-                Environment = "env",
-                ServiceVersion = "version"
-            };
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                { ConfigurationKeys.LogsInjectionEnabled, true },
+                { ConfigurationKeys.Environment, "env" },
+                { ConfigurationKeys.ServiceVersion, "version" },
+            });
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
             Tracer.UnsafeSetTracerInstance(LogInjectionTracer);

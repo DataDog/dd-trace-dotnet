@@ -83,7 +83,7 @@ namespace Datadog.Trace.Configuration
                 GlobalSamplingRate = settings.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDouble(),
                 // SpanSamplingRules = settings.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString(),
                 LogsInjectionEnabled = settings.WithKeys(ConfigurationKeys.LogsInjectionEnabled).AsBool(),
-                HeaderTags = headerTags == null ? null : new ReadOnlyDictionary<string, string>(headerTags),
+                HeaderTags = headerTags,
                 // ServiceNameMappings = serviceNameMappings == null ? null : new ReadOnlyDictionary<string, string>(serviceNameMappings)
                 GlobalTags = globalTags == null ? null : new ReadOnlyDictionary<string, string>(globalTags)
             };

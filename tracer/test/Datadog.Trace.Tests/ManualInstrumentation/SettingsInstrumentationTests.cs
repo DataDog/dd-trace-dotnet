@@ -12,6 +12,8 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Configuration.TracerSettings;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using Xunit;
 using CtorIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer.CtorIntegration;
@@ -50,32 +52,7 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_CustomSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
-        {
-            AnalyticsEnabled = true,
-            CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
-            DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = ["something"],
-            Environment = "my-test-env",
-            GlobalSamplingRate = 0.5,
-            GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
-            GrpcTags = new Dictionary<string, string> { { "grpc1", "grpc-value" } },
-            HeaderTags = new Dictionary<string, string> { { "header1", "header-value" } },
-            KafkaCreateConsumerScopeEnabled = false,
-            LogsInjectionEnabled = true,
-            MaxTracesSubmittedPerSecond = 50,
-            ServiceName = "my-test-service",
-            ServiceVersion = "1.2.3",
-            StartupDiagnosticLogEnabled = false,
-            StatsComputationEnabled = true,
-            TraceEnabled = false,
-            TracerMetricsEnabled = true,
-        };
-
-        automatic.Exporter.AgentUri = new Uri("http://localhost:1234");
-        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled = false;
-        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled = true;
-        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
+        var automatic = GetAndAssertAutomaticTracerSettings();
 
         Dictionary<string, object> serializedSettings = new();
         PopulateDictionaryIntegration.PopulateSettings(serializedSettings, automatic);
@@ -134,11 +111,55 @@ public class SettingsInstrumentationTests
         var settings = manual.ToDictionary();
 
         var keys = GetManualTracerSettingKeys();
-        settings.Should().ContainKeys(keys).And.HaveSameCount(keys);
+        settings.Should().ContainKeys(keys);
+
+        // we have additional keys for each of the customized settings
+        settings.Keys.Except(keys).Should().ContainSingle("DD_TRACE_COUCHBASE_ANALYTICS_SAMPLE_RATE");
     }
 
     [Fact]
-    public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly()
+    public void ManualInstrumentationLegacyConfigurationSource_ProducesPublicApiForEveryExpectedValue()
+    {
+        // If we add more public API properties, we need to exclude them here, as we do _not_ expect the legacy provider to support them.
+        string[] excluded = [TracerSettingKeyConstants.IntegrationSettingsKey, TracerSettingKeyConstants.IsFromDefaultSourcesKey];
+        var keys = GetManualTracerSettingKeys().Where(x => !excluded.Contains(x));
+        Dictionary<string, PublicApiUsage> results = new();
+        foreach (var key in keys)
+        {
+            var result = ManualInstrumentationLegacyConfigurationSource.GetTelemetryKey(key);
+            result.Should().NotBeNull($"the TracerSettingKeyConstants key '{key}' should correspond to a public API property. " +
+                                      "Note that if you have added a _new_ TracerSettingKeyConstants value, this failure is expected - " +
+                                      "you should not update your implementation, instead you should add to the 'exlude' list in this test");
+            results.Add(key, result!.Value);
+        }
+
+        results.Should().OnlyHaveUniqueItems(x => x.Value);
+    }
+
+    [Fact]
+    public void ManualInstrumentationConfigurationSource_ProducesPublicApiForEveryExpectedValue()
+    {
+        // Do not add more values here, unless they represent "meta" properties like "IsFromDefaultSources" etc
+        string[] excluded = [TracerSettingKeyConstants.IntegrationSettingsKey, TracerSettingKeyConstants.IsFromDefaultSourcesKey];
+        var keys = GetManualTracerSettingKeys().Where(x => !excluded.Contains(x));
+        Dictionary<string, PublicApiUsage> results = new();
+        foreach (var key in keys)
+        {
+            var result = ManualInstrumentationConfigurationSource.GetTelemetryKey(key);
+            result.Should()
+                  .NotBeNull(
+                       $"the TracerSettingKeyConstants key '{key}' should correspond to a public API property. " +
+                       "Update ManualInstrumentationConfigurationSource.GetTelemetryKey() to include a mapping for the key.");
+            results.Add(key, result!.Value);
+        }
+
+        results.Should().OnlyHaveUniqueItems(x => x.Value);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ManualToAutomatic_CustomSettingsAreTransferredCorrectly(bool useLegacySettings)
     {
         Dictionary<string, object> initialValues = new();
         PopulateDictionaryIntegration.PopulateSettings(initialValues, new TracerSettings());
@@ -180,8 +201,10 @@ public class SettingsInstrumentationTests
 
         var changedValues = manual.ToDictionary();
 
-        var automatic = new TracerSettings();
-        ConfigureIntegration.UpdateSettings(changedValues, automatic);
+        IConfigurationSource configSource = useLegacySettings
+                               ? new ManualInstrumentationLegacyConfigurationSource(changedValues)
+                               : new ManualInstrumentationConfigurationSource(changedValues);
+        var automatic = new TracerSettings(configSource);
 
         AssertEquivalent(manual, automatic);
         automatic.ServiceNameMappings.Should().Equal(mappings);
@@ -192,58 +215,31 @@ public class SettingsInstrumentationTests
     [Fact]
     public void AutomaticToManual_ImmutableSettingsAreTransferredCorrectly()
     {
-        var automatic = new TracerSettings
-        {
-            AnalyticsEnabled = true,
-            CustomSamplingRules = """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""",
-            DiagnosticSourceEnabled = true,
-            DisabledIntegrationNames = [nameof(IntegrationId.Kafka)],
-            Environment = "my-test-env",
-            GlobalSamplingRate = 0.5,
-            GlobalTags = new Dictionary<string, string> { { "tag1", "value" } },
-            GrpcTags = new Dictionary<string, string> { { "grpc1", "grpc-value" } },
-            HeaderTags = new Dictionary<string, string> { { "header1", "header-value" } },
-            KafkaCreateConsumerScopeEnabled = false,
-            LogsInjectionEnabled = true,
-            MaxTracesSubmittedPerSecond = 50,
-            ServiceName = "my-test-service",
-            ServiceVersion = "1.2.3",
-            StartupDiagnosticLogEnabled = false,
-            StatsComputationEnabled = true,
-            TraceEnabled = false,
-            TracerMetricsEnabled = true,
-        };
-
-        automatic.Exporter.AgentUri = new Uri("http://localhost:1234");
-        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled = false;
-        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled = true;
-        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate = 0.5;
-
-        var immutable = automatic.Build();
+        var automatic = GetAndAssertAutomaticTracerSettings();
 
         Dictionary<string, object> serializedSettings = new();
-        CtorIntegration.PopulateSettings(serializedSettings, immutable);
+        CtorIntegration.PopulateSettings(serializedSettings, automatic);
 
         var manual = new ImmutableManualSettings(serializedSettings);
 
-        manual.AgentUri.Should().Be(immutable.Exporter.AgentUri);
-        manual.Exporter.AgentUri.Should().Be(immutable.Exporter.AgentUri);
-        manual.AnalyticsEnabled.Should().Be(immutable.AnalyticsEnabled);
-        manual.CustomSamplingRules.Should().Be(immutable.CustomSamplingRules);
-        manual.Environment.Should().Be(immutable.Environment);
-        manual.GlobalSamplingRate.Should().Be(immutable.GlobalSamplingRate);
-        manual.GlobalTags.Should().BeEquivalentTo(immutable.GlobalTags);
-        manual.HeaderTags.Should().BeEquivalentTo(immutable.HeaderTags);
-        manual.Integrations.Settings.Should().BeEquivalentTo(immutable.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
-        manual.KafkaCreateConsumerScopeEnabled.Should().Be(immutable.KafkaCreateConsumerScopeEnabled);
-        manual.LogsInjectionEnabled.Should().Be(immutable.LogsInjectionEnabled);
-        manual.MaxTracesSubmittedPerSecond.Should().Be(immutable.MaxTracesSubmittedPerSecond);
-        manual.ServiceName.Should().Be(immutable.ServiceName);
-        manual.ServiceVersion.Should().Be(immutable.ServiceVersion);
-        manual.StartupDiagnosticLogEnabled.Should().Be(immutable.StartupDiagnosticLogEnabled);
-        manual.StatsComputationEnabled.Should().Be(immutable.StatsComputationEnabled);
-        manual.TraceEnabled.Should().Be(immutable.TraceEnabled);
-        manual.TracerMetricsEnabled.Should().Be(immutable.TracerMetricsEnabled);
+        manual.AgentUri.Should().Be(automatic.Exporter.AgentUri);
+        manual.Exporter.AgentUri.Should().Be(automatic.Exporter.AgentUri);
+        manual.AnalyticsEnabled.Should().Be(automatic.AnalyticsEnabled);
+        manual.CustomSamplingRules.Should().Be(automatic.CustomSamplingRules);
+        manual.Environment.Should().Be(automatic.Environment);
+        manual.GlobalSamplingRate.Should().Be(automatic.GlobalSamplingRate);
+        manual.GlobalTags.Should().BeEquivalentTo(automatic.GlobalTags);
+        manual.HeaderTags.Should().BeEquivalentTo(automatic.HeaderTags);
+        manual.Integrations.Settings.Should().BeEquivalentTo(automatic.Integrations.Settings.ToDictionary(x => x.IntegrationName, x => x));
+        manual.KafkaCreateConsumerScopeEnabled.Should().Be(automatic.KafkaCreateConsumerScopeEnabled);
+        manual.LogsInjectionEnabled.Should().Be(automatic.LogsInjectionEnabled);
+        manual.MaxTracesSubmittedPerSecond.Should().Be(automatic.MaxTracesSubmittedPerSecond);
+        manual.ServiceName.Should().Be(automatic.ServiceName);
+        manual.ServiceVersion.Should().Be(automatic.ServiceVersion);
+        manual.StartupDiagnosticLogEnabled.Should().Be(automatic.StartupDiagnosticLogEnabled);
+        manual.StatsComputationEnabled.Should().Be(automatic.StatsComputationEnabled);
+        manual.TraceEnabled.Should().Be(automatic.TraceEnabled);
+        manual.TracerMetricsEnabled.Should().Be(automatic.TracerMetricsEnabled);
     }
 
     private static void AssertEquivalent(ManualSettings manual, TracerSettings automatic)
@@ -270,11 +266,10 @@ public class SettingsInstrumentationTests
         manual.TracerMetricsEnabled.Should().Be(automatic.TracerMetricsEnabled);
 
         Uri GetTransformedAgentUri(Uri agentUri)
-        {
-            var e = new ExporterSettings();
-            e.AgentUri = agentUri;
-            return e.AgentUri;
-        }
+            => ExporterSettings.Create(new()
+            {
+                { ConfigurationKeys.AgentUri, agentUri }
+            }).AgentUri;
     }
 
     private static string[] GetAllTracerSettingKeys()
@@ -302,4 +297,59 @@ public class SettingsInstrumentationTests
         => GetAllTracerSettingKeys()
           .Where(x => x is not "DD_DIAGNOSTIC_SOURCE_ENABLED")
           .ToArray();
+
+    private static TracerSettings GetAndAssertAutomaticTracerSettings()
+    {
+        var automatic = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.GlobalAnalyticsEnabled, true },
+            { ConfigurationKeys.CustomSamplingRules, """[{"sample_rate":0.3, "service":"shopping-cart.*"}]""" },
+            { ConfigurationKeys.DiagnosticSourceEnabled, true },
+            { ConfigurationKeys.DisabledIntegrations, "something;OpenTelemetry" },
+            { ConfigurationKeys.Environment, "my-test-env" },
+            { ConfigurationKeys.GlobalSamplingRate, 0.5 },
+            { ConfigurationKeys.GlobalTags, "tag1:value" },
+            { ConfigurationKeys.GrpcTags, "grpc1:grpc-value" },
+            { ConfigurationKeys.HeaderTags, "header1:header-value" },
+            { ConfigurationKeys.KafkaCreateConsumerScopeEnabled, false },
+            { ConfigurationKeys.LogsInjectionEnabled, true },
+            { ConfigurationKeys.MaxTracesSubmittedPerSecond, 50 },
+            { ConfigurationKeys.ServiceName, "my-test-service" },
+            { ConfigurationKeys.ServiceVersion, "1.2.3" },
+            { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+            { ConfigurationKeys.StatsComputationEnabled, true },
+            { ConfigurationKeys.TraceEnabled, false },
+            { ConfigurationKeys.TracerMetricsEnabled, true },
+            { ConfigurationKeys.AgentUri, "http://localhost:1234" },
+            { string.Format(ConfigurationKeys.Integrations.Enabled, nameof(IntegrationId.Aerospike)), "false" },
+            { string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, nameof(IntegrationId.Grpc)), "true" },
+            { string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, nameof(IntegrationId.Couchbase)), 0.5 },
+        });
+
+        // verify that all the settings are as expected
+        automatic.AnalyticsEnabled.Should().Be(true);
+        automatic.CustomSamplingRules.Should().Be("""[{"sample_rate":0.3, "service":"shopping-cart.*"}]""");
+        automatic.DiagnosticSourceEnabled.Should().Be(true);
+        automatic.DisabledIntegrationNames.Should().BeEquivalentTo(["something", "OpenTelemetry"]);
+        automatic.Environment.Should().Be("my-test-env");
+        automatic.GlobalSamplingRate.Should().Be(0.5);
+        automatic.GlobalTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "tag1", "value" } });
+        automatic.GrpcTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "grpc1", "grpc-value" } });
+        automatic.HeaderTags.Should().BeEquivalentTo(new Dictionary<string, string> { { "header1", "header-value" } });
+        automatic.KafkaCreateConsumerScopeEnabled.Should().Be(false);
+        automatic.LogsInjectionEnabled.Should().Be(true);
+        automatic.MaxTracesSubmittedPerSecond.Should().Be(50);
+        automatic.ServiceName.Should().Be("my-test-service");
+        automatic.ServiceVersion.Should().Be("1.2.3");
+        automatic.StartupDiagnosticLogEnabled.Should().Be(false);
+        automatic.StatsComputationEnabled.Should().Be(true);
+        automatic.TraceEnabled.Should().Be(false);
+        automatic.TracerMetricsEnabled.Should().Be(true);
+        automatic.Exporter.AgentUri.Should().Be(new Uri("http://127.0.0.1:1234"));
+        automatic.Integrations[nameof(IntegrationId.Aerospike)].Enabled.Should().Be(false);
+        automatic.Integrations[nameof(IntegrationId.Grpc)].AnalyticsEnabled.Should().Be(true);
+        automatic.Integrations[nameof(IntegrationId.Couchbase)].AnalyticsSampleRate.Should().Be(0.5);
+
+        return automatic;
+    }
 }

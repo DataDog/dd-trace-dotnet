@@ -39,8 +39,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private string? _ciVisibilityDdTags;
 
         public LogFormatter(
-            ImmutableTracerSettings settings,
-            ImmutableDirectLogSubmissionSettings directLogSettings,
+            TracerSettings settings,
+            DirectLogSubmissionSettings directLogSettings,
             ImmutableAzureAppServiceSettings? aasSettings,
             string serviceName,
             string env,

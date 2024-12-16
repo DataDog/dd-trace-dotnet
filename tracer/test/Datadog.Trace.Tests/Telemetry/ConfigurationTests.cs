@@ -23,6 +23,8 @@ public class ConfigurationTests
         // Lambda handler extracts these directly from env var, and no reason to think that will change
         "_DD_EXTENSION_ENDPOINT",
         "_DD_EXTENSION_PATH",
+        // Internal variable just used to "pass" settings to the
+        "_DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY",
         // mini agent uses this directly from env var, and no reason to think that will change
         "DD_MINI_AGENT_PATH",
         "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
@@ -54,6 +56,17 @@ public class ConfigurationTests
         "DD_INJECT_FORCE",
     };
 
+    // These are the keys that are used in the integration registry which are _not_ sent to telemetry, so we can ignore them
+    private static readonly string[] IntegrationSettingKeys =
+        IntegrationRegistry.Names
+            .SelectMany(x => new[]
+                            {
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ENABLED",
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ANALYTICS_ENABLED",
+                                $"DD_TRACE_{x.ToUpperInvariant()}_ANALYTICS_SAMPLE_RATE"
+                            })
+            .ToArray();
+
     [Fact]
     public void AllConfigurationValuesAreRegisteredWithIntake()
     {
@@ -79,9 +92,9 @@ public class ConfigurationTests
         var allPotentialConfigKeys = assemblyStrings
                                     .Where(x => (x.StartsWith("DD_") || x.StartsWith("_DD") || x.StartsWith("DATADOG_") || x.StartsWith("OTEL_")) && !x.Contains(" "))
                                     .Concat(configKeyStrings)
-                                    .Where(x => !x.Contains("{0}") && x != "DD_") // exclude the format string ones + the interpolated string ones
+                                    .Where(x => !x.Contains("{0}") && x != "DD_" && x != "DD_TRACE_") // exclude the format string ones + the interpolated string ones
                                     .Distinct()
-                                    .Where(x => !ExcludedKeys.Contains(x))
+                                    .Where(x => !ExcludedKeys.Contains(x) && !IntegrationSettingKeys.Contains(x))
                                     .ToList();
 
         var keysWithoutConfig = new List<string>();

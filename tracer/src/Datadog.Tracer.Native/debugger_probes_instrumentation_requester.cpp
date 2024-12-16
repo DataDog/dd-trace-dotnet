@@ -163,6 +163,11 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         }
 
         const auto& module_info = GetModuleInfo(m_corProfiler->info_, module_id);
+        if (!module_info.IsValid())
+        {
+            return;
+        }
+
         const auto assembly_name = module_info.assembly.name;
 
         if (IsCoreLibOr3rdParty(assembly_name))
@@ -866,7 +871,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
     const auto& moduleInfo = GetModuleInfo(corProfilerInfo, moduleId);
 
-    if (moduleInfo.IsNGEN() || moduleInfo.IsDynamic() || IsCoreLibOr3rdParty(moduleInfo.assembly.name))
+    if (!moduleInfo.IsValid() || moduleInfo.IsNGEN() || moduleInfo.IsDynamic() || IsCoreLibOr3rdParty(moduleInfo.assembly.name))
     {
         return;
     }
