@@ -77,7 +77,7 @@ namespace Samples.Security.AspNetCore5.Controllers.DatabaseIntegration
             get { return _dbConnectionSystemData ??= IastControllerHelper.CreateSystemDataDatabase(); }
         }
         
-        private static SqliteConnection DbConnectionSystemDataMicrosoftData
+        private static SqliteConnection DbConnectionMicrosoftData
         {
             get { return _dbConnectionSystemDataMicrosoftData ??= IastControllerHelper.CreateMicrosoftDataDatabase(); }
         }
@@ -164,9 +164,9 @@ namespace Samples.Security.AspNetCore5.Controllers.DatabaseIntegration
             IDbConnection db =
                 database switch
                 {
-                    "System.Data.SQLite" => DbConnectionSystemDataMicrosoftData,
+                    "System.Data.SQLite" => DbConnectionSystemData,
                     "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
-                    "Microsoft.Data.Sqlite" => DbConnectionSystemData,
+                    "Microsoft.Data.Sqlite" => DbConnectionMicrosoftData,
                     "Npgsql" => DbConnectionNpgsql,
                     "MySql.Data" => DbConnectionMySql,
                     "Oracle" => DbConnectionOracle,
