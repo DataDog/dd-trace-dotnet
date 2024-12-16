@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+#if !NETFRAMEWORK
 
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,8 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -98,8 +99,8 @@ public static class SignInManagerPasswordSignInIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
-            var httpContext = instance.Context;
-            var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+            var httpContext = instance as HttpContext;
+            var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
             securityCoordinator.CollectHeaders();
             security.SetTraceSamplingPriority(span);
 

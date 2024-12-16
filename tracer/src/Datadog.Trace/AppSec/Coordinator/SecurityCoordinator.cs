@@ -17,6 +17,7 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+
 #else
 using System.Collections.Specialized;
 using System.Web;
@@ -111,6 +112,11 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWafForUser(IDictionary<string, string> loginTags, bool force = false)
     {
+        if (_httpTransport.IsBlocked)
+        {
+            return null;
+        }
+
         var args = loginTags.ToDictionary(a => a.Key, object (a) => a.Value);
         LogAddressIfDebugEnabled(args);
         IResult? result = null;

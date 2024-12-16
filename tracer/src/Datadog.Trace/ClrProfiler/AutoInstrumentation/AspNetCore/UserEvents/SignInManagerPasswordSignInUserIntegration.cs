@@ -5,6 +5,8 @@
 
 #nullable enable
 
+#if !NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -15,8 +17,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -92,8 +94,8 @@ public static class SignInManagerPasswordSignInUserIntegration
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-            var httpContext = instance.Context;
-            var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+            var httpContext = instance as HttpContext;
+            var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
             var userAddressesWaf = new Dictionary<string, string>();
             if (!returnValue.Succeeded)
             {

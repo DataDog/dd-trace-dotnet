@@ -62,11 +62,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             return CallTargetState.GetDefault();
         }
 
-        internal static object OnAsyncMethodEnd<TTarget>(object instance, object returnValue, Exception exception, in CallTargetState state)
+        internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
             if (state.State is Tuple<ClaimsPrincipal, HttpContext> stateTuple)
             {
-
                 if (stateTuple.Item1?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
                 {
                     var span = scope.Span;

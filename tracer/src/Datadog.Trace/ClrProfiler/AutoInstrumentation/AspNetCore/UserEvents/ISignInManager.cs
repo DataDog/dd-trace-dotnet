@@ -15,11 +15,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface ISignInManager
+internal interface ISignInManager
 {
     /// <summary>
     /// Gets the Context
     /// </summary>
-    public HttpContext Context { get; }
+    public string AuthenticationScheme { get; }
 }
 #endif

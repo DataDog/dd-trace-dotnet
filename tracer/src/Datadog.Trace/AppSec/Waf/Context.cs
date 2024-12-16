@@ -66,6 +66,10 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool AlreadyRanWith(IDictionary<string, string> loginTags)
         {
+            var previousUserId = _loginTags.TryGetValue(AddressesConstants.UserId, out var userId);
+            var previousUserLogin = _loginTags.TryGetValue(AddressesConstants.UserLogin, out var userLogin);
+            var previousSessionId = _loginTags.TryGetValue(AddressesConstants.UserSessionId, out var userSessionId);
+
             foreach (var loginTag in loginTags)
             {
                 if (_loginTags.TryGetValue(loginTag.Key, out var tag))
