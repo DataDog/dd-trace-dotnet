@@ -141,6 +141,15 @@ src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
 src/Datadog.Trace/Iast/Iast.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/SourceType.cs
+src/Datadog.Trace/LibDatadog/AgentResponseCallback.cs
+src/Datadog.Trace/LibDatadog/ByteSlice.cs
+src/Datadog.Trace/LibDatadog/CharSlice.cs
+src/Datadog.Trace/LibDatadog/ErrorTag.cs
+src/Datadog.Trace/LibDatadog/LibDatadogException.cs
+src/Datadog.Trace/LibDatadog/MaybeError.cs
+src/Datadog.Trace/LibDatadog/TraceExporter.cs
+src/Datadog.Trace/LibDatadog/TraceExporterInputFormat.cs
+src/Datadog.Trace/LibDatadog/TraceExporterOutputFormat.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/AzureContext.cs
 src/Datadog.Trace/PlatformHelpers/ContainerMetadata.cs
