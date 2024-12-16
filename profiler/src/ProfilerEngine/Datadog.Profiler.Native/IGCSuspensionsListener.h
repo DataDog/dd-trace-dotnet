@@ -3,16 +3,17 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 
 class IGCSuspensionsListener
 {
 public:
     virtual void OnSuspension(
-        uint64_t timestamp,
+        std::chrono::nanoseconds timestamp,
         int32_t number,
         uint32_t generation,
-        uint64_t pauseDuration) = 0;
+        std::chrono::nanoseconds pauseDuration) = 0;
 
     virtual ~IGCSuspensionsListener() = default;
 };

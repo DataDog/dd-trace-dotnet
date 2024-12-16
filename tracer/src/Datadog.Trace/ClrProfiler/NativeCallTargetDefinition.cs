@@ -3,36 +3,37 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Datadog.Trace.ClrProfiler
 {
- // !                                         ██
- //                                         ██░░██
- //                                       ██░░░░░░██
- //                                     ██░░░░░░░░░░██
- //                                     ██░░░░░░░░░░██
- //                                   ██░░░░░░░░░░░░░░██
- //                                 ██░░░░░░██████░░░░░░██
- //                                 ██░░░░░░██████░░░░░░██
- //                               ██░░░░░░░░██████░░░░░░░░██
- //                               ██░░░░░░░░██████░░░░░░░░██
- //                             ██░░░░░░░░░░██████░░░░░░░░░░██
- //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
- //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
- //                         ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██
- //                         ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
- //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
- //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
- //                     ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██
- //                     ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
- //                       ██████████████████████████████████████████
- //
- // If you happen to change the layout of this structure,
- // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
- // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
+    // !                                         ██
+    //                                         ██░░██
+    //                                       ██░░░░░░██
+    //                                     ██░░░░░░░░░░██
+    //                                     ██░░░░░░░░░░██
+    //                                   ██░░░░░░░░░░░░░░██
+    //                                 ██░░░░░░██████░░░░░░██
+    //                                 ██░░░░░░██████░░░░░░██
+    //                               ██░░░░░░░░██████░░░░░░░░██
+    //                               ██░░░░░░░░██████░░░░░░░░██
+    //                             ██░░░░░░░░░░██████░░░░░░░░░░██
+    //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+    //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+    //                         ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██
+    //                         ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+    //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+    //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+    //                     ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██
+    //                     ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+    //                       ██████████████████████████████████████████
+    //
+    // If you happen to change the layout of this structure,
+    // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
+    // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition

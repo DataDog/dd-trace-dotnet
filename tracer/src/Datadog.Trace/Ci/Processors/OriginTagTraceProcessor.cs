@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Threading;
@@ -46,7 +47,7 @@ namespace Datadog.Trace.Ci.Processors
                 for (var i = trace.Offset + trace.Count - 1; i >= trace.Offset; i--)
                 {
                     var span = trace.Array![i];
-                    if (span.Context.ParentInternal is null &&
+                    if (span.Context.Parent is null &&
                         span.Type != SpanTypes.Test &&
                         span.Type != SpanTypes.Browser &&
                         span.Type != SpanTypes.TestSuite &&
@@ -84,8 +85,13 @@ namespace Datadog.Trace.Ci.Processors
             return trace;
         }
 
-        public Span Process(Span span)
+        public Span? Process(Span? span)
         {
+            if (span is null)
+            {
+                return span;
+            }
+
             // Sets the origin tag on the TraceContext to ensure the CI track.
             var traceContext = span.Context.TraceContext;
 
@@ -97,7 +103,7 @@ namespace Datadog.Trace.Ci.Processors
             return span;
         }
 
-        public ITagProcessor GetTagProcessor()
+        public ITagProcessor? GetTagProcessor()
         {
             return null;
         }

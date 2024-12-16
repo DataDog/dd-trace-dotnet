@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Ci
 {
     internal class CodeOwners
     {
-        private readonly IGrouping<string, Entry>[] _sections;
+        private readonly IGrouping<string?, Entry>[] _sections;
 
         public CodeOwners(string filePath)
         {
@@ -23,10 +24,10 @@ namespace Datadog.Trace.Ci
             }
 
             var entriesList = new List<Entry>();
-            var lines = File.ReadAllLines(filePath);
             var sectionsList = new List<string>();
-            string currentSectionName = null;
-            foreach (var line in lines)
+            string? currentSectionName = null;
+            var atSpan = "@".AsSpan();
+            foreach (var line in File.ReadLines(filePath))
             {
                 if (string.IsNullOrEmpty(line) || line[0] == '#')
                 {
@@ -48,10 +49,9 @@ namespace Datadog.Trace.Ci
 
                 var finalLine = line;
                 var ownersList = new List<string>();
-                var terms = line.Split(new[] { ' ' }, StringSplitOptions.None);
-                for (var i = 0; i < terms.Length; i++)
+                foreach (var currentTermSplitValue in line.SplitIntoSpans(' '))
                 {
-                    var currentTerm = terms[i];
+                    var currentTerm = currentTermSplitValue.AsSpan();
                     if (currentTerm.Length == 0)
                     {
                         continue;
@@ -59,13 +59,13 @@ namespace Datadog.Trace.Ci
 
                     // Teams and users handles starts with @
                     // Emails contains @
-                    if (currentTerm[0] == '@' || currentTerm.Contains("@"))
+                    if (currentTerm[0] == '@' || currentTerm.Contains(atSpan, StringComparison.Ordinal))
                     {
-                        ownersList.Add(currentTerm);
-                        var pos = finalLine.IndexOf(currentTerm, StringComparison.Ordinal);
+                        ownersList.Add(currentTerm.ToString());
+                        var pos = finalLine.AsSpan().IndexOf(currentTerm, StringComparison.Ordinal);
                         if (pos > 0)
                         {
-                            finalLine = finalLine.Substring(0, pos) + finalLine.Substring(pos + currentTerm.Length);
+                            finalLine = finalLine.Remove(pos, currentTerm.Length);
                         }
                     }
                 }
@@ -180,19 +180,19 @@ namespace Datadog.Trace.Ci
         internal readonly struct Entry
         {
             public readonly string Pattern;
-            public readonly string[] Owners;
-            public readonly string Section;
+            public readonly IEnumerable<string> Owners;
+            public readonly string? Section;
 
-            public Entry(string pattern, string[] owners, string section)
+            public Entry(string pattern, IEnumerable<string> owners, string? section)
             {
                 Pattern = pattern;
                 Owners = owners;
                 Section = section;
             }
 
-            public string GetOwnersString()
+            public string? GetOwnersString()
             {
-                if (Owners is null || Owners.Length == 0)
+                if (Owners is null || !Owners.Any())
                 {
                     return null;
                 }

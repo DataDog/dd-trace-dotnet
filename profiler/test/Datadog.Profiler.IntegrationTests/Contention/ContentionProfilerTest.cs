@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
     public class ContentionProfilerTest
     {
         private const string ScenarioContention = "--scenario 10 --threads 20";
-        private const string ScenarioWithoutContention = "--scenario 25 --threads 2 --param 1000";
+        private const string ScenarioWithoutContention = "--scenario 6 --threads 1";
 
         private readonly ITestOutputHelper _output;
 
@@ -31,7 +31,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -56,7 +56,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -78,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -90,6 +90,8 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         public void ShouldGetLockContentionSamplesViaEtw(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioWithoutContention);
+            // allow agent proxy to send the recorded events
+            runner.TestDurationInSeconds = 30;
 
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");

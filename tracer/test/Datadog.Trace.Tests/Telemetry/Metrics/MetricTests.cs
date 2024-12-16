@@ -52,6 +52,9 @@ public class MetricTests
         { "git_requests.search_commits_ms", ["rs_compressed"] },
         { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
         { "early_flake_detection.response_bytes", ["rs_compressed"] },
+        { "rasp.rule.eval", ["rule_variant"] },
+        { "rasp.rule.match", ["rule_variant"] },
+        { "rasp.timeout", ["rule_variant"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()

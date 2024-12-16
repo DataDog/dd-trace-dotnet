@@ -14,6 +14,7 @@ namespace trace
 class GeneratedDefinitions
 {
 public:
-    static std::vector<WCHAR*>* GetCallSites();
+    static int InitCallSites(UINT32 enabledCategories, UINT32 platform);
+    static int InitCallTargets(UINT32 enabledCategories, UINT32 platform);
 };
 } // namespace trace

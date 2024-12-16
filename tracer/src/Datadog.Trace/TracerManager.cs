@@ -53,7 +53,7 @@ namespace Datadog.Trace
         private volatile bool _isClosing = false;
 
         public TracerManager(
-            ImmutableTracerSettings settings,
+            TracerSettings settings,
             IAgentWriter agentWriter,
             IScopeManager scopeManager,
             IDogStatsd statsd,
@@ -128,7 +128,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public ImmutableTracerSettings Settings { get; }
+        public TracerSettings Settings { get; }
 
         public IAgentWriter AgentWriter { get; }
 
@@ -170,7 +170,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings">The settings to use </param>
         /// <param name="factory">The factory to use to create the <see cref="TracerManager"/></param>
-        public static void ReplaceGlobalManager(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        public static void ReplaceGlobalManager(TracerSettings settings, TracerManagerFactory factory)
         {
             TracerManager oldManager;
             TracerManager newManager;
@@ -313,7 +313,7 @@ namespace Datadog.Trace
                 // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
                 // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
                 // Also disable if tracing is not enabled (as likely to be in an environment where agent is not available)
-                if (instanceSettings.TraceEnabledInternal && !instanceSettings.IsRunningInAzureAppService)
+                if (instanceSettings.TraceEnabled && !instanceSettings.IsRunningInAzureAppService)
                 {
                     try
                     {
@@ -377,42 +377,42 @@ namespace Datadog.Trace
                     writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
 
                     writer.WritePropertyName("env");
-                    writer.WriteValue(instanceSettings.EnvironmentInternal);
+                    writer.WriteValue(instanceSettings.Environment);
 
                     writer.WritePropertyName("enabled");
-                    writer.WriteValue(instanceSettings.TraceEnabledInternal);
+                    writer.WriteValue(instanceSettings.TraceEnabled);
 
                     writer.WritePropertyName("service");
                     writer.WriteValue(instance.DefaultServiceName);
 
                     writer.WritePropertyName("agent_url");
-                    writer.WriteValue(instanceSettings.ExporterInternal.AgentUriInternal);
+                    writer.WriteValue(instanceSettings.Exporter.AgentUri);
 
                     writer.WritePropertyName("agent_transport");
-                    writer.WriteValue(instanceSettings.ExporterInternal.TracesTransport.ToString());
+                    writer.WriteValue(instanceSettings.Exporter.TracesTransport.ToString());
 
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Instance.DebugEnabledInternal);
 
                     writer.WritePropertyName("health_checks_enabled");
-                    writer.WriteValue(instanceSettings.TracerMetricsEnabledInternal);
+                    writer.WriteValue(instanceSettings.TracerMetricsEnabled);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
                     writer.WritePropertyName("analytics_enabled");
-                    writer.WriteValue(instanceSettings.AnalyticsEnabledInternal);
+                    writer.WriteValue(instanceSettings.AnalyticsEnabled);
 #pragma warning restore 618
 
                     writer.WritePropertyName("sample_rate");
-                    writer.WriteValue(instanceSettings.GlobalSamplingRateInternal);
+                    writer.WriteValue(instanceSettings.GlobalSamplingRate);
 
                     writer.WritePropertyName("sampling_rules");
-                    writer.WriteValue(instanceSettings.CustomSamplingRulesInternal);
+                    writer.WriteValue(instanceSettings.CustomSamplingRules);
 
                     writer.WritePropertyName("tags");
-                    WriteDictionary(instanceSettings.GlobalTagsInternal);
+                    WriteDictionary(instanceSettings.GlobalTags);
 
                     writer.WritePropertyName("log_injection_enabled");
-                    writer.WriteValue(instanceSettings.LogsInjectionEnabledInternal);
+                    writer.WriteValue(instanceSettings.LogsInjectionEnabled);
 
                     writer.WritePropertyName("runtime_metrics_enabled");
                     writer.WriteValue(instanceSettings.RuntimeMetricsEnabled);
@@ -424,11 +424,11 @@ namespace Datadog.Trace
                     // lists them whether they were explicitly disabled with
                     // DD_DISABLED_INTEGRATIONS, DD_TRACE_{0}_ENABLED, DD_{0}_ENABLED,
                     // or manually in code.
-                    foreach (var integration in instanceSettings.IntegrationsInternal.Settings)
+                    foreach (var integration in instanceSettings.Integrations.Settings)
                     {
-                        if (integration.EnabledInternal == false)
+                        if (integration.Enabled == false)
                         {
-                            writer.WriteValue(integration.IntegrationNameInternal);
+                            writer.WriteValue(integration.IntegrationName);
                         }
                     }
 
@@ -456,10 +456,10 @@ namespace Datadog.Trace
                     }
 
                     writer.WritePropertyName("partialflush_enabled");
-                    writer.WriteValue(instanceSettings.ExporterInternal.PartialFlushEnabledInternal);
+                    writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
                     writer.WritePropertyName("partialflush_minspans");
-                    writer.WriteValue(instanceSettings.ExporterInternal.PartialFlushMinSpansInternal);
+                    writer.WriteValue(instanceSettings.Exporter.PartialFlushMinSpans);
 
                     writer.WritePropertyName("runtime_id");
                     writer.WriteValue(Tracer.RuntimeId);
@@ -503,7 +503,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("exporter_settings_warning");
                     writer.WriteStartArray();
 
-                    foreach (var warning in instanceSettings.ExporterInternal.ValidationWarnings)
+                    foreach (var warning in instanceSettings.Exporter.ValidationWarnings)
                     {
                         writer.WriteValue(warning);
                     }
@@ -532,7 +532,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.SpanSamplingRules);
 
                     writer.WritePropertyName("stats_computation_enabled");
-                    writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
+                    writer.WriteValue(instanceSettings.StatsComputationEnabled);
 
                     writer.WritePropertyName("dbm_propagation_mode");
                     writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
@@ -541,7 +541,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.IsRemoteConfigurationAvailable);
 
                     writer.WritePropertyName("header_tags");
-                    WriteDictionary(instanceSettings.HeaderTagsInternal);
+                    WriteDictionary(instanceSettings.HeaderTags);
 
                     writer.WritePropertyName("service_mapping");
                     WriteDictionary(instanceSettings.ServiceNameMappings);
@@ -634,7 +634,7 @@ namespace Datadog.Trace
         }
 
         // should only be called inside a global lock, i.e. by TracerManager.Instance or ReplaceGlobalManager
-        private static TracerManager CreateInitializedTracer(ImmutableTracerSettings settings, TracerManagerFactory factory)
+        private static TracerManager CreateInitializedTracer(TracerSettings settings, TracerManagerFactory factory)
         {
             if (_instance is ILockedTracer)
             {
@@ -649,7 +649,7 @@ namespace Datadog.Trace
                 OneTimeSetup();
             }
 
-            if (newManager.Settings.StartupDiagnosticLogEnabledInternal)
+            if (newManager.Settings.StartupDiagnosticLogEnabled)
             {
                 _ = Task.Run(() => WriteDiagnosticLog(newManager));
             }
@@ -729,7 +729,7 @@ namespace Datadog.Trace
             // use the count of Tracer instances as the heartbeat value
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
-            if (_instance?.Settings.TracerMetricsEnabledInternal == true)
+            if (_instance?.Settings.TracerMetricsEnabled == true)
             {
                 _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
             }

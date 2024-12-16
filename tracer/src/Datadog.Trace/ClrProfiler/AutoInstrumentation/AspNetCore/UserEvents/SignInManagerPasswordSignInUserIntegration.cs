@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { "!0", ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = ["!0", ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -68,46 +69,71 @@ public static class SignInManagerPasswordSignInUserIntegration
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
             var user = state.State as IIdentityUser;
-            var id = UserEventsCommon.GetId(user);
-
-            if (id == null)
+            if (user is null)
             {
-                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(false, false);
                 return returnValue;
+            }
+
+            var foundUserId = false;
+            var foundLogin = false;
+            Func<string, string?>? processPii = null;
+            string autoMode;
+            if (security.IsAnonUserTrackingMode)
+            {
+                processPii = UserEventsCommon.Anonymize;
+                autoMode = SecuritySettings.UserTrackingAnonMode;
+            }
+            else
+            {
+                autoMode = SecuritySettings.UserTrackingIdentMode;
             }
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+
             if (!returnValue.Succeeded)
             {
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutoInstrumentationMode);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, autoMode);
 
-                if (security.IsAnonUserTrackingMode)
+                var userId = UserEventsCommon.GetId(user);
+                var userLogin = UserEventsCommon.GetLogin(user);
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                    foundUserId = true;
+                    userId = processPii?.Invoke(userId!) ?? userId;
+                    setTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId!);
                 }
-                else
+
+                if (!string.IsNullOrEmpty(userLogin))
                 {
-                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
+                    foundLogin = true;
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin;
+                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login!);
                 }
+
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
+                SecurityCoordinator.CollectHeaders(span);
             }
+#if !NETCOREAPP3_1_OR_GREATER
             else if (userExists)
             {
-                // AuthenticatedHttpcontExtextensions should fill these, but on core <3.1 email doesnt appear in claims
+                // AuthenticatedHttpcontExtextensions should fill these, but on core <3.1 email doesn't appear in claims
                 // so let's try to fill these up here if we have the chance to come here
-                if (security.IsAnonUserTrackingMode)
+                var userLogin = UserEventsCommon.GetLogin(user);
+
+                if (!string.IsNullOrEmpty(userLogin))
                 {
-                    var anonId = UserEventsCommon.GetAnonId(id);
-                    tryAddTag(Tags.User.Id, anonId);
-                }
-                else
-                {
-                    tryAddTag(Tags.User.Id, id);
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
                 }
             }
+#endif
 
             security.SetTraceSamplingPriority(span);
         }

@@ -72,11 +72,22 @@ internal static class BsonSerializationHelper
 
         // Create a "real" JsonWriter
         var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
-        var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
+        var realJsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings);
 
         // Wrap the real writer with our custom proxy that has extra behaviours
-        var customBsonWriter = new MongoBsonWriter(jsonWriter, jsonWriterSettings);
-        var customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
+        object customWriterProxy;
+        if (helper.IsV3Bson)
+        {
+            var jsonWriter = realJsonWriter.DuckCast<IBsonWriterProxyV3>();
+            var customBsonWriter = new MongoBsonWriterV3(jsonWriter, jsonWriterSettings);
+            customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
+        }
+        else
+        {
+            var jsonWriter = realJsonWriter.DuckCast<IBsonWriterProxy>();
+            var customBsonWriter = new MongoBsonWriter(jsonWriter, jsonWriterSettings);
+            customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
+        }
 
         // Find the serializer and serializer
         var nominalType = obj.GetType();
@@ -97,6 +108,7 @@ internal static class BsonSerializationHelper
         internal readonly Func<TextWriter, object, object> CreateJsonWriterFunc;
         internal readonly Func<Type, object> CreateBsonSerializationArgsFunc;
         internal readonly Type IBsonWriterType;
+        internal readonly bool IsV3Bson;
 
         private BsonHelper(
             IBsonSerializationContextProxy bsonSerializationContextProxy,
@@ -104,7 +116,8 @@ internal static class BsonSerializationHelper
             IBsonSerializerLookupProxy bsonSerializerLookupProxy,
             Func<TextWriter, object, object> createJsonWriterFunc,
             Func<Type, object> createBsonSerializationArgsFunc,
-            Type ibsonWriterType)
+            Type ibsonWriterType,
+            bool isV3Bson)
         {
             BsonSerializationContextProxy = bsonSerializationContextProxy;
             JsonWriterSettingsProxy = jsonWriterSettingsProxy;
@@ -112,6 +125,7 @@ internal static class BsonSerializationHelper
             CreateJsonWriterFunc = createJsonWriterFunc;
             CreateBsonSerializationArgsFunc = createBsonSerializationArgsFunc;
             IBsonWriterType = ibsonWriterType;
+            IsV3Bson = isV3Bson;
         }
 
         public static BsonHelper? Create()
@@ -166,6 +180,9 @@ internal static class BsonSerializationHelper
                 Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.IO.IBsonWriter type");
                 return null;
             }
+
+            // in v3+ IBsonWriter has extra methods, so we need to handle that differently
+            var isV3Bson = ibsonWriterType.GetMethod(nameof(IBsonWriterProxyV3.WriteGuid), [typeof(Guid)]) is not null;
 
             // We found all the required types, now try to create the proxies/activators
             var proxyResult = DuckType.GetOrCreateProxyType(typeof(IBsonSerializerLookupProxy), bsonSerializerType);
@@ -237,7 +254,8 @@ internal static class BsonSerializationHelper
                 bsonSerializerLookupProxy: bsonSerializerLookupProxy,
                 createJsonWriterFunc: createJsonWriterFunc,
                 createBsonSerializationArgsFunc: createBsonSerializationArgsFunc,
-                ibsonWriterType: ibsonWriterType);
+                ibsonWriterType: ibsonWriterType,
+                isV3Bson: isV3Bson);
 
             // smoke test - we don't verify the Duck types until we actually try to create a proxy,
             // so we do it once here, just to confirm that it will work later

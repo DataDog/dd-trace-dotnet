@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = [ClrNames.Object, "System.Collections.Generic.Dictionary`2[System.String,System.Object]"],
     MinimumVersion = ManualInstrumentationConstants.MinVersion,
-    MaximumVersion = ManualInstrumentationConstants.MaxVersion,
+    MaximumVersion = "3.6.*", // Removed in 3.7.0
     IntegrationName = ManualInstrumentationConstants.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -32,6 +32,8 @@ public class CtorIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object? automaticTracer, Dictionary<string, object?> values)
     {
+        // In earlier versions of the automatic tracer, the settings were passed in as a dictionary
+        // but in 3.7.0 we don't need to instrument them
         if (automaticTracer is Datadog.Trace.Tracer tracer)
         {
             PopulateSettings(values, tracer.Settings);
@@ -40,38 +42,39 @@ public class CtorIntegration
         return CallTargetState.GetDefault();
     }
 
-    internal static void PopulateSettings(Dictionary<string, object?> values, ImmutableTracerSettings settings)
+    internal static void PopulateSettings(Dictionary<string, object?> values, TracerSettings settings)
     {
         // record all the settings in the dictionary
-        values[TracerSettingKeyConstants.AgentUriKey] = settings.ExporterInternal.AgentUriInternal;
+        // This key is used to detect if the settings have been populated _at all_, so should always be sent
+        values[TracerSettingKeyConstants.AgentUriKey] = settings.Exporter.AgentUri;
 #pragma warning disable CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabledInternal;
+        values[TracerSettingKeyConstants.AnalyticsEnabledKey] = settings.AnalyticsEnabled;
 #pragma warning restore CS0618 // Type or member is obsolete
-        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRulesInternal;
+        values[TracerSettingKeyConstants.CustomSamplingRules] = settings.CustomSamplingRules;
         values[TracerSettingKeyConstants.DiagnosticSourceEnabledKey] = GlobalSettings.Instance.DiagnosticSourceEnabled;
-        values[TracerSettingKeyConstants.EnvironmentKey] = settings.EnvironmentInternal;
-        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRateInternal;
-        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabledInternal;
+        values[TracerSettingKeyConstants.EnvironmentKey] = settings.Environment;
+        values[TracerSettingKeyConstants.GlobalSamplingRateKey] = settings.GlobalSamplingRate;
+        values[TracerSettingKeyConstants.KafkaCreateConsumerScopeEnabledKey] = settings.KafkaCreateConsumerScopeEnabled;
 #pragma warning disable DD0002 // This API is only for public usage and should not be called internally (there's no internal version currently)
-        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogsInjectionEnabledInternal;
+        values[TracerSettingKeyConstants.LogsInjectionEnabledKey] = settings.LogsInjectionEnabled;
 #pragma warning restore DD0002
-        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecondInternal;
-        values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceNameInternal;
-        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.ServiceVersionInternal;
-        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.StartupDiagnosticLogEnabledInternal;
-        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabledInternal;
-        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabledInternal;
-        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabledInternal;
+        values[TracerSettingKeyConstants.MaxTracesSubmittedPerSecondKey] = settings.MaxTracesSubmittedPerSecond;
+        values[TracerSettingKeyConstants.ServiceNameKey] = settings.ServiceName;
+        values[TracerSettingKeyConstants.ServiceVersionKey] = settings.ServiceVersion;
+        values[TracerSettingKeyConstants.StartupDiagnosticLogEnabledKey] = settings.StartupDiagnosticLogEnabled;
+        values[TracerSettingKeyConstants.StatsComputationEnabledKey] = settings.StatsComputationEnabled;
+        values[TracerSettingKeyConstants.TraceEnabledKey] = settings.TraceEnabled;
+        values[TracerSettingKeyConstants.TracerMetricsEnabledKey] = settings.TracerMetricsEnabled;
 
         // probably don't _have_ to copy these dictionaries, but playing it safe
-        values[TracerSettingKeyConstants.GlobalTagsKey] = new ConcurrentDictionary<string, string>(settings.GlobalTagsInternal);
-        values[TracerSettingKeyConstants.GrpcTags] = new ConcurrentDictionary<string, string>(settings.GrpcTagsInternal);
-        values[TracerSettingKeyConstants.HeaderTags] = new ConcurrentDictionary<string, string>(settings.HeaderTagsInternal);
+        values[TracerSettingKeyConstants.GlobalTagsKey] = new ConcurrentDictionary<string, string>(settings.GlobalTags);
+        values[TracerSettingKeyConstants.GrpcTags] = new ConcurrentDictionary<string, string>(settings.GrpcTags);
+        values[TracerSettingKeyConstants.HeaderTags] = new ConcurrentDictionary<string, string>(settings.HeaderTags);
 
-        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.IntegrationsInternal);
+        values[TracerSettingKeyConstants.IntegrationSettingsKey] = BuildIntegrationSettings(settings.Integrations);
     }
 
-    private static Dictionary<string, object?[]>? BuildIntegrationSettings(ImmutableIntegrationSettingsCollection settings)
+    private static Dictionary<string, object?[]>? BuildIntegrationSettings(IntegrationSettingsCollection settings)
     {
         if (settings.Settings.Length == 0)
         {
@@ -81,7 +84,7 @@ public class CtorIntegration
         var results = new Dictionary<string, object?[]>(settings.Settings.Length, StringComparer.OrdinalIgnoreCase);
         foreach (var setting in settings.Settings)
         {
-            results[setting.IntegrationNameInternal] = [setting.EnabledInternal, setting.AnalyticsEnabledInternal, setting.AnalyticsSampleRateInternal];
+            results[setting.IntegrationName] = [setting.Enabled, setting.AnalyticsEnabled, setting.AnalyticsSampleRate];
         }
 
         return results;

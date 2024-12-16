@@ -102,14 +102,18 @@
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "2.0.*",
       "2.5.*",
       "2.14.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "3.0.0",
+      "ExcludeTargetFrameworks": ["net462", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1"]
+    },{
       "MaxVersionExclusive": "2.3.0",
       "IncludeOnlyTargetFrameworks": ["net462"]
     }]
@@ -176,9 +180,10 @@
     "SampleProjectName": "Samples.GraphQL7",
     "NugetPackageSearchName": "GraphQL",
     "MinVersion": "7.0.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
-      "7.*.*"
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "8.0.0",
@@ -190,17 +195,18 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "14.0.0",
+    "MaxVersionExclusive": "15.0.0",
     "SpecificVersions": [
       "11.*.*",
       "12.*.*",
-      "13.*.*"
+      "13.*.*",
+      "14.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "12.22.0",
       "ExcludeTargetFrameworks": [ "netcoreapp3.1", "net5.0" ]
     },{
-      "MaxVersionExclusive": "14.0.0",
+      "MaxVersionExclusive": "15.0.0",
       "ExcludeTargetFrameworks": [ "net462", "netcoreapp2.1", "netcoreapp3.0" ]
     }]
   },
@@ -209,15 +215,17 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "10.0.0",
     "SpecificVersions": [
       "4.*.*",
-      "5.*.*",
       "6.*.*",
-      "7.*.*",
-      "8.*.*"
+      "8.*.*",
+      "9.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "9.0.0",
+      "ExcludeTargetFrameworks": ["net462","netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    },{
       "MinVersion": "6.0.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }]
@@ -257,8 +265,13 @@
     "SpecificVersions": [
       "4.1.*",
       "4.5.*",
+      "4.8.*",
       "4.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "4.9.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+    }]
   },
   {
     "IntegrationName": "MicrosoftDataSqlClient",
@@ -355,14 +368,13 @@
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "10.0.0",
     "SpecificVersions": [
       "2.*.*",
-      "3.*.*",
       "5.*.*",
-      "6.*.*",
       "7.*.*",
-      "8.*.*"
+      "8.*.*",
+      "9.*.*"
     ],
     "VersionConditions": [
       {
@@ -574,11 +586,15 @@
     "SampleProjectName": "LogsInjection.ILogger.ExtendedLogger",
     "NugetPackageSearchName": "Microsoft.Extensions.Telemetry",
     "MinVersion": "8.0.0",
-    "MaxVersionExclusive": "9.0.0",
+    "MaxVersionExclusive": "10.0.0",
     "SpecificVersions": [
-      "8.*.*"
+      "8.*.*",
+      "9.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "9.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+    },{
       "MinVersion": "8.0.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
@@ -588,12 +604,13 @@
     "SampleProjectName": "Samples.Aerospike",
     "NugetPackageSearchName": "Aerospike.Client",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "8.0.0",
+    "MaxVersionExclusive": "9.0.0",
     "SpecificVersions": [
       "4.0.*",
       "4.*.*",
       "5.*.*",
-      "7.*.*"
+      "7.*.*",
+      "8.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "6.0.0",

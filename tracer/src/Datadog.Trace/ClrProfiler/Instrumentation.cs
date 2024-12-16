@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler
                             enabledCategories |= InstrumentationCategory.AppSec;
                         }
 
-                        var defs = NativeMethods.RegisterCallTargetDefinitions("Tracing", InstrumentationDefinitions.Instrumentations, (uint)enabledCategories);
+                        var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(enabledCategories, ConfigTelemetryData.TargetFramework);
                         Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
                         TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
@@ -362,7 +362,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 try
                 {
-                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceNameInternal ?? tracer.DefaultServiceName);
+                    DynamicInstrumentationHelper.ServiceName = TraceUtil.NormalizeTag(tracer.Settings.ServiceName ?? tracer.DefaultServiceName);
                 }
                 catch (Exception e)
                 {
@@ -560,39 +560,6 @@ namespace Datadog.Trace.ClrProfiler
         internal static void DisableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
             NativeMethods.DisableCallTargetDefinitions((uint)categories);
-        }
-
-        private static void RemoveTracerInstrumentationsLegacy(InstrumentationCategory categories)
-        {
-            if (categories.HasFlag(InstrumentationCategory.AppSec))
-            {
-                int defs = 0, derived = 0;
-                try
-                {
-                    Log.Debug("Removing CallTarget AppSec integration definitions from native library.");
-                    var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
-                    NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                    defs = payload.Definitions.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error removing CallTarget AppSec integration definitions from native library");
-                }
-
-                try
-                {
-                    Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
-                    var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                    NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                    derived = payload.Definitions.Length;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error removing CallTarget appsec derived integration definitions from native library");
-                }
-
-                Log.Information<int, int>("{DefinitionCount} AppSec definitions and {DerivedCount} AppSec derived definitions removed from the profiler.", defs, derived);
-            }
         }
     }
 }

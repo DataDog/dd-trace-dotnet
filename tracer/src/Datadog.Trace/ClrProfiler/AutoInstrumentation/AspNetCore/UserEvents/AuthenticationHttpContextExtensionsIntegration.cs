@@ -2,18 +2,17 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Security.Claims;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -25,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
     [InstrumentMethod(
         AssemblyName = AssemblyName,
         TypeName = HttpContextExtensionsTypeName,
-        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties" },
+        ParameterTypeNames = ["Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties"],
         MethodName = "SignInAsync",
         ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
@@ -41,10 +40,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";
 
         // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-        private static readonly HashSet<string> ClaimsToTest = new HashSet<string>
-        {
-            ClaimTypes.NameIdentifier, ClaimTypes.Name, "sub", ClaimTypes.Email,  ClaimTypes.Name
-        };
+        private static readonly HashSet<string> LoginsClaimsToTest =
+        [
+            ClaimTypes.Name,
+            ClaimTypes.Email,
+            "sub",
+        ];
 
         internal static CallTargetState OnMethodBegin<TTarget>(object httpContext, string scheme, ClaimsPrincipal claimPrincipal, object authProperties)
         {
@@ -62,45 +63,62 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
-            if (claimsPrincipal?.Claims != null && Security.Instance is { IsTrackUserEventsEnabled: true } security)
+            if (claimsPrincipal?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
             {
-                var span = state.Scope.Span;
+                var span = scope.Span;
+                var foundUserId = false;
+                var foundLogin = false;
+                Func<string, string>? processPii = null;
+                string successAutoMode;
+                if (security.IsAnonUserTrackingMode)
+                {
+                    processPii = UserEventsCommon.Anonymize;
+                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
+                }
+                else
+                {
+                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
+                }
+
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-
-                var foundUserId = false;
-
                 foreach (var claim in claimsPrincipal.Claims)
                 {
-                    if (ClaimsToTest.Contains(claim.Type))
+                    if (string.IsNullOrEmpty(claim.Value))
                     {
-                        if (security.IsAnonUserTrackingMode)
-                        {
-                            var anonId = UserEventsCommon.GetAnonId(claim.Value);
-                            tryAddTag(Tags.User.Id, anonId);
-                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingAnonMode);
-                        }
-                        else
-                        {
-                            tryAddTag(Tags.User.Id, claim.Value);
-                            setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, SecuritySettings.UserTrackingIdentMode);
-                        }
+                        continue;
+                    }
 
+                    if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
+                    {
                         foundUserId = true;
+                        var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        tryAddTag(Tags.User.Id, userId);
+                        setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                    }
+                    else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
+                    {
+                        foundLogin = true;
+                        var login = processPii?.Invoke(claim.Value) ?? claim.Value;
+                        setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
+                    }
 
+                    if (foundLogin && foundUserId)
+                    {
                         break;
                     }
                 }
 
-                if (foundUserId)
+                if (foundUserId || foundLogin)
                 {
                     security.SetTraceSamplingPriority(span);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, "true");
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
                 }
-                else
-                {
-                    TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
-                }
+
+                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
+                SecurityCoordinator.CollectHeaders(span);
             }
 
             return returnValue;

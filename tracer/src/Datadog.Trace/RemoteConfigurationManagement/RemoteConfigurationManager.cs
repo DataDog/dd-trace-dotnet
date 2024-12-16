@@ -61,7 +61,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             IRemoteConfigurationApi remoteConfigurationApi,
             RemoteConfigurationSettings settings,
             string serviceName,
-            ImmutableTracerSettings tracerSettings,
+            TracerSettings tracerSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
@@ -70,23 +70,23 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.EnvironmentInternal), tracerSettings.ServiceVersionInternal, tags),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.Environment), tracerSettings.ServiceVersion, tags),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
                     subscriptionManager);
         }
 
-        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, ImmutableTracerSettings tracerSettings)
+        private static List<string> GetTags(RemoteConfigurationSettings rcmSettings, TracerSettings tracerSettings)
         {
-            var tags = tracerSettings.GlobalTagsInternal?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
+            var tags = tracerSettings.GlobalTags?.Select(pair => pair.Key + ":" + pair.Value).ToList() ?? new List<string>();
 
-            var environment = TraceUtil.NormalizeTag(tracerSettings.EnvironmentInternal);
+            var environment = TraceUtil.NormalizeTag(tracerSettings.Environment);
             if (!string.IsNullOrEmpty(environment))
             {
                 tags.Add($"env:{environment}");
             }
 
-            var serviceVersion = tracerSettings.ServiceVersionInternal;
+            var serviceVersion = tracerSettings.ServiceVersion;
             if (!string.IsNullOrEmpty(serviceVersion))
             {
                 tags.Add($"version:{serviceVersion}");

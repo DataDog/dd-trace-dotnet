@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 namespace Datadog.Trace.Ci.Tags;
 
@@ -204,4 +205,9 @@ internal static class CommonTags
     /// GIT PR Base branch name
     /// </summary>
     public const string GitPrBaseBranch = "git.pull_request.base_branch";
+
+    /// <summary>
+    /// Defines if the service is a user provided test service
+    /// </summary>
+    public const string UserProvidedTestServiceTag = "_dd.test.is_user_provided_service";
 }

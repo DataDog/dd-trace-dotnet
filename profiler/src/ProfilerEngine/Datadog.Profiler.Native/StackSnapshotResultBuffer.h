@@ -9,6 +9,7 @@
 // end
 
 #include <array>
+#include <chrono>
 #include <vector>
 #include <cstdint>
 #include <utility>
@@ -26,11 +27,11 @@
 class StackSnapshotResultBuffer
 {
 public:
-    inline std::uint64_t GetUnixTimeUtc() const;
-    inline std::uint64_t SetUnixTimeUtc(std::uint64_t value);
+    inline std::chrono::nanoseconds GetUnixTimeUtc() const;
+    inline std::chrono::nanoseconds SetUnixTimeUtc(std::chrono::nanoseconds value);
 
-    inline std::uint64_t GetRepresentedDurationNanoseconds() const;
-    inline std::uint64_t SetRepresentedDurationNanoseconds(std::uint64_t value);
+    inline std::chrono::nanoseconds GetRepresentedDuration() const;
+    inline std::chrono::nanoseconds SetRepresentedDuration(std::chrono::nanoseconds value);
 
     inline std::uint64_t GetLocalRootSpanId() const;
     inline std::uint64_t SetLocalRootSpanId(std::uint64_t value);
@@ -55,8 +56,8 @@ public:
 
 protected:
 
-    std::uint64_t _unixTimeUtc;
-    std::uint64_t _representedDurationNanoseconds;
+    std::chrono::nanoseconds _unixTimeUtc;
+    std::chrono::nanoseconds _representedDuration;
     Callstack _callstack;
 
     std::uint64_t _localRootSpanId;
@@ -65,27 +66,27 @@ protected:
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc() const
+inline std::chrono::nanoseconds StackSnapshotResultBuffer::GetUnixTimeUtc() const
 {
     return _unixTimeUtc;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::SetUnixTimeUtc(std::uint64_t value)
+inline std::chrono::nanoseconds StackSnapshotResultBuffer::SetUnixTimeUtc(std::chrono::nanoseconds value)
 {
-    std::uint64_t prevValue = _unixTimeUtc;
+    auto prevValue = _unixTimeUtc;
     _unixTimeUtc = value;
     return prevValue;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds() const
+inline std::chrono::nanoseconds StackSnapshotResultBuffer::GetRepresentedDuration() const
 {
-    return _representedDurationNanoseconds;
+    return _representedDuration;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::SetRepresentedDurationNanoseconds(std::uint64_t value)
+inline std::chrono::nanoseconds StackSnapshotResultBuffer::SetRepresentedDuration(std::chrono::nanoseconds value)
 {
-    std::uint64_t prevValue = _representedDurationNanoseconds;
-    _representedDurationNanoseconds = value;
+    auto prevValue = _representedDuration;
+    _representedDuration = value;
     return prevValue;
 }
 

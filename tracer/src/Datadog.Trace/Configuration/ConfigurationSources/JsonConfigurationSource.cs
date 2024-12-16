@@ -24,7 +24,7 @@ namespace Datadog.Trace.Configuration
     /// Represents a configuration source that retrieves
     /// values from the provided JSON string.
     /// </summary>
-    public class JsonConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
+    internal class JsonConfigurationSource : IConfigurationSource
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
         private readonly JToken? _configuration;
@@ -71,14 +71,8 @@ namespace Datadog.Trace.Configuration
         /// by loading the JSON string from the specified file.
         /// </summary>
         /// <param name="filename">A JSON file that contains configuration values.</param>
+        /// <param name="origin">The origin to use for telemetry.</param>
         /// <returns>The newly created configuration source.</returns>
-        [PublicApi]
-        public static JsonConfigurationSource FromFile(string filename)
-        {
-            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_FromFile);
-            return FromFile(filename, ConfigurationOrigins.Code);
-        }
-
         internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
         {
             var json = File.ReadAllText(filename);
@@ -97,64 +91,12 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Gets the <see cref="string"/> value of
-        /// the setting with the specified key.
-        /// Supports JPath.
-        /// </summary>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
-        string? IConfigurationSource.GetString(string key)
-        {
-            return GetValueInternal<string>(key);
-        }
-
-        /// <summary>
-        /// Gets the <see cref="int"/> value of
-        /// the setting with the specified key.
-        /// Supports JPath.
-        /// </summary>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
-        int? IConfigurationSource.GetInt32(string key)
-        {
-            return GetValueInternal<int?>(key);
-        }
-
-        /// <summary>
-        /// Gets the <see cref="double"/> value of
-        /// the setting with the specified key.
-        /// Supports JPath.
-        /// </summary>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
-        double? IConfigurationSource.GetDouble(string key)
-        {
-            return GetValueInternal<double?>(key);
-        }
-
-        /// <summary>
-        /// Gets the <see cref="bool"/> value of
-        /// the setting with the specified key.
-        /// Supports JPath.
-        /// </summary>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <returns>The value of the setting, or null if not found.</returns>
-        [PublicApi]
-        bool? IConfigurationSource.GetBool(string key)
-        {
-            return GetValueInternal<bool?>(key);
-        }
-
-        /// <summary>
         /// Gets the value of the setting with the specified key and converts it into type <typeparamref name="T"/>.
         /// Supports JPath.
         /// </summary>
         /// <typeparam name="T">The type to convert the setting value into.</typeparam>
         /// <param name="key">The key that identifies the setting.</param>
         /// <returns>The value of the setting, or the default value of T if not found.</returns>
-        [PublicApi]
-        public T? GetValue<T>(string key) => GetValueInternal<T>(key);
-
         internal T? GetValueInternal<T>(string key)
         {
             JToken? token = SelectToken(key);
@@ -164,74 +106,8 @@ namespace Datadog.Trace.Configuration
                        : token.Value<T>();
         }
 
-        /// <summary>
-        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
-        /// </summary>
-        /// <remarks>
-        /// Example JSON where `globalTags` is the configuration key.
-        /// {
-        ///  "globalTags": {
-        ///     "name1": "value1",
-        ///     "name2": "value2"
-        ///     }
-        /// }
-        /// </remarks>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string>? GetDictionary(string key)
-        {
-            return GetDictionaryInternal(key, allowOptionalMappings: false);
-        }
-
-        /// <summary>
-        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
-        /// </summary>
-        /// <remarks>
-        /// Example JSON where `globalTags` is the configuration key.
-        /// {
-        ///  "globalTags": {
-        ///     "name1": "value1",
-        ///     "name2": "value2"
-        ///     }
-        /// }
-        /// </remarks>
-        /// <param name="key">The key that identifies the setting.</param>
-        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping. This only applies to string values, not JSON objects</param>
-        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
-        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
-        public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
-        {
-            return GetDictionaryInternal(key, allowOptionalMappings);
-        }
-
-        private IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
-        {
-            var token = SelectToken(key);
-            if (token == null)
-            {
-                return null;
-            }
-
-            if (token.Type == JTokenType.Object)
-            {
-                try
-                {
-                    var dictionary = ConvertToDictionary(key, token);
-                    return dictionary;
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e, "Unable to parse configuration value for {ConfigurationKey} as key-value pairs of strings.", key);
-                    return null;
-                }
-            }
-
-            return StringConfigurationSource.ParseCustomKeyValuesInternal(token.ToString(), allowOptionalMappings);
-        }
-
         /// <inheritdoc />
-        bool ITelemeteredConfigurationSource.IsPresent(string key)
+        public bool IsPresent(string key)
         {
             JToken? token = SelectToken(key);
 
@@ -239,7 +115,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<string> ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
+        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
             var token = SelectToken(key);
 
@@ -268,7 +144,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<int> ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
+        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
             var token = SelectToken(key);
 
@@ -297,7 +173,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<double> ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
+        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
             var token = SelectToken(key);
 
@@ -326,7 +202,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<bool> ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
+        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
             var token = SelectToken(key);
 
@@ -355,7 +231,7 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<T> ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
+        public ConfigurationResult<T> GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
             var token = SelectToken(key);
 
@@ -405,21 +281,10 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
-        /// <inheritdoc />
-        ConfigurationResult<IDictionary<string, string>> ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
-            => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator);
-
-        private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
-
-        private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
-        {
-            return token.ToObject<ConcurrentDictionary<string, string>>();
-        }
-
-        private ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -459,7 +324,7 @@ namespace Datadog.Trace.Configuration
                     }
                 }
 
-                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings, separator);
+                var result = StringConfigurationSource.ParseCustomKeyValues(tokenAsString, allowOptionalMappings, separator);
                 return Validate(result);
             }
             catch (InvalidCastException)
@@ -479,6 +344,13 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(key, tokenAsString, recordValue: true, _origin, TelemetryErrorCode.FailedValidation);
                 return ConfigurationResult<IDictionary<string, string>>.Invalid(dictionary);
             }
+        }
+
+        private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
+
+        private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        {
+            return token.ToObject<ConcurrentDictionary<string, string>>();
         }
     }
 }

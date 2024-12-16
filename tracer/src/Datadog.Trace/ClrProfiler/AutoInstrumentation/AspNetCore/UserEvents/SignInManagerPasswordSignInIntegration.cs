@@ -8,6 +8,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -34,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     AssemblyName = AssemblyName,
     TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
-    ParameterTypeNames = new[] { ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool },
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     MinimumVersion = "2",
     MaximumVersion = SupportedVersions.LatestDotNet,
@@ -64,33 +65,38 @@ public static class SignInManagerPasswordSignInIntegration
         where TReturn : ISignInResult
     {
         if (!returnValue.Succeeded
-            && Security.Instance is { IsTrackUserEventsEnabled: true } security
-            && state is { Scope: { Span: { } span } })
+         && Security.Instance is { IsTrackUserEventsEnabled: true } security
+         && state is { Scope.Span: { } span })
         {
-            if (state.State is not string id)
+            // the new user semantics events must only be collected if either the user login or the user ID are available
+            // here as it's the first login step, state.State is the username, db hasn't been hit yet.
+            if (state.State is not string login || string.IsNullOrEmpty(login))
             {
-                TelemetryFactory.Metrics.RecordCountMissingUserId(MetricTags.AuthenticationFramework.AspNetCoreIdentity);
+                UserEventsCommon.RecordMetricsLoginFailureIfNotFound(true, foundLogin: false);
                 return returnValue;
             }
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
-            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
-            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
 
             if (security.IsAnonUserTrackingMode)
             {
-                var anonId = UserEventsCommon.GetAnonId(id);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, anonId);
+                var loginAnon = UserEventsCommon.Anonymize(login);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, loginAnon);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, loginAnon);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
             {
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, id);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
+            SecurityCoordinator.CollectHeaders(span);
             security.SetTraceSamplingPriority(span);
         }
 

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using CodeGenerators;
 using Colorful;
 using Nuke.Common;
 using Nuke.Common.CI;
@@ -204,7 +205,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
     
     Target BuildManagedTracerHomeR2R => _ => _
         .Unlisted()
@@ -217,7 +218,7 @@ partial class Build : NukeBuild
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateMissingNullabilityFile)
-        .DependsOn(CreateRootDescriptorsFile);
+        .DependsOn(CreateTrimmingFile);
 
     Target BuildTracerHome => _ => _
         .Description("Builds the native and managed src, and publishes the tracer home directory")
@@ -370,7 +371,7 @@ partial class Build : NukeBuild
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)
-        .DependsOn(CreateRequiredDirectories, CreateRootDescriptorsFile)
+        .DependsOn(CreateRequiredDirectories, CreateTrimmingFile)
         .Executes(() =>
         {
             DotNetPack(s => s
@@ -593,4 +594,19 @@ partial class Build : NukeBuild
     /// Run the default build
     /// </summary>
     public static int Main() => Execute<Build>(x => x.BuildTracerHome);
+
+    // For nuke step debugging, comment previous line and uncomment the following lines
+    /*
+        public static int Main() => Execute<Build>(x => x.Debug);
+
+        Target Debug => _ => _
+            .Unlisted()
+            .Executes(() =>
+            {
+                Logger.Information("Debugging...");
+                // Execute whatever you want to debug here
+                var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+            });
+    //*/
 }

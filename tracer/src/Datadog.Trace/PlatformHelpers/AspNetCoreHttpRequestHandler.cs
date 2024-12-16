@@ -74,7 +74,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         private void AddHeaderTagsToSpan(ISpan span, HttpRequest request, Tracer tracer)
         {
-            var headerTagsInternal = tracer.Settings.HeaderTagsInternal;
+            var headerTagsInternal = tracer.Settings.HeaderTags;
 
             if (!headerTagsInternal.IsNullOrEmpty())
             {
@@ -167,7 +167,7 @@ namespace Datadog.Trace.PlatformHelpers
                     }
                 }
 
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 if (security.AppsecEnabled)
                 {
                     var transport = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));

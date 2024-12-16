@@ -20,7 +20,7 @@ namespace Datadog.Trace.Iast;
 /// </summary>
 internal struct TruncatedVulnerabilities
 {
-    private const string MaxSizeExceeded = "MAX SIZE EXCEEDED";
+    public const string MaxSizeExceeded = "MAX SIZE EXCEEDED";
 
     private List<Vulnerability> vulnerabilities;
 

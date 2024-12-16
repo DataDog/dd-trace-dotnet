@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
@@ -16,7 +17,7 @@ internal static class TelemetryHelper
     /// </summary>
     /// <param name="testingFramework">Testing framework string</param>
     /// <returns>MetricTags.CIVisibilityTestFramework</returns>
-    public static MetricTags.CIVisibilityTestFramework GetTelemetryTestingFrameworkEnum(string testingFramework)
+    public static MetricTags.CIVisibilityTestFramework GetTelemetryTestingFrameworkEnum(string? testingFramework)
     {
         return testingFramework switch
         {

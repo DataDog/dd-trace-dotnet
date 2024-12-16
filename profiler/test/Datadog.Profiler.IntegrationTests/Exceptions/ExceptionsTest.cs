@@ -81,7 +81,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -101,7 +101,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             foreach (var file in Directory.GetFiles(runner.Environment.LogDir))
             {
-                _output.WriteLine($"Log file: {file}");
+                runner.XUnitLogger.WriteLine($"Log file: {file}");
             }
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -201,7 +201,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
@@ -255,7 +255,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -278,7 +278,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -301,7 +301,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             EnvironmentHelper.DisableDefaultProfilers(runner);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 
@@ -314,10 +314,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             Dictionary<string, int> profiledExceptions = GetProfiledExceptions(exceptionSamples);
             Dictionary<string, int> realExceptions = GetRealExceptions(runner.ProcessOutput);
 
-            _output.WriteLine("Comparing exceptions");
-            _output.WriteLine("-------------------------------------------------------");
-            _output.WriteLine("      Count          Type");
-            _output.WriteLine("-------------------------------------------------------");
+            var logger = runner.XUnitLogger;
+            logger.WriteLine("Comparing exceptions");
+            logger.WriteLine("-------------------------------------------------------");
+            logger.WriteLine("      Count          Type");
+            logger.WriteLine("-------------------------------------------------------");
             foreach (var exception in profiledExceptions)
             {
                 var exceptionCount = exception.Value;
@@ -337,7 +338,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine($"{exceptionCount,11} {type}");
                 builder.AppendLine($"{stats,11}");
-                _output.WriteLine(builder.ToString());
+                logger.WriteLine(builder.ToString());
             }
         }
 
@@ -521,7 +522,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |cg: |fn:Run |fg: |sg:()"),
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |cg: |fn:Main |fg: |sg:(string[] args)"));
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
 

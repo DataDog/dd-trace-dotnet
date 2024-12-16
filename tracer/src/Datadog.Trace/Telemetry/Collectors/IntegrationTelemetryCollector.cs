@@ -30,12 +30,12 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        public void RecordTracerSettings(ImmutableTracerSettings settings)
+        public void RecordTracerSettings(TracerSettings settings)
         {
-            for (var i = 0; i < settings.IntegrationsInternal.Settings.Length; i++)
+            for (var i = 0; i < settings.Integrations.Settings.Length; i++)
             {
-                var integration = settings.IntegrationsInternal.Settings[i];
-                if (integration.EnabledInternal == false)
+                var integration = settings.Integrations.Settings[i];
+                if (integration.Enabled == false)
                 {
                     _integrationsById[i].WasExplicitlyDisabled = 1;
                 }

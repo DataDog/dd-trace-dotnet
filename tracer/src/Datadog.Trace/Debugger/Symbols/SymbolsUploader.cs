@@ -56,13 +56,13 @@ namespace Datadog.Trace.Debugger.Symbols
             IDiscoveryService discoveryService,
             IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
-            ImmutableTracerSettings tracerSettings,
+            TracerSettings tracerSettings,
             string serviceName)
         {
             _symDbEndpoint = null;
             _alreadyProcessed = new HashSet<string>();
-            _environment = tracerSettings.EnvironmentInternal;
-            _serviceVersion = tracerSettings.ServiceVersionInternal;
+            _environment = tracerSettings.Environment;
+            _serviceVersion = tracerSettings.ServiceVersion;
             _serviceName = serviceName;
             _discoveryService = discoveryService;
             _api = api;
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService = null;
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, DebuggerSettings settings, TracerSettings tracerSettings, string serviceName)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {

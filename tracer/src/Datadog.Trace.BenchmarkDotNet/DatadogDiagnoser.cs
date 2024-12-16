@@ -216,12 +216,12 @@ public class DatadogDiagnoser : IDiagnoser
 
         if (!environment.TryGetValue(ConfigurationKeys.Environment, out _))
         {
-            environment[ConfigurationKeys.Environment] = tracer.Settings.EnvironmentInternal;
+            environment[ConfigurationKeys.Environment] = tracer.Settings.Environment;
         }
 
         if (!environment.TryGetValue(ConfigurationKeys.ServiceVersion, out _))
         {
-            environment[ConfigurationKeys.ServiceVersion] = tracer.Settings.ServiceVersionInternal;
+            environment[ConfigurationKeys.ServiceVersion] = tracer.Settings.ServiceVersion;
         }
 
         const string ProfilerId = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";

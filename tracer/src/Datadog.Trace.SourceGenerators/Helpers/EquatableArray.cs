@@ -1,7 +1,9 @@
-﻿// <copyright file="EquatableArray.cs" company="Datadog">
+// <copyright file="EquatableArray.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
 
 using System;
 using System.Collections;
@@ -67,7 +69,7 @@ public readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IEnume
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
-        return obj is EquatableArray<T> array && Equals(this, array);
+        return obj is EquatableArray<T> array && this.Equals(array);
     }
 
     /// <inheritdoc/>

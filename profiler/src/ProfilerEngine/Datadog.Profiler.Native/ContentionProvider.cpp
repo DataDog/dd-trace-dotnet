@@ -19,6 +19,7 @@
 
 #include <math.h>
 
+using namespace std::chrono_literals;
 
 std::vector<uintptr_t> ContentionProvider::_emptyStack;
 
@@ -57,24 +58,24 @@ ContentionProvider::ContentionProvider(
     _sampledLockContentionsDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_sampled_lock_contentions_duration");
 }
 
-std::string ContentionProvider::GetBucket(double contentionDurationNs)
+std::string ContentionProvider::GetBucket(std::chrono::nanoseconds contentionDuration)
 {
-    if (contentionDurationNs < 10'000'000.0)
+    if (contentionDuration < 10ms)
     {
         return "0 - 9 ms";
     }
 
-    if (contentionDurationNs < 50'000'000.0)
+    if (contentionDuration < 50ms)
     {
         return " 10 - 49 ms";
     }
 
-    if (contentionDurationNs < 100'000'000.0)
+    if (contentionDuration < 100ms)
     {
         return "50 - 99 ms";
     }
 
-    if (contentionDurationNs < 500'000'000.0)
+    if (contentionDuration < 500ms)
     {
         return "100 - 499 ms";
     }
@@ -83,9 +84,9 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
 }
 
 // .NET Framework implementation
-void ContentionProvider::OnContention(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, const std::vector<uintptr_t>& stack)
+void ContentionProvider::OnContention(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, const std::vector<uintptr_t>& stack)
 {
-    AddContentionSample(timestamp, threadId, contentionDurationNs, 0, WStr(""), stack);
+    AddContentionSample(timestamp, threadId, contentionDuration, 0, WStr(""), stack);
 }
 
 void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
@@ -102,7 +103,7 @@ void ContentionProvider::SetBlockingThread(uint64_t osThreadId)
 
 // .NET synchronous implementation: we are expecting to be called from the same thread that is contending.
 // It means that the current thread will be stack walking itself.
-void ContentionProvider::OnContention(double contentionDurationNs)
+void ContentionProvider::OnContention(std::chrono::nanoseconds contentionDuration)
 {
     auto currentThreadInfo = ManagedThreadInfo::CurrentThreadInfo;
     if (currentThreadInfo == nullptr)
@@ -111,20 +112,20 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     }
 
     auto [blockingThreadId, blockingThreadName] = currentThreadInfo->SetBlockingThread(0, WStr(""));
-    AddContentionSample(0, -1, contentionDurationNs, blockingThreadId, std::move(blockingThreadName), _emptyStack);
+    AddContentionSample(0ns, -1, contentionDuration, blockingThreadId, std::move(blockingThreadName), _emptyStack);
 }
 
-void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t threadId, double contentionDurationNs, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
+void ContentionProvider::AddContentionSample(std::chrono::nanoseconds timestamp, uint32_t threadId, std::chrono::nanoseconds contentionDuration, uint64_t blockingThreadId, shared::WSTRING blockingThreadName, const std::vector<uintptr_t>& stack)
 {
     _lockContentionsCountMetric->Incr();
-    _lockContentionsDurationMetric->Add(contentionDurationNs);
+    _lockContentionsDurationMetric->Add(contentionDuration.count());
 
-    auto bucket = GetBucket(contentionDurationNs);
+    auto bucket = GetBucket(contentionDuration);
 
     {
         std::lock_guard lock(_contentionsLock);
 
-        if (!_sampler.Sample(bucket, static_cast<uint64_t>(contentionDurationNs)))
+        if (!_sampler.Sample(bucket, contentionDuration.count()))
         {
             return;
         }
@@ -135,10 +136,14 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
     // Synchronous case where the current thread is the contended thread
     // (i.e. receiving the contention events directly from ICorProfilerCallback)
     static uint64_t failureCount = 0;
-    if ((timestamp == 0) && (threadId == -1) && stack.empty())
+    if ((timestamp == 0ns) && (threadId == -1) && stack.empty())
     {
-        std::shared_ptr<ManagedThreadInfo> threadInfo;
-        CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
+        auto threadInfo = ManagedThreadInfo::CurrentThreadInfo;
+        if (threadInfo == nullptr)
+        {
+            LogOnce(Warn, "ContentionProvider::AddContentionSample: Profiler failed at getting the current managed thread info ");
+            return;
+        }
 
         const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
             _pCorProfilerInfo, _pConfiguration, &_callstackProvider, _metricsRegistry);
@@ -221,14 +226,14 @@ void ContentionProvider::AddContentionSample(uint64_t timestamp, uint32_t thread
         }
     }
 
-    rawSample.ContentionDuration = contentionDurationNs;
+    rawSample.ContentionDuration = contentionDuration;
     rawSample.Bucket = std::move(bucket);
     rawSample.BlockingThreadId = blockingThreadId;
     rawSample.BlockingThreadName = std::move(blockingThreadName);
 
     Add(std::move(rawSample));
     _sampledLockContentionsCountMetric->Incr();
-    _sampledLockContentionsDurationMetric->Add(contentionDurationNs);
+    _sampledLockContentionsDurationMetric->Add(contentionDuration.count());
 }
 
 

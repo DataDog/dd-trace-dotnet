@@ -9,14 +9,18 @@
     Tags: {
       appsec.events.users.login.failure.track: true,
       appsec.events.users.login.failure.usr.exists: false,
-      appsec.events.users.login.failure.usr.id: anon_c34de12d00b78a9977da847b7e55202e,
+      appsec.events.users.login.failure.usr.login: anon_c34de12d00b78a9977da847b7e55202e,
       aspnet_core.endpoint: Samples.Security.AspNetCore5.Controllers.AccountController.Index (Samples.Security.AspNetCore5),
       aspnet_core.route: {controller=home}/{action=index}/{id?},
       component: aspnet_core,
       env: integration_tests,
       http.client_ip: 127.0.0.1,
       http.method: POST,
+      http.request.headers.content-length: 45,
+      http.request.headers.content-type: application/x-www-form-urlencoded; charset=utf-8,
       http.request.headers.host: localhost:00000,
+      http.request.headers.user-agent: Mistake Not...,
+      http.request.headers.x-forwarded-for: 86.242.244.246,
       http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 302,
       http.url: http://localhost:00000/Account/Index,
@@ -26,6 +30,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.events.users.login.failure.auto.mode: anonymization,
+      _dd.appsec.usr.login: anon_c34de12d00b78a9977da847b7e55202e,
       _dd.runtime_family: dotnet
     },
     Metrics: {
