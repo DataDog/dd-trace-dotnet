@@ -211,7 +211,7 @@ namespace Datadog.Trace.Configuration
                               .AsString();
 
             // DD_GIT_REPOSITORY_URL has precedence over DD_TAGS
-            GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitCommit, ConfigurationKeys.GitRepositoryUrl);
+            GitRepositoryUrl = GetExplicitSettingOrTag(GitRepositoryUrl, globalTags, Ci.Tags.CommonTags.GitRepository, ConfigurationKeys.GitRepositoryUrl);
 
             GitMetadataEnabled = config
                                 .WithKeys(ConfigurationKeys.GitMetadataEnabled)
