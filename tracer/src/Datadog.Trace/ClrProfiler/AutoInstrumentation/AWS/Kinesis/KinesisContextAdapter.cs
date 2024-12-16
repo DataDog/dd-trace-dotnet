@@ -25,20 +25,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public Dictionary<string, object> GetDictionary()
         {
-            var retval = new Dictionary<string, object>();
-            foreach (string key in headers.Keys)
-            {
-                retval.Add(key, headers[key][0]);
-            }
-
-            return retval;
+            // Convert to Dictionary<string, object> to satisfy IHeadersCollection
+            return headers.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
         }
 
         public IEnumerable<string> GetValues(string name)
         {
-            if (headers.ContainsKey(name))
+            if (headers.TryGetValue(name, out var value))
             {
-                return headers[name];
+                return value;
             }
 
             return Enumerable.Empty<string>();
@@ -46,15 +41,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public void Set(string name, string value)
         {
-            Remove(name);
-            Add(name, value);
+            var newValues = new List<string>();
+            newValues.Add(value);
+            headers.Add(name, newValues);
         }
 
         public void Add(string name, string value)
         {
-            if (headers.ContainsKey(name))
+            if (headers.TryGetValue(name, out var oldValues))
             {
-                headers[name].Add(value);
+                oldValues.Add(value);
             }
             else
             {
@@ -71,9 +67,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public byte[] TryGetLastBytes(string name)
         {
-            if (headers.ContainsKey(name))
+            if (headers.TryGetValue(name, out var value))
             {
-                return Convert.FromBase64String(headers[name][headers[name].Count - 1]);
+                return Convert.FromBase64String(value[value.Count - 1]);
             }
 
             return new byte[0];

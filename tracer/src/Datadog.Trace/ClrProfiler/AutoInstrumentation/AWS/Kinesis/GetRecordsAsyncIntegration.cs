@@ -34,15 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         private const string Operation = "GetRecords";
 
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TGetRecordsRequest">Type of the request object</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
-        /// <param name="request">The request for the Kinesis operation</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
-        /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TGetRecordsRequest>(TTarget instance, TGetRecordsRequest request, CancellationToken cancellationToken)
             where TGetRecordsRequest : IGetRecordsRequest, IDuckType
         {
@@ -62,16 +53,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             return new CallTargetState(scope, streamName);
         }
 
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">Response instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">CallTarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
             where TResponse : IGetRecordsResponse, IDuckType
         {
