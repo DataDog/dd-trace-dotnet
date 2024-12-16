@@ -41,9 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
         public void Set(string name, string value)
         {
-            var newValues = new List<string>();
-            newValues.Add(value);
-            headers.Add(name, newValues);
+            headers[name] = new List<string> { value };
         }
 
         public void Add(string name, string value)
