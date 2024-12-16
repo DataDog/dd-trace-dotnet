@@ -39,8 +39,8 @@
         "DD_DEBUGGER_DIAGNOSTICS_INTERVAL": "5",
         "DD_SERVICE": "exception_replay_service",
         "DD_ENV": "staging",
-        "DD_TRACE_DEBUG": "3",
-        "DD_TRACE_ENABLED": "true",
+        "DD_TRACE_DEBUG": "1",
+        "DD_TRACE_ENABLED": "1",
         "DD_VERSION": "1",
         "DD_IAST_ENABLED": "false",
         "DD_DEBUGGER_MAX_DEPTH_TO_SERIALIZE": "2",
@@ -49,7 +49,8 @@
         "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD": "true",
         "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED": "true",
         "DD_SYMBOL_DATABASE_UPLOAD_ENABLED": "true",
-        "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS": "5"
+        "DD_EXCEPTION_DEBUGGING_RATE_LIMIT_SECONDS": "5",
+        "COMPLUS_ForceEnc": "0"
       },
       "Logging": {
         "LogLevel": {

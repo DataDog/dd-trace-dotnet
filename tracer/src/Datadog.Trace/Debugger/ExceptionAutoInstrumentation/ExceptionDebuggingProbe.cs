@@ -6,6 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
@@ -93,7 +97,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     var parentProbes = probes.Take(index).ToArray();
                     var childProbes = probes.Skip(index + 1).ToArray();
 
-                    var processor = new ExceptionProbeProcessor(probe, @case.ExceptionId.ExceptionTypes, parentProbes: parentProbes, childProbes: childProbes);
+                    var processor = new ExceptionProbeProcessor(probe, @case.ExceptionTypes, parentProbes: parentProbes, childProbes: childProbes);
                     @case.Processors.TryAdd(processor, 0);
                     ExceptionDebuggingProcessor?.AddProbeProcessor(processor);
                 }

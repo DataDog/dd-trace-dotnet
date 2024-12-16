@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -33,11 +34,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly ConcurrentDictionary<MethodUniqueIdentifier, ExceptionDebuggingProbe> MethodToProbe = new();
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
 
-        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId)
+        internal static ExceptionCase Instrument(ExceptionIdentifier exceptionId, string exceptionToString)
         {
             Log.Information("Instrumenting {ExceptionId}", exceptionId);
 
-            var participatingUserMethods = GetMethodsToRejit(exceptionId.StackTrace);
+            var parsedFramesFromExceptionToString = ExceptionNormalizer.Instance.ParseFrames(exceptionToString).ToArray();
+            var stackTrace = exceptionId.StackTrace.Where(frame => parsedFramesFromExceptionToString.Any(f => f.Contains(frame.Method.Name))).ToArray();
+            var participatingUserMethods = GetMethodsToRejit(stackTrace);
 
             var uniqueMethods = participatingUserMethods
                                .Distinct(EqualityComparer<MethodUniqueIdentifier>.Default)
@@ -65,7 +68,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
             }
 
-            var newCase = new ExceptionCase(exceptionId, probes);
+            var newCase = new ExceptionCase(exceptionId.ExceptionTypes, probes);
 
             foreach (var method in uniqueMethods)
             {
@@ -79,6 +82,50 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 return i == 0 || i >= thresholdIndex || participatingUserMethods.Count <= MaxFramesToCapture + 1;
             }
+        }
+
+        private static bool ContainsExceptionDispatchInfoThrow(MethodBase method)
+        {
+            var methodBody = method.GetMethodBody();
+            if (methodBody == null)
+            {
+                return false;
+            }
+
+            byte[] ilBytes = methodBody.GetILAsByteArray();
+
+            if (ilBytes == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < ilBytes.Length; i++)
+            {
+                if (ilBytes[i] == (byte)OpCodes.Call.Value || ilBytes[i] == (byte)OpCodes.Callvirt.Value)
+                {
+                    // The next 4 bytes after a call instruction contain the metadata token
+                    if (i + 4 < ilBytes.Length)
+                    {
+                        int metadataToken = BitConverter.ToInt32(ilBytes, i + 1);
+                        try
+                        {
+                            MethodInfo calledMethod = (MethodInfo)method.Module.ResolveMethod(metadataToken);
+                            if (calledMethod.DeclaringType == typeof(System.Runtime.ExceptionServices.ExceptionDispatchInfo) &&
+                                calledMethod.Name == "Throw")
+                            {
+                                return true;
+                            }
+                        }
+                        catch (ArgumentException)
+                        {
+                            // If we can't resolve the method, just continue
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static List<MethodUniqueIdentifier> GetMethodsToRejit(ParticipatingFrame[] allFrames)

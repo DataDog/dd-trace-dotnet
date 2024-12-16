@@ -24,14 +24,14 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
     {
         private readonly int _hashCode;
 
-        public ExceptionCase(ExceptionIdentifier exceptionId, ExceptionDebuggingProbe[] probes)
+        public ExceptionCase(HashSet<Type> exceptionTypes, ExceptionDebuggingProbe[] probes)
         {
-            ExceptionId = exceptionId;
+            ExceptionTypes = exceptionTypes;
             Probes = probes;
             _hashCode = ComputeHashCode();
         }
 
-        public ExceptionIdentifier ExceptionId { get; }
+        public HashSet<Type> ExceptionTypes { get; }
 
         public ExceptionDebuggingProbe[] Probes { get; }
 
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         {
             var probesInfo = Probes == null ? "null" : $"{Probes.Length} probes";
             var processorsCount = Processors?.Count ?? 0;
-            return $"ExceptionCase: ExceptionId={ExceptionId}, Probes=[{probesInfo}], Processors={processorsCount}";
+            return $"ExceptionCase: Probes=[{probesInfo}], Processors={processorsCount}";
         }
     }
 

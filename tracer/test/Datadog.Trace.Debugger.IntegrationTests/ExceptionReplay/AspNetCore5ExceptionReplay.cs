@@ -66,7 +66,7 @@ public abstract class AspNetCore5ExceptionReplay : AspNetBase, IClassFixture<Asp
 
     // This class is used to test Exception Replay with Dynamic Instrumentation enabled or disabled.
     public AspNetCore5ExceptionReplay(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableDynamicInstrumentation, bool captureFullCallStack)
-        : base("AspNetCore5", outputHelper, "/shutdown")
+        : base("AspNetCore5", outputHelper)
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, enableDynamicInstrumentation.ToString().ToLower());
