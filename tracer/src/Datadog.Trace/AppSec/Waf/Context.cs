@@ -29,7 +29,7 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly IEncoder _encoder;
-
+        private readonly IDictionary<string, string> _loginTags = new Dictionary<string, string>();
         private bool _disposed;
         private ulong _totalRuntimeOverRuns;
 
@@ -63,6 +63,34 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
             => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
+
+        public bool AlreadyRanWith(IDictionary<string, string> loginTags)
+        {
+            foreach (var loginTag in loginTags)
+            {
+                if (_loginTags.TryGetValue(loginTag.Key, out var tag))
+                {
+                    if (tag != loginTag.Value)
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public void Remember(IDictionary<string, string> loginTags)
+        {
+            foreach (var loginTag in loginTags)
+            {
+                _loginTags[loginTag.Key] = loginTag.Value;
+            }
+        }
 
         private unsafe IResult? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
         {

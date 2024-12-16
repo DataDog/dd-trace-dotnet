@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -60,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             return CallTargetState.GetDefault();
         }
 
-        internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
+        internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
             var claimsPrincipal = state.State as ClaimsPrincipal;
             if (claimsPrincipal?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
@@ -82,6 +83,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+                var secCoordinator = SecurityCoordinator.Get(security, span, (instance as HttpContext)!);
+                var loginAddressesForWaf = new Dictionary<string, string>();
                 foreach (var claim in claimsPrincipal.Claims)
                 {
                     if (string.IsNullOrEmpty(claim.Value))
@@ -95,6 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
                         tryAddTag(Tags.User.Id, userId);
                         setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                        loginAddressesForWaf.Add(AddressesConstants.UserId, userId);
                     }
                     else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
                     {
@@ -102,6 +106,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         var login = processPii?.Invoke(claim.Value) ?? claim.Value;
                         setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
                         tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
+                        if (security.AddressEnabled(AddressesConstants.UserLogin))
+                        {
+                            loginAddressesForWaf.Add(AddressesConstants.UserLogin, login);
+                        }
                     }
 
                     if (foundLogin && foundUserId)
@@ -112,13 +120,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                 if (foundUserId || foundLogin)
                 {
+                    loginAddressesForWaf.Add(AddressesConstants.UserBusinessLoginSuccess, string.Empty);
                     security.SetTraceSamplingPriority(span);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
                 }
 
                 UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                SecurityCoordinator.CollectHeaders(span);
+                secCoordinator.CollectHeaders();
+                var result = secCoordinator.RunWafForUser(loginAddressesForWaf);
+                secCoordinator.BlockAndReport(result);
             }
 
             return returnValue;

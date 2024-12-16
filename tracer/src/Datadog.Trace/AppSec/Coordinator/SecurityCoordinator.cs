@@ -77,36 +77,14 @@ internal readonly partial struct SecurityCoordinator
         IResult? result = null;
         try
         {
-            var additiveContext = _httpTransport.GetAdditiveContext();
-
-            if (additiveContext == null)
-            {
-                additiveContext = _security.CreateAdditiveContext();
-                // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
-                if (additiveContext != null)
-                {
-                    _httpTransport.SetAdditiveContext(additiveContext);
-                }
-            }
-            else if (_httpTransport.IsAdditiveContextDisposed())
-            {
-                Log.Warning("Waf could not run as waf additive context is disposed");
-                return null;
-            }
-
-            _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
-
+            var additiveContext = GetOrCreateAdditiveContext();
             if (additiveContext != null)
             {
+                _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode.ToString(), _httpTransport.RouteData);
                 // run the WAF and execute the results
-                if (runWithEphemeral)
-                {
-                    result = additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp);
-                }
-                else
-                {
-                    result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
-                }
+                result = runWithEphemeral
+                             ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
+                             : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
                 RecordTelemetry(result);
             }
@@ -128,6 +106,64 @@ internal readonly partial struct SecurityCoordinator
         }
 
         return result;
+    }
+
+    public IResult? RunWafForUser(IDictionary<string, string> loginTags, bool force = false)
+    {
+        var args = (IDictionary<string, object>)loginTags;
+        LogAddressIfDebugEnabled(args);
+        IResult? result = null;
+        try
+        {
+            var additiveContext = GetOrCreateAdditiveContext();
+            if (additiveContext is not null && (force || !additiveContext.AlreadyRanWith(loginTags)))
+            {
+                // run the WAF and execute the results
+                result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+                additiveContext.Remember(loginTags);
+                RecordTelemetry(result);
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            var stringBuilder = StringBuilderCache.Acquire();
+            foreach (var kvp in loginTags)
+            {
+                stringBuilder.Append($"Key: {kvp.Key} Value: {kvp.Value}, ");
+            }
+
+            Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
+        }
+
+        if (_localRootSpan.Context.TraceContext is not null)
+        {
+            _localRootSpan.Context.TraceContext.WafExecuted = true;
+        }
+
+        return result;
+    }
+
+    internal IContext? GetOrCreateAdditiveContext()
+    {
+        var additiveContext = _httpTransport.GetAdditiveContext();
+
+        if (additiveContext == null)
+        {
+            additiveContext = _security.CreateAdditiveContext();
+            // prevent very cases where waf has been disposed between here and has been passed as argument until the 2nd line of constructor..
+            if (additiveContext is not null)
+            {
+                _httpTransport.SetAdditiveContext(additiveContext);
+            }
+        }
+
+        if (!_httpTransport.IsAdditiveContextDisposed())
+        {
+            return additiveContext;
+        }
+
+        Log.Warning("Waf could not run as waf additive context is disposed");
+        return null;
     }
 
     private static void RecordTelemetry(IResult? result)

@@ -647,21 +647,13 @@ namespace Datadog.Trace.AppSec
 
         internal bool AddressEnabled(string address)
         {
-            // So far, RASP is the only one that uses this
-            if (!_settings.RaspEnabled)
-            {
-                return false;
-            }
-
             if (_waf?.IsKnowAddressesSuported() == true)
             {
                 return _activeAddresses?.Contains(address) ?? false;
             }
-            else
-            {
-                // If we don't support knowAddresses, we will have to call the WAF
-                return true;
-            }
+
+            // If we don't support knowAddresses, we will have to call the WAF
+            return true;
         }
     }
 }

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -92,12 +93,14 @@ public static class UserManagerCreateIntegration
 
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.Track, "true");
                 setTag(Tags.AppSec.EventsUsers.SignUpEvent.AutoMode, successAutoMode);
+                var userAddressesWaf = new Dictionary<string, string> { { AddressesConstants.UserBusinessSignup, string.Empty } };
 
                 if (foundUserId)
                 {
                     var processedUserId = processPii?.Invoke(userId!) ?? userId!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, processedUserId);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, processedUserId);
+                    userAddressesWaf.Add(AddressesConstants.UserLogin, processedUserId);
                 }
 
                 if (foundLogin)
@@ -105,11 +108,21 @@ public static class UserManagerCreateIntegration
                     var processedUserLogin = processPii?.Invoke(userLogin!) ?? userLogin!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.Login, processedUserLogin);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalLogin, processedUserLogin);
+                    if (security.AddressEnabled(AddressesConstants.UserLogin))
+                    {
+                        userAddressesWaf.Add(AddressesConstants.UserLogin, processedUserLogin);
+                    }
+                }
+
+                security.SetTraceSamplingPriority(span);
+                var securityCoordinator = SecurityCoordinator.TryGet(security, span);
+                if (securityCoordinator.HasValue)
+                {
+                    securityCoordinator.Value.CollectHeaders();
+                    var result = securityCoordinator.Value.RunWafForUser(userAddressesWaf);
+                    securityCoordinator.Value.BlockAndReport(result);
                 }
             }
-
-            security.SetTraceSamplingPriority(span);
-            SecurityCoordinator.CollectHeaders(span);
         }
 
         return returnValue;

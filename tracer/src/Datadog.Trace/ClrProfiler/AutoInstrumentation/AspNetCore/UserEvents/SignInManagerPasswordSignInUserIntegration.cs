@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
@@ -64,12 +65,12 @@ public static class SignInManagerPasswordSignInUserIntegration
 
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
+        where TTarget : ISignInManager
     {
         if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { Span: { } span })
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
-            var user = state.State as IIdentityUser;
-            if (user is null)
+            if (state.State is not IIdentityUser user)
             {
                 UserEventsCommon.RecordMetricsLoginFailureIfNotFound(false, false);
                 return returnValue;
@@ -91,9 +92,12 @@ public static class SignInManagerPasswordSignInUserIntegration
 
             var setTag = TaggingUtils.GetSpanSetter(span, out _);
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-
+            var httpContext = instance.Context;
+            var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+            var userAddressesWaf = new Dictionary<string, string>();
             if (!returnValue.Succeeded)
             {
+                userAddressesWaf.Add(AddressesConstants.UserBusinessLoginFailure, string.Empty);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, autoMode);
 
@@ -105,19 +109,26 @@ public static class SignInManagerPasswordSignInUserIntegration
                     userId = processPii?.Invoke(userId!) ?? userId;
                     setTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId!);
+                    userAddressesWaf.Add(AddressesConstants.UserLogin, userId!);
                 }
 
                 if (!string.IsNullOrEmpty(userLogin))
                 {
                     foundLogin = true;
-                    var login = processPii?.Invoke(userLogin!) ?? userLogin;
-                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login!);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login!);
+                    var login = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, login);
+                    if (security.AddressEnabled(AddressesConstants.UserLogin))
+                    {
+                        userAddressesWaf.Add(AddressesConstants.UserLogin, login);
+                    }
                 }
 
+                securityCoordinator.CollectHeaders();
                 UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
                 tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
-                SecurityCoordinator.CollectHeaders(span);
+                var result = securityCoordinator.RunWafForUser(userAddressesWaf);
+                securityCoordinator.BlockAndReport(result);
             }
 #if !NETCOREAPP3_1_OR_GREATER
             else if (userExists)
