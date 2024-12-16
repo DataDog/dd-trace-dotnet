@@ -44,8 +44,8 @@ jobs:
 
     - name: Install Clang-16
       run: |
-        apt update
-        DEBIAN_FRONTEND=noninteractive apt -y install clang-16
+        sudo apt-get update
+        DEBIAN_FRONTEND=noninteractive sudo apt -y install clang-16
         sudo ln -s -f `which clang-16` `which clang`
         sudo ln -s -f `which clang++-16` `which clang++`
 
