@@ -19,6 +19,7 @@
 #include "module_metadata.h"
 #include "resource.h"
 #include "stats.h"
+#include "Generated/generated_definitions.h"
 
 #include "../../../shared/src/native-src/pal.h"
 #include "../../../shared/src/native-src/version.h"

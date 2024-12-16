@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.DirectoryServices;
@@ -73,6 +74,7 @@ namespace Samples.Security.AspNetCore5.Controllers
     {
         private static SQLiteConnection _dbConnectionSystemData = null;
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
+        private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
 
         public IActionResult Index()
@@ -994,70 +996,6 @@ namespace Samples.Security.AspNetCore5.Controllers
             return View("Xss");
         }
 
-        [HttpGet("StoredXss")]
-        [Route("StoredXss")]
-        public IActionResult StoredXss(bool useMicrosoftDataDb = false)
-        {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-            var param = GetDbValue(db);
-            ViewData["XSS"] = param + "<b>More Text</b>";
-            return View("Xss");
-        }
-
-        [HttpGet("StoredXssEscaped")]
-        [Route("StoredXssEscaped")]
-        public IActionResult StoredXssEscaped(bool useMicrosoftDataDb = false)
-        {
-            IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-            var param = GetDbValue(db);
-            var escapedText = System.Net.WebUtility.HtmlEncode($"System.Net.WebUtility.HtmlEncode({param})") + Environment.NewLine
-                            + System.Web.HttpUtility.HtmlEncode($"System.Web.HttpUtility.HtmlEncode({param})") + Environment.NewLine;
-            ViewData["XSS"] = escapedText;
-            return View("Xss");
-        }
-
-
-        [HttpGet("StoredSqli")]
-        [Route("StoredSqli")]
-        public IActionResult StoredSqli(bool useMicrosoftDataDb = false)
-        {
-            try
-            {
-                IDbConnection db = useMicrosoftDataDb ? DbConnectionSystemDataMicrosoftData : DbConnectionSystemData;
-                var details = GetDbValue(db, "Michael");
-                var taintedQuery = "SELECT name from Persons where Details = '" + details + "'";
-
-                var name = db switch
-                {
-                    SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
-                    SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
-                    _ => null
-                };
-
-                return Content($"Result: " + name);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500);
-            }
-        }
-
-        private static string GetDbValue(IDbConnection db, string name = "Name1")
-        {
-            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
-
-            IDataReader reader = db switch
-            {
-                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
-                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
-                _ => throw new ArgumentException("Invalid db connection")
-            };
-
-            reader.Read();
-            var res = reader.GetString(0);
-            return res;
-        }
-        
         #if NET6_0_OR_GREATER
         [HttpGet("InterpolatedSqlString")]
         [Route("InterpolatedSqlString")]
@@ -1223,6 +1161,23 @@ namespace Samples.Security.AspNetCore5.Controllers
 
             return Content(result, "text/html");
         }
+
+        private static string GetDbValue(IDbConnection db, string name = "Name1")
+        {
+            var taintedQuery = $"SELECT Details from Persons where name = '{name}'";
+
+            using IDataReader reader = db switch
+            {
+                SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
+                SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
+                _ => throw new ArgumentException("Invalid db connection")
+            };
+
+            reader.Read();
+            var res = reader.GetString(0);
+            return res;
+        }
+
 
         [HttpGet("Print")]
         public ActionResult PrintReport(
