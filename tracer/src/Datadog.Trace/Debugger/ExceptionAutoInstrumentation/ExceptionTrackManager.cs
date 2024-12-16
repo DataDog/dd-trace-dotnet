@@ -37,7 +37,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static readonly SemaphoreSlim WorkAvailable = new(0, int.MaxValue);
         private static readonly CancellationTokenSource Cts = new();
         private static readonly ExceptionCaseScheduler ExceptionsScheduler = new();
-        private static readonly ExceptionNormalizer ExceptionNormalizer = new();
         private static readonly int MaxFramesToCapture = ExceptionDebugging.Settings.MaximumFramesToCapture;
         private static readonly TimeSpan RateLimit = ExceptionDebugging.Settings.RateLimit;
         private static readonly BasicCircuitBreaker ReportingCircuitBreaker = new(ExceptionDebugging.Settings.MaxExceptionAnalysisLimit, TimeSpan.FromSeconds(1));
@@ -96,7 +95,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static void ReportInternal(Exception exception, ErrorOriginKind errorOrigin, Span rootSpan)
         {
             var exToString = exception.ToString();
-            var normalizedExHash = ExceptionNormalizer.NormalizeAndHashException(exToString, exception.GetType().Name, exception.InnerException?.GetType().Name);
+            var normalizedExHash = ExceptionNormalizer.Instance.NormalizeAndHashException(exToString, exception.GetType().Name, exception.InnerException?.GetType().Name);
 
             if (CachedDoneExceptions.Contains(normalizedExHash))
             {
@@ -155,7 +154,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var allParticipatingFrames = GetAllExceptionRelatedStackFrames(exception);
             var allParticipatingFramesFlattened = allParticipatingFrames.GetAllFlattenedFrames().Reverse().ToArray();
 
-            normalizedExHash = normalizedExHash != 0 ? normalizedExHash : ExceptionNormalizer.NormalizeAndHashException(exception.ToString(), exception.GetType().Name, exception.InnerException?.GetType().Name);
+            normalizedExHash = normalizedExHash != 0 ? normalizedExHash : ExceptionNormalizer.Instance.NormalizeAndHashException(exception.ToString(), exception.GetType().Name, exception.InnerException?.GetType().Name);
 
             if (allParticipatingFramesFlattened.Length == 0)
             {
@@ -514,7 +513,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.All(f => !FrameFilter.IsUserCode(f)) == false;
+            bool AtLeastOneFrameBelongToUserCode() => framesToRejit.Any(f => FrameFilter.IsUserCode(f));
         }
 
         private static bool IsSupportedExceptionType(Exception ex) =>
