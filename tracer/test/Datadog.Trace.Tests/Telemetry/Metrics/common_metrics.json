@@ -904,7 +904,8 @@
     "test_session": {
       "tags": [
         "provider",
-        "auto_injected"
+        "auto_injected",
+        "agentless_log_submission_enabled",
       ],
       "metric_type": "count",
       "data_type": "events",
@@ -1195,6 +1196,7 @@
       "tags": [
         "coverage_enabled",
         "itrskip_enabled",
+        "flaky_test_retries_enabled",
         "early_flake_detection_enabled"
       ],
       "metric_type": "count",
