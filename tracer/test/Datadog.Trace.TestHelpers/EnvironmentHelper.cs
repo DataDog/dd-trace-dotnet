@@ -68,6 +68,8 @@ namespace Datadog.Trace.TestHelpers
 
         public bool DebugModeEnabled { get; set; }
 
+        public bool DataPipelineEnabled { get; private set; }
+
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string SampleName { get; }
@@ -244,6 +246,8 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
+
+            environmentVariables["DD_DATA_PIPELINE_ENABLED"] = DataPipelineEnabled ? "1" : "0";
 
             if (!string.IsNullOrEmpty(processToProfile) && !ignoreProfilerProcessesVar)
             {
@@ -546,6 +550,11 @@ namespace Datadog.Trace.TestHelpers
                 default:
                     throw new InvalidOperationException("Unknown transport " + transport.ToString());
             }
+        }
+
+        public void EnableDataPipeline(bool isEnabled)
+        {
+            DataPipelineEnabled = isEnabled;
         }
 
         public MockTracerAgent GetMockAgent(bool useStatsD = false, int? fixedPort = null, bool useTelemetry = false)
