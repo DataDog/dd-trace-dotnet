@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,6 +12,7 @@ using System.Threading;
 namespace Datadog.Trace.Debugger.Caching
 {
     internal class LRUEvictionPolicy<TKey> : IEvictionPolicy<TKey>
+        where TKey : notnull
     {
         private readonly LinkedList<TKey> _list = new LinkedList<TKey>();
         private readonly Dictionary<TKey, LinkedListNode<TKey>> _map = new Dictionary<TKey, LinkedListNode<TKey>>();

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 
@@ -13,7 +15,7 @@ internal class CacheItem<TValue>
     private long _lastAccessed;
     private long _accessCount;
 
-    public CacheItem(TValue value, TimeSpan? slidingExpiration)
+    public CacheItem(TValue? value, TimeSpan? slidingExpiration)
     {
         Value = value;
         Created = DateTime.UtcNow;
@@ -25,7 +27,7 @@ internal class CacheItem<TValue>
 
     public TimeSpan? SlidingExpiration { get; set; }
 
-    public TValue Value { get; set; }
+    public TValue? Value { get; set; }
 
     internal DateTimeOffset LastAccessed
     {
