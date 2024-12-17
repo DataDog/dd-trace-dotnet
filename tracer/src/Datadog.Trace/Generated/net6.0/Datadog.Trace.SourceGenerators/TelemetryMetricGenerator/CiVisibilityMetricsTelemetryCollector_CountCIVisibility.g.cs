@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 353;
+    private const int CountCIVisibilityLength = 366;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -400,7 +400,22 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests.is_modified, index = 352
+            // impacted_tests.request, index = 352
+            new(null),
+            new(new[] { "rq_compressed:true" }),
+            // impacted_tests.request_errors, index = 354
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:400" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:401" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:403" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
+            new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
+            // impacted_tests.is_modified, index = 365
             new(null),
         };
 
@@ -410,7 +425,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 80, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 8, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 1, };
+        = new int[]{ 40, 80, 10, 10, 4, 1, 4, 22, 2, 10, 80, 2, 11, 2, 11, 2, 11, 8, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -581,8 +596,20 @@ internal partial class CiVisibilityMetricsTelemetryCollector
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    {
+        var index = 352 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 354 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
     public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.CountCIVisibility[352], increment);
+        Interlocked.Add(ref _buffer.CountCIVisibility[365], increment);
     }
 }

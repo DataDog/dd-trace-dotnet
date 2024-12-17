@@ -29,7 +29,7 @@ internal static class ImpactedTestsModule
 
     private static FileCoverageInfo[]? modifiedFiles = null;
 
-    public static bool IsEnabled => CIVisibility.Settings.ImpactedTestsDetection;
+    public static bool IsEnabled => CIVisibility.Settings.ImpactedTestsDetectionEnabled ?? false;
 
     public static void Analyze(Test test, TestSpanTags tags)
     {
@@ -52,7 +52,7 @@ internal static class ImpactedTestsModule
 
                         if (testFile.ExecutedBitmap is null || modifiedFile.ExecutedBitmap is null)
                         {
-                            Log.Debug(" No line info");
+                            Log.Debug("  No line info");
                             modified = true;
                             break;
                         }
@@ -62,7 +62,7 @@ internal static class ImpactedTestsModule
 
                         if (testFileBitmap.IntersectsWith(ref modifiedFileBitmap))
                         {
-                            Log.Debug(" Intersecting lines");
+                            Log.Debug("  Intersecting lines. Marking test {TestName} as modified.", test.Name);
                             modified = true;
                             break;
                         }
@@ -75,10 +75,14 @@ internal static class ImpactedTestsModule
                     TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsIsModified();
                 }
             }
+            else
+            {
+                Log.Debug("Impacted Tests Detection is DISABLED for {TestName}", test.Name);
+            }
         }
         catch (Exception err)
         {
-            Log.Error(err, "Error analyzing impacted tests for {TestName}", tags.Name);
+            Log.Error(err, "Error analyzing Impacted Tests for {TestName}", tags.Name);
         }
     }
 
@@ -98,9 +102,8 @@ internal static class ImpactedTestsModule
         {
             var executedBitmap = new FileBitmap((int)tags.SourceStart, (int)tags.SourceEnd);
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
+            Log.Debug<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
         }
-
-        Log.Debug<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
 
         return [file];
     }
@@ -114,24 +117,63 @@ internal static class ImpactedTestsModule
                 if (modifiedFiles is null)
                 {
                     var workspacePath = CIEnvironmentValues.Instance.WorkspacePath ?? string.Empty;
-                    var prBase = CIEnvironmentValues.Instance.PrBaseCommit;
+                    var prBase = CIEnvironmentValues.Instance.PrBaseCommit ?? GetBaseCommitFromBackend();
                     var commit = CIEnvironmentValues.Instance.HeadCommit;
-                    if (prBase is null)
+                    if (prBase is { Length: > 0 })
                     {
-                        Log.Debug("No PR detected. Retrieving only  diff files for {Path}...", workspacePath);
-                        // TODO : Milestone 1 : Retrieve diff files from Backend
-                        modifiedFiles = Array.Empty<FileCoverageInfo>();
+                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} {BaseCommit}...", workspacePath, prBase);
+                        // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
+                        try
+                        {
+                            modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase, commit).Result;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Debug(ex, "Git command failed.");
+                        }
                     }
                     else
                     {
-                        Log.Debug("PR detected. Retrieving diff lines from gir CLI for {Path} {BaseCommit}...", workspacePath, prBase);
-                        // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
-                        modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase, commit).Result;
+                        Log.Debug("No PR detected.");
+                    }
+
+                    if (modifiedFiles is null)
+                    {
+                        // Milestone 1 : Retrieve diff files from Backend
+                        modifiedFiles = GetDiffFilesFromBackend();
                     }
                 }
             }
         }
 
         return modifiedFiles;
+    }
+
+    private static FileCoverageInfo[] GetDiffFilesFromBackend()
+    {
+        Log.Debug("Retrieving diff files from backend...");
+
+        if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.Files is { Length: > 0 } files)
+        {
+            List<FileCoverageInfo> res = new List<FileCoverageInfo>();
+            foreach (var file in files)
+            {
+                res.Add(new FileCoverageInfo(file));
+            }
+
+            return res.ToArray();
+        }
+
+        return Array.Empty<FileCoverageInfo>();
+    }
+
+    private static string? GetBaseCommitFromBackend()
+    {
+        if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.BaseSha is { Length: > 0 } baseSha)
+        {
+            return baseSha;
+        }
+
+        return null;
     }
 }
