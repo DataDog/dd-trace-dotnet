@@ -7,18 +7,27 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.LibDatadog;
 
 internal class TraceExporter : SafeHandle, IApi
 {
-    private readonly TraceExporterConfiguration _configuration;
+    private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<TraceExporter>();
 
-    public TraceExporter(TraceExporterConfiguration configuration)
+    private readonly TraceExporterConfiguration _configuration;
+    private readonly IDatadogLogger _log;
+
+    public TraceExporter(
+        TraceExporterConfiguration configuration,
+        IDatadogLogger log = null)
         : base(IntPtr.Zero, true)
     {
+        _log = log ?? StaticLog;
         _configuration = configuration;
-        var errPtr = TraceExporterNative.ddog_trace_exporter_new(out var ptr, configuration);
+
+        _log.Debug("Creating new TraceExporter");
+        var errPtr = TraceExporterNative.ddog_trace_exporter_new(out var ptr, _configuration);
         errPtr.ThrowIfError();
         SetHandle(ptr);
     }
@@ -27,6 +36,8 @@ internal class TraceExporter : SafeHandle, IApi
 
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool appsecStandaloneEnabled)
     {
+        _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
+
         // Pin the array to get a pointer to the data
         // This is recommended if using UnsafeAddrOfPinnedArrayElement to avoid the GC moving the array
         var tracesHandle = GCHandle.Alloc(traces.Array, GCHandleType.Pinned);
@@ -46,6 +57,7 @@ internal class TraceExporter : SafeHandle, IApi
 
     public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
     {
+        _log.Debug("No-op: stats computation happens in the data pipeline.");
         return Task.FromResult(true);
     }
 
