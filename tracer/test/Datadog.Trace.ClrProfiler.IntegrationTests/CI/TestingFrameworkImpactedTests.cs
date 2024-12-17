@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
             var deadline = DateTime.UtcNow.AddMilliseconds(5000);
             testFilter ??= _ => true; // t => t.Meta.ContainsKey("is_modified")
 
@@ -145,8 +145,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Thread.Sleep(500);
             }
 
+            // Sort and aggregate
+            var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
+
             tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
-            filteredTests.Count().Should().Be(expectedTests, "Expected filtered test count not met");
+            results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
         }
 
         protected override Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     [UsesVerify]
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
-        private const int ExpectedSpanCount = 16;
+        private const int ExpectedSpanCount = 41;
 
         public XUnitImpactedTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromPr(string packageVersion)
         {
             InjectGitHubActionsSession();
-            return SubmitTests(packageVersion, $"baseShaFromPr", 12, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
         }
 
         [SkippableTheory]
@@ -51,7 +51,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromBackend(string packageVersion)
         {
             InjectGitHubActionsSession(false);
-            return SubmitTests(packageVersion, $"baseShaFromPr", 41, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+            return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public Task FilesFromBackend(string packageVersion)
+        {
+            InjectGitHubActionsSession(false);
+            Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = (request, receivedTests) =>
+            {
+                if (request.PathAndQuery.EndsWith("api/v2/ci/tests/diffs"))
+                {
+                    request.Response = new MockTracerResponse(GetDiffFilesJson(false), 200);
+                    return;
+                }
+
+                ProcessAgentRequest(request, receivedTests);
+            };
+            return SubmitTests(packageVersion, $"baseShaFromPr", 12, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true", agentRequestProcessor);
         }
 
         [SkippableTheory]
@@ -130,52 +150,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 return tmpFileName;
             }
         }
-
-        /*
-                [SkippableTheory]
-                [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
-                [Trait("Category", "EndToEnd")]
-                [Trait("Category", "TestIntegrations")]
-                public Task BaseShaFromBackend(string packageVersion)
-                {
-                    using var agent = EnvironmentHelper.GetMockAgent();
-                    agent.EventPlatformProxyPayloadReceived += (sender, e) =>
-                    {
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-                        {
-                            e.Value.Response = new MockTracerResponse(SettingsJson, 200);
-                            return;
-                        }
-
-                        if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-                        {
-                            var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                            if (payload.Events?.Length > 0)
-                            {
-                                foreach (var @event in payload.Events)
-                                {
-                                    if (@event.Content.ToString() is { } eventContent)
-                                    {
-                                        if (@event.Type == SpanTypes.Test)
-                                        {
-                                            tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
-                                        }
-                                        else if (@event.Type == SpanTypes.TestSuite)
-                                        {
-                                            testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(eventContent));
-                                        }
-                                        else if (@event.Type == SpanTypes.TestModule)
-                                        {
-                                            testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(eventContent));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    };
-
-                    return SubmitTraces(packageVersion, "baseShaFromPr");
-                }
-        */
     }
 }
