@@ -31,6 +31,10 @@ internal static class ImpactedTestsModule
 
     public static bool IsEnabled => CIVisibility.Settings.ImpactedTestsDetectionEnabled ?? false;
 
+    private static string? CurrentCommit => CIEnvironmentValues.Instance.HeadCommit ?? CIEnvironmentValues.Instance.Commit;
+
+    private static string? BaseCommit => CIEnvironmentValues.Instance.PrBaseCommit ?? GetBaseCommitFromBackend();
+
     public static void Analyze(Test test, TestSpanTags tags)
     {
         try
@@ -98,7 +102,8 @@ internal static class ImpactedTestsModule
         var file = new FileCoverageInfo(tags.SourceFile);
 
         // Milestone 1.5 : Return the test definition lines
-        if (CIEnvironmentValues.Instance.PrBaseCommit is { } prBase)
+        var prBase = BaseCommit;
+        if (prBase is not null)
         {
             var executedBitmap = new FileBitmap((int)tags.SourceStart, (int)tags.SourceEnd);
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
@@ -117,11 +122,11 @@ internal static class ImpactedTestsModule
                 if (modifiedFiles is null)
                 {
                     var workspacePath = CIEnvironmentValues.Instance.WorkspacePath ?? string.Empty;
-                    var prBase = CIEnvironmentValues.Instance.PrBaseCommit ?? GetBaseCommitFromBackend();
-                    var commit = CIEnvironmentValues.Instance.HeadCommit;
+                    var prBase = BaseCommit;
+                    var commit = CurrentCommit;
                     if (prBase is { Length: > 0 })
                     {
-                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} {BaseCommit}...", workspacePath, prBase);
+                        Log.Debug("PR detected. Retrieving diff lines from Git CLI for {Path} {BaseCommit}...{CurrentCommit}", workspacePath, prBase, commit);
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
                         try
                         {
