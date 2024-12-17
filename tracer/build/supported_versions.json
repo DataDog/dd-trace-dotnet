@@ -44,14 +44,14 @@
     "integrationName": "Aerospike",
     "assemblyName": "AerospikeClient",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
     "packages": [
       {
         "name": "Aerospike.Client",
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "4.0.3",
-        "maxVersionSupportedInclusive": "7.4.0",
+        "maxVersionSupportedInclusive": "8.0.0",
         "maxVersionAvailableInclusive": "8.0.0",
         "maxVersionTestedInclusive": "8.0.0"
       }
@@ -242,9 +242,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.404.1",
-        "maxVersionAvailableInclusive": "3.7.404.1",
-        "maxVersionTestedInclusive": "3.7.404.1"
+        "maxVersionSupportedInclusive": "3.7.404.5",
+        "maxVersionAvailableInclusive": "3.7.404.5",
+        "maxVersionTestedInclusive": "3.7.404.5"
       }
     ]
   },
@@ -259,9 +259,9 @@
         "minVersionAvailableInclusive": "3.3.100",
         "minVersionSupportedInclusive": "3.3.100",
         "minVersionTestedInclusive": "3.3.102.16",
-        "maxVersionSupportedInclusive": "3.7.402.2",
-        "maxVersionAvailableInclusive": "3.7.402.2",
-        "maxVersionTestedInclusive": "3.7.402.2"
+        "maxVersionSupportedInclusive": "3.7.402.6",
+        "maxVersionAvailableInclusive": "3.7.402.6",
+        "maxVersionTestedInclusive": "3.7.402.6"
       }
     ]
   },
@@ -276,9 +276,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.402.37",
-        "maxVersionAvailableInclusive": "3.7.402.37",
-        "maxVersionTestedInclusive": "3.7.402.37"
+        "maxVersionSupportedInclusive": "3.7.402.41",
+        "maxVersionAvailableInclusive": "3.7.402.41",
+        "maxVersionTestedInclusive": "3.7.402.41"
       }
     ]
   },
@@ -292,10 +292,10 @@
         "name": "Amazon.Lambda.RuntimeSupport",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.4.0",
-        "minVersionTestedInclusive": "1.12.1",
-        "maxVersionSupportedInclusive": "1.12.1",
-        "maxVersionAvailableInclusive": "1.12.1",
-        "maxVersionTestedInclusive": "1.12.1"
+        "minVersionTestedInclusive": "1.12.2",
+        "maxVersionSupportedInclusive": "1.12.2",
+        "maxVersionAvailableInclusive": "1.12.2",
+        "maxVersionTestedInclusive": "1.12.2"
       }
     ]
   },
@@ -310,8 +310,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.400.60",
-        "maxVersionAvailableInclusive": "3.7.400.60",
+        "maxVersionSupportedInclusive": "3.7.400.64",
+        "maxVersionAvailableInclusive": "3.7.400.64",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -327,9 +327,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.400.60",
-        "maxVersionAvailableInclusive": "3.7.400.60",
-        "maxVersionTestedInclusive": "3.7.400.60"
+        "maxVersionSupportedInclusive": "3.7.400.64",
+        "maxVersionAvailableInclusive": "3.7.400.64",
+        "maxVersionTestedInclusive": "3.7.400.64"
       }
     ]
   },
@@ -344,9 +344,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.400.60",
-        "maxVersionAvailableInclusive": "3.7.400.60",
-        "maxVersionTestedInclusive": "3.7.400.60"
+        "maxVersionSupportedInclusive": "3.7.400.64",
+        "maxVersionAvailableInclusive": "3.7.400.64",
+        "maxVersionTestedInclusive": "3.7.400.64"
       }
     ]
   },
@@ -509,14 +509,14 @@
     "integrationName": "GraphQL",
     "assemblyName": "GraphQL",
     "minAssemblyVersionInclusive": "2.3.0",
-    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
     "packages": [
       {
         "name": "GraphQL",
         "minVersionAvailableInclusive": "0.1.0",
         "minVersionSupportedInclusive": "2.3.0",
         "minVersionTestedInclusive": "4.1.0",
-        "maxVersionSupportedInclusive": "7.9.0",
+        "maxVersionSupportedInclusive": "8.2.1",
         "maxVersionAvailableInclusive": "8.2.1",
         "maxVersionTestedInclusive": "8.2.1"
       }
@@ -954,9 +954,9 @@
         "minVersionAvailableInclusive": "2.5.7.10213",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "3.6.1",
-        "maxVersionSupportedInclusive": "4.2.2",
-        "maxVersionAvailableInclusive": "4.2.2",
-        "maxVersionTestedInclusive": "4.2.2"
+        "maxVersionSupportedInclusive": "4.3.0",
+        "maxVersionAvailableInclusive": "4.3.0",
+        "maxVersionTestedInclusive": "4.3.0"
       }
     ]
   },
@@ -1252,7 +1252,7 @@
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": null,
         "maxVersionSupportedInclusive": "4.10.3",
-        "maxVersionAvailableInclusive": "8.1.0",
+        "maxVersionAvailableInclusive": "8.1.1",
         "maxVersionTestedInclusive": null
       }
     ]
