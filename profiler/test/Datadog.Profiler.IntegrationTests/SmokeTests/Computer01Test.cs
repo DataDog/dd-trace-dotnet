@@ -136,6 +136,8 @@ namespace Datadog.Profiler.SmokeTests
             if (EnvironmentHelper.GetPlatform() == "x64")
             {
                 var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+                runner.EnvironmentHelper.DisableDefaultProfilers(runner);
+                runner.EnvironmentHelper.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
                 runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
                 runner.RunAndCheck();
             }
