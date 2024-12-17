@@ -372,6 +372,28 @@ public class CreatedumpTests : ConsoleTestHelper
     }
 
     [SkippableFact]
+    public async Task ResumeProcessWhenCrashing()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-native",
+                               enableProfiler: true,
+                               [LdPreloadConfig, CrashReportConfig(reportFile), ("DD_INTERNAL_CRASHTRACKING_CRASH", "1")]);
+
+        var completion = await Task.WhenAny(helper.Task, Task.Delay(TimeSpan.FromMinutes(1)));
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        Assert.Equal(completion, helper.Task);
+    }
+
+    [SkippableFact]
     public async Task CheckThreadName()
     {
         // Test that threads prefixed with DD_ are marked as suspicious even if they have nothing of Datadog in the stacktrace
