@@ -95,8 +95,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!--    Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/14.2.0 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="14.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/14.3.0 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="14.3.0" />
 
     <!-- Integration: amqmdnetstd -->
     <!--    Assembly: amqmdnetstd -->
