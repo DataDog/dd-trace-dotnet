@@ -13,6 +13,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Any;
+using Datadog.Trace.Vendors.Microsoft.OpenApi.Interfaces;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Models;
 using Datadog.Trace.Vendors.Microsoft.OpenApi.Writers;
 
@@ -237,7 +238,8 @@ internal class SchemaExtractor
                     Description = description,
                     Reference = reference,
                     Format = format,
-                    Enum = enumValues
+                    Enum = enumValues,
+                    Extensions = new Dictionary<string, IOpenApiExtension> { { "x-protobuf-number", new OpenApiInteger(field.FieldNumber) } }
                 };
                 if (field.IsRepeated)
                 {
