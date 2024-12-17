@@ -2,8 +2,6 @@ using System;
 using System.Data.SQLite;
 using System.Text;
 #if NETCOREAPP
-using Npgsql;
-using Oracle.ManagedDataAccess.Client;
 using Microsoft.Data.Sqlite;
 #endif
 
