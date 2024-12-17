@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -114,7 +116,7 @@ internal class DefaultMemoryChecker : IMemoryChecker
         return false;
     }
 
-    protected virtual string ReadMemInfo()
+    protected virtual string? ReadMemInfo()
     {
         string memInfo = System.IO.File.ReadAllText("/proc/meminfo");
         var memAvailable = memInfo.Split('\n')

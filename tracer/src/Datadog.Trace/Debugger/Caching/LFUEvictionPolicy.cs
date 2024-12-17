@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,7 @@ using System.Threading;
 namespace Datadog.Trace.Debugger.Caching
 {
     internal class LFUEvictionPolicy<TKey> : IEvictionPolicy<TKey>
+        where TKey : notnull
     {
         private readonly Dictionary<TKey, FrequencyItem> _frequencyMap = new Dictionary<TKey, FrequencyItem>();
         private readonly SortedDictionary<FrequencyKey, HashSet<TKey>> _frequencySortedSet = new SortedDictionary<FrequencyKey, HashSet<TKey>>();
