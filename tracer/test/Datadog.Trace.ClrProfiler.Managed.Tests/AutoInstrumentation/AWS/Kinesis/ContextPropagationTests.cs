@@ -5,13 +5,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Text;
 using Amazon.Kinesis.Model;
+using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using FluentAssertions;
+using Moq;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -75,7 +80,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var tracer = GetTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -107,7 +113,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecords", SpanKinds.Producer, null, out var tags);
+        var tracer = GetTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out var tags);
         ContextPropagation.InjectTraceIntoRecords(proxy, scope, "streamname");
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
@@ -127,7 +134,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecord", SpanKinds.Producer, null, out var tags);
+        var tracer = GetTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecord", SpanKinds.Producer, null, out var tags);
         ContextPropagation.InjectTraceIntoData(proxy, scope, "streamname");
 
         // Naively deserialize in order to not use tracer extraction logic
@@ -159,7 +167,8 @@ public class ContextPropagationTests
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        var scope = AwsKinesisCommon.CreateScope(Tracer.Instance, "PutRecord", SpanKinds.Producer, null, out var tags);
+        var tracer = GetTracer();
+        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecord", SpanKinds.Producer, null, out var tags);
         ContextPropagation.InjectTraceIntoData(proxy, scope, "streamname");
 
         var data = proxy.Data;
@@ -202,5 +211,16 @@ public class ContextPropagationTests
         personMemoryStream.Should().NotBeNull();
 
         personMemoryStream.ToArray().Should().BeEquivalentTo(PersonJsonStringBytes);
+    }
+
+    private static Tracer GetTracer(string schemaVersion = "v1")
+    {
+        var collection = new NameValueCollection { { ConfigurationKeys.MetadataSchemaVersion, schemaVersion } };
+        IConfigurationSource source = new NameValueConfigurationSource(collection);
+        var settings = new TracerSettings(source);
+        var writerMock = new Mock<IAgentWriter>();
+        var samplerMock = new Mock<ITraceSampler>();
+
+        return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
     }
 }
