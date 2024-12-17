@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -581,8 +582,9 @@ namespace Datadog.Trace.DiagnosticListeners
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.AppsecEnabled;
             var shouldUseIast = CurrentIast.Settings.Enabled;
+            var isCodeOriginEnabled = LiveDebugger.Instance.Settings.CodeOriginForSpansEnabled;
 
-            if (!shouldTrace && !shouldSecure && !shouldUseIast)
+            if (!shouldTrace && !shouldSecure && !shouldUseIast && !isCodeOriginEnabled)
             {
                 return;
             }
@@ -611,9 +613,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (span is not null)
                 {
-                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                    if (isCodeOriginEnabled)
+                    {
+                        AddCodeOriginTags(typedArg, span);
+                    }
 
-                    AddCodeOriginTags(typedArg, span);
+                    CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (shouldUseIast)
