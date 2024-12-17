@@ -26,7 +26,6 @@ public class SymmetricAlgorithmAspect
         try
         {
             var scope = SymmetricAlgorithmIntegrationCommon.CreateScope(target);
-            scope?.Dispose();
         }
         catch (Exception ex)
         {
