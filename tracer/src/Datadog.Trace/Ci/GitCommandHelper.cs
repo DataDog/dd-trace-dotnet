@@ -93,6 +93,7 @@ internal static class GitCommandHelper
         catch (Exception ex)
         {
             Log.Information(ex, "Error calling git diff");
+            throw;
         }
 
         return Array.Empty<FileCoverageInfo>();

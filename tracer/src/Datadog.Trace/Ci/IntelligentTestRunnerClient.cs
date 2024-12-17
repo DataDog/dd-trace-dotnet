@@ -50,6 +50,7 @@ internal class IntelligentTestRunnerClient
     private const string TestParamsType = "test_params";
     private const string SettingsType = "ci_app_test_service_libraries_settings";
     private const string EarlyFlakeDetectionRequestType = "ci_app_libraries_tests_request";
+    private const string ImpactedTestsDetectionRequestType = "ci_app_tests_diffs_request";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new("[0-9a-f]+", RegexOptions.Compiled);
@@ -67,6 +68,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
     private readonly Uri _earlyFlakeDetectionTestsUrl;
+    private readonly Uri _impactedTestsDetectionTestsUrl;
     private readonly EventPlatformProxySupport _eventPlatformProxySupport;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
@@ -95,6 +97,7 @@ internal class IntelligentTestRunnerClient
         const string packFileUrlPath = "api/v2/git/repository/packfile";
         const string skippableTestsUrlPath = "api/v2/ci/tests/skippable";
         const string efdTestsUrlPath = "api/v2/ci/libraries/tests";
+        const string itdTestsUrlPath = "api/v2/ci/tests/diffs";
 
         if (_settings.Agentless)
         {
@@ -107,6 +110,7 @@ internal class IntelligentTestRunnerClient
                 _packFileUrl = new UriBuilder(agentlessUrl) { Path = packFileUrlPath }.Uri;
                 _skippableTestsUrl = new UriBuilder(agentlessUrl) { Path = skippableTestsUrlPath }.Uri;
                 _earlyFlakeDetectionTestsUrl = new UriBuilder(agentlessUrl) { Path = efdTestsUrlPath }.Uri;
+                _impactedTestsDetectionTestsUrl = new UriBuilder(agentlessUrl) { Path = itdTestsUrlPath }.Uri;
             }
             else
             {
@@ -139,6 +143,12 @@ internal class IntelligentTestRunnerClient
                     host: "api." + _settings.Site,
                     port: 443,
                     pathValue: efdTestsUrlPath).Uri;
+
+                _impactedTestsDetectionTestsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: itdTestsUrlPath).Uri;
             }
         }
         else
@@ -153,6 +163,7 @@ internal class IntelligentTestRunnerClient
                     _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{packFileUrlPath}");
                     _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{skippableTestsUrlPath}");
                     _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{efdTestsUrlPath}");
+                    _impactedTestsDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v2/{itdTestsUrlPath}");
                     break;
                 case EventPlatformProxySupport.V4:
                     _settingsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{settingsUrlPath}");
@@ -160,6 +171,7 @@ internal class IntelligentTestRunnerClient
                     _packFileUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{packFileUrlPath}");
                     _skippableTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{skippableTestsUrlPath}");
                     _earlyFlakeDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{efdTestsUrlPath}");
+                    _impactedTestsDetectionTestsUrl = _apiRequestFactory.GetEndpoint($"evp_proxy/v4/{itdTestsUrlPath}");
                     break;
                 default:
                     throw new NotSupportedException("Event platform proxy not supported by the agent.");
@@ -798,6 +810,114 @@ internal class IntelligentTestRunnerClient
         }
     }
 
+    public async Task<ImpactedTestsDetectionResponse> GetImpactedTestsDetectionFilesAsync()
+    {
+        Log.Debug("ITR: Getting impacted tests detection modified files...");
+        var framework = FrameworkDescription.Instance;
+        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        var branch = await _getBranchNameTask.ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
+        if (string.IsNullOrEmpty(repository))
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command returned null or empty");
+            return default;
+        }
+
+        if (string.IsNullOrEmpty(currentSha))
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command returned null or empty");
+            return default;
+        }
+
+        var query = new DataEnvelope<Data<ImpactedTestsDetectionQuery>>(
+            new Data<ImpactedTestsDetectionQuery>(
+                currentSha,
+                ImpactedTestsDetectionRequestType,
+                new ImpactedTestsDetectionQuery(
+                    _serviceName,
+                    _environment,
+                    repository,
+                    branch,
+                    currentSha)),
+            default);
+        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
+        Log.Debug("ITR: Efd.JSON RQ = {Json}", jsonQuery);
+
+        return await WithRetries(InternalGetImpactedTestsDetectionFilesAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+
+        async Task<ImpactedTestsDetectionResponse> InternalGetImpactedTestsDetectionFilesAsync(byte[] state, bool finalTry)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                // We currently always send the request uncompressed
+                TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
+                var request = _apiRequestFactory.Create(_impactedTestsDetectionTestsUrl);
+                SetRequestHeader(request);
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ITR: Getting Impacted test file diffs: {Url}", _impactedTestsDetectionTestsUrl.ToString());
+                }
+
+                string? responseContent;
+                try
+                {
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(errorType);
+                    }
+
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                    try
+                    {
+                        if (response.ContentLength is { } contentLength and > 0)
+                        {
+                            // TODO: Check for compressed responses - currently these are not handled and will throw when we attempt to deserialize
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, contentLength);
+                        }
+                    }
+                    catch
+                    {
+                        // If calling ContentLength throws we just ignore it
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                    Log.Error(ex, "ITR: Impacted tests file diffs request failed.");
+                    throw;
+                }
+
+                Log.Debug("ITR: Efd.JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return default;
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<ImpactedTestsDetectionResponse>?>>(responseContent);
+                var finalResponse = deserializedResult.Data?.Attributes ?? default;
+
+                // Count the number of tests for telemetry
+                var filesCount = 0;
+                if (finalResponse.Files is { Length: > 0 } files)
+                {
+                    filesCount = files.Length;
+                }
+
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(filesCount);
+                return finalResponse;
+            }
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(sw.Elapsed.TotalMilliseconds);
+            }
+        }
+    }
+
     private async Task<SearchCommitResponse> GetCommitsAsync()
     {
         var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
@@ -1349,6 +1469,9 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("require_git")]
         public readonly bool? RequireGit;
 
+        [JsonProperty("impacted_tests_enabled")]
+        public readonly bool? ImpactedTestsEnabled;
+
         [JsonProperty("flaky_test_retries_enabled")]
         public readonly bool? FlakyTestRetries;
 
@@ -1418,6 +1541,42 @@ internal class IntelligentTestRunnerClient
         public class EfdResponseModules : Dictionary<string, EfdResponseSuites?>
         {
         }
+    }
+
+    public readonly struct ImpactedTestsDetectionQuery
+    {
+        [JsonProperty("service")]
+        public readonly string Service;
+
+        [JsonProperty("env")]
+        public readonly string Environment;
+
+        [JsonProperty("repository_url")]
+        public readonly string RepositoryUrl;
+
+        [JsonProperty("branch")]
+        public readonly string Branch;
+
+        [JsonProperty("sha")]
+        public readonly string Sha;
+
+        public ImpactedTestsDetectionQuery(string service, string environment, string repositoryUrl, string branch, string sha)
+        {
+            Service = service;
+            Environment = environment;
+            RepositoryUrl = repositoryUrl;
+            Branch = branch;
+            Sha = sha;
+        }
+    }
+
+    public readonly struct ImpactedTestsDetectionResponse
+    {
+        [JsonProperty("base_sha")]
+        public readonly string? BaseSha;
+
+        [JsonProperty("files")]
+        public readonly string[]? Files;
     }
 
     private class ObjectPackFilesResult

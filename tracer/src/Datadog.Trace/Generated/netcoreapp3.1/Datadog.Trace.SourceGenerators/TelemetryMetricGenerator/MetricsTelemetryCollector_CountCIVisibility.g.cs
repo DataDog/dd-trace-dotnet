@@ -128,6 +128,14 @@ internal partial class MetricsTelemetryCollector
     {
     }
 
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequest(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityRequestCompressed tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityImpactedTestsDetectionRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
     public void RecordCountCIVisibilityImpactedTestsIsModified(int increment = 1)
     {
     }
