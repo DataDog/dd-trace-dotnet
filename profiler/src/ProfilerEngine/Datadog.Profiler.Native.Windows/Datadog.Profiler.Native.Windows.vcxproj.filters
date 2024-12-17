@@ -15,6 +15,9 @@
     <Filter Include="ETW">
       <UniqueIdentifier>{49c9eaba-b1d6-4bb8-9faa-466465babc12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="asm">
+      <UniqueIdentifier>{d038044f-5bd4-4685-b718-12b084157463}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -125,5 +128,10 @@
     <ResourceCompile Include="..\Datadog.Profiler.Native.Windows\Resource.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="wrapper_callback.x64.asm">
+      <Filter>asm</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

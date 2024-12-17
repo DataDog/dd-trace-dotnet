@@ -43,5 +43,16 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.RunAndCheck();
         }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckSmokeOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+            if (EnvironmentHelper.GetPlatform() == "x64")
+            {
+                var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
+                runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+                runner.RunAndCheck();
+            }
+        }
     }
 }

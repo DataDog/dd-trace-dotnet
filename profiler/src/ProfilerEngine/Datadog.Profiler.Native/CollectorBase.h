@@ -123,7 +123,11 @@ public:
 
     std::unique_ptr<SamplesEnumerator> GetSamples() override
     {
-        return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), this);
+        if (_collectedSamples.size() > 0)
+        {
+            return std::make_unique<SamplesEnumeratorImpl>(_collectedSamples.Move(), this);
+        }
+        return nullptr;
     }
 
 protected:

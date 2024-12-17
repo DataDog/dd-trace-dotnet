@@ -33,5 +33,16 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
+
+        [TestAppFact("Samples.Website-AspNetCore01")]
+        public void CheckSmokeOptimReuseCallstack(string appName, string framework, string appAssembly)
+        {
+            if (EnvironmentHelper.GetPlatform() == "x64")
+            {
+                var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+                runner.EnvironmentHelper.SetVariable("DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1");
+                runner.RunAndCheck();
+            }
+        }
     }
 }

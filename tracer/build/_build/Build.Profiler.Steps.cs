@@ -740,7 +740,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Debug");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
@@ -990,6 +990,7 @@ partial class Build
                 { "DD_PROFILING_HEAP_ENABLED", "1"},
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
+                { "DD_EXPERIMENTAL_WALLTIME_REUSE_CALLSTACK", "1" },
             };
 
         if (IsLinux)

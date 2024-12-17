@@ -186,7 +186,8 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     // Now walk the stack:
     CONTEXT context;
-    context.ContextFlags = CONTEXT_FULL;
+    context.ContextFlags = CONTEXT_INTEGER | CONTEXT_CONTROL;
+
     HANDLE handle;
     BOOL hasInfo = GetThreadInfo(selfCollect ? nullptr : pThreadInfo, context, handle);
 
@@ -210,6 +211,14 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
     DWORD64 establisherFrame = 0;
     const PKNONVOLATILE_CONTEXT_POINTERS pNonVolatileContextPtrsIsNull = nullptr;
     RUNTIME_FUNCTION* pFunctionTableEntry;
+
+    auto origContext = context;
+
+    auto wasExecutingWrapper = pThreadInfo->IsExecutingWrapper(context);
+    if (wasExecutingWrapper)
+    {
+        pThreadInfo->RestoreContext(context);
+    }
 
     do
     {
@@ -288,7 +297,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
                                    context.Rip,
                                    pFunctionTableEntry,
                                    &context,
-                                   &pHandlerData,
+                                     &pHandlerData,
                                    &establisherFrame,
                                    pNonVolatileContextPtrsIsNull);
             }
@@ -326,6 +335,12 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     } while (context.Rip != 0);
 
+    if (!wasExecutingWrapper && GetStackSnapshotResult()->GetFramesCount() > 0 && GetStackSnapshotResult()->CanReuseCallstack())
+    {
+        pThreadInfo->UpdateContext(origContext);
+        SetThreadContext(handle, &origContext);
+    }
+
     SetOutputHr(S_OK, pHR);
     return this->GetStackSnapshotResult();
 }
@@ -333,7 +348,7 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 BOOL Windows64BitStackFramesCollector::EnsureThreadIsSuspended(HANDLE hThread)
 {
     CONTEXT ctx;
-    ctx.ContextFlags = CONTEXT_INTEGER;
+    ctx.ContextFlags = CONTEXT_CONTROL;
 
     return ::GetThreadContext(hThread, &ctx);
 }

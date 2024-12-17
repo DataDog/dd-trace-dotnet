@@ -133,14 +133,18 @@ void SamplesCollector::Export(bool lastCall)
 
 void SamplesCollector::CollectSamples(std::forward_list<std::pair<ISamplesProvider*, uint64_t>>& samplesProviders)
 {
-    for (auto& samplesProvider : samplesProviders)
+    for (auto& [provider, samplesCount] : samplesProviders)
     {
         try
         {
             std::lock_guard lock(_exportLock);
 
-            auto samples = samplesProvider.first->GetSamples();
-            samplesProvider.second += samples->size();
+            auto samples = provider->GetSamples();
+            if (samples == nullptr)
+            {
+                continue;
+            }
+            samplesCount += samples->size();
 
             while (samples->MoveNext(_cachedSample))
             {

@@ -8,6 +8,7 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "Callstack.h"
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "shared/src/native-src/string.h"
@@ -17,6 +18,14 @@
 #include <mutex>
 #include <shared_mutex>
 #include <utility>
+
+#undef DD_CALLSTACK_REUSE_ENABLED
+#if (defined(LINUX) && defined(AMD64)) || (defined(_WINDOWS) && defined(BIT64))
+#define DD_CALLSTACK_REUSE_ENABLED
+extern "C" void dd_restart_wrapper();
+extern "C" void dd_restart_wrapper_end();
+extern "C" size_t dd_restart_wrapper_size;
+#endif
 
 #ifdef LINUX
 #include "SpinningMutex.hpp"
@@ -95,6 +104,14 @@ public:
     inline bool CanBeInterrupted() const;
 #endif
 
+#if defined(DD_CALLSTACK_REUSE_ENABLED)
+#ifdef _WINDOWS
+    #define ThreadContext CONTEXT
+#else
+    #define ThreadContext ucontext_t
+#endif
+    inline void UpdateContext(ThreadContext& context);
+#endif
     inline AppDomainID GetAppDomainId();
 
     inline std::pair<std::uint64_t, std::uint64_t> GetTracingContext() const;
@@ -145,6 +162,24 @@ private:
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
     dd_mutex_t _objLock;
+
+#if defined(DD_CALLSTACK_REUSE_ENABLED)
+    struct WrapperThreadContext
+    {
+        std::uintptr_t RipOrig;
+        std::uintptr_t RdiOrig;
+        std::uintptr_t Flag;
+    };
+
+    WrapperThreadContext _wrapperContext = {0xdeadbeef, 0xdeadbeef, 1};
+
+public:
+    // should be previous snapshot (missing spanid and stuff)
+    Callstack PreviousCallstack;
+    inline bool CanReuseCallstack() const;
+    inline bool IsExecutingWrapper(ThreadContext const& ctx) const;
+    inline void RestoreContext(ThreadContext& ctx) const;
+#endif
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -447,3 +482,47 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
 
     return {localRootSpanId, spanId};
 }
+
+
+#if defined(DD_CALLSTACK_REUSE_ENABLED)
+
+#if defined(_WINDOWS)
+#define GetIp(ctx) ctx.Rip
+#define GetRdi(ctx) ctx.Rdi
+#else
+#define GetIp(ctx) ctx.uc_mcontext.gregs[REG_RIP]
+#define GetRdi(ctx) ctx.uc_mcontext.gregs[REG_RDI]
+#endif
+
+inline void ManagedThreadInfo::UpdateContext(ThreadContext& context)
+{
+    _wrapperContext.RipOrig = GetIp(context);
+    _wrapperContext.RdiOrig = GetRdi(context);
+    _wrapperContext.Flag = 0;
+
+    static_assert(sizeof(std::uintptr_t) == sizeof(decltype(GetIp(context))));
+    static_assert(sizeof(std::uintptr_t) == sizeof(decltype(GetRdi(context))));
+
+    GetRdi(context) = reinterpret_cast<std::uintptr_t>(&_wrapperContext);
+    GetIp(context) = reinterpret_cast<std::uintptr_t>(&dd_restart_wrapper);
+}
+
+inline bool ManagedThreadInfo::CanReuseCallstack() const
+{ 
+    return _wrapperContext.Flag == 0;
+}
+
+inline void ManagedThreadInfo::RestoreContext(ThreadContext& ctx) const
+{
+    GetIp(ctx) = _wrapperContext.RipOrig;
+    GetRdi(ctx) = _wrapperContext.RdiOrig;
+}
+inline bool ManagedThreadInfo::IsExecutingWrapper(ThreadContext const& ctx) const
+{
+    auto ip = GetIp(ctx);
+    uintptr_t start = reinterpret_cast<uintptr_t>(&dd_restart_wrapper);
+    uintptr_t end = reinterpret_cast<uintptr_t>(&dd_restart_wrapper_end);
+    //uintptr_t end = start + dd_restart_wrapper_size;
+    return (ip >= start && ip < end);
+}
+#endif

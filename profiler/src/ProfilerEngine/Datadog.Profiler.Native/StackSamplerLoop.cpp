@@ -65,7 +65,8 @@ StackSamplerLoop::StackSamplerLoop(
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled() && pConfiguration->GetCpuProfilerType() == CpuProfilerType::ManualCpuTime},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
+    _canReuseCaLLStack{pConfiguration->CanReuseWalltimeCallstack()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -89,6 +90,8 @@ StackSamplerLoop::StackSamplerLoop(
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
         _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
     }
+    _reusedCallstack = 0;
+    Log::Info("Feature reuse callstack: ", std::boolalpha, _canReuseCaLLStack);
 }
 
 StackSamplerLoop::~StackSamplerLoop()
@@ -135,6 +138,7 @@ bool StackSamplerLoop::StopImpl()
         }
     }
 
+    Log::Info("--- Reused callstacks: ", _reusedCallstack);
     return true;
 }
 
@@ -415,12 +419,36 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     PROFILING_TYPE profilingType)
 {
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
+
     if (osThreadHandle == static_cast<HANDLE>(0))
     {
         // The thread was already registered, but the OS handle is not associated yet.
         return;
     }
 
+    const auto reuseCallstack =
+#ifndef DD_CALLSTACK_REUSE_ENABLED
+        false;
+#else
+        profilingType == PROFILING_TYPE::WallTime == profilingType && _canReuseCaLLStack && pThreadInfo->PreviousCallstack.Size() > 0
+                         && pThreadInfo->CanReuseCallstack();
+
+    if (reuseCallstack)
+    {
+        StackSnapshotResultBuffer buffer;
+        auto callstack = _pStackFramesCollector->GetCallstack();
+        callstack.CopyFrom(pThreadInfo->PreviousCallstack);
+        buffer.SetCallstack(std::move(callstack));
+        auto [rootLocalSpanId, spanId] = pThreadInfo->GetTracingContext();
+        buffer.SetLocalRootSpanId(rootLocalSpanId);
+        buffer.SetSpanId(spanId);
+        UpdateSnapshotInfos(&buffer, duration, thisSampleTimestampNanosecs);
+
+        PersistStackSnapshotResults(&buffer, pThreadInfo, PROFILING_TYPE::WallTime);
+        _reusedCallstack++;
+        return;
+    }
+#endif
     // NOTE: since the StackSamplerLoop thread is not managed, it is not possible to collect ourself
 
     // In this section we use the uint32_t type where logically the HRESULT type would be used normally.
@@ -481,6 +509,9 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
+                auto toto = profilingType == PROFILING_TYPE::WallTime;
+                auto tata = _canReuseCaLLStack;
+                _pStackFramesCollector->ReuseCallstack(toto && tata);
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
             }
 
@@ -492,6 +523,22 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             if (isStackSnapshotSuccessful)
             {
                 UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
+                #ifdef DD_CALLSTACK_REUSE_ENABLED
+                auto callstack = pStackSnapshotResult->GetCallstack();
+                //Log::Info("Reuse callstack: ", std::boolalpha, _canReuseCaLLStack, std::noboolalpha,
+                //          "\nprofilingType: ", PROFILING_TYPE::WallTime,
+                //          "\nprevious callstack size: ", pThreadInfo->PreviousCallstack.Size(),
+                //          "\ncurrent callstack size: ", callstack.Size());
+                if (_canReuseCaLLStack && profilingType == PROFILING_TYPE::WallTime)
+                {
+                    if (pThreadInfo->PreviousCallstack.Size() == 0)
+                    {
+                        pThreadInfo->PreviousCallstack = _pStackFramesCollector->GetCallstack();
+                    }
+                    pThreadInfo->PreviousCallstack.CopyFrom(callstack);
+                }
+                pStackSnapshotResult->SetCallstack(std::move(callstack));
+                #endif
             }
 
             // If we got here, then either target thread == sampler thread (we are sampling the current thread),
