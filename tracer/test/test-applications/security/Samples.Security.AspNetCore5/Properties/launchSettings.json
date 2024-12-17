@@ -5,7 +5,7 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DD_APPSEC_ENABLED": "true",
+        "DD_APPSEC_ENABLED": "false",
         "DD_APPSEC_BLOCKING_ENABLED": "false",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
         "CORECLR_ENABLE_PROFILING": "1",
@@ -26,8 +26,6 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "DD_APPSEC_ENABLED": "true",
-        "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_APPSEC_RASP_ENABLED": "true",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)\\shared\\bin\\monitoring-home\\",
         "CORECLR_ENABLE_PROFILING": "1",

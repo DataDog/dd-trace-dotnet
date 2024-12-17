@@ -4,15 +4,20 @@
 // </copyright>
 
 #nullable enable
+using System.Numerics;
+
 namespace Datadog.Trace.Telemetry;
 
 internal class ProductData
 {
-    public ProductData(bool enabled, ErrorData? error)
+    public ProductData(bool enabled, ErrorData? error, BigInteger? state = null)
     {
         Enabled = enabled;
         Error = error;
+        State = state;
     }
+
+    public BigInteger? State { get; }
 
     public bool Enabled { get; }
 

@@ -8,10 +8,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -39,12 +41,7 @@ internal record ConfigurationState
     internal const string WafActionsKey = "actions";
     private readonly IAsmConfigUpdater _asmFeatureProduct = new AsmFeaturesProduct();
 
-    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater>
-    {
-        { RcmProducts.Asm, new AsmProduct() },
-        { RcmProducts.AsmDd, new AsmDdProduct() },
-        { RcmProducts.AsmData, new AsmDataProduct() }
-    };
+    private readonly IReadOnlyDictionary<string, IAsmConfigUpdater> _productConfigUpdaters = new Dictionary<string, IAsmConfigUpdater> { { RcmProducts.Asm, new AsmProduct() }, { RcmProducts.AsmDd, new AsmDdProduct() }, { RcmProducts.AsmData, new AsmDataProduct() } };
 
     private readonly string? _rulesPath;
     private readonly bool _canBeToggled;
@@ -59,6 +56,8 @@ internal record ConfigurationState
         {
             IncomingUpdateState.ShouldInitAppsec = true;
         }
+
+        RefreshState();
     }
 
     public ConfigurationState(SecuritySettings settings, bool wafIsNull, Dictionary<string, RuleSet>? rulesByFile, Dictionary<string, RuleData[]>? ruleDataByFile, Dictionary<string, RuleOverride[]>? ruleOverrideByFile, Dictionary<string, Action[]>? actionsByFile = null)
@@ -87,6 +86,8 @@ internal record ConfigurationState
             ActionsByFile = actionsByFile;
             IncomingUpdateState.WafKeysToApply.Add(WafActionsKey);
         }
+
+        RefreshState();
     }
 
     public bool AppsecEnabled { get; set; }
@@ -113,11 +114,30 @@ internal record ConfigurationState
 
     internal IncomingUpdateStatus IncomingUpdateState { get; } = new();
 
+    internal BigInteger State { get; private set; }
+
     public string? RulesPath => _rulesPath;
 
     public bool HasRemoteConfig { get; private set; }
 
     public string? RuleSetTitle => HasRemoteConfig ? "RemoteConfig" : _rulesPath;
+
+    private void RefreshState()
+    {
+        SetCapability(StateIndices.AppsecCanBeSwitched, _canBeToggled);
+
+        void SetCapability(BigInteger index, bool available)
+        {
+            if (available)
+            {
+                State |= index;
+            }
+            else
+            {
+                State &= ~index;
+            }
+        }
+    }
 
     internal string[] WhatProductsAreRelevant(SecuritySettings settings)
     {

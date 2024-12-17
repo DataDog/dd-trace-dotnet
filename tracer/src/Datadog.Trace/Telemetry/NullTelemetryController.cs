@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Telemetry
         {
         }
 
-        public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
+        public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error, BigInteger? state = null)
         {
         }
 

@@ -142,6 +142,8 @@ namespace Datadog.Trace.AppSec
 
         internal ApiSecurity ApiSecurity { get; }
 
+        public BigInteger? State => _configurationState.State;
+
         internal static bool CalculateIsTrackUserEventsEnabled(string? remote, string local)
         {
             if (remote is SecuritySettings.UserTrackingIdentMode or SecuritySettings.UserTrackingAnonMode)

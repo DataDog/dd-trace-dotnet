@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -110,8 +111,8 @@ internal class TelemetryController : ITelemetryController
         _scheduler.SetTracerInitialized();
     }
 
-    public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
-        => _products.ProductChanged(product, enabled, error);
+    public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error, BigInteger? state = null)
+        => _products.ProductChanged(product, enabled, error, state);
 
     public void RecordProfilerSettings(Profiler profiler)
     {

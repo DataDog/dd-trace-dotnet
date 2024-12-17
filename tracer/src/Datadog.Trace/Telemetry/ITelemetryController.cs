@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -53,7 +54,7 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Should be called when the status (enabled/disabled) of a product (ASM/Profiler) changed.
         /// </summary>
-        void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error);
+        void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error, BigInteger? state = null);
 
         /// <summary>
         /// Dumps the current telemetry state to the provided filename.

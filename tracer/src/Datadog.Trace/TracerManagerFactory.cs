@@ -144,7 +144,9 @@ namespace Datadog.Trace
             ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
                                        : null;
-            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.AppsecEnabled, initError);
+            var security = Security.Instance;
+            Log.Information("Security state is {State}", security.State);
+            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: security.AppsecEnabled, error: initError, security.State);
 
             var profiler = Profiler.Instance;
             telemetry.RecordProfilerSettings(profiler);

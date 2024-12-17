@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Numerics;
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
@@ -21,9 +22,9 @@ internal class ProductsTelemetryCollector
         _allTime = new ProductDetail?[3];
     }
 
-    public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
+    public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error, BigInteger? state)
     {
-        _productsByType[(int)product] = new ProductDetail(enabled, error);
+        _productsByType[(int)product] = new ProductDetail(enabled, error, state);
         SetHasChanges();
     }
 
@@ -106,7 +107,7 @@ internal class ProductsTelemetryCollector
             {
                 allTime[(int)product] = latest;
                 productsByType[(int)product] = null;
-                return new ProductData(latest.Enabled, latest.Error);
+                return new ProductData(latest.Enabled, latest.Error, latest.State);
             }
 
             // nothing to do
@@ -123,14 +124,17 @@ internal class ProductsTelemetryCollector
 
     internal readonly record struct ProductDetail
     {
-        public ProductDetail(bool enabled, ErrorData? error)
+        public ProductDetail(bool enabled, ErrorData? error, BigInteger? state)
         {
             Enabled = enabled;
             Error = error;
+            State = state;
         }
 
         public bool Enabled { get; }
 
         public ErrorData? Error { get; }
+
+        public BigInteger? State { get; }
     }
 }
