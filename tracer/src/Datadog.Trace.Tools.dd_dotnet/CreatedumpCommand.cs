@@ -600,7 +600,9 @@ internal class CreatedumpCommand : Command
         {
             var filteringEnabled = Environment.GetEnvironmentVariable("DD_CRASHTRACKING_FILTERING_ENABLED") ?? string.Empty;
 
-            if (filteringEnabled == "0" || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase))
+            if (filteringEnabled == "0"
+                || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase)
+                || filteringEnabled.Equals("off", StringComparison.OrdinalIgnoreCase))
             {
                 AnsiConsole.WriteLine("Datadog - The crash is not suspicious, but filtering has been disabled with DD_CRASHTRACKING_FILTERING_ENABLED, sending crash report...");
             }
