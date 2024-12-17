@@ -30,7 +30,11 @@ public class BufferMessageInternalWriteToIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TCtx>(TTarget instance, ref TCtx ctx)
         where TTarget : IMessageProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        if (instance.Instance is not null)
+        {
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        }
+
         return CallTargetState.GetDefault();
     }
 }

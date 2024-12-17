@@ -31,7 +31,11 @@ public class MessageMergeFromIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
         where TTarget : IMessageProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        if (instance.Instance is not null)
+        {
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "deserialization");
+        }
+
         return CallTargetState.GetDefault();
     }
 }

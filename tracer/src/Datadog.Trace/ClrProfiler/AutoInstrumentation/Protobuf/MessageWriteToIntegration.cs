@@ -30,7 +30,11 @@ public class MessageWriteToIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TOutput>(TTarget instance, ref TOutput? output)
         where TTarget : IMessageProxy
     {
-        SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
+        if (instance.Instance is not null)
+        {
+            SchemaExtractor.EnrichActiveSpanWith(instance.Descriptor, "serialization");
+        }
+
         return CallTargetState.GetDefault();
     }
 }
