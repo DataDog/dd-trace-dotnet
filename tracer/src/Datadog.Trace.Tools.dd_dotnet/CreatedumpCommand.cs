@@ -598,10 +598,21 @@ internal class CreatedumpCommand : Command
 
         if (!isSuspicious)
         {
-            return;
-        }
+            var filteringEnabled = Environment.GetEnvironmentVariable("DD_CRASHTRACKING_FILTERING_ENABLED") ?? string.Empty;
 
-        AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
+            if (filteringEnabled == "0" || filteringEnabled.Equals("false", StringComparison.OrdinalIgnoreCase))
+            {
+                AnsiConsole.WriteLine("Datadog - The crash is not suspicious, but filtering has been disabled with DD_CRASHTRACKING_FILTERING_ENABLED, sending crash report...");
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            AnsiConsole.WriteLine("Datadog - The crash may have been caused by automatic instrumentation, sending crash report...");
+        }
 
         if (signal.HasValue)
         {
