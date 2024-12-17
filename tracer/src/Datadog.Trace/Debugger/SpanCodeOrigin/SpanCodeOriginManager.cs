@@ -35,9 +35,9 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
 
         private SpanCodeOriginManager()
         {
-            _tags = new CodeOriginTags(_maxUserFrames);
             var settings = LiveDebugger.Instance?.Settings ?? DebuggerSettings.FromDefaultSource();
             _maxUserFrames = settings.CodeOriginMaxUserFrames;
+            _tags = new CodeOriginTags(_maxUserFrames);
             _isCodeOriginEnabled = settings.CodeOriginForSpansEnabled;
             _thirdPartyDetectionExcludes = settings.ThirdPartyDetectionExcludes;
             _thirdPartyDetectionIncludes = settings.ThirdPartyDetectionIncludes;
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             if (span == null ||
                 type == null ||
                 method == null ||
-                !this._isCodeOriginEnabled)
+                !_isCodeOriginEnabled)
             {
                 return;
             }
