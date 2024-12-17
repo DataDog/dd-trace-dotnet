@@ -103,7 +103,7 @@ internal static class GitCommandHelper
         {
             var fileChanges = new List<FileCoverageInfo>();
             FileCoverageInfo? currentFile = null;
-            List<Tuple<int, int>> modifiedLines = new List<Tuple<int, int>>(100);
+            var modifiedLines = new List<Tuple<int, int>>(100);
 
             // Split the diff output into lines for processing
             var lines = SplitLines(diffOutput);
@@ -164,7 +164,7 @@ internal static class GitCommandHelper
 
                 var maxCount = modifiedLines[modifiedLines.Count - 1].Item2;
 
-                var bitmap = new FileBitmap(maxCount);
+                var bitmap = FileBitmap.FromLineCount(maxCount);
                 foreach (var tuple in modifiedLines)
                 {
                     for (int i = tuple.Item1; i <= tuple.Item2; i++)

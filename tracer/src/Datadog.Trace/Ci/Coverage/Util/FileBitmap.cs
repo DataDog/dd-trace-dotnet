@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -88,34 +89,6 @@ internal unsafe ref struct FileBitmap
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified line count.
-    /// </summary>
-    /// <param name="lines">Line count</param>
-    public FileBitmap(int lines)
-        : this(new byte[GetSize(lines)])
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with an specified range set to 1.
-    /// </summary>
-    /// <param name="fromLine">Start of range</param>
-    /// <param name="toLine">End of range</param>
-    public FileBitmap(int fromLine, int toLine)
-        : this(toLine)
-    {
-        if (fromLine <= 0 || toLine < fromLine)
-        {
-            throw new ArgumentException("Invalid range");
-        }
-
-        for (var i = fromLine; i <= toLine; i++)
-        {
-            Set(i);
-        }
-    }
-
-    /// <summary>
     /// Gets the size of the bitmap in Bytes.
     /// </summary>
     public int Size => _size;
@@ -150,6 +123,37 @@ internal unsafe ref struct FileBitmap
     /// <returns>The result of the bitwise NOT operation.</returns>
     public static FileBitmap operator ~(FileBitmap fileBitmap)
         => Not(fileBitmap, false);
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with a specified line count.
+    /// </summary>
+    /// <param name="lines">Line count</param>
+    public static FileBitmap FromLineCount(int lines)
+    {
+        return new FileBitmap(new byte[GetSize(lines)]);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileBitmap"/> struct with an specified range set to 1.
+    /// </summary>
+    /// <param name="fromLine">Start of range</param>
+    /// <param name="toLine">End of range</param>
+    public static FileBitmap FromActiveRange(int fromLine, int toLine)
+    {
+        var res = FromLineCount(toLine);
+
+        if (fromLine <= 0 || toLine < fromLine)
+        {
+            throw new ArgumentException("Invalid range");
+        }
+
+        for (var i = fromLine; i <= toLine; i++)
+        {
+            res.Set(i);
+        }
+
+        return res;
+    }
 
     /// <summary>
     /// Performs a bitwise OR operation on two <see cref="FileBitmap"/> instances.

@@ -105,7 +105,7 @@ internal static class ImpactedTestsModule
         var prBase = BaseCommit;
         if (prBase is not null)
         {
-            var executedBitmap = new FileBitmap((int)tags.SourceStart, (int)tags.SourceEnd);
+            var executedBitmap = FileBitmap.FromActiveRange((int)tags.SourceStart, (int)tags.SourceEnd);
             file.ExecutedBitmap = executedBitmap.GetInternalArrayOrToArrayAndDispose();
             Log.Debug<string, int, int>("TestCoverage for {TestFile}: {Start}..{End}", tags.SourceFile, (int)tags.SourceStart, (int)tags.SourceEnd);
         }
@@ -160,7 +160,7 @@ internal static class ImpactedTestsModule
 
         if (CIVisibility.ImpactedTestsDetectionResponse is { } response && response.Files is { Length: > 0 } files)
         {
-            List<FileCoverageInfo> res = new List<FileCoverageInfo>();
+            var res = new List<FileCoverageInfo>();
             foreach (var file in files)
             {
                 res.Add(new FileCoverageInfo(file));
