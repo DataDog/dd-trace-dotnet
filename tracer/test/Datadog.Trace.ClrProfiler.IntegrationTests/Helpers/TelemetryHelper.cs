@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryHelper.cs" company="Datadog">
+// <copyright file="TelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -163,6 +163,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     latestIntegrations.TryAdd(integrationEntry.Name, integrationEntry);
                 }
+            }
+
+            var spansCreatedByIntegration = new ConcurrentDictionary<string, MetricData>();
+            var metricsPayloads =
+                allData
+                    .Select(
+                        data => data switch
+                        {
+                            _ when data.TryGetPayload<GenerateMetricsPayload>(TelemetryRequestTypes.GenerateMetrics) is { } p => p.Series.Where(s => s.Metric == "spans_created"),
+                            _ => null,
+                        })
+                    .Where(x => x is not null);
+
+            // Flatten the spans_created metrics
+            foreach (var metricPayload in metricsPayloads)
+            {
+                foreach (var metricEntry in metricPayload)
+                {
+                    spansCreatedByIntegration.TryAdd(metricEntry.Tags.First(s => s.StartsWith("integration_name:")), metricEntry);
+                }
+            }
+
+            if (enabled)
+            {
+                spansCreatedByIntegration.Should().NotBeEmpty();
+
+                var spansCreated = spansCreatedByIntegration.Should().ContainKey($"integration_name:{integrationId.ToString().ToLower()}").WhoseValue;
+                spansCreated.Points.Should().NotBeEmpty();
+                spansCreated.Points.Sum(p => p.Value).Should().BeGreaterThanOrEqualTo(1);
             }
 
             latestIntegrations.Should().NotBeEmpty();
