@@ -17,6 +17,11 @@ internal class CacheItem<TValue>
 
     public CacheItem(TValue? value, TimeSpan? slidingExpiration)
     {
+        if (slidingExpiration.HasValue && slidingExpiration.Value <= TimeSpan.Zero)
+        {
+            throw new ArgumentException("Sliding expiration must be positive", nameof(slidingExpiration));
+        }
+
         Value = value;
         Created = DateTime.UtcNow;
         LastAccessed = Created;

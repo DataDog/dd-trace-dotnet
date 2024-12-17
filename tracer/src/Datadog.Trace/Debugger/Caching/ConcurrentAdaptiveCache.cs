@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.Caching
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ConcurrentAdaptiveCache<TKey, TValue>>();
 
         private readonly TimeSpan _defaultSlidingExpiration = TimeSpan.FromMinutes(60);
-        private readonly Dictionary<TKey, CacheItem<TValue>?> _cache;
+        private readonly Dictionary<TKey, CacheItem<TValue>> _cache;
         private readonly ReaderWriterLockSlim _lock;
         private readonly int _capacity;
         private readonly IEvictionPolicy<TKey> _evictionPolicy;
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Caching
             _memoryChecker = memoryChecker ?? DefaultMemoryChecker.Instance;
             _capacity = capacity ?? DetermineCapacity();
             Logger.Information("Cache capacity is: {Capacity}", (object)_capacity);
-            _cache = new Dictionary<TKey, CacheItem<TValue>?>(_capacity, comparer);
+            _cache = new Dictionary<TKey, CacheItem<TValue>>(_capacity, comparer);
             _lock = new ReaderWriterLockSlim();
             _hits = 0;
             _misses = 0;
@@ -173,21 +173,18 @@ namespace Datadog.Trace.Debugger.Caching
 
             try
             {
-                if (_cache.TryGetValue(key, out CacheItem<TValue>? item))
+                if (_cache.TryGetValue(key, out var item))
                 {
-                    if (item != null)
-                    {
-                        item.LastAccessed = DateTime.UtcNow;
-                        Interlocked.Increment(ref _hits);
-                        item.IncrementAccessCount();
-                        value = item.Value;
-                        _evictionPolicy.Access(key);
-                        return true;
-                    }
+                    item.LastAccessed = DateTime.UtcNow;
+                    Interlocked.Increment(ref _hits);
+                    item.IncrementAccessCount();
+                    value = item.Value;
+                    _evictionPolicy.Access(key);
+                    return true;
                 }
 
                 Interlocked.Increment(ref _misses);
-                value = default(TValue);
+                value = default;
                 return false;
             }
             finally
@@ -250,7 +247,7 @@ namespace Datadog.Trace.Debugger.Caching
             try
             {
                 var now = DateTime.UtcNow;
-                var expiredItems = _cache.Where(kvp => kvp.Value != null && IsExpired(kvp.Value, now)).ToList();
+                var expiredItems = _cache.Where(kvp => IsExpired(kvp.Value, now)).ToList();
 
                 foreach (var item in expiredItems)
                 {
@@ -261,8 +258,11 @@ namespace Datadog.Trace.Debugger.Caching
                 while (_cache.Count > _capacity)
                 {
                     var keyToRemove = _evictionPolicy.Evict();
-                    _cache.Remove(keyToRemove);
-                    expiredItems.Add(new KeyValuePair<TKey, CacheItem<TValue>?>(keyToRemove, null));
+                    if (_cache.TryGetValue(keyToRemove, out var removedItem))
+                    {
+                        _cache.Remove(keyToRemove);
+                        expiredItems.Add(new KeyValuePair<TKey, CacheItem<TValue>>(keyToRemove, removedItem));
+                    }
                 }
 
                 return expiredItems.Count;
@@ -354,11 +354,6 @@ namespace Datadog.Trace.Debugger.Caching
             }
 
             var item = _cache[key];
-            if (item == null)
-            {
-                return;
-            }
-
             item.Value = value;
             item.LastAccessed = DateTime.UtcNow;
             item.IncrementAccessCount();
