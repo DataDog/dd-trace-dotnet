@@ -123,6 +123,7 @@ onboarding_tests_installer:
       - ONBOARDING_FILTER_WEBLOG: [test-app-dotnet, test-app-dotnet-container]
         SCENARIO: [ SIMPLE_INSTALLER_AUTO_INJECTION, SIMPLE_AUTO_INJECTION_PROFILING ]
 
+        
 onboarding_tests_k8s_injection:
   variables:
     WEBLOG_VARIANT: dd-lib-dotnet-init-test-app
