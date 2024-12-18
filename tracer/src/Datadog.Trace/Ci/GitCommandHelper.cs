@@ -67,7 +67,7 @@ internal static class GitCommandHelper
         }
     }
 
-    public static async Task<FileCoverageInfo[]> GetGitDiffFilesAndLines(string workingDirectory, string baseCommit, string? headCommit = null)
+    public static async Task<FileCoverageInfo[]> GetGitDiffFilesAndLinesAsync(string workingDirectory, string baseCommit, string? headCommit = null)
     {
         try
         {

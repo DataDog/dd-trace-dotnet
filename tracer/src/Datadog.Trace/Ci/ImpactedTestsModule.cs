@@ -20,6 +20,7 @@ using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
 
@@ -35,7 +36,7 @@ internal static class ImpactedTestsModule
 
     private static string? BaseCommit => CIEnvironmentValues.Instance.PrBaseCommit ?? GetBaseCommitFromBackend();
 
-    public static void Analyze(Test test, TestSpanTags tags)
+    public static void Analyze(Test test)
     {
         try
         {
@@ -43,6 +44,7 @@ internal static class ImpactedTestsModule
             {
                 Log.Debug("Impacted Tests Detection is enabled for {TestName}", test.Name);
 
+                var tags = test.GetTags();
                 bool modified = false;
                 var testFiles = GetTestCoverage(tags);
                 var modifiedFiles = GetModifiedFiles();
@@ -86,7 +88,7 @@ internal static class ImpactedTestsModule
         }
         catch (Exception err)
         {
-            Log.Error(err, "Error analyzing Impacted Tests for {TestName}", tags.Name);
+            Log.Error(err, "Error analyzing Impacted Tests for {TestName}", test.Name);
         }
     }
 
@@ -130,7 +132,7 @@ internal static class ImpactedTestsModule
                         // Milestone 1.5 : Retrieve diff files and lines from Git Diff CLI
                         try
                         {
-                            modifiedFiles = GitCommandHelper.GetGitDiffFilesAndLines(workspacePath, prBase, commit).Result;
+                            modifiedFiles = AsyncUtil.RunSync(() => GitCommandHelper.GetGitDiffFilesAndLinesAsync(workspacePath, prBase, commit));
                         }
                         catch (Exception ex)
                         {
