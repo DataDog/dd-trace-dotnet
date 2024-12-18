@@ -279,6 +279,17 @@ std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configurat
     // handle "with agent" case
     auto url = configuration->GetAgentUrl(); // copy expected here
 
+    if (url.rfind("unix://", 0) == 0)
+    {
+        auto path = fs::path(url.substr(7));
+        std::error_code ec;
+        if (!fs::exists(path, ec))
+        {
+            Log::Debug("Env var '", EnvironmentVariables::AgentUrl, "' contains a path to a non-existent UDS '", url, "'. Fallback to default (HTTP).");
+            url = "";
+        }
+    }
+
     if (url.empty())
     {
         // Agent mode
@@ -298,14 +309,14 @@ std::string ProfileExporter::BuildAgentEndpoint(IConfiguration const* configurat
         }
 
 #endif
+    }
 
-        if (url.empty())
-        {
-            // Use default HTTP endpoint
-            std::stringstream oss;
-            oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
-            url = oss.str();
-        }
+    if (url.empty())
+    {
+        // Use default HTTP endpoint
+        std::stringstream oss;
+        oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
+        url = oss.str();
     }
 
     Log::Info("Using agent endpoint ", url);
