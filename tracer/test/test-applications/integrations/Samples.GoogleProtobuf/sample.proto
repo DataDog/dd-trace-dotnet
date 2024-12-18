@@ -6,9 +6,11 @@ import "google/protobuf/timestamp.proto";
 
 message Person {
   string name = 1;
-  int32 id = 2;
   string email = 3;
-
+  repeated PhoneNumber phones = 4;
+  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp last_updated = 6;
+  
   enum PhoneType {
     UNSPECIFIED = 0;
     MOBILE = 1;
@@ -21,12 +23,8 @@ message Person {
     PhoneType type = 2;
   }
 
-  repeated PhoneNumber phones = 4;
-
-  google.protobuf.Timestamp created = 5;
-  google.protobuf.Timestamp last_updated = 6;
 }
 
 message AddressBook {
-  repeated Person people = 1;
+  map<int32, Person> people = 1;
 }

@@ -257,6 +257,7 @@ internal class SchemaExtractor
                 };
                 if (field.IsRepeated)
                 {
+                    // note: maps are seen as arrays of auto-generated XxxEntry type
                     property = new OpenApiSchema { Type = "array", Items = property };
                 }
 

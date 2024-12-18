@@ -50,8 +50,6 @@ internal interface IFieldDescriptorProxy : IDescriptorProxy
 {
     bool IsRepeated { get; }
 
-    bool IsMap { get; }
-
     int FieldType { get; } // actually an enum
 
     int FieldNumber { get; }
