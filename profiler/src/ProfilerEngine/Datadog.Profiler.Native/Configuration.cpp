@@ -99,6 +99,9 @@ Configuration::Configuration()
     _isTelemetryToDiskEnabled = GetEnvironmentValue(EnvironmentVariables::TelemetryToDiskEnabled, false);
     _isSsiTelemetryEnabled = GetEnvironmentValue(EnvironmentVariables::SsiTelemetryEnabled, false);
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, CpuProfilerType::ManualCpuTime);
+    _isHttpProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HttpProfilingEnabled, false);
+    _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
+    _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -745,4 +748,30 @@ bool Configuration::IsTelemetryToDiskEnabled() const
 bool Configuration::IsSsiTelemetryEnabled() const
 {
     return _isSsiTelemetryEnabled;
+}
+
+bool Configuration::IsHttpProfilingEnabled() const
+{
+    return _isHttpProfilingEnabled;
+}
+
+bool Configuration::ForceHttpSampling() const
+{
+    return _forceHttpSampling;
+}
+
+
+std::chrono::milliseconds Configuration::ExtractHttpRequestDurationThreshold() const
+{
+    auto const defaultValue = 50ms;
+    auto value = GetEnvironmentValue(EnvironmentVariables::HttpRequestDurationThreshold, defaultValue);
+    if (value < 0ms)
+        return defaultValue;
+
+    return std::chrono::milliseconds(value);
+}
+
+std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
+{
+    return _httpRequestDurationThreshold;
 }

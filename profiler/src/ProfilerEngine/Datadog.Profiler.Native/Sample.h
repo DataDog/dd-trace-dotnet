@@ -173,6 +173,20 @@ public:
     static const std::string ObjectLifetimeLabel;
     static const std::string ObjectIdLabel;
     static const std::string ObjectGenerationLabel;
+    static const std::string RequestUrlLabel;
+    static const std::string RequestTimeStampLabel;
+    static const std::string RequestStatusCodeLabel;
+    static const std::string RequestErrorLabel;
+    static const std::string RequestRedirectUrlLabel;
+    static const std::string RequestDnsWaitLabel;
+    static const std::string RequestDnsDurationLabel;
+    static const std::string RequestDnsSuccessLabel;
+    static const std::string RequestHandshakeWaitLabel;
+    static const std::string RequestHandshakeDurationLabel;
+    static const std::string RequestHandshakeErrorLabel;
+    static const std::string RequestSocketDurationLabel;
+    static const std::string RequestResponseThreadIdLabel;
+    static const std::string RequestResponseDurationLabel;
 
 private:
     std::chrono::nanoseconds _timestamp;
