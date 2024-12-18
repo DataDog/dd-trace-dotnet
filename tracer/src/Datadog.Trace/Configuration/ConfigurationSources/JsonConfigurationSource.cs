@@ -30,7 +30,6 @@ namespace Datadog.Trace.Configuration
         private readonly JToken? _configuration;
         private readonly ConfigurationOrigins _origin;
 
-
         /// <summary>
         /// Initializes a new instance of the <see cref="JsonConfigurationSource"/>
         /// class with the specified JSON string.
