@@ -549,6 +549,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("trace_propagation_style_extract_first_only");
                     writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
 
+                    writer.WritePropertyName("tracer_datadog_json_configuration_source");
+                    writer.WriteValue(instanceSettings.JsonConfigurationSource);
+
                     writer.WritePropertyName("trace_propagation_style_inject");
                     writer.WriteStartArray();
 

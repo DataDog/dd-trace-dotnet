@@ -582,6 +582,11 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+            if (source is JsonConfigurationSource)
+            {
+                JsonConfigurationSource = source.ToString() ?? "N/A";
+            }
+
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
@@ -1066,6 +1071,8 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
+
+        internal string JsonConfigurationSource { get; set; } = "N/A";
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.
