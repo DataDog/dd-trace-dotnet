@@ -29,9 +29,9 @@ body:
 
   - type: input
     attributes:
-      label: CLR
-      description: "What CLR and version are you using"
-      placeholder: ".NET Framework 4.6.2, .NET Core 2.1"
+      label: TFM
+      description: "What Target Framework Moniker (TFM) are you using in your project?"
+      placeholder: "net462, net9.0"
     validations:
       required: true
 
