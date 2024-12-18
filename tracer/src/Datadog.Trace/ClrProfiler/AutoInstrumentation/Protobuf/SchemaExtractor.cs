@@ -76,7 +76,7 @@ internal class SchemaExtractor
             descriptor.Name,
             _ =>
             {
-                var schema = new Schema(Extractor.ExtractSchemas(descriptor));
+                var schema = Extractor.ExtractSchemas(descriptor);
                 Log.Debug<string, int>("Extracted new protobuf schema with name '{Name}' of size {Size} characters.", descriptor.Name, schema.JsonDefinition.Length);
                 return schema;
             });
@@ -90,7 +90,12 @@ internal class SchemaExtractor
     {
         private const int MaxExtractionDepth = 10;
         private const int MaxProperties = 1000;
+
+        // hashing an empty string is a no-op, allowing us to retrieve the default value for 'initialHash'
+        private static readonly ulong BaseHash = FnvHash64.GenerateHash(string.Empty, FnvHash64.Version.V1A);
+
         private readonly IDictionary<string, OpenApiSchema> _schemas;
+        private ulong _computedHash = BaseHash;
         private int _propertiesCount;
         private bool _maxPropsLogged;
 
@@ -100,28 +105,34 @@ internal class SchemaExtractor
             _schemas = componentsSchemas;
         }
 
-        public static OpenApiDocument ExtractSchemas(IMessageDescriptorProxy descriptor)
+        public static Schema ExtractSchemas(IMessageDescriptorProxy descriptor)
         {
             var components = new OpenApiComponents();
-            new Extractor(components.Schemas).ExtractSchema(descriptor); // fill the component's schemas
-            return new OpenApiDocument { Components = components };
+            var hash = new Extractor(components.Schemas).ExtractSchema(descriptor); // fill the component's schemas
+            var doc = new OpenApiDocument { Components = components };
+            return new Schema(doc, hash);
         }
 
         /// <summary>
         /// Add the given message's schema and all its sub-messages schemas to the Dictionary that was given to the ctor.
         /// </summary>
-        private void ExtractSchema(IMessageDescriptorProxy descriptor, int depth = 0)
+        private ulong ExtractSchema(IMessageDescriptorProxy descriptor, int depth = 0)
         {
             if (depth > MaxExtractionDepth)
             {
                 Log.Debug("Reached max depth of {MaxDepth} when extracting protobuf schema for field {Field} of schema {SchemaName}, will not extract further.", MaxExtractionDepth, descriptor.Name, descriptor.File.Name);
-                return;
+                return _computedHash;
             }
 
             if (!_schemas.ContainsKey(descriptor.Name))
             {
-                _schemas.Add(descriptor.Name, new OpenApiSchema { Type = "object", Properties = ExtractFields(descriptor, depth) });
+                var schema = new OpenApiSchema { Type = "object" };
+                _schemas.Add(descriptor.Name, schema);
+                // It's important that we extract the fields AFTER adding the key to the dict, to make sure we don't re-extract on recursive message types
+                schema.Properties = ExtractFields(descriptor, depth);
             }
+
+            return _computedHash;
         }
 
         private Dictionary<string, OpenApiSchema> ExtractFields(IMessageDescriptorProxy descriptor, int depth)
@@ -194,6 +205,7 @@ internal class SchemaExtractor
                     case 10: // message
                         ExtractSchema(field.MessageType, depth + 1); // Recursively add nested schemas (conditions apply)
                         reference = new OpenApiReference { Id = field.MessageType.Name, Type = ReferenceType.Schema };
+                        _computedHash = FnvHash64.GenerateHash(reference.Id, FnvHash64.Version.V1A, _computedHash);
                         break;
                     case 11:
                         type = "string";
@@ -221,6 +233,7 @@ internal class SchemaExtractor
                         {
                             var enumVal = e.DuckCast<IDescriptorProxy>()!;
                             enumValues.Add(new OpenApiString(enumVal.Name));
+                            _computedHash = FnvHash64.GenerateHash(enumVal.Name, FnvHash64.Version.V1A, _computedHash);
                         }
 
                         break;
@@ -231,6 +244,10 @@ internal class SchemaExtractor
                         description = "Unknown type";
                         break;
                 }
+
+                _computedHash = FnvHash64.GenerateHash(field.FieldNumber.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
+                _computedHash = FnvHash64.GenerateHash(field.FieldType.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
+                _computedHash = FnvHash64.GenerateHash(depth.ToString(CultureInfo.InvariantCulture), FnvHash64.Version.V1A, _computedHash);
 
                 var property = new OpenApiSchema
                 {
@@ -243,6 +260,7 @@ internal class SchemaExtractor
                 };
                 if (field.IsRepeated)
                 {
+                    // note: maps are seen as arrays of auto-generated XxxEntry type
                     property = new OpenApiSchema { Type = "array", Items = property };
                 }
 
@@ -256,14 +274,13 @@ internal class SchemaExtractor
 
     private class Schema
     {
-        public Schema(OpenApiDocument openApiDoc)
+        public Schema(OpenApiDocument openApiDoc, ulong hash)
         {
             using var writer = new StringWriter();
             try
             {
                 openApiDoc.SerializeAsV3(new OpenApiJsonWriter(writer, new OpenApiJsonWriterSettings { Terse = true /* no pretty print */ }));
                 JsonDefinition = writer.ToString();
-                Hash = FnvHash64.GenerateHash(JsonDefinition, FnvHash64.Version.V1A);
             }
             catch (Exception e)
             {
@@ -271,6 +288,8 @@ internal class SchemaExtractor
                 JsonDefinition = string.Empty;
                 Log.Warning(e, "Error while writing protobuf schema to JSON, stopped after {PartialJson}", writer.ToString());
             }
+
+            Hash = hash;
         }
 
         internal string JsonDefinition { get; }

@@ -11,9 +11,9 @@ internal class Program
     private static void Main()
     {
         // sample data
-        var john = new Person { Id = 1234, Name = "John Doe", Email = "john@doe.com", Phones = { new PhoneNumber { Number = "12345", Type = PhoneType.Home } } };
-        var jane = new Person { Id = 1234, Name = "Jane Doe", Email = "jane@doe.com", Phones = { new PhoneNumber { Number = "67890", Type = PhoneType.Work }, new PhoneNumber { Number = "54321", Type = PhoneType.Mobile } } };
-        var addressBook = new AddressBook { People = { john, jane } };
+        var john = new Person { Name = "John Doe", Email = "john@doe.com", Phones = { new PhoneNumber { Number = "12345", Type = PhoneType.Home } } };
+        var jane = new Person { Name = "Jane Doe", Email = "jane@doe.com", Phones = { new PhoneNumber { Number = "67890", Type = PhoneType.Work }, new PhoneNumber { Number = "54321", Type = PhoneType.Mobile } } };
+        var addressBook = new AddressBook { People = { { 12, john }, { 21, jane } } };
 
         // serialization
 

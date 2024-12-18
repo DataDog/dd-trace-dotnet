@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 /// </summary>
 internal interface IMessageProxy : IDuckType
 {
+    [Duck(ExplicitInterfaceTypeName = "Google.Protobuf.IMessage")]
     IMessageDescriptorProxy Descriptor { get; }
 }
 
@@ -49,8 +50,6 @@ internal interface IFieldCollectionProxy : IDuckType
 internal interface IFieldDescriptorProxy : IDescriptorProxy
 {
     bool IsRepeated { get; }
-
-    bool IsMap { get; }
 
     int FieldType { get; } // actually an enum
 

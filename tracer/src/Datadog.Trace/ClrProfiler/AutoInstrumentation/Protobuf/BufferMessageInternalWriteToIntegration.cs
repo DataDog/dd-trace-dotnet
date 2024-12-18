@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     MethodName = "InternalWriteTo",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = ["Google.Protobuf.WriteContext&"],
-    MinimumVersion = "3.0.0",
+    MinimumVersion = "3.15.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]
