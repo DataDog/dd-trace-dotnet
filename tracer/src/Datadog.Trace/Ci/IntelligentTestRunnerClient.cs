@@ -413,14 +413,21 @@ internal class IntelligentTestRunnerClient
                 var settingsResponse = deserializedResult.Data?.Attributes ?? default;
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
                 {
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
-                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled,
-                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled,
-                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled,
-                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled,
-                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: false } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrDisabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: false, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: true, TestsSkipping: false, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled_EFDEnabled_AtrEnabled,
+                    { CodeCoverage: false, TestsSkipping: true, EarlyFlakeDetection.Enabled: true, FlakyTestRetries: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled_EFDEnabled_AtrEnabled,
+                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled_AtrDisabled,
                 });
                 return settingsResponse;
             }
