@@ -6,7 +6,7 @@ body:
   - type: input
     attributes:
       label: Tracer Version(s)
-      description: "Version(s) of the tracer affected by this bug"
+      description: "Version of the tracer used"
       placeholder: 1.9.0
     validations:
       required: true
