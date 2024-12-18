@@ -81,6 +81,7 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             settings.Enabled.Should().BeTrue();
+            settings.SymbolDatabaseCompressionEnabled.Should().BeTrue();
             settings.SymbolDatabaseUploadEnabled.Should().BeTrue();
             settings.MaximumDepthOfMembersToCopy.Should().Be(100);
             settings.MaxSerializationTimeInMilliseconds.Should().Be(1000);

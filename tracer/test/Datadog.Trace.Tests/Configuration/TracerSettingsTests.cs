@@ -975,6 +975,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), true)]
+        public void IsDataStreamsLegacyHeadersEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.DataStreamsMonitoring.LegacyHeadersEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.IsDataStreamsLegacyHeadersEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void IsRareSamplerEnabled(string value, bool expected)
         {

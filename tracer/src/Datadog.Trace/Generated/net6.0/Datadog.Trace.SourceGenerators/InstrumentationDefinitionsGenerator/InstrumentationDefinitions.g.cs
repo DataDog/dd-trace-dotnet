@@ -111,7 +111,9 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge.PutEventsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge.PutEventsAsyncIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AwsEventBridge,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.GetRecordsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis.PutRecordsAsyncIntegration"

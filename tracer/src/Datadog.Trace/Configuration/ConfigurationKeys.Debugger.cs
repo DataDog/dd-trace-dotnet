@@ -56,6 +56,13 @@ namespace Datadog.Trace.Configuration
             public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
+            /// Configuration key for enabling or disabling compression for symbols payload.
+            /// Default value is true (enabled).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
+            public const string SymbolDatabaseCompressionEnabled = "DD_SYMBOL_DATABASE_COMPRESSION_ENABLED";
+
+            /// <summary>
             /// Configuration key for a separated comma list of libraries to include in the 3rd party detection
             /// Default value is empty.
             /// </summary>
