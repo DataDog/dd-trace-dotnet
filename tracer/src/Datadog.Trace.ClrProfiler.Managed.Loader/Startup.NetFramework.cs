@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             // WARNING: Logs must not be added _before_ we check for the above bail-out conditions
-            var path = string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
+            var path = new FileInfo(string.IsNullOrEmpty(ManagedProfilerDirectory) ? $"{assemblyName.Name}.dll" : Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll")).FullName;
             StartupLogger.Debug("  Looking for: '{0}'", path);
 
             if (File.Exists(path))
