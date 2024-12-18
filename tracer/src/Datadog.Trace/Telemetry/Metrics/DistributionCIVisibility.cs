@@ -115,7 +115,7 @@ internal enum DistributionCIVisibility
         ("impacted_tests_detection.response_bytes", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionResponseBytes,
 
     /// <summary>
-    /// The number of files received by the endpoint by CI Visibility
+    /// The number of modified files received by the endpoint by CI Visibility
     /// </summary>
     [TelemetryMetric("impacted_tests_detection.response_files", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionResponseFiles,
 }

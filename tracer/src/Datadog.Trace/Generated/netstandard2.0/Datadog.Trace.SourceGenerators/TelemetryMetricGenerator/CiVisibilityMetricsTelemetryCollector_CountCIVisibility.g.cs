@@ -400,10 +400,10 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests.request, index = 352
+            // impacted_tests_detection.request, index = 352
             new(null),
             new(new[] { "rq_compressed:true" }),
-            // impacted_tests.request_errors, index = 354
+            // impacted_tests_detection.request_errors, index = 354
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
@@ -415,7 +415,7 @@ internal partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
-            // impacted_tests.is_modified, index = 365
+            // impacted_tests_detection.is_modified, index = 365
             new(null),
         };
 

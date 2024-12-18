@@ -51,9 +51,9 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.CodeCoverageErrors => "code_coverage.errors",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequest => "early_flake_detection.request",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EarlyFlakeDetectionRequestErrors => "early_flake_detection.request_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "impacted_tests.request",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "impacted_tests.request_errors",
-            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests.is_modified",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequest => "impacted_tests_detection.request",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsDetectionRequestErrors => "impacted_tests_detection.request_errors",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.ImpactedTestsIsModified => "impacted_tests_detection.is_modified",
             _ => null!,
         };
 
