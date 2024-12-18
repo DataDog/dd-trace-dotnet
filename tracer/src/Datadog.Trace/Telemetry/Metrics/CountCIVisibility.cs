@@ -221,7 +221,7 @@ internal enum CountCIVisibility
     /// Tagged with a boolean flag set to true if request body is compressed
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityRequestCompressed>
-        ("impacted_tests.request", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequest,
+        ("impacted_tests_detection.request", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequest,
 
     /// <summary>
     /// The number of known modified files requests sent to the endpoint that errored, tagget by the error type
@@ -229,7 +229,7 @@ internal enum CountCIVisibility
     /// and status code (400,401,403,404,408,429)
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityErrorType>
-        ("impacted_tests.request_errors", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequestErrors,
+        ("impacted_tests_detection.request_errors", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequestErrors,
 
     /// <summary>
     /// The number of tests marked as Modified by Impacted Tests Detection
@@ -237,5 +237,5 @@ internal enum CountCIVisibility
     /// <summary>
     /// Counts the number of tainted objects after a request
     /// </summary>
-    [TelemetryMetric("impacted_tests.is_modified", isCommon: true, NS.CIVisibility)] ImpactedTestsIsModified,
+    [TelemetryMetric("impacted_tests_detection.is_modified", isCommon: true, NS.CIVisibility)] ImpactedTestsIsModified,
 }
