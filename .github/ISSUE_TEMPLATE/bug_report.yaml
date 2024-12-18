@@ -13,9 +13,9 @@ body:
 
   - type: input
     attributes:
-      label: Node.js Version(s)
-      description: "Version(s) of Node.js (`node --version`) that you've encountered this bug with"
-      placeholder: 20.1.1
+      label: Operating system and platform
+      description: "The operating system (Windows, Linux, Ubuntu) and platform (arm64, x64) on which you are experiencing the issue"
+      placeholder: Windows (x64), Linux (arm64)
     validations:
       required: true
 
