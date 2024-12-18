@@ -185,18 +185,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
 
+            var integrationName = integrationId.ToString();
+            var integrationNameTagValue = integrationName switch
+            {
+                "OpenTelemetry" => "otel",
+                _ => integrationName.ToLowerInvariant(),
+            };
+
             if (enabled)
             {
                 spansCreatedByIntegration.Should().NotBeEmpty();
 
-                var spansCreated = spansCreatedByIntegration.Should().ContainKey($"integration_name:{integrationId.ToString().ToLower()}").WhoseValue;
+                var spansCreated = spansCreatedByIntegration.Should().ContainKey($"integration_name:{integrationNameTagValue}").WhoseValue;
                 spansCreated.Points.Should().NotBeEmpty();
                 spansCreated.Points.Sum(p => p.Value).Should().BeGreaterThanOrEqualTo(1);
             }
 
             latestIntegrations.Should().NotBeEmpty();
 
-            var integration = latestIntegrations.Should().ContainKey(integrationId.ToString()).WhoseValue;
+            var integration = latestIntegrations.Should().ContainKey(integrationName).WhoseValue;
 
             integration.Enabled.Should().Be(enabled, $"{integration.Name} should only be enabled if we generate a span");
             if (autoEnabled.HasValue)
