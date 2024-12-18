@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -178,12 +179,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         }
 
         internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, bool redelivered, string? exchange, string? routingKey, TBasicProperties basicProperties, TBody body)
-            where TBasicProperties : IBasicProperties
+            where TBasicProperties : IReadOnlyBasicProperties
             where TBody : IBody, IDuckType // ReadOnlyMemory<byte> body in 6.0.0
         {
             var tracer = Tracer.Instance;
 
-            if (IsActiveScopeRabbitMQ(tracer))
+            if (IsActiveScopeRabbitMqConsume(tracer))
             {
                 // we are already instrumenting this,
                 // don't instrument nested methods that belong to the same stacktrace
@@ -246,12 +247,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return new CallTargetState(scope);
         }
 
-        private static bool IsActiveScopeRabbitMQ(Tracer tracer)
-        {
-            var scope = tracer.InternalActiveScope;
-            var parent = scope?.Span;
+        internal static bool IsRabbitMqSpan(Tracer tracer, [NotNullWhen(true)] ISpan? span, string spanKind)
+            => span != null && span.OperationName == GetOperationName(tracer, spanKind);
 
-            return parent != null && parent.OperationName == GetOperationName(tracer, SpanKinds.Consumer);
-        }
+        private static bool IsActiveScopeRabbitMqConsume(Tracer tracer)
+            => IsRabbitMqSpan(tracer, tracer.InternalActiveScope?.Span, SpanKinds.Consumer);
     }
 }
