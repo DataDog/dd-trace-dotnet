@@ -1289,9 +1289,9 @@ internal class IntelligentTestRunnerClient
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
+    private Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
     {
-        return await GitCommandHelper.RunGitCommandAsync(_workingDirectory, arguments, ciVisibilityCommand, input).ConfigureAwait(false);
+        return GitCommandHelper.RunGitCommandAsync(_workingDirectory, arguments, ciVisibilityCommand, input);
     }
 
     private readonly struct SearchCommitResponse
