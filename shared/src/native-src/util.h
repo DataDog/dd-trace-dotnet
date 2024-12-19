@@ -24,6 +24,8 @@
 
 namespace shared
 {
+    WCHAR* GetDatadogAssemblyString();
+
     template <typename In, typename Out>
     void Split(const WSTRING& s, typename In::value_type delim, Out result);
 

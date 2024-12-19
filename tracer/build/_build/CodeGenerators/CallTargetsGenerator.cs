@@ -518,8 +518,7 @@ namespace CodeGenerators
                 {
                 """);
 
-            var assemblyName = $"Datadog.Trace, Version={version}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-            sb.AppendLine($"WCHAR* assemblyName = (WCHAR*)WStr(\"{assemblyName}\");");
+            sb.AppendLine($"WCHAR* assemblyName = GetDatadogAssemblyString();");
             sb.AppendLine();
 
             // Retrieve all signatures

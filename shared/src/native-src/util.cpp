@@ -6,9 +6,24 @@
 #include <sstream>
 #include <string> //NOLINT
 #include <vector>
+#include "../../../shared/src/native-src/version.h"
+
 
 namespace shared
 {
+    shared::WSTRING nameW = WStr("");
+    WCHAR* GetDatadogAssemblyString()
+    {
+        if (nameW.empty())
+        {
+            std::string version = ::PROFILER_VERSION;
+            std::string name = "Datadog.Trace, Version=" + version + ".0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+            shared::WSTRING nameW = ToWSTRING(name);
+        }
+
+        return (WCHAR*) (nameW.c_str());
+    }
+
     template <typename In, typename Out>
     void Split(const In& s, typename In::value_type delim, Out result)
     {
