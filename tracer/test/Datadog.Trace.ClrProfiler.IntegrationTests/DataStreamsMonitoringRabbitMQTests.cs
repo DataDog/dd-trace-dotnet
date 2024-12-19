@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
-public class DataStreamsMonitoringRabbitMQTests : TestHelper
+public class DataStreamsMonitoringRabbitMQNotTests : TestHelper
 {
-    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
+    public DataStreamsMonitoringRabbitMQNotTests(ITestOutputHelper output)
         : base("DataStreams.RabbitMQ", output)
     {
         SetServiceVersion("1.0.0");
@@ -48,7 +48,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             settings.UseParameters(packageVersion);
             settings.AddDataStreamsScrubber();
             await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
-                          .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
+                          .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQNotTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();
         }
     }
