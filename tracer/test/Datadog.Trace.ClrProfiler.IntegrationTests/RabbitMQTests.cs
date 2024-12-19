@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            var expectedSpanCount = 52;
+            var expectedSpanCount = 108;
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
