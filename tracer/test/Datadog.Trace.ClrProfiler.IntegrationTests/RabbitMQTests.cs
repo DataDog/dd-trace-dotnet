@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("RabbitMQ", output)
         {
             SetServiceVersion("1.0.0");
+            EnvironmentHelper.DebugModeEnabled = true;
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
