@@ -24,39 +24,201 @@ namespace Samples.RabbitMQ
             return Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             // Test a derived type for the sync consumer from the library
-            RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
+            await RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
 
             // Test a derived type for the async consumer from the library
-            RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
+            await RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
 
             // Test a custom type that implements the sync consumer interface, using implicit interface implementation
-            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalSyncImplicit, isAsyncConsumer: false);
+            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalImplicit, isAsyncConsumer: false);
 
             // Test a custom type that implements the async consumer inteface, using explicit interface implementation
-            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalAsyncExplicit, isAsyncConsumer: true);
+            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
         }
 
-        private static void RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
+        private static async Task RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
-            PublishAndGet(useDefaultQueue: false);
-            PublishAndGet(useDefaultQueue: true);
+            await PublishAndGet(useDefaultQueue: false);
+            await PublishAndGet(useDefaultQueue: true);
 
-            var sendThread = new Thread(Send);
-            sendThread.Start();
+            var sendTask = Task.Run(Send);
+            var receiveTask = Task.Run(() => Receive(useQueue, consumerType, isAsyncConsumer));
 
-            var receiveThread = new Thread(o => Receive(useQueue, consumerType, isAsyncConsumer));
-            receiveThread.Start();
-
-            sendThread.Join();
-            receiveThread.Join();
+            await Task.WhenAll(sendTask, receiveTask);
 
             _sendFinished.Reset();
         }
 
-        private static void PublishAndGet(bool useDefaultQueue)
+#if RABBITMQ_7_0
+        private static async Task PublishAndGet(bool useDefaultQueue)
+        {
+            string messagePrefix = $"Program.PublishAndGetDefault(useDefaultQueue: {useDefaultQueue})";
+
+            // Configure and send to RabbitMQ queue
+            var factory = new ConnectionFactory() { HostName = Host() };
+            using (var connection = await factory.CreateConnectionAsync())
+            using (var channel = await connection.CreateChannelAsync())
+            {
+                string publishExchangeName;
+                string publishQueueName;
+                string publishRoutingKey;
+
+                using (SampleHelpers.CreateScope(messagePrefix))
+                {
+                    if (useDefaultQueue)
+                    {
+                        publishExchangeName = "";
+                        publishQueueName = (await channel.QueueDeclareAsync()).QueueName;
+                        publishRoutingKey = publishQueueName;
+                    }
+                    else
+                    {
+                        publishExchangeName = exchangeName;
+                        publishQueueName = queueName;
+                        publishRoutingKey = routingKey;
+
+                        await channel.ExchangeDeclareAsync(publishExchangeName, "direct");
+                        await channel.QueueDeclareAsync(queue: publishQueueName,
+                                             durable: false,
+                                             exclusive: false,
+                                             autoDelete: false,
+                                             arguments: null);
+                        await channel.QueueBindAsync(publishQueueName, publishExchangeName, publishRoutingKey);
+                    }
+
+                    // Ensure there are no more messages in this queue
+                    await channel.QueuePurgeAsync(publishQueueName);
+
+                    // Test an empty BasicGetResult
+                    await channel.BasicGetAsync(publishQueueName, true);
+
+                    // Send message to the default exchange and use new queue as the routingKey
+                    string message = $"{messagePrefix} - Message";
+                    var body = Encoding.UTF8.GetBytes(message);
+                    await channel.BasicPublishAsync(exchange: publishExchangeName,
+                                         routingKey: publishRoutingKey,
+                                         body: body);
+                    Console.WriteLine($"BasicPublish - Sent message: {message}");
+                }
+
+                // Immediately get a message from the queue
+                // Move this outside of the manual span to ensure that the operation
+                // uses the distributed tracing context
+                var result = await channel.BasicGetAsync(publishQueueName, true);
+                var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
+                Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
+            }
+        }
+
+        private static async Task Send()
+        {
+            // Configure and send to RabbitMQ queue
+            var factory = new ConnectionFactory() { HostName = Host() };
+            using (var connection = await factory.CreateConnectionAsync())
+            using (var channel = await connection.CreateChannelAsync())
+            {
+                await channel.QueueDeclareAsync(queue: "hello",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+                await channel.QueuePurgeAsync("hello"); // Ensure there are no more messages in this queue
+
+                for (int i = 0; i < 3; i++)
+                {
+                    using (SampleHelpers.CreateScope("PublishToConsumer()"))
+                    {
+                        string message = $"Send - Message #{i}";
+                        var body = Encoding.UTF8.GetBytes(message);
+
+                        await channel.BasicPublishAsync (exchange: "",
+                                             routingKey: "hello",
+                                             body: body);
+                        Console.WriteLine("[Send] - [x] Sent \"{0}\"", message);
+
+
+                        Interlocked.Increment(ref _messageCount);
+                    }
+                }
+            }
+
+            _sendFinished.Set();
+            Console.WriteLine("[Send] Exiting Thread.");
+        }
+
+        private static async Task Receive(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
+        {
+            // Let's just wait for all sending activity to finish before doing any work
+            _sendFinished.WaitOne();
+
+            // Configure and listen to RabbitMQ queue
+            var factory = new ConnectionFactory() { HostName = Host() };
+            _ = isAsyncConsumer; // not used in v7+
+            using (var connection = await factory.CreateConnectionAsync())
+            using (var channel = await connection.CreateChannelAsync())
+
+            {
+                await channel.QueueDeclareAsync(queue: "hello",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                var queue = new BlockingCollection<BasicDeliverEventArgs>();
+                var consumer = CreateConsumer(channel, queue, useQueue: useQueue, consumerType);
+                await channel.BasicConsumeAsync("hello",
+                                     true,
+                                     consumer);
+
+                ProcessReceive(useQueue, queue);
+            }
+        }
+
+        private static IAsyncBasicConsumer CreateConsumer(IChannel channel, BlockingCollection<BasicDeliverEventArgs> queue, bool useQueue, ConsumerType consumerType)
+        {
+            Task HandleEvent(object sender, BasicDeliverEventArgs ea)
+            {
+                if (useQueue)
+                {
+                    queue.Add(ea);
+                }
+                else
+                {
+                    TraceOnTheReceivingEnd(ea);
+                }
+                return Task.CompletedTask;
+            }
+
+            IAsyncBasicConsumer consumer = null;
+            switch (consumerType)
+            {
+                case ConsumerType.ExternalImplicit:
+                    var customSyncConsumer = new Samples.RabbitMQ.AsyncImplicitImplementationConsumer(channel);
+                    customSyncConsumer.ReceivedAsync += HandleEvent;
+                    consumer = customSyncConsumer;
+                    break;
+                case ConsumerType.ExternalExplicit:
+                    var customAsyncConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
+                    customAsyncConsumer.ReceivedAsync += HandleEvent;
+                    consumer = customAsyncConsumer;
+                    break;
+                // By default use the EventingBasicConsumer so we don't have to change span expectations across library versions
+                case ConsumerType.InternalAsyncDerived:
+                case ConsumerType.InternalSyncDerived:
+                default:
+                    var defaultConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
+                    defaultConsumer.ReceivedAsync += HandleEvent;
+                    consumer = defaultConsumer;
+                    break;
+            }
+
+            return consumer;
+        }
+#else
+        private static Task PublishAndGet(bool useDefaultQueue)
         {
             string messagePrefix = $"Program.PublishAndGetDefault(useDefaultQueue: {useDefaultQueue})";
 
@@ -121,9 +283,11 @@ namespace Samples.RabbitMQ
 
                 Console.WriteLine($"[Program.PublishAndGetDefault] BasicGet - Received message: {resultMessage}");
             }
+
+            return Task.CompletedTask;
         }
 
-        private static void Send()
+        private static Task Send()
         {
             // Configure and send to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
@@ -158,6 +322,7 @@ namespace Samples.RabbitMQ
 
             _sendFinished.Set();
             Console.WriteLine("[Send] Exiting Thread.");
+            return Task.CompletedTask;
         }
 
         private static void Receive(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
@@ -186,25 +351,7 @@ namespace Samples.RabbitMQ
                                     true,
                                     consumer);
 
-                Thread dequeueThread = null;
-                if (useQueue)
-                {
-                    dequeueThread = new Thread(() => ConsumeFromQueue(queue));
-                    dequeueThread.Start();
-                }
-
-                while (Interlocked.Read(ref _messageCount) != 0)
-                {
-                    Thread.Sleep(100);
-                }
-
-                queue.CompleteAdding();
-                if (useQueue)
-                {
-                    dequeueThread.Join();
-                }
-
-                Console.WriteLine("[Receive] Exiting Thread.");
+                ProcessReceive(useQueue, queue);
             }
         }
 
@@ -241,13 +388,13 @@ namespace Samples.RabbitMQ
                     consumer = asyncEventingBasicConsumer;
                     break;
 #endif
-                case ConsumerType.ExternalSyncImplicit:
+                case ConsumerType.ExternalImplicit:
                     var customSyncConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
                     customSyncConsumer.Received += HandleEvent;
                     consumer = customSyncConsumer;
                     break;
 #if RABBITMQ_5_0
-                case ConsumerType.ExternalAsyncExplicit:
+                case ConsumerType.ExternalExplicit:
                     var customAsyncConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
                     customAsyncConsumer.Received += HandleEvent;
                     consumer = customAsyncConsumer;
@@ -262,6 +409,30 @@ namespace Samples.RabbitMQ
             }
 
             return consumer;
+        }
+#endif
+
+        private static void ProcessReceive(bool useQueue, BlockingCollection<BasicDeliverEventArgs> queue)
+        {
+            Thread dequeueThread = null;
+            if (useQueue)
+            {
+                dequeueThread = new Thread(() => ConsumeFromQueue(queue));
+                dequeueThread.Start();
+            }
+
+            while (Interlocked.Read(ref _messageCount) != 0)
+            {
+                Thread.Sleep(100);
+            }
+
+            queue.CompleteAdding();
+            if (useQueue)
+            {
+                dequeueThread.Join();
+            }
+
+            Console.WriteLine("[Receive] Exiting Thread.");
         }
 
         private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
@@ -304,8 +475,8 @@ namespace Samples.RabbitMQ
         enum ConsumerType
         {
             InternalSyncDerived,
-            ExternalSyncImplicit,
-            ExternalAsyncExplicit,
+            ExternalImplicit,
+            ExternalExplicit,
             InternalAsyncDerived,
         }
     }
