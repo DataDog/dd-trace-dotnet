@@ -21,7 +21,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
+#pragma warning disable SA1649
 public class DataStreamsMonitoringRabbitMQNotTests : TestHelper
+#pragma warning restore SA1649
 {
     public DataStreamsMonitoringRabbitMQNotTests(ITestOutputHelper output)
         : base("DataStreams.RabbitMQ", output)
