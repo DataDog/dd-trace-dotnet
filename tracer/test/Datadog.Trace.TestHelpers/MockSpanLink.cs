@@ -27,6 +27,7 @@ namespace Datadog.Trace.TestHelpers
         [Key("tracestate")]
         public string TraceState { get; set; }
 
+        // Although the API accepts values of type object, they are encoded as strings in the MessagePack representation
         [Key("attributes")]
         public Dictionary<string, string>  Attributes { get; set; }
     }

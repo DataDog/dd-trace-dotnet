@@ -290,7 +290,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     foreach (var attribute in spanLink.Attributes)
                     {
                         offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Value);
+                        offset += WriteOpenTelemetryAttributeAsString(ref bytes, offset, attribute.Value);
                     }
                 }
 
@@ -618,6 +618,59 @@ namespace Datadog.Trace.Agent.MessagePack
             MessagePackBinary.EnsureCapacity(ref bytes, offset, keyBytes.Length + StringEncoding.UTF8.GetMaxByteCount(value.Length) + 5);
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, keyBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int WriteOpenTelemetryAttributeAsString(ref byte[] bytes, int offset, object value)
+        {
+            var formatter = System.Globalization.CultureInfo.InvariantCulture;
+            switch (value)
+            {
+                case char c:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(c, System.Globalization.CultureInfo.InvariantCulture));
+                case string s:
+                    return MessagePackBinary.WriteString(ref bytes, offset, s);
+                case bool b:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                case byte b:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                case sbyte sb:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sb, System.Globalization.CultureInfo.InvariantCulture));
+                case short sh:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sh, System.Globalization.CultureInfo.InvariantCulture));
+                case ushort us:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(us, System.Globalization.CultureInfo.InvariantCulture));
+                case int i:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(i, System.Globalization.CultureInfo.InvariantCulture));
+                case uint ui:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ui, System.Globalization.CultureInfo.InvariantCulture));
+                case long l:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(l, System.Globalization.CultureInfo.InvariantCulture));
+                case ulong ul:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ul, System.Globalization.CultureInfo.InvariantCulture));
+                case float f:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(f, System.Globalization.CultureInfo.InvariantCulture));
+                case double d:
+                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(d, System.Globalization.CultureInfo.InvariantCulture));
+                case Array array:
+                    // No-op for now
+                    return offset;
+                default:
+                    try
+                    {
+                        var stringValue = Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+                        if (stringValue == null)
+                        {
+                            return 0;
+                        }
+
+                        return MessagePackBinary.WriteString(ref bytes, offset, stringValue);
+                    }
+                    catch
+                    {
+                        return 0;
+                    }
+            }
         }
 
         // METRICS

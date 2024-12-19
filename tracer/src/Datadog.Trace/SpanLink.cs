@@ -26,13 +26,13 @@ internal class SpanLink
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    public SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, string>>? attributes = null)
+    public SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? attributes = null)
     {
         Context = spanLinkContext;
         Attributes = attributes;
     }
 
-    public List<KeyValuePair<string, string>>? Attributes { get; private set; }
+    public List<KeyValuePair<string, object>>? Attributes { get; private set; }
 
     public SpanContext Context { get; }
 }
