@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
-            _enableCompression = enableCompression;
+            _enableCompression = false;
             discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Debugger.Upload
                 using var gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
                 await gzipStream.WriteAsync(symbols.Array, 0, symbols.Array.Length).ConfigureAwait(false);
 #endif
-                symbolsItem = new MultipartFormItem("file", "gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
+                symbolsItem = new MultipartFormItem("file", "application/gzip", "file.gz", new ArraySegment<byte>(memoryStream.ToArray()));
             }
             else
             {
