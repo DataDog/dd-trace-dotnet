@@ -174,9 +174,16 @@ namespace Datadog.Trace.Propagators
                 {
                     cumulativeSpanContext = currentExtractedContext.SpanContext;
                 }
-                else if (extractor is W3CTraceContextPropagator && currentExtractedContext.SpanContext is { } extractedSpanContext)
+                else if (currentExtractedContext.SpanContext is { } extractedSpanContext)
                 {
-                    MergeExtractedW3CSpanContext(cumulativeSpanContext, extractedSpanContext);
+                    if (cumulativeSpanContext.RawTraceId != extractedSpanContext.RawTraceId)
+                    {
+                        spanLinks.Add(new SpanLink(extractedSpanContext, attributes: [new("reason", "terminated_context"), new("context_headers", extractor.DisplayName)]));
+                    }
+                    else if (extractor is W3CTraceContextPropagator)
+                    {
+                        MergeExtractedW3CSpanContext(cumulativeSpanContext, extractedSpanContext);
+                    }
                 }
             }
 
