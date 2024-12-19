@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
     MethodName = "InternalMergeFrom",
     ParameterTypeNames = ["Google.Protobuf.ParseContext&"],
     ReturnTypeName = ClrNames.Void,
-    MinimumVersion = "3.0.0",
+    MinimumVersion = "3.15.0",
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(Configuration.IntegrationId.Protobuf),
     CallTargetIntegrationKind = CallTargetKind.Interface)]
