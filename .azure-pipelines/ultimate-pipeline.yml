@@ -2221,6 +2221,11 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
+        buildType: 'specific'
+        project: 'dd-trace-dotnet'
+        definition: 54
+        buildVersionToDownload: 'specific'
+        pipelineId: 170326
         artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
