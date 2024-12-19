@@ -354,7 +354,7 @@
     "integrationName": "AzureFunctions",
     "assemblyName": "Microsoft.Azure.Functions.Worker.Core",
     "minAssemblyVersionInclusive": "1.4.0",
-    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
     "packages": []
   },
   {
