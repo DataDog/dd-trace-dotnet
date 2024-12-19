@@ -143,10 +143,13 @@ public class SpanMessagePackFormatterTests
         };
         spans[0].AddLink(new SpanLink(spans[1].Context, attributesToAdd));
 
-        var tmpSpanLink = new SpanLink(spans[2].Context);
+        var tmpSpanLinkAttributesToAdd = new List<KeyValuePair<string, string>>
+        {
+            new("attribute1", "value1"),
+            new("attribute2", "value2"),
+        };
+        var tmpSpanLink = new SpanLink(spans[2].Context, tmpSpanLinkAttributesToAdd);
         spans[1].AddLink(tmpSpanLink);
-        tmpSpanLink.AddAttribute("attribute1", "value1");
-        tmpSpanLink.AddAttribute("attribute2", "value2");
 
         spans[1].AddLink(new SpanLink(spans[0].Context));
 
