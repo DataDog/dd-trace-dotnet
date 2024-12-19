@@ -212,7 +212,7 @@ namespace Datadog.Trace.Pdb
                 {
                     cdiAsyncAndClosure.EncLambdaAndClosureMap = true;
                 }
-                else if (methodCustomDebugInfo.Kind is PdbCustomDebugInfoKind.StateMachineHoistedLocalScopes)
+                else if (methodCustomDebugInfo.Kind is PdbCustomDebugInfoKind.AsyncMethod)
                 {
                     cdiAsyncAndClosure.StateMachineHoistedLocal = true;
                     cdiAsyncAndClosure.StateMachineKickoffMethodRid = (int)((PdbAsyncMethodCustomDebugInfo)methodCustomDebugInfo).KickoffMethod.MDToken.Rid;
