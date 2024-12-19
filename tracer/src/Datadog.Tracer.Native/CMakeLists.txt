@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8.0)
+cmake_minimum_required (VERSION 3.13.4)
 cmake_policy(SET CMP0015 NEW)
 
 # macOS uses 3.30 which deprecates FetchContent_Populate in favor of FetchContent_MakeAvailable,
