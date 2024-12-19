@@ -1,4 +1,4 @@
-﻿// <copyright file="TestingFrameworkTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -218,7 +218,7 @@ public abstract class TestingFrameworkTest : TestHelper
     protected void SetCIEnvironmentValues()
     {
         var current = GitInfo.GetCurrent();
-        var ciDictionaryValues = new Dictionary<string, string>
+        var ciDictionaryValues = DefineCIEnvironmentValues(new Dictionary<string, string>
         {
             [CIEnvironmentValues.Constants.AzureTFBuild] = "1",
             [CIEnvironmentValues.Constants.AzureSystemTeamProjectId] = "TeamProjectId",
@@ -240,7 +240,7 @@ public abstract class TestingFrameworkTest : TestHelper
             [CIEnvironmentValues.Constants.AzureBuildSourceVersionMessage] = "Fake commit for testing",
             [CIEnvironmentValues.Constants.AzureBuildRequestedForId] = "AuthorName",
             [CIEnvironmentValues.Constants.AzureBuildRequestedForEmail] = "author@company.com",
-        };
+        });
 
         foreach (var item in ciDictionaryValues)
         {
@@ -248,5 +248,10 @@ public abstract class TestingFrameworkTest : TestHelper
         }
 
         CIValues = CIEnvironmentValues.Create(ciDictionaryValues);
+    }
+
+    protected virtual Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)
+    {
+        return values;
     }
 }
