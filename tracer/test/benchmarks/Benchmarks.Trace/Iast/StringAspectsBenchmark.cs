@@ -44,7 +44,7 @@ public class StringAspectsBenchmark
             var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
             Datadog.Trace.Iast.Iast.Instance = new Datadog.Trace.Iast.Iast(iastSettings);
 
-            IastModule.OnWeakRandomness("fake"); // Add fake span
+            IastModule.OnWeakRandomness("fake", false); // Add fake span
             var tracer = Tracer.Instance;
             var currentSpan = (tracer.ActiveScope as Scope)?.Span;
             var traceContext = currentSpan?.Context?.TraceContext;

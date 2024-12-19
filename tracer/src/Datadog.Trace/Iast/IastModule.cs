@@ -202,7 +202,7 @@ internal static partial class IastModule
         }
     }
 
-    internal static IastModuleResponse OnWeakRandomness(string evidence)
+    internal static IastModuleResponse OnWeakRandomness(string evidence, bool autoCloseScopeWhenSingleSpan = true)
     {
         if (!Iast.Instance.Settings.Enabled)
         {
@@ -212,7 +212,7 @@ internal static partial class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, autoCloseScopeWhenSingleSpan: autoCloseScopeWhenSingleSpan);
         }
         catch (Exception ex)
         {
