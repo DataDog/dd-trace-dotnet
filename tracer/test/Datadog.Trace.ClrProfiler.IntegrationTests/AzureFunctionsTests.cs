@@ -99,6 +99,8 @@ public abstract class AzureFunctionsTests : TestHelper
             new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
             @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
 
+        settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated")
                           .DisableRequireUniquePrefix();
