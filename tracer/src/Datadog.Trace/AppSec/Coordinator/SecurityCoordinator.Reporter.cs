@@ -92,9 +92,12 @@ internal readonly partial struct SecurityCoordinator
             security.WafInitResult.Reported = true;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
-            if (security.WafInitResult.HasErrors && !Security.HasOnlyUnknownMatcherErrors(security.WafInitResult.Errors))
+            bool onlyUnknownMatcherErrors = Security.HasOnlyUnknownMatcherErrors(security.WafInitResult.Errors);
+
+            // If there are only unknown matcher errors, we don't want to report the failures
+            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, onlyUnknownMatcherErrors ? 0 : security.WafInitResult.FailedToLoadRules);
+            if (security.WafInitResult.HasErrors && !onlyUnknownMatcherErrors)
             {
-                span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, security.WafInitResult.FailedToLoadRules);
                 span.SetTag(Tags.AppSecWafInitRuleErrors, security.WafInitResult.ErrorMessage);
             }
 
