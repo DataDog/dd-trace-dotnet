@@ -6,9 +6,11 @@
 using System;
 #if NETFRAMEWORK
 using System.Collections.Specialized;
+using System.Reflection;
 using System.Web;
 using System.Web.ModelBinding;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
@@ -149,8 +151,7 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the url from a HttpRequest
-    internal static Uri? GetUrl(HttpRequest request)
+    private static Uri? TryGetRequestUrl(HttpRequest request, string logMessage)
     {
         try
         {
@@ -158,9 +159,57 @@ internal static class RequestDataHelper
         }
         catch (HttpRequestValidationException)
         {
-            Log.Debug("Error reading request.Url from the request.");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Error reading request.Url from the request. {Message}", logMessage);
+            }
+
             return null;
         }
+    }
+
+    // Get the url from a HttpRequest
+    internal static Uri? GetUrl(HttpRequest request)
+    {
+        // TODO do we need to lock(request) here?
+        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (urlField is null)
+        {
+            return TryGetRequestUrl(request, "Failed to reflect into _url of HttpRequest, falling back to Url property.");
+        }
+
+        var urlValueBefore = urlField.GetValue(request) as Uri;
+
+        // if the .Url has already been accessed by something else
+        // then the _url field will have already been cached
+        // in this instance we shouldn't reset the field to ensure we
+        // don't introduce some side-effect
+        // however .Url doesn't just check _url, so we should still call the actual property
+        if (urlValueBefore is not null)
+        {
+            return TryGetRequestUrl(request, "_url was already accessed by something else.");
+        }
+
+        // we are first callers of the .Url property
+        // we should cache this value and then reset the _url field
+        // to ensure we don't introduce side-effects
+        // we saw this happen with customers using Owin middleware
+        var url = TryGetRequestUrl(request, "_url was not accessed by anything else.");
+
+        // reset _url
+        try
+        {
+            // will happen regardless whether we got a value or not from .Url
+            urlField?.SetValue(request, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error resetting request.Url.");
+            return url;
+        }
+
+        return url;
     }
 #endif
 }
