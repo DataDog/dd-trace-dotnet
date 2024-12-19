@@ -21,6 +21,8 @@ namespace Datadog.Trace.Propagators
 
         public PropagatorType PropagatorType => PropagatorType.TraceContext;
 
+        public string DisplayName => "datadog-inprocess";
+
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out PropagationContext context)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
