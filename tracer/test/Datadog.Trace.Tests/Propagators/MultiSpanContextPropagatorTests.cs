@@ -369,6 +369,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -489,6 +490,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -525,6 +527,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -567,6 +570,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -613,6 +617,7 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -637,6 +642,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -673,6 +679,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -707,6 +714,7 @@ namespace Datadog.Trace.Tests.Propagators
             result.SpanId.Should().Be(expectedSpanId);
 
             context.Baggage.Should().BeNull();
+            context.Links.Should().BeNullOrEmpty();
 
             // Check the injection restoring the 128 bits traceId.
             var headersForInjection = new Mock<IHeadersCollection>();
@@ -774,6 +782,9 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
                       },
                       opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -829,6 +840,9 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = w3CHeaderFirst ? "0123456789abcdef" : null, // if we have Datadog headers don't use p
                       },
                       opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -884,6 +898,9 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
                       },
                       opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -941,6 +958,9 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = expectW3cParentIds ? "0123456789abcdef" : null,
                       },
                       opts => opts.ExcludingMissingMembers());
+
+            result.Baggage.Should().BeNull();
+            result.Links.Should().BeNullOrEmpty();
         }
 
         [Theory]
@@ -977,31 +997,70 @@ namespace Datadog.Trace.Tests.Propagators
                 },
                 null);
 
-            var traceId = new TraceId(0x1111111111111111, (ulong)(w3CHeaderFirst ? 5 : 0xdd5));
+            var w3CtraceId = new TraceId(0x1111111111111111, 5);
+            var ddtraceId = new TraceId(0x1111111111111111, 0xdd5);
+
+            var w3cSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = w3CtraceId,
+                    TraceId = 5,
+                    SpanId = 987654321,
+                    RawTraceId = w3CtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 1,
+                    PropagatedTags = new TraceTagCollection(),
+                    AdditionalW3CTraceState = "foo=1",
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = ZeroLastParentId,
+                };
+
+            var ddSpanContextMock = new SpanContextMock
+                {
+                    TraceId128 = ddtraceId,
+                    TraceId = 0xdd5,
+                    SpanId = 987654321,
+                    RawTraceId = ddtraceId.ToString(),
+                    RawSpanId = "000000003ade68b1",
+                    SamplingPriority = 2,
+                    PropagatedTags = propagatedTags,
+                    AdditionalW3CTraceState = null,
+                    Parent = null,
+                    ParentId = null,
+                    IsRemote = true,
+                    LastParentId = null,
+                };
 
             result.SpanContext
                   .Should()
                   .NotBeNull()
                   .And
-                  .BeEquivalentTo(
-                      new SpanContextMock
-                      {
-                          TraceId128 = traceId,
-                          TraceId = (ulong)(w3CHeaderFirst ? 5 : 0xdd5),
-                          SpanId = 987654321,
-                          RawTraceId = traceId.ToString(),
-                          RawSpanId = "000000003ade68b1",
-                          SamplingPriority = w3CHeaderFirst ? 1 : 2,
-                          PropagatedTags = !w3CHeaderFirst ? propagatedTags : new TraceTagCollection(),
-                          AdditionalW3CTraceState = w3CHeaderFirst ? "foo=1" : null,
-                          Parent = null,
-                          ParentId = null,
-                          IsRemote = true,
-                          LastParentId = w3CHeaderFirst ? ZeroLastParentId : null,
-                      },
-                      opts => opts.ExcludingMissingMembers());
+                  .BeEquivalentTo(w3CHeaderFirst ? w3cSpanContextMock : ddSpanContextMock, opts => opts.ExcludingMissingMembers());
 
             result.Baggage.Should().BeEquivalentTo(new Baggage([new KeyValuePair<string, string>("usr", "customer")]));
+
+            if (extractFirst)
+            {
+                result.Links.Should().BeNullOrEmpty();
+            }
+            else
+            {
+                result.Links
+                      .Should()
+                      .BeEquivalentTo(
+                        [
+                            new SpanLinkMock
+                            {
+                                Context = w3CHeaderFirst ? ddSpanContextMock : w3cSpanContextMock,
+                                Attributes =
+                                [
+                                    new("reason", "terminated_context"),
+                                    new("context_headers", w3CHeaderFirst ? "datadog" : "tracecontext")
+                                ]
+                            }
+                        ]);
+            }
         }
 
         [Theory]
