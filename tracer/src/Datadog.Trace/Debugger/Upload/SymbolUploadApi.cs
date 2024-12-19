@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Upload
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadata;
-            _enableCompression = false;
+            _enableCompression = enableCompression;
             discoveryService.SubscribeToChanges(c => Endpoint = c.SymbolDbEndpoint);
         }
 

@@ -124,7 +124,8 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
-            SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(false);
+            // Force it to false to disable SymDB compression, will be re-enabled in the next PR
+            SymbolDatabaseCompressionEnabled = false;
         }
 
         public bool Enabled { get; }
