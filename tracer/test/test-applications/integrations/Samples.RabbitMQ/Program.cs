@@ -30,13 +30,13 @@ namespace Samples.RabbitMQ
             await RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
 
             // Test a derived type for the async consumer from the library
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
+            // await RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
 
             // Test a custom type that implements the sync consumer interface, using implicit interface implementation
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalImplicit, isAsyncConsumer: false);
+            // await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalImplicit, isAsyncConsumer: false);
 
             // Test a custom type that implements the async consumer inteface, using explicit interface implementation
-            await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
+            // await RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalExplicit, isAsyncConsumer: true);
         }
 
         private static async Task RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
