@@ -35,4 +35,9 @@ internal static class BrowserTags
     /// Is RUM active tag
     /// </summary>
     public const string IsRumActive = "test.is_rum_active";
+
+    /// <summary>
+    /// Test is modified
+    /// </summary>
+    public const string IsModified = "test.is_modified";
 }

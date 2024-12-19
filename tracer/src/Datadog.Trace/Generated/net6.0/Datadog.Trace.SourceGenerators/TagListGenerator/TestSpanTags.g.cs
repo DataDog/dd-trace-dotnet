@@ -50,6 +50,8 @@ namespace Datadog.Trace.Ci.Tagging
         private static ReadOnlySpan<byte> BrowserVersionBytes => new byte[] { 180, 116, 101, 115, 116, 46, 98, 114, 111, 119, 115, 101, 114, 46, 118, 101, 114, 115, 105, 111, 110 };
         // IsRumActiveBytes = MessagePack.Serialize("test.is_rum_active");
         private static ReadOnlySpan<byte> IsRumActiveBytes => new byte[] { 178, 116, 101, 115, 116, 46, 105, 115, 95, 114, 117, 109, 95, 97, 99, 116, 105, 118, 101 };
+        // IsModifiedBytes = MessagePack.Serialize("test.is_modified");
+        private static ReadOnlySpan<byte> IsModifiedBytes => new byte[] { 176, 116, 101, 115, 116, 46, 105, 115, 95, 109, 111, 100, 105, 102, 105, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -71,6 +73,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.browser.name" => BrowserName,
                 "test.browser.version" => BrowserVersion,
                 "test.is_rum_active" => IsRumActive,
+                "test.is_modified" => IsModified,
                 _ => base.GetTag(key),
             };
         }
@@ -126,6 +129,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.is_rum_active": 
                     IsRumActive = value;
+                    break;
+                case "test.is_modified": 
+                    IsModified = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -213,6 +219,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (IsRumActive is not null)
             {
                 processor.Process(new TagItem<string>("test.is_rum_active", IsRumActive, IsRumActiveBytes));
+            }
+
+            if (IsModified is not null)
+            {
+                processor.Process(new TagItem<string>("test.is_modified", IsModified, IsModifiedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -329,6 +340,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.is_rum_active (tag):")
                   .Append(IsRumActive)
+                  .Append(',');
+            }
+
+            if (IsModified is not null)
+            {
+                sb.Append("test.is_modified (tag):")
+                  .Append(IsModified)
                   .Append(',');
             }
 
