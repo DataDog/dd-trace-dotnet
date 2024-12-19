@@ -5,20 +5,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using VerifyXunit;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
@@ -33,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         protected string buildDir = string.Empty;
         protected string repo = string.Empty;
         protected string branch = string.Empty;
+
+        protected bool settingsDelivered = false;
 #pragma warning restore SA1401 // FieldsMustBePrivate
 
         public TestingFrameworkImpactedTests(string sampleAppName, ITestOutputHelper output)
@@ -41,8 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetCIEnvironmentValues();
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
-
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1"); // For debugging CI error
         }
 
         protected string GetSettingsJson(bool enabled = false)
@@ -98,6 +94,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             if (request.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
             {
                 request.Response = new MockTracerResponse(GetSettingsJson(true), 200);
+                settingsDelivered = true;
                 return;
             }
 
@@ -146,6 +143,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 Thread.Sleep(500);
             }
+
+            settingsDelivered.Should().BeTrue("Settings not delivered");
 
             // Sort and aggregate
             var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();

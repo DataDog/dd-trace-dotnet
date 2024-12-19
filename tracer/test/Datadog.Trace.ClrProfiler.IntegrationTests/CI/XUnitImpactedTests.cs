@@ -6,16 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -82,14 +77,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             InjectGitHubActionsSession();
             var tests = new List<MockCIVisibilityTest>();
-            bool configDelivered = false;
 
             Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = (request, receivedTests) =>
             {
                 if (request.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
                 {
                     request.Response = new MockTracerResponse(GetSettingsJson(false), 200);
-                    configDelivered = true;
+                    settingsDelivered = true;
                     return;
                 }
 
@@ -97,7 +91,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
 
             var res = SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"), agentRequestProcessor);
-            configDelivered.Should().BeTrue("Config was not delivered to the agent");
             return res;
         }
 

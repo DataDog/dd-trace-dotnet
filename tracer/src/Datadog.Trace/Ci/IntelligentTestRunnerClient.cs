@@ -1230,7 +1230,7 @@ internal class IntelligentTestRunnerClient
 
                 if (isSocketException)
                 {
-                    Log.Debug(sourceException, "Unable to communicate with the server");
+                    Log.Debug(sourceException, "ITR: Unable to communicate with the server");
                 }
 
                 if (sourceException is RateLimitException { DelayTimeInSeconds: { } delayTimeInSeconds })
@@ -1249,7 +1249,7 @@ internal class IntelligentTestRunnerClient
                 continue;
             }
 
-            Log.Debug("Request was completed successfully.");
+            Log.Debug("ITR: Request was completed successfully.");
             return response;
         }
     }
