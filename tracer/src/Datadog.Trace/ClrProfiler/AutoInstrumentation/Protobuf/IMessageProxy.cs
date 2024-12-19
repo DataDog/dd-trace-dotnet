@@ -15,6 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Protobuf;
 /// </summary>
 internal interface IMessageProxy : IDuckType
 {
+    [Duck(ExplicitInterfaceTypeName = "Google.Protobuf.IMessage")]
     IMessageDescriptorProxy Descriptor { get; }
 }
 
