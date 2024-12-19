@@ -9,7 +9,7 @@ namespace trace
 {
 int GeneratedDefinitions::InitCallTargets(UINT32 enabledCategories, UINT32 platform)
 {
-WCHAR* assemblyName = (WCHAR*)WStr("Datadog.Trace, Version=3.7.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+WCHAR* assemblyName = (WCHAR*)WStr("Datadog.Trace, Version=3.8.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 WCHAR* sig000[]={(WCHAR*)WStr("!!0"),(WCHAR*)WStr("StackExchange.Redis.Message"),(WCHAR*)WStr("StackExchange.Redis.ResultProcessor`1[!!0]"),(WCHAR*)WStr("StackExchange.Redis.ServerEndPoint"),};
 WCHAR* sig001[]={(WCHAR*)WStr("!!0"),(WCHAR*)WStr("StackExchange.Redis.Message"),(WCHAR*)WStr("StackExchange.Redis.ResultProcessor`1[!!0]"),(WCHAR*)WStr("StackExchange.Redis.ServerEndPoint"),(WCHAR*)WStr("!!0"),};
