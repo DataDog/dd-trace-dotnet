@@ -31,7 +31,7 @@ public class CreatedumpTests : ConsoleTestHelper
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
 #endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
-    private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled with DD_CRASHTRACKING_FILTERING_ENABLED";
+    private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
 
     public CreatedumpTests(ITestOutputHelper output)
         : base(output)
