@@ -47,6 +47,12 @@ namespace Datadog.Trace.Configuration
         {
         }
 
+        internal JsonConfigurationSource(string json, ConfigurationOrigins origin, string filename)
+            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+        {
+            ConfigurationSource = filename;
+        }
+
         private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
@@ -56,6 +62,8 @@ namespace Datadog.Trace.Configuration
             _configuration = deserialize(json);
             _origin = origin;
         }
+
+        internal string ConfigurationSource { get; set; } = "N/A because Jsonconfigsource.cs";
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
@@ -69,7 +77,18 @@ namespace Datadog.Trace.Configuration
         internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
         {
             var json = File.ReadAllText(filename);
-            return new JsonConfigurationSource(json, origin);
+            return new JsonConfigurationSource(json, origin, filename);
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that indicates the source of the datadog.json configuration.
+        /// </returns>
+        public override string ToString()
+        {
+            return "The datadog.json configuration is coming from " + ConfigurationSource;
         }
 
         /// <summary>
