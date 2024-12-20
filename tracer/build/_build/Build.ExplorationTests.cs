@@ -607,7 +607,7 @@ class ExplorationTestDescription
             {
                 Name = ExplorationTestName.protobuf,
                 GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
-                GitRepositoryTag = "v3.19.1",
+                GitRepositoryTag = "v3.23.0", // min version targeting net6.0 in tests
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
