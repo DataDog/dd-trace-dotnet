@@ -602,7 +602,7 @@ class ExplorationTestDescription
                 GitRepositoryTag = "netcore2.1",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 }
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
@@ -612,7 +612,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 TestsToIgnore = new string[]
                 {
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion",
