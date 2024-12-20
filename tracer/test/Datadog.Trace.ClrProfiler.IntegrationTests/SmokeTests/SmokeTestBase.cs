@@ -138,8 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
 #if !NET5_0_OR_GREATER
             if (result.StandardOutput.Contains("App completed successfully")
-                && (Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)")
-                || Regex.IsMatch(result.StandardError, @"ptrace\(ATTACH, \d+\) FAILED Operation not permitted")))
+                && Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)"))
             {
                 // The above message is the last thing set before we exit.
                 // We can still get flake on shutdown (which we can't isolate), but for some reason
