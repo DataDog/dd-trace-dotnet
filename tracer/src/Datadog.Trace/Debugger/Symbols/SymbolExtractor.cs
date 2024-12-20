@@ -683,44 +683,48 @@ namespace Datadog.Trace.Debugger.Symbols
                 return [new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) }];
             }
 
-            var argsSymbol = CreateArgSymbolArray(method, parameters);
+            var argsSymbol = method.IsStaticMethod() ? new Symbol[parameters.Count] : new Symbol[parameters.Count + 1]; // 'this'
             int index = 0;
             var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
-            var paramTypesMatchArgSymbols = methodSig.ParameterTypes.Length == argsSymbol.Length || methodSig.ParameterTypes.Length == argsSymbol.Length - 1;
+            var typesIndex = 0;
+            if (!method.IsStaticMethod())
+            {
+                var thisSymbol = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
+                argsSymbol[0] = thisSymbol;
+                index++;
+            }
+
             foreach (var parameterHandle in parameters)
             {
-                var parameterDef = MetadataReader.GetParameter(parameterHandle);
-                if (index == 0 && !method.IsStaticMethod())
+                if (parameterHandle.IsNil)
                 {
-                    argsSymbol[index] = new Symbol { Name = "this", SymbolType = SymbolType.Arg, Line = UnknownFieldAndArgLine, Type = method.GetDeclaringType().FullName(MetadataReader) };
-                    index++;
+                    continue;
+                }
 
-                    if (parameterDef.IsHiddenThis())
-                    {
-                        continue;
-                    }
+                var parameterDef = MetadataReader.GetParameter(parameterHandle);
+                var parameterName = MetadataReader.GetString(parameterDef.Name);
+                if (string.IsNullOrEmpty(parameterName))
+                {
+                    continue;
+                }
+
+                if (parameterDef.IsHiddenThis())
+                {
+                    continue;
                 }
 
                 argsSymbol[index] = new Symbol
                 {
-                    Name = MetadataReader.GetString(parameterDef.Name),
+                    Name = parameterName,
                     SymbolType = SymbolType.Arg,
                     Line = UnknownFieldAndArgLine,
-                    Type = paramTypesMatchArgSymbols ? methodSig.ParameterTypes[parameterDef.IsHiddenThis() ? index : index - 1] : "Unknown"
+                    Type = typesIndex < methodSig.ParameterTypes.Length ? methodSig.ParameterTypes[typesIndex] : "Unknown"
                 };
                 index++;
+                typesIndex++;
             }
 
             return argsSymbol;
-        }
-
-        private Symbol[] CreateArgSymbolArray(MethodDefinition method, ParameterHandleCollection parameters)
-        {
-            // ReSharper disable once NotDisposedResource
-            return method.IsStaticMethod() ?
-                       new Symbol[parameters.Count] :
-                       MetadataReader.GetParameter(parameters.GetEnumerator().Current).IsHiddenThis() ?
-                           new Symbol[parameters.Count] : new Symbol[parameters.Count + 1];
         }
 
         private string[]? GetClassBaseClassNames(TypeDefinition type)
