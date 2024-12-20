@@ -55,6 +55,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         /// <returns>Async operation</returns>
         protected async Task CheckForSmoke(bool shouldDeserializeTraces = true, int expectedExitCode = 0)
         {
+            // named pipes is notoriously flaky
+            var attemptsRemaining = 2;
+            while (attemptsRemaining > 0)
+            {
+                if (await RunCheck(shouldDeserializeTraces, expectedExitCode, attemptsRemaining > 1))
+                {
+                    // all good
+                    return;
+                }
+
+                await ErrorHelpers.SendMetric(Output, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
+            }
+
+            throw new Exception("Unreachable, should throw in RunCheck or return true");
+        }
+
+        private async Task<bool> RunCheck(bool shouldDeserializeTraces, int expectedExitCode, bool allowRetry)
+        {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
             Output.WriteLine($"Application path: {applicationPath}");
             var executable = EnvironmentHelper.GetSampleExecutionSource();
@@ -106,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         if (AssumeSuccessOnTimeout)
                         {
                             Assert.True(true, "No smoke is a good sign for this case, even on timeout.");
-                            return;
+                            return true;
                         }
                         else
                         {
@@ -136,9 +154,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
 
+            // TODO: Investigate and fix this!
+            if (allowRetry && Regex.IsMatch(result.StandardError, @"ptrace\(ATTACH, \d+\) FAILED Operation not permitted"))
+            {
+                // We have a "known" issue with getting errors like 'ptrace(ATTACH, 1234) FAILED Operation not permitted'
+                // It causes flake, happens during shutdown, but affects all runtimes.
+                // We don't have a good story for it now, so do a single retry...
+                Output.WriteLine($"Received 'ptrace(ATTACH, *) FAILED Operation not permitted' in standard error. Retrying once.");
+                return false;
+            }
 #if !NET5_0_OR_GREATER
             if (result.StandardOutput.Contains("App completed successfully")
-                && Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)"))
+             && Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)"))
             {
                 // The above message is the last thing set before we exit.
                 // We can still get flake on shutdown (which we can't isolate), but for some reason
@@ -153,6 +180,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             {
                 Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");
             }
+
+            return true;
         }
     }
 }
