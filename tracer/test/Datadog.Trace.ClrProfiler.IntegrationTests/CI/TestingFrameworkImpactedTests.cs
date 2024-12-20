@@ -39,6 +39,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetCIEnvironmentValues();
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         }
 
         protected string GetSettingsJson(bool enabled = false)

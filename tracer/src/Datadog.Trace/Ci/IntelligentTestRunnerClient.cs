@@ -1256,35 +1256,49 @@ internal class IntelligentTestRunnerClient
 
     private async Task<string> GetRepositoryUrlAsync()
     {
+        Log.Debug("ITR: GetRepositoryUrlAsync() <");
+
         if (CIEnvironmentValues.Instance.Repository is { Length: > 0 } repository)
         {
+            Log.Debug("ITR: GetRepositoryUrlAsync() < {Repo}", repository);
             return repository;
         }
 
         var gitOutput = await GitCommandHelper.RunGitCommandAsync(_workingDirectory, "config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository).ConfigureAwait(false);
-        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        var res = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        Log.Debug("ITR: GetRepositoryUrlAsync() < {Repo}", res);
+        return res;
     }
 
     private async Task<string> GetBranchNameAsync()
     {
+        Log.Debug("ITR: GetBranchNameAsync() <");
+
         if (CIEnvironmentValues.Instance.Branch is { Length: > 0 } branch)
         {
+            Log.Debug("ITR: GetBranchNameAsync() < {Branch}", branch);
             return branch;
         }
 
         var gitOutput = await GitCommandHelper.RunGitCommandAsync(_workingDirectory, "branch --show-current", MetricTags.CIVisibilityCommands.GetBranch).ConfigureAwait(false);
-        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        var res = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+        Log.Debug("ITR: GetBranchNameAsync() < {Branch}", res);
+        return res;
     }
 
     private async Task<string> GetCommitShaAsync()
     {
+        Log.Debug("ITR: GetCommitShaAsync() <");
+
         var gitOutput = await GitCommandHelper.RunGitCommandAsync(_workingDirectory, "rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
         var gitSha = gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
         if (string.IsNullOrEmpty(gitSha) && CIEnvironmentValues.Instance.Commit is { Length: > 0 } commitSha)
         {
+            Log.Debug("ITR: GetCommitShaAsync() < {Sha}", commitSha);
             return commitSha;
         }
 
+        Log.Debug("ITR: GetCommitShaAsync() < {Sha}", gitSha);
         return gitSha;
     }
 

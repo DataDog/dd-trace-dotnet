@@ -35,6 +35,8 @@ internal static class GitCommandHelper
         TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
         try
         {
+            Log.Debug("ITR: RunGitCommandAsync() < {Arguments}", arguments);
+
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var gitOutput = await ProcessHelpers.RunCommandAsync(
                                 new ProcessHelpers.Command(
@@ -57,6 +59,7 @@ internal static class GitCommandHelper
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
             }
 
+            Log.Debug("ITR: RunGitCommandAsync() > {Output}", gitOutput);
             return gitOutput;
         }
         catch (System.ComponentModel.Win32Exception ex)
