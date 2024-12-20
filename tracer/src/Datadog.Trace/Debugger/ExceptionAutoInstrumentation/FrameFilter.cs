@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -64,7 +65,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return true;
             }
 
-            return AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly, LiveDebugger.Instance.Settings.ThirdPartyDetectionExcludes, LiveDebugger.Instance.Settings.ThirdPartyDetectionIncludes);
+            return AssemblyFilter.ShouldSkipAssembly(method.Module.Assembly, ImmutableHashSet<string>.Empty, ImmutableHashSet<string>.Empty);
         }
 
         internal static bool ShouldSkipNamespaceIfOnTopOfStack(MethodBase method)
