@@ -599,7 +599,6 @@ class ExplorationTestDescription
             {
                 Name = ExplorationTestName.eShopOnWeb,
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "netcore2.1",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 }
