@@ -1072,7 +1072,7 @@ namespace Datadog.Trace.Configuration
 
         internal ImmutableDynamicSettings DynamicSettings { get; init; } = new();
 
-        internal string JsonConfigurationSource { get; set; } = "N/A";
+        internal string JsonConfigurationSource { get; set; } = "N/A from default";
 
         /// <summary>
         /// Gets a value indicating whether remote configuration is potentially available.

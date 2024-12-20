@@ -63,7 +63,7 @@ namespace Datadog.Trace.Configuration
             _origin = origin;
         }
 
-        public string ConfigurationSource { get; set; } = "N/A because Jsonconfigsource.cs";
+        internal string ConfigurationSource { get; set; } = "N/A because Jsonconfigsource.cs";
 
         internal bool TreatNullDictionaryAsEmpty { get; set; } = true;
 
