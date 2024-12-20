@@ -602,7 +602,7 @@ class ExplorationTestDescription
                 GitRepositoryTag = "main",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 }
+                SupportedFrameworks = new[] { TargetFramework.NET8_0 }
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
