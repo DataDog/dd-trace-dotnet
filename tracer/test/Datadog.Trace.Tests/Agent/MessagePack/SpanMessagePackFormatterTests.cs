@@ -135,11 +135,11 @@ public class SpanMessagePackFormatterTests
             new Span(new SpanContext(parentContext, new TraceContext(Mock.Of<IDatadogTracer>()), "ServiceName1"), DateTimeOffset.UtcNow),
             new Span(new SpanContext(new TraceId(0, 5), 6, (int)SamplingPriority.UserKeep, "ServiceName3", "origin3"), DateTimeOffset.UtcNow),
         };
-        var attributesToAdd = new List<KeyValuePair<string, object>>
+        var attributesToAdd = new Dictionary<string, object>()
         {
-            new("link.name", "manually_linking"),
-            new("pair", "false"),
-            new("arbitrary", "56709")
+            { "link.name", "manually_linking" },
+            { "pair", "false" },
+            { "arbitrary", "56709" },
         };
         spans[0].AddLink(new SpanLink(spans[1].Context, attributesToAdd));
 
@@ -199,7 +199,7 @@ public class SpanMessagePackFormatterTests
                         actualSpanLink.TraceFlags.Should().Be(expectedTraceFlags);
                     }
 
-                    if (expectedSpanlink.Attributes is { Count: > 0 })
+                    if (expectedSpanlink.Attributes.Any())
                     {
                         actualSpanLink.Attributes.Should().BeEquivalentTo(expectedSpanlink.Attributes);
                     }

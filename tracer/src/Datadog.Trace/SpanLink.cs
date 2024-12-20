@@ -4,8 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
+using System.Linq;
 
 #nullable enable
 
@@ -17,8 +16,6 @@ namespace Datadog.Trace;
 /// </summary>
 internal class SpanLink
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanLink>();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SpanLink"/> class.
     /// A span link describes a tuple of trace id and span id
@@ -26,13 +23,13 @@ internal class SpanLink
     /// </summary>
     /// <param name="spanLinkContext">The context of the spanlink to extract attributes from</param>
     /// <param name="attributes">Optional dictionary of attributes to take for the spanlink.</param>
-    public SpanLink(SpanContext spanLinkContext, List<KeyValuePair<string, object>>? attributes = null)
+    public SpanLink(SpanContext spanLinkContext, IEnumerable<KeyValuePair<string, object>>? attributes = null)
     {
         Context = spanLinkContext;
-        Attributes = attributes;
+        Attributes = attributes ?? Enumerable.Empty<KeyValuePair<string, object>>();
     }
 
-    public List<KeyValuePair<string, object>>? Attributes { get; private set; }
+    public IEnumerable<KeyValuePair<string, object>> Attributes { get; private set; }
 
     public SpanContext Context { get; }
 }

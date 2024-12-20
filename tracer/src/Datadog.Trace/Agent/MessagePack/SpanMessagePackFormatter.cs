@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ExtensionMethods;
@@ -266,7 +267,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     len++;
                 }
 
-                var hasAttributes = spanLink.Attributes is { Count: > 0 };
+                var hasAttributes = spanLink.Attributes.Any();
                 if (hasAttributes)
                 {
                     len++;
@@ -286,11 +287,23 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (hasAttributes)
                 {
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _attributesBytes);
-                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
+                    int count = 0;
+
+                    // We don't know the final count yet, write a fixed-size header and note the offset
+                    var countOffset = offset;
+                    offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
                     foreach (var attribute in spanLink.Attributes)
                     {
-                        offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
-                        offset += WriteOpenTelemetryAttributeAsString(ref bytes, offset, attribute.Value);
+                        if (TryWriteOpenTelemetryAttribute(ref bytes, ref offset, attribute.Key, attribute.Value))
+                        {
+                            count++;
+                        }
+                    }
+
+                    if (count > 0)
+                    {
+                        // Back-patch the count. End of "meta" dictionary. Do not add any string tags after this line.
+                        MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, countOffset, (uint)count);
                     }
                 }
 
@@ -621,54 +634,82 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int WriteOpenTelemetryAttributeAsString(ref byte[] bytes, int offset, object value)
+        private bool TryWriteOpenTelemetryAttribute(ref byte[] bytes, ref int offset, string key, object value)
         {
             var formatter = System.Globalization.CultureInfo.InvariantCulture;
             switch (value)
             {
                 case char c:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(c, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(c, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case string s:
-                    return MessagePackBinary.WriteString(ref bytes, offset, s);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, s);
+                    return true;
                 case bool b:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case byte b:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(b, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case sbyte sb:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sb, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sb, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case short sh:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sh, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(sh, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case ushort us:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(us, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(us, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case int i:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(i, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(i, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case uint ui:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ui, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ui, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case long l:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(l, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(l, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case ulong ul:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ul, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(ul, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case float f:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(f, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(f, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case double d:
-                    return MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(d, System.Globalization.CultureInfo.InvariantCulture));
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, Convert.ToString(d, System.Globalization.CultureInfo.InvariantCulture));
+                    return true;
                 case Array array:
                     // No-op for now
-                    return offset;
+                    return false;
                 default:
                     try
                     {
                         var stringValue = Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
                         if (stringValue == null)
                         {
-                            return 0;
+                            return false;
                         }
 
-                        return MessagePackBinary.WriteString(ref bytes, offset, stringValue);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, key);
+                        offset += MessagePackBinary.WriteString(ref bytes, offset, stringValue);
+                        return true;
                     }
                     catch
                     {
-                        return 0;
+                        return false;
                     }
             }
         }
