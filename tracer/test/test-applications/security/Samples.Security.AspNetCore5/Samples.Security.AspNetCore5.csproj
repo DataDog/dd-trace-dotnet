@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
+    <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -45,7 +46,10 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
     <PackageReference Include="MongoDB.Driver" Version="2.8.0" />
     <PackageReference Include="Moq" Version="4.16.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.30" />
     <PackageReference Include="NHibernate" Version="5.5.0" />
+    <PackageReference Include="Npgsql" Version="7.0.4" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.6.1" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.5" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />

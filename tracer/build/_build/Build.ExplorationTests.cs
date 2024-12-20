@@ -249,6 +249,7 @@ partial class Build
                 x =>
                 {
                     x = x
+                       .SetDotnetPath(TargetPlatform)
                        .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, targetFramework, BuildConfiguration))
                        .EnableNoRestore()
                        .EnableNoBuild()

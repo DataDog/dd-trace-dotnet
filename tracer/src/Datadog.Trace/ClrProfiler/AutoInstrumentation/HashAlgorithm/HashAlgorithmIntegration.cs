@@ -50,7 +50,7 @@ public class HashAlgorithmIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
     {
-        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
+        return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance, false));
     }
 
     /// <summary>

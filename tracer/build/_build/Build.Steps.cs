@@ -63,7 +63,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.21.0";
+    const string LibDdwafVersion = "1.22.0";
 
     string[] OlderLibDdwafVersions = { "1.3.0", "1.10.0", "1.14.0", "1.16.0" };
 
@@ -2592,6 +2592,8 @@ partial class Build
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*Error detecting and reconfiguring git repository for shallow clone. System.IO.FileLoadException.*", RegexOptions.Compiled),
+               // error thrown to check error handling in RC tests
+               new(@".*haha, you weren't expect this!*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
