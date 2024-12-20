@@ -582,10 +582,8 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            if (source is JsonConfigurationSource)
-            {
-                JsonConfigurationSource = source.ToString() ?? "N/A because Tracer Settings";
-            }
+            this.JsonConfigurationSource = source.ToString() ?? "N/A because Tracer Settings";
+
 
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
