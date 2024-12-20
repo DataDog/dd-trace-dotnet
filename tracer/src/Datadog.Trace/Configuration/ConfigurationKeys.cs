@@ -737,6 +737,17 @@ namespace Datadog.Trace.Configuration
             /// when an obfuscation mechanism will be implemented in the agent.
             /// </summary>
             internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for setting the header extraction propagation behavior. Accepted values are:
+            /// <ul>
+            ///   <li>continue: Extracted span context becomes the parent and baggage is propagated</li>
+            ///   <li>restart: Extracted span context becomes a span link (a new trace is started) and baggage is propagated</li>
+            ///   <li>ignore: We disregard the incoming trace context headers and we also disregard baggage</li>
+            /// </ul>
+            /// Default value is continue.
+            /// </summary>
+            public const string PropagationBehaviorExtract = "DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT";
         }
 
         internal static class Telemetry
