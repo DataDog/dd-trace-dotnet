@@ -65,9 +65,21 @@ public class BasicPublishAsyncIntegration
         return new CallTargetState(scope);
     }
 
+#if NETCOREAPP3_1_OR_GREATER
+    // We don't support ValueTask in < .NET Core 3.1, which means this doesn't work and is never called
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         state.Scope.DisposeWithException(exception);
         return returnValue;
     }
+#else
+    // If the method executes synchronously, then this works fine, but if it executes asynchronously we could miss the exception
+    // This is because the exception is thrown after the method returns, and we can't catch it here
+    // If/when we support handling ValueTask correctly in < .NET Core 3.1, we should remove this method
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        state.Scope.DisposeWithException(exception);
+        return new CallTargetReturn<TReturn?>(returnValue);
+    }
+#endif
 }
