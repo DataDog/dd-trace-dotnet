@@ -75,4 +75,16 @@ internal partial class MetricsTelemetryCollector
     public void RecordDistributionCIVisibilityEarlyFlakeDetectionResponseTests(double value)
     {
     }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionRequestMs(double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityResponseCompressed tag, double value)
+    {
+    }
+
+    public void RecordDistributionCIVisibilityImpactedTestsDetectionResponseFiles(double value)
+    {
+    }
 }

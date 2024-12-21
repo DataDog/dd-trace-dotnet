@@ -199,6 +199,8 @@ public sealed class Test
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
 
+            ImpactedTestsModule.Analyze(this);
+
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
             {
                 var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
