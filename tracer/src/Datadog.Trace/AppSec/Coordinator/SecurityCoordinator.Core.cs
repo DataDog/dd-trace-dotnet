@@ -26,9 +26,8 @@ internal readonly partial struct SecurityCoordinator
         _security = security;
         _localRootSpan = TryGetRoot(span);
         _httpTransport = transport;
+        Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
-
-    private static bool CanAccessHeaders => true;
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
@@ -59,27 +58,6 @@ internal readonly partial struct SecurityCoordinator
         value = cookie.Value;
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static void CollectHeaders(Span internalSpan)
-    {
-        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
-        {
-            CollectHeadersImpl(internalSpan);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        static void CollectHeadersImpl(Span internalSpan)
-        {
-            var context = CoreHttpContextStore.Instance.Get();
-            internalSpan = TryGetRoot(internalSpan);
-            if (context is not null)
-            {
-                var headers = new HeadersCollectionAdapter(context.Request.Headers);
-                AddRequestHeaders(internalSpan, headers);
-            }
-        }
-    }
-
     internal void BlockAndReport(IResult? result)
     {
         if (result is not null)
@@ -89,7 +67,7 @@ internal readonly partial struct SecurityCoordinator
                 throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!);
             }
 
-            TryReport(result, result.ShouldBlock);
+            Reporter.TryReport(result, result.ShouldBlock);
         }
     }
 
@@ -97,7 +75,7 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            TryReport(result, result.ShouldBlock);
+            Reporter.TryReport(result, result.ShouldBlock);
 
             if (result.ShouldBlock)
             {

@@ -67,17 +67,18 @@ public static class EventTrackingSdk
             }
         }
 
-        if (internalSpan is not null)
-        {
-            FillUp(internalSpan);
-        }
+        FillUp(internalSpan);
     }
 
     private static void FillUp(Span span)
     {
-        span = span.Context.TraceContext?.RootSpan ?? span;
+        if (span is null)
+        {
+            return;
+        }
+
         Security.Instance.SetTraceSamplingPriority(span);
-        SecurityCoordinator.CollectHeaders(span);
+        SecurityReporter.SafeCollectHeaders(span, false);
     }
 
     /// <summary>
@@ -134,10 +135,7 @@ public static class EventTrackingSdk
             }
         }
 
-        if (spanInternal is not null)
-        {
-            FillUp(spanInternal);
-        }
+        FillUp(spanInternal);
     }
 
     /// <summary>

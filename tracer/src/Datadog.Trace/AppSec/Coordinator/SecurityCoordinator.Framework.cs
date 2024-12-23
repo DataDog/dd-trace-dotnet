@@ -27,32 +27,14 @@ internal readonly partial struct SecurityCoordinator
     private const string WebApiControllerHandlerTypeFullname = "System.Web.Http.WebHost.HttpControllerHandler";
     private static readonly Lazy<Action<IResult, HttpStatusCode, string>?> _throwHttpResponseRedirectException = new(CreateThrowHttpResponseExceptionDynMethForRedirect);
     private static readonly Lazy<Action<IResult, HttpStatusCode, string, string>?> _throwHttpResponseException = new(CreateThrowHttpResponseExceptionDynMeth);
-    private static readonly bool? UsingIntegratedPipeline;
-
-    static SecurityCoordinator()
-    {
-        if (UsingIntegratedPipeline == null)
-        {
-            try
-            {
-                UsingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-            }
-            catch (Exception ex)
-            {
-                UsingIntegratedPipeline = false;
-                Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-            }
-        }
-    }
 
     private SecurityCoordinator(Security security, Span span, HttpTransport transport)
     {
         _security = security;
         _localRootSpan = TryGetRoot(span);
         _httpTransport = transport;
+        Reporter = new SecurityReporter(span, transport, true);
     }
-
-    private bool CanAccessHeaders => UsingIntegratedPipeline is true or null;
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
     {
@@ -326,6 +308,7 @@ internal readonly partial struct SecurityCoordinator
     private Action<int?, bool> MakeReportingFunction(IResult result)
     {
         var securityCoordinator = this;
+        var secReporter = Reporter;
         return (status, blocked) =>
         {
             if (result.ShouldBlock)
@@ -333,7 +316,7 @@ internal readonly partial struct SecurityCoordinator
                 securityCoordinator._httpTransport.MarkBlocked();
             }
 
-            securityCoordinator.TryReport(result, blocked, status);
+            secReporter.TryReport(result, blocked, status);
         };
     }
 
@@ -371,7 +354,7 @@ internal readonly partial struct SecurityCoordinator
         httpResponse.Cookies.Clear();
 
         // cant clear headers, on some iis version we get a platform not supported exception
-        if (CanAccessHeaders)
+        if (Reporter.CanAccessHeaders)
         {
             var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
             foreach (var key in keys)
@@ -437,12 +420,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 7)
-        {
-            { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
-        };
+        var dict = new Dictionary<string, object>(capacity: 7) { { AddressesConstants.RequestMethod, request.HttpMethod }, { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
 
         var url = RequestDataHelper.GetUrl(request);
         if (url is not null)
@@ -511,18 +489,7 @@ internal readonly partial struct SecurityCoordinator
         return headersDic;
     }
 
-    internal static void CollectHeaders(Span internalSpan)
-    {
-        var context = HttpContext.Current;
-
-        if (context != null)
-        {
-            var headers = new NameValueHeadersCollection(context.Request.Headers);
-            AddRequestHeaders(internalSpan, headers);
-        }
-    }
-
-    internal class HttpTransport : HttpTransportBase
+    internal class HttpTransport(HttpContext context) : HttpTransportBase
     {
         private const string WafKey = "waf";
 
@@ -530,16 +497,11 @@ internal readonly partial struct SecurityCoordinator
 
         private static bool _canReadHttpResponseHeaders = true;
 
-        public HttpTransport(HttpContext context)
-        {
-            Context = context;
-        }
-
         internal override bool IsBlocked => Context.Items[BlockingAction.BlockDefaultActionName] is true;
 
         internal override int StatusCode => Context.Response.StatusCode;
 
-        public override HttpContext Context { get; }
+        public override HttpContext Context { get; } = context;
 
         internal override IDictionary<string, object>? RouteData => Context.Request.RequestContext.RouteData?.Values;
 

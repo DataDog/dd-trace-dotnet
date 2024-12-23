@@ -7,13 +7,11 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #else
@@ -36,32 +34,9 @@ internal readonly partial struct SecurityCoordinator
 
     public bool IsBlocked => _httpTransport.IsBlocked;
 
-    public void MarkBlocked() => _httpTransport.MarkBlocked();
+    public SecurityReporter Reporter { get; }
 
-    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
-    {
-        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
-        {
-            foreach (var result in results)
-            {
-                if (result is Dictionary<string, object?> match)
-                {
-                    if (blocked)
-                    {
-                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
-                    }
-                    else
-                    {
-                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
-                    }
-                }
-                else
-                {
-                    Log.Debug("{Result} not of expected type", result);
-                }
-            }
-        }
-    }
+    public void MarkBlocked() => _httpTransport.MarkBlocked();
 
     public IResult? Scan(bool lastTime = false)
     {
@@ -73,7 +48,7 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false)
     {
-        LogAddressIfDebugEnabled(args);
+        SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
         try
         {
@@ -108,7 +83,7 @@ internal readonly partial struct SecurityCoordinator
                     result = additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
                 }
 
-                RecordTelemetry(result);
+                SecurityReporter.RecordTelemetry(result);
             }
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -130,46 +105,13 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    private static void RecordTelemetry(IResult? result)
-    {
-        if (result == null)
-        {
-            return;
-        }
-
-        if (result.Timeout)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
-        }
-        else if (result.ShouldBlock)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
-        }
-        else if (result.ShouldReportSecurityResult)
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
-        }
-        else
-        {
-            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
-        }
-    }
-
-    public void AddResponseHeadersToSpanAndCleanup()
-    {
-        if (_localRootSpan.IsAppsecEvent())
-        {
-            AddResponseHeaderTags(CanAccessHeaders);
-        }
-
-        _httpTransport.DisposeAdditiveContext();
-    }
+    internal static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
 
     internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
     {
         var cookies = RequestDataHelper.GetCookies(request);
 
-        if (cookies is not null && cookies.Count is > 0)
+        if (cookies is { Count: > 0 })
         {
             var cookiesCount = cookies.Count;
             var cookiesDic = new Dictionary<string, object>(cookiesCount);
@@ -234,6 +176,4 @@ internal readonly partial struct SecurityCoordinator
 
         return headersDic;
     }
-
-    private static Span TryGetRoot(Span span) => span.Context.TraceContext?.RootSpan ?? span;
 }
