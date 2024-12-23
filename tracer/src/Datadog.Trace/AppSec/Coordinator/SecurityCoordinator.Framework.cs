@@ -270,7 +270,7 @@ internal readonly partial struct SecurityCoordinator
         var result = RunWaf(args, lastWafCall);
         if (result is not null)
         {
-            var reporting = MakeReportingFunction(result);
+            var reporting = Reporter.MakeReportingFunction(result);
 
             if (result.ShouldBlock)
             {
@@ -286,7 +286,7 @@ internal readonly partial struct SecurityCoordinator
     {
         if (result is not null)
         {
-            var reporting = MakeReportingFunction(result);
+            var reporting = Reporter.MakeReportingFunction(result);
             reporting(null, result.ShouldBlock);
 
             if (result.ShouldBlock)
@@ -303,21 +303,6 @@ internal readonly partial struct SecurityCoordinator
                 }
             }
         }
-    }
-
-    private Action<int?, bool> MakeReportingFunction(IResult result)
-    {
-        var securityCoordinator = this;
-        var secReporter = Reporter;
-        return (status, blocked) =>
-        {
-            if (result.ShouldBlock)
-            {
-                securityCoordinator._httpTransport.MarkBlocked();
-            }
-
-            secReporter.TryReport(result, blocked, status);
-        };
     }
 
     private void ChooseBlockingMethodAndBlock(IResult result, Action<int?, bool> reporting, Dictionary<string, object?>? blockInfo, Dictionary<string, object?>? redirectInfo)

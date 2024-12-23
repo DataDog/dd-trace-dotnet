@@ -8,6 +8,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Web;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -52,6 +53,20 @@ internal partial class SecurityReporter
             var headers = new NameValueHeadersCollection(context.Request.Headers);
             securityReporter.AddRequestHeaders(headers);
         }
+    }
+
+    internal Action<int?, bool> MakeReportingFunction(IResult result)
+    {
+        var httpTransport = _httpTransport;
+        return (status, blocked) =>
+        {
+            if (result.ShouldBlock)
+            {
+                httpTransport.MarkBlocked();
+            }
+
+            TryReport(result, blocked, status);
+        };
     }
 }
 #endif
