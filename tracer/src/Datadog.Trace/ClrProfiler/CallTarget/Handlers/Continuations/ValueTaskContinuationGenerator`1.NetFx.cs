@@ -6,6 +6,7 @@
 
 #if !NETCOREAPP3_1_OR_GREATER
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -89,28 +90,36 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
             return ValueTaskActivator<TReturn, TResult?>.CreateInstance(secondTask);
         }
 
-        private async Task<TResult?> ContinuationAction(Task<TResult?> previousValueTask, TTarget? target, CallTargetState state)
+        private async Task<TResult?> ContinuationAction(Task<TResult?> previousTask, TTarget? target, CallTargetState state)
         {
-            TResult? result = default;
-            try
+            if (!previousTask.IsCompleted)
             {
-                result = await previousValueTask.ConfigureAwait(_preserveContext);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
-            catch (Exception ex)
+
+            TResult? taskResult = default;
+            Exception? exception = null;
+            TResult? continuationResult = default;
+
+            if (previousTask.Status == TaskStatus.RanToCompletion)
+            {
+                taskResult = previousTask.Result;
+            }
+            else if (previousTask.Status == TaskStatus.Faulted)
+            {
+                exception = previousTask.Exception?.GetBaseException();
+            }
+            else if (previousTask.Status == TaskStatus.Canceled)
             {
                 try
                 {
-                    // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
-                    // *
-                    _continuation(target, result, ex, in state);
+                    // The only supported way to extract the cancellation exception is to await the task
+                    await previousTask.ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                    exception = ex;
                 }
-
-                throw;
             }
 
             try
@@ -118,14 +127,22 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                return _continuation(target, result, null, in state);
+                continuationResult = _continuation(target, taskResult, exception, in state);
             }
-            catch (Exception contEx)
+            catch (Exception ex)
             {
-                IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }
 
-            return result;
+            // *
+            // If the original task throws an exception we rethrow it here.
+            // *
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
+            return continuationResult;
         }
     }
 
@@ -166,48 +183,57 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn, TR
             return ValueTaskActivator<TReturn, TResult?>.CreateInstance(secondTask);
         }
 
-        private async Task<TResult?> ContinuationAction(Task<TResult?> previousValueTask, TTarget? target, CallTargetState state, Exception? exception)
+        private async Task<TResult?> ContinuationAction(Task<TResult?> previousTask, TTarget? target, CallTargetState state, Exception? exception)
         {
-            if (exception != null)
+            TResult? taskResult = default;
+            if (!previousTask.IsCompleted)
             {
-                return await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
 
-            TResult? result = default;
-            try
+            if (previousTask.Status == TaskStatus.RanToCompletion)
             {
-                result = await previousValueTask.ConfigureAwait(_preserveContext);
+                taskResult = previousTask.Result;
             }
-            catch (Exception ex)
+            else if (previousTask.Status == TaskStatus.Faulted)
+            {
+                exception ??= previousTask.Exception?.GetBaseException();
+            }
+            else if (previousTask.Status == TaskStatus.Canceled)
             {
                 try
                 {
-                    // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
-                    // *
-                    await _asyncContinuation(target, result, ex, in state).ConfigureAwait(_preserveContext);
+                    // The only supported way to extract the cancellation exception is to await the task
+                    await previousTask.ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                    exception ??= ex;
                 }
-
-                throw;
             }
 
+            TResult? continuationResult = default;
             try
             {
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                return await _asyncContinuation(target, result, null, in state).ConfigureAwait(_preserveContext);
+                continuationResult = await _asyncContinuation(target, taskResult, exception, in state).ConfigureAwait(_preserveContext);
             }
-            catch (Exception contEx)
+            catch (Exception ex)
             {
-                IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
             }
 
-            return result;
+            // *
+            // If the original task throws an exception we rethrow it here.
+            // *
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
+            return continuationResult;
         }
     }
 
