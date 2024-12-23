@@ -5,20 +5,8 @@
 
 #nullable enable
 #if !NETFRAMEWORK
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using System.IO.Compression;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.AppSec.AttackerFingerprint;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 

@@ -9,13 +9,10 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #else
-using System.Collections.Specialized;
 using System.Web;
 #endif
 
