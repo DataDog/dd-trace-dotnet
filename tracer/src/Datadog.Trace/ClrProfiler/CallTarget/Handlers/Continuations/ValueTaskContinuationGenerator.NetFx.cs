@@ -6,6 +6,7 @@
 
 #if !NETCOREAPP3_1_OR_GREATER
 using System;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -86,27 +87,30 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : 
             return ValueTaskActivator<TReturn>.CreateInstance(secondTask);
         }
 
-        private async Task ContinuationAction(Task previousValueTask, TTarget? target, CallTargetState state)
+        private async Task ContinuationAction(Task previousTask, TTarget? target, CallTargetState state)
         {
-            try
+            if (!previousTask.IsCompleted)
             {
-                await previousValueTask.ConfigureAwait(_preserveContext);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
-            catch (Exception ex)
+
+            Exception? exception = null;
+
+            if (previousTask.Status == TaskStatus.Faulted)
+            {
+                exception = previousTask.Exception?.GetBaseException();
+            }
+            else if (previousTask.Status == TaskStatus.Canceled)
             {
                 try
                 {
-                    // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
-                    // *
-                    _continuation(target, default, ex, in state);
+                    // The only supported way to extract the cancellation exception is to await the task
+                    await previousTask.ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                    exception = ex;
                 }
-
-                throw;
             }
 
             try
@@ -114,11 +118,19 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : 
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                _continuation(target, default, default, in state);
+                _continuation(target, null, exception, in state);
             }
-            catch (Exception contEx)
+            catch (Exception ex)
             {
-                IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+            }
+
+            // *
+            // If the original task throws an exception we rethrow it here.
+            // *
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
             }
         }
     }
@@ -160,32 +172,28 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : 
             return ValueTaskActivator<TReturn>.CreateInstance(secondTask);
         }
 
-        private async Task ContinuationAction(Task previousValueTask, TTarget? target, CallTargetState state, Exception? exception)
+        private async Task ContinuationAction(Task previousTask, TTarget? target, CallTargetState state, Exception? exception)
         {
-            if (exception != null)
+            if (!previousTask.IsCompleted)
             {
-                await _asyncContinuation(target, default, exception, in state).ConfigureAwait(_preserveContext);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
 
-            try
+            if (previousTask.Status == TaskStatus.Faulted)
             {
-                await previousValueTask.ConfigureAwait(_preserveContext);
+                exception ??= previousTask.Exception?.GetBaseException();
             }
-            catch (Exception ex)
+            else if (previousTask.Status == TaskStatus.Canceled)
             {
                 try
                 {
-                    // *
-                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
-                    // *
-                    await _asyncContinuation(target, default, ex, in state).ConfigureAwait(_preserveContext);
+                    // The only supported way to extract the cancellation exception is to await the task
+                    await previousTask.ConfigureAwait(_preserveContext);
                 }
-                catch (Exception contEx)
+                catch (Exception ex)
                 {
-                    IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                    exception ??= ex;
                 }
-
-                throw;
             }
 
             try
@@ -193,11 +201,19 @@ internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : 
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                await _asyncContinuation(target, default, default, in state).ConfigureAwait(_preserveContext);
+                await _asyncContinuation(target, null, exception, in state).ConfigureAwait(_preserveContext);
             }
-            catch (Exception contEx)
+            catch (Exception ex)
             {
-                IntegrationOptions<TIntegration, TTarget>.LogException(contEx);
+                IntegrationOptions<TIntegration, TTarget>.LogException(ex);
+            }
+
+            // *
+            // If the original task throws an exception we rethrow it here.
+            // *
+            if (exception != null)
+            {
+                ExceptionDispatchInfo.Capture(exception).Throw();
             }
         }
     }
