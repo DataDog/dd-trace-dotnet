@@ -5,7 +5,16 @@
   -->
 
   <PropertyGroup>
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.1) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet from complaining about vulnerable packages -->
+    <NuGetAudit>false</NuGetAudit>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+
     <!-- Stop complaining about obsolete/vulnerable packages, we know they are -->
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../../../artifacts</ArtifactsPath>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
   </PropertyGroup>
 </Project>
