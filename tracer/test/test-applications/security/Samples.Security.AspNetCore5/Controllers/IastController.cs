@@ -33,7 +33,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
 using MySql.Data.MySqlClient;
 using Npgsql;
 using Oracle.ManagedDataAccess.Client;
@@ -81,7 +81,7 @@ namespace Samples.Security.AspNetCore5.Controllers
         private static SqliteConnection _dbConnectionSystemDataMicrosoftData = null;
         private static SqlConnection _dbConnectionSystemDataSqlClient = null;
         private static IMongoDatabase _mongoDb = null;
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
         private static NpgsqlConnection _dbConnectionNpgsql = null;
         private static MySqlConnection _dbConnectionMySql = null;
         private static OracleConnection _dbConnectionOracle = null;
@@ -112,7 +112,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             get { return _dbConnectionSystemDataSqlClient ??= IastControllerHelper.CreateSqlServerDatabase(); }
         }
 
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
         private static NpgsqlConnection DbConnectionNpgsql
         {
             get { return _dbConnectionNpgsql ??= IastControllerHelper.CreatePostgresDatabase(); }
@@ -171,7 +171,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteScalar(),
                     SqliteConnection sqliteConnection => new SqliteCommand(taintedQuery, sqliteConnection).ExecuteScalar(),
                     SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteScalar(),
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
                     NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteScalar(),
                     MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteScalar(),
                     OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteScalar(),
@@ -196,7 +196,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                     "System.Data.SQLite" => DbConnectionSystemData,
                     "System.Data.SqlClient" => DbConnectionSystemDataSqlClient,
                     "Microsoft.Data.Sqlite" => DbConnectionMicrosoftData,
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
                     "Npgsql" => DbConnectionNpgsql,
                     "MySql.Data" => DbConnectionMySql,
                     "Oracle" => DbConnectionOracle,
@@ -216,7 +216,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 SQLiteConnection connection => new SQLiteCommand(taintedQuery, connection).ExecuteReader(),
                 SqliteConnection connection => new SqliteCommand(taintedQuery, connection).ExecuteReader(),
                 SqlConnection connection => new SqlCommand(taintedQuery, connection).ExecuteReader(),
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
                 NpgsqlConnection connection => new NpgsqlCommand(taintedQuery, connection).ExecuteReader(),
                 MySqlConnection connection => new MySqlCommand(taintedQuery, connection).ExecuteReader(),
                 OracleConnection connection => new OracleCommand(taintedQuery, connection).ExecuteReader(),

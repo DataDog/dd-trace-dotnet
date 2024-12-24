@@ -6,7 +6,7 @@ using System.Text;
 #if NETCOREAPP
 using Microsoft.Data.Sqlite;
 #endif
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
 using MySql.Data.MySqlClient;
 using Npgsql;
 using Oracle.ManagedDataAccess.Client;
@@ -58,7 +58,7 @@ namespace Samples.Security.Data
             "INSERT INTO Books (Id, Title, Price, ISBN, Pages, Author, Editorial, Prologue, Format) VALUES ('026decfd-bba3-4aa8-85d4-1c71ffcfe8e9', 'CLR via C#', CAST(50.00 AS Decimal(18, 2)), '0735669954', 894, ' Jeffrey Richter', 'Microsoft Press', 'bla bla bla', 0)"
         ];
 
-#if NET5_0_OR_GREATER
+#if NETCOREAPP3_0_OR_GREATER
         public static OracleConnection CreateOracleDatabase()
         {
             var host = Environment.GetEnvironmentVariable("ORACLE_HOST") ?? "localhost";
