@@ -33,7 +33,7 @@ internal readonly partial struct SecurityCoordinator
         _security = security;
         _localRootSpan = TryGetRoot(span);
         _httpTransport = transport;
-        Reporter = new SecurityReporter(span, transport, true);
+        Reporter = new SecurityReporter(_localRootSpan, transport, true);
     }
 
     internal static SecurityCoordinator? TryGet(Security security, Span span)
