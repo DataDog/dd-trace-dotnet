@@ -468,21 +468,14 @@ namespace Datadog.Trace.TestHelpers
                     EnvironmentTools.GetBuildConfiguration(),
                     "publish");
             }
-            else if (EnvironmentTools.GetOS() == "win" && !usePublishWithRID)
-            {
-                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
-            }
-            else if (usePublishWithRID)
-            {
-                return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
-            }
             else if (usePublishFolder)
             {
                 return Path.Combine(artifactsPublishDir, FullSampleName, GetPivot());
             }
             else
             {
-                return Path.Combine(artifactsBinDir, FullSampleName, GetPivot());
+                var basedir = usePublishWithRID ? artifactsPublishDir : artifactsBinDir;
+                return Path.Combine(basedir, FullSampleName, GetPivot());
             }
 
             string GetPivot()
