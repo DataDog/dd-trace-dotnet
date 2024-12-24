@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
 #pragma warning disable SA1401 // FieldsMustBePrivate
         protected const int ExpectedTestCount = 16;
-        protected const string GitHubSha = "f8c18a2ed1f91447fc3da6adc655f4a7a91bf99c";
-        protected const string GitHubBaseSha = "56bef05720c791ba6246a95c36bd0ae80a3d3441";
+        protected const string GitHubSha = "c7fd869e31de6b621750c7542822c5001d06e421";
+        protected const string GitHubBaseSha = "340fa40ce6b5c6c8c45b6a07cfa90e84718f1ab6";
         protected string buildDir = string.Empty;
         protected string repo = string.Empty;
         protected string branch = string.Empty;
