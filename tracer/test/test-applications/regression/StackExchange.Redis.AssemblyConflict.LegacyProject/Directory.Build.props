@@ -3,13 +3,4 @@
   This file intentionally left blank...
   to stop msbuild from looking up the folder hierarchy
   -->
-
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-
-    <!-- Control build output locations -->
-    <!-- ArtifactsPath and UseArtifactsOutput appear to be ignored by  -->
-    <ArtifactsPath>$(MSBuildThisFileDirectory)../../../../../artifacts</ArtifactsPath>
-    <UseArtifactsOutput>true</UseArtifactsOutput>
-  </PropertyGroup>
 </Project>
