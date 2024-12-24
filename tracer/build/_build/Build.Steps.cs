@@ -1647,6 +1647,7 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileSamplesWindows)
+        .After(CompileTrimmingSamples)
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .DependsOn(CleanTestLogs)
@@ -2174,6 +2175,7 @@ partial class Build
 
     Target RunLinuxIntegrationTests => _ => _
         .After(CompileLinuxOrOsxIntegrationTests)
+        .After(CompileTrimmingSamples)
         .DependsOn(CleanTestLogs)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
