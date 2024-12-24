@@ -6,13 +6,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 
 #if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
@@ -68,15 +67,16 @@ public static class UserManagerCreateIntegration
         var user = state.State as IIdentityUser;
         if (security.IsTrackUserEventsEnabled && state.Scope is { Span: { } span })
         {
-            var userId = UserEventsCommon.GetId(user);
-            var userLogin = UserEventsCommon.GetLogin(user);
-            var foundUserId = !string.IsNullOrEmpty(userId);
-            var foundLogin = !string.IsNullOrEmpty(userLogin);
-            UserEventsCommon.RecordMetricsSignupIfNotFound(foundUserId, foundLogin);
             if (returnValue.Succeeded)
             {
+                var userId = UserEventsCommon.GetId(user);
+                var userLogin = UserEventsCommon.GetLogin(user);
+                var foundUserId = !string.IsNullOrEmpty(userId);
+                var foundLogin = !string.IsNullOrEmpty(userLogin);
+                UserEventsCommon.RecordMetricsSignupIfNotFound(foundUserId, foundLogin);
                 Func<string, string>? processPii = null;
                 string successAutoMode;
+
                 if (security.IsAnonUserTrackingMode)
                 {
                     processPii = UserEventsCommon.Anonymize;
@@ -87,6 +87,9 @@ public static class UserManagerCreateIntegration
                     successAutoMode = SecuritySettings.UserTrackingIdentMode;
                 }
 
+                string? processedUserId = null;
+                string? processedUserLogin = null;
+
                 var setTag = TaggingUtils.GetSpanSetter(span, out _);
                 var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
 
@@ -95,21 +98,30 @@ public static class UserManagerCreateIntegration
 
                 if (foundUserId)
                 {
-                    var processedUserId = processPii?.Invoke(userId!) ?? userId!;
+                    processedUserId = processPii?.Invoke(userId!) ?? userId!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.UserId, processedUserId);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalUserId, processedUserId);
                 }
 
                 if (foundLogin)
                 {
-                    var processedUserLogin = processPii?.Invoke(userLogin!) ?? userLogin!;
+                    processedUserLogin = processPii?.Invoke(userLogin!) ?? userLogin!;
                     tryAddTag(Tags.AppSec.EventsUsers.SignUpEvent.Login, processedUserLogin);
                     tryAddTag(Tags.AppSec.EventsUsers.InternalLogin, processedUserLogin);
                 }
-            }
 
-            security.SetTraceSamplingPriority(span);
-            SecurityReporter.SafeCollectHeaders(span);
+                security.SetTraceSamplingPriority(span);
+                var securityCoordinator = SecurityCoordinator.TryGet(security, span);
+                if (securityCoordinator.HasValue)
+                {
+                    securityCoordinator.Value.Reporter.CollectHeaders();
+                    var result = securityCoordinator.Value.RunWafForUser(
+                        userId: processedUserId,
+                        userLogin: processedUserLogin,
+                        otherTags: new Dictionary<string, string> { { AddressesConstants.UserBusinessSignup, string.Empty } });
+                    securityCoordinator.Value.BlockAndReport(result);
+                }
+            }
         }
 
         return returnValue;

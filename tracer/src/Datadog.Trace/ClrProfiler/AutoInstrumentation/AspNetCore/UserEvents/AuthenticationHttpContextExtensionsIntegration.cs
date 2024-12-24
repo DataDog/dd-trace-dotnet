@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 #if !NETFRAMEWORK
@@ -13,6 +14,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 {
@@ -54,71 +56,77 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                return new CallTargetState(scope, claimPrincipal);
+                return new CallTargetState(scope, (claimPrincipal, httpContext));
             }
 
             return CallTargetState.GetDefault();
         }
 
-        internal static object OnAsyncMethodEnd<TTarget>(object returnValue, Exception exception, in CallTargetState state)
+        internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
-            var claimsPrincipal = state.State as ClaimsPrincipal;
-            if (claimsPrincipal?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
+            if (state.State is Tuple<ClaimsPrincipal, HttpContext> stateTuple)
             {
-                var span = scope.Span;
-                var foundUserId = false;
-                var foundLogin = false;
-                Func<string, string>? processPii = null;
-                string successAutoMode;
-                if (security.IsAnonUserTrackingMode)
+                if (stateTuple.Item1?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
                 {
-                    processPii = UserEventsCommon.Anonymize;
-                    successAutoMode = SecuritySettings.UserTrackingAnonMode;
-                }
-                else
-                {
-                    successAutoMode = SecuritySettings.UserTrackingIdentMode;
-                }
-
-                var setTag = TaggingUtils.GetSpanSetter(span, out _);
-                var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                foreach (var claim in claimsPrincipal.Claims)
-                {
-                    if (string.IsNullOrEmpty(claim.Value))
+                    var span = scope.Span;
+                    string? userId = null;
+                    string? userLogin = null;
+                    Func<string, string>? processPii = null;
+                    string successAutoMode;
+                    if (security.IsAnonUserTrackingMode)
                     {
-                        continue;
+                        processPii = UserEventsCommon.Anonymize;
+                        successAutoMode = SecuritySettings.UserTrackingAnonMode;
+                    }
+                    else
+                    {
+                        successAutoMode = SecuritySettings.UserTrackingIdentMode;
                     }
 
-                    if (claim.Type is ClaimTypes.NameIdentifier && !foundUserId)
+                    var setTag = TaggingUtils.GetSpanSetter(span, out _);
+                    var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+                    foreach (var claim in stateTuple.Item1.Claims)
                     {
-                        foundUserId = true;
-                        var userId = processPii?.Invoke(claim.Value) ?? claim.Value;
-                        tryAddTag(Tags.User.Id, userId);
-                        setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
-                    }
-                    else if (LoginsClaimsToTest.Contains(claim.Type) && !foundLogin)
-                    {
-                        foundLogin = true;
-                        var login = processPii?.Invoke(claim.Value) ?? claim.Value;
-                        setTag(Tags.AppSec.EventsUsers.InternalLogin, login);
-                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, login);
+                        if (string.IsNullOrEmpty(claim.Value))
+                        {
+                            continue;
+                        }
+
+                        if (claim.Type is ClaimTypes.NameIdentifier && userId is null)
+                        {
+                            userId = processPii?.Invoke(claim.Value) ?? claim.Value;
+                            tryAddTag(Tags.User.Id, userId);
+                            setTag(Tags.AppSec.EventsUsers.InternalUserId, userId);
+                        }
+                        else if (LoginsClaimsToTest.Contains(claim.Type) && userLogin is null)
+                        {
+                            userLogin = processPii?.Invoke(claim.Value) ?? claim.Value;
+                            setTag(Tags.AppSec.EventsUsers.InternalLogin, userLogin);
+                            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessLogin, userLogin);
+                        }
+
+                        if (userId is not null && userLogin is not null)
+                        {
+                            break;
+                        }
                     }
 
-                    if (foundLogin && foundUserId)
+                    var loginAddressesForWaf = new Dictionary<string, string> { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } };
+                    var foundUserId = userId is not null;
+                    var foundLogin = userLogin is not null;
+                    if (userId is not null || userLogin is not null)
                     {
-                        break;
+                        security.SetTraceSamplingPriority(span);
+                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
                     }
+
+                    UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
+                    var secCoordinator = SecurityCoordinator.Get(security, span, stateTuple.Item2);
+                    secCoordinator.Reporter.CollectHeaders();
+                    var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: loginAddressesForWaf);
+                    secCoordinator.BlockAndReport(result);
                 }
-
-                if (foundUserId || foundLogin)
-                {
-                    security.SetTraceSamplingPriority(span);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
-                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
-                }
-
-                UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                SecurityReporter.SafeCollectHeaders(span);
             }
 
             return returnValue;

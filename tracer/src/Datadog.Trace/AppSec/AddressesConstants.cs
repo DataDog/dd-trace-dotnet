@@ -33,7 +33,13 @@ namespace Datadog.Trace.AppSec
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
 
         public const string UserId = "usr.id";
+        public const string UserLogin = "usr.login";
         public const string UserSessionId = "usr.session_id";
+        public const string UserBusinessPrefix = "server.business_logic.users.";
+        public const string UserBusinessLoginFailure = UserBusinessPrefix + "login.failure";
+        public const string UserBusinessLoginSuccess = UserBusinessPrefix + "login.success";
+        public const string UserBusinessSignup = UserBusinessPrefix + "signup";
+
         public const string WafContextProcessor = "waf.context.processor";
     }
 }

@@ -45,8 +45,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private readonly GetKnownAddressesDelegate _getKnownAddresses;
-        private string _version = null;
-        private bool _isKnownAddressesSuported = false;
+        private string _version;
+        private bool _isKnownAddressesSuported;
 
         private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {

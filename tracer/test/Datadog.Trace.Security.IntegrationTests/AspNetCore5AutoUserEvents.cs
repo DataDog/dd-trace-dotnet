@@ -7,9 +7,10 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,11 +41,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        public virtual string GetTestFileName(string testName)
-        {
-            return $"{_testName}-{testName}";
-        }
-
         public override void Dispose()
         {
             base.Dispose();
@@ -73,20 +69,27 @@ namespace Datadog.Trace.Security.IntegrationTests
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
         }
+
+        [SkippableFact]
+        protected async Task TestAuthenticatedRequest()
+        {
+            await TryStartApp();
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser&Input.Password=test", contentType: "application/x-www-form-urlencoded");
+            request.StatusCode.Should().Be(HttpStatusCode.OK);
+            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)));
+            // reset memory database (useless for net7 as it runs with EF7 on app.db
+            await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
+            await SendRequestsAsync(_fixture.Agent, "/account/logout");
+        }
+
+        private string GetTestFileName(string testName) => $"{_testName}-{testName}";
     }
 
     public class AspNetCore5AutoUserEventsDefaultModeSecurityEnabled : AspNetCore5AutoUserEvents
     {
         public AspNetCore5AutoUserEventsDefaultModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base(fixture, outputHelper, true)
-        {
-        }
-    }
-
-    public class AspNetCore5AutoUserEventsDefaultModeSecurityDisabled : AspNetCore5AutoUserEvents
-    {
-        public AspNetCore5AutoUserEventsDefaultModeSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, false)
         {
         }
     }

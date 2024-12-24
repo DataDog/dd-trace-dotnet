@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Samples.Security.AspNetCore5.Models;
@@ -10,13 +11,11 @@ public class AccountController : Controller
 {
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly IUserStore<IdentityUser> _userStore;
 
     public AccountController(SignInManager<IdentityUser> signInManager, UserManager<IdentityUser> userManager, IUserStore<IdentityUser> userStore)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-        _userStore = userStore;
     }
 
     [HttpGet]
@@ -28,6 +27,13 @@ public class AccountController : Controller
         }
 
         return View(new LoginModel { Input = new LoginModel.InputModel { UserName = "TestUser", Password = "test" } });
+    }
+    
+    [HttpGet]
+    [Authorize]
+    public IActionResult SomeAuthenticatedAction()
+    {
+       return Content("Authorized content");
     }
 
     [HttpPost]

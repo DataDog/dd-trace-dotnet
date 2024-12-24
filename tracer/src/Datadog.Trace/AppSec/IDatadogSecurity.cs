@@ -14,5 +14,7 @@ namespace Datadog.Trace.AppSec
     internal interface IDatadogSecurity
     {
         SecuritySettings Settings { get; }
+
+        bool AddressEnabled(string address);
     }
 }

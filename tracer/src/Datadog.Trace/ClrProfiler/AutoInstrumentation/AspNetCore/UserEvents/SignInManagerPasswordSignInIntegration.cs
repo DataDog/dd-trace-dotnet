@@ -4,17 +4,20 @@
 // </copyright>
 
 #nullable enable
+#if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Microsoft.AspNetCore.Http;
 
-#if !NETFRAMEWORK
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 
 /// <summary>
@@ -23,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [InstrumentMethod(
     AssemblyName = AssemblyName,
-    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
+    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
     MethodName = "PasswordSignInAsync",
     ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
@@ -33,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
     AssemblyName = AssemblyName,
-    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
+    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
     MethodName = "PasswordSignInAsync",
     ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
@@ -81,12 +84,12 @@ public static class SignInManagerPasswordSignInIntegration
 
             setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, Tags.AppSec.EventsUsers.True);
             tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, Tags.AppSec.EventsUsers.False);
-
+            var processedLogin = login;
             if (security.IsAnonUserTrackingMode)
             {
-                var loginAnon = UserEventsCommon.Anonymize(login);
-                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, loginAnon);
-                setTag(Tags.AppSec.EventsUsers.InternalLogin, loginAnon);
+                processedLogin = UserEventsCommon.Anonymize(login);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserLogin, processedLogin);
+                setTag(Tags.AppSec.EventsUsers.InternalLogin, processedLogin);
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingAnonMode);
             }
             else
@@ -96,8 +99,22 @@ public static class SignInManagerPasswordSignInIntegration
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, SecuritySettings.UserTrackingIdentMode);
             }
 
-            SecurityReporter.SafeCollectHeaders(span);
-            security.SetTraceSamplingPriority(span);
+            var duckCast = instance.TryDuckCast<ISignInManager>(out var value);
+            if (duckCast && value is not null)
+            {
+                var httpContext = value.Context;
+                var securityCoordinator = SecurityCoordinator.Get(security, span, httpContext!);
+                securityCoordinator.Reporter.CollectHeaders();
+                security.SetTraceSamplingPriority(span);
+
+                var loginTags = new Dictionary<string, string> { { AddressesConstants.UserBusinessLoginFailure, string.Empty } };
+                if (security.AddressEnabled(AddressesConstants.UserLogin))
+                {
+                    loginTags.Add(AddressesConstants.UserLogin, processedLogin);
+                    var result = securityCoordinator.RunWafForUser(userLogin: processedLogin, otherTags: loginTags);
+                    securityCoordinator.BlockAndReport(result);
+                }
+            }
         }
 
         return returnValue;

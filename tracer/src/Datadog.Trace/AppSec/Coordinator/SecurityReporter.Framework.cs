@@ -44,15 +44,10 @@ internal partial class SecurityReporter
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static bool TryGetUsingIntegratedPipelineBool() => HttpRuntime.UsingIntegratedPipeline;
 
-    internal static void SafeCollectHeaders(Span internalSpan, bool isRoot)
+    internal void CollectHeaders()
     {
-        var context = HttpContext.Current;
-        var securityReporter = new SecurityReporter(internalSpan, new SecurityCoordinator.HttpTransport(context), isRoot);
-        if (context != null)
-        {
-            var headers = new NameValueHeadersCollection(context.Request.Headers);
-            securityReporter.AddRequestHeaders(headers);
-        }
+        var headers = new NameValueHeadersCollection(_httpTransport.Context.Request.Headers);
+        AddRequestHeaders(headers);
     }
 
     internal Action<int?, bool> MakeReportingFunction(IResult result)

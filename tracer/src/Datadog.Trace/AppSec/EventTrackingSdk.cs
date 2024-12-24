@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -70,15 +71,36 @@ public static class EventTrackingSdk
         FillUp(internalSpan);
     }
 
-    private static void FillUp(Span span)
+    /// <summary>
+    /// Biggest part of this method will only work in a web context
+    /// </summary>
+    /// <param name="span">span</param>
+    /// <param name="userId">userid</param>
+    private static void FillUp(Span span, string userId = null)
     {
         if (span is null)
         {
             return;
         }
 
-        Security.Instance.SetTraceSamplingPriority(span);
-        SecurityReporter.SafeCollectHeaders(span, true);
+        var securityInstance = Security.Instance;
+        securityInstance.SetTraceSamplingPriority(span);
+
+        var securityCoordinator = SecurityCoordinator.TryGetSafe(securityInstance, span);
+        if (securityCoordinator is not null)
+        {
+            RunWafAndCollectHeaders();
+        }
+
+        return;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        void RunWafAndCollectHeaders()
+        {
+            securityCoordinator.Value.Reporter.CollectHeaders();
+            var result = securityCoordinator.Value.RunWafForUser(userId: userId, fromSdk: true);
+            securityCoordinator.Value.BlockAndReport(result);
+        }
     }
 
     /// <summary>
@@ -188,9 +210,6 @@ public static class EventTrackingSdk
             }
         }
 
-        if (internalSpan is not null)
-        {
-            FillUp(internalSpan);
-        }
+        FillUp(internalSpan);
     }
 }
