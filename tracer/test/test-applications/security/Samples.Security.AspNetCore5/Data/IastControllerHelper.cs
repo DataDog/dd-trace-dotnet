@@ -133,6 +133,8 @@ namespace Samples.Security.Data
             return connection;
         }
 
+#endif
+
         public static SqlConnection CreateSqlServerDatabase()
         {
             // assumes the sqlserver docker image is running...
@@ -145,7 +147,7 @@ namespace Samples.Security.Data
                 SqlConnection connection = null;
                 try
                 {
-                    connection =new SqlConnection(connectionString);
+                    connection = new SqlConnection(connectionString);
                     connection.Open();
 
                     foreach (var command in SqlServerTables)
@@ -169,7 +171,6 @@ namespace Samples.Security.Data
             throw new Exception($"Unable to open connection to connection string {connectionString} after {numAttempts} attempts");
         }
 
-#endif
         public static SQLiteConnection CreateSystemDataDatabase()
         {
             var builderSystemData = new SQLiteConnectionStringBuilder { DataSource = ":memory:" };
