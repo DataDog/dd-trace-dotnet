@@ -1050,7 +1050,7 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
@@ -1077,7 +1077,7 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
@@ -1104,7 +1104,7 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [
@@ -1131,7 +1131,7 @@
   {
     "IntegrationName": "AspNetCore",
     "AssemblyName": "Microsoft.AspNetCore.Identity",
-    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    "TargetTypeName": "Microsoft.AspNetCore.Identity.SignInManager`1",
     "TargetMethodName": "PasswordSignInAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
     "TargetParameterTypes": [

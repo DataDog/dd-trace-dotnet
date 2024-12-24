@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
 /// </summary>
 [InstrumentMethod(
     AssemblyName = AssemblyName,
-    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
     ParameterTypeNames = ["!0", ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [InstrumentMethod(
     AssemblyName = AssemblyName,
-    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1<!!0>",
+    TypeName = "Microsoft.AspNetCore.Identity.SignInManager`1",
     MethodName = "PasswordSignInAsync",
     ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.Bool, ClrNames.Bool],
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Identity.SignInResult]",

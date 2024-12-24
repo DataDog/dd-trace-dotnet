@@ -22,11 +22,12 @@ public class ContextUserEventTests
     {
         var iWaf = new Mock<IWaf>().Object;
         var encoder = new Mock<Encoder>().Object;
-        var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<WafLibraryInvoker>().Object, encoder);
+        var context = Context.GetContext(IntPtr.Zero, iWaf, new Mock<IWafLibraryInvoker>().Object, encoder);
         var security = new Mock<IDatadogSecurity>();
-        security.Setup(s => s.AddressEnabled("test")).Returns(true);
+        security.Setup(s => s.AddressEnabled(AddressesConstants.UserId)).Returns(true);
         var userId = "toto";
         var addresses = context!.ShouldRunWith(security.Object, userId: userId);
+        addresses.Should().HaveCount(1);
         addresses.Should().Contain(new KeyValuePair<string, string>(AddressesConstants.UserId, userId));
     }
 }

@@ -26,14 +26,14 @@ internal class Context : IContext
 
     private readonly List<IEncodeResult> _encodeResults;
     private readonly Stopwatch _stopwatch;
-    private readonly WafLibraryInvoker _wafLibraryInvoker;
+    private readonly IWafLibraryInvoker _wafLibraryInvoker;
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
     private bool _disposed;
     private ulong _totalRuntimeOverRuns;
 
     // Beware this class is created on a thread but can be disposed on another so don't trust the lock is not going to be held
-    private Context(IntPtr contextHandle, IWaf waf, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
+    private Context(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
     {
         _contextHandle = contextHandle;
         _waf = waf;
@@ -45,7 +45,7 @@ internal class Context : IContext
 
     ~Context() => Dispose(false);
 
-    public static IContext? GetContext(IntPtr contextHandle, IWaf waf, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
+    public static IContext? GetContext(IntPtr contextHandle, IWaf waf, IWafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
     {
         // in high concurrency, the waf passed as argument here could have been disposed just above in between creation / waf update so last test here
         if (waf.Disposed)
