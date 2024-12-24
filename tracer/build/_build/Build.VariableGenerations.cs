@@ -103,24 +103,26 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix");
-                GenerateTfmsMatrix("unit_tests_macos_matrix");
-                GenerateLinuxMatrix("x64");
-                GenerateLinuxMatrix("arm64");
+                GenerateTfmsMatrix("unit_tests_windows_matrix", TestingFrameworks);
+                var unixFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 }).ToList();
+                GenerateTfmsMatrix("unit_tests_macos_matrix", unixFrameworks);
+                GenerateLinuxMatrix("x64", unixFrameworks);
+                GenerateLinuxMatrix("arm64", unixFrameworks);
 
-                void GenerateTfmsMatrix(string name)
+                void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
                 {
-                    var matrix = TestingFrameworks
+                    var matrix = frameworks
                        .ToDictionary(t => t.ToString(), t => new { framework = t, });
 
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateLinuxMatrix(string platform)
+                void GenerateLinuxMatrix(string platform, IEnumerable<TargetFramework> frameworks)
                 {
                     var matrix = new Dictionary<string, object>();
-                    foreach (var framework in TestingFrameworks)
+
+                    foreach (var framework in frameworks)
                     {
                         matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}"});
                         matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}"});
