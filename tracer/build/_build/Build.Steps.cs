@@ -1321,33 +1321,33 @@ partial class Build
             DotnetBuild(regressionLibs, framework: Framework, noRestore: false);
         });
 
-    Target CompileFrameworkReproductions => _ => _
-        .Unlisted()
-        .Description("Builds .NET Framework projects (non SDK-based projects)")
-        .After(CompileRegressionDependencyLibs)
-        .After(CompileDependencyLibs)
-        .Requires(() => IsWin)
-        .Executes(() =>
-        {
-            // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
-            // seems similar to https://github.com/dotnet/sdk/issues/8360
-            MSBuild(s => s
-                .SetTargetPath(MsBuildProject)
-                .SetMSBuildPath()
-                .DisableRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .SetTargets("BuildFrameworkReproductions")
-                .SetMaxCpuCount(null));
-        });
+    // Target CompileFrameworkReproductions => _ => _
+    //     .Unlisted()
+    //     .Description("Builds .NET Framework projects (non SDK-based projects)")
+    //     .After(CompileRegressionDependencyLibs)
+    //     .After(CompileDependencyLibs)
+    //     .Requires(() => IsWin)
+    //     .Executes(() =>
+    //     {
+    //         // We have to use the full MSBuild here, as dotnet msbuild doesn't copy the EDMX assets for embedding correctly
+    //         // seems similar to https://github.com/dotnet/sdk/issues/8360
+    //         MSBuild(s => s
+    //             .SetTargetPath(MsBuildProject)
+    //             .SetMSBuildPath()
+    //             .DisableRestore()
+    //             .EnableNoDependencies()
+    //             .SetConfiguration(BuildConfiguration)
+    //             .SetTargetPlatformAnyCPU()
+    //             .SetTargets("BuildFrameworkReproductions")
+    //             .SetMaxCpuCount(null));
+    //     });
 
     Target CompileIntegrationTests => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .After(BuildRunnerTool)
         .Requires(() => Framework)
@@ -1373,7 +1373,7 @@ partial class Build
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileDependencyLibs)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1616,7 +1616,7 @@ partial class Build
         .Unlisted()
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -1648,7 +1648,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileSamplesWindows)
         .After(CompileTrimmingSamples)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
@@ -1713,7 +1713,7 @@ partial class Build
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
         .DependsOn(HackForMissingMsBuildLocation)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1783,7 +1783,7 @@ partial class Build
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileRegressionSamples)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(BuildNativeLoader)
         .DependsOn(CleanTestLogs)
         .Requires(() => IsWin)
@@ -1823,7 +1823,7 @@ partial class Build
     Target RunWindowsTracerIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1833,7 +1833,7 @@ partial class Build
     Target RunWindowsSecurityIisIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
@@ -1873,7 +1873,7 @@ partial class Build
     Target RunWindowsMsiIntegrationTests => _ => _
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
-        .After(CompileFrameworkReproductions)
+        // .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
