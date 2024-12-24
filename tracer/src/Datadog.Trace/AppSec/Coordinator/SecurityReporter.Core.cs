@@ -19,19 +19,22 @@ internal partial class SecurityReporter
     /// </summary>
     /// <param name="span">the span to report on</param>
     /// <param name="searchRootSpan">should we fetch the root span for you</param>
-    /// <returns>security reporter</returns>
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static SecurityReporter? SafeCollectHeaders(Span span, bool searchRootSpan = true)
+    internal static void SafeCollectHeaders(Span span, bool searchRootSpan = true)
     {
-        var securityReporter = AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable() ? GetSecurityReporter(searchRootSpan) : null;
-        securityReporter?.CollectHeaders();
-        return securityReporter;
+        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
+        {
+            CollectHeadersSafe(searchRootSpan);
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        SecurityReporter? GetSecurityReporter(bool searchRootSpanImpl)
+        void CollectHeadersSafe(bool searchRootSpanImpl)
         {
             var context = CoreHttpContextStore.Instance.Get();
-            return context != null ? new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context), searchRootSpanImpl) : null;
+            if (context is not null)
+            {
+                var securityReporter = new SecurityReporter(span, new SecurityCoordinator.HttpTransport(context), !searchRootSpanImpl);
+                securityReporter.CollectHeaders();
+            }
         }
     }
 
@@ -39,26 +42,6 @@ internal partial class SecurityReporter
     {
         var headers = new HeadersCollectionAdapter(_httpTransport.Context.Request.Headers);
         AddRequestHeaders(headers);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal void CollectHeadersSafeOutsideWeb()
-    {
-        if (AspNetCoreAvailabilityChecker.IsAspNetCoreAvailable())
-        {
-            CollectHeadersImpl();
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        void CollectHeadersImpl()
-        {
-            var context = CoreHttpContextStore.Instance.Get();
-            if (context is not null)
-            {
-                var headers = new HeadersCollectionAdapter(context.Request.Headers);
-                AddRequestHeaders(headers);
-            }
-        }
     }
 }
 #endif

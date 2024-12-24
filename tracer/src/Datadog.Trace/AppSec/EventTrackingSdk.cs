@@ -78,7 +78,7 @@ public static class EventTrackingSdk
         }
 
         Security.Instance.SetTraceSamplingPriority(span);
-        SecurityReporter.SafeCollectHeaders(span, false);
+        SecurityReporter.SafeCollectHeaders(span, true);
     }
 
     /// <summary>
