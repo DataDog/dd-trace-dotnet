@@ -23,6 +23,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+                       GenerateUnitTestFrameworkMatrices();
 
                        GenerateIntegrationTestsWindowsMatrices();
                        GenerateIntegrationTestsLinuxMatrices();
@@ -97,6 +98,36 @@ partial class Build : NukeBuild
                     var variableValue = isChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                }
+            }
+
+            void GenerateUnitTestFrameworkMatrices()
+            {
+                GenerateTfmsMatrix("unit_tests_windows_matrix");
+                GenerateTfmsMatrix("unit_tests_macos_matrix");
+                GenerateLinuxMatrix("x64");
+                GenerateLinuxMatrix("arm64");
+
+                void GenerateTfmsMatrix(string name)
+                {
+                    var matrix = TestingFrameworks
+                       .ToDictionary(t => t.ToString(), t => new { framework = t, });
+
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable(name, JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxMatrix(string platform)
+                {
+                    var matrix = new Dictionary<string, object>();
+                    foreach (var framework in TestingFrameworks)
+                    {
+                        matrix.Add($"glibc_{framework}", new { framework = framework, baseImage = "debian", artifactSuffix = $"linux-{platform}"});
+                        matrix.Add($"musl_{framework}", new { framework = framework, baseImage = "alpine", artifactSuffix = $"linux-musl-{platform}"});
+                    }
+
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable($"unit_tests_linux_{platform}_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
 
@@ -205,7 +236,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMsiMatrix(params TargetFramework[] targetFrameworks)
             {
-                var targetPlatforms = new[] { 
+                var targetPlatforms = new[] {
                     (targetPlaform: "x64", enable32Bit: false),
                     (targetPlaform: "x64", enable32Bit: true),
                 };
@@ -235,8 +266,8 @@ partial class Build : NukeBuild
             {
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
                 var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
@@ -285,8 +316,8 @@ partial class Build : NukeBuild
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
                 var optimizations = new[] { "true", "false" };
 
@@ -365,8 +396,8 @@ partial class Build : NukeBuild
 
                 var baseImages = new []
                 {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"),
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -420,7 +451,7 @@ partial class Build : NukeBuild
 
                 // tracer home smoke tests
                 GenerateWindowsTracerHomeSmokeTestsMatrix();
-                
+
                 // macos smoke tests
                 GenerateMacosDotnetToolNugetSmokeTestsMatrix();
 
@@ -1089,7 +1120,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
                             new (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
+                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
                         }.Where(x=> !IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-x64",
@@ -1106,7 +1137,7 @@ partial class Build : NukeBuild
                             new (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
                             new (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
-                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available 
+                            // We can't install prerelease versions of the dotnet-tool nuget in .NET Core 3.1, because the --prerelease flag isn't available
                         }.Where(x=> !IsPrerelease || x.PublishFramework != TargetFramework.NETCOREAPP3_1).ToArray(),
                         platformSuffix: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
@@ -1410,14 +1441,14 @@ partial class Build : NukeBuild
         {
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
         }
-        
+
         Console.WriteLine("Base Branch: {0}", baseBranch);
         Console.WriteLine("Current Branch: {0}", branch);
 
         var cleanBranch = CleanBranchName(branch);
         var cleanBaseBranch = CleanBranchName(baseBranch);
         Console.Write("  {0} == {1}? ", cleanBranch, cleanBaseBranch);
-        
+
         if (string.Equals(cleanBranch, cleanBaseBranch, StringComparison.OrdinalIgnoreCase))
         {
             Console.WriteLine("true");
