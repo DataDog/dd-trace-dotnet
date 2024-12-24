@@ -1515,7 +1515,7 @@ partial class Build
         });
 
     Target CompileSamples => _ => _
-        .Description("Compiles all the sample projects, including multi-version samples")
+        .Description("Compiles all the sample projects")
         .Unlisted()
         .After(Clean)
         .DependsOn(HackForMissingMsBuildLocation)
@@ -1579,7 +1579,7 @@ partial class Build
         });
 
     Target CompileMultiPackageSamples => _ => _
-        .Description("Compiles all the sample projects, including multi-version samples")
+        .Description("Compiles all the multi-version samples")
         .Unlisted()
         .After(Clean)
         .DependsOn(HackForMissingMsBuildLocation)

@@ -290,8 +290,8 @@ partial class Build : NukeBuild
         .Requires(() => IsWin)
         .Description("Builds the regression tests for Windows")
         .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileRegressionDependencyLibs)
-        .DependsOn(CompileRegressionSamples)
+        // .DependsOn(CompileRegressionDependencyLibs)
+        // .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
         .DependsOn(CompileIntegrationTests);
 
