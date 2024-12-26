@@ -35,6 +35,14 @@ public class AccountController : Controller
     {
        return Content("Authorized content");
     }
+    
+    [HttpGet]
+    [Authorize]
+    public IActionResult SomeAuthenticatedActionWithSdk()
+    {
+        SampleHelpers.TrackUserLoginSuccessEvent("toto", null);
+        return Content("Authorized content");
+    }
 
     [HttpPost]
     public IActionResult LogOut()

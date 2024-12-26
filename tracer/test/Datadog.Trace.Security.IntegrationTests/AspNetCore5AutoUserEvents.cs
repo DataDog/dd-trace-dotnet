@@ -86,37 +86,17 @@ namespace Datadog.Trace.Security.IntegrationTests
         private string GetTestFileName(string testName) => $"{_testName}-{testName}";
     }
 
-    public class AspNetCore5AutoUserEventsDefaultModeSecurityEnabled : AspNetCore5AutoUserEvents
-    {
-        public AspNetCore5AutoUserEventsDefaultModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true)
-        {
-        }
-    }
+    public class AspNetCore5AutoUserEventsDefaultModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AutoUserEvents(fixture, outputHelper, true);
 
-    public class AspNetCore5AutoUserEventsExtendedModeSecurityEnabled : AspNetCore5AutoUserEvents
-    {
-        public AspNetCore5AutoUserEventsExtendedModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true, "extended")
-        {
-        }
-    }
+    public class AspNetCore5AutoUserEventsExtendedModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AutoUserEvents(fixture, outputHelper, true, "extended");
 
-    public class AspNetCore5AutoUserEventsIndentModeSecurityEnabled : AspNetCore5AutoUserEvents
-    {
-        public AspNetCore5AutoUserEventsIndentModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true, "ident")
-        {
-        }
-    }
+    public class AspNetCore5AutoUserEventsIndentModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AutoUserEvents(fixture, outputHelper, true, "ident");
 
-    public class AspNetCore5AutoUserEventsAnonModeSecurityEnabled : AspNetCore5AutoUserEvents
-    {
-        public AspNetCore5AutoUserEventsAnonModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-            : base(fixture, outputHelper, true, "anon")
-        {
-        }
-    }
+    public class AspNetCore5AutoUserEventsAnonModeSecurityEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+        : AspNetCore5AutoUserEvents(fixture, outputHelper, true, "anon");
 
     public class AspNetCore5AutoUserEventsExtendedModeSecurityDisabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : AspNetCore5AutoUserEvents(fixture, outputHelper, false, "extended")
