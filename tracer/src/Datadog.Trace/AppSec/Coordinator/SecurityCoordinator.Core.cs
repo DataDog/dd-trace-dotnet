@@ -128,12 +128,6 @@ internal readonly partial struct SecurityCoordinator
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
 
-        var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
-        if (!string.IsNullOrEmpty(userId))
-        {
-            addressesDictionary.Add(AddressesConstants.UserId, userId!);
-        }
-
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
         AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
 
