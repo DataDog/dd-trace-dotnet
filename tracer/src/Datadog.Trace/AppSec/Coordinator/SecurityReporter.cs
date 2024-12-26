@@ -1,9 +1,10 @@
-// <copyright file="SecurityCoordinator.Reporter.cs" company="Datadog">
+﻿// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -11,16 +12,19 @@ using System.IO;
 using System.IO.Compression;
 using Datadog.Trace.AppSec.AttackerFingerprint;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
-internal readonly partial struct SecurityCoordinator
+internal partial class SecurityReporter
 {
     private const int MaxApiSecurityTagValueLength = 25000;
 
@@ -62,18 +66,16 @@ internal readonly partial struct SecurityCoordinator
     };
 
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };
+    private readonly HttpTransportBase _httpTransport;
+    private readonly Span _span;
 
-    private static void AddRequestHeaders(Span span, IHeadersCollection headers)
+    internal SecurityReporter(Span span, HttpTransportBase httpTransport, bool isRoot = false)
     {
-        AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+        _span = isRoot ? span : SecurityCoordinator.TryGetRoot(span);
+        _httpTransport = httpTransport;
     }
 
-    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix)
-    {
-        SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
-    }
-
-    private static void LogAddressIfDebugEnabled(IDictionary<string, object> args)
+    internal static void LogAddressIfDebugEnabled(IDictionary<string, object> args)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -84,24 +86,84 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    internal static void ReportWafInitInfoOnce(Security security, Span span)
-    {
-        if (security.WafInitResult is { Reported: false })
-        {
-            span = TryGetRoot(span);
-            security.WafInitResult.Reported = true;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
-            span.SetMetric(Metrics.AppSecWafInitRulesLoaded, security.WafInitResult.LoadedRules);
-            bool onlyUnknownMatcherErrors = Security.HasOnlyUnknownMatcherErrors(security.WafInitResult.Errors);
+    internal void AddRequestHeaders(IHeadersCollection headers) => AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
-            // If there are only unknown matcher errors, we don't want to report the failures
-            span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, onlyUnknownMatcherErrors ? 0 : security.WafInitResult.FailedToLoadRules);
-            if (security.WafInitResult.HasErrors && !onlyUnknownMatcherErrors)
+    internal void AddResponseHeadersToSpanAndCleanup()
+    {
+        if (_span.IsAppsecEvent())
+        {
+            AddResponseHeaderTags();
+        }
+
+        _httpTransport.DisposeAdditiveContext();
+    }
+
+    private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => SpanContextPropagator.Instance.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
+
+    private static void LogMatchesIfDebugEnabled(IReadOnlyCollection<object>? results, bool blocked)
+    {
+        if (Log.IsEnabled(LogEventLevel.Debug) && results != null)
+        {
+            foreach (var result in results)
             {
-                span.SetTag(Tags.AppSecWafInitRuleErrors, security.WafInitResult.ErrorMessage);
+                if (result is Dictionary<string, object?> match)
+                {
+                    if (blocked)
+                    {
+                        Log.Debug("DDAS-0012-02: Blocking current transaction (rule: {RuleId})", match["rule"]);
+                    }
+                    else
+                    {
+                        Log.Debug("DDAS-0012-01: Detecting an attack from rule {RuleId}", match["rule"]);
+                    }
+                }
+                else
+                {
+                    Log.Debug("{Result} not of expected type", result);
+                }
+            }
+        }
+    }
+
+    internal static void RecordTelemetry(IResult? result)
+    {
+        if (result is null)
+        {
+            return;
+        }
+
+        if (result.Timeout)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.WafTimeout);
+        }
+        else if (result.ShouldBlock)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
+        }
+        else if (result.ShouldReportSecurityResult)
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
+        }
+        else
+        {
+            TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.Normal);
+        }
+    }
+
+    internal void ReportWafInitInfoOnce(InitResult? initResult)
+    {
+        if (initResult is { Reported: false })
+        {
+            initResult.Reported = true;
+            _span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
+            _span.SetMetric(Metrics.AppSecWafInitRulesLoaded, initResult.LoadedRules);
+            _span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, initResult.FailedToLoadRules);
+            if (initResult.HasErrors && !Security.HasOnlyUnknownMatcherErrors(initResult.Errors))
+            {
+                _span.SetTag(Tags.AppSecWafInitRuleErrors, initResult.ErrorMessage);
             }
 
-            span.SetTag(Tags.AppSecWafVersion, security.DdlibWafVersion);
+            _span.SetTag(Tags.AppSecWafVersion, initResult.Waf?.Version);
         }
     }
 
@@ -118,54 +180,55 @@ internal readonly partial struct SecurityCoordinator
         if (!_httpTransport.ReportedExternalWafsRequestHeaders)
         {
             headers = _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_localRootSpan, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            AddHeaderTags(_span, headers, ExternalWafsRequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
             _httpTransport.ReportedExternalWafsRequestHeaders = true;
         }
 
-        AttackerFingerprintHelper.AddSpanTags(_localRootSpan, result);
+        AttackerFingerprintHelper.AddSpanTags(_span, result);
 
         if (result.ShouldReportSecurityResult)
         {
-            _localRootSpan.SetTag(Tags.AppSecEvent, "true");
+            _span.SetTag(Tags.AppSecEvent, "true");
             if (blocked)
             {
-                _localRootSpan.SetTag(Tags.AppSecBlocked, "true");
+                _span.SetTag(Tags.AppSecBlocked, "true");
             }
 
-            _security.SetTraceSamplingPriority(_localRootSpan);
+            var security = Security.Instance;
+            security.SetTraceSamplingPriority(_span);
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
-            var traceContext = _localRootSpan.Context.TraceContext;
+            var traceContext = _span.Context.TraceContext;
             if (result.Data != null)
             {
                 traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
 
-            var clientIp = _localRootSpan.GetTag(Tags.HttpClientIp);
+            var clientIp = _span.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
             {
-                _localRootSpan.SetTag(Tags.ActorIp, clientIp);
+                _span.SetTag(Tags.ActorIp, clientIp);
             }
 
             if (traceContext is { Origin: null })
             {
-                _localRootSpan.SetTag(Tags.Origin, "appsec");
+                _span.SetTag(Tags.Origin, "appsec");
                 traceContext.Origin = "appsec";
             }
 
-            _localRootSpan.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
-            _localRootSpan.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
+            _span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
+            _span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
             headers ??= _httpTransport.GetRequestHeaders();
-            AddHeaderTags(_localRootSpan, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+            AddHeaderTags(_span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
             if (status is not null)
             {
-                _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
             }
         }
 
-        AddRaspSpanMetrics(result, _localRootSpan);
+        AddRaspSpanMetrics(result, _span);
 
         if (result.ExtractSchemaDerivatives?.Count > 0)
         {
@@ -184,7 +247,7 @@ internal readonly partial struct SecurityCoordinator
                     if (memoryStream.TryGetBuffer(out var bytesResult))
                     {
                         var gzipBase64 = Convert.ToBase64String(bytesResult.Array!, bytesResult.Offset, bytesResult.Count);
-                        _localRootSpan.SetTag(derivative.Key, gzipBase64);
+                        _span.SetTag(derivative.Key, gzipBase64);
                     }
                     else
                     {
@@ -205,19 +268,19 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private void AddResponseHeaderTags(bool canAccessHeaders)
+    internal void AddResponseHeaderTags()
     {
         TryAddEndPoint();
-        var headers = canAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_localRootSpan, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
+        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
+        AddHeaderTags(_span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
     }
 
     private void TryAddEndPoint()
     {
-        var route = _localRootSpan.GetTag(Tags.AspNetCoreRoute) ?? _localRootSpan.GetTag(Tags.AspNetRoute);
+        var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
-            _localRootSpan.SetTag(Tags.HttpEndpoint, route);
+            _span.SetTag(Tags.HttpEndpoint, route);
         }
     }
 }
