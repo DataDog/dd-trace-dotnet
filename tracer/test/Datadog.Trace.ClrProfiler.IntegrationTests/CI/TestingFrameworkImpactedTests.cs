@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -156,6 +157,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             branch = values[CIEnvironmentValues.Constants.AzureBuildSourceBranch];
 
             return values;
+        }
+
+        protected void InjectGitHubActionsSession(bool setupPr = true, bool enabled = true)
+        {
+            // Reset all the envVars for spawned process (override possibly existing env vars)
+            foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
+            {
+                var fieldName = field.GetValue(null) as string;
+                SetEnvironmentVariable(fieldName, string.Empty);
+            }
+
+            // Set relevant GitHub variables
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubRepository, repo);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubBaseRef, branch);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, buildDir);
+            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubSha, GitHubSha);
+            if (setupPr)
+            {
+                SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubEventPath, GetEventJsonFile());
+            }
+
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled ? "True" : "False");
+
+            static string GetEventJsonFile()
+            {
+                string content = $$"""
+                {
+                  "pull_request": {
+                    "head": {
+                      "sha": "{{GitHubSha}}"
+                    },
+                    "base": {
+                      "sha": "{{GitHubBaseSha}}"
+                    }
+                  }
+                }
+                """;
+                var tmpFileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + "_event.json");
+                File.WriteAllText(tmpFileName, content);
+                return tmpFileName;
+            }
         }
 
         private MockTracerAgent GetAgent(List<MockCIVisibilityTest> receivedTests, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> processRequest = null)

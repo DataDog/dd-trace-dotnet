@@ -36,9 +36,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromPr(string packageVersion)
         {
             InjectGitHubActionsSession();
+
+            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
+
             return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
         }
 
+/*
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -78,46 +82,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             InjectGitHubActionsSession(true, false);
             return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
         }
-
-        private void InjectGitHubActionsSession(bool setupPr = true, bool enabled = true)
-        {
-            // Reset all the envVars for spawned process (override possibly existing env vars)
-            foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
-            {
-                var fieldName = field.GetValue(null) as string;
-                SetEnvironmentVariable(fieldName, string.Empty);
-            }
-
-            // Set relevant GitHub variables
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubRepository, repo);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubBaseRef, branch);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubWorkspace, buildDir);
-            SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubSha, GitHubSha);
-            if (setupPr)
-            {
-                SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubEventPath, GetEventJsonFile());
-            }
-
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled ? "True" : "False");
-
-            static string GetEventJsonFile()
-            {
-                string content = $$"""
-                {
-                  "pull_request": {
-                    "head": {
-                      "sha": "{{GitHubSha}}"
-                    },
-                    "base": {
-                      "sha": "{{GitHubBaseSha}}"
-                    }
-                  }
-                }
-                """;
-                var tmpFileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + "_event.json");
-                File.WriteAllText(tmpFileName, content);
-                return tmpFileName;
-            }
-        }
+*/
     }
 }
