@@ -101,10 +101,6 @@ internal readonly partial struct SecurityCoordinator
             if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
             {
                 addresses = userAddresses.ToDictionary(k => k.Key, object (v) => v.Value);
-                if (addresses.IsEmpty())
-                {
-                    return null;
-                }
 
                 if (otherTags is not null)
                 {
@@ -123,6 +119,11 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(addresses, _security.Settings.WafTimeoutMicroSeconds);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
                 RecordTelemetry(result);
+
+                if (_localRootSpan.Context.TraceContext is not null)
+                {
+                    _localRootSpan.Context.TraceContext.WafExecuted = true;
+                }
             }
         }
         catch (Exception ex) when (ex is not BlockException)
@@ -137,11 +138,6 @@ internal readonly partial struct SecurityCoordinator
 
                 Log.Error(ex, "Call into the security module failed with arguments {Args}", StringBuilderCache.GetStringAndRelease(stringBuilder));
             }
-        }
-
-        if (_localRootSpan.Context.TraceContext is not null)
-        {
-            _localRootSpan.Context.TraceContext.WafExecuted = true;
         }
 
         return result;

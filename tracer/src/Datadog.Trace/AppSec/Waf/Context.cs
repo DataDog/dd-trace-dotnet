@@ -123,7 +123,7 @@ internal class Context : IContext
                 ephemeralParameters);
         }
 
-        // not restart cause it's the total runtime over runs, and we run several * during request
+        // not restart because it's the total runtime over runs, and we run several * during request
         _stopwatch.Start();
         WafReturnCode code;
         lock (_stopwatch)
