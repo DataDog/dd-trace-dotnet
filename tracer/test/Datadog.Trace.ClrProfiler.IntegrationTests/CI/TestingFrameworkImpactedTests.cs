@@ -7,15 +7,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using VerifyXunit;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
@@ -30,11 +33,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         protected string buildDir = string.Empty;
         protected string repo = string.Empty;
         protected string branch = string.Empty;
+        protected bool gitAvailable = false;
 #pragma warning restore SA1401 // FieldsMustBePrivate
 
         public TestingFrameworkImpactedTests(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, output)
         {
+            InitGit();
             SetCIEnvironmentValues();
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
@@ -159,8 +164,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             return values;
         }
 
-        protected void InjectGitHubActionsSession(bool setupPr = true, bool enabled = true)
+        protected void InjectGitHubActionsSession(bool setupPr = true, bool? enabled = true)
         {
+            // Check for GIT availability
+            Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
+
             // Reset all the envVars for spawned process (override possibly existing env vars)
             foreach (var field in typeof(CIEnvironmentValues.Constants).GetFields())
             {
@@ -178,7 +186,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable(CIEnvironmentValues.Constants.GitHubEventPath, GetEventJsonFile());
             }
 
-            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled ? "True" : "False");
+            if (enabled is not null)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, enabled.Value ? "True" : "False");
+            }
 
             static string GetEventJsonFile()
             {
@@ -215,6 +226,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
 
             return agent;
+        }
+
+        private void InitGit()
+        {
+            // Check git availability
+            var output = RunGitCommandAsync("branch --show-current");
+            if (output.ExitCode < 0)
+            {
+                // Try to fix the git path
+                RunGitCommandAsync("git config --global --add safe.directory '*'");
+                output = RunGitCommandAsync("branch --show-current");
+            }
+
+            if (output.ExitCode == 0)
+            {
+                gitAvailable = true;
+                Output.WriteLine($"Git NOT available. ExitCode: {output.ExitCode} Error: {output.Error}");
+            }
+        }
+
+        private ProcessHelpers.CommandOutput RunGitCommandAsync(string arguments)
+        {
+            try
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var gitOutput = AsyncUtil.RunSync<ProcessHelpers.CommandOutput>(() => ProcessHelpers.RunCommandAsync(
+                                    new ProcessHelpers.Command(
+                                        "git",
+                                        arguments,
+                                        EnvironmentTools.GetSolutionDirectory(),
+                                        outputEncoding: Encoding.Default,
+                                        errorEncoding: Encoding.Default,
+                                        inputEncoding: Encoding.Default,
+                                        useWhereIsIfFileNotFound: true),
+                                    null));
+
+                if (gitOutput is null || (gitOutput.ExitCode < 0 && gitOutput.Error is not { Length: > 0 }))
+                {
+                    return new ProcessHelpers.CommandOutput(null, "git command returned null output", -1);
+                }
+
+                return gitOutput;
+            }
+            catch (Exception err)
+            {
+                return new ProcessHelpers.CommandOutput(null, err.ToString(), -1);
+            }
         }
     }
 }

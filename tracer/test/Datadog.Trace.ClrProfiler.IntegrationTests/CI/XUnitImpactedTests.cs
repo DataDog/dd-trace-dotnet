@@ -36,13 +36,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public Task BaseShaFromPr(string packageVersion)
         {
             InjectGitHubActionsSession();
-
-            SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-
             return SubmitTests(packageVersion, $"baseShaFromPr", 2, (t) => t.Meta.ContainsKey("test.is_modified") && t.Meta["test.is_modified"] == "true");
         }
 
-/*
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -77,11 +73,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public Task Disabled(string packageVersion)
+        public Task DisabledByEnvVar(string packageVersion)
         {
             InjectGitHubActionsSession(true, false);
             return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
         }
-*/
+
+        [SkippableTheory]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public Task EnabledBySettings(string packageVersion)
+        {
+            InjectGitHubActionsSession(true, null);
+            return SubmitTests(packageVersion, $"baseShaFromPr", 0, (t) => t.Meta.ContainsKey("is_modified"));
+        }
     }
 }
