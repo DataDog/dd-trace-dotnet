@@ -368,8 +368,8 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headers = RequestDataHelper.GetHeaders(request);
-        var headersDic = ExtractHeadersFromRequest(request.Headers);
+        var headers = request.Headers;
+        var headersDic = ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
@@ -405,7 +405,12 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 7) { { AddressesConstants.RequestMethod, request.HttpMethod }, { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
+        var dict = new Dictionary<string, object>(capacity: 7)
+        {
+            { AddressesConstants.RequestMethod, request.HttpMethod },
+            { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
+        };
 
         var url = RequestDataHelper.GetUrl(request);
         if (url is not null)
@@ -435,8 +440,6 @@ internal readonly partial struct SecurityCoordinator
 
         return dict;
     }
-
-    internal static Dictionary<string, object> ExtractHeadersFromRequest(NameValueCollection headers) => ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
 
     private static object GetHeaderAsArray(string[] value) => value.Length == 1 ? value[0] : value;
 
