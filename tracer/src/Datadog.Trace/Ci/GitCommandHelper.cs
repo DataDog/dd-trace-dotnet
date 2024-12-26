@@ -57,6 +57,17 @@ internal static class GitCommandHelper
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
             }
 
+            if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+            {
+                Log.Debug("Git command : {Command}", $"git {arguments}");
+                Log.Debug("  exit code : {Output}", gitOutput?.ExitCode);
+                Log.Debug("     output : {Output}", gitOutput?.Output ?? "<NULL>");
+                if (gitOutput is not null && gitOutput.Error is { Length: > 0 } err)
+                {
+                    Log.Debug("     error  : {Error}", err);
+                }
+            }
+
             return gitOutput;
         }
         catch (System.ComponentModel.Win32Exception ex)
@@ -79,14 +90,8 @@ internal static class GitCommandHelper
             }
 
             var output = await RunGitCommandAsync(workingDirectory, arguments, MetricTags.CIVisibilityCommands.Diff).ConfigureAwait(false);
-            if (output is not null)
+            if (output is not null && output.ExitCode == 0 && output.Output is { Length: > 0 })
             {
-                if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
-                {
-                    Log.Debug("Git command : {Command}", $"git {arguments}");
-                    Log.Debug("     output : {Output}", output.Output);
-                }
-
                 return ParseGitDiff(output.Output).ToArray();
             }
         }
