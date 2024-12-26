@@ -15,6 +15,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
+
 #else
 using System.Web;
 #endif
@@ -92,19 +93,27 @@ internal readonly partial struct SecurityCoordinator
             return null;
         }
 
-        IDictionary<string, object>? addresses = null;
         IResult? result = null;
+        Dictionary<string, object>? addresses = null;
         try
         {
             var additiveContext = GetOrCreateAdditiveContext();
             if (additiveContext?.ShouldRunWith(_security, userId, userLogin, userSessionId, fromSdk) is { Count: > 0 } userAddresses)
             {
                 addresses = userAddresses.ToDictionary(k => k.Key, object (v) => v.Value);
-                if (otherTags != null)
+                if (addresses.IsEmpty())
+                {
+                    return null;
+                }
+
+                if (otherTags is not null)
                 {
                     foreach (var kvp in otherTags)
                     {
-                        userAddresses.Add(kvp.Key, kvp.Value);
+                        if (!addresses.ContainsKey(kvp.Key))
+                        {
+                            addresses.Add(kvp.Key, kvp.Value);
+                        }
                     }
                 }
 
@@ -118,7 +127,7 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            if (addresses != null)
+            if (addresses is not null)
             {
                 var stringBuilder = StringBuilderCache.Acquire();
                 foreach (var kvp in addresses)

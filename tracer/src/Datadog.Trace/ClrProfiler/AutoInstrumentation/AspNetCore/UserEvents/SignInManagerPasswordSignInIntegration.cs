@@ -107,11 +107,9 @@ public static class SignInManagerPasswordSignInIntegration
                 securityCoordinator.Reporter.CollectHeaders();
                 security.SetTraceSamplingPriority(span);
 
-                var loginTags = new Dictionary<string, string> { { AddressesConstants.UserBusinessLoginFailure, string.Empty } };
                 if (security.AddressEnabled(AddressesConstants.UserLogin))
                 {
-                    loginTags.Add(AddressesConstants.UserLogin, processedLogin);
-                    var result = securityCoordinator.RunWafForUser(userLogin: processedLogin, otherTags: loginTags);
+                    var result = securityCoordinator.RunWafForUser(userLogin: processedLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
                     securityCoordinator.BlockAndReport(result);
                 }
             }

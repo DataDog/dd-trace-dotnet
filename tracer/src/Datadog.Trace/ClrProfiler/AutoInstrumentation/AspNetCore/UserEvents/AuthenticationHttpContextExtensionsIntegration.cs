@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
             {
                 var tracer = Tracer.Instance;
                 var scope = tracer.InternalActiveScope;
-                return new CallTargetState(scope, (claimPrincipal, httpContext));
+                return new CallTargetState(scope, new ClaimsAndHttpContext(httpContext as HttpContext, claimPrincipal));
             }
 
             return CallTargetState.GetDefault();
@@ -64,9 +64,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
         internal static object OnAsyncMethodEnd<TTarget>(TTarget instance, object returnValue, Exception exception, in CallTargetState state)
         {
-            if (state.State is Tuple<ClaimsPrincipal, HttpContext> stateTuple)
+            if (state.State is ClaimsAndHttpContext stateTuple)
             {
-                if (stateTuple.Item1?.Claims is not null && Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
+                if (Security.Instance is { IsTrackUserEventsEnabled: true } security && state.Scope is { } scope)
                 {
                     var span = scope.Span;
                     string? userId = null;
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
 
                     var setTag = TaggingUtils.GetSpanSetter(span, out _);
                     var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
-                    foreach (var claim in stateTuple.Item1.Claims)
+                    foreach (var claim in stateTuple.ClaimsPrincipal.Claims)
                     {
                         if (string.IsNullOrEmpty(claim.Value))
                         {
@@ -111,26 +111,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         }
                     }
 
-                    var loginAddressesForWaf = new Dictionary<string, string> { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } };
                     var foundUserId = userId is not null;
                     var foundLogin = userLogin is not null;
-                    if (userId is not null || userLogin is not null)
-                    {
-                        security.SetTraceSamplingPriority(span);
-                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
-                        setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
-                    }
-
                     UserEventsCommon.RecordMetricsLoginSuccessIfNotFound(foundUserId, foundLogin);
-                    var secCoordinator = SecurityCoordinator.Get(security, span, stateTuple.Item2);
-                    secCoordinator.Reporter.CollectHeaders();
-                    var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: loginAddressesForWaf);
-                    secCoordinator.BlockAndReport(result);
+                    security.SetTraceSamplingPriority(span);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessTrack, Tags.AppSec.EventsUsers.True);
+                    setTag(Tags.AppSec.EventsUsers.LoginEvent.SuccessAutoMode, successAutoMode);
+
+                    if (stateTuple.HttpContext is { } httpContext)
+                    {
+                        var secCoordinator = SecurityCoordinator.Get(security, span, httpContext);
+                        secCoordinator.Reporter.CollectHeaders();
+                        if (userId is not null || userLogin is not null)
+                        {
+                            var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } });
+                            secCoordinator.BlockAndReport(result);
+                        }
+                    }
                 }
             }
 
             return returnValue;
         }
+
+        private record ClaimsAndHttpContext(HttpContext? HttpContext, ClaimsPrincipal ClaimsPrincipal);
     }
 }
 #endif

@@ -95,7 +95,6 @@ public static class SignInManagerPasswordSignInUserIntegration
             var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
             if (!returnValue.Succeeded)
             {
-                var userAddressesWaf = new Dictionary<string, string> { { AddressesConstants.UserBusinessLoginFailure, string.Empty } };
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
                 setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, autoMode);
 
@@ -107,7 +106,6 @@ public static class SignInManagerPasswordSignInUserIntegration
                     userId = processPii?.Invoke(userId!) ?? userId;
                     setTag(Tags.AppSec.EventsUsers.InternalUserId, userId!);
                     setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, userId!);
-                    userAddressesWaf.Add(AddressesConstants.UserId, userId!);
                 }
 
                 if (!string.IsNullOrEmpty(userLogin))
@@ -126,7 +124,7 @@ public static class SignInManagerPasswordSignInUserIntegration
                     securityCoordinator.Reporter.CollectHeaders();
                     UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
-                    var result = securityCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: userAddressesWaf);
+                    var result = securityCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
                     securityCoordinator.BlockAndReport(result);
                 }
             }
