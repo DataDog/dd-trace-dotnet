@@ -235,7 +235,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             if (output.ExitCode < 0)
             {
                 // Try to fix the git path
-                RunGitCommandAsync("git config --global --add safe.directory '*'");
+                RunGitCommandAsync("config --global --add safe.directory '*'");
                 output = RunGitCommandAsync("branch --show-current");
             }
 
