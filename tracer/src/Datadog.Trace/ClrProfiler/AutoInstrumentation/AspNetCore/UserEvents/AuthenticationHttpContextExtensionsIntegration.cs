@@ -124,6 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
                         secCoordinator.Reporter.CollectHeaders();
                         if (userId is not null || userLogin is not null)
                         {
+                            // if the current collection mode is anonymization, the ID must be provided after anonymization, instead of the original one.
                             var result = secCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginSuccess, string.Empty } });
                             secCoordinator.BlockAndReport(result);
                         }

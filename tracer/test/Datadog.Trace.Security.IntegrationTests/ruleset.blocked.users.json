@@ -8,7 +8,7 @@
       "data": [
         {
           "expiration": 0,
-          "value": "toto"
+          "value": "blocked-user"
         }
       ],
       "id": "blocked_users",

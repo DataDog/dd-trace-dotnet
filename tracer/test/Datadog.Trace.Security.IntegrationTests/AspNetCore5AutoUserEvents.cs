@@ -47,9 +47,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(null);
         }
 
-        protected async Task TryStartApp(string rulesFile = null)
+        protected async Task TryStartApp()
         {
-            await _fixture.TryStartApp(this, _enableSecurity, externalRulesFile: rulesFile);
+            await _fixture.TryStartApp(this, _enableSecurity, externalRulesFile: ("ruleset.blocked.users.json"));
             SetHttpPort(_fixture.HttpPort);
         }
 
@@ -79,6 +79,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         protected async Task TestAuthenticatedRequest()
         {
             await TryStartApp();
@@ -91,14 +92,25 @@ namespace Datadog.Trace.Security.IntegrationTests
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
         }
 
-        [SkippableFact]
-        protected async Task TestLoginWithSdk()
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData("blocked-user")]
+        [InlineData("not-blocked-user")]
+        protected async Task TestLoginWithSdk(string userIdSdk)
         {
-            await TryStartApp(rulesFile: DefaultRuleFile);
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser&Input.Password=test", contentType: "application/x-www-form-urlencoded");
-            request.StatusCode.Should().Be(HttpStatusCode.OK);
-            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/Index?userIdSdk=Toto", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestLoginWithSdk)));
+            await TryStartApp();
+            var agent = _fixture.Agent;
+            var settings = VerifyHelper.GetSpanVerifierSettings(nameof(TestLoginWithSdk), userIdSdk);
+            await TestAppSecRequestWithVerifyAsync(
+                agent,
+                $"/Account/Index?userIdSdk={userIdSdk}",
+                "Input.UserName=TestUser&Input.Password=test",
+                1,
+                1,
+                settings,
+                contentType: "application/x-www-form-urlencoded",
+                methodNameOverride: nameof(TestUserLoginEvent),
+                fileNameOverride: GetTestFileName($"{nameof(TestLoginWithSdk)}.{userIdSdk}"));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");

@@ -124,8 +124,12 @@ public static class SignInManagerPasswordSignInUserIntegration
                     securityCoordinator.Reporter.CollectHeaders();
                     UserEventsCommon.RecordMetricsLoginFailureIfNotFound(foundUserId, foundLogin);
                     tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? Tags.AppSec.EventsUsers.True : Tags.AppSec.EventsUsers.False);
-                    var result = securityCoordinator.RunWafForUser(userId: userId, userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
-                    securityCoordinator.BlockAndReport(result);
+                    if (userLogin is not null)
+                    {
+                        // userId must not be provided on login failure
+                        var result = securityCoordinator.RunWafForUser(userLogin: userLogin, otherTags: new() { { AddressesConstants.UserBusinessLoginFailure, string.Empty } });
+                        securityCoordinator.BlockAndReport(result);
+                    }
                 }
             }
 #if !NETCOREAPP3_1_OR_GREATER

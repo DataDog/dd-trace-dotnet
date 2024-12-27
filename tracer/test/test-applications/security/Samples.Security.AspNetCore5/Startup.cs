@@ -97,7 +97,7 @@ namespace Samples.Security.AspNetCore5
         {
             if (env.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                // app.UseDeveloperExceptionPage();
             }
             else
             {

@@ -84,6 +84,11 @@ public static class EventTrackingSdk
         }
 
         var securityInstance = Security.Instance;
+        if (!securityInstance.IsTrackUserEventsEnabled)
+        {
+            return;
+        }
+
         securityInstance.SetTraceSamplingPriority(span);
 
         var securityCoordinator = SecurityCoordinator.TryGetSafe(securityInstance, span);

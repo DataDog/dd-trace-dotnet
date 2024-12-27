@@ -633,7 +633,7 @@ namespace Datadog.Trace.AppSec
         private void UpdateActiveAddresses()
         {
             // So far, RASP is the only one that uses this
-            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            if (_waf?.IsKnowAddressesSuported() is true)
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
