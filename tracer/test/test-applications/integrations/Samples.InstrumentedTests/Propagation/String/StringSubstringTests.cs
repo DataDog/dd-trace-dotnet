@@ -2,7 +2,7 @@ using System;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 
 public class StringSubstringTests : InstrumentationTestsBase
 {
@@ -77,42 +77,42 @@ public class StringSubstringTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithBoth_ThenResultIsTainted()
     {
-        string str = String.Concat(TaintedString, UntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:UntaintedString", str.Substring(2), () => str.Substring(2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithBoth_ThenResultIsTainted2()
     {
-        string str = String.Concat(TaintedString, UntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:Un", str.Substring(2, 13), () => str.Substring(2, 13));
     }
 
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithBothInverse_ThenResultIsTainted()
     {
-        string str = String.Concat(UntaintedString, TaintedString);
+        string str = System.String.Concat(UntaintedString, TaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:", str.Substring(17), () => str.Substring(17));
     }
 
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithTwoTainted_ThenResultIsTainted()
     {
-        string str = String.Concat(String.Concat(TaintedString, UntaintedString), TaintedString);
+        string str = System.String.Concat(System.String.Concat(TaintedString, UntaintedString), TaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-intedString-+:UntaintedString:+-TaintedString-+:", str.Substring(2), () => str.Substring(2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexWithTwoTaintedTwoUntainted_ThenResultIsTainted()
     {
-        string str = String.Concat(TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString, OtherTaintedString, OtherUntaintedString);
         AssertTaintedFormatWithOriginalCallCheck(":+-String-+:UntaintedString:+-OtherTaintedString-+:OtherUntaintedString", str.Substring(7), () => str.Substring(7));
     }
 
     [Fact]
     public void GivenATaintedString_WhenSubstringIndexTaintedBaseOutOfRange_ThenResultIsNotTainted()
     {
-        string str = String.Concat(TaintedString, UntaintedString);
+        string str = System.String.Concat(TaintedString, UntaintedString);
         string newString = str.Substring(13);
 
         Assert.Equal("UntaintedString", newString);

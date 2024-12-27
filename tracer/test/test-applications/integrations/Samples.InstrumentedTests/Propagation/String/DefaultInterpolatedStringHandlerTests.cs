@@ -5,7 +5,7 @@ using Xunit;
 using System.Runtime.CompilerServices;
 using FluentAssertions;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 
 public class DefaultInterpolatedStringHandlerTests : InstrumentationTestsBase
 {

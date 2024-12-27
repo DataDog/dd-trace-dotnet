@@ -3,7 +3,7 @@ using System.Linq;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class StringTrimTests : InstrumentationTestsBase
 {
     protected string taintedValue = "tainted";
@@ -37,19 +37,19 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedString_WhenCallingTrim_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", String.Concat(TaintedString, "   ").Trim(), () => String.Concat(TaintedString, "   ").Trim());
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", System.String.Concat(TaintedString, "   ").Trim(), () => System.String.Concat(TaintedString, "   ").Trim());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingTrim_ResultIsTainted4()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", String.Concat(TaintedString, "\t\n\r").Trim(), () => String.Concat(TaintedString, "\t\n\r").Trim());
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", System.String.Concat(TaintedString, "\t\n\r").Trim(), () => System.String.Concat(TaintedString, "\t\n\r").Trim());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingTrim_ResultIsTainted3()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", String.Concat("   ", TaintedString).Trim(), () => String.Concat("   ", TaintedString).Trim());
+        AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:", System.String.Concat("   ", TaintedString).Trim(), () => System.String.Concat("   ", TaintedString).Trim());
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimWithCharArrayParam_ResultIsTainted5()
     {
-        AssertUntaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(System.String.Empty,
             taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.Trim(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
@@ -161,7 +161,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimStartWithCharArrayParam_ResultIsTainted6()
     {
-        AssertUntaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(System.String.Empty,
             taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.TrimStart(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }
@@ -193,7 +193,7 @@ public class StringTrimTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingTrimEndWithCharArrayParam_ResultIsTainted5()
     {
-        AssertUntaintedWithOriginalCallCheck(String.Empty,
+        AssertUntaintedWithOriginalCallCheck(System.String.Empty,
             taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }),
             () => taintedValue.TrimEnd(new char[] { 't', 'a', 'i', 'n', 'e', 'd' }));
     }

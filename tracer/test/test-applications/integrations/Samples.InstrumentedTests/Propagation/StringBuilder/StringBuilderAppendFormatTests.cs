@@ -1,8 +1,9 @@
-using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
+
+
 public class StringBuilderAppendFormatTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
@@ -44,16 +45,16 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneObjectFormatProvider_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedtainted-+:",
-            new StringBuilder(_taintedValue).AppendFormat("{0}", _taintedValue).ToString(),
-            () => new StringBuilder(_taintedValue).AppendFormat("{0}", _taintedValue).ToString());
+            new System.Text.StringBuilder(_taintedValue).AppendFormat("{0}", _taintedValue).ToString(),
+            () => new System.Text.StringBuilder(_taintedValue).AppendFormat("{0}", _taintedValue).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneParamMissing_ResultIsTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue).ToString());
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object)")]
@@ -70,8 +71,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatTwoObjects_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedmyformattaintednotTainted-+:",
-            new StringBuilder(_taintedValue).AppendFormat("myformat{0}{1}", _taintedValue, _notTaintedValue).ToString(),
-            () => new StringBuilder(_taintedValue).AppendFormat("myformat{0}{1}", _taintedValue, _notTaintedValue).ToString());
+            new System.Text.StringBuilder(_taintedValue).AppendFormat("myformat{0}{1}", _taintedValue, _notTaintedValue).ToString(),
+            () => new System.Text.StringBuilder(_taintedValue).AppendFormat("myformat{0}{1}", _taintedValue, _notTaintedValue).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object,System.Object,System.Object)")]
@@ -88,8 +89,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatThreeObjectFormatProvider_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedtaintedeeetainted-+:",
-            new StringBuilder(_taintedValue).AppendFormat("{0}{1}{2}", _taintedValue, "eee", _taintedValue).ToString(),
-            () => new StringBuilder(_taintedValue).AppendFormat("{0}{1}{2}", _taintedValue, "eee", _taintedValue).ToString());
+            new System.Text.StringBuilder(_taintedValue).AppendFormat("{0}{1}{2}", _taintedValue, "eee", _taintedValue).ToString(),
+            () => new System.Text.StringBuilder(_taintedValue).AppendFormat("{0}{1}{2}", _taintedValue, "eee", _taintedValue).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.String,System.Object[])")]
@@ -98,16 +99,16 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatObjectArray_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-formattaintednotTainted-+:",
-            new StringBuilder(string.Empty).AppendFormat(_formatTaintedValue, new object[] { _taintedValue, _notTaintedValue }).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(_formatTaintedValue, new object[] { _taintedValue, _notTaintedValue }).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(_formatTaintedValue, new object[] { _taintedValue, _notTaintedValue }).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(_formatTaintedValue, new object[] { _taintedValue, _notTaintedValue }).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatNottaintedObjectArray_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-myformattaintednotTainted-+:",
-            new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object)")]
@@ -116,16 +117,16 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneObjectFormatProviderFormatProvider_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedcustomformat-+:",
-            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}", _taintedValue).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}", _taintedValue).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}", _taintedValue).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}", _taintedValue).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatFormatNull_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:",
-            new StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object)")]
@@ -143,24 +144,24 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatTwoObjectsFormatProvider_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-myformattaintedcustomformatnotTaintedcustomformat-+:",
-            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", _taintedValue, _notTaintedValue).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", _taintedValue, _notTaintedValue).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", _taintedValue, _notTaintedValue).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", _taintedValue, _notTaintedValue).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatOneParamNull_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-myformattainted-+:",
-            new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue, null).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue, null).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue, null).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat("myformat{0}{1}", _taintedValue, null).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatMoreParameters_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:",
-            new StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue, "eee").ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue, "eee").ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue, "eee").ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(null, _taintedValue, _notTaintedValue, "eee").ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
@@ -169,8 +170,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatThreeObjectFormatProviderFormatProvider_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintedcustomformatTAINTED2customformattaintedcustomformat-+:",
-            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}{1}{2}", _taintedValue, _taintedValue2, _taintedValue).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}{1}{2}", _taintedValue, _taintedValue2, _taintedValue).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}{1}{2}", _taintedValue, _taintedValue2, _taintedValue).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "{0}{1}{2}", _taintedValue, _taintedValue2, _taintedValue).ToString());
     }
 
     // [AspectMethodReplace("System.Text.StringBuilder::AppendFormat(System.IFormatProvider,System.String,System.Object[])")]
@@ -179,8 +180,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderAppendFormatObjectArrayFormatProvider_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-myformattaintedcustomformatnotTaintedcustomformat-+:", 
-            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString(), 
-            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString(), 
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString());
     }
 
     
@@ -193,8 +194,8 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
         var composite = CompositeFormat.Parse("myformat{0}{1}");
         AssertUntaintedWithOriginalCallCheck(
             "myformattaintedcustomformatnotTaintedcustomformat",
-            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString(),
-            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString());
+            new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString(),
+            () => new System.Text.StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString());
     }
 #endif
 }
