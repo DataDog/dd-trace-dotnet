@@ -68,7 +68,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(internalSpan);
+        FillUp(internalSpan, userId: userId);
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public static class EventTrackingSdk
             }
         }
 
-        FillUp(spanInternal);
+        FillUp(spanInternal, userId: userId);
     }
 
     /// <summary>

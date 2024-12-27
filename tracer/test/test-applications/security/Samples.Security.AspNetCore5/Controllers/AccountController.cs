@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -28,19 +29,11 @@ public class AccountController : Controller
 
         return View(new LoginModel { Input = new LoginModel.InputModel { UserName = "TestUser", Password = "test" } });
     }
-    
+
     [HttpGet]
     [Authorize]
     public IActionResult SomeAuthenticatedAction()
     {
-       return Content("Authorized content");
-    }
-    
-    [HttpGet]
-    [Authorize]
-    public IActionResult SomeAuthenticatedActionWithSdk()
-    {
-        SampleHelpers.TrackUserLoginSuccessEvent("toto", null);
         return Content("Authorized content");
     }
 
@@ -71,12 +64,17 @@ public class AccountController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Index(LoginModel model, string returnUrl = null)
+    public async Task<IActionResult> Index(LoginModel model, string userIdSdk = null, string returnUrl = null)
     {
         returnUrl ??= Url.Content("~/");
 
         if (ModelState.IsValid)
         {
+            if (userIdSdk is not null)
+            {
+                SampleHelpers.TrackUserLoginSuccessEvent(userIdSdk, new Dictionary<string, string> { { "some-metadata", "some-value" } });
+            }
+
             // This doesn't count login failures towards account lockout
             // To enable password failures to trigger account lockout, set lockoutOnFailure: true
             var result = await _signInManager.PasswordSignInAsync(model.Input.UserName, model.Input.Password, model.Input.RememberMe, lockoutOnFailure: false);

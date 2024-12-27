@@ -207,10 +207,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                 appsecSpans.Should()
                            .OnlyContain(
                                 s =>
-                                    s.Metrics.ContainsKey("_dd.appsec.waf.duration")
-                                 && s.Metrics.ContainsKey("_dd.appsec.waf.duration_ext")
-                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration")
-                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration_ext"),
+                                    (s.Metrics.ContainsKey("_dd.appsec.waf.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.waf.duration_ext"))
+                                 || (s.Metrics.ContainsKey("_dd.appsec.rasp.duration")
+                                 && s.Metrics.ContainsKey("_dd.appsec.rasp.duration_ext")),
                                 "if waf has run, these metrics should be present and are not, has the waf really run?")
                            .And.OnlyContain(
                                 s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]

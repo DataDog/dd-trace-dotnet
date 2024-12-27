@@ -47,9 +47,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(null);
         }
 
-        protected async Task TryStartApp()
+        protected async Task TryStartApp(string rulesFile = null)
         {
-            await _fixture.TryStartApp(this, _enableSecurity);
+            await _fixture.TryStartApp(this, _enableSecurity, externalRulesFile: rulesFile);
             SetHttpPort(_fixture.HttpPort);
         }
 
@@ -86,6 +86,19 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser&Input.Password=test", contentType: "application/x-www-form-urlencoded");
             request.StatusCode.Should().Be(HttpStatusCode.OK);
             await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/SomeAuthenticatedAction", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestAuthenticatedRequest)));
+            // reset memory database (useless for net7 as it runs with EF7 on app.db
+            await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
+            await SendRequestsAsync(_fixture.Agent, "/account/logout");
+        }
+
+        [SkippableFact]
+        protected async Task TestLoginWithSdk()
+        {
+            await TryStartApp(rulesFile: DefaultRuleFile);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var request = await SubmitRequest("/Account/Index", "Input.UserName=TestUser&Input.Password=test", contentType: "application/x-www-form-urlencoded");
+            request.StatusCode.Should().Be(HttpStatusCode.OK);
+            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/Account/Index?userIdSdk=Toto", null, 1, 1, settings, fileNameOverride: GetTestFileName(nameof(TestLoginWithSdk)));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");

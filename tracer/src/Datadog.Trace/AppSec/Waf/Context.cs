@@ -66,18 +66,18 @@ internal class Context : IContext
     public Dictionary<string, string> ShouldRunWith(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
         var addresses = new Dictionary<string, string>();
-        ShouldRun(userId, _userEventsState.Id.Value, AddressesConstants.UserId);
-        ShouldRun(userLogin, _userEventsState.Login.Value, AddressesConstants.UserLogin);
-        ShouldRun(userSessionId, _userEventsState.SessionId.Value, AddressesConstants.UserSessionId);
+        ShouldRun(userId, _userEventsState.Id.Value, _userEventsState.Id.FromSdk, AddressesConstants.UserId);
+        ShouldRun(userLogin, _userEventsState.Login.Value, _userEventsState.Login.FromSdk, AddressesConstants.UserLogin);
+        ShouldRun(userSessionId, _userEventsState.SessionId.Value, _userEventsState.SessionId.FromSdk, AddressesConstants.UserSessionId);
 
         return addresses;
 
-        void ShouldRun(string? value, string? previousValue, string address)
+        void ShouldRun(string? value, string? previousValue, bool previousFromSdk, string address)
         {
             if (value is not null && security.AddressEnabled(address))
             {
                 var differentValue = string.Compare(value, previousValue, StringComparison.OrdinalIgnoreCase) != 0;
-                if (differentValue && (fromSdk || !_userEventsState.Id.FromSdk))
+                if (differentValue && (fromSdk || !previousFromSdk))
                 {
                     addresses[address] = value;
                 }
