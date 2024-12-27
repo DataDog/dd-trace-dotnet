@@ -8,12 +8,9 @@
 using System.ComponentModel;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Iast;
-using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -25,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     TypeName = "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext",
     MethodName = "set_Result",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
+    ParameterTypeNames = ["Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"],
     MinimumVersion = "2.0.0.0",
     MaximumVersion = SupportedVersions.LatestDotNet,
     IntegrationName = IntegrationName,

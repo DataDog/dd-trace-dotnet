@@ -24,6 +24,7 @@ namespace Samples
         private static readonly Type TracerConstantsType = Type.GetType("Datadog.Trace.TracerConstants, Datadog.Trace");
         private static readonly Type ProcessHelpersType = Type.GetType("Datadog.Trace.Util.ProcessHelpers, Datadog.Trace");
         private static readonly Type UserDetailsType = Type.GetType("Datadog.Trace.UserDetails, Datadog.Trace");
+        private static readonly Type EventTrackingSdk = Type.GetType("Datadog.Trace.AppSec.EventTrackingSdk, Datadog.Trace");
         private static readonly Type SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         public static readonly Type IpcClientType = Type.GetType("Datadog.Trace.Ci.Ipc.IpcClient, Datadog.Trace");
         private static readonly PropertyInfo GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -51,6 +52,7 @@ namespace Samples
         private static readonly MethodInfo GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo RunCommandMethod = ProcessHelpersType?.GetMethod("TestingOnly_RunCommand", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo SetUserIdMethod = UserDetailsType?.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance)?.SetMethod;
+        private static readonly MethodInfo TrackUserLoginSuccessEventMethod = EventTrackingSdk?.GetMethod("TrackUserLoginSuccessEvent", BindingFlags.Public | BindingFlags.Static, null, [typeof(string), typeof(IDictionary<string,string>)], null);
 #if NETCOREAPP
         private static readonly MethodInfo SetUserMethod = SpanExtensionsType?.GetMethod("SetUser", BindingFlags.Public | BindingFlags.Static | BindingFlags.DoNotWrapExceptions);
 #else
@@ -396,6 +398,11 @@ namespace Samples
                ?.Invoke(null, new[] { discoveryService });
 
             return result as Task ?? Task.CompletedTask;
+        }
+
+        public static void TrackUserLoginSuccessEvent(string userId, IDictionary<string, string> metadata)
+        {
+            TrackUserLoginSuccessEventMethod.Invoke(null, [userId, metadata]);
         }
 
         public static void SetUser(string userId)

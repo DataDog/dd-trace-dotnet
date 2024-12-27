@@ -4,13 +4,9 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {

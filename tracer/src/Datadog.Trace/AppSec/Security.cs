@@ -630,14 +630,14 @@ namespace Datadog.Trace.AppSec
             return _spanMetaStructs;
         }
 
-        internal void UpdateActiveAddresses()
+        private void UpdateActiveAddresses()
         {
             // So far, RASP is the only one that uses this
-            if (_settings.RaspEnabled && _waf?.IsKnowAddressesSuported() == true)
+            if (_waf?.IsKnowAddressesSuported() is true)
             {
                 var addresses = _waf.GetKnownAddresses();
                 Log.Debug("Updating WAF active addresses to {Addresses}", addresses);
-                _activeAddresses = addresses is null ? null : new HashSet<string>(addresses);
+                _activeAddresses = [..addresses];
             }
             else
             {
@@ -645,23 +645,15 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        internal bool AddressEnabled(string address)
+        public bool AddressEnabled(string address)
         {
-            // So far, RASP is the only one that uses this
-            if (!_settings.RaspEnabled)
-            {
-                return false;
-            }
-
             if (_waf?.IsKnowAddressesSuported() == true)
             {
                 return _activeAddresses?.Contains(address) ?? false;
             }
-            else
-            {
-                // If we don't support knowAddresses, we will have to call the WAF
-                return true;
-            }
+
+            // If we don't support knowAddresses, we will have to call the WAF
+            return true;
         }
     }
 }

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Vendors.Serilog;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #else
