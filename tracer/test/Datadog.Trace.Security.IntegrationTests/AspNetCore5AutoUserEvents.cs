@@ -62,9 +62,17 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             await TryStartApp();
             var agent = _fixture.Agent;
-            var url = "/Account/Index";
             var settings = VerifyHelper.GetSpanVerifierSettings(eventName, bodyString);
-            await TestAppSecRequestWithVerifyAsync(agent, url, bodyString, 1, 1, settings, contentType: "application/x-www-form-urlencoded", methodNameOverride: nameof(TestUserLoginEvent), fileNameOverride: GetTestFileName(eventName));
+            await TestAppSecRequestWithVerifyAsync(
+                agent,
+                "/Account/Index",
+                bodyString,
+                1,
+                1,
+                settings,
+                contentType: "application/x-www-form-urlencoded",
+                methodNameOverride: nameof(TestUserLoginEvent),
+                fileNameOverride: GetTestFileName(eventName));
             // reset memory database (useless for net7 as it runs with EF7 on app.db
             await SendRequestsAsync(_fixture.Agent, "/account/reset-memory-db");
             await SendRequestsAsync(_fixture.Agent, "/account/logout");
