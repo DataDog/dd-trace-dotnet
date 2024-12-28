@@ -353,7 +353,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                         // no size available for .NET Framework
                         if (sample.Value.Count > 1)
                         {
-                           size = sample.Value[1];
+                            size = sample.Value[1];
                         }
 
                         var labels = sample.Labels(profile).ToArray();
