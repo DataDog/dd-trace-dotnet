@@ -77,7 +77,7 @@ internal static class RequestDataHelper
         {
             return request.Form;
         }
-        catch (HttpRequestValidationException)
+        catch (HttpException)
         {
             Log.Debug("Error reading Form (body) from the request.");
             return null;
