@@ -68,8 +68,9 @@ internal static class RaspModule
     {
         var security = Security.Instance;
 
-        if (!security.RaspEnabled || !security.AddressEnabled(address))
+        if (!security.RaspEnabled || security.AddressEnabled(address))
         {
+            Log.Debug("RASP: RASP is disabled or address is disabled, skipping vulnerability check.");
             return;
         }
 
@@ -77,6 +78,7 @@ internal static class RaspModule
 
         if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
         {
+            Log.Warning("RASP: Root span is null, finished or not a web span, skipping vulnerability check.");
             return;
         }
 
@@ -117,12 +119,17 @@ internal static class RaspModule
             return;
         }
 
+        Log.Debug("RASP: Calling WAF");
+
         var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
 
         if (result is not null)
         {
+            Log.Debug("RASP: Result is not null");
             RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout);
         }
+
+        Log.Debug("RASP: LetsGo");
 
         try
         {
@@ -189,6 +196,7 @@ internal static class RaspModule
         {
             if (!Security.Instance.RaspEnabled)
             {
+                Log.Debug("RASP: RASP is disabled, skipping command injection check.");
                 return;
             }
 
