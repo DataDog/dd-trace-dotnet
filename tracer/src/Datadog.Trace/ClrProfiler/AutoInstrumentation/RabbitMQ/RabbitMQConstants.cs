@@ -10,6 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     internal static class RabbitMQConstants
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
+        internal const string IReadOnlyBasicPropertiesTypeName = "RabbitMQ.Client.IReadOnlyBasicProperties";
         internal const string IBasicPropertiesTypeName = "RabbitMQ.Client.IBasicProperties";
         internal const string IDictionaryArgumentsTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
         internal const string AmqpCommand = "amqp.command";
