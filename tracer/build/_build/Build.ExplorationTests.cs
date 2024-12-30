@@ -599,20 +599,20 @@ class ExplorationTestDescription
             {
                 Name = ExplorationTestName.eShopOnWeb,
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "netcore2.1",
+                GitRepositoryTag = "2414014bfa0f4d2021b5bc9061429a98d232f440",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET8_0 }
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
                 Name = ExplorationTestName.protobuf,
                 GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
-                GitRepositoryTag = "v3.19.1",
+                GitRepositoryTag = "v3.23.0", // min version targeting net6.0 in tests
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
                 TestsToIgnore = new string[]
                 {
                     "Google.Protobuf.CodedInputStreamTest.MaliciousRecursion",
