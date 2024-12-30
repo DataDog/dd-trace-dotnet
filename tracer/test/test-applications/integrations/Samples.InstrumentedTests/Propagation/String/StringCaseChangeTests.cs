@@ -3,7 +3,7 @@ using System.Globalization;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 
 public class StringCaseChangeTests : InstrumentationTestsBase
 {
@@ -33,8 +33,8 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         string str1 = AddTaintedString("0a2");
         string str2 = AddTaintedString("0b2");
         AssertTaintedFormatWithOriginalCallCheck("    :+-0A2-+:    :+-0B2-+:",
-            String.Concat("    ", str1, "    ", str2).ToUpper(),
-            () => String.Concat("    ", str1, "    ", str2).ToUpper());
+            System.String.Concat("    ", str1, "    ", str2).ToUpper(),
+            () => System.String.Concat("    ", str1, "    ", str2).ToUpper());
     }
 
     [Fact]
@@ -49,8 +49,8 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         string str1 = AddTaintedString("0A2");
         string str2 = AddTaintedString("0B2");
         AssertTaintedFormatWithOriginalCallCheck("    :+-0a2-+:    :+-0b2-+:",
-            String.Concat("    ", str1, "    ", str2).ToLower(),
-            () => String.Concat("    ", str1, "    ", str2).ToLower());
+            System.String.Concat("    ", str1, "    ", str2).ToLower(),
+            () => System.String.Concat("    ", str1, "    ", str2).ToLower());
     }
 
     [Fact]
@@ -65,8 +65,8 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         string str1 = AddTaintedString("0a2");
         string str2 = AddTaintedString("0b2");
         AssertTaintedFormatWithOriginalCallCheck("    :+-0A2-+:    :+-0B2-+:",
-            String.Concat("    ", str1, "    ", str2).ToUpperInvariant(),
-            () => String.Concat("    ", str1, "    ", str2).ToUpperInvariant());
+            System.String.Concat("    ", str1, "    ", str2).ToUpperInvariant(),
+            () => System.String.Concat("    ", str1, "    ", str2).ToUpperInvariant());
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public class StringCaseChangeTests : InstrumentationTestsBase
         string str1 = AddTaintedString("0A2");
         string str2 = AddTaintedString("0B2");
         AssertTaintedFormatWithOriginalCallCheck("    :+-0a2-+:    :+-0b2-+:", 
-            String.Concat("    ", str1, "    ", str2).ToLowerInvariant(), 
-            () => String.Concat("    ", str1, "    ", str2).ToLowerInvariant());
+            System.String.Concat("    ", str1, "    ", str2).ToLowerInvariant(), 
+            () => System.String.Concat("    ", str1, "    ", str2).ToLowerInvariant());
     }
 
     [Fact]
