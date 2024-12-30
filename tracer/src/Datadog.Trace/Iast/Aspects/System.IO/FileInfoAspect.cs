@@ -41,7 +41,7 @@ public class FileInfoAspect
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(FileInfoAspect)}.{nameof(ReviewPath)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(FileInfoAspect)}.{nameof(ReviewPath)}");
             return path;
         }
     }

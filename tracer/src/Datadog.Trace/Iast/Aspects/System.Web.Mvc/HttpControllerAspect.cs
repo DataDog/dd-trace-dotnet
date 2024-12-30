@@ -31,7 +31,7 @@ public class HttpControllerAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpControllerAspect)}.{nameof(Redirect)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpControllerAspect)}.{nameof(Redirect)}");
             return url;
         }
     }

@@ -106,7 +106,7 @@ public class ReplaceAspectCodeFixProvider : CodeFixProvider
 
         var catchDeclaration = SyntaxFactory.CatchDeclaration(SyntaxFactory.IdentifierName("Exception"), SyntaxFactory.Identifier("ex"));
         var logExpression = SyntaxFactory.ExpressionStatement(
-            SyntaxFactory.ParseExpression($$"""IastModule.Log.Error(ex, $"Error invoking {nameof({{typeName}})}.{nameof({{methodName}})}")"""));
+            SyntaxFactory.ParseExpression($$"""IastModule.LogAspectException(ex, $"Error invoking {nameof({{typeName}})}.{nameof({{methodName}})}")"""));
 
         var catchSyntax = SyntaxFactory.CatchClause()
                                        .WithDeclaration(catchDeclaration)

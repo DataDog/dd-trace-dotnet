@@ -63,7 +63,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while initializing NewtonsoftJsonAspects");
+            IastModule.LogAspectException(ex, "Error while initializing NewtonsoftJsonAspects");
         }
     }
 
@@ -85,7 +85,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while tainting the JObject");
+            IastModule.LogAspectException(ex, "Error while tainting the JObject");
         }
 
         return result;
@@ -113,7 +113,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while tainting the JArray");
+            IastModule.LogAspectException(ex, "Error while tainting the JArray");
         }
 
         return result;
@@ -136,7 +136,7 @@ public class NewtonsoftJsonAspects
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error while tainting the JToken");
+            IastModule.LogAspectException(ex, "Error while tainting the JToken");
         }
 
         return result;

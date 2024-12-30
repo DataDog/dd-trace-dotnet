@@ -32,7 +32,7 @@ public class HttpResponseAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(HttpResponseAspect)}.{nameof(Redirect)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(HttpResponseAspect)}.{nameof(Redirect)}");
             return url;
         }
     }

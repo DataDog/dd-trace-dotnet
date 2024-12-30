@@ -45,7 +45,7 @@ public class ActivatorAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(ActivatorAspect)}.{nameof(ReflectionInjectionParam)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(ActivatorAspect)}.{nameof(ReflectionInjectionParam)}");
             return param;
         }
     }

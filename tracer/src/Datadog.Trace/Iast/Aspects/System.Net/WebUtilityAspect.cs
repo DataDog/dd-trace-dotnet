@@ -36,7 +36,7 @@ public class WebUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(XssEscape)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(XssEscape)}");
         }
 
         return result;
@@ -60,7 +60,7 @@ public class WebUtilityAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(SsrfEscape)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(WebUtilityAspect)}.{nameof(SsrfEscape)}");
         }
 
         return result;

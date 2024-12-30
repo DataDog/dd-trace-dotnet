@@ -36,7 +36,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -61,7 +61,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -87,7 +87,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -114,7 +114,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -142,7 +142,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -171,7 +171,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
 
         return result;
@@ -196,7 +196,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(Init)}");
         }
     }
 
@@ -219,7 +219,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetQuery)}");
         }
     }
 
@@ -242,7 +242,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetPath)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(SetPath)}");
         }
     }
 
@@ -265,7 +265,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetHost)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetHost)}");
         }
 
         return result;
@@ -290,7 +290,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetQuery)}");
         }
 
         return result;
@@ -315,7 +315,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetPath)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(GetPath)}");
         }
 
         return result;
@@ -341,7 +341,7 @@ public class UriBuilderAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(ToString)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(UriBuilderAspect)}.{nameof(ToString)}");
         }
 
         return result;

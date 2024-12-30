@@ -29,7 +29,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, "Error in SymmetricAlgorithmAspect.");
+            IastModule.LogAspectException(ex, "Error in SymmetricAlgorithmAspect.");
         }
     }
 
@@ -47,7 +47,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitDES)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitDES)}");
         }
 
         return target;
@@ -67,7 +67,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRC2)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRC2)}");
         }
 
         return target;
@@ -87,7 +87,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitTripleDES)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitTripleDES)}");
         }
 
         return target;
@@ -107,7 +107,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRijndaelManaged)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitRijndaelManaged)}");
         }
 
         return target;
@@ -127,7 +127,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitAesCryptoServiceProvider)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(InitAesCryptoServiceProvider)}");
         }
 
         return target;
@@ -157,7 +157,7 @@ public class SymmetricAlgorithmAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(Create)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(SymmetricAlgorithmAspect)}.{nameof(Create)}");
             return target;
         }
     }

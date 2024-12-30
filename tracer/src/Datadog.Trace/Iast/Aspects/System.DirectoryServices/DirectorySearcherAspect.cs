@@ -37,7 +37,7 @@ public partial class DirectorySearcherAspect
         }
         catch (global::System.Exception ex)
         {
-            IastModule.Log.Error(ex, $"Error invoking {nameof(DirectorySearcherAspect)}.{nameof(Init)}");
+            IastModule.LogAspectException(ex, $"Error invoking {nameof(DirectorySearcherAspect)}.{nameof(Init)}");
             return path;
         }
     }

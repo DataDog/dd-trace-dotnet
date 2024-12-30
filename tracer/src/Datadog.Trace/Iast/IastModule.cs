@@ -61,6 +61,7 @@ internal static partial class IastModule
     private static readonly Func<TaintedObject, bool> Always = (x) => true;
     private static readonly DbRecordManager DbRecords = new DbRecordManager(IastSettings);
     private static readonly SourceType[] _dbSources = [SourceType.SqlRowValue];
+    private static readonly HashSet<int> LoggedAspectExceptionMessages = [];
     private static bool _showTimeoutExceptionError = true;
 
     internal static void LogTimeoutError(RegexMatchTimeoutException err)
@@ -863,6 +864,16 @@ internal static partial class IastModule
 
         // We use the same secure marks as XSS, but excluding db sources
         GetScope(messageDuck.Body, IntegrationId.EmailHtmlInjection, VulnerabilityTypeName.EmailHtmlInjection, OperationNameEmailHtmlInjection, taintValidator: Always, safeSources: _dbSources, exclusionSecureMarks: SecureMarks.Xss);
+    }
+
+    public static void LogAspectException(Exception ex, string message)
+    {
+        if (!LoggedAspectExceptionMessages.Add(message.GetHashCode()))
+        {
+            return;
+        }
+
+        Log.Error(ex, "Aspect Exception: {Message}.", message);
     }
 
     internal static void RegisterDbRecord(object instance)
