@@ -5028,7 +5028,7 @@ stages:
             set -e
             
             source venv/bin/activate
-            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g appsec > out.txt
+            PYTHONPATH=. python utils/scripts/compute-workflow-parameters.py dotnet -g $(scenarioGroups) > out.txt
 
             endtoend_scenarios=$(grep 'endtoend_scenarios' out.txt | sed 's/.*=//g')
             graphql_scenarios=$(grep 'graphql_scenarios' out.txt | sed 's/.*=//g')
@@ -5052,7 +5052,7 @@ stages:
             echo 'matrix_items = {}' >> cross.py
             echo 'for s in combined_scenarios:' >> cross.py
             echo '    for w in script_weblogs:' >> cross.py
-            echo '        matrix_items[s] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
+            echo '        matrix_items[s + " (" + w + ")"] = {"SCENARIO": s, "WEBLOG_VARIANT": w}' >> cross.py
             echo 'print(json.dumps(matrix_items))' >> cross.py
             
             python cross.py > matrix.json
@@ -5064,8 +5064,8 @@ stages:
           workingDirectory: system-tests
             
     - job: tests
+      displayName: ""
       timeoutInMinutes: 60
-      displayName: Run system-tests scenarios
       pool:
           vmImage: ubuntu-latest
       dependsOn: compute_scenarios
