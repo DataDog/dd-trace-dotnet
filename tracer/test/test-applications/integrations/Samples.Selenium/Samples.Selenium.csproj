@@ -37,7 +37,7 @@
     </None>
   </ItemGroup>
 
-  <Target Name="CodeCoverageFixTarget" AfterTargets="Build">
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(OS)' == 'Windows_NT' AND '$(TargetFramework)' != '' ">
     <Message Importance="High" Text="Fixing Code Coverage" />
 
     <!-- Running a target in Microsoft.CodeCoverage.targets to copy the code coverage assemblies to the publish folder -->
