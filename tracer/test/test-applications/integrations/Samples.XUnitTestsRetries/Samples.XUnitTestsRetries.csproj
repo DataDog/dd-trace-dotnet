@@ -40,7 +40,7 @@
     </None>
   </ItemGroup>
 
-  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(OS)' == 'Windows_NT' AND '$(TargetFramework)' != '' ">
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(TargetFramework)' != '' AND '$(ManuallyCopyCodeCoverageFiles)' != 'false'  ">
     <Message Importance="High" Text="Fixing Code Coverage: $(TargetFramework)" />
     <CallTarget Targets="ComputeFilesToPublish" />
     <CallTarget Targets="CopyCoverletDataCollectorFiles" />
