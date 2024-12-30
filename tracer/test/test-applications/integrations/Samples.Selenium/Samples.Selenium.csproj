@@ -37,16 +37,18 @@
     </None>
   </ItemGroup>
 
-<!--  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition=" '$(OS)' == 'Windows_NT' AND '$(TargetFramework)' != '' ">-->
-<!--    <Message Importance="High" Text="Fixing Code Coverage: $(TargetFramework)" />-->
-<!--    <CallTarget Targets="ComputeFilesToPublish" />-->
-<!--    <CallTarget Targets="CopyCoverletDataCollectorFiles" />-->
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build">
+    <Message Importance="High" Text="Fixing Code Coverage" />
 
-<!--    &lt;!&ndash; Because we don't publish on windows, we just move the code coverage binaries from the publish folder to the actual build bin folder&ndash;&gt;-->
-<!--    <ItemGroup>-->
-<!--      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />-->
-<!--    </ItemGroup>-->
-<!--    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />-->
-<!--  </Target>-->
+    <!-- Running a target in Microsoft.CodeCoverage.targets to copy the code coverage assemblies to the publish folder -->
+    <CallTarget Targets="ComputeFilesToPublish" />
+    <CallTarget Targets="CopyTraceDataCollectorArtifacts" />
+
+    <!-- Because we don't publish on windows, we just move the code coverage binaries from the publish folder to the actual build bin folder-->
+    <ItemGroup>
+      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />
+  </Target>
 
 </Project>
