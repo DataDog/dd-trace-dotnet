@@ -1,1 +1,1 @@
-https://github.com/microsoft/OpenAPI.NET/archive/1.6.22.zip
+https://github.com/microsoft/OpenAPI.NET/archive/1.6.23.zip
