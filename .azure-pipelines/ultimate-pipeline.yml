@@ -3007,6 +3007,20 @@ stages:
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-bin-standalone
+            path: $(outputDir)/bin
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download multi-package samples
+          inputs:
+            artifact: samples-bin-multi-package
+            path: $(outputDir)/publish
+          retryCountOnTaskFailure: 5
+
         - template: steps/run-in-docker.yml
           parameters:
             build: true
@@ -3077,6 +3091,19 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-$(artifactSuffix)-working-directory
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-bin-standalone
+            path: $(outputDir)/bin
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download multi-package samples
+          inputs:
+            artifact: samples-bin-multi-package
+            path: $(outputDir)/publish
+          retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
           parameters:
