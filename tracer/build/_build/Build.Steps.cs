@@ -1521,15 +1521,77 @@ partial class Build
         .DependsOn(HackForMissingMsBuildLocation)
         .Executes(() =>
         {
-            // TODO: set Samples.Trimming as don't build, as we're going to publish anyway
-            // Just try building the solution and seeing what happens
+            var samples = GetSamplesToBuild();
+            Logger.Information("Building {SampleName}", samples);
+
+            // TODO: set Samples.Trimming as don't build, as we have to build that on every platform anyway
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
-                // .SetTargetPlatformAnyCPU()
-                // .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .SetProjectFile(SamplesSolution));
+                .When(Framework is not null, x => x.SetFramework(Framework))
+                .SetProjectFile(samples));
+
+            string GetSamplesToBuild()
+            {
+                // If a specific sample name was not given, build whole samples solution
+                if (string.IsNullOrWhiteSpace(SampleName))
+                {
+                    return SamplesSolution;
+                }
+
+                var candidates =
+                    TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj")
+                                   .Select(x => Solution.GetProject(x))
+                                   .Where(project => project is not null
+                                                  && project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
+
+                if (Framework is not null)
+                {
+                    // exclude projects that can't be built for this TFM
+                    candidates = candidates.Where(project => project.TryGetTargetFrameworks()?.Contains(Framework) ?? true);
+                }
+
+                var allMatches = candidates.ToList();
+                if (allMatches.Count == 0)
+                {
+                    throw new InvalidOperationException($"No sample projects found matching '{SampleName}'." +
+                                                        (string.IsNullOrEmpty(Framework) ? $" Does the project support the specified framework '{Framework}'?" : " ") +
+                                                        "Alternatively, exclude the SampleName parameter to build all samples instead");
+                }
+
+                if (allMatches.Count == 1)
+                {
+                    return allMatches.First();
+                }
+
+                // try to find best "exact" match
+                // exact name match
+                var bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.Ordinal)).ToList();
+                if(bestMatches.Count == 1)
+                {
+                    return bestMatches.First();
+                }
+
+                // case insensitive exact name match
+                bestMatches = allMatches.Where(x => x.Name.Equals(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
+                if(bestMatches.Count == 1)
+                {
+                    return bestMatches.First();
+                }
+
+                // case insensitive path suffix match
+                bestMatches = allMatches.Where(x => x.Path.ToString().EndsWith(SampleName, StringComparison.OrdinalIgnoreCase)).ToList();
+                if(bestMatches.Count == 1)
+                {
+                    return bestMatches.First();
+                }
+
+                // no way to choose between them
+                throw new InvalidOperationException($"Found multiple sample projects matching '{SampleName}'. " +
+                                                    string.Join(",", allMatches.Select(x => $"'{x.Name}'")) +
+                                                    ". Provide an exact match for the name of of the project, or a path suffix");
+            }
         });
 
     Target CompileTrimmingSamples => _ => _
@@ -1589,8 +1651,9 @@ partial class Build
         {
             // these are defined in the Datadog.Trace.proj - they only build the projects that have multiple package versions of their NuGet
             var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
-            
-            foreach (var framework in TestingFrameworks)
+            var frameworks = Framework is null || string.IsNullOrEmpty(Framework) ? TestingFrameworks : new[] { Framework };
+
+            foreach (var framework in frameworks)
             {
                 foreach (var target in targets)
                 {

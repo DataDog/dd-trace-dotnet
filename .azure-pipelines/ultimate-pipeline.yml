@@ -1539,20 +1539,10 @@ stages:
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [build]
+        jobs: [standalone, multi_version, merge]
 
-    - job: build
+    - job: standalone
       timeoutInMinutes: 60 #default value
-      strategy:
-        matrix:
-          Standalone:
-            target: CreateRequiredDirectories CompileSamples
-            artifactPath: /bin
-            artifact: samples-bin-standalone
-          MultiPackage:
-            target: CreateRequiredDirectories CompileMultiPackageSamples -TestAllPackageVersions
-            artifactPath: /publish
-            artifact: samples-bin-multi-package
       pool:
         name: azure-windows-scale-set-3
       steps:
@@ -1562,19 +1552,150 @@ stages:
             targetBranch: $(targetBranch)
         - template: steps/install-latest-dotnet-sdk.yml
 
-        - script: tracer\build.cmd $(target)
+        - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
           retryCountOnTaskFailure: 1
 
-        - publish: $(outputDir)$(artifactPath)
+        - publish: $(outputDir)/bin
           displayName: Upload artifact samples (bin only)
-          artifact: $(artifact)
+          artifact: samples-bin-standalone
 
         - publish: artifacts/build_data
           displayName: Uploading logs
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
           condition: failed()
           continueOnError: true
+
+    - job: multi_version
+      timeoutInMinutes: 60 #default value
+      strategy:
+        # TODO: we could move this generation to the generate_variables stage but it would delay this starting, so just hardcode it for now
+        matrix:
+          net462:
+            framework: net462
+          netcoreapp2.1:
+            framework: netcoreapp2.1
+          netcoreapp3.0:
+            framework: netcoreapp3.0
+          netcoreapp3.1:
+            framework: netcoreapp3.1
+          net5.0:
+            framework: net5.0
+          net6.0:
+            framework: net6.0
+          net7.0:
+            framework: net7.0
+          net8.0:
+            framework: net8.0
+          net9.0:
+            framework: net9.0
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd CreateRequiredDirectories CompileMultiPackageSamples -Framework $(framework) -TestAllPackageVersions
+          displayName: Build sample projects
+          retryCountOnTaskFailure: 1
+
+        - publish: $(outputDir)/publish
+          displayName: Upload artifact samples (bin only)
+          artifact: samples-multi-version-$(framework)
+
+        - publish: artifacts/build_data
+          displayName: Uploading logs
+          artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+          condition: failed()
+          continueOnError: true
+
+    - job: merge
+      dependsOn: [ standalone, multi_version ]
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-windows-scale-set-3
+      steps:
+        - checkout: none
+        - powershell: |
+            mkdir $(Build.ArtifactStagingDirectory)/bin
+            mkdir $(Build.ArtifactStagingDirectory)/publish
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-bin-standalone
+            path: $(Build.ArtifactStagingDirectory)/bin
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net462
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp2.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-netcoreapp3.1
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net5.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net6.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net7.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net8.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download samples
+          inputs:
+            artifact: samples-multi-version-net9.0
+            path: $(Build.ArtifactStagingDirectory)/publish
+          retryCountOnTaskFailure: 5
+
+        - publish: $(Build.ArtifactStagingDirectory)
+          displayName: Upload artifact samples
+          artifact: samples
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -1606,8 +1727,8 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download samples
       inputs:
-        artifact: samples-bin-standalone
-        path: $(outputDir)/bin
+        artifact: samples
+        path: $(outputDir)
       retryCountOnTaskFailure: 5
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
@@ -2173,14 +2294,8 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download samples
       inputs:
-        artifact: samples-bin-standalone
-        path: $(outputDir)/bin
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-package samples
-      inputs:
-        artifact: samples-bin-multi-package
-        path: $(outputDir)/publish
+        artifact: samples
+        path: $(outputDir)
       retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
@@ -2266,14 +2381,8 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download samples
       inputs:
-        artifact: samples-bin-standalone
-        path: $(outputDir)/bin
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-package samples
-      inputs:
-        artifact: samples-bin-multi-package
-        path: $(outputDir)/publish
+        artifact: samples
+        path: $(outputDir)
       retryCountOnTaskFailure: 5
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
@@ -2395,14 +2504,8 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download samples
       inputs:
-        artifact: samples-bin-standalone
-        path: $(outputDir)/bin
-      retryCountOnTaskFailure: 5
-    - task: DownloadPipelineArtifact@2
-      displayName: Download multi-package samples
-      inputs:
-        artifact: samples-bin-multi-package
-        path: $(outputDir)/publish
+        artifact: samples
+        path: $(outputDir)
       retryCountOnTaskFailure: 5
 
     - template: steps/run-in-docker.yml
@@ -3010,15 +3113,8 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download samples
           inputs:
-            artifact: samples-bin-standalone
-            path: $(outputDir)/bin
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download multi-package samples
-          inputs:
-            artifact: samples-bin-multi-package
-            path: $(outputDir)/publish
+            artifact: samples
+            path: $(outputDir)
           retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
@@ -3094,15 +3190,8 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download samples
           inputs:
-            artifact: samples-bin-standalone
-            path: $(outputDir)/bin
-          retryCountOnTaskFailure: 5
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download multi-package samples
-          inputs:
-            artifact: samples-bin-multi-package
-            path: $(outputDir)/publish
+            artifact: samples
+            path: $(outputDir)
           retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
