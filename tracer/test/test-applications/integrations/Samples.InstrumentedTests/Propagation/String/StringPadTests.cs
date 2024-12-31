@@ -2,7 +2,7 @@ using System;
 using FluentAssertions;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 
 public class StringPadTests : InstrumentationTestsBase
 {
@@ -33,8 +33,8 @@ public class StringPadTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingPadLeft_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck("    :+-TaintedString-+:UntaintedString", 
-            String.Concat(TaintedString, UntaintedString).PadLeft(32)
-            , () => String.Concat(TaintedString, UntaintedString).PadLeft(32));
+            System.String.Concat(TaintedString, UntaintedString).PadLeft(32)
+            , () => System.String.Concat(TaintedString, UntaintedString).PadLeft(32));
     }
 
     [Fact]
@@ -47,16 +47,16 @@ public class StringPadTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingPadLeft_ResultIsTainted5()
     {
         AssertTaintedFormatWithOriginalCallCheck("****:+-TaintedString-+:UntaintedString",
-            String.Concat(TaintedString, UntaintedString).PadLeft(32, '*'), 
-            () => String.Concat(TaintedString, UntaintedString).PadLeft(32, '*'));
+            System.String.Concat(TaintedString, UntaintedString).PadLeft(32, '*'), 
+            () => System.String.Concat(TaintedString, UntaintedString).PadLeft(32, '*'));
     }
 
     [Fact]
     public void GivenATaintedObject_WhenCallingPadLeft_ResultIsTainted6()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString",
-            String.Concat(TaintedString, UntaintedString).PadLeft(2, '*'),
-            () => String.Concat(TaintedString, UntaintedString).PadLeft(2, '*'));
+            System.String.Concat(TaintedString, UntaintedString).PadLeft(2, '*'),
+            () => System.String.Concat(TaintedString, UntaintedString).PadLeft(2, '*'));
     }
 
     [Fact]
@@ -94,8 +94,8 @@ public class StringPadTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingPadRight_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString    ",
-            String.Concat(TaintedString, UntaintedString).PadRight(32), 
-            () => String.Concat(TaintedString, UntaintedString).PadRight(32));
+            System.String.Concat(TaintedString, UntaintedString).PadRight(32), 
+            () => System.String.Concat(TaintedString, UntaintedString).PadRight(32));
     }
 
     [Fact]
@@ -108,8 +108,8 @@ public class StringPadTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingPadRight_ResultIsTainted5()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString****",
-            String.Concat(TaintedString, UntaintedString).PadRight(32, '*'),
-            () => String.Concat(TaintedString, UntaintedString).PadRight(32, '*'));
+            System.String.Concat(TaintedString, UntaintedString).PadRight(32, '*'),
+            () => System.String.Concat(TaintedString, UntaintedString).PadRight(32, '*'));
     }
 
     [Fact]
@@ -129,8 +129,8 @@ public class StringPadTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingPadRight_ResultIsTainted8()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TaintedString-+:UntaintedString",
-            String.Concat(TaintedString, UntaintedString).PadRight(2, '*'),
-            () => String.Concat(TaintedString, UntaintedString).PadRight(2, '*'));
+            System.String.Concat(TaintedString, UntaintedString).PadRight(2, '*'),
+            () => System.String.Concat(TaintedString, UntaintedString).PadRight(2, '*'));
     }
 
     [Fact]

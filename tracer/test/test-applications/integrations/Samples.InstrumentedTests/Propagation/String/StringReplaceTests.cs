@@ -2,7 +2,7 @@ using System;
 using System.Globalization;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.String;
 public class StringReplaceTests : InstrumentationTestsBase
 {
     private string _taintedString = "TaintedString";
@@ -95,8 +95,8 @@ public class StringReplaceTests : InstrumentationTestsBase
     public void GivenAString_WhenCallingReplace_ResultIsOk10()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => _taintedValue.Replace(String.Empty, "w"),
-            () => _taintedValue.Replace(String.Empty, "w"));
+            () => _taintedValue.Replace(System.String.Empty, "w"),
+            () => _taintedValue.Replace(System.String.Empty, "w"));
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted20()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedLarge joining OtherTaintedLarge-+:",
             str.Replace("String", "Large"),
@@ -158,7 +158,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted19()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedSmall joining OtherTaintedSmall and LargeTaintedSmall-+:",
             str.Replace("String", "Small"),
@@ -177,7 +177,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainte17()
     {
-        string str = String.Concat(_otherTaintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_otherTaintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-OtherLargeString joining OtherLargeString-+:",
             str.Replace(_taintedString, _largeString),
@@ -187,7 +187,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted16()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-LargeString joining OtherLargeString-+:",
             str.Replace(_taintedString, _largeString),
@@ -197,7 +197,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted15()
     {
-        string str = String.Concat(_otherTaintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        string str = System.String.Concat(_otherTaintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-OtherLargeString joining OtherLargeString and LargeLargeString-+:",
             str.Replace(_taintedString, _largeString),
@@ -216,7 +216,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted13()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-XaintedString joining OtherXaintedString-+:",
             str.Replace("T", "X"),
@@ -226,7 +226,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted12()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedXtring joining OtherTaintedXtring-+:",
             str.Replace("S", "X"),
@@ -236,7 +236,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted11()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedStrinX joininX OtherTaintedStrinX-+:",
             str.Replace("g", "X"),
@@ -246,7 +246,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted410()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedXtring joining OtherTaintedXtring and LargeTaintedXtring-+:",
             str.Replace("S", "X"),
@@ -282,7 +282,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted6()
     {
-        string str = String.Concat("-", "Payload", "-", _otherTaintedString, "end");
+        string str = System.String.Concat("-", "Payload", "-", _otherTaintedString, "end");
         // if no replacement is done, string remains inmutable
         AssertTaintedFormatWithOriginalCallCheck("-Payload-:+-OtherTaintedString-+:end",
             str.Replace(@"-Payload-([A-Za-z0-9\-]+)\end", _untaintedString),
@@ -292,7 +292,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted5()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
         // if no replacement is done, string remains inmutable
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedString-+: joining :+-OtherTaintedString-+: and :+-LargeTaintedString-+:",
@@ -303,7 +303,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted4()
     {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        string str = System.String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
         // if no replacement is done, string remains inmutable
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-TaintedString-+: joining :+-OtherTaintedString-+: and :+-LargeTaintedString-+:",
@@ -314,7 +314,7 @@ public class StringReplaceTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted()
     {
-        string str = String.Concat("dummy", _taintedString);
+        string str = System.String.Concat("dummy", _taintedString);
         AssertTaintedFormatWithOriginalCallCheck(
             ":+-duOtherTaintedStringTaintedString-+:",
             str.Replace("mmy", _otherTaintedString),

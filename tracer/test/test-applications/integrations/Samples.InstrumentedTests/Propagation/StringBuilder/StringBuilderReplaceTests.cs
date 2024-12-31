@@ -1,7 +1,7 @@
 using System.Text;
 using Xunit;
 
-namespace Samples.InstrumentedTests.Iast.Vulnerabilities.StringBuilderPropagation;
+namespace Samples.InstrumentedTests.Iast.Propagation.StringBuilder;
 public class StringBuilderReplaceTests : InstrumentationTestsBase
 {
     private string _taintedValue = "tainted";
@@ -85,56 +85,56 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTainted_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TainTed-+:", 
-            new StringBuilder(_taintedValue).Replace('t', 'T').ToString(), 
-            () => new StringBuilder(_taintedValue).Replace('t', 'T').ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace('t', 'T').ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T').ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCount_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainTed-+:", 
-            new StringBuilder(_taintedValue).Replace('t', 'T', 2, 5).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', 2, 5).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 2, 5).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 2, 5).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCount_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintEd-+:", 
-            new StringBuilder(_taintedValue).Replace('e', 'E', 2, 5).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace('e', 'E', 2, 5).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace('e', 'E', 2, 5).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('e', 'E', 2, 5).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCount_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", 
-            new StringBuilder(_taintedValue).Replace('e', 'E', 2, 0).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace('e', 'E', 2, 0).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace('e', 'E', 2, 0).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('e', 'E', 2, 0).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCount_ResultIsTainted4()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taintEd-+:", 
-            new StringBuilder(_taintedValue).Replace('e', 'E').ToString(), 
-            () => new StringBuilder(_taintedValue).Replace('e', 'E').ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace('e', 'E').ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('e', 'E').ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCountWrongArguments_ArgumentOutOfRangeException()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', -2, 2), 
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', -2, 2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', -2, 2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', -2, 2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCountWrongArguments_ArgumentOutOfRangeException2()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', 200, 2), 
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', 200, 2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 200, 2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 200, 2));
     }
 
     [Fact]
@@ -142,48 +142,48 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceCharTaintedIndexCountWrongArguments_ArgumentOutOfRangeException3()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', 2, -2), 
-            () => new StringBuilder(_taintedValue).Replace('t', 'T', 2, -2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 2, -2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace('t', 'T', 2, -2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTainted_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TainTed-+:", 
-            new StringBuilder(_taintedValue).Replace("t", "T").ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "T").ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("t", "T").ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T").ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTainted_ResultIsTainted3()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-TTTainTTTed-+:", 
-            new StringBuilder(_taintedValue).Replace("t", "TTT").ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "TTT").ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("t", "TTT").ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "TTT").ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTainted_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-taiNted-+:", 
-            new StringBuilder(_taintedValue).Replace("n", "N").ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("n", "N").ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("n", "N").ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("n", "N").ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCount_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainTed-+:", 
-            new StringBuilder(_taintedValue).Replace("t", "T", 2, 5).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "T", 2, 5).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 2, 5).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 2, 5).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCount_ResultIsTainted2()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-tainTTTed-+:", 
-            new StringBuilder(_taintedValue).Replace("t", "TTT", 2, 5).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "TTT", 2, 5).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("t", "TTT", 2, 5).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "TTT", 2, 5).ToString());
     }
 
     [Fact]
@@ -191,8 +191,8 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentOutOfRangeException()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace("t", "T", -2, 2).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "T", -2, 2).ToString());
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", -2, 2).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", -2, 2).ToString());
     }
 
     [Fact]
@@ -200,40 +200,40 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentOutOfRangeException2()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace("t", "T", 200, 2).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", "T", 200, 2).ToString());
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 200, 2).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 200, 2).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringNotTaintedWithTainted_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-NoTAINTED2TainTAINTED2ed-+:", 
-            new StringBuilder(_notTaintedValue).Replace("t", _taintedValue2).ToString(), 
-            () => new StringBuilder(_notTaintedValue).Replace("t", _taintedValue2).ToString());
+            new System.Text.StringBuilder(_notTaintedValue).Replace("t", _taintedValue2).ToString(), 
+            () => new System.Text.StringBuilder(_notTaintedValue).Replace("t", _taintedValue2).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringNotTaintedWithTaintedIndexCount_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-NoTAINTED2Tainted-+:", 
-            new StringBuilder(_notTaintedValue).Replace("t", _taintedValue2, 2, 5).ToString(), 
-            () => new StringBuilder(_notTaintedValue).Replace("t", _taintedValue2, 2, 5).ToString());
+            new System.Text.StringBuilder(_notTaintedValue).Replace("t", _taintedValue2, 2, 5).ToString(), 
+            () => new System.Text.StringBuilder(_notTaintedValue).Replace("t", _taintedValue2, 2, 5).ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringNotTaintedWithTaintedPattern_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-NotTtttinted-+:",
-            new StringBuilder(_notTaintedValue).Replace(_taintedValue.Substring(1, 1), "ttt").ToString(), 
-            () => new StringBuilder(_notTaintedValue).Replace(_taintedValue.Substring(1, 1), "ttt").ToString());
+            new System.Text.StringBuilder(_notTaintedValue).Replace(_taintedValue.Substring(1, 1), "ttt").ToString(), 
+            () => new System.Text.StringBuilder(_notTaintedValue).Replace(_taintedValue.Substring(1, 1), "ttt").ToString());
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringNotTaintedWithNotTaintedPattern_ResultIsNotTainted()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_notTaintedValue).Replace(_notTaintedValue.Substring(1), "ttt").ToString(),
-            () => new StringBuilder(_notTaintedValue).Replace(_notTaintedValue.Substring(1), "ttt").ToString());
+            () => new System.Text.StringBuilder(_notTaintedValue).Replace(_notTaintedValue.Substring(1), "ttt").ToString(),
+            () => new System.Text.StringBuilder(_notTaintedValue).Replace(_notTaintedValue.Substring(1), "ttt").ToString());
     }
 
     [Fact]
@@ -241,8 +241,8 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentOutOfRangeException3()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace("t", "T", 2, -2), 
-            () => new StringBuilder(_taintedValue).Replace("t", "T", 2, -2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 2, -2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", "T", 2, -2));
     }
 
     [Fact]
@@ -250,8 +250,8 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentNullException()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace((string)null, "T", 2, 2), 
-            () => new StringBuilder(_taintedValue).Replace((string)null, "T", 2, 2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace((string)null, "T", 2, 2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace((string)null, "T", 2, 2));
     }
 
     [Fact]
@@ -259,16 +259,16 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentOutOfRangeException5()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace("t", (string)null, 2, -2), 
-            () => new StringBuilder(_taintedValue).Replace("t", (string)null, 2, -2));
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", (string)null, 2, -2), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", (string)null, 2, -2));
     }
 
     [Fact]
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentOutOfRangeException6()
     {
         AssertTaintedFormatWithOriginalCallCheck(":+-ained-+:", 
-            new StringBuilder(_taintedValue).Replace("t", (string)null).ToString(), 
-            () => new StringBuilder(_taintedValue).Replace("t", (string)null).ToString());
+            new System.Text.StringBuilder(_taintedValue).Replace("t", (string)null).ToString(), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace("t", (string)null).ToString());
     }
 
     [Fact]
@@ -276,7 +276,7 @@ public class StringBuilderReplaceTests : InstrumentationTestsBase
     public void GivenATaintedString_WhenCallingStringBuilderReplaceStringTaintedIndexCountWrongArguments_ArgumentNullException2()
     {
         AssertUntaintedWithOriginalCallCheck(
-            () => new StringBuilder(_taintedValue).Replace((string)null, "T"), 
-            () => new StringBuilder(_taintedValue).Replace((string)null, "T"));
+            () => new System.Text.StringBuilder(_taintedValue).Replace((string)null, "T"), 
+            () => new System.Text.StringBuilder(_taintedValue).Replace((string)null, "T"));
     }
 }
