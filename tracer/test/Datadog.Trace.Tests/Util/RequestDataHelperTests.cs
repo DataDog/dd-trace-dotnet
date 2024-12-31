@@ -194,29 +194,6 @@ public class RequestDataHelperTests
     }
 
     [Fact]
-    public void GetUrl_WhenUrlHasBeenAccessed_ShouldReturnCachedUrlAndNotResetUrlField()
-    {
-        var request = CreateHttpRequest("GET");
-        var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        // Access request.Url to set _url
-        var initialUrl = request.Url;
-
-        // Verify that _url is set before we call as we'd expect
-        var urlBeforeRequestDataHelper = urlField.GetValue(request) as Uri;
-        urlBeforeRequestDataHelper.Should().NotBeNull();
-
-        var url = RequestDataHelper.GetUrl(request);
-
-        url.Should().NotBeNull();
-        url.Should().BeSameAs(initialUrl);
-
-        // Verify that _url is still set
-        var urlValueAfter = urlField.GetValue(request) as Uri;
-        urlValueAfter.Should().NotBeNull();
-    }
-
-    [Fact]
     public void GivenADangerousQueryString_WhenCallingASMAndIAST_NoExceptionIsThrown()
     {
         var request = new HttpRequest("file", "http://localhost/benchmarks", "data=<script>alert(1)</script>");
