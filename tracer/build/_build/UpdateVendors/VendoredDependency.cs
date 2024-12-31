@@ -23,10 +23,25 @@ namespace UpdateVendors
         {
             Add(
                 libraryName: "Microsoft.OpenApi",
-                version: "1.6.22",
-                downloadUrl: "https://github.com/microsoft/OpenAPI.NET/archive/1.6.22.zip",
-                pathToSrc: new[] { "OpenAPI.NET-1.6.22", "src", "Microsoft.OpenApi" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Microsoft.OpenApi"));
+                "1.6.23",
+                "https://github.com/microsoft/OpenAPI.NET/archive/1.6.23.zip",
+                new[] { "OpenAPI.NET-1.6.23", "src", "Microsoft.OpenApi" },
+                filePath => RewriteCsFileWithStandardTransform(filePath, "Microsoft.OpenApi"),
+                new[]
+                {
+                    "Extensions/OpenApiElementExtensions.cs",
+                    "Extensions/OpenApiSerializableExtensions.cs",
+                    "Extensions/OpenApiTypeMapper.cs",
+                    "MicrosoftExtensions/", // whole folder
+                    "Services/CopyReferences.cs",
+                    "Services/OpenApiFilterService.cs",
+                    "Services/OpenApiUrlTreeNode.cs",
+                    "Services/OperationSearch.cs",
+                    "Services/SearchResult.cs",
+                    "Validations/", // whole folder
+                    "Writers/FormattingStreamWriter.cs",
+                    "Writers/OpenApiYamlWriter.cs"
+                });
 
             Add(
                 libraryName: "Serilog",

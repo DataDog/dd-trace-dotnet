@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- https://www.nuget.org/packages/Microsoft.OpenApi/1.6.22 -->
-    <PackageReference Include="Microsoft.OpenApi" Version="1.6.22" />
+    <!-- https://www.nuget.org/packages/Microsoft.OpenApi/1.6.23 -->
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.23" />
 
     <!-- https://www.nuget.org/packages/Serilog/2.10.0 -->
     <PackageReference Include="Serilog" Version="2.10.0" />
