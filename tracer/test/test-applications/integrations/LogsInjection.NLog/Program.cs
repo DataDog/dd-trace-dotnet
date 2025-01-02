@@ -239,8 +239,13 @@ namespace LogsInjection.NLog
                     throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
 #endif
                 case ContextProperty.Mdc:
+
+#if NLOG_5_0 || NLOG_4_6 || NLOG_4_0
                     global::NLog.MappedDiagnosticsContext.Set(propKey, propValue);
                     break;
+#else
+                    throw new ArgumentException("Invalid context property '{0}' for this NLog version", contextProperty.ToString());
+#endif
             }
 
             Logger logger = LogManager.GetCurrentClassLogger();
