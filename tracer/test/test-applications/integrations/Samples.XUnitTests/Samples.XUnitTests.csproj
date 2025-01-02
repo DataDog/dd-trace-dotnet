@@ -23,6 +23,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftTestSDKVersion)" />
+    <!-- Microsoft.NET.Test.Sdk implicitly references Microsoft.TestPlatform.TestHost, but that -->
+    <!-- includes Windows-specific testhost that mean that you can't use a built project on all -->
+    <!-- platforms. By excluding this, we use the same dll on all platforms instead -->
+    <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="$(MicrosoftTestSDKVersion)">
+      <ExcludeAssets>build;buildtransitive</ExcludeAssets>
+    </PackageReference>
+
     <PackageReference Include="xunit" Version="$(ApiVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="$(VsAdapterApiVersion)">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
