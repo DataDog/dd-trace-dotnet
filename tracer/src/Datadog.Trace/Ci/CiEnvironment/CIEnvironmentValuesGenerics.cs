@@ -26,67 +26,67 @@ internal abstract class CIEnvironmentValues<TValueProvider>(TValueProvider value
 
     internal static CIEnvironmentValues Create(TValueProvider valueProvider)
     {
-        if (valueProvider.GetValue(Constants.Travis) != null)
+        if (valueProvider.GetValue(Constants.Travis) is { Length: > 0 })
         {
             return new TravisEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CircleCI) != null)
+        if (valueProvider.GetValue(Constants.CircleCI) is { Length: > 0 })
         {
             return new CircleCiEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.JenkinsUrl) != null)
+        if (valueProvider.GetValue(Constants.JenkinsUrl) is { Length: > 0 })
         {
             return new JenkinsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitlabCI) != null)
+        if (valueProvider.GetValue(Constants.GitlabCI) is { Length: > 0 })
         {
             return new GitlabEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Appveyor) != null)
+        if (valueProvider.GetValue(Constants.Appveyor) is { Length: > 0 })
         {
             return new AppveyorEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.AzureTFBuild) != null)
+        if (valueProvider.GetValue(Constants.AzureTFBuild) is { Length: > 0 })
         {
             return new AzurePipelinesEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitBucketCommit) != null)
+        if (valueProvider.GetValue(Constants.BitBucketCommit) is { Length: > 0 })
         {
             return new BitbucketEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.GitHubSha) != null)
+        if (valueProvider.GetValue(Constants.GitHubSha) is { Length: > 0 })
         {
             return new GithubActionsEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.TeamCityVersion) != null)
+        if (valueProvider.GetValue(Constants.TeamCityVersion) is { Length: > 0 })
         {
             return new TeamcityEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BuildKite) != null)
+        if (valueProvider.GetValue(Constants.BuildKite) is { Length: > 0 })
         {
             return new BuildkiteEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.BitriseBuildSlug) != null)
+        if (valueProvider.GetValue(Constants.BitriseBuildSlug) is { Length: > 0 })
         {
             return new BitriseEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.Buddy) != null)
+        if (valueProvider.GetValue(Constants.Buddy) is { Length: > 0 })
         {
             return new BuddyEnvironmentValues<TValueProvider>(valueProvider);
         }
 
-        if (valueProvider.GetValue(Constants.CodefreshBuildId) != null)
+        if (valueProvider.GetValue(Constants.CodefreshBuildId) is { Length: > 0 })
         {
             return new CodefreshEnvironmentValues<TValueProvider>(valueProvider);
         }

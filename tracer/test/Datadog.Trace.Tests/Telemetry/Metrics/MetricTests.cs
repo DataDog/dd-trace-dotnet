@@ -43,15 +43,18 @@ public class MetricTests
         { "git_requests.settings_errors", ["status_code"] },
         { "itr_skippable_tests.request_errors", ["status_code"] },
         { "early_flake_detection.request_errors", ["status_code"] },
+        { "impacted_tests_detection.request_errors", ["status_code"] },
         { "endpoint_payload.requests", ["rq_compressed"] },
         { "git_requests.search_commits", ["rq_compressed"] },
         { "git_requests.objects_pack", ["rq_compressed"] },
         { "git_requests.settings", ["rq_compressed"] },
         { "itr_skippable_tests.request", ["rq_compressed"] },
         { "early_flake_detection.request", ["rq_compressed"] },
+        { "impacted_tests_detection.request", ["rq_compressed"] },
         { "git_requests.search_commits_ms", ["rs_compressed"] },
         { "itr_skippable_tests.response_bytes", ["rs_compressed"] },
         { "early_flake_detection.response_bytes", ["rs_compressed"] },
+        { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
@@ -118,7 +121,7 @@ public class MetricTests
 
                 if (permutationPrefixes.Count == 0)
                 {
-                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count);
+                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count, $"{implementation.Metric} tags has unexpected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
                 }
                 else
                 {

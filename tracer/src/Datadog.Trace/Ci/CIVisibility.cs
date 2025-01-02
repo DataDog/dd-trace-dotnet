@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
@@ -83,6 +82,8 @@ namespace Datadog.Trace.Ci
         internal static IntelligentTestRunnerClient.EarlyFlakeDetectionSettingsResponse EarlyFlakeDetectionSettings { get; private set; }
 
         internal static IntelligentTestRunnerClient.EarlyFlakeDetectionResponse? EarlyFlakeDetectionResponse { get; private set; }
+
+        internal static IntelligentTestRunnerClient.ImpactedTestsDetectionResponse? ImpactedTestsDetectionResponse { get; private set; }
 
         public static void Initialize()
         {
@@ -710,7 +711,10 @@ namespace Datadog.Trace.Ci
 
                 // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
                 // We query the settings api for those
-                if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null || settings.EarlyFlakeDetectionEnabled != false)
+                if (settings.CodeCoverageEnabled == null
+                    || settings.TestsSkippingEnabled == null
+                    || settings.EarlyFlakeDetectionEnabled != false
+                    || settings.ImpactedTestsDetectionEnabled == null)
                 {
                     var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
 
@@ -753,6 +757,17 @@ namespace Datadog.Trace.Ci
                         Log.Information("CIVisibility: Flaky Retries has been changed to {Value} by the settings api.", itrSettings.FlakyTestRetries.Value);
                         settings.SetFlakyRetryEnabled(itrSettings.FlakyTestRetries.Value);
                     }
+
+                    if (settings.ImpactedTestsDetectionEnabled == null && itrSettings.ImpactedTestsEnabled.HasValue)
+                    {
+                        Log.Information("CIVisibility: Impacted Tests Detection has been changed to {Value} by the settings api.", itrSettings.ImpactedTestsEnabled.Value);
+                        settings.SetImpactedTestsEnabled(itrSettings.ImpactedTestsEnabled.Value);
+                    }
+
+                    if (settings.ImpactedTestsDetectionEnabled == true)
+                    {
+                        ImpactedTestsDetectionResponse = await lazyItrClient.Value.GetImpactedTestsDetectionFilesAsync().ConfigureAwait(false);
+                    }
                 }
 
                 // Log code coverage status
@@ -763,6 +778,9 @@ namespace Datadog.Trace.Ci
 
                 // Log flaky retries status
                 Log.Information("{V}", settings.FlakyRetryEnabled == true ? "CIVisibility: Flaky retries is enabled." : "CIVisibility: Flaky retries is disabled.");
+
+                // Log impacted tests detection status
+                Log.Information("{V}", settings.ImpactedTestsDetectionEnabled == true ? "CIVisibility: Impacted tests detection is enabled." : "CIVisibility: Impacted tests detection is disabled.");
 
                 // For ITR we need the git metadata upload before consulting the skippable tests.
                 // If ITR is disabled we just need to make sure the git upload task has completed before leaving this method.
