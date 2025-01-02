@@ -151,7 +151,9 @@ namespace Datadog.Trace.AspNet
                 string host = requestHeaders.Get("Host");
                 var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                    ? httpContext.Request.BuildUrlForSpan(tracer.TracerManager.QueryStringManager)
+                    : httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, extractedContext.SpanContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
@@ -285,7 +287,9 @@ namespace Datadog.Trace.AspNet
                             {
                                 try
                                 {
-                                    var requestUrl = RequestDataHelper.GetUrl(app.Context.Request);
+                                    var requestUrl = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                        ? RequestDataHelper.BuildUrl(app.Context.Request)
+                                        : RequestDataHelper.GetUrl(app.Context.Request);
                                     ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode, requestUrl?.Scheme);
                                     var headers = RequestDataHelper.GetHeaders(app.Context.Request);
                                     if (headers is not null)
@@ -347,7 +351,9 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            var url = RequestDataHelper.GetUrl(app.Request);
+                            var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                ? RequestDataHelper.BuildUrl(app.Request)
+                                : RequestDataHelper.GetUrl(app.Request);
                             if (url is not null)
                             {
                                 string path = UriHelpers.GetCleanUriPath(url, app.Request.ApplicationPath);
