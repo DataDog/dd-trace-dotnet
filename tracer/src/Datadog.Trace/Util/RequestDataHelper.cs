@@ -3,16 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 #if NETFRAMEWORK
+using System;
 using System.Collections.Specialized;
-using System.Reflection;
 using System.Web;
-using System.Web.ModelBinding;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.DuckTypes;
-using Datadog.Trace.Vendors.Serilog.Events;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
@@ -153,20 +150,17 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
-    // Get the url from a HttpRequest
+    /// <summary>
+    /// Gets the Uri from the <paramref name="request"/>.
+    /// <para>
+    /// Note that this will <em>CACHE</em> the <c>Uri</c> of the <paramref name="request"/>
+    /// for all future callers (example the customer's application) if we are the first to call <see cref="HttpRequest.Url"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="request">The <see cref="HttpRequest"/> to get the <c>Uri</c> of.</param>
+    /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
     internal static Uri? GetUrl(HttpRequest request)
     {
-        var duckRequest = request.DuckCast<IHttpRequest>();
-        if (duckRequest.WorkerRequest is not null)
-        {
-            var path = GetPath(request);
-            if (path is not null)
-            {
-                return duckRequest.BuildUrl(() => path);
-            }
-        }
-
-        // fallback to the default implementation
         try
         {
             return request.Url;
@@ -176,6 +170,48 @@ internal static class RequestDataHelper
             Log.Debug("Error reading request.Url from the request.");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Builds the Uri from the <paramref name="request"/>.
+    /// <para>
+    /// Note that this will <em>bypass</em> the caching behavior of the <see cref="HttpRequest.Url"/> property.
+    /// </para>
+    /// </summary>
+    /// <param name="request">The <see cref="HttpRequest"/> to build the <c>Uri</c> from.</param>
+    /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
+    /// <remarks>While not <em>required</em> to be set this is controlled by <see cref="Configuration.ConfigurationKeys.FeatureFlags.BypassHttpRequestUrlCachingEnabled"/>.</remarks>
+    internal static Uri? BuildUrl(HttpRequest request)
+    {
+        // accessing request.Url will do one of the following:
+        // 1. Build the Uri for the HttpRequest IF .Url has not been called previously
+        // 2. return the cached Uri that was built when .Url was called previously
+        // On some setups that mix Owin and System.Web this can cause issues
+        // where the .NET Tracer will access the HttpRequest.Url causing it to be cached
+        // and then the customer can't
+        var duckRequest = request.DuckCast<IHttpRequest>();
+
+        // this is based on the implementation in .Url with respect to checking WorkerRequest
+        // https://referencesource.microsoft.com/#System.Web/HttpRequest.cs,1917
+        if (duckRequest.WorkerRequest is not null)
+        {
+            var path = GetPath(request);
+            if (path is not null)
+            {
+                // comment via https://referencesource.microsoft.com/#System.Web/HttpRequest.cs,1918
+                // The Path is accessed in a deferred way to preserve the execution order that existed
+                // before the code in BuildUrl was factored out of this property.
+                // While evaluating the Path immediately would probably not have an impact on regular execution
+                // it might impact error cases. Consider a situation in which some method in workerRequest throws.
+                // If we evaluate Path early, then some other method might throw, thus producing a different
+                // error behavior for the same conditions. Passing in a Func preserves the old ordering.
+                return duckRequest.BuildUrl(() => path);
+            }
+        }
+
+        Log.Debug("Error calling BuildUrl from the request - falling back to .Url.");
+        // fallback to the default implementation
+        return GetUrl(request);
     }
 #endif
 }

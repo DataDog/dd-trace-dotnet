@@ -130,7 +130,7 @@ public class RequestDataHelperTests
     }
 
     [Fact]
-    public void GetUrl_WhenUrlHasNotBeenAccessed_ShouldReturnUrlAndResetUrlField()
+    public void BuildUrl_WhenUrlHasNotBeenAccessed_ShouldReturnUrlAndResetUrlField()
     {
         var request = CreateHttpRequest("GET");
         var urlField = typeof(HttpRequest).GetField("_url", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -139,7 +139,7 @@ public class RequestDataHelperTests
         // this will mean that Url will need to be built
         urlField.GetValue(request).Should().BeNull();
 
-        var url = RequestDataHelper.GetUrl(request);
+        var url = RequestDataHelper.BuildUrl(request);
 
         url.Should().NotBeNull();
         url.ToString().Should().Be("http://127.0.0.1/test/test.aspx");
@@ -150,7 +150,7 @@ public class RequestDataHelperTests
     }
 
     [Fact]
-    public void GetUrl_WhenUrlIsResetAndHttpRequestIsModified_ShouldReturnUpdatedUrl()
+    public void BuildUrl_WhenUrlIsResetAndHttpRequestIsModified_ShouldReturnUpdatedUrl()
     {
         var initialHost = "localhost";
         var newHost = "example.com";
@@ -168,7 +168,7 @@ public class RequestDataHelperTests
 
         // simulate tracer calling HttpRequest.Url
         // Call GetUrl to get the initial URL and reset _url
-        var initialUrl = RequestDataHelper.GetUrl(request);
+        var initialUrl = RequestDataHelper.BuildUrl(request);
 
         // Modify the HttpRequest object by changing the host
         // This is emulating some middleware that is running after us
