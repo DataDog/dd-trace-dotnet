@@ -130,6 +130,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
         }
+#endif
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
